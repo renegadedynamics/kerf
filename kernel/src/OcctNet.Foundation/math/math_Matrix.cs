@@ -693,6 +693,8 @@ public class math_Matrix
                     I2++;
                 }
 
+                // OCCT writes column J2 of Right's column range into this matrix, so a Right whose column range
+                // differs from this matrix's (not square, or other bounds) writes the wrong columns or out of range.
                 Array[I, J2] = Som;
             }
         }

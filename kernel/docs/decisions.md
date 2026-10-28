@@ -55,3 +55,31 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     are tools for ported code. Immutability applies to values callers hold (gp now, Geom and TopoDS later).
 22. **Trimming**: default construction uses `Activator.CreateInstance<T>()`, with the trimming warning suppressed on
     the grounds that OCCT.NET's value types keep their constructors. Revisit if Bento publishes with full trimming.
+
+## Phase 1: the math package (28 October 2026)
+
+23. **`math_Vector` and `math_IntegerVector` are global using aliases** of the generic class
+    `math_VectorBase<T>` (`where T : struct, INumber<T>`), as they are `using` aliases in OCCT. Each project that
+    uses them declares the aliases (`<Using Include="Occt.math_VectorBase&lt;double&gt;" Alias="math_Vector" />`);
+    they can't go in a shared props file, because projects that don't reference OcctNet.Foundation would fail on
+    the unknown type. Rejected: subclasses, whose inherited operators would return the base type.
+24. **`math_Vector`, `math_Matrix` and `math_DoubleTab` copy explicitly.** C++ copy construction is `new(x)`;
+    C++ assignment, including move assignment from a temporary, is `Initialized(x)` (`Assign` for
+    math_DoubleTab), which copies values, keeps the bounds and throws if the sizes differ, as OCCT does. The
+    compound operators (`+=`, `-=`, `*=`, `/=`) are C# 14 instance compound operators, so they change the
+    object in place as in C++. Moves are reference transfers, so the GTests' checks on moved-from objects are
+    dropped. OCCT's inline buffers for small vectors and matrices are not reproduced.
+25. **Function interfaces are abstract classes with `out` results**: `bool Value(double X, out double F)`,
+    `bool Values(math_Vector X, out double F, math_Vector G)`. Vectors and matrices are passed as references
+    and filled in place. An implementation that fails must still assign its `out` values, where C++ may leave
+    them unchanged; the ported algorithms that rely on an unchanged value (`math_KronrodSingleIntegration`'s
+    error, `math_GlobOptMin::computeLocalExtremum`) use `ref` internally.
+26. **A `const math_Vector&` returned from a field returns the object itself**, documented "shared: don't
+    modify", rather than a copy: these are low-level tools (decision 21) and copying would cost every caller.
+27. **`Dump(Standard_OStream&)` is `Dump(TextWriter)`**, and `ToString()` returns what it writes, for every math
+    class with a Dump.
+28. **math_Recipes' free functions** (`LU_Decompose`, `SVD_Decompose`, `Jacobi`, ...) are static methods of a
+    static class `math_Recipes`, imported with `using static Occt.math_Recipes;`.
+29. **NCollection_CellFilter** takes its inspector as a type parameter constrained to
+    `INCollection_CellFilter_Inspector<TTarget, TPoint>` (static abstract `Coord`, static virtual `Dimension`
+    and `IsEqual`), in place of OCCT's duck-typed template parameter.
