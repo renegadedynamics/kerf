@@ -63,3 +63,25 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     package group off the phase branch, merged back with `--no-ff`. The harness's own worktree isolation refused
     this repository's path (a drive-letter case mismatch) and left three locked worktrees in `.claude/worktrees`,
     which are ignored and can be removed with `git worktree remove --force`.
+
+## Phase 1: ElCLib, ElSLib, GeomAbs, TopLoc (28 October 2026)
+
+25. **ElCLib and ElSLib output parameters are `out`**, and where OCCT fills an output with `SetXYZ`/`SetX`/... the
+    port assigns a new value built from the same expressions in the same order, so results are unchanged.
+    `ElCLib::AdjustPeriodic`'s U1 and U2 are read and written, so `ref`.
+26. **TopLoc_Location is a struct** holding one reference to a shared, immutable list of nodes, exactly OCCT's
+    layout. It has value semantics in OCCT (copied freely, embedded in every TopoDS_Shape), costs no allocation for
+    the identity, and `default(TopLoc_Location)` is a valid identity, as OCCT's default constructor. A class would
+    add an allocation and a null that OCCT doesn't have. TopLoc_SListOfItemLocation and TopLoc_ItemLocation are
+    structs for the same reason; the list node and TopLoc_Datum3D are Standard_Transient classes, as in OCCT.
+27. **TopLoc_Location equality is OCCT's `IsEqual`**: datums compared by reference, then powers, so `Equals`,
+    `==` and `GetHashCode` agree with OCCT's maps of locations and shapes. Two locations built from equal
+    transformations are different, as in OCCT. `HashCode()` keeps OCCT's structure (0 for the identity, then each
+    datum and power folded in from a fixed seed) but returns an `int` from `System.HashCode` over the datums'
+    `RuntimeHelpers.GetHashCode`, where OCCT MurmurHashes their addresses into a `size_t`; both are
+    process-specific. The deprecated aliases TopLoc_MapOfLocation and TopLoc_IndexedMapOfLocation are written out
+    as `NCollection_Map<TopLoc_Location>` and `NCollection_IndexedMap<TopLoc_Location>`.
+28. **`operator gp_Trsf()` of TopLoc_Location is an explicit conversion**, and the non-explicit
+    `TopLoc_Location(const gp_Trsf&)` is written out, as for gp's implicit conversions.
+29. **ShallowDump keeps a TextWriter overload**; the object's address becomes its runtime hash code and C++'s default
+    six-digit stream formatting becomes "G6".
