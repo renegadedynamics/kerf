@@ -253,3 +253,35 @@ something:
   these are dependencies of the XCAF assembly toolkits and of text, so we'll prune by actual
   dependencies, checked by the load-context test, rather than by name.
 - **Bento.Collections** stays at 0.4.0. We'll flag any need for something newer.
+
+### Tessellation is in (4.3)
+
+```csharp
+ShapeMesh mesh = shape.Triangulate(linearDeflection: 0.1, angularDeflection: 0.2);  // radians
+ShapeMesh auto = shape.Triangulate();             // MeshTolerances.For(shape): 0.1% of the diagonal
+MeshNode  tree = assembly.TriangulateTree();      // labels, colours, locations; instances share meshes
+```
+
+It follows your sketch, with these differences:
+
+- **Buffers.** `FaceMesh.Positions`, `Normals` and `Triangles`, and `EdgeMesh.Points`, are
+  `ReadOnlyMemory<float>` and `ReadOnlyMemory<int>` slices, not arrays, so the mesh is immutable and
+  isn't copied per face. Use `.Span` to read them. `NodeCount`, `TriangleCount` and `PointCount` give
+  the sizes.
+- **Order.** Index *i* of `Faces`, `Edges` and `Vertices` is index *i* of the shape's `Faces()`,
+  `Edges()` and `Vertices()`. The tests check this.
+- **Faces.**
+  - Triangle indices are 0-based into the face's own nodes, counter-clockwise seen from outside.
+  - Normals are the surface's at each node.
+  - A face the mesher couldn't triangulate has no nodes rather than throwing.
+- **Edges.** Each polyline runs the way its edge does. Where the edge bounds a face, its points are
+  that face's own boundary nodes. Free edges (wires, curves) use the mesher's polygon.
+- **Speed.** Copying out a mesh of 100k triangles takes about 6 ms in Release. OCCT's meshing itself
+  takes about 1.4 s for a sphere at that density, so choose tolerances with care. `MeshTolerances.For`
+  is a sensible default.
+- **Thread safety.** Meshing works on a private copy, so concurrent calls on shapes that share geometry
+  are safe, and the same inputs give the same output. An empty shape gives `ShapeMesh.Empty`.
+- **Instances.** In `TriangulateTree`, parts that share a `TShape` (and orientation) share one
+  `ShapeMesh` object. It is in the part's own coordinates, and `MeshNode.Location` is relative to the
+  parent. Instancing is detected by reference equality.
+

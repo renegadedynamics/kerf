@@ -32,42 +32,48 @@ public abstract partial class Shape
                 case TopoDS_Edge edge:
                 {
                     using var curve = new BRepAdaptor_Curve(edge);
-                    return curve.GetType_() switch
-                    {
-                        GeomAbs_CurveType.GeomAbs_Line => GeomType.Line,
-                        GeomAbs_CurveType.GeomAbs_Circle => GeomType.Circle,
-                        GeomAbs_CurveType.GeomAbs_Ellipse => GeomType.Ellipse,
-                        GeomAbs_CurveType.GeomAbs_Hyperbola => GeomType.Hyperbola,
-                        GeomAbs_CurveType.GeomAbs_Parabola => GeomType.Parabola,
-                        GeomAbs_CurveType.GeomAbs_BezierCurve => GeomType.Bezier,
-                        GeomAbs_CurveType.GeomAbs_BSplineCurve => GeomType.BSpline,
-                        GeomAbs_CurveType.GeomAbs_OffsetCurve => GeomType.Offset,
-                        _ => GeomType.Other,
-                    };
+                    return GeomTypeOf(curve.GetType_());
                 }
                 case TopoDS_Face face:
                 {
                     using var surface = new BRepAdaptor_Surface(face);
-                    return surface.GetType_() switch
-                    {
-                        GeomAbs_SurfaceType.GeomAbs_Plane => GeomType.Plane,
-                        GeomAbs_SurfaceType.GeomAbs_Cylinder => GeomType.Cylinder,
-                        GeomAbs_SurfaceType.GeomAbs_Cone => GeomType.Cone,
-                        GeomAbs_SurfaceType.GeomAbs_Sphere => GeomType.Sphere,
-                        GeomAbs_SurfaceType.GeomAbs_Torus => GeomType.Torus,
-                        GeomAbs_SurfaceType.GeomAbs_BezierSurface => GeomType.Bezier,
-                        GeomAbs_SurfaceType.GeomAbs_BSplineSurface => GeomType.BSpline,
-                        GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution => GeomType.Revolution,
-                        GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion => GeomType.Extrusion,
-                        GeomAbs_SurfaceType.GeomAbs_OffsetSurface => GeomType.Offset,
-                        _ => GeomType.Other,
-                    };
+                    return GeomTypeOf(surface.GetType_());
                 }
                 default:
                     return GeomType.Other;
             }
         }
     }
+
+    /// <summary>The geometry type of a kind of curve.</summary>
+    internal static GeomType GeomTypeOf(GeomAbs_CurveType type) => type switch
+    {
+        GeomAbs_CurveType.GeomAbs_Line => GeomType.Line,
+        GeomAbs_CurveType.GeomAbs_Circle => GeomType.Circle,
+        GeomAbs_CurveType.GeomAbs_Ellipse => GeomType.Ellipse,
+        GeomAbs_CurveType.GeomAbs_Hyperbola => GeomType.Hyperbola,
+        GeomAbs_CurveType.GeomAbs_Parabola => GeomType.Parabola,
+        GeomAbs_CurveType.GeomAbs_BezierCurve => GeomType.Bezier,
+        GeomAbs_CurveType.GeomAbs_BSplineCurve => GeomType.BSpline,
+        GeomAbs_CurveType.GeomAbs_OffsetCurve => GeomType.Offset,
+        _ => GeomType.Other,
+    };
+
+    /// <summary>The geometry type of a kind of surface.</summary>
+    internal static GeomType GeomTypeOf(GeomAbs_SurfaceType type) => type switch
+    {
+        GeomAbs_SurfaceType.GeomAbs_Plane => GeomType.Plane,
+        GeomAbs_SurfaceType.GeomAbs_Cylinder => GeomType.Cylinder,
+        GeomAbs_SurfaceType.GeomAbs_Cone => GeomType.Cone,
+        GeomAbs_SurfaceType.GeomAbs_Sphere => GeomType.Sphere,
+        GeomAbs_SurfaceType.GeomAbs_Torus => GeomType.Torus,
+        GeomAbs_SurfaceType.GeomAbs_BezierSurface => GeomType.Bezier,
+        GeomAbs_SurfaceType.GeomAbs_BSplineSurface => GeomType.BSpline,
+        GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution => GeomType.Revolution,
+        GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion => GeomType.Extrusion,
+        GeomAbs_SurfaceType.GeomAbs_OffsetSurface => GeomType.Offset,
+        _ => GeomType.Other,
+    };
 
     // ---- Placement ----
 
@@ -397,12 +403,12 @@ public abstract partial class Shape
     /// triangulation in the faces it's given, so it meshes a copy: the shape itself, and everything sharing its
     /// geometry, is untouched.
     /// </summary>
-    internal TopoDS_Shape MeshedCopy(double tolerance, double angularTolerance)
+    internal TopoDS_Shape MeshedCopy(double tolerance, double angularTolerance, bool relative = true)
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
         var copy = TopoUtil.PrivateCopy(_wrapped);
-        new BRepMesh_IncrementalMesh(copy, tolerance, true, angularTolerance, true).Dispose();
+        new BRepMesh_IncrementalMesh(copy, tolerance, relative, angularTolerance, true).Dispose();
         return copy;
     }
 

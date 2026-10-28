@@ -137,6 +137,22 @@ change every shape sharing it, and race between threads. So:
 - **Warnings** are collected per operation by `Warnings.Capture()` scopes that follow the async flow,
   not by a static event.
 
+#### Meshes
+
+- **`Triangulate` is for viewers and picking**, and leaves `Tessellate` as build123d has it. It meshes
+  a private copy of the shape. The copy has the shape's structure, so its `Faces()`, `Edges()` and
+  `Vertices()` come in the same order: index *i* of the mesh is index *i* of the shape.
+- **The shim copies out the whole mesh in two calls**
+  ([b3d_mesh.cpp](../native/shim/src/b3d_mesh.cpp)): one gathers every face's nodes, normals and
+  triangles and every edge's polyline into flat buffers, and the next copies them out. A face's normals
+  come from its surface (`BRepLib_ToolTriangulatedShape::ComputeNormals`). Its winding is flipped for a
+  reversed face or a mirroring location. An edge's polyline is its polygon on an adjacent face's
+  triangulation, so it lies exactly on the shading. The faces and edges of a `ShapeMesh` are read-only
+  slices of those buffers. Copying out 100k triangles takes a few milliseconds; OCCT's meshing dominates.
+- **`TriangulateTree`** follows `AssemblyChildren`. It gives a node per child with its label, colour and
+  location relative to its parent, and meshes each `TShape` once in its own coordinates. Instances share
+  the same `ShapeMesh` object.
+
 #### Objects
 
 - **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,

@@ -49,7 +49,7 @@ public class LoadContextTests
     }
 
     [Fact]
-    public void ABoxTessellatesThroughACollectibleLoadContext()
+    public void ABoxTriangulatesThroughACollectibleLoadContext()
     {
         var root = Unpack();
         var (context, triangles, nativeLoads) = Run(root);
@@ -72,7 +72,7 @@ public class LoadContextTests
         Assert.False(context.IsAlive, "the extension's load context didn't unload");
     }
 
-    /// <summary>Makes a box in the extension and tessellates it on a background thread, as Bento calculates cells.</summary>
+    /// <summary>Makes a box in the extension and triangulates it on a background thread, as Bento calculates cells.</summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static (WeakReference Context, int Triangles, List<string> NativeLoads) Run(string root)
     {
@@ -84,9 +84,8 @@ public class LoadContextTests
             const BindingFlags invoke = BindingFlags.Public | BindingFlags.Instance | BindingFlags.OptionalParamBinding;
             var boxType = assembly.GetType("Build123d.Box", throwOnError: true)!;
             var box = boxType.InvokeMember("", invoke | BindingFlags.CreateInstance, null, null, [80.0, 60.0, 10.0])!;
-            var mesh = boxType.InvokeMember("Tessellate", invoke | BindingFlags.InvokeMethod, null, box, [0.1])!;
-            var list = (System.Collections.ICollection)mesh.GetType().GetField("Item2")!.GetValue(mesh)!;
-            return list.Count;
+            var mesh = boxType.InvokeMember("Triangulate", invoke | BindingFlags.InvokeMethod, null, box, [0.1])!;
+            return (int)mesh.GetType().GetProperty("TriangleCount")!.GetValue(mesh)!;
         }).GetAwaiter().GetResult();
         var loads = context.NativeLoads.ToList();
         context.Unload();

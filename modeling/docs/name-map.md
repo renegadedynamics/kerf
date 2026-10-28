@@ -89,6 +89,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `filter_by_value(Edge.length, 3)` | `FilterByValue(e => e.Length, 3)` |
 | `ShapeHistory.merge` (in place) | `Merge` returns a new record |
 | `shape.mesh(tol)` (in place) | `Meshed(tol)` returns a meshed copy; `Tessellate` meshes a copy too |
+| (ocp-tessellate, for viewers) | `Triangulate(…)` returns a `ShapeMesh` (faces, edges and vertices in the shape's order); `TriangulateTree()` a `MeshNode` tree for assemblies |
 | `make_constrained_arcs(a, b, radius=r)`, `(a, b, c)`, `(a, center=p)`, `(a, radius=r, center_on=c)` | `Edge.MakeConstrainedArcs(…)` overloads, each target a `Tangent` (from an `Edge`, `Axis`, `Vector`, `Vertex` or `(edge, Tangency)`) |
 | `make_constrained_arcs(a, b, center_on=c)` | `Edge.MakeConstrainedArcsCenteredOn(a, b, c)`: three targets would be ambiguous with the three-tangent form |
 | `make_constrained_lines(a, b)`, `(a, axis, angle=…)`, `(a, axis, direction=…)` | `Edge.MakeConstrainedLines(…)` overloads |

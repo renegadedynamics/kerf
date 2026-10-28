@@ -20,3 +20,11 @@ The first packages, for Bento's 3D-models extension.
   - booleans run non-destructive;
   - ShapeFix, loft and tapered extrusion work on copies.
 - Warnings are collected by `Warnings.Capture()` scopes, which replace the static `Warnings.Raised` event.
+- `Shape.Triangulate` gives a structured, immutable `ShapeMesh` for viewers and picking:
+  - face meshes, with nodes shared within each face, surface normals, outward winding and the surface type;
+  - edge polylines, taken from the face meshes, with the curve type;
+  - vertices.
+  Each list is in the order of `Faces()`, `Edges()` and `Vertices()`, and the whole mesh is copied out of
+  the kernel in bulk. `MeshTolerances.For(shape)` gives tolerances in proportion to the shape.
+  `TriangulateTree` gives the assembly tree, with labels, colours and locations, meshing each instanced
+  geometry once.

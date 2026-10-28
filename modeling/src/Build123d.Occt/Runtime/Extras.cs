@@ -79,8 +79,72 @@ public static partial class Extras
         return new TopoDS_Shape(r);
     }
 
+    /// <summary>
+    /// The triangulations of <paramref name="faces"/> and the polylines of <paramref name="edges"/>, sub-shapes of the
+    /// meshed <paramref name="root"/>, copied out in bulk. Edges come from a face's triangulation where they lie on
+    /// one, else from the mesher's own polygon, else are discretised to <paramref name="deflection"/> and
+    /// <paramref name="angle"/>.
+    /// </summary>
+    public static MeshBuffers ExtractMesh(TopoDS_Shape root, IReadOnlyList<TopoDS_Shape> faces, IReadOnlyList<TopoDS_Shape> edges,
+                                          double deflection, double angle)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        var facePtrs = faces.Select(f => f.PtrAs_TopoDS_Shape()).ToArray();
+        var edgePtrs = edges.Select(e => e.PtrAs_TopoDS_Shape()).ToArray();
+        IntPtr mesh, err;
+        unsafe
+        {
+            fixed (IntPtr* f = facePtrs)
+            fixed (IntPtr* e = edgePtrs)
+                mesh = N.b3d_mesh_extract(root.PtrAs_TopoDS_Shape(), (IntPtr)f, facePtrs.Length, (IntPtr)e, edgePtrs.Length, deflection, angle, out err);
+        }
+        GC.KeepAlive(root);
+        GC.KeepAlive(faces);
+        GC.KeepAlive(edges);
+        OcctException.ThrowIfError(err);
+        try
+        {
+            N.b3d_mesh_sizes(mesh, out var nodeFloats, out var triangleIndices, out var pointFloats);
+            var buffers = new MeshBuffers(checked((int)nodeFloats), checked((int)triangleIndices), checked((int)pointFloats),
+                                          facePtrs.Length, edgePtrs.Length);
+            unsafe
+            {
+                fixed (float* positions = buffers.Positions)
+                fixed (float* normals = buffers.Normals)
+                fixed (int* triangles = buffers.Triangles)
+                fixed (long* faceNodes = buffers.FaceNodes)
+                fixed (long* faceTriangles = buffers.FaceTriangles)
+                fixed (int* faceTypes = buffers.FaceTypes)
+                fixed (float* points = buffers.Points)
+                fixed (long* edgePoints = buffers.EdgePoints)
+                fixed (int* edgeTypes = buffers.EdgeTypes)
+                    N.b3d_mesh_copy(mesh, (IntPtr)positions, (IntPtr)normals, (IntPtr)triangles, (IntPtr)faceNodes, (IntPtr)faceTriangles,
+                                    (IntPtr)faceTypes, (IntPtr)points, (IntPtr)edgePoints, (IntPtr)edgeTypes);
+            }
+            return buffers;
+        }
+        finally
+        {
+            N.b3d_mesh_free(mesh);
+        }
+    }
+
     internal static partial class N
     {
+        [LibraryImport("b3docct")]
+        internal static partial IntPtr b3d_mesh_extract(IntPtr root, IntPtr faces, int faceCount, IntPtr edges, int edgeCount,
+                                                        double deflection, double angle, out IntPtr err);
+
+        [LibraryImport("b3docct")]
+        internal static partial void b3d_mesh_sizes(IntPtr mesh, out long nodeFloats, out long triangleIndices, out long pointFloats);
+
+        [LibraryImport("b3docct")]
+        internal static partial void b3d_mesh_copy(IntPtr mesh, IntPtr positions, IntPtr normals, IntPtr triangles, IntPtr faceNodes,
+                                                   IntPtr faceTriangles, IntPtr faceTypes, IntPtr points, IntPtr edgePoints, IntPtr edgeTypes);
+
+        [LibraryImport("b3docct")]
+        internal static partial void b3d_mesh_free(IntPtr mesh);
+
         [LibraryImport("b3docct")]
         internal static partial IntPtr b3d_brep_write(IntPtr shape, byte withTriangles, out long size, out IntPtr err);
 
@@ -99,4 +163,40 @@ public static partial class Extras
         [LibraryImport("b3docct")]
         internal static partial int b3d_edge_curve3d_is_planar(IntPtr edge, IntPtr normal, double tolerance, out IntPtr err);
     }
+}
+
+/// <summary>
+/// The buffers <see cref="Extras.ExtractMesh"/> fills: every face's nodes (x, y, z each, located), their normals and
+/// the triangles (index triples into each face's own nodes, wound to face out) end to end, then every edge's
+/// polyline. The offsets have one entry per face or edge and a final total.
+/// </summary>
+public sealed class MeshBuffers
+{
+    internal MeshBuffers(int nodeFloats, int triangleIndices, int pointFloats, int faces, int edges)
+    {
+        Positions = new float[nodeFloats];
+        Normals = new float[nodeFloats];
+        Triangles = new int[triangleIndices];
+        FaceNodes = new long[faces + 1];
+        FaceTriangles = new long[faces + 1];
+        FaceTypes = new int[faces];
+        Points = new float[pointFloats];
+        EdgePoints = new long[edges + 1];
+        EdgeTypes = new int[edges];
+    }
+
+    public float[] Positions { get; }
+    public float[] Normals { get; }
+    public int[] Triangles { get; }
+    /// <summary>Each face's first node, then the total.</summary>
+    public long[] FaceNodes { get; }
+    /// <summary>Each face's first triangle index (three per triangle), then the total.</summary>
+    public long[] FaceTriangles { get; }
+    /// <summary>Each face's <c>GeomAbs_SurfaceType</c>.</summary>
+    public int[] FaceTypes { get; }
+    public float[] Points { get; }
+    /// <summary>Each edge's first point, then the total.</summary>
+    public long[] EdgePoints { get; }
+    /// <summary>Each edge's <c>GeomAbs_CurveType</c>.</summary>
+    public int[] EdgeTypes { get; }
 }
