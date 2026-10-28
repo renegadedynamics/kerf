@@ -159,6 +159,22 @@ public class NCollection_Array1<T> : IEnumerable<T>
         return this;
     }
 
+    /// <summary>
+    /// Copies the values of an array of the same length, keeping this array's bounds (OCCT's <c>CopyValues</c>).
+    /// Throws <see cref="Standard_DimensionMismatch"/> if the lengths differ.
+    /// </summary>
+    public NCollection_Array1<T> CopyValues(NCollection_Array1<T> theOther)
+    {
+        if (ReferenceEquals(this, theOther))
+        {
+            return this;
+        }
+
+        Standard_DimensionMismatch_Raise_if(mySize != theOther.mySize, "NCollection_Array1::CopyValues");
+        theOther.AsSpan().CopyTo(AsSpan());
+        return this;
+    }
+
     /// <summary>Takes over another array's storage, leaving it empty (OCCT's <c>Move</c>).</summary>
     public NCollection_Array1<T> Move(NCollection_Array1<T> theOther)
     {

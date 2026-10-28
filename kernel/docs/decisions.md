@@ -85,3 +85,30 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     `TopLoc_Location(const gp_Trsf&)` is written out, as for gp's implicit conversions.
 29. **ShallowDump keeps a TextWriter overload**; the object's address becomes its runtime hash code and C++'s default
     six-digit stream formatting becomes "G6".
+
+## Phase 1: the math package (28 October 2026)
+
+30. **`math_Vector` and `math_IntegerVector` are global using aliases** of the generic class
+    `math_VectorBase<T>` (`where T : struct, INumber<T>`), as they are `using` aliases in OCCT. The aliases are declared once in
+    `src/Directory.Build.props` and `tests/Directory.Build.props` (every port and test project references
+    OcctNet.Foundation; the analyzer project is excluded). Rejected: subclasses, whose inherited operators would return the base type.
+31. **`math_Vector`, `math_Matrix` and `math_DoubleTab` copy explicitly.** C++ copy construction is `new(x)`;
+    C++ assignment, including move assignment from a temporary, is `Initialized(x)` (`Assign` for
+    math_DoubleTab), which copies values, keeps the bounds and throws if the sizes differ, as OCCT does. The
+    compound operators (`+=`, `-=`, `*=`, `/=`) are C# 14 instance compound operators, so they change the
+    object in place as in C++. Moves are reference transfers, so the GTests' checks on moved-from objects are
+    dropped. OCCT's inline buffers for small vectors and matrices are not reproduced.
+32. **Function interfaces are abstract classes with `out` results**: `bool Value(double X, out double F)`,
+    `bool Values(math_Vector X, out double F, math_Vector G)`. Vectors and matrices are passed as references
+    and filled in place. An implementation that fails must still assign its `out` values, where C++ may leave
+    them unchanged; the ported algorithms that rely on an unchanged value (`math_KronrodSingleIntegration`'s
+    error, `math_GlobOptMin::computeLocalExtremum`) use `ref` internally.
+33. **A `const math_Vector&` returned from a field returns the object itself**, documented "shared: don't
+    modify", rather than a copy: these are low-level tools (decision 21) and copying would cost every caller.
+34. **`Dump(Standard_OStream&)` is `Dump(TextWriter)`**, and `ToString()` returns what it writes, for every math
+    class with a Dump.
+35. **math_Recipes' free functions** (`LU_Decompose`, `SVD_Decompose`, `Jacobi`, ...) are static methods of a
+    static class `math_Recipes`, imported with `using static Occt.math_Recipes;`.
+36. **NCollection_CellFilter** takes its inspector as a type parameter constrained to
+    `INCollection_CellFilter_Inspector<TTarget, TPoint>` (static abstract `Coord`, static virtual `Dimension`
+    and `IsEqual`), in place of OCCT's duck-typed template parameter.
