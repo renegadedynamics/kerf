@@ -1,0 +1,467 @@
+using System.Diagnostics;
+using Build123d.Occt;
+
+namespace Build123d;
+
+/// <summary>
+/// An immutable plane: a right-handed coordinate system with an origin and X, Y and Z directions, Z
+/// normal to the plane. Local 2D coordinates on a plane map to global 3D ones.
+/// </summary>
+/// <remarks>
+/// <list type="table">
+/// <listheader><term>Plane</term><description>x_dir, y_dir, z_dir</description></listheader>
+/// <item><term>XY, Top</term><description>+x, +y, +z</description></item>
+/// <item><term>YZ, Right</term><description>+y, +z, +x</description></item>
+/// <item><term>ZX</term><description>+z, +x, +y</description></item>
+/// <item><term>XZ, Front</term><description>+x, +z, -y</description></item>
+/// <item><term>YX</term><description>+y, +x, -z</description></item>
+/// <item><term>ZY</term><description>+z, +y, -x</description></item>
+/// <item><term>Back</term><description>-x, +z, +y</description></item>
+/// <item><term>Left</term><description>-y, +z, -x</description></item>
+/// <item><term>Bottom</term><description>+x, -y, -z</description></item>
+/// <item><term>Isometric</term><description>+x+y, -x+y+z, +x+y-z</description></item>
+/// </list>
+/// Equality compares origin, X and Z directions rounded to five decimal places.
+/// </remarks>
+public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
+{
+    /// <summary>The OCCT plane. Never modified.</summary>
+    internal gp_Pln Pln { get; }
+
+    /// <summary>The global position of the local origin.</summary>
+    public Vector Origin { get; }
+
+    /// <summary>The local X direction.</summary>
+    public Vector XDir { get; }
+
+    /// <summary>The local Y direction.</summary>
+    public Vector YDir { get; }
+
+    /// <summary>The local Z direction, normal to the plane.</summary>
+    public Vector ZDir { get; }
+
+#pragma warning disable CS1591 // The standard planes are described in the remarks
+    public static Plane XY { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
+    public static Plane YZ { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
+    public static Plane ZX { get; } = new((0, 0, 0), (0, 0, 1), (0, 1, 0));
+    public static Plane XZ { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
+    public static Plane YX { get; } = new((0, 0, 0), (0, 1, 0), (0, 0, -1));
+    public static Plane ZY { get; } = new((0, 0, 0), (0, 0, 1), (-1, 0, 0));
+    public static Plane Front { get; } = new((0, 0, 0), (1, 0, 0), (0, -1, 0));
+    public static Plane Back { get; } = new((0, 0, 0), (-1, 0, 0), (0, 1, 0));
+    public static Plane Left { get; } = new((0, 0, 0), (0, -1, 0), (-1, 0, 0));
+    public static Plane Right { get; } = new((0, 0, 0), (0, 1, 0), (1, 0, 0));
+    public static Plane Top { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, 1));
+    public static Plane Bottom { get; } = new((0, 0, 0), (1, 0, 0), (0, 0, -1));
+    public static Plane Isometric { get; } = new(
+        (0, 0, 0), (1 / Math.Sqrt(2), 1 / Math.Sqrt(2), 0), (1 / Math.Sqrt(3), -1 / Math.Sqrt(3), 1 / Math.Sqrt(3)));
+#pragma warning restore CS1591
+
+    /// <summary>Wraps a gp_Pln this plane takes ownership of, making it right-handed if it isn't.</summary>
+    Plane(gp_Pln pln, bool owned)
+    {
+        Pln = EnsureRightHanded(pln);
+        using var loc = Pln.Location();
+        using var axis = Pln.Axis();
+        using var z = axis.Direction();
+        using var xAxis = Pln.XAxis();
+        using var x = xAxis.Direction();
+        using var yAxis = Pln.YAxis();
+        using var y = yAxis.Direction();
+        (Origin, XDir, YDir, ZDir) = (new Vector(loc), new Vector(x), new Vector(y), new Vector(z));
+    }
+
+    /// <summary>A plane from an OCCT gp_Pln (copied).</summary>
+    public Plane(gp_Pln pln) : this(new gp_Pln(pln), owned: true) { }
+
+    /// <summary>
+    /// A plane at <paramref name="origin"/> with normal <paramref name="zDir"/> (default +Z) and X direction
+    /// <paramref name="xDir"/>. Without an X direction, OCCT chooses one perpendicular to the normal.
+    /// </summary>
+    /// <exception cref="ArgumentException">A direction has zero length.</exception>
+    /// <exception cref="OcctException">The X direction is parallel to the normal.</exception>
+    public Plane(Vector origin, Vector? xDir = null, Vector? zDir = null)
+        : this(Build(origin, xDir is { } x ? NormalizedArg(x) : null, zDir is { } z ? NormalizedArg(z) : new Vector(0, 0, 1)), owned: true)
+    {
+    }
+
+    /// <summary>The plane of a location: at its position, with its axes.</summary>
+    public Plane(Location location) : this(FromLocation(location), owned: true) { }
+
+    /// <summary>A plane through the axis position, normal to the axis, with an optional X direction.</summary>
+    public Plane(Axis axis, Vector? xDir = null) : this(Build(axis.Position, xDir, axis.Direction), owned: true) { }
+
+    /// <summary>
+    /// A plane at <paramref name="origin"/> from its X and Y directions. The normal is X × Y, and Y is
+    /// adjusted to be perpendicular to X.
+    /// </summary>
+    /// <exception cref="ArgumentException">A direction has zero length, or the two are parallel.</exception>
+    public static Plane FromXAndYDirections(Vector origin, Vector xDir, Vector yDir)
+    {
+        if (xDir.Length == 0.0)
+            throw new ArgumentException("x_dir must be non null", nameof(xDir));
+        if (yDir.Length == 0.0)
+            throw new ArgumentException("y_dir must be non null", nameof(yDir));
+        var x = xDir.Normalized();
+        var yInput = yDir.Normalized();
+        var zFromXy = x.Cross(yInput);
+        if (zFromXy.Length == 0.0)
+            throw new ArgumentException("x_dir and y_dir must not be parallel", nameof(yDir));
+        var z = zFromXy.Normalized();
+        var y = z.Cross(x).Normalized();
+        x = y.Cross(z).Normalized();
+        return new Plane(Ax3Plane(origin, z, x), owned: true);
+    }
+
+    /// <summary>The plane through three points: origin at the first, X towards the second, the third on the plane.</summary>
+    public static Plane ThroughPoints(Vector p0, Vector p1, Vector p2)
+    {
+        var xDir = p1 - p0;
+        return Create(p0, xDir, xDir.Cross(p2 - p0));
+    }
+
+    /// <summary>
+    /// A plane from directions used as given: build123d's keyword-argument construction. The public
+    /// constructor normalises its direction arguments once more first, as build123d's positional one does.
+    /// </summary>
+    internal static Plane Create(Vector origin, Vector? xDir, Vector zDir) => new(Build(origin, xDir, zDir), owned: true);
+
+    static Vector NormalizedArg(Vector v)
+    {
+        try
+        {
+            return v.Normalized();
+        }
+        catch (OcctException ex)
+        {
+            throw new ArgumentException("Expected gp_Pln, Face, Location, Axis, VectorLike, or three points", ex);
+        }
+    }
+
+    static gp_Pln Build(Vector origin, Vector? xDir, Vector zDir)
+    {
+        if (zDir.Length == 0.0)
+            throw new ArgumentException("z_dir must be non null", nameof(zDir));
+        var z = zDir.Normalized();
+        Vector x;
+        if (xDir is null)
+        {
+            // OCCT picks an X direction perpendicular to the normal
+            using var p = origin.ToGpPnt();
+            using var n = z.ToGpDir();
+            using var ax3 = new gp_Ax3(p, n);
+            using var xd = ax3.XDirection();
+            x = new Vector(xd).Normalized();
+        }
+        else
+        {
+            if (xDir.Value.Length == 0.0)
+                throw new ArgumentException("x_dir must be non null", nameof(xDir));
+            x = xDir.Value.Normalized();
+        }
+        return Ax3Plane(origin, z, x);
+    }
+
+    static gp_Pln Ax3Plane(Vector origin, Vector z, Vector x)
+    {
+        using var p = origin.ToGpPnt();
+        using var n = z.ToGpDir();
+        using var vx = x.ToGpDir();
+        using var ax3 = new gp_Ax3(p, n, vx);
+        return new gp_Pln(ax3);
+    }
+
+    static gp_Pln FromLocation(Location location)
+    {
+        // build123d moves a planar XY face to the location and reads back its surface's X direction and
+        // its normal. Both follow from transforming the XY frame's directions as gp_Ax3::Transform does:
+        // X and Y each transformed as a gp_Dir, and the normal their cross product.
+        using var trsf = location.Wrapped.Transformation();
+        using var dx = new gp_Dir(1, 0, 0);
+        using var dy = new gp_Dir(0, 1, 0);
+        using var tx = dx.Transformed(trsf);
+        using var ty = dy.Transformed(trsf);
+        var x = new Vector(tx);
+        var normal = x.Cross(new Vector(ty));
+        return Build(location.Position, x.Round(14), normal.Round(14));
+    }
+
+    static gp_Pln EnsureRightHanded(gp_Pln pln)
+    {
+        using var position = pln.Position();
+        if (position.Direct())
+            return pln;
+
+        Trace.TraceWarning("Trying to set a left-handed plane");
+        using var loc = pln.Location();
+        using var axis = pln.Axis();
+        using var n = axis.Direction();
+        using var xAxis = pln.XAxis();
+        using var vx = xAxis.Direction();
+        using var ax2 = new gp_Ax2(loc, n, vx);
+        using var ax3 = new gp_Ax3(ax2);
+        pln.Dispose();
+        return new gp_Pln(ax3);
+    }
+
+    /// <summary>A new OCCT gp_Pln for this plane.</summary>
+    public gp_Pln ToGpPln() => new(Pln);
+
+    /// <summary>A new OCCT gp_Ax3 for this plane's coordinate system.</summary>
+    public gp_Ax3 ToGpAx3() => Pln.Position();
+
+    /// <summary>A new OCCT gp_Ax2 for this plane's coordinate system.</summary>
+    public gp_Ax2 ToGpAx2()
+    {
+        using var ax3 = Pln.Position();
+        return ax3.Ax2();
+    }
+
+    /// <summary>The plane moved by <paramref name="amount"/> along its Z direction.</summary>
+    public Plane Offset(double amount) => Create(Origin + ZDir * amount, XDir, ZDir);
+
+    /// <summary>The plane with its Z direction reversed (X unchanged, so Y reverses too).</summary>
+    public Plane Reverse() => -this;
+
+    /// <summary>This plane with a new origin and the same directions.</summary>
+    public Plane WithOrigin(Vector origin) => Create(origin, XDir, ZDir);
+
+    /// <summary>This plane with a new X direction, projected to be perpendicular to the normal.</summary>
+    public Plane WithXDir(Vector xDir)
+    {
+        using var ax2 = ToGpAx2();
+        using var d = xDir.ToGpDir();
+        ax2.SetXDirection(d);
+        using var ax3 = new gp_Ax3(ax2);
+        return new Plane(new gp_Pln(ax3), owned: true);
+    }
+
+    /// <summary>This plane with a new Y direction, projected to be perpendicular to the normal.</summary>
+    public Plane WithYDir(Vector yDir)
+    {
+        using var ax2 = ToGpAx2();
+        using var d = yDir.ToGpDir();
+        ax2.SetYDirection(d);
+        using var ax3 = new gp_Ax3(ax2);
+        return new Plane(new gp_Pln(ax3), owned: true);
+    }
+
+    /// <summary>
+    /// This plane with its origin moved within it to a global point; the directions are unchanged.
+    /// </summary>
+    /// <exception cref="ArgumentException">The point isn't in the plane.</exception>
+    public Plane ShiftOrigin(Vector point)
+    {
+        if (!Contains(point))
+            throw new ArgumentException($"{point} is not located within plane", nameof(point));
+        return Create(point, XDir, ZDir);
+    }
+
+    /// <summary>This plane with its origin moved by local (x, y) coordinates; the directions are unchanged.</summary>
+    public Plane ShiftOrigin((double X, double Y) local) => Create(FromLocalCoords(new Vector(local.X, local.Y)), XDir, ZDir);
+
+    /// <summary>This plane with its origin moved to where an axis crosses it; the directions are unchanged.</summary>
+    /// <exception cref="ArgumentException">The axis doesn't cross the plane at a single point.</exception>
+    public Plane ShiftOrigin(Axis axis)
+    {
+        if (Intersect(axis) is not Vector point)
+            throw new ArgumentException($"{axis} doesn't intersect the plane", nameof(axis));
+        return Create(point, XDir, ZDir);
+    }
+
+    /// <summary>
+    /// This plane rotated about its own X, Y and Z directions (not the world's) by angles in degrees,
+    /// in <paramref name="ordering"/> (default <see cref="Intrinsic.XYZ"/>). The origin doesn't move.
+    /// </summary>
+    public Plane Rotated(Vector rotation, RotationOrder ordering = default) =>
+        new(Location * new Rotation(rotation, ordering));
+
+    /// <summary>This plane moved by a relative location.</summary>
+    public Plane Moved(Location location) => new(Location * location);
+
+    /// <summary>This plane moved by the location of another plane.</summary>
+    public Plane Moved(Plane plane) => Moved(plane.Location);
+
+    /// <summary>This plane as a location: at its origin, with its axes.</summary>
+    public Location Location => new(this);
+
+    /// <summary>The matrix taking global coordinates to this plane's local ones.</summary>
+    public Matrix ForwardTransform
+    {
+        get
+        {
+            using var global = new gp_Ax3();
+            using var local = Pln.Position();
+            using var t = new gp_Trsf();
+            t.SetTransformation(global, local);
+            return new Matrix(t);
+        }
+    }
+
+    /// <summary>The matrix taking this plane's local coordinates to global ones.</summary>
+    public Matrix ReverseTransform
+    {
+        get
+        {
+            using var global = new gp_Ax3();
+            using var local = Pln.Position();
+            using var t = new gp_Trsf();
+            t.SetTransformation(local, global);
+            return new Matrix(t);
+        }
+    }
+
+    /// <summary>A global point in this plane's local coordinates.</summary>
+    public Vector ToLocalCoords(Vector point) => point.Transform(ForwardTransform);
+
+    /// <summary>A point in this plane's local coordinates in global ones.</summary>
+    public Vector FromLocalCoords(Vector point) => point.Transform(ReverseTransform);
+
+    /// <summary>A bounding box's corners in this plane's local coordinates.</summary>
+    public BoundBox ToLocalCoords(BoundBox box) => TransformBox(box, ForwardTransform);
+
+    /// <summary>A bounding box's corners, in this plane's local coordinates, in global ones.</summary>
+    public BoundBox FromLocalCoords(BoundBox box) => TransformBox(box, ReverseTransform);
+
+    static BoundBox TransformBox(BoundBox box, Matrix transform)
+    {
+        // The two corners are transformed as they are; the box isn't re-fitted around the result
+        using var min = box.Min.Transform(transform).ToGpPnt();
+        using var max = box.Max.Transform(transform).ToGpPnt();
+        return BoundBox.Own(new Bnd_Box(min, max));
+    }
+
+    /// <summary>The location taking this plane to another.</summary>
+    public Location LocationBetween(Plane other)
+    {
+        using var t = new gp_Trsf();
+        using var from = Pln.Position();
+        using var to = other.Pln.Position();
+        t.SetTransformation(from, to);
+        return new Location(t);
+    }
+
+    /// <summary>True if the point lies in the plane, within the tolerance.</summary>
+    public bool Contains(Vector point, double tolerance = Constants.Tolerance)
+    {
+        using var p = point.ToGpPnt();
+        return Pln.Contains(p, tolerance);
+    }
+
+    /// <summary>True if the whole axis lies in the plane, within the tolerance (linear and angular).</summary>
+    public bool Contains(Axis axis, double tolerance = Constants.Tolerance)
+    {
+        using var p = axis.Position.ToGpPnt();
+        using var d = axis.Direction.ToGpDir();
+        using var line = new gp_Lin(p, d);
+        return Pln.Contains(line, tolerance, tolerance);
+    }
+
+#pragma warning disable CS1591 // Operators are self-describing
+    /// <summary>The plane with its Z direction reversed.</summary>
+    public static Plane operator -(Plane p) => new(p.Origin, p.XDir, -p.ZDir);
+
+    /// <summary>The plane's location composed with another location.</summary>
+    public static Location operator *(Plane p, Location l) => new Location(p) * l;
+
+    /// <summary>The plane's location composed with another plane's.</summary>
+    public static Location operator *(Plane p, Plane q) => new Location(p) * q.Location;
+
+    /// <summary>The plane moved by a location.</summary>
+    public static Plane operator *(Location l, Plane p) => p.Moved(l);
+
+    /// <summary>The plane's location composed with each location in turn.</summary>
+    public static IReadOnlyList<Location> operator *(Plane p, IEnumerable<Location> locations) =>
+        locations.Select(l => p * l).ToArray();
+
+    /// <summary>The plane's location composed with each plane's location in turn.</summary>
+    public static IReadOnlyList<Location> operator *(Plane p, IEnumerable<Plane> planes) =>
+        planes.Select(q => p * q).ToArray();
+
+    /// <summary>The plane moved by each location in turn.</summary>
+    public static IReadOnlyList<Plane> operator *(IEnumerable<Location> locations, Plane p) =>
+        locations.Select(l => p.Moved(l)).ToArray();
+
+    /// <summary>The plane moved by each plane's location in turn.</summary>
+    public static IReadOnlyList<Plane> operator *(IEnumerable<Plane> planes, Plane p) =>
+        planes.Select(q => p.Moved(q)).ToArray();
+
+    public static bool operator ==(Plane? a, Plane? b) => a is null ? b is null : a.Equals(b);
+    public static bool operator !=(Plane? a, Plane? b) => !(a == b);
+    public static IGeometry? operator &(Plane a, Plane b) => a.Intersect(b);
+    public static IGeometry? operator &(Plane a, Axis b) => a.Intersect(b);
+    public static IGeometry? operator &(Plane a, Location b) => a.Intersect(b);
+    public static Vector? operator &(Plane a, Vector b) => a.Intersect(b);
+#pragma warning restore CS1591
+
+    /// <summary>The intersection with an axis: the axis if it lies in the plane, the crossing point, or null.</summary>
+    public IGeometry? Intersect(Axis axis)
+    {
+        if (Contains(axis))
+            return axis;
+        using var ax1 = axis.ToGpAx1();
+        using var line = new Geom_Line(ax1);
+        using var ax3 = Pln.Position();
+        using var plane = new Geom_Plane(ax3);
+        using var intersection = new GeomAPI_IntCS(line, plane);
+        if (intersection.IsDone() && intersection.NbPoints() == 1)
+        {
+            using var p = intersection.Point(1);
+            return new Vector(p);
+        }
+        return null;
+    }
+
+    /// <summary>The intersection with another plane: this plane if they coincide, the line where they cross, or null.</summary>
+    public IGeometry? Intersect(Plane plane)
+    {
+        if (Contains(plane.Origin) && ZDir == plane.ZDir)
+            return this;
+        using var s1 = new Geom_Plane(Pln);
+        using var s2 = new Geom_Plane(plane.Pln);
+        using var intersector = new GeomAPI_IntSS(s1, s2, Constants.Tolerance);
+        if (intersector.IsDone() && intersector.NbLines() > 0)
+        {
+            using var curve = intersector.Line(1);
+            using var line = Geom_Line.DownCast(curve) ?? throw new InvalidOperationException("plane intersection isn't a line");
+            using var position = line.Position();
+            return new Axis(position);
+        }
+        return null;
+    }
+
+    /// <summary>The point if it lies in the plane, else null.</summary>
+    public Vector? Intersect(Vector point) => Contains(point) ? point : null;
+
+    /// <summary>
+    /// The intersection with a location: the location if it lies in the plane with the same normal, its
+    /// position if it lies in the plane otherwise, or null.
+    /// </summary>
+    public IGeometry? Intersect(Location location)
+    {
+        var locationPlane = new Plane(location);
+        if (!Contains(locationPlane.Origin))
+            return null;
+        return ZDir == locationPlane.ZDir ? location : locationPlane.Origin;
+    }
+
+    internal ((double, double, double), (double, double, double), (double, double, double)) Key =>
+        (Origin.Key, XDir.Key, ZDir.Key);
+
+    /// <inheritdoc/>
+    public bool Equals(Plane? other) => other is not null && Key == other.Key;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is Plane p && Equals(p);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => Key.GetHashCode();
+
+    /// <summary>"Plane: (origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, 0, 1))".</summary>
+    public override string ToString() =>
+        $"Plane: (origin={Origin.ToString(".6g")}, x_dir={XDir.ToString(".6g")}, z_dir={ZDir.ToString(".6g")})";
+
+    /// <summary>"(origin, x_dir, z_dir)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
+    public string ToString(string? format, IFormatProvider? formatProvider = null) =>
+        $"({Origin.ToString(format)}, {XDir.ToString(format)}, {ZDir.ToString(format)})";
+}

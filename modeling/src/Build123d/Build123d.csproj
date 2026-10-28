@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Build123d</RootNamespace>
+    <Description>A .NET port of build123d, a code-first CAD library built on OpenCascade.</Description>
+    <!-- The public API is documented -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Build123d.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Build123d.Occt\Build123d.Occt.csproj" />
+  </ItemGroup>
+
+</Project>

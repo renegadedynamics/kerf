@@ -4,6 +4,18 @@
 #include <TopoDS_Shape.hxx>
 
 B3D_API void b3d_TopoDS_Shape_delete(void* p) { delete static_cast<TopoDS_Shape*>(p); }
+B3D_API void* b3d_TopoDS_Shape_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<TopoDS_Shape>)
+  {
+    try { return new TopoDS_Shape(*static_cast<const TopoDS_Shape*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "TopoDS_Shape cannot be copied");
+  return nullptr;
+}
 
 B3D_API void* b3d_TopoDS_Shape_new(b3d_error** err)
 {

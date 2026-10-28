@@ -33,6 +33,8 @@ sealed class ClassInfo(string name, CXXRecordDecl? decl, List<FunctionDecl> nsFu
     public bool IsStatic { get; set; }
     public bool IsAbstract => Decl?.IsAbstract ?? false;
     public bool CanDelete { get; set; }
+    /// <summary>A concrete value class whose copy constructor isn't explicitly deleted or hidden: gets a C# copy constructor.</summary>
+    public bool CanCopy { get; set; }
     /// <summary>Nearest whitelisted ancestor along the primary base chain: the C# base class.</summary>
     public ClassInfo? Base { get; set; }
     public List<Member> Members { get; } = [];
@@ -92,10 +94,15 @@ sealed class Model
             cls.IsTransient = AllBases(cls.Decl).Any(b => b.Name == "Standard_Transient")
                               || cls.Name == "Standard_Transient";
             cls.IsStatic = !cls.IsTransient
-                           && !cls.Decl.Ctors.Any(c => c.IsUserProvided && IsPublic(c))
+                           && !cls.Decl.Ctors.Any(c => (c.IsUserProvided || c.IsExplicitlyDefaulted) && IsPublic(c))
                            && cls.Decl.Methods.Where(m => IsPublic(m) && m.Kind == CX_DeclKind.CX_DeclKind_CXXMethod)
                                   .All(m => m.IsStatic);
             cls.CanDelete = !cls.IsStatic && (cls.Decl.Destructor is null || IsPublic(cls.Decl.Destructor));
+            // Implicit copy constructors aren't reliably declared in the parsed AST, so only an explicit
+            // deleted or non-public one rules copying out; the shim checks the rest at compile time
+            cls.CanCopy = cls.CanDelete && !cls.IsTransient && !cls.IsAbstract
+                          && !cls.Decl.Ctors.Any(c => c.IsCopyConstructor && c.IsUserProvided && !IsPublic(c))
+                          && !cls.Decl.Ctors.Any(c => c.IsCopyConstructor && c.IsDeleted);
             cls.Base = PrimaryWhitelistedBase(cls.Decl, model.Classes);
         }
 
@@ -131,7 +138,7 @@ sealed class Model
         if (!cls.IsAbstract && !cls.IsStatic)
             foreach (var ctor in cls.Decl.Ctors)
             {
-                if (!IsPublic(ctor) || !ctor.IsUserProvided || ctor.IsDeleted || ctor.IsCopyConstructor || ctor.IsMoveConstructor)
+                if (!IsPublic(ctor) || !(ctor.IsUserProvided || ctor.IsExplicitlyDefaulted) || ctor.IsDeleted || ctor.IsCopyConstructor || ctor.IsMoveConstructor)
                     continue;
                 AddVariants(cls, cls.Name, ctor, isCtor: true, mapper, config, seen, inherited);
             }

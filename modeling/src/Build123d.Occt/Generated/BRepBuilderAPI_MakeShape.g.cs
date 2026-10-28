@@ -11,6 +11,18 @@ public partial class BRepBuilderAPI_MakeShape : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_BRepBuilderAPI_MakeShape_delete(ptr);
     internal virtual IntPtr PtrAs_BRepBuilderAPI_MakeShape() => Ptr;
 
+    /// <summary>A copy of another BRepBuilderAPI_MakeShape.</summary>
+    public BRepBuilderAPI_MakeShape(BRepBuilderAPI_MakeShape other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(BRepBuilderAPI_MakeShape other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_BRepBuilderAPI_MakeShape_copy(other.PtrAs_BRepBuilderAPI_MakeShape(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public void Build()
     {
         __N.b3d_BRepBuilderAPI_MakeShape_Build(PtrAs_BRepBuilderAPI_MakeShape(), out var __err);
@@ -55,6 +67,8 @@ public partial class BRepBuilderAPI_MakeShape : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepBuilderAPI_MakeShape_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepBuilderAPI_MakeShape_Build(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

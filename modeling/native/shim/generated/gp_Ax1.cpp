@@ -8,6 +8,18 @@
 #include <gp_Vec.hxx>
 
 B3D_API void b3d_gp_Ax1_delete(void* p) { delete static_cast<gp_Ax1*>(p); }
+B3D_API void* b3d_gp_Ax1_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<gp_Ax1>)
+  {
+    try { return new gp_Ax1(*static_cast<const gp_Ax1*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "gp_Ax1 cannot be copied");
+  return nullptr;
+}
 
 B3D_API void* b3d_gp_Ax1_new(b3d_error** err)
 {

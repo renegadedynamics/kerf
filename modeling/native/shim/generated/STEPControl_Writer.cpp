@@ -4,6 +4,18 @@
 #include <TopoDS_Shape.hxx>
 
 B3D_API void b3d_STEPControl_Writer_delete(void* p) { delete static_cast<STEPControl_Writer*>(p); }
+B3D_API void* b3d_STEPControl_Writer_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<STEPControl_Writer>)
+  {
+    try { return new STEPControl_Writer(*static_cast<const STEPControl_Writer*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "STEPControl_Writer cannot be copied");
+  return nullptr;
+}
 
 B3D_API void* b3d_STEPControl_Writer_new(b3d_error** err)
 {

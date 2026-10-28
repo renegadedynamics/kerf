@@ -95,6 +95,22 @@ static class CsEmitter
             }
         }
 
+        if (cls.CanCopy && !cls.Members.Any(m => m.IsCtor && m.Params.Count == 1 && m.Params[0].Type.Name == cls.Name))
+        {
+            sb.AppendLine();
+            sb.AppendLine($"    /// <summary>A copy of another {n}.</summary>");
+            sb.AppendLine($"    public {n}({n} other) : this(__Copy(other)) {{ }}");
+            sb.AppendLine();
+            sb.AppendLine($"    private static IntPtr __Copy({n} other)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(other);");
+            sb.AppendLine($"        var __r = __N.b3d_{n}_copy(other.PtrAs_{n}(), out var __err);");
+            sb.AppendLine("        GC.KeepAlive(other);");
+            sb.AppendLine("        OcctException.ThrowIfError(__err);");
+            sb.AppendLine("        return __r;");
+            sb.AppendLine("    }");
+        }
+
         int ctorIndex = 0;
         foreach (var m in cls.Members)
         {
@@ -169,6 +185,8 @@ static class CsEmitter
         sb.AppendLine("    {");
         if (cls.CanDelete)
             Import(sb, $"b3d_{n}_delete", "void", ["IntPtr p"]);
+        if (cls.CanCopy)
+            Import(sb, $"b3d_{n}_copy", "IntPtr", ["IntPtr p", "out IntPtr err"]);
         foreach (var a in cls.Ancestors())
             Import(sb, $"b3d_{n}_as_{a.Name}", "IntPtr", ["IntPtr p"]);
         if (cls.IsTransient)

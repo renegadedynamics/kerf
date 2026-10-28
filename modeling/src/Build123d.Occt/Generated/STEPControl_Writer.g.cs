@@ -11,6 +11,18 @@ public partial class STEPControl_Writer : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_STEPControl_Writer_delete(ptr);
     internal virtual IntPtr PtrAs_STEPControl_Writer() => Ptr;
 
+    /// <summary>A copy of another STEPControl_Writer.</summary>
+    public STEPControl_Writer(STEPControl_Writer other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(STEPControl_Writer other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_STEPControl_Writer_copy(other.PtrAs_STEPControl_Writer(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public STEPControl_Writer() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -87,6 +99,8 @@ public partial class STEPControl_Writer : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_STEPControl_Writer_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_STEPControl_Writer_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_STEPControl_Writer_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

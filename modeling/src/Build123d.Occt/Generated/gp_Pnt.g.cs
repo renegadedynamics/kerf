@@ -11,9 +11,30 @@ public partial class gp_Pnt : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_Pnt_delete(ptr);
     internal virtual IntPtr PtrAs_gp_Pnt() => Ptr;
 
-    public gp_Pnt(gp_XYZ theCoord) : this(__New0(theCoord)) { }
+    /// <summary>A copy of another gp_Pnt.</summary>
+    public gp_Pnt(gp_Pnt other) : this(__Copy(other)) { }
 
-    private static IntPtr __New0(gp_XYZ theCoord)
+    private static IntPtr __Copy(gp_Pnt other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_Pnt_copy(other.PtrAs_gp_Pnt(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public gp_Pnt() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_gp_Pnt_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public gp_Pnt(gp_XYZ theCoord) : this(__New1(theCoord)) { }
+
+    private static IntPtr __New1(gp_XYZ theCoord)
     {
         ArgumentNullException.ThrowIfNull(theCoord);
         var __r = __N.b3d_gp_Pnt_new__gp_XYZ(theCoord.PtrAs_gp_XYZ(), out var __err);
@@ -22,9 +43,9 @@ public partial class gp_Pnt : OcctObject
         return __r;
     }
 
-    public gp_Pnt(double theXp, double theYp, double theZp) : this(__New1(theXp, theYp, theZp)) { }
+    public gp_Pnt(double theXp, double theYp, double theZp) : this(__New2(theXp, theYp, theZp)) { }
 
-    private static IntPtr __New1(double theXp, double theYp, double theZp)
+    private static IntPtr __New2(double theXp, double theYp, double theZp)
     {
         var __r = __N.b3d_gp_Pnt_new__double__double__double(theXp, theYp, theZp, out var __err);
         OcctException.ThrowIfError(__err);
@@ -329,6 +350,10 @@ public partial class gp_Pnt : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Pnt_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Pnt_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Pnt_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Pnt_new__gp_XYZ(IntPtr theCoord, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

@@ -11,6 +11,18 @@ public partial class BRepGProp : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_BRepGProp_delete(ptr);
     internal virtual IntPtr PtrAs_BRepGProp() => Ptr;
 
+    /// <summary>A copy of another BRepGProp.</summary>
+    public BRepGProp(BRepGProp other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(BRepGProp other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_BRepGProp_copy(other.PtrAs_BRepGProp(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public static void LinearProperties(TopoDS_Shape S, GProp_GProps LProps)
     {
         ArgumentNullException.ThrowIfNull(S);
@@ -243,10 +255,103 @@ public partial class BRepGProp : OcctObject
         return __r;
     }
 
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps, bool OnlyClosed)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, OnlyClosed ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps, bool OnlyClosed, bool IsUseSpan)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, OnlyClosed ? (byte)1 : (byte)0, IsUseSpan ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps, bool OnlyClosed, bool IsUseSpan, bool CGFlag)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, OnlyClosed ? (byte)1 : (byte)0, IsUseSpan ? (byte)1 : (byte)0, CGFlag ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps, bool OnlyClosed, bool IsUseSpan, bool CGFlag, bool IFlag)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, OnlyClosed ? (byte)1 : (byte)0, IsUseSpan ? (byte)1 : (byte)0, CGFlag ? (byte)1 : (byte)0, IFlag ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public static double VolumePropertiesGK(TopoDS_Shape S, GProp_GProps VProps, gp_Pln thePln, double Eps, bool OnlyClosed, bool IsUseSpan, bool CGFlag, bool IFlag, bool SkipShared)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(VProps);
+        ArgumentNullException.ThrowIfNull(thePln);
+        var __r = __N.b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool__bool(S.PtrAs_TopoDS_Shape(), VProps.PtrAs_GProp_GProps(), thePln.PtrAs_gp_Pln(), Eps, OnlyClosed ? (byte)1 : (byte)0, IsUseSpan ? (byte)1 : (byte)0, CGFlag ? (byte)1 : (byte)0, IFlag ? (byte)1 : (byte)0, SkipShared ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(S);
+        GC.KeepAlive(VProps);
+        GC.KeepAlive(thePln);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepGProp_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepGProp_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps(IntPtr S, IntPtr LProps, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -291,5 +396,19 @@ public partial class BRepGProp : OcctObject
         internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool__bool__bool(IntPtr S, IntPtr VProps, double Eps, byte OnlyClosed, byte IsUseSpan, byte CGFlag, byte IFlag, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool__bool__bool__bool(IntPtr S, IntPtr VProps, double Eps, byte OnlyClosed, byte IsUseSpan, byte CGFlag, byte IFlag, byte SkipShared, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln(IntPtr S, IntPtr VProps, IntPtr thePln, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, byte OnlyClosed, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, byte OnlyClosed, byte IsUseSpan, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, byte OnlyClosed, byte IsUseSpan, byte CGFlag, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, byte OnlyClosed, byte IsUseSpan, byte CGFlag, byte IFlag, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool__bool(IntPtr S, IntPtr VProps, IntPtr thePln, double Eps, byte OnlyClosed, byte IsUseSpan, byte CGFlag, byte IFlag, byte SkipShared, out IntPtr err);
     }
 }

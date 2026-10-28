@@ -4,6 +4,7 @@
 #include <Geom_Line.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Dir.hxx>
+#include <gp_Lin.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
@@ -26,6 +27,18 @@ B3D_API void* b3d_Geom_Line_new__gp_Ax1(const gp_Ax1* A1, b3d_error** err)
   return {};
 }
 
+B3D_API void* b3d_Geom_Line_new__gp_Lin(const gp_Lin* L, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new Geom_Line(*L);
+    return b3d_retain(r);
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
 B3D_API void* b3d_Geom_Line_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
@@ -36,6 +49,17 @@ B3D_API void* b3d_Geom_Line_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir* V
   }
   B3D_CATCH(err)
   return {};
+}
+
+B3D_API void b3d_Geom_Line_SetLin__gp_Lin(void* self, const gp_Lin* L, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<Geom_Line*>(self)->SetLin(*L);
+    return;
+  }
+  B3D_CATCH(err)
 }
 
 B3D_API void b3d_Geom_Line_SetDirection__gp_Dir(void* self, const gp_Dir* V, b3d_error** err)
@@ -69,6 +93,18 @@ B3D_API void b3d_Geom_Line_SetPosition__gp_Ax1(void* self, const gp_Ax1* A1, b3d
     return;
   }
   B3D_CATCH(err)
+}
+
+B3D_API void* b3d_Geom_Line_Lin(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<Geom_Line*>(self)->Lin();
+    return new gp_Lin(r);
+  }
+  B3D_CATCH(err)
+  return {};
 }
 
 B3D_API void* b3d_Geom_Line_Position(void* self, b3d_error** err)

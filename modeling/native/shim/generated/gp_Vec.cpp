@@ -9,6 +9,30 @@
 #include <gp_XYZ.hxx>
 
 B3D_API void b3d_gp_Vec_delete(void* p) { delete static_cast<gp_Vec*>(p); }
+B3D_API void* b3d_gp_Vec_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<gp_Vec>)
+  {
+    try { return new gp_Vec(*static_cast<const gp_Vec*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "gp_Vec cannot be copied");
+  return nullptr;
+}
+
+B3D_API void* b3d_gp_Vec_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new gp_Vec();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
 
 B3D_API void* b3d_gp_Vec_new__gp_Dir(const gp_Dir* theV, b3d_error** err)
 {

@@ -5,6 +5,18 @@
 #include <TopoDS_Shape.hxx>
 
 B3D_API void b3d_BRepBuilderAPI_MakeShape_delete(void* p) { delete static_cast<BRepBuilderAPI_MakeShape*>(p); }
+B3D_API void* b3d_BRepBuilderAPI_MakeShape_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeShape>)
+  {
+    try { return new BRepBuilderAPI_MakeShape(*static_cast<const BRepBuilderAPI_MakeShape*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "BRepBuilderAPI_MakeShape cannot be copied");
+  return nullptr;
+}
 
 B3D_API void b3d_BRepBuilderAPI_MakeShape_Build(void* self, b3d_error** err)
 {

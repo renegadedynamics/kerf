@@ -75,11 +75,30 @@ no aliasing surprises.
 - **Default arguments** become one overload per arity, because OCCT defaults are often non-constant.
 - **Namespaces of free functions** (OCCT 8 turned `TopoDS` into one) become static classes.
 
+#### Geometry values
+
+- **`Vector`, `Axis` and `Color` are `readonly struct`s.**
+  - Plain arithmetic (add, dot, cross, normalise) runs in C#, in the same operation order as OCCT,
+    so results are bit-identical.
+  - Anything OCCT computes non-trivially goes through short-lived OCCT objects, so the numbers and
+    the exceptions match build123d. This covers angles, axis tests, rotation, and sRGB ↔ linear
+    colour conversion.
+- **`Location`, `Plane`, `Matrix`, `BoundBox` and `OrientedBoundBox` are immutable classes**, each
+  holding one private OCCT object that is never modified.
+  - A `Location` keeps its `TopLoc_Location` for life. OCCT compares shape locations by identity, so
+    shapes placed with the same `Location` instance share their location, as in build123d.
+  - Public accessors (`ToGpPln()`, `ToGpGTrsf()`, …) return copies. `ToTopLoc()` returns a
+    `TopLoc_Location` that shares the location's identity.
+- **`IGeometry`.** Intersections between geometric values can return several types, so they return
+  `IGeometry?` for pattern matching.
+- **Names** are listed in [name-map.md](name-map.md), with the deliberate differences from build123d.
+
 ### 3. Behavioural parity is tested, not assumed
 
 - The pytest suite is ported module by module, alongside the code it tests.
-- A differential harness runs the Python examples and their .NET ports, then compares volume, area,
-  bounding box and topology counts within a tolerance.
+- A differential harness runs Python build123d and the port on the same inputs and compares the
+  results. For geometry that's [tests/reference](../tests/reference), held to about 1e-12. For shapes
+  it will also compare volume, area, bounding box and topology counts within a tolerance.
 
 ## Phases
 

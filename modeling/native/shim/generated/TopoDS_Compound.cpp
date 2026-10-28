@@ -3,4 +3,28 @@
 #include <TopoDS_Compound.hxx>
 
 B3D_API void b3d_TopoDS_Compound_delete(void* p) { delete static_cast<TopoDS_Compound*>(p); }
+B3D_API void* b3d_TopoDS_Compound_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<TopoDS_Compound>)
+  {
+    try { return new TopoDS_Compound(*static_cast<const TopoDS_Compound*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "TopoDS_Compound cannot be copied");
+  return nullptr;
+}
 B3D_API void* b3d_TopoDS_Compound_as_TopoDS_Shape(void* p) { return static_cast<TopoDS_Shape*>(static_cast<TopoDS_Compound*>(p)); }
+
+B3D_API void* b3d_TopoDS_Compound_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new TopoDS_Compound();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}

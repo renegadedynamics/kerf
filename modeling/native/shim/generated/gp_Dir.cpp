@@ -8,6 +8,18 @@
 #include <gp_XYZ.hxx>
 
 B3D_API void b3d_gp_Dir_delete(void* p) { delete static_cast<gp_Dir*>(p); }
+B3D_API void* b3d_gp_Dir_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<gp_Dir>)
+  {
+    try { return new gp_Dir(*static_cast<const gp_Dir*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "gp_Dir cannot be copied");
+  return nullptr;
+}
 
 B3D_API void* b3d_gp_Dir_new(b3d_error** err)
 {

@@ -4,6 +4,18 @@
 #include <gp_Ax2.hxx>
 
 B3D_API void b3d_BRepPrimAPI_MakeCylinder_delete(void* p) { delete static_cast<BRepPrimAPI_MakeCylinder*>(p); }
+B3D_API void* b3d_BRepPrimAPI_MakeCylinder_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeCylinder>)
+  {
+    try { return new BRepPrimAPI_MakeCylinder(*static_cast<const BRepPrimAPI_MakeCylinder*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "BRepPrimAPI_MakeCylinder cannot be copied");
+  return nullptr;
+}
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_as_BRepPrimAPI_MakeOneAxis(void* p) { return static_cast<BRepPrimAPI_MakeOneAxis*>(static_cast<BRepPrimAPI_MakeCylinder*>(p)); }
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepPrimAPI_MakeCylinder*>(p)); }
 

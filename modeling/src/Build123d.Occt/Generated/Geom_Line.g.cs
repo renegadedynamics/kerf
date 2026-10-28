@@ -34,9 +34,20 @@ public partial class Geom_Line : Geom_Curve
         return __r;
     }
 
-    public Geom_Line(gp_Pnt P, gp_Dir V) : this(__New1(P, V)) { }
+    public Geom_Line(gp_Lin L) : this(__New1(L)) { }
 
-    private static IntPtr __New1(gp_Pnt P, gp_Dir V)
+    private static IntPtr __New1(gp_Lin L)
+    {
+        ArgumentNullException.ThrowIfNull(L);
+        var __r = __N.b3d_Geom_Line_new__gp_Lin(L.PtrAs_gp_Lin(), out var __err);
+        GC.KeepAlive(L);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public Geom_Line(gp_Pnt P, gp_Dir V) : this(__New2(P, V)) { }
+
+    private static IntPtr __New2(gp_Pnt P, gp_Dir V)
     {
         ArgumentNullException.ThrowIfNull(P);
         ArgumentNullException.ThrowIfNull(V);
@@ -45,6 +56,15 @@ public partial class Geom_Line : Geom_Curve
         GC.KeepAlive(V);
         OcctException.ThrowIfError(__err);
         return __r;
+    }
+
+    public void SetLin(gp_Lin L)
+    {
+        ArgumentNullException.ThrowIfNull(L);
+        __N.b3d_Geom_Line_SetLin__gp_Lin(PtrAs_Geom_Line(), L.PtrAs_gp_Lin(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(L);
+        OcctException.ThrowIfError(__err);
     }
 
     public void SetDirection(gp_Dir V)
@@ -72,6 +92,14 @@ public partial class Geom_Line : Geom_Curve
         GC.KeepAlive(this);
         GC.KeepAlive(A1);
         OcctException.ThrowIfError(__err);
+    }
+
+    public gp_Lin Lin()
+    {
+        var __r = __N.b3d_Geom_Line_Lin(PtrAs_Geom_Line(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new gp_Lin(__r);
     }
 
     public gp_Ax1 Position()
@@ -213,13 +241,19 @@ public partial class Geom_Line : Geom_Curve
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_Geom_Line_new__gp_Ax1(IntPtr A1, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_Geom_Line_new__gp_Lin(IntPtr L, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_Geom_Line_new__gp_Pnt__gp_Dir(IntPtr P, IntPtr V, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_Geom_Line_SetLin__gp_Lin(IntPtr self, IntPtr L, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Geom_Line_SetDirection__gp_Dir(IntPtr self, IntPtr V, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Geom_Line_SetLocation__gp_Pnt(IntPtr self, IntPtr P, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Geom_Line_SetPosition__gp_Ax1(IntPtr self, IntPtr A1, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_Geom_Line_Lin(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_Geom_Line_Position(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

@@ -1,4 +1,10 @@
 # Members skipped by OcctGen, and why. Generated; do not edit.
+Bnd_Box::Center: unbound type std::optional<gp_Pnt>
+Bnd_Box::Get: unbound type Bnd_Box::Limits
+Bnd_Box::InitFromJson: unbound type const std::basic_stringstream<char>
+Bnd_OBB::GetHalfSizes: unbound type Bnd_OBB::HalfSizes
+Bnd_OBB::GetVertex: unsupported type gp_Pnt[8]
+Bnd_OBB::ReBuild: unbound type const NCollection_Array1<gp_Pnt>
 BRepAlgoAPI_BooleanOperation::BRepAlgoAPI_BooleanOperation: unbound type const BOPAlgo_PaveFiller
 BRepAlgoAPI_BooleanOperation::SetTools: unbound type const NCollection_List<TopoDS_Shape>
 BRepAlgoAPI_BooleanOperation::Tools: unbound type const NCollection_List<TopoDS_Shape>
@@ -16,7 +22,6 @@ BRepAlgoAPI_Cut::BRepAlgoAPI_Cut: unbound type const BOPAlgo_PaveFiller
 BRepAlgoAPI_Fuse::BRepAlgoAPI_Fuse: unbound type const BOPAlgo_PaveFiller
 BRepBuilderAPI_MakeShape::Generated: unbound type const NCollection_List<TopoDS_Shape>
 BRepBuilderAPI_MakeShape::Modified: unbound type const NCollection_List<TopoDS_Shape>
-BRepGProp::VolumePropertiesGK: unbound type const gp_Pln
 BRepPrimAPI_MakeBox::Wedge: returns non-const reference BRepPrim_Wedge &
 BRepPrimAPI_MakeCylinder::Cylinder: returns non-const reference BRepPrim_Cylinder &
 BRepPrimAPI_MakeCylinder::OneAxis: unsupported type void *
@@ -29,9 +34,14 @@ Geom_Geometry::IsKind: handle to unbound Standard_Type
 Geom_Line::EvalD1: unbound type Geom_Curve::ResD1
 Geom_Line::EvalD2: unbound type Geom_Curve::ResD2
 Geom_Line::EvalD3: unbound type Geom_Curve::ResD3
-Geom_Line::Geom_Line: unbound type const gp_Lin
-Geom_Line::Lin: unbound type gp_Lin
-Geom_Line::SetLin: unbound type const gp_Lin
+Geom_Plane::EvalD1: unbound type Geom_Surface::ResD1
+Geom_Plane::EvalD2: unbound type Geom_Surface::ResD2
+Geom_Plane::EvalD3: unbound type Geom_Surface::ResD3
+Geom_Plane::ParametricTransformation: unbound type gp_GTrsf2d
+Geom_Surface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_Surface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_Surface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_Surface::ParametricTransformation: unbound type gp_GTrsf2d
 Geom_TrimmedCurve::EvalD1: unbound type Geom_Curve::ResD1
 Geom_TrimmedCurve::EvalD2: unbound type Geom_Curve::ResD2
 Geom_TrimmedCurve::EvalD3: unbound type Geom_Curve::ResD3
@@ -39,33 +49,46 @@ gp_Ax1::gp_Ax1: nested enum const gp_Dir::D
 gp_Ax1::InitFromJson: unbound type const std::basic_stringstream<char>
 gp_Ax2::gp_Ax2: nested enum const gp_Dir::D
 gp_Ax2::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Ax3::gp_Ax3: nested enum const gp_Dir::D
+gp_Ax3::InitFromJson: unbound type const std::basic_stringstream<char>
 gp_Dir::gp_Dir: nested enum const gp_Dir::D
 gp_Dir::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Mat::ChangeValue: returns non-const reference double &
 gp_Pnt::ChangeCoord: returns non-const reference gp_XYZ &
 gp_Pnt::InitFromJson: unbound type const std::basic_stringstream<char>
-gp_Trsf::GetRotation: unbound type gp_Quaternion
 gp_Trsf::gp_Trsf: unbound type const gp_Trsf2d
-gp_Trsf::HVectorialPart: unbound type const gp_Mat
 gp_Trsf::InitFromJson: unbound type const std::basic_stringstream<char>
-gp_Trsf::SetDisplacement: unbound type const gp_Ax3
-gp_Trsf::SetRotation: unbound type const gp_Quaternion
-gp_Trsf::SetRotationPart: unbound type const gp_Quaternion
-gp_Trsf::SetTransformation: unbound type const gp_Ax3
-gp_Trsf::SetTransformation: unbound type const gp_Quaternion
-gp_Trsf::VectorialPart: unbound type gp_Mat
 gp_XYZ::ChangeCoord: returns non-const reference double &
 gp_XYZ::ChangeData: unsupported type double *
 gp_XYZ::GetData: unsupported type const double *
 gp_XYZ::InitFromJson: unbound type const std::basic_stringstream<char>
-gp_XYZ::Multiplied: unbound type const gp_Mat
-gp_XYZ::Multiply: unbound type const gp_Mat
 gp::DX2d: unbound type const gp_Dir2d
 gp::DY2d: unbound type const gp_Dir2d
 gp::Origin2d: unbound type const gp_Pnt2d
 gp::OX2d: unbound type const gp_Ax2d
 gp::OY2d: unbound type const gp_Ax2d
-GProp_GProps::MatrixOfInertia: unbound type gp_Mat
 GProp_GProps::PrincipalProperties: unbound type GProp_PrincipalProps
+Quantity_Color::ColorFromName: non-const reference to Quantity_NameOfColor &
+Quantity_Color::ColorToHex: unbound type TCollection_AsciiString
+Quantity_Color::Convert_HLS_To_LinearRGB: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_HLS_To_sRGB: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_Lab_To_Lch: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_Lab_To_LinearRGB: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_Lch_To_Lab: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_LinearRGB_To_HLS: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_LinearRGB_To_Lab: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_LinearRGB_To_sRGB_approx22: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_sRGB_To_HLS: unbound type NCollection_Vec3<float>
+Quantity_Color::Convert_sRGB_To_LinearRGB_approx22: unbound type NCollection_Vec3<float>
+Quantity_Color::InitFromJson: unbound type const std::basic_stringstream<char>
+Quantity_Color::Quantity_Color: unbound type const NCollection_Vec3<float>
+Quantity_Color::Rgb: unbound type const NCollection_Vec3<float>
+Quantity_ColorRGBA::ChangeRGB: returns non-const reference Quantity_Color &
+Quantity_ColorRGBA::ColorToHex: unbound type TCollection_AsciiString
+Quantity_ColorRGBA::Convert_LinearRGB_To_sRGB: unbound type NCollection_Vec4<float>
+Quantity_ColorRGBA::Convert_sRGB_To_LinearRGB: unbound type NCollection_Vec4<float>
+Quantity_ColorRGBA::InitFromJson: unbound type const std::basic_stringstream<char>
+Quantity_ColorRGBA::Quantity_ColorRGBA: unbound type const NCollection_Vec4<float>
 STEPControl_Reader::FileUnits: non-const reference to NCollection_Sequence<TCollection_AsciiString> &
 STEPControl_Reader::GetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
 STEPControl_Reader::GetShapeProcessFlags: unbound type const std::pair<std::bitset<18>, bool>

@@ -11,6 +11,18 @@ public partial class gp_Dir : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_Dir_delete(ptr);
     internal virtual IntPtr PtrAs_gp_Dir() => Ptr;
 
+    /// <summary>A copy of another gp_Dir.</summary>
+    public gp_Dir(gp_Dir other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(gp_Dir other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_Dir_copy(other.PtrAs_gp_Dir(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public gp_Dir() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -382,6 +394,8 @@ public partial class gp_Dir : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Dir_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Dir_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Dir_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

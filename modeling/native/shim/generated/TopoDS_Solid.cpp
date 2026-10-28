@@ -3,4 +3,28 @@
 #include <TopoDS_Solid.hxx>
 
 B3D_API void b3d_TopoDS_Solid_delete(void* p) { delete static_cast<TopoDS_Solid*>(p); }
+B3D_API void* b3d_TopoDS_Solid_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<TopoDS_Solid>)
+  {
+    try { return new TopoDS_Solid(*static_cast<const TopoDS_Solid*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "TopoDS_Solid cannot be copied");
+  return nullptr;
+}
 B3D_API void* b3d_TopoDS_Solid_as_TopoDS_Shape(void* p) { return static_cast<TopoDS_Shape*>(static_cast<TopoDS_Solid*>(p)); }
+
+B3D_API void* b3d_TopoDS_Solid_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new TopoDS_Solid();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}

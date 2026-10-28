@@ -11,9 +11,30 @@ public partial class gp_Vec : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_Vec_delete(ptr);
     internal virtual IntPtr PtrAs_gp_Vec() => Ptr;
 
-    public gp_Vec(gp_Dir theV) : this(__New0(theV)) { }
+    /// <summary>A copy of another gp_Vec.</summary>
+    public gp_Vec(gp_Vec other) : this(__Copy(other)) { }
 
-    private static IntPtr __New0(gp_Dir theV)
+    private static IntPtr __Copy(gp_Vec other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_Vec_copy(other.PtrAs_gp_Vec(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public gp_Vec() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_gp_Vec_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public gp_Vec(gp_Dir theV) : this(__New1(theV)) { }
+
+    private static IntPtr __New1(gp_Dir theV)
     {
         ArgumentNullException.ThrowIfNull(theV);
         var __r = __N.b3d_gp_Vec_new__gp_Dir(theV.PtrAs_gp_Dir(), out var __err);
@@ -22,9 +43,9 @@ public partial class gp_Vec : OcctObject
         return __r;
     }
 
-    public gp_Vec(gp_XYZ theCoord) : this(__New1(theCoord)) { }
+    public gp_Vec(gp_XYZ theCoord) : this(__New2(theCoord)) { }
 
-    private static IntPtr __New1(gp_XYZ theCoord)
+    private static IntPtr __New2(gp_XYZ theCoord)
     {
         ArgumentNullException.ThrowIfNull(theCoord);
         var __r = __N.b3d_gp_Vec_new__gp_XYZ(theCoord.PtrAs_gp_XYZ(), out var __err);
@@ -33,18 +54,18 @@ public partial class gp_Vec : OcctObject
         return __r;
     }
 
-    public gp_Vec(double theXv, double theYv, double theZv) : this(__New2(theXv, theYv, theZv)) { }
+    public gp_Vec(double theXv, double theYv, double theZv) : this(__New3(theXv, theYv, theZv)) { }
 
-    private static IntPtr __New2(double theXv, double theYv, double theZv)
+    private static IntPtr __New3(double theXv, double theYv, double theZv)
     {
         var __r = __N.b3d_gp_Vec_new__double__double__double(theXv, theYv, theZv, out var __err);
         OcctException.ThrowIfError(__err);
         return __r;
     }
 
-    public gp_Vec(gp_Pnt theP1, gp_Pnt theP2) : this(__New3(theP1, theP2)) { }
+    public gp_Vec(gp_Pnt theP1, gp_Pnt theP2) : this(__New4(theP1, theP2)) { }
 
-    private static IntPtr __New3(gp_Pnt theP1, gp_Pnt theP2)
+    private static IntPtr __New4(gp_Pnt theP1, gp_Pnt theP2)
     {
         ArgumentNullException.ThrowIfNull(theP1);
         ArgumentNullException.ThrowIfNull(theP2);
@@ -594,6 +615,10 @@ public partial class gp_Vec : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Vec_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Vec_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Vec_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Vec_new__gp_Dir(IntPtr theV, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

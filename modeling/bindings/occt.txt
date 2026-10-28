@@ -9,7 +9,19 @@ gp_Vec
 gp_Dir
 gp_Ax1
 gp_Ax2
+gp_Ax3
+gp_Pln
+gp_Lin
+gp_Mat
 gp_Trsf
+gp_GTrsf
+gp_Quaternion
+
+# Bounding boxes and colours
+Bnd_Box
+Bnd_OBB
+Quantity_Color
+Quantity_ColorRGBA
 
 # Topology
 TopoDS
@@ -29,6 +41,13 @@ Geom_Curve
 Geom_BoundedCurve
 Geom_Line
 Geom_TrimmedCurve
+Geom_Surface
+Geom_ElementarySurface
+Geom_Plane
+
+# Geometric intersection
+GeomAPI_IntCS
+GeomAPI_IntSS
 
 # Construction
 BRepBuilderAPI_MakeShape

@@ -12,18 +12,39 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     internal virtual IntPtr PtrAs_BRepPrimAPI_MakeBox() => Ptr;
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(Ptr);
 
-    public BRepPrimAPI_MakeBox(double dx, double dy, double dz) : this(__New0(dx, dy, dz)) { }
+    /// <summary>A copy of another BRepPrimAPI_MakeBox.</summary>
+    public BRepPrimAPI_MakeBox(BRepPrimAPI_MakeBox other) : this(__Copy(other)) { }
 
-    private static IntPtr __New0(double dx, double dy, double dz)
+    private static IntPtr __Copy(BRepPrimAPI_MakeBox other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_BRepPrimAPI_MakeBox_copy(other.PtrAs_BRepPrimAPI_MakeBox(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public BRepPrimAPI_MakeBox() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_BRepPrimAPI_MakeBox_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public BRepPrimAPI_MakeBox(double dx, double dy, double dz) : this(__New1(dx, dy, dz)) { }
+
+    private static IntPtr __New1(double dx, double dy, double dz)
     {
         var __r = __N.b3d_BRepPrimAPI_MakeBox_new__double__double__double(dx, dy, dz, out var __err);
         OcctException.ThrowIfError(__err);
         return __r;
     }
 
-    public BRepPrimAPI_MakeBox(gp_Pnt P, double dx, double dy, double dz) : this(__New1(P, dx, dy, dz)) { }
+    public BRepPrimAPI_MakeBox(gp_Pnt P, double dx, double dy, double dz) : this(__New2(P, dx, dy, dz)) { }
 
-    private static IntPtr __New1(gp_Pnt P, double dx, double dy, double dz)
+    private static IntPtr __New2(gp_Pnt P, double dx, double dy, double dz)
     {
         ArgumentNullException.ThrowIfNull(P);
         var __r = __N.b3d_BRepPrimAPI_MakeBox_new__gp_Pnt__double__double__double(P.PtrAs_gp_Pnt(), dx, dy, dz, out var __err);
@@ -32,9 +53,9 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
         return __r;
     }
 
-    public BRepPrimAPI_MakeBox(gp_Pnt P1, gp_Pnt P2) : this(__New2(P1, P2)) { }
+    public BRepPrimAPI_MakeBox(gp_Pnt P1, gp_Pnt P2) : this(__New3(P1, P2)) { }
 
-    private static IntPtr __New2(gp_Pnt P1, gp_Pnt P2)
+    private static IntPtr __New3(gp_Pnt P1, gp_Pnt P2)
     {
         ArgumentNullException.ThrowIfNull(P1);
         ArgumentNullException.ThrowIfNull(P2);
@@ -45,9 +66,9 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
         return __r;
     }
 
-    public BRepPrimAPI_MakeBox(gp_Ax2 Axes, double dx, double dy, double dz) : this(__New3(Axes, dx, dy, dz)) { }
+    public BRepPrimAPI_MakeBox(gp_Ax2 Axes, double dx, double dy, double dz) : this(__New4(Axes, dx, dy, dz)) { }
 
-    private static IntPtr __New3(gp_Ax2 Axes, double dx, double dy, double dz)
+    private static IntPtr __New4(gp_Ax2 Axes, double dx, double dy, double dz)
     {
         ArgumentNullException.ThrowIfNull(Axes);
         var __r = __N.b3d_BRepPrimAPI_MakeBox_new__gp_Ax2__double__double__double(Axes.PtrAs_gp_Ax2(), dx, dy, dz, out var __err);
@@ -168,7 +189,11 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepPrimAPI_MakeBox_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_new__double__double__double(double dx, double dy, double dz, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

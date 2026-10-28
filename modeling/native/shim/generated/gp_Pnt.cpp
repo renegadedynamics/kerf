@@ -8,6 +8,30 @@
 #include <gp_XYZ.hxx>
 
 B3D_API void b3d_gp_Pnt_delete(void* p) { delete static_cast<gp_Pnt*>(p); }
+B3D_API void* b3d_gp_Pnt_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<gp_Pnt>)
+  {
+    try { return new gp_Pnt(*static_cast<const gp_Pnt*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "gp_Pnt cannot be copied");
+  return nullptr;
+}
+
+B3D_API void* b3d_gp_Pnt_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new gp_Pnt();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
 
 B3D_API void* b3d_gp_Pnt_new__gp_XYZ(const gp_XYZ* theCoord, b3d_error** err)
 {

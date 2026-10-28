@@ -11,6 +11,18 @@ public partial class gp_XYZ : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_XYZ_delete(ptr);
     internal virtual IntPtr PtrAs_gp_XYZ() => Ptr;
 
+    /// <summary>A copy of another gp_XYZ.</summary>
+    public gp_XYZ(gp_XYZ other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(gp_XYZ other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_XYZ_copy(other.PtrAs_gp_XYZ(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public gp_XYZ() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -263,6 +275,15 @@ public partial class gp_XYZ : OcctObject
         OcctException.ThrowIfError(__err);
     }
 
+    public void Multiply(gp_Mat theMatrix)
+    {
+        ArgumentNullException.ThrowIfNull(theMatrix);
+        __N.b3d_gp_XYZ_Multiply__gp_Mat(PtrAs_gp_XYZ(), theMatrix.PtrAs_gp_Mat(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theMatrix);
+        OcctException.ThrowIfError(__err);
+    }
+
     public gp_XYZ Multiplied(double theScalar)
     {
         var __r = __N.b3d_gp_XYZ_Multiplied__double(PtrAs_gp_XYZ(), theScalar, out var __err);
@@ -277,6 +298,16 @@ public partial class gp_XYZ : OcctObject
         var __r = __N.b3d_gp_XYZ_Multiplied__gp_XYZ(PtrAs_gp_XYZ(), theOther.PtrAs_gp_XYZ(), out var __err);
         GC.KeepAlive(this);
         GC.KeepAlive(theOther);
+        OcctException.ThrowIfError(__err);
+        return new gp_XYZ(__r);
+    }
+
+    public gp_XYZ Multiplied(gp_Mat theMatrix)
+    {
+        ArgumentNullException.ThrowIfNull(theMatrix);
+        var __r = __N.b3d_gp_XYZ_Multiplied__gp_Mat(PtrAs_gp_XYZ(), theMatrix.PtrAs_gp_Mat(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theMatrix);
         OcctException.ThrowIfError(__err);
         return new gp_XYZ(__r);
     }
@@ -409,6 +440,8 @@ public partial class gp_XYZ : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_XYZ_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_XYZ_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_XYZ_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_XYZ_new__double__double__double(double theX, double theY, double theZ, out IntPtr err);
@@ -467,9 +500,13 @@ public partial class gp_XYZ : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_XYZ_Multiply__gp_XYZ(IntPtr self, IntPtr theOther, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_XYZ_Multiply__gp_Mat(IntPtr self, IntPtr theMatrix, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_XYZ_Multiplied__double(IntPtr self, double theScalar, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_XYZ_Multiplied__gp_XYZ(IntPtr self, IntPtr theOther, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_XYZ_Multiplied__gp_Mat(IntPtr self, IntPtr theMatrix, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_XYZ_Normalize(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

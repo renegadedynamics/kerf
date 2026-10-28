@@ -12,11 +12,36 @@ public partial class TopoDS_Face : TopoDS_Shape
     internal virtual IntPtr PtrAs_TopoDS_Face() => Ptr;
     internal override IntPtr PtrAs_TopoDS_Shape() => __N.b3d_TopoDS_Face_as_TopoDS_Shape(Ptr);
 
+    /// <summary>A copy of another TopoDS_Face.</summary>
+    public TopoDS_Face(TopoDS_Face other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(TopoDS_Face other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_TopoDS_Face_copy(other.PtrAs_TopoDS_Face(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public TopoDS_Face() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_TopoDS_Face_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_TopoDS_Face_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_TopoDS_Face_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_TopoDS_Face_as_TopoDS_Shape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_TopoDS_Face_new(out IntPtr err);
     }
 }

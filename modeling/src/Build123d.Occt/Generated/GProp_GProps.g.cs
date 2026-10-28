@@ -11,6 +11,18 @@ public partial class GProp_GProps : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_GProp_GProps_delete(ptr);
     internal virtual IntPtr PtrAs_GProp_GProps() => Ptr;
 
+    /// <summary>A copy of another GProp_GProps.</summary>
+    public GProp_GProps(GProp_GProps other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(GProp_GProps other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_GProp_GProps_copy(other.PtrAs_GProp_GProps(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public GProp_GProps() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -65,6 +77,14 @@ public partial class GProp_GProps : OcctObject
         return new gp_Pnt(__r);
     }
 
+    public gp_Mat MatrixOfInertia()
+    {
+        var __r = __N.b3d_GProp_GProps_MatrixOfInertia(PtrAs_GProp_GProps(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new gp_Mat(__r);
+    }
+
     public void StaticMoments(ref double Ix, ref double Iy, ref double Iz)
     {
         __N.b3d_GProp_GProps_StaticMoments__ref_double__ref_double__ref_double(PtrAs_GProp_GProps(), ref Ix, ref Iy, ref Iz, out var __err);
@@ -97,6 +117,8 @@ public partial class GProp_GProps : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_GProp_GProps_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_GProp_GProps_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_GProp_GProps_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_GProp_GProps_new__gp_Pnt(IntPtr SystemLocation, out IntPtr err);
@@ -108,6 +130,8 @@ public partial class GProp_GProps : OcctObject
         internal static partial double b3d_GProp_GProps_Mass(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_GProp_GProps_CentreOfMass(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_GProp_GProps_MatrixOfInertia(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_GProp_GProps_StaticMoments__ref_double__ref_double__ref_double(IntPtr self, ref double Ix, ref double Iy, ref double Iz, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

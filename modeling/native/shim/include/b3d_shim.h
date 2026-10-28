@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <type_traits>
 
 #ifdef _WIN32
   #define B3D_API extern "C" __declspec(dllexport)

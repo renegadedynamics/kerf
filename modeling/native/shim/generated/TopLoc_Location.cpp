@@ -4,6 +4,30 @@
 #include <TopLoc_Location.hxx>
 
 B3D_API void b3d_TopLoc_Location_delete(void* p) { delete static_cast<TopLoc_Location*>(p); }
+B3D_API void* b3d_TopLoc_Location_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<TopLoc_Location>)
+  {
+    try { return new TopLoc_Location(*static_cast<const TopLoc_Location*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "TopLoc_Location cannot be copied");
+  return nullptr;
+}
+
+B3D_API void* b3d_TopLoc_Location_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new TopLoc_Location();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
 
 B3D_API void* b3d_TopLoc_Location_new__gp_Trsf(const gp_Trsf* T, b3d_error** err)
 {

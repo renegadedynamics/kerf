@@ -6,7 +6,8 @@ static class Writer
     public static void WriteIfChanged(string path, string content)
     {
         content = content.ReplaceLineEndings("\n");
-        if (File.Exists(path) && File.ReadAllText(path) == content)
+        // Compare ignoring line endings: git may have checked the file out with CRLF
+        if (File.Exists(path) && File.ReadAllText(path).ReplaceLineEndings("\n") == content)
             return;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, content);

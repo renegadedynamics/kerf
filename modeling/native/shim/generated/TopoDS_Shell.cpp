@@ -3,4 +3,28 @@
 #include <TopoDS_Shell.hxx>
 
 B3D_API void b3d_TopoDS_Shell_delete(void* p) { delete static_cast<TopoDS_Shell*>(p); }
+B3D_API void* b3d_TopoDS_Shell_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<TopoDS_Shell>)
+  {
+    try { return new TopoDS_Shell(*static_cast<const TopoDS_Shell*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "TopoDS_Shell cannot be copied");
+  return nullptr;
+}
 B3D_API void* b3d_TopoDS_Shell_as_TopoDS_Shape(void* p) { return static_cast<TopoDS_Shape*>(static_cast<TopoDS_Shell*>(p)); }
+
+B3D_API void* b3d_TopoDS_Shell_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new TopoDS_Shell();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}

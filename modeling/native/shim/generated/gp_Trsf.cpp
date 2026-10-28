@@ -2,12 +2,27 @@
 #include "b3d_shim.h"
 #include <gp_Ax1.hxx>
 #include <gp_Ax2.hxx>
+#include <gp_Ax3.hxx>
+#include <gp_Mat.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Quaternion.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
 #include <gp_XYZ.hxx>
 
 B3D_API void b3d_gp_Trsf_delete(void* p) { delete static_cast<gp_Trsf*>(p); }
+B3D_API void* b3d_gp_Trsf_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<gp_Trsf>)
+  {
+    try { return new gp_Trsf(*static_cast<const gp_Trsf*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "gp_Trsf cannot be copied");
+  return nullptr;
+}
 
 B3D_API void* b3d_gp_Trsf_new(b3d_error** err)
 {
@@ -65,12 +80,78 @@ B3D_API void b3d_gp_Trsf_SetRotation__gp_Ax1__double(void* self, const gp_Ax1* t
   B3D_CATCH(err)
 }
 
+B3D_API void b3d_gp_Trsf_SetRotation__gp_Quaternion(void* self, const gp_Quaternion* theR, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetRotation(*theR);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_gp_Trsf_SetRotationPart__gp_Quaternion(void* self, const gp_Quaternion* theR, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetRotationPart(*theR);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
 B3D_API void b3d_gp_Trsf_SetScale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
   try
   {
     static_cast<gp_Trsf*>(self)->SetScale(*theP, theS);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_gp_Trsf_SetDisplacement__gp_Ax3__gp_Ax3(void* self, const gp_Ax3* theFromSystem1, const gp_Ax3* theToSystem2, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetDisplacement(*theFromSystem1, *theToSystem2);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_gp_Trsf_SetTransformation__gp_Ax3__gp_Ax3(void* self, const gp_Ax3* theFromSystem1, const gp_Ax3* theToSystem2, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetTransformation(*theFromSystem1, *theToSystem2);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_gp_Trsf_SetTransformation__gp_Ax3(void* self, const gp_Ax3* theToSystem, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetTransformation(*theToSystem);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_gp_Trsf_SetTransformation__gp_Quaternion__gp_Vec(void* self, const gp_Quaternion* R, const gp_Vec* theT, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<gp_Trsf*>(self)->SetTransformation(*R, *theT);
     return;
   }
   B3D_CATCH(err)
@@ -197,6 +278,42 @@ B3D_API uint8_t b3d_gp_Trsf_GetRotation__mut_gp_XYZ__ref_double(void* self, gp_X
   {
     auto&& r = static_cast<gp_Trsf*>(self)->GetRotation(*theAxis, *theAngle);
     return r ? 1 : 0;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void* b3d_gp_Trsf_GetRotation(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<gp_Trsf*>(self)->GetRotation();
+    return new gp_Quaternion(r);
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void* b3d_gp_Trsf_VectorialPart(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<gp_Trsf*>(self)->VectorialPart();
+    return new gp_Mat(r);
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void* b3d_gp_Trsf_HVectorialPart(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<gp_Trsf*>(self)->HVectorialPart();
+    return new gp_Mat(r);
   }
   B3D_CATCH(err)
   return {};

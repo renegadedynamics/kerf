@@ -30,6 +30,21 @@ static class CppEmitter
                 ? $"B3D_API void b3d_{self}_delete(void* p) {{ b3d_release(static_cast<{self}*>(p)); }}"
                 : $"B3D_API void b3d_{self}_delete(void* p) {{ delete static_cast<{self}*>(p); }}");
         }
+        if (cls.CanCopy)
+        {
+            sb.AppendLine($"B3D_API void* b3d_{self}_copy(const void* p, b3d_error** err)");
+            sb.AppendLine("{");
+            sb.AppendLine("  *err = nullptr;");
+            sb.AppendLine($"  if constexpr (std::is_copy_constructible_v<{self}>)");
+            sb.AppendLine("  {");
+            sb.AppendLine($"    try {{ return new {self}(*static_cast<const {self}*>(p)); }}");
+            sb.AppendLine("    B3D_CATCH(err)");
+            sb.AppendLine("  }");
+            sb.AppendLine("  else");
+            sb.AppendLine($"    *err = b3d_make_error(\"std::logic_error\", \"{self} cannot be copied\");");
+            sb.AppendLine("  return nullptr;");
+            sb.AppendLine("}");
+        }
         foreach (var a in cls.Ancestors())
             sb.AppendLine($"B3D_API void* b3d_{self}_as_{a.Name}(void* p) {{ return static_cast<{a.Name}*>(static_cast<{self}*>(p)); }}");
         if (cls.IsTransient)

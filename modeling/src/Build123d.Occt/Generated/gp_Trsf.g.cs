@@ -11,6 +11,18 @@ public partial class gp_Trsf : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_Trsf_delete(ptr);
     internal virtual IntPtr PtrAs_gp_Trsf() => Ptr;
 
+    /// <summary>A copy of another gp_Trsf.</summary>
+    public gp_Trsf(gp_Trsf other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(gp_Trsf other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_Trsf_copy(other.PtrAs_gp_Trsf(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public gp_Trsf() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -56,12 +68,72 @@ public partial class gp_Trsf : OcctObject
         OcctException.ThrowIfError(__err);
     }
 
+    public void SetRotation(gp_Quaternion theR)
+    {
+        ArgumentNullException.ThrowIfNull(theR);
+        __N.b3d_gp_Trsf_SetRotation__gp_Quaternion(PtrAs_gp_Trsf(), theR.PtrAs_gp_Quaternion(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theR);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetRotationPart(gp_Quaternion theR)
+    {
+        ArgumentNullException.ThrowIfNull(theR);
+        __N.b3d_gp_Trsf_SetRotationPart__gp_Quaternion(PtrAs_gp_Trsf(), theR.PtrAs_gp_Quaternion(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theR);
+        OcctException.ThrowIfError(__err);
+    }
+
     public void SetScale(gp_Pnt theP, double theS)
     {
         ArgumentNullException.ThrowIfNull(theP);
         __N.b3d_gp_Trsf_SetScale__gp_Pnt__double(PtrAs_gp_Trsf(), theP.PtrAs_gp_Pnt(), theS, out var __err);
         GC.KeepAlive(this);
         GC.KeepAlive(theP);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetDisplacement(gp_Ax3 theFromSystem1, gp_Ax3 theToSystem2)
+    {
+        ArgumentNullException.ThrowIfNull(theFromSystem1);
+        ArgumentNullException.ThrowIfNull(theToSystem2);
+        __N.b3d_gp_Trsf_SetDisplacement__gp_Ax3__gp_Ax3(PtrAs_gp_Trsf(), theFromSystem1.PtrAs_gp_Ax3(), theToSystem2.PtrAs_gp_Ax3(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theFromSystem1);
+        GC.KeepAlive(theToSystem2);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetTransformation(gp_Ax3 theFromSystem1, gp_Ax3 theToSystem2)
+    {
+        ArgumentNullException.ThrowIfNull(theFromSystem1);
+        ArgumentNullException.ThrowIfNull(theToSystem2);
+        __N.b3d_gp_Trsf_SetTransformation__gp_Ax3__gp_Ax3(PtrAs_gp_Trsf(), theFromSystem1.PtrAs_gp_Ax3(), theToSystem2.PtrAs_gp_Ax3(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theFromSystem1);
+        GC.KeepAlive(theToSystem2);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetTransformation(gp_Ax3 theToSystem)
+    {
+        ArgumentNullException.ThrowIfNull(theToSystem);
+        __N.b3d_gp_Trsf_SetTransformation__gp_Ax3(PtrAs_gp_Trsf(), theToSystem.PtrAs_gp_Ax3(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theToSystem);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetTransformation(gp_Quaternion R, gp_Vec theT)
+    {
+        ArgumentNullException.ThrowIfNull(R);
+        ArgumentNullException.ThrowIfNull(theT);
+        __N.b3d_gp_Trsf_SetTransformation__gp_Quaternion__gp_Vec(PtrAs_gp_Trsf(), R.PtrAs_gp_Quaternion(), theT.PtrAs_gp_Vec(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(R);
+        GC.KeepAlive(theT);
         OcctException.ThrowIfError(__err);
     }
 
@@ -157,6 +229,30 @@ public partial class gp_Trsf : OcctObject
         return __r != 0;
     }
 
+    public gp_Quaternion GetRotation()
+    {
+        var __r = __N.b3d_gp_Trsf_GetRotation(PtrAs_gp_Trsf(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new gp_Quaternion(__r);
+    }
+
+    public gp_Mat VectorialPart()
+    {
+        var __r = __N.b3d_gp_Trsf_VectorialPart(PtrAs_gp_Trsf(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new gp_Mat(__r);
+    }
+
+    public gp_Mat HVectorialPart()
+    {
+        var __r = __N.b3d_gp_Trsf_HVectorialPart(PtrAs_gp_Trsf(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new gp_Mat(__r);
+    }
+
     public double Value(int theRow, int theCol)
     {
         var __r = __N.b3d_gp_Trsf_Value__int__int(PtrAs_gp_Trsf(), theRow, theCol, out var __err);
@@ -244,6 +340,8 @@ public partial class gp_Trsf : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Trsf_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Trsf_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_SetMirror__gp_Pnt(IntPtr self, IntPtr theP, out IntPtr err);
@@ -254,7 +352,19 @@ public partial class gp_Trsf : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_SetRotation__gp_Ax1__double(IntPtr self, IntPtr theA1, double theAng, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetRotation__gp_Quaternion(IntPtr self, IntPtr theR, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetRotationPart__gp_Quaternion(IntPtr self, IntPtr theR, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_SetScale__gp_Pnt__double(IntPtr self, IntPtr theP, double theS, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetDisplacement__gp_Ax3__gp_Ax3(IntPtr self, IntPtr theFromSystem1, IntPtr theToSystem2, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetTransformation__gp_Ax3__gp_Ax3(IntPtr self, IntPtr theFromSystem1, IntPtr theToSystem2, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetTransformation__gp_Ax3(IntPtr self, IntPtr theToSystem, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_gp_Trsf_SetTransformation__gp_Quaternion__gp_Vec(IntPtr self, IntPtr R, IntPtr theT, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_SetTranslation__gp_Vec(IntPtr self, IntPtr theV, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -277,6 +387,12 @@ public partial class gp_Trsf : OcctObject
         internal static partial IntPtr b3d_gp_Trsf_TranslationPart(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial byte b3d_gp_Trsf_GetRotation__mut_gp_XYZ__ref_double(IntPtr self, IntPtr theAxis, ref double theAngle, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Trsf_GetRotation(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Trsf_VectorialPart(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Trsf_HVectorialPart(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial double b3d_gp_Trsf_Value__int__int(IntPtr self, int theRow, int theCol, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

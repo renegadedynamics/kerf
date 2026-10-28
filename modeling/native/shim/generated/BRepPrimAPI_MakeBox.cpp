@@ -8,7 +8,31 @@
 #include <TopoDS_Solid.hxx>
 
 B3D_API void b3d_BRepPrimAPI_MakeBox_delete(void* p) { delete static_cast<BRepPrimAPI_MakeBox*>(p); }
+B3D_API void* b3d_BRepPrimAPI_MakeBox_copy(const void* p, b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeBox>)
+  {
+    try { return new BRepPrimAPI_MakeBox(*static_cast<const BRepPrimAPI_MakeBox*>(p)); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "BRepPrimAPI_MakeBox cannot be copied");
+  return nullptr;
+}
 B3D_API void* b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepPrimAPI_MakeBox*>(p)); }
+
+B3D_API void* b3d_BRepPrimAPI_MakeBox_new(b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new BRepPrimAPI_MakeBox();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
 
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new__double__double__double(double dx, double dy, double dz, b3d_error** err)
 {

@@ -11,9 +11,30 @@ public partial class TopLoc_Location : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_TopLoc_Location_delete(ptr);
     internal virtual IntPtr PtrAs_TopLoc_Location() => Ptr;
 
-    public TopLoc_Location(gp_Trsf T) : this(__New0(T)) { }
+    /// <summary>A copy of another TopLoc_Location.</summary>
+    public TopLoc_Location(TopLoc_Location other) : this(__Copy(other)) { }
 
-    private static IntPtr __New0(gp_Trsf T)
+    private static IntPtr __Copy(TopLoc_Location other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_TopLoc_Location_copy(other.PtrAs_TopLoc_Location(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public TopLoc_Location() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_TopLoc_Location_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public TopLoc_Location(gp_Trsf T) : this(__New1(T)) { }
+
+    private static IntPtr __New1(gp_Trsf T)
     {
         ArgumentNullException.ThrowIfNull(T);
         var __r = __N.b3d_TopLoc_Location_new__gp_Trsf(T.PtrAs_gp_Trsf(), out var __err);
@@ -153,6 +174,10 @@ public partial class TopLoc_Location : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_TopLoc_Location_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_TopLoc_Location_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_TopLoc_Location_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_TopLoc_Location_new__gp_Trsf(IntPtr T, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

@@ -11,6 +11,18 @@ public partial class STEPControl_Reader : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_STEPControl_Reader_delete(ptr);
     internal virtual IntPtr PtrAs_STEPControl_Reader() => Ptr;
 
+    /// <summary>A copy of another STEPControl_Reader.</summary>
+    public STEPControl_Reader(STEPControl_Reader other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(STEPControl_Reader other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_STEPControl_Reader_copy(other.PtrAs_STEPControl_Reader(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public STEPControl_Reader() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -178,6 +190,8 @@ public partial class STEPControl_Reader : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_STEPControl_Reader_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_STEPControl_Reader_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_STEPControl_Reader_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

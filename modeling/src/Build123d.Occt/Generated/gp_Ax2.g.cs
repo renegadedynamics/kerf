@@ -11,6 +11,18 @@ public partial class gp_Ax2 : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_gp_Ax2_delete(ptr);
     internal virtual IntPtr PtrAs_gp_Ax2() => Ptr;
 
+    /// <summary>A copy of another gp_Ax2.</summary>
+    public gp_Ax2(gp_Ax2 other) : this(__Copy(other)) { }
+
+    private static IntPtr __Copy(gp_Ax2 other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var __r = __N.b3d_gp_Ax2_copy(other.PtrAs_gp_Ax2(), out var __err);
+        GC.KeepAlive(other);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public gp_Ax2() : this(__New0()) { }
 
     private static IntPtr __New0()
@@ -323,6 +335,8 @@ public partial class gp_Ax2 : OcctObject
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Ax2_delete(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Ax2_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Ax2_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
