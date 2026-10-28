@@ -1,0 +1,11 @@
+# Third-party sources, build trees and local tools
+/.deps/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Native
+/native/out/
