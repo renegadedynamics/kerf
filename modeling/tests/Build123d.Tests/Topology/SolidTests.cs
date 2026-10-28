@@ -300,31 +300,18 @@ public class SolidTests
     [Fact]
     public void SweepWarnsWhenInvalid()
     {
-        var warnings = new List<string>();
-        void Collect(string message)
-        {
-            lock (warnings)
-                warnings.Add(message);
-        }
-        Warnings.Raised += Collect;
-        try
-        {
-            // The kernel reports success for a sweep that folds over itself
-            var path = Wire.MakePolygon([(0, 20), (20, 20), (20, 0)], close: false);
-            var section = new Plane((0, 20, 0), zDir: (1, 0, 0)) * Face.MakeRect(10, 10);
-            var folded = Solid.Sweep(section, path);
-            Assert.Contains(warnings, w => w.Contains("sweep created an invalid solid"));
-            Assert.False(folded.IsValid);
+        using var warnings = Warnings.Capture();
+        // The kernel reports success for a sweep that folds over itself
+        var path = Wire.MakePolygon([(0, 20), (20, 20), (20, 0)], close: false);
+        var section = new Plane((0, 20, 0), zDir: (1, 0, 0)) * Face.MakeRect(10, 10);
+        var folded = Solid.Sweep(section, path);
+        Assert.Contains(warnings.Messages, w => w.Contains("sweep created an invalid solid"));
+        Assert.False(folded.IsValid);
 
-            var arc = Edge.MakeCircle(5, startAngle: 0, endAngle: 180);
-            var profiles = new[] { 0.0, 1.0 }.Select(u => new Plane(arc.PositionAt(u), zDir: arc % u) * Face.MakeRect(30, 30));
-            Solid.SweepMulti(profiles, arc);
-            Assert.Contains(warnings, w => w.Contains("sweep_multi created an invalid"));
-        }
-        finally
-        {
-            Warnings.Raised -= Collect;
-        }
+        var arc = Edge.MakeCircle(5, startAngle: 0, endAngle: 180);
+        var profiles = new[] { 0.0, 1.0 }.Select(u => new Plane(arc.PositionAt(u), zDir: arc % u) * Face.MakeRect(30, 30));
+        Solid.SweepMulti(profiles, arc);
+        Assert.Contains(warnings.Messages, w => w.Contains("sweep_multi created an invalid"));
     }
 
     [Fact]

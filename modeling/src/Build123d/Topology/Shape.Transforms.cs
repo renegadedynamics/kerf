@@ -235,6 +235,12 @@ public static class ShapeOperations
         /// <summary>The shape fixed by <c>ShapeFix_Shape</c> if it isn't valid, else this shape.</summary>
         public T Fix() => (T)shape.FixCore();
 
+        /// <summary>
+        /// A copy carrying a triangulation within <paramref name="tolerance"/> (and <paramref name="angularTolerance"/>
+        /// radians), for exporters that write meshes; build123d's <c>mesh</c> meshes the shape in place.
+        /// </summary>
+        public T Meshed(double tolerance, double angularTolerance = 0.1) => (T)shape.Rewrapped(shape.MeshedCopy(tolerance, angularTolerance));
+
         /// <summary>A copy mirrored about <paramref name="mirrorPlane"/> (default <see cref="Plane.XY"/>), without the original.</summary>
         public T Mirror(Plane? mirrorPlane = null) => (T)shape.MirrorCore(mirrorPlane);
 

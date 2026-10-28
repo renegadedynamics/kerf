@@ -393,15 +393,17 @@ public abstract partial class Shape
     // ---- Meshing ----
 
     /// <summary>
-    /// Triangulates the shape if it has no triangulation within <paramref name="tolerance"/>. The triangulation is
-    /// cached on the shared geometry: meshing the same geometry from several threads at once must be serialised.
+    /// A copy of the kernel shape carrying a triangulation within <paramref name="tolerance"/>. Meshing stores the
+    /// triangulation in the faces it's given, so it meshes a copy: the shape itself, and everything sharing its
+    /// geometry, is untouched.
     /// </summary>
-    public void Mesh(double tolerance, double angularTolerance = 0.1)
+    internal TopoDS_Shape MeshedCopy(double tolerance, double angularTolerance)
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
-        if (!BRepTools.Triangulation(_wrapped, tolerance))
-            new BRepMesh_IncrementalMesh(_wrapped, tolerance, true, angularTolerance, true).Dispose();
+        var copy = TopoUtil.PrivateCopy(_wrapped);
+        new BRepMesh_IncrementalMesh(copy, tolerance, true, angularTolerance, true).Dispose();
+        return copy;
     }
 
     /// <summary>A triangulated approximation: the vertices and the triangles as index triples into them.</summary>
@@ -409,11 +411,11 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot tessellate an empty shape");
-        Mesh(tolerance, angularTolerance);
+        var meshed = Rewrapped(MeshedCopy(tolerance, angularTolerance));
         var vertices = new List<Vector>();
         var triangles = new List<(int, int, int)>();
         int offset = 0;
-        foreach (var face in Faces())
+        foreach (var face in meshed.Faces())
         {
             using var loc = new TopLoc_Location();
             using var poly = BRep_Tool.Triangulation(face.TopoFace, loc);

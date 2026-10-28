@@ -248,6 +248,7 @@ public static class TwoD
     internal static List<TopoDS_Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
         using var splitter = new BOPAlgo_Splitter();
+        splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
         splitter.AddArgument(edge.TopoShape);
         splitter.AddTool(splitVertex.TopoShape);
         splitter.Perform();

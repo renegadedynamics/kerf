@@ -417,7 +417,8 @@ public partial class Wire : Shape1D
         }
         builder.Build();
         using var chamfered = builder.Shape();
-        using var fix = new ShapeFix_Shape(chamfered);
+        // The chamfered face shares the wire's other edges, which ShapeFix would edit: it fixes a copy
+        using var fix = new ShapeFix_Shape(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
         fix.Perform();
         var fixedFace = TopoUtil.Downcast(fix.Shape()) as TopoDS_Face
                         ?? throw new InvalidOperationException("An internal error occured creating the chamfer");
@@ -430,7 +431,7 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't fix an empty edge");
-        using var fix = new ShapeFix_Wireframe(TopoShape);
+        using var fix = new ShapeFix_Wireframe(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
         fix.SetPrecision(precision);
         fix.SetMaxTolerance(1e-6);
         fix.FixSmallEdges();

@@ -47,8 +47,49 @@ public static partial class Extras
         return new BRepTools_History(r);
     }
 
+    /// <summary>A shape in OCCT's BRep text format, with its triangulations if <paramref name="withTriangles"/>.</summary>
+    public static byte[] WriteBRep(TopoDS_Shape shape, bool withTriangles = false)
+    {
+        ArgumentNullException.ThrowIfNull(shape);
+        var data = N.b3d_brep_write(shape.PtrAs_TopoDS_Shape(), withTriangles ? (byte)1 : (byte)0, out var size, out var err);
+        GC.KeepAlive(shape);
+        OcctException.ThrowIfError(err);
+        try
+        {
+            var bytes = new byte[size];
+            Marshal.Copy(data, bytes, 0, checked((int)size));
+            return bytes;
+        }
+        finally
+        {
+            N.b3d_free_bytes(data);
+        }
+    }
+
+    /// <summary>A shape read from OCCT's BRep text format.</summary>
+    public static TopoDS_Shape ReadBRep(ReadOnlySpan<byte> data)
+    {
+        IntPtr r, err;
+        unsafe
+        {
+            fixed (byte* p = data)
+                r = N.b3d_brep_read((IntPtr)p, data.Length, out err);
+        }
+        OcctException.ThrowIfError(err);
+        return new TopoDS_Shape(r);
+    }
+
     internal static partial class N
     {
+        [LibraryImport("b3docct")]
+        internal static partial IntPtr b3d_brep_write(IntPtr shape, byte withTriangles, out long size, out IntPtr err);
+
+        [LibraryImport("b3docct")]
+        internal static partial IntPtr b3d_brep_read(IntPtr data, long size, out IntPtr err);
+
+        [LibraryImport("b3docct")]
+        internal static partial void b3d_free_bytes(IntPtr data);
+
         [LibraryImport("b3docct")]
         internal static partial IntPtr b3d_BRepTools_History_copy(IntPtr history, out IntPtr err);
 

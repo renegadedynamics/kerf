@@ -146,7 +146,7 @@ internal static partial class TopoUtil
             if (obj.TopoShape is TopoDS_Vertex v)
                 loft.AddVertex(v);
             else if (obj.TopoShape is TopoDS_Wire w)
-                loft.AddWire(w);
+                loft.AddWire(TopoDS.Wire(PrivateCopy(w)));   // the loft writes pcurves into the sections' edges
         }
         loft.Build();
         return loft.Shape();
@@ -259,6 +259,7 @@ public static partial class TopologyUtils
         using var combinedEdges = TopoUtil.ListOf(combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape));
         using var originalEdges = TopoUtil.ListOf(objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape));
         using var operation = new BRepAlgoAPI_Cut();
+        operation.SetNonDestructive(true);   // leave the inputs' tolerances alone
         operation.SetArguments(combinedEdges);
         operation.SetTools(originalEdges);
         operation.SetRunParallel(true);

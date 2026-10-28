@@ -185,6 +185,8 @@ public abstract partial class Shape
             operation.SetArguments(argShapes);
             TopoUtil.SetTools(operation, toolShapes);
             operation.SetRunParallel(true);
+            // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
+            operation.SetNonDestructive(true);
             operation.Build();
             topoResult = TopoUtil.Downcast(operation.Shape());
             history = ShapeHistory.FromBoolean(operation, arg, tool);
@@ -285,7 +287,8 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             return ([], []);
-        using var section = new BRepAlgoAPI_Section(_wrapped, other._wrapped);
+        using var section = new BRepAlgoAPI_Section(_wrapped, other._wrapped, false);
+        section.SetNonDestructive(true);   // leave the inputs' tolerances alone
         section.SetRunParallel(true);
         section.Approximation(true);
         section.ComputePCurveOn1(true);

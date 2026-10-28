@@ -108,6 +108,35 @@ no aliasing surprises.
   template collections (`NCollection_List<TopoDS_Shape>` and friends) are bound under their legacy names
   (`TopTools_ListOfShape`, …) and enumerate as `IEnumerable`.
 
+#### Immutability in the kernel
+
+A `TopoDS_Shape` is a handle: shapes made from one another share their `TShape`s, and so do the shapes
+in different cells of a spreadsheet. Some OCCT algorithms write into the topology they are given: they
+add pcurves to its edges, raise its tolerances or store a mesh on its faces. Without care, that would
+change every shape sharing it, and race between threads. So:
+
+- **Meshing works on a private copy** (`TopoUtil.PrivateCopy`): `Tessellate`, and `Meshed`, which
+  replaces build123d's in-place `mesh`. Bounding boxes ignore triangulations instead of calling
+  `BRepTools::Clean`.
+- **Booleans, splits and sections run non-destructive** (`SetNonDestructive`), so OCCT copies an input
+  it would otherwise change.
+- **Algorithms that edit what they're given get copies:**
+  - ShapeFix in `Fix()`, `FixDegenerateEdges` and the 2D chamfer;
+  - loft sections;
+  - the profile of a tapered extrusion, whose prism shares the profile's face. Its copy's history is
+    merged in front, so selection by history still reaches the original.
+- **What is shared stays shared** when Python relies on it. A face made from a wire keeps the wire's
+  edges, for example. These are only copied if the test below finds a change.
+- **The test is the rule.** [InputsUnchangedTests](../tests/Build123d.Tests/Immutability/InputsUnchangedTests.cs)
+  snapshots the inputs as BRep text, triangulations included, and checks them after each case.
+  - It runs a curated list of operations, a reflection sweep of every public member that takes no
+    arguments, and all the cases concurrently on shared inputs.
+  - It ignores only OCCT's Free and Checked flags, which are bookkeeping: any shape put into a new
+    compound loses Free.
+  - A new operation goes into its list.
+- **Warnings** are collected per operation by `Warnings.Capture()` scopes that follow the async flow,
+  not by a static event.
+
 #### Objects
 
 - **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,

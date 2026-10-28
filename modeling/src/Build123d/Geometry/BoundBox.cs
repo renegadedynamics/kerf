@@ -59,7 +59,7 @@ public sealed class BoundBox
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
-    /// shape is removed first, as it can affect the box.
+    /// shape is ignored, as it can affect the box.
     /// </summary>
     public static BoundBox FromShape(Shape shape, double? tolerance = null, bool optimal = true) =>
         shape.IsEmpty ? Empty : FromTopoDS(shape.TopoShape, tolerance, optimal);
@@ -69,11 +69,11 @@ public sealed class BoundBox
     {
         _ = tolerance;   // accepted, as build123d accepts it, but unused
         var box = new Bnd_Box();
-        BRepTools.Clean(shape);   // remove a mesh, which may affect the box
+        // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape
         if (optimal)
-            BRepBndLib.AddOptimal(shape, box);
+            BRepBndLib.AddOptimal(shape, box, false);
         else
-            BRepBndLib.Add(shape, box, true);
+            BRepBndLib.Add(shape, box, false);
         return new BoundBox(box);
     }
 

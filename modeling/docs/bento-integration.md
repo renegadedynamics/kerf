@@ -223,10 +223,10 @@ something:
   - ShapeFix can raise the tolerances of shared edges and vertices;
   - booleans aren't non-destructive by default.
 
-  These break absolute immutability and race between threads. Phase 4.2 fixes them by meshing copies,
-  not cleaning, fixing copies and running booleans non-destructive. A test then runs every public
-  operation from several threads and checks that the inputs' BRep bytes don't change. Until that is in,
-  don't calculate cells that share a shape concurrently.
+  These broke absolute immutability and raced between threads. **Fixed in 4.2:** meshing works on copies,
+  bounding boxes ignore meshes, booleans run non-destructive, and ShapeFix, loft and tapered extrusion work
+  on copies. `InputsUnchangedTests` checks every case's inputs as BRep bytes, alone and with all cases
+  running concurrently on shared inputs. `Shape.Mesh` is now `Meshed`, which returns a meshed copy.
 - **Exception types.** We keep build123d's mapping, which is more specific than you asked:
   - an argument problem (`ValueError`) is an `ArgumentException`, or an `InvalidOperationException` when
     the shape being operated on is empty;
@@ -243,8 +243,9 @@ something:
     stays worthwhile.
 - **Memory pressure** goes on new results and meshes only. Wrappers share geometry, so adding pressure
   per wrapper would count the same memory many times over.
-- **Warnings.** `Warnings.Raised` is a static event today, so concurrent cells would see each other's
-  warnings. It becomes per-operation in 4.2.
+- **Warnings** are per operation now (4.2). Wrap a cell's calculation in
+  `using var w = Warnings.Capture();` and show `w.Messages`. A scope follows the async flow, so concurrent
+  cells don't see each other's warnings.
 - **Selectors** already take plain values for most cases: `FilterBy(Axis | GeomType | Plane)`,
   `SortBy(Axis | SortBy)`, `GroupBy(Axis | SortBy)`, `First`/`Last` and `Select`. Mapping strings such as
   `"Z"` to `Axis.Z` is better done in Bento's formula layer, where the vocabulary is yours.

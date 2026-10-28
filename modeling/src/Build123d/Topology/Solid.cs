@@ -156,6 +156,13 @@ public partial class Solid : Shape3D
         var profileWires = new List<Wire> { profile.OuterWire() };
         profileWires.AddRange(profile.InnerWires());
 
+        // The prism shares the profile's face, which the draft would edit: the profile is a copy
+        var original = profile;
+        using var copier = new BRepBuilderAPI_Copy(original.TopoShape, false, false);
+        profile = new Face(TopoDS.Face(copier.Shape()));
+        var copyHistory = ShapeHistory.FromAlgorithm(copier, [original.TopoShape], profile.TopoShape);
+        profileWires = [profile.OuterWire(), .. profile.InnerWires()];
+
         // Extrude the profile; its sides are the faces generated from its edges
         using var directionVec = direction.ToGpVec();
         using var prismBuilder = new BRepPrimAPI_MakePrism(profile.TopoShape, directionVec);
@@ -207,7 +214,7 @@ public partial class Solid : Shape3D
             if (result is not null && !result.IsValid)
                 result = null;
             if (result is not null)
-                result = (Solid)result.MadeBy(ShapeHistory.FromAlgorithm(prismBuilder, [profile.TopoShape], prism)
+                result = (Solid)result.MadeBy(copyHistory.Merge(ShapeHistory.FromAlgorithm(prismBuilder, [profile.TopoShape], prism))
                     .Merge(ShapeHistory.FromAlgorithm(draft, [prism], result.TopoShape)));
         }
         if (result is null)
@@ -257,7 +264,14 @@ public partial class Solid : Shape3D
         var extrusion = Extrude(profile, direction * maxDimension);
 
         // 2: the target's faces the extrusion modified
-        using var intersectOp = new BRepAlgoAPI_Common(target.TopoShape, extrusion.TopoShape);
+        using var intersectOp = new BRepAlgoAPI_Common();
+        using (var arguments = TopoUtil.ListOf([target.TopoShape]))
+        using (var tools = TopoUtil.ListOf([extrusion.TopoShape]))
+        {
+            intersectOp.SetArguments(arguments);
+            intersectOp.SetTools(tools);
+        }
+        intersectOp.SetNonDestructive(true);   // leave the target's tolerances alone
         intersectOp.Build();
         using var intersection = intersectOp.Shape();
         using (var faceExp = new TopExp_Explorer(intersection, TopAbs_ShapeEnum.TopAbs_FACE))

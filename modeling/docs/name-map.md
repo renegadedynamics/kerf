@@ -82,12 +82,13 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `Compound(children=[…])` | `Compound.Assembly([…])`; children hold no parent link |
 | `Shape.cast(topods)` | `Shape.Cast(topods)` |
 | `SkipClean()` context | `using (new SkipClean()) { … }` |
-| `warnings.warn` | `Warnings.Raised` event |
+| `warnings.warn` | `using var w = Warnings.Capture();` then `w.Messages`: per operation, not global |
 | `topo_explore_connected_edges`, `edges_to_wires`, … | `OneD.ConnectedEdges`, `OneD.EdgesToWires`, …; `Vertex.CommonVertex` |
 | `topo_distance_to(shapes)` | `TopologyUtils.TopoDistanceTo(shapes)`, a `Func<Shape, double>` |
 | `show_topology("Face")` | `ShowTopology(ShapeType.Face)` |
 | `filter_by_value(Edge.length, 3)` | `FilterByValue(e => e.Length, 3)` |
 | `ShapeHistory.merge` (in place) | `Merge` returns a new record |
+| `shape.mesh(tol)` (in place) | `Meshed(tol)` returns a meshed copy; `Tessellate` meshes a copy too |
 | `make_constrained_arcs(a, b, radius=r)`, `(a, b, c)`, `(a, center=p)`, `(a, radius=r, center_on=c)` | `Edge.MakeConstrainedArcs(…)` overloads, each target a `Tangent` (from an `Edge`, `Axis`, `Vector`, `Vertex` or `(edge, Tangency)`) |
 | `make_constrained_arcs(a, b, center_on=c)` | `Edge.MakeConstrainedArcsCenteredOn(a, b, c)`: three targets would be ambiguous with the three-tangent form |
 | `make_constrained_lines(a, b)`, `(a, axis, angle=…)`, `(a, axis, direction=…)` | `Edge.MakeConstrainedLines(…)` overloads |

@@ -327,8 +327,8 @@ public class BoundBoxWithShapesTests
     {
         var s = Solid.MakeSphere(3);
         Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
-        s.Mesh(1e-3);
-        Check.AlmostEqual((6, 6, 6), s.BoundingBox().Size, 5);
+        var meshed = s.Meshed(1e-3);
+        Check.AlmostEqual((6, 6, 6), meshed.BoundingBox().Size, 5);
     }
 }
 

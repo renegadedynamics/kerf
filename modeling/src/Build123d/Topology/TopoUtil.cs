@@ -54,10 +54,22 @@ internal static partial class TopoUtil
         var t => throw new ArgumentException($"Unable to cast {t}"),
     };
 
-    /// <summary>The shape fixed by ShapeFix_Shape.</summary>
+    /// <summary>
+    /// A copy of a shape that shares nothing with it but (unless <paramref name="copyGeometry"/>) its curves and surfaces,
+    /// which OCCT doesn't change: for the algorithms that write into the topology they are given (adding pcurves to its
+    /// edges, raising its tolerances, storing a mesh), which would otherwise change every shape sharing it.
+    /// </summary>
+    internal static TopoDS_Shape PrivateCopy(TopoDS_Shape shape, bool copyGeometry = false)
+    {
+        using var copier = new BRepBuilderAPI_Copy(shape, copyGeometry, false);
+        return copier.Shape();
+    }
+
+    /// <summary>The shape fixed by ShapeFix_Shape, which works on a private copy.</summary>
     internal static TopoDS_Shape Fix(TopoDS_Shape obj)
     {
-        using var shapeFix = new ShapeFix_Shape(obj);
+        // ShapeFix edits the shape it's given, pcurves and parameters included, so it gets its own geometry too
+        using var shapeFix = new ShapeFix_Shape(PrivateCopy(obj, copyGeometry: true));
         shapeFix.Perform();
         return Downcast(shapeFix.Shape());
     }
@@ -196,6 +208,8 @@ internal static partial class TopoUtil
         operation.SetArguments(arg);
         SetTools(operation, tool);
         operation.SetRunParallel(true);
+        // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
+        operation.SetNonDestructive(true);
         operation.Build();
         var result = Downcast(operation.Shape());
         return result is TopoDS_Compound c ? UnwrapCompound(c) : result;

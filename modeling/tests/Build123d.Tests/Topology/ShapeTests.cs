@@ -499,17 +499,12 @@ public class ShapeTests
         // oriented
         var path = Wire.MakePolygon([(0, 20, 0), (20, 20, 0), (20, 0, 0)], close: false);
         var start = new Plane((0, 20, 0), zDir: (1, 0, 0));
-        var warnings = new List<string>();
-        void OnWarning(string message) => warnings.Add(message);
         Shape folded;
-        Warnings.Raised += OnWarning;
-        try
+        IReadOnlyList<string> warnings;
+        using (var scope = Warnings.Capture())
         {
             folded = Solid.Sweep(start * Face.MakeRect(40, 40), path, transition: Transition.Round);
-        }
-        finally
-        {
-            Warnings.Raised -= OnWarning;
+            warnings = scope.Messages;
         }
         Assert.Contains(warnings, w => w.Contains("invalid solid"));
         Assert.False(folded.IsValid);
@@ -630,7 +625,7 @@ public class ShapeTests
         Assert.Throws<InvalidOperationException>(() => empty.Distance(new Vertex(1, 1, 1)));
         Assert.Throws<InvalidOperationException>(() => empty.Distances(new Vertex(0, 0, 0), new Vertex(1, 1, 1)).ToList());
         Assert.Throws<InvalidOperationException>(() => box.Distances(empty, new Vertex(1, 1, 1)).ToList());
-        Assert.Throws<InvalidOperationException>(() => empty.Mesh(0.001));
+        Assert.Throws<InvalidOperationException>(() => empty.Meshed(0.001));
         Assert.Throws<InvalidOperationException>(() => empty.Tessellate(0.001));
         Assert.Throws<InvalidOperationException>(() => empty.ToSplines());
         var emptyWire = new Wire();
