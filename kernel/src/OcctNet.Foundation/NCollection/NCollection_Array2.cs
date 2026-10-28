@@ -92,6 +92,8 @@ public class NCollection_Array2<T>
 
     public int UpperCol() => myLowerCol + mySizeCol - 1;
 
+    public bool IsDeletable() => myIsOwner;
+
     public bool IsEmpty() => Size() == 0;
 
     public void UpdateLowerRow(int theLowerRow) => myLowerRow = theLowerRow;

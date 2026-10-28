@@ -189,6 +189,24 @@ public static class Standard
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void math_NotSquare_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new math_NotSquare(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void math_SingularMatrix_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new math_SingularMatrix(message);
+        }
+    }
+
     // Standard_Real.hxx
 
     /// <summary>The smallest positive normal double (DBL_MIN).</summary>

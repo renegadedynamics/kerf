@@ -8,6 +8,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- OCCT's math_Vector and math_IntegerVector are using aliases of math_VectorBase<T>; so are these -->
+    <Using Include="Occt.math_VectorBase&lt;double&gt;" Alias="math_Vector" />
+    <Using Include="Occt.math_VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 
