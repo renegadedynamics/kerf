@@ -55,3 +55,11 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     are tools for ported code. Immutability applies to values callers hold (gp now, Geom and TopoDS later).
 22. **Trimming**: default construction uses `Activator.CreateInstance<T>()`, with the trimming warning suppressed on
     the grounds that OCCT.NET's value types keep their constructors. Revisit if Bento publishes with full trimming.
+23. **TKMath is verified by OCCT's GTests, not the oracle.** build123d.NET's native bindings expose only Bnd_Box,
+    Bnd_OBB, TopLoc_Location and two Poly classes from TKMath, and widening them means changing and rebuilding
+    that repository. Those classes get oracle tests now; the rest of TKMath gets oracle coverage indirectly through
+    Geom, GeomAPI and BRep, which build123d.NET does bind, from phase 2.
+24. **Parallel porting uses git worktrees made by hand** (in the session's scratch directory), one branch per
+    package group off the phase branch, merged back with `--no-ff`. The harness's own worktree isolation refused
+    this repository's path (a drive-letter case mismatch) and left three locked worktrees in `.claude/worktrees`,
+    which are ignored and can be removed with `git worktree remove --force`.

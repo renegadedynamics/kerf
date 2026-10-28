@@ -7,3 +7,6 @@ obj/
 *.user
 .vs/
 /artifacts/
+
+# Claude Code session data and worktrees
+/.claude/
