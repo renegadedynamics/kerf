@@ -26,5 +26,12 @@
   <ItemGroup>
     <None Include="@(NativeLib)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
+  <!-- The package carries only the native libraries b3docct needs, flat, as tools/pack.ps1 stages them -->
+  <ItemGroup Condition="'$(NativeStageDir)' != ''">
+    <None Include="$(NativeStageDir)*" Pack="true" PackagePath="runtimes/$(NativeRid)/native/" Visible="false" />
+  </ItemGroup>
+  <Target Name="RequireNativeStage" BeforeTargets="GenerateNuspec" Condition="'$(NativeStageDir)' == ''">
+    <Error Text="Pack with tools/pack.ps1, which stages the native libraries (NativeStageDir)" />
+  </Target>
 
 </Project>

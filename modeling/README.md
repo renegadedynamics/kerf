@@ -47,3 +47,24 @@ dotnet test
 
 `Build123d.Occt` copies the OCCT, FreeType and shim libraries for the host runtime into the output
 directory of anything that references it.
+
+## Packages
+
+```powershell
+./tools/pack.ps1                         # Windows x64; -VersionSuffix preview.1 for a pre-release
+```
+
+This writes `Build123d` and `Build123d.Occt` to the local folder feed `artifacts/packages`.
+`Build123d.Occt` carries the shim, plus only the OCCT and FreeType libraries the shim depends on,
+flat under `runtimes/win-x64/native`. The script then runs
+[tests/Build123d.Packaging.Tests](tests/Build123d.Packaging.Tests). That test unpacks the packages into
+a folder of their own and loads them through a collectible `AssemblyLoadContext`, as Bento's extensions
+are loaded. Inside that context it makes and tessellates a box on a background thread, checks the native
+libraries came from that folder, and checks the context unloads. The test needs the packages, so it
+isn't part of the solution's `dotnet test`. Changes are listed in [CHANGELOG.md](CHANGELOG.md), and the
+shipped native code's licences in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Licence
+
+Apache License 2.0, as build123d's (see [LICENSE](LICENSE)). The native libraries the packages ship
+are under their own licences: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
