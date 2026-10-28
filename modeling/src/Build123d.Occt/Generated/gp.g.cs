@@ -84,6 +84,41 @@ public static partial class gp
         return new gp_Ax2(__r);
     }
 
+    public static gp_Pnt2d Origin2d()
+    {
+        var __r = __N.b3d_gp_Origin2d(out var __err);
+        OcctException.ThrowIfError(__err);
+        return new gp_Pnt2d(__r);
+    }
+
+    public static gp_Dir2d DX2d()
+    {
+        var __r = __N.b3d_gp_DX2d(out var __err);
+        OcctException.ThrowIfError(__err);
+        return new gp_Dir2d(__r);
+    }
+
+    public static gp_Dir2d DY2d()
+    {
+        var __r = __N.b3d_gp_DY2d(out var __err);
+        OcctException.ThrowIfError(__err);
+        return new gp_Dir2d(__r);
+    }
+
+    public static gp_Ax2d OX2d()
+    {
+        var __r = __N.b3d_gp_OX2d(out var __err);
+        OcctException.ThrowIfError(__err);
+        return new gp_Ax2d(__r);
+    }
+
+    public static gp_Ax2d OY2d()
+    {
+        var __r = __N.b3d_gp_OY2d(out var __err);
+        OcctException.ThrowIfError(__err);
+        return new gp_Ax2d(__r);
+    }
+
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -108,5 +143,15 @@ public static partial class gp
         internal static partial IntPtr b3d_gp_ZOX(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_YOZ(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Origin2d(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_DX2d(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_DY2d(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_OX2d(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_OY2d(out IntPtr err);
     }
 }

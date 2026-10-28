@@ -102,6 +102,14 @@ public partial class GProp_GProps : OcctObject
         return __r;
     }
 
+    public GProp_PrincipalProps PrincipalProperties()
+    {
+        var __r = __N.b3d_GProp_GProps_PrincipalProperties(PtrAs_GProp_GProps(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new GProp_PrincipalProps(__r);
+    }
+
     public double RadiusOfGyration(gp_Ax1 A)
     {
         ArgumentNullException.ThrowIfNull(A);
@@ -136,6 +144,8 @@ public partial class GProp_GProps : OcctObject
         internal static partial void b3d_GProp_GProps_StaticMoments__ref_double__ref_double__ref_double(IntPtr self, ref double Ix, ref double Iy, ref double Iz, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial double b3d_GProp_GProps_MomentOfInertia__gp_Ax1(IntPtr self, IntPtr A, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_GProp_GProps_PrincipalProperties(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial double b3d_GProp_GProps_RadiusOfGyration__gp_Ax1(IntPtr self, IntPtr A, out IntPtr err);
     }

@@ -49,6 +49,20 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         Direction = new Vector(dir);
     }
 
+    /// <summary>The axis along an edge's curve where it starts (ignoring the edge's orientation), as build123d's <c>Axis(edge)</c>.</summary>
+    public Axis(Edge edge)
+    {
+        double first = 0, last = 0;
+        using var curve = BRep_Tool.Curve(edge.TopoEdge, ref first, ref last)
+                          ?? throw new ArgumentException($"Invalid edge argument: {edge}");
+        double min = 0, max = 0;
+        BRep_Tool.Range(edge.TopoEdge, ref min, ref max);
+        using var origin = new gp_Pnt();
+        using var tangent = new gp_Vec();
+        curve.D1(min, origin, tangent);
+        this = new Axis(new Vector(origin), new Vector(tangent));
+    }
+
     /// <summary>The Z axis of a location.</summary>
     public Axis(Location location) => this = Z.Located(location);
 
@@ -160,6 +174,12 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public static IGeometry? operator &(Axis a, Plane b) => a.Intersect(b);
     public static IGeometry? operator &(Axis a, Location b) => a.Intersect(b);
     public static Vector? operator &(Axis a, Vector b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
+    public static ShapeList<Shape> operator &(Axis a, Shape b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this axis (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 
     /// <summary>

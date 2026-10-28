@@ -77,6 +77,16 @@ public partial class Geom_Surface : Geom_Geometry
         OcctException.ThrowIfError(__err);
     }
 
+    public gp_GTrsf2d ParametricTransformation(gp_Trsf T)
+    {
+        ArgumentNullException.ThrowIfNull(T);
+        var __r = __N.b3d_Geom_Surface_ParametricTransformation__gp_Trsf(PtrAs_Geom_Surface(), T.PtrAs_gp_Trsf(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(T);
+        OcctException.ThrowIfError(__err);
+        return new gp_GTrsf2d(__r);
+    }
+
     public void Bounds(ref double U1, ref double U2, ref double V1, ref double V2)
     {
         __N.b3d_Geom_Surface_Bounds__ref_double__ref_double__ref_double__ref_double(PtrAs_Geom_Surface(), ref U1, ref U2, ref V1, ref V2, out var __err);
@@ -296,6 +306,8 @@ public partial class Geom_Surface : Geom_Geometry
         internal static partial double b3d_Geom_Surface_VReversedParameter__double(IntPtr self, double V, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Geom_Surface_TransformParameters__ref_double__ref_double__gp_Trsf(IntPtr self, ref double U, ref double V, IntPtr T, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_Geom_Surface_ParametricTransformation__gp_Trsf(IntPtr self, IntPtr T, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Geom_Surface_Bounds__ref_double__ref_double__ref_double__ref_double(IntPtr self, ref double U1, ref double U2, ref double V1, ref double V2, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

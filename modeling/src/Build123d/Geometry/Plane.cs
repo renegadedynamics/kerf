@@ -88,6 +88,63 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>The plane of a location: at its position, with its axes.</summary>
     public Plane(Location location) : this(FromLocation(location), owned: true) { }
 
+    /// <summary>
+    /// The plane of a planar face: at its centre of mass, normal to it, with X along the surface's own X direction (or
+    /// <paramref name="xDir"/>).
+    /// </summary>
+    /// <exception cref="ArgumentException">The face isn't planar.</exception>
+    public Plane(Face face, Vector? xDir = null) : this(FromFace(face, xDir), owned: true) { }
+
+    static gp_Pln FromFace(Face face, Vector? xDir)
+    {
+        if (face.IsPlanar is null)
+            throw new ArgumentException("Planes can only be created from planar faces");
+        var topoFace = face.TopoFace;
+        using var surface = BRep_Tool.Surface(topoFace)!;
+        Vector origin;
+        using (var props = new GProp_GProps())
+        {
+            BRepGProp.SurfaceProperties(topoFace, props);
+            using var c = props.CentreOfMass();
+            origin = new Vector(c);
+        }
+        Vector faceXDir;
+        if (Geom_BoundedSurface.DownCast(surface) is { } bounded)
+        {
+            using (bounded)
+            using (var point = new gp_Pnt())
+            using (var du = new gp_Vec())
+            using (var dv = new gp_Vec())
+            {
+                bounded.D1(0.5, 0.5, point, du, dv);
+                faceXDir = new Vector(du);
+            }
+        }
+        else
+        {
+            using var elementary = Geom_ElementarySurface.DownCast(surface)!;
+            using var position = elementary.Position();
+            using var x = position.XDirection();
+            faceXDir = new Vector(x);
+        }
+        var x14 = (xDir ?? faceXDir).Round(14);
+        var z14 = FaceNormal(topoFace, surface).Round(14);
+        return Build(origin, x14, z14);
+    }
+
+    /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>
+    static Vector FaceNormal(TopoDS_Face face, Geom_Surface surface)
+    {
+        using var pnt = new gp_Pnt();
+        using var normal = new gp_Vec();
+        using var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
+        double u = 0, v = 0;
+        projector.LowerDistanceParameters(ref u, ref v);
+        using var props = new BRepGProp_Face(face);
+        props.Normal(u, v, pnt, normal);
+        return new Vector(normal);
+    }
+
     /// <summary>A plane through the axis position, normal to the axis, with an optional X direction.</summary>
     public Plane(Axis axis, Vector? xDir = null) : this(Build(axis.Position, xDir, axis.Direction), owned: true) { }
 
@@ -257,6 +314,16 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         return Create(point, XDir, ZDir);
     }
 
+    /// <summary>This plane with its origin moved to a vertex in it.</summary>
+    /// <exception cref="ArgumentException">The vertex isn't in the plane.</exception>
+    public Plane ShiftOrigin(Vertex vertex)
+    {
+        var point = vertex.ToVector();
+        if (!Contains(point))
+            throw new ArgumentException($"{vertex} is not located within plane", nameof(vertex));
+        return Create(point, XDir, ZDir);
+    }
+
     /// <summary>This plane with its origin moved by local (x, y) coordinates; the directions are unchanged.</summary>
     public Plane ShiftOrigin((double X, double Y) local) => Create(FromLocalCoords(new Vector(local.X, local.Y)), XDir, ZDir);
 
@@ -322,6 +389,12 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     /// <summary>A bounding box's corners, in this plane's local coordinates, in global ones.</summary>
     public BoundBox FromLocalCoords(BoundBox box) => TransformBox(box, ReverseTransform);
+
+    /// <summary>A copy of the shape repositioned relative to this plane: its global coordinates become local ones.</summary>
+    public T ToLocalCoords<T>(T shape) where T : Shape => (T)shape.TransformedBy(ForwardTransform);
+
+    /// <summary>A copy of the shape repositioned from this plane's local coordinates to global ones.</summary>
+    public T FromLocalCoords<T>(T shape) where T : Shape => (T)shape.TransformedBy(ReverseTransform);
 
     static BoundBox TransformBox(BoundBox box, Matrix transform)
     {
@@ -392,6 +465,12 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public static IGeometry? operator &(Plane a, Axis b) => a.Intersect(b);
     public static IGeometry? operator &(Plane a, Location b) => a.Intersect(b);
     public static Vector? operator &(Plane a, Vector b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
+    public static ShapeList<Shape> operator &(Plane a, Shape b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this plane (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 
     /// <summary>The intersection with an axis: the axis if it lies in the plane, the crossing point, or null.</summary>
@@ -460,6 +539,9 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>"Plane: (origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, 0, 1))".</summary>
     public override string ToString() =>
         $"Plane: (origin={Origin.ToString(".6g")}, x_dir={XDir.ToString(".6g")}, z_dir={ZDir.ToString(".6g")})";
+
+    /// <summary>Python's repr: "Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))", components to six significant figures.</summary>
+    public string Repr() => "Plane" + ToString(".6g");
 
     /// <summary>"(origin, x_dir, z_dir)" with components formatted as <see cref="Vector.ToString(string?, IFormatProvider?)"/>.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider = null) =>

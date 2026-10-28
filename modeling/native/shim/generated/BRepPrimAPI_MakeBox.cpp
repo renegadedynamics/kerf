@@ -21,6 +21,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_copy(const void* p, b3d_error** err)
   return nullptr;
 }
 B3D_API void* b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepPrimAPI_MakeBox*>(p)); }
+B3D_API void* b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_Command(void* p) { return static_cast<BRepBuilderAPI_Command*>(static_cast<BRepPrimAPI_MakeBox*>(p)); }
 
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new(b3d_error** err)
 {

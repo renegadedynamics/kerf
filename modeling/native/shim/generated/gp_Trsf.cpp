@@ -7,6 +7,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Quaternion.hxx>
 #include <gp_Trsf.hxx>
+#include <gp_Trsf2d.hxx>
 #include <gp_Vec.hxx>
 #include <gp_XYZ.hxx>
 
@@ -30,6 +31,18 @@ B3D_API void* b3d_gp_Trsf_new(b3d_error** err)
   try
   {
     auto&& r = new gp_Trsf();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void* b3d_gp_Trsf_new__gp_Trsf2d(const gp_Trsf2d* theT, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = new gp_Trsf(*theT);
     return r;
   }
   B3D_CATCH(err)

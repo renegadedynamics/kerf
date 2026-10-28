@@ -1,8 +1,12 @@
 # Reference results from Python build123d
 
 The scripts here run the original Python build123d and save its results as JSON. The .NET tests
-recompute the same cases and compare (see `tests/Build123d.Tests/Geometry/ReferenceTests.cs`).
-The JSON is committed, so running the tests doesn't need Python.
+recompute the same cases and compare. The JSON is committed, so running the tests doesn't need Python.
+
+| Script | Output | C# test |
+|---|---|---|
+| `geometry_reference.py` | `Reference/geometry.json` | `Geometry/ReferenceTests.cs`: positions, directions and angles to about 1e-12 |
+| `topology_reference.py` | `Reference/topology.json` | `Topology/TopologyReferenceTests.cs`: each named shape's type, topology counts, validity, volume, area, bounding box and centre |
 
 ## Setting up the reference environment
 

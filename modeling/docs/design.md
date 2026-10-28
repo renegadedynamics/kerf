@@ -93,6 +93,21 @@ no aliasing surprises.
   `IGeometry?` for pattern matching.
 - **Names** are listed in [name-map.md](name-map.md), with the deliberate differences from build123d.
 
+#### Shapes
+
+- **Classes** follow build123d's: `Shape` ← `Vertex`; `Shape1D` ← `Edge`, `Wire`; `Shape2D` ← `Face`,
+  `Shell`; `Shape3D` ← `Solid`, `Compound` ← `Curve`, `Sketch`, `Part`. The `Mixin1D/2D/3D` bases are
+  abstract classes here.
+- **`Self` return types.** Operations that keep a shape's class (`Moved`, `Located`, `Rotate`, `Clean`,
+  `WithLabel`, `Location * shape`, …) are C# 14 extension members generic in the shape's type, so
+  `box.Moved(loc)` is still a `Box`. A copy is a `MemberwiseClone` around a new `TopoDS_Shape`, which
+  carries a subclass's own fields (a Box's dimensions) as Python's `copy.copy` does.
+- **History** (`ShapeHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new
+  record built on a copy of the OCCT `BRepTools_History`, so shapes sharing a record never see it change.
+- **Collections.** `ShapeList<T>` is an immutable list over Bento.Collections' `IBentoList<T>`. OCCT's
+  template collections (`NCollection_List<TopoDS_Shape>` and friends) are bound under their legacy names
+  (`TopTools_ListOfShape`, …) and enumerate as `IEnumerable`.
+
 ### 3. Behavioural parity is tested, not assumed
 
 - The pytest suite is ported module by module, alongside the code it tests.

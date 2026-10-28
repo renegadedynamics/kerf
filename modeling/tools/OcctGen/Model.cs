@@ -18,8 +18,14 @@ sealed class Member
     public required Mapped Return { get; init; }
     public string Export { get; set; } = "";
     public bool HidesBase { get; set; }
+    /// <summary>A default constructor the class doesn't declare: emitted only if the type is default-constructible.</summary>
+    public bool IsImplicitDefault { get; init; }
 
     public string Signature => $"{Name}({string.Join(",", Params.Select(p => p.Type.Key))})";
+
+    /// <summary>The signature as C# sees it, where a handle and a reference to the same transient are one type.</summary>
+    public string CsSignature =>
+        $"{Name}({string.Join(",", Params.Select(p => p.Type.Kind == Kind.TransRef ? p.Type.Name : p.Type.Key))})";
 }
 
 /// <summary>A bound class, or a namespace of free functions (bound as a static class).</summary>
@@ -29,6 +35,9 @@ sealed class ClassInfo(string name, CXXRecordDecl? decl, List<FunctionDecl> nsFu
     public CXXRecordDecl? Decl { get; } = decl;
     public List<FunctionDecl> NamespaceFunctions { get; } = nsFunctions;
     public string Name { get; } = name;
+    /// <summary>Set for a collection bound under an alias: its C++ spelling.</summary>
+    public CollectionInfo? Collection { get; init; }
+    public string CppName => Collection?.Spelling ?? Name;
     public bool IsTransient { get; set; }
     public bool IsStatic { get; set; }
     public bool IsAbstract => Decl?.IsAbstract ?? false;
@@ -51,6 +60,25 @@ sealed class ClassInfo(string name, CXXRecordDecl? decl, List<FunctionDecl> nsFu
 sealed class Model
 {
     public Dictionary<string, ClassInfo> Classes { get; } = [];
+    /// <summary>Bound collections, by alias and by C++ spelling.</summary>
+    public Dictionary<string, ClassInfo> Collections { get; } = [];
+    /// <summary>Classes bound under an alias of a template instantiation, by the instantiation's spelling.</summary>
+    public Dictionary<string, ClassInfo> Aliases { get; } = [];
+
+    /// <summary>
+    /// Whitelisted names that alias a template instantiation (BRepLProp_SLProps), with the instantiation's
+    /// spelling and its definition if clang has instantiated it.
+    /// </summary>
+    public static Dictionary<string, (string Spelling, CXXRecordDecl? Def)> TemplateAliases(TranslationUnit tu, Config config)
+    {
+        var wanted = config.Classes.ToHashSet();
+        var found = new Dictionary<string, (string, CXXRecordDecl?)>();
+        foreach (var d in tu.TranslationUnitDecl.Decls)
+            if (d is TypedefNameDecl td && wanted.Contains(td.Name)
+                && td.UnderlyingType.CanonicalType is RecordType { Decl: ClassTemplateSpecializationDecl spec } rt)
+                found.TryAdd(td.Name, (CollectionInfo.Normalize(rt.AsString), spec.Definition as CXXRecordDecl));
+        return found;
+    }
     public SortedDictionary<string, EnumDecl> Enums { get; } = [];
     public List<string> Skipped { get; } = [];
 
@@ -74,6 +102,11 @@ sealed class Model
                 fns.AddRange(ns.Decls.OfType<FunctionDecl>().Where(f => f is not CXXMethodDecl));
             }
         }
+
+        var aliases = TemplateAliases(tu, config);
+        foreach (var (alias, (_, def)) in aliases)
+            if (def is not null)
+                defs.TryAdd(alias, def);
 
         foreach (var name in config.Classes)
         {
@@ -106,12 +139,52 @@ sealed class Model
             cls.Base = PrimaryWhitelistedBase(cls.Decl, model.Classes);
         }
 
-        var mapper = new TypeMapper(n => model.Classes.GetValueOrDefault(n), e => model.Enums.TryAdd(e.Name, e));
+        foreach (var (alias, (spelling, _)) in aliases)
+            if (model.Classes.TryGetValue(alias, out var ac))
+                model.Aliases[spelling] = ac;
+
+        foreach (var c in config.Collections)
+        {
+            var info = new ClassInfo(c.Alias, null, []) { Collection = c, IsTransient = c.IsTransient };
+            model.Collections[c.Alias] = info;
+            model.Collections[c.Spelling] = info;
+        }
+        foreach (var c in config.Collections)
+        {
+            c.Item = model.ItemType(c, c.Args[0]);
+            if (c.Kind is "datamap" or "indexeddatamap")
+                c.Value = model.ItemType(c, c.Args[1]);
+        }
+
+        var mapper = new TypeMapper(n => model.Classes.GetValueOrDefault(n) ?? model.Collections.GetValueOrDefault(n)
+                                         ?? model.Aliases.GetValueOrDefault(n),
+                                    e => model.Enums.TryAdd(e.Name, e));
         // Base classes first, so each class knows which signatures C# already inherits
         foreach (var cls in model.Classes.Values.OrderBy(c => c.Ancestors().Count()))
             model.CollectMembers(cls, mapper, config);
         return model;
     }
+
+    Mapped ItemType(CollectionInfo c, string arg)
+    {
+        switch (arg)
+        {
+            case "double": return new Mapped(Kind.Prim, "double");
+            case "int": return new Mapped(Kind.Prim, "int32_t");
+            case "bool": return new Mapped(Kind.Bool, "bool");
+        }
+        var cls = Classes.GetValueOrDefault(arg) ?? Collections.GetValueOrDefault(CollectionInfo.Normalize(arg));
+        if (cls is { IsTransient: false, IsStatic: false })
+            return new Mapped(Kind.Value, cls.Name, cls.CppName);
+        throw new InvalidOperationException($"collection {c.Alias}: item type {arg} isn't a bound value class");
+    }
+
+    /// <summary>The headers that declare a bound class or collection.</summary>
+    public IEnumerable<string> HeadersOf(string name) =>
+        Collections.TryGetValue(name, out var c)
+            ? c.Collection!.Headers().Select(h => h + ".hxx")
+                .Concat(c.Collection.Args.SelectMany(a => Collections.TryGetValue(CollectionInfo.Normalize(a), out var inner) ? HeadersOf(inner.Name) : []))
+            : [name + ".hxx"];
 
     void CollectMembers(ClassInfo cls, TypeMapper mapper, Config config)
     {
@@ -136,12 +209,28 @@ sealed class Model
                               + $"base={cls.Base?.Name} ctors={string.Join("; ", cls.Decl.Ctors.Select(c => $"{c.Name}({c.Parameters.Count}) public={IsPublic(c)} userProvided={c.IsUserProvided} copy={c.IsCopyConstructor}"))}");
 
         if (!cls.IsAbstract && !cls.IsStatic)
+        {
             foreach (var ctor in cls.Decl.Ctors)
             {
                 if (!IsPublic(ctor) || !(ctor.IsUserProvided || ctor.IsExplicitlyDefaulted) || ctor.IsDeleted || ctor.IsCopyConstructor || ctor.IsMoveConstructor)
                     continue;
                 AddVariants(cls, cls.Name, ctor, isCtor: true, mapper, config, seen, inherited);
             }
+            // A class that declares no constructor of its own (BRep_Builder) has the implicit default one
+            if (cls.CanDelete && !cls.Decl.Ctors.Any(c => c.IsUserProvided || c.IsExplicitlyDefaulted || c.IsDeleted))
+            {
+                var member = new Member
+                {
+                    Owner = cls, DeclaringClass = cls.Name, Name = "new", IsCtor = true, IsStatic = false, IsConst = false,
+                    Params = [], Return = Mapped.Void, IsImplicitDefault = true,
+                };
+                if (seen.Add(member.Signature))
+                {
+                    member.Export = "b3d_" + cls.Name + "_new";
+                    cls.Members.Add(member);
+                }
+            }
+        }
 
         // Own methods first, then those of ancestors outside the C# base chain (flattened)
         var sources = new List<CXXRecordDecl> { cls.Decl };
@@ -155,8 +244,20 @@ sealed class Model
                     continue;
                 if (cls.IsStatic && !m.IsStatic)
                     continue;
-                AddVariants(cls, src.Name, m, isCtor: false, mapper, config, seen, inherited);
+                AddVariants(cls, src == cls.Decl ? cls.Name : src.Name, m, isCtor: false, mapper, config, seen, inherited);
             }
+
+        // Methods of a non-public base that a class makes public with "using Base::Method;"
+        // (BRepAlgoAPI_Algo re-exports SetRunParallel and friends from BOPAlgo_Options)
+        foreach (var src in sources)
+            foreach (var m in src.Decls.OfType<UsingShadowDecl>().Where(IsPublic).Select(s => s.UnderlyingDecl).OfType<CXXMethodDecl>())
+                {
+                    if (m.IsDeleted || m.IsVariadic || m.Kind != CX_DeclKind.CX_DeclKind_CXXMethod
+                        || m.Name.StartsWith("operator") || IgnoredMethods.Contains(m.Name)
+                        || (cls.IsStatic && !m.IsStatic))
+                        continue;
+                    AddVariants(cls, src == cls.Decl ? cls.Name : src.Name, m, isCtor: false, mapper, config, seen, inherited);
+                }
     }
 
     void AddVariants(ClassInfo cls, string src, FunctionDecl fn, bool isCtor, TypeMapper mapper,
@@ -218,11 +319,16 @@ sealed class Model
             };
             if (!seen.Add(member.Signature))
                 return;   // an override or a more-derived declaration already bound it
+            if (!seen.Add("cs:" + member.CsSignature))
+            {
+                Skipped.Add($"{where}: same C# signature as another overload");
+                return;
+            }
             member.HidesBase = !isCtor && inherited.Contains(member.Signature);
             member.Export = "b3d_" + cls.Name + "_" + name
                             + string.Concat(args.Select(a => "__" + a.Type.Key.Replace("*", "").Replace(" ", "")));
             foreach (var t in args.Select(a => a.Type).Append(ret))
-                if (t.Kind is Kind.Value or Kind.MutValue or Kind.Handle)
+                if (t.Kind is Kind.Value or Kind.MutValue or Kind.Handle or Kind.TransRef)
                     cls.Referenced.Add(t.Name);
             cls.Members.Add(member);
         }

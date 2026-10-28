@@ -152,7 +152,7 @@ static class CsEmitter
     {
         foreach (var p in m.Params)
         {
-            if (p.Type.Kind is Kind.Value or Kind.MutValue)
+            if (p.Type.Kind is Kind.Value or Kind.MutValue or Kind.TransRef)
                 sb.AppendLine($"        ArgumentNullException.ThrowIfNull({Id(p.Name)});");
             if (p.Type.Kind == Kind.RefBool)
                 sb.AppendLine($"        byte __{p.Name} = {Id(p.Name)} ? (byte)1 : (byte)0;");
@@ -168,7 +168,7 @@ static class CsEmitter
         sb.AppendLine($"        {(isVoid ? "" : "var __r = ")}__N.{m.Export}({string.Join(", ", args)});");
         if (receiver != null)
             sb.AppendLine("        GC.KeepAlive(this);");
-        foreach (var p in m.Params.Where(p => p.Type.Kind is Kind.Value or Kind.MutValue or Kind.Handle))
+        foreach (var p in m.Params.Where(p => p.Type.Kind is Kind.Value or Kind.MutValue or Kind.Handle or Kind.TransRef))
             sb.AppendLine($"        GC.KeepAlive({Id(p.Name)});");
         foreach (var p in m.Params.Where(p => p.Type.Kind == Kind.RefBool))
             sb.AppendLine($"        {Id(p.Name)} = __{p.Name} != 0;");
@@ -222,7 +222,7 @@ static class CsEmitter
         Kind.Bool => "bool",
         Kind.Enum => t.Name,
         Kind.CString => "string",
-        Kind.Value or Kind.MutValue => t.Name,
+        Kind.Value or Kind.MutValue or Kind.TransRef => t.Name,
         Kind.Handle => t.Name + "?",
         Kind.RefPrim => "ref " + Mapped.CsPrim(t.Name),
         Kind.RefBool => "ref bool",
@@ -244,7 +244,7 @@ static class CsEmitter
             Kind.Prim or Kind.CString => n,
             Kind.Bool => $"{n} ? (byte)1 : (byte)0",
             Kind.Enum => $"(int){n}",
-            Kind.Value or Kind.MutValue => $"{n}.PtrAs_{p.Type.Name}()",
+            Kind.Value or Kind.MutValue or Kind.TransRef => $"{n}.PtrAs_{p.Type.Name}()",
             Kind.Handle => $"{n}?.PtrAs_{p.Type.Name}() ?? IntPtr.Zero",
             Kind.RefPrim => $"ref {n}",
             Kind.RefBool => $"ref __{p.Name}",
@@ -270,7 +270,7 @@ static class CsEmitter
         Kind.Bool => "byte",
         Kind.Enum => "int",
         Kind.CString => "string",
-        Kind.Value or Kind.MutValue or Kind.Handle => "IntPtr",
+        Kind.Value or Kind.MutValue or Kind.Handle or Kind.TransRef => "IntPtr",
         Kind.RefPrim => "ref " + Mapped.CsPrim(t.Name),
         Kind.RefBool => "ref byte",
         _ => throw new ArgumentException(t.ToString()),

@@ -11,6 +11,7 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_BRepPrimAPI_MakeBox_delete(ptr);
     internal virtual IntPtr PtrAs_BRepPrimAPI_MakeBox() => Ptr;
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_Command(Ptr);
 
     /// <summary>A copy of another BRepPrimAPI_MakeBox.</summary>
     public BRepPrimAPI_MakeBox(BRepPrimAPI_MakeBox other) : this(__Copy(other)) { }
@@ -192,6 +193,8 @@ public partial class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
         internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_MakeShape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_Command(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeBox_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

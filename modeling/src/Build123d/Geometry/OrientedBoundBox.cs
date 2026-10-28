@@ -91,5 +91,5 @@ public sealed class OrientedBoundBox
     }
 
     /// <inheritdoc/>
-    public override string ToString() => $"OrientedBoundBox(center={Center()}, size={Size}, plane={Plane})";
+    public override string ToString() => $"OrientedBoundBox(center={Center().Repr()}, size={Size.Repr()}, plane={Plane.Repr()})";
 }

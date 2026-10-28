@@ -206,6 +206,12 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public static IGeometry? operator &(Location a, Axis b) => a.Intersect(b);
     public static IGeometry? operator &(Location a, Plane b) => a.Intersect(b);
     public static Vector? operator &(Location a, Vector b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
+    public static ShapeList<Shape> operator &(Location a, Shape b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this location (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 
     /// <summary>The point if it is this location's position, else null.</summary>
@@ -239,6 +245,9 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
 
     /// <inheritdoc/>
     public override int GetHashCode() => Key.GetHashCode();
+
+    /// <summary>Python's repr: "Location((1, 2, 3), (10, 20, 30))", components to six significant figures.</summary>
+    public string Repr() => $"{GetType().Name}({Position.ToString(".6g")}, {Orientation.ToString(".6g")})";
 
     /// <summary>"Location: (position=(1, 2, 3), orientation=(10, 20, 30))".</summary>
     public override string ToString() =>

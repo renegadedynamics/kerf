@@ -6,6 +6,7 @@
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_XYZ.hxx>
+#include <NCollection_Array1.hxx>
 
 B3D_API void b3d_Bnd_OBB_delete(void* p) { delete static_cast<Bnd_OBB*>(p); }
 B3D_API void* b3d_Bnd_OBB_copy(const void* p, b3d_error** err)
@@ -55,6 +56,17 @@ B3D_API void* b3d_Bnd_OBB_new__Bnd_Box(const Bnd_Box* theBox, b3d_error** err)
   }
   B3D_CATCH(err)
   return {};
+}
+
+B3D_API void b3d_Bnd_OBB_ReBuild__TColgp_Array1OfPnt(void* self, const NCollection_Array1<gp_Pnt>* theListOfPoints, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<Bnd_OBB*>(self)->ReBuild(*theListOfPoints);
+    return;
+  }
+  B3D_CATCH(err)
 }
 
 B3D_API void b3d_Bnd_OBB_SetCenter__gp_Pnt(void* self, const gp_Pnt* theCenter, b3d_error** err)

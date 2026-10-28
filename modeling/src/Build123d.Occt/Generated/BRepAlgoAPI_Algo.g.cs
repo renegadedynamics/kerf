@@ -10,6 +10,7 @@ public partial class BRepAlgoAPI_Algo : BRepBuilderAPI_MakeShape
 
     internal virtual IntPtr PtrAs_BRepAlgoAPI_Algo() => Ptr;
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_Command(Ptr);
 
     public new TopoDS_Shape Shape()
     {
@@ -19,11 +20,98 @@ public partial class BRepAlgoAPI_Algo : BRepBuilderAPI_MakeShape
         return new TopoDS_Shape(__r);
     }
 
+    public void Clear()
+    {
+        __N.b3d_BRepAlgoAPI_Algo_Clear(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void ClearWarnings()
+    {
+        __N.b3d_BRepAlgoAPI_Algo_ClearWarnings(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public double FuzzyValue()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_Algo_FuzzyValue(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
+    public bool HasErrors()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_Algo_HasErrors(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return __r != 0;
+    }
+
+    public bool HasWarnings()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_Algo_HasWarnings(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return __r != 0;
+    }
+
+    public bool RunParallel()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_Algo_RunParallel(PtrAs_BRepAlgoAPI_Algo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return __r != 0;
+    }
+
+    public void SetFuzzyValue(double theFuzz)
+    {
+        __N.b3d_BRepAlgoAPI_Algo_SetFuzzyValue__double(PtrAs_BRepAlgoAPI_Algo(), theFuzz, out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetRunParallel(bool theFlag)
+    {
+        __N.b3d_BRepAlgoAPI_Algo_SetRunParallel__bool(PtrAs_BRepAlgoAPI_Algo(), theFlag ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public void SetUseOBB(bool theUseOBB)
+    {
+        __N.b3d_BRepAlgoAPI_Algo_SetUseOBB__bool(PtrAs_BRepAlgoAPI_Algo(), theUseOBB ? (byte)1 : (byte)0, out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+    }
+
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_MakeShape(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_Command(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_Algo_Shape(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_Algo_Clear(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_Algo_ClearWarnings(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial double b3d_BRepAlgoAPI_Algo_FuzzyValue(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial byte b3d_BRepAlgoAPI_Algo_HasErrors(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial byte b3d_BRepAlgoAPI_Algo_HasWarnings(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial byte b3d_BRepAlgoAPI_Algo_RunParallel(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_Algo_SetFuzzyValue__double(IntPtr self, double theFuzz, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_Algo_SetRunParallel__bool(IntPtr self, byte theFlag, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_Algo_SetUseOBB__bool(IntPtr self, byte theUseOBB, out IntPtr err);
     }
 }

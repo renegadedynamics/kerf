@@ -11,6 +11,7 @@ public partial class BRepPrimAPI_MakeOneAxis : BRepBuilderAPI_MakeShape
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_BRepPrimAPI_MakeOneAxis_delete(ptr);
     internal virtual IntPtr PtrAs_BRepPrimAPI_MakeOneAxis() => Ptr;
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_Command(Ptr);
 
     public new void Build()
     {
@@ -49,6 +50,8 @@ public partial class BRepPrimAPI_MakeOneAxis : BRepBuilderAPI_MakeShape
         internal static partial void b3d_BRepPrimAPI_MakeOneAxis_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_MakeShape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_Command(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepPrimAPI_MakeOneAxis_Build(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

@@ -2,6 +2,7 @@
 #include "b3d_shim.h"
 #include <Geom_Curve.hxx>
 #include <Geom_Surface.hxx>
+#include <gp_GTrsf2d.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
@@ -90,6 +91,18 @@ B3D_API void b3d_Geom_Surface_TransformParameters__ref_double__ref_double__gp_Tr
     return;
   }
   B3D_CATCH(err)
+}
+
+B3D_API void* b3d_Geom_Surface_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<Geom_Surface*>(self)->ParametricTransformation(*T);
+    return new gp_GTrsf2d(r);
+  }
+  B3D_CATCH(err)
+  return {};
 }
 
 B3D_API void b3d_Geom_Surface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)

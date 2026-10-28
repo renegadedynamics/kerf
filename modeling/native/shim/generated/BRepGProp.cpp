@@ -19,6 +19,19 @@ B3D_API void* b3d_BRepGProp_copy(const void* p, b3d_error** err)
   return nullptr;
 }
 
+B3D_API void* b3d_BRepGProp_new(b3d_error** err)
+{
+  *err = nullptr;
+  if constexpr (std::is_default_constructible_v<BRepGProp>)
+  {
+    try { return new BRepGProp(); }
+    B3D_CATCH(err)
+  }
+  else
+    *err = b3d_make_error("std::logic_error", "BRepGProp cannot be default-constructed");
+  return nullptr;
+}
+
 B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps(const TopoDS_Shape* S, GProp_GProps* LProps, b3d_error** err)
 {
   *err = nullptr;

@@ -4,6 +4,7 @@
 #include <gp_Mat.hxx>
 #include <gp_Pnt.hxx>
 #include <GProp_GProps.hxx>
+#include <GProp_PrincipalProps.hxx>
 
 B3D_API void b3d_GProp_GProps_delete(void* p) { delete static_cast<GProp_GProps*>(p); }
 B3D_API void* b3d_GProp_GProps_copy(const void* p, b3d_error** err)
@@ -119,6 +120,18 @@ B3D_API double b3d_GProp_GProps_MomentOfInertia__gp_Ax1(void* self, const gp_Ax1
   {
     auto&& r = static_cast<GProp_GProps*>(self)->MomentOfInertia(*A);
     return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void* b3d_GProp_GProps_PrincipalProperties(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<GProp_GProps*>(self)->PrincipalProperties();
+    return new GProp_PrincipalProps(r);
   }
   B3D_CATCH(err)
   return {};

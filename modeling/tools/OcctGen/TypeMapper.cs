@@ -16,12 +16,16 @@ enum Kind
     Handle,     // occ::handle<T> of a whitelisted transient class, by raw pointer
     RefPrim,    // double& / int&, by pointer
     RefBool,    // bool&, by uint8_t pointer
+    TransRef,   // a whitelisted transient class by reference (const T& or T&), by raw pointer
 }
 
 /// <summary>How one parameter or return type crosses the C ABI.</summary>
-sealed record Mapped(Kind Kind, string Name)
+sealed record Mapped(Kind Kind, string Name, string? Cpp = null)
 {
-    // Name is the C type for Prim, the enum name for Enum, the class name for Value/MutValue/Handle
+    // Name is the C type for Prim, the enum name for Enum, the class name for Value/MutValue/Handle.
+    // Cpp is the C++ spelling where it differs from Name (a collection's template instantiation).
+
+    public string CppName => Cpp ?? Name;
 
     public static readonly Mapped Void = new(Kind.Void, "void");
 
@@ -33,6 +37,7 @@ sealed record Mapped(Kind Kind, string Name)
         Kind.RefBool => "ref_bool",
         Kind.CString => "string",
         Kind.MutValue => "mut_" + Name,
+        Kind.TransRef => "tref_" + Name,
         _ => Name,
     };
 
@@ -61,6 +66,9 @@ sealed class TypeMapper(Func<string, ClassInfo?> lookupClass, Action<EnumDecl> u
         {
             var pointee = lref.PointeeType.CanonicalType;
             bool isConst = pointee.IsLocalConstQualified;
+            // OCCT 8 adaptors are transient but passed by reference, not by handle
+            if (ClassOf(pointee) is { IsTransient: true } transient)
+                return new Mapped(Kind.TransRef, transient.Name, transient.CppName);
             if (isConst)
                 return MapByValue(pointee, out why, forParam: true);
             if (pointee is BuiltinType b)
@@ -74,7 +82,7 @@ sealed class TypeMapper(Func<string, ClassInfo?> lookupClass, Action<EnumDecl> u
             }
             var cls = ClassOf(pointee);
             if (cls is { IsTransient: false, IsStatic: false })
-                return new Mapped(Kind.MutValue, cls.Name);
+                return new Mapped(Kind.MutValue, cls.Name, cls.CppName);
             why = $"non-const reference to {type.AsString}";
             return null;
         }
@@ -133,13 +141,13 @@ sealed class TypeMapper(Func<string, ClassInfo?> lookupClass, Action<EnumDecl> u
                 {
                     var tcls = lookupClass(target);
                     if (tcls is { IsTransient: true })
-                        return new Mapped(Kind.Handle, tcls.Name);
+                        return new Mapped(Kind.Handle, tcls.Name, tcls.CppName);
                     why = $"handle to unbound {target}";
                     return null;
                 }
-                var cls = lookupClass(r.Decl.Name);
+                var cls = lookupClass(RecordName(r));
                 if (cls is { IsTransient: false, IsStatic: false })
-                    return new Mapped(Kind.Value, cls.Name);
+                    return new Mapped(Kind.Value, cls.Name, cls.CppName);
                 why = cls is null ? $"unbound type {canon.AsString}" : $"unsupported use of {cls.Name}";
                 return null;
         }
@@ -147,7 +155,11 @@ sealed class TypeMapper(Func<string, ClassInfo?> lookupClass, Action<EnumDecl> u
         return null;
     }
 
-    ClassInfo? ClassOf(Type canon) => canon is RecordType r ? lookupClass(r.Decl.Name) : null;
+    ClassInfo? ClassOf(Type canon) => canon is RecordType r ? lookupClass(RecordName(r)) : null;
+
+    /// <summary>A class's name, or a template instantiation's full spelling (how collections are looked up).</summary>
+    static string RecordName(RecordType r) =>
+        r.Decl is ClassTemplateSpecializationDecl ? CollectionInfo.Normalize(r.AsString) : r.Decl.Name;
 
     /// <summary>T for opencascade::handle&lt;T&gt;, else null.</summary>
     static string? HandleTarget(RecordType r)
@@ -156,7 +168,7 @@ sealed class TypeMapper(Func<string, ClassInfo?> lookupClass, Action<EnumDecl> u
             && spec.DeclContext is NamespaceDecl { Name: "opencascade" }
             && spec.TemplateArgs.Count == 1
             && spec.TemplateArgs[0].AsType.CanonicalType is RecordType inner)
-            return inner.Decl.Name;
+            return RecordName(inner);
         return null;
     }
 

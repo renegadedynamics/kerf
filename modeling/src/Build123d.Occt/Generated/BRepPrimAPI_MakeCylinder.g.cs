@@ -12,6 +12,7 @@ public partial class BRepPrimAPI_MakeCylinder : BRepPrimAPI_MakeOneAxis
     internal virtual IntPtr PtrAs_BRepPrimAPI_MakeCylinder() => Ptr;
     internal override IntPtr PtrAs_BRepPrimAPI_MakeOneAxis() => __N.b3d_BRepPrimAPI_MakeCylinder_as_BRepPrimAPI_MakeOneAxis(Ptr);
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_Command(Ptr);
 
     /// <summary>A copy of another BRepPrimAPI_MakeCylinder.</summary>
     public BRepPrimAPI_MakeCylinder(BRepPrimAPI_MakeCylinder other) : this(__Copy(other)) { }
@@ -75,6 +76,8 @@ public partial class BRepPrimAPI_MakeCylinder : BRepPrimAPI_MakeOneAxis
         internal static partial IntPtr b3d_BRepPrimAPI_MakeCylinder_as_BRepPrimAPI_MakeOneAxis(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_MakeShape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_Command(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepPrimAPI_MakeCylinder_new__double__double(double R, double H, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

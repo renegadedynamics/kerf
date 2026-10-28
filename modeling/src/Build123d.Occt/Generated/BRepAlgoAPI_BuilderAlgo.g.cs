@@ -12,6 +12,7 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     internal virtual IntPtr PtrAs_BRepAlgoAPI_BuilderAlgo() => Ptr;
     internal override IntPtr PtrAs_BRepAlgoAPI_Algo() => __N.b3d_BRepAlgoAPI_BuilderAlgo_as_BRepAlgoAPI_Algo(Ptr);
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepAlgoAPI_BuilderAlgo_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepAlgoAPI_BuilderAlgo_as_BRepBuilderAPI_Command(Ptr);
 
     public BRepAlgoAPI_BuilderAlgo() : this(__New0()) { }
 
@@ -20,6 +21,23 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_new(out var __err);
         OcctException.ThrowIfError(__err);
         return __r;
+    }
+
+    public void SetArguments(TopTools_ListOfShape theLS)
+    {
+        ArgumentNullException.ThrowIfNull(theLS);
+        __N.b3d_BRepAlgoAPI_BuilderAlgo_SetArguments__TopTools_ListOfShape(PtrAs_BRepAlgoAPI_BuilderAlgo(), theLS.PtrAs_TopTools_ListOfShape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theLS);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public TopTools_ListOfShape Arguments()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_Arguments(PtrAs_BRepAlgoAPI_BuilderAlgo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
     }
 
     public void SetNonDestructive(bool theFlag)
@@ -102,6 +120,26 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         OcctException.ThrowIfError(__err);
     }
 
+    public new TopTools_ListOfShape Modified(TopoDS_Shape theS)
+    {
+        ArgumentNullException.ThrowIfNull(theS);
+        var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_Modified__TopoDS_Shape(PtrAs_BRepAlgoAPI_BuilderAlgo(), theS.PtrAs_TopoDS_Shape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theS);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
+    }
+
+    public new TopTools_ListOfShape Generated(TopoDS_Shape theS)
+    {
+        ArgumentNullException.ThrowIfNull(theS);
+        var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_Generated__TopoDS_Shape(PtrAs_BRepAlgoAPI_BuilderAlgo(), theS.PtrAs_TopoDS_Shape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theS);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
+    }
+
     public new bool IsDeleted(TopoDS_Shape aS)
     {
         ArgumentNullException.ThrowIfNull(aS);
@@ -151,6 +189,22 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         return __r != 0;
     }
 
+    public TopTools_ListOfShape SectionEdges()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_SectionEdges(PtrAs_BRepAlgoAPI_BuilderAlgo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
+    }
+
+    public BRepTools_History? History()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_BuilderAlgo_History(PtrAs_BRepAlgoAPI_BuilderAlgo(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return __r == IntPtr.Zero ? null : new BRepTools_History(__r);
+    }
+
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -160,7 +214,13 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_as_BRepBuilderAPI_MakeShape(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_as_BRepBuilderAPI_Command(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_new(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_BuilderAlgo_SetArguments__TopTools_ListOfShape(IntPtr self, IntPtr theLS, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_Arguments(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepAlgoAPI_BuilderAlgo_SetNonDestructive__bool(IntPtr self, byte theFlag, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -184,6 +244,10 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool__bool__double(IntPtr self, byte theUnifyEdges, byte theUnifyFaces, double theAngularTol, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_Modified__TopoDS_Shape(IntPtr self, IntPtr theS, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_Generated__TopoDS_Shape(IntPtr self, IntPtr theS, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial byte b3d_BRepAlgoAPI_BuilderAlgo_IsDeleted__TopoDS_Shape(IntPtr self, IntPtr aS, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial byte b3d_BRepAlgoAPI_BuilderAlgo_HasModified(IntPtr self, out IntPtr err);
@@ -195,5 +259,9 @@ public partial class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         internal static partial void b3d_BRepAlgoAPI_BuilderAlgo_SetToFillHistory__bool(IntPtr self, byte theHistFlag, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial byte b3d_BRepAlgoAPI_BuilderAlgo_HasHistory(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_SectionEdges(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BuilderAlgo_History(IntPtr self, out IntPtr err);
     }
 }

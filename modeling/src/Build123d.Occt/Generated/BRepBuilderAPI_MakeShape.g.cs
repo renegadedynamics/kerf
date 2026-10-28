@@ -4,12 +4,13 @@ using System.Runtime.InteropServices;
 
 namespace Build123d.Occt;
 
-public partial class BRepBuilderAPI_MakeShape : OcctObject
+public partial class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command
 {
     internal BRepBuilderAPI_MakeShape(IntPtr ptr) : base(ptr) { }
 
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_BRepBuilderAPI_MakeShape_delete(ptr);
     internal virtual IntPtr PtrAs_BRepBuilderAPI_MakeShape() => Ptr;
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepBuilderAPI_MakeShape_as_BRepBuilderAPI_Command(Ptr);
 
     /// <summary>A copy of another BRepBuilderAPI_MakeShape.</summary>
     public BRepBuilderAPI_MakeShape(BRepBuilderAPI_MakeShape other) : this(__Copy(other)) { }
@@ -38,6 +39,26 @@ public partial class BRepBuilderAPI_MakeShape : OcctObject
         return new TopoDS_Shape(__r);
     }
 
+    public TopTools_ListOfShape Generated(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        var __r = __N.b3d_BRepBuilderAPI_MakeShape_Generated__TopoDS_Shape(PtrAs_BRepBuilderAPI_MakeShape(), S.PtrAs_TopoDS_Shape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(S);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
+    }
+
+    public TopTools_ListOfShape Modified(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        var __r = __N.b3d_BRepBuilderAPI_MakeShape_Modified__TopoDS_Shape(PtrAs_BRepBuilderAPI_MakeShape(), S.PtrAs_TopoDS_Shape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(S);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
+    }
+
     public bool IsDeleted(TopoDS_Shape S)
     {
         ArgumentNullException.ThrowIfNull(S);
@@ -48,21 +69,6 @@ public partial class BRepBuilderAPI_MakeShape : OcctObject
         return __r != 0;
     }
 
-    public bool IsDone()
-    {
-        var __r = __N.b3d_BRepBuilderAPI_MakeShape_IsDone(PtrAs_BRepBuilderAPI_MakeShape(), out var __err);
-        GC.KeepAlive(this);
-        OcctException.ThrowIfError(__err);
-        return __r != 0;
-    }
-
-    public void Check()
-    {
-        __N.b3d_BRepBuilderAPI_MakeShape_Check(PtrAs_BRepBuilderAPI_MakeShape(), out var __err);
-        GC.KeepAlive(this);
-        OcctException.ThrowIfError(__err);
-    }
-
     private static partial class __N
     {
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
@@ -70,14 +76,16 @@ public partial class BRepBuilderAPI_MakeShape : OcctObject
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_as_BRepBuilderAPI_Command(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepBuilderAPI_MakeShape_Build(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_Shape(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_Generated__TopoDS_Shape(IntPtr self, IntPtr S, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepBuilderAPI_MakeShape_Modified__TopoDS_Shape(IntPtr self, IntPtr S, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial byte b3d_BRepBuilderAPI_MakeShape_IsDeleted__TopoDS_Shape(IntPtr self, IntPtr S, out IntPtr err);
-        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
-        internal static partial byte b3d_BRepBuilderAPI_MakeShape_IsDone(IntPtr self, out IntPtr err);
-        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
-        internal static partial void b3d_BRepBuilderAPI_MakeShape_Check(IntPtr self, out IntPtr err);
     }
 }

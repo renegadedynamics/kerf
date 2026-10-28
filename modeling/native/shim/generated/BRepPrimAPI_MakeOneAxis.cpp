@@ -7,6 +7,7 @@
 
 B3D_API void b3d_BRepPrimAPI_MakeOneAxis_delete(void* p) { delete static_cast<BRepPrimAPI_MakeOneAxis*>(p); }
 B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepPrimAPI_MakeOneAxis*>(p)); }
+B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_Command(void* p) { return static_cast<BRepBuilderAPI_Command*>(static_cast<BRepPrimAPI_MakeOneAxis*>(p)); }
 
 B3D_API void b3d_BRepPrimAPI_MakeOneAxis_Build(void* self, b3d_error** err)
 {

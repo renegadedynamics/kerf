@@ -5,6 +5,7 @@
 #include <Geom_Plane.hxx>
 #include <gp_Ax3.hxx>
 #include <gp_Dir.hxx>
+#include <gp_GTrsf2d.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Trsf.hxx>
@@ -143,6 +144,18 @@ B3D_API void b3d_Geom_Plane_TransformParameters__ref_double__ref_double__gp_Trsf
     return;
   }
   B3D_CATCH(err)
+}
+
+B3D_API void* b3d_Geom_Plane_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<Geom_Plane*>(self)->ParametricTransformation(*T);
+    return new gp_GTrsf2d(r);
+  }
+  B3D_CATCH(err)
+  return {};
 }
 
 B3D_API void b3d_Geom_Plane_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)

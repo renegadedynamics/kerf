@@ -8,6 +8,7 @@ B3D_API void* b3d_BRepAlgoAPI_Common_as_BRepAlgoAPI_BooleanOperation(void* p) { 
 B3D_API void* b3d_BRepAlgoAPI_Common_as_BRepAlgoAPI_BuilderAlgo(void* p) { return static_cast<BRepAlgoAPI_BuilderAlgo*>(static_cast<BRepAlgoAPI_Common*>(p)); }
 B3D_API void* b3d_BRepAlgoAPI_Common_as_BRepAlgoAPI_Algo(void* p) { return static_cast<BRepAlgoAPI_Algo*>(static_cast<BRepAlgoAPI_Common*>(p)); }
 B3D_API void* b3d_BRepAlgoAPI_Common_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepAlgoAPI_Common*>(p)); }
+B3D_API void* b3d_BRepAlgoAPI_Common_as_BRepBuilderAPI_Command(void* p) { return static_cast<BRepBuilderAPI_Command*>(static_cast<BRepAlgoAPI_Common*>(p)); }
 
 B3D_API void* b3d_BRepAlgoAPI_Common_new(b3d_error** err)
 {

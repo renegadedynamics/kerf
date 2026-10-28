@@ -14,6 +14,7 @@ public partial class BRepAlgoAPI_Cut : BRepAlgoAPI_BooleanOperation
     internal override IntPtr PtrAs_BRepAlgoAPI_BuilderAlgo() => __N.b3d_BRepAlgoAPI_Cut_as_BRepAlgoAPI_BuilderAlgo(Ptr);
     internal override IntPtr PtrAs_BRepAlgoAPI_Algo() => __N.b3d_BRepAlgoAPI_Cut_as_BRepAlgoAPI_Algo(Ptr);
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepAlgoAPI_Cut_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepAlgoAPI_Cut_as_BRepBuilderAPI_Command(Ptr);
 
     public BRepAlgoAPI_Cut() : this(__New0()) { }
 
@@ -49,6 +50,8 @@ public partial class BRepAlgoAPI_Cut : BRepAlgoAPI_BooleanOperation
         internal static partial IntPtr b3d_BRepAlgoAPI_Cut_as_BRepAlgoAPI_Algo(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_Cut_as_BRepBuilderAPI_MakeShape(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_Cut_as_BRepBuilderAPI_Command(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_Cut_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

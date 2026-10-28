@@ -13,6 +13,7 @@ public partial class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
     internal override IntPtr PtrAs_BRepAlgoAPI_BuilderAlgo() => __N.b3d_BRepAlgoAPI_BooleanOperation_as_BRepAlgoAPI_BuilderAlgo(Ptr);
     internal override IntPtr PtrAs_BRepAlgoAPI_Algo() => __N.b3d_BRepAlgoAPI_BooleanOperation_as_BRepAlgoAPI_Algo(Ptr);
     internal override IntPtr PtrAs_BRepBuilderAPI_MakeShape() => __N.b3d_BRepAlgoAPI_BooleanOperation_as_BRepBuilderAPI_MakeShape(Ptr);
+    internal override IntPtr PtrAs_BRepBuilderAPI_Command() => __N.b3d_BRepAlgoAPI_BooleanOperation_as_BRepBuilderAPI_Command(Ptr);
 
     public BRepAlgoAPI_BooleanOperation() : this(__New0()) { }
 
@@ -37,6 +38,23 @@ public partial class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
         GC.KeepAlive(this);
         OcctException.ThrowIfError(__err);
         return new TopoDS_Shape(__r);
+    }
+
+    public void SetTools(TopTools_ListOfShape theLS)
+    {
+        ArgumentNullException.ThrowIfNull(theLS);
+        __N.b3d_BRepAlgoAPI_BooleanOperation_SetTools__TopTools_ListOfShape(PtrAs_BRepAlgoAPI_BooleanOperation(), theLS.PtrAs_TopTools_ListOfShape(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theLS);
+        OcctException.ThrowIfError(__err);
+    }
+
+    public TopTools_ListOfShape Tools()
+    {
+        var __r = __N.b3d_BRepAlgoAPI_BooleanOperation_Tools(PtrAs_BRepAlgoAPI_BooleanOperation(), out var __err);
+        GC.KeepAlive(this);
+        OcctException.ThrowIfError(__err);
+        return new TopTools_ListOfShape(__r);
     }
 
     public void SetOperation(BOPAlgo_Operation theBOP)
@@ -72,11 +90,17 @@ public partial class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_as_BRepBuilderAPI_MakeShape(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_as_BRepBuilderAPI_Command(IntPtr p);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_Shape1(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_Shape2(IntPtr self, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_BRepAlgoAPI_BooleanOperation_SetTools__TopTools_ListOfShape(IntPtr self, IntPtr theLS, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepAlgoAPI_BooleanOperation_Tools(IntPtr self, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepAlgoAPI_BooleanOperation_SetOperation__BOPAlgo_Operation(IntPtr self, int theBOP, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

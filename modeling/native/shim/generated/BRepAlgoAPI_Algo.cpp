@@ -4,6 +4,7 @@
 #include <TopoDS_Shape.hxx>
 
 B3D_API void* b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_MakeShape(void* p) { return static_cast<BRepBuilderAPI_MakeShape*>(static_cast<BRepAlgoAPI_Algo*>(p)); }
+B3D_API void* b3d_BRepAlgoAPI_Algo_as_BRepBuilderAPI_Command(void* p) { return static_cast<BRepBuilderAPI_Command*>(static_cast<BRepAlgoAPI_Algo*>(p)); }
 
 B3D_API void* b3d_BRepAlgoAPI_Algo_Shape(void* self, b3d_error** err)
 {
@@ -15,4 +16,107 @@ B3D_API void* b3d_BRepAlgoAPI_Algo_Shape(void* self, b3d_error** err)
   }
   B3D_CATCH(err)
   return {};
+}
+
+B3D_API void b3d_BRepAlgoAPI_Algo_Clear(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<BRepAlgoAPI_Algo*>(self)->Clear();
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_BRepAlgoAPI_Algo_ClearWarnings(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<BRepAlgoAPI_Algo*>(self)->ClearWarnings();
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API double b3d_BRepAlgoAPI_Algo_FuzzyValue(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<BRepAlgoAPI_Algo*>(self)->FuzzyValue();
+    return r;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API uint8_t b3d_BRepAlgoAPI_Algo_HasErrors(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<BRepAlgoAPI_Algo*>(self)->HasErrors();
+    return r ? 1 : 0;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API uint8_t b3d_BRepAlgoAPI_Algo_HasWarnings(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<BRepAlgoAPI_Algo*>(self)->HasWarnings();
+    return r ? 1 : 0;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API uint8_t b3d_BRepAlgoAPI_Algo_RunParallel(void* self, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    auto&& r = static_cast<BRepAlgoAPI_Algo*>(self)->RunParallel();
+    return r ? 1 : 0;
+  }
+  B3D_CATCH(err)
+  return {};
+}
+
+B3D_API void b3d_BRepAlgoAPI_Algo_SetFuzzyValue__double(void* self, double theFuzz, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<BRepAlgoAPI_Algo*>(self)->SetFuzzyValue(theFuzz);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_BRepAlgoAPI_Algo_SetRunParallel__bool(void* self, uint8_t theFlag, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<BRepAlgoAPI_Algo*>(self)->SetRunParallel(theFlag != 0);
+    return;
+  }
+  B3D_CATCH(err)
+}
+
+B3D_API void b3d_BRepAlgoAPI_Algo_SetUseOBB__bool(void* self, uint8_t theUseOBB, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    static_cast<BRepAlgoAPI_Algo*>(self)->SetUseOBB(theUseOBB != 0);
+    return;
+  }
+  B3D_CATCH(err)
 }

@@ -32,6 +32,17 @@ public partial class gp_Trsf : OcctObject
         return __r;
     }
 
+    public gp_Trsf(gp_Trsf2d theT) : this(__New1(theT)) { }
+
+    private static IntPtr __New1(gp_Trsf2d theT)
+    {
+        ArgumentNullException.ThrowIfNull(theT);
+        var __r = __N.b3d_gp_Trsf_new__gp_Trsf2d(theT.PtrAs_gp_Trsf2d(), out var __err);
+        GC.KeepAlive(theT);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public void SetMirror(gp_Pnt theP)
     {
         ArgumentNullException.ThrowIfNull(theP);
@@ -343,6 +354,8 @@ public partial class gp_Trsf : OcctObject
         internal static partial IntPtr b3d_gp_Trsf_copy(IntPtr p, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_gp_Trsf_new(out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_gp_Trsf_new__gp_Trsf2d(IntPtr theT, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_gp_Trsf_SetMirror__gp_Pnt(IntPtr self, IntPtr theP, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

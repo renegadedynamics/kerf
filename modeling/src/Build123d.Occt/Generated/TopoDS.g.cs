@@ -61,6 +61,15 @@ public static partial class TopoDS
         return new TopoDS_Solid(__r);
     }
 
+    public static TopoDS_CompSolid CompSolid(TopoDS_Shape theShape)
+    {
+        ArgumentNullException.ThrowIfNull(theShape);
+        var __r = __N.b3d_TopoDS_CompSolid__TopoDS_Shape(theShape.PtrAs_TopoDS_Shape(), out var __err);
+        GC.KeepAlive(theShape);
+        OcctException.ThrowIfError(__err);
+        return new TopoDS_CompSolid(__r);
+    }
+
     public static TopoDS_Compound Compound(TopoDS_Shape theShape)
     {
         ArgumentNullException.ThrowIfNull(theShape);
@@ -84,6 +93,8 @@ public static partial class TopoDS
         internal static partial IntPtr b3d_TopoDS_Shell__TopoDS_Shape(IntPtr theShape, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_TopoDS_Solid__TopoDS_Shape(IntPtr theShape, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_TopoDS_CompSolid__TopoDS_Shape(IntPtr theShape, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_TopoDS_Compound__TopoDS_Shape(IntPtr theShape, out IntPtr err);
     }

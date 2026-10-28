@@ -60,6 +60,15 @@ public partial class Bnd_OBB : OcctObject
         return __r;
     }
 
+    public void ReBuild(TColgp_Array1OfPnt theListOfPoints)
+    {
+        ArgumentNullException.ThrowIfNull(theListOfPoints);
+        __N.b3d_Bnd_OBB_ReBuild__TColgp_Array1OfPnt(PtrAs_Bnd_OBB(), theListOfPoints.PtrAs_TColgp_Array1OfPnt(), out var __err);
+        GC.KeepAlive(this);
+        GC.KeepAlive(theListOfPoints);
+        OcctException.ThrowIfError(__err);
+    }
+
     public void SetCenter(gp_Pnt theCenter)
     {
         ArgumentNullException.ThrowIfNull(theCenter);
@@ -285,6 +294,8 @@ public partial class Bnd_OBB : OcctObject
         internal static partial IntPtr b3d_Bnd_OBB_new__gp_Pnt__gp_Dir__gp_Dir__gp_Dir__double__double__double(IntPtr theCenter, IntPtr theXDirection, IntPtr theYDirection, IntPtr theZDirection, double theHXSize, double theHYSize, double theHZSize, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_Bnd_OBB_new__Bnd_Box(IntPtr theBox, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void b3d_Bnd_OBB_ReBuild__TColgp_Array1OfPnt(IntPtr self, IntPtr theListOfPoints, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_Bnd_OBB_SetCenter__gp_Pnt(IntPtr self, IntPtr theCenter, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

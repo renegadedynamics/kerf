@@ -9,6 +9,7 @@
 //   caller reads and frees with b3d_error_free.
 #pragma once
 
+#include <Message_ProgressRange.hxx>  // a default argument throughout OCCT, not always included
 #include <Standard_Failure.hxx>
 #include <Standard_Transient.hxx>
 

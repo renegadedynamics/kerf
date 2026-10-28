@@ -1,73 +1,350 @@
 # Members skipped by OcctGen, and why. Generated; do not edit.
+Adaptor2d_Curve2d::Bezier: handle to unbound Geom2d_BezierCurve
+Adaptor2d_Curve2d::EvalD1: unbound type Geom2d_Curve::ResD1
+Adaptor2d_Curve2d::EvalD2: unbound type Geom2d_Curve::ResD2
+Adaptor2d_Curve2d::EvalD3: unbound type Geom2d_Curve::ResD3
+Adaptor2d_Curve2d::Hyperbola: unbound type gp_Hypr2d
+Adaptor2d_Curve2d::IsInstance: handle to unbound Standard_Type
+Adaptor2d_Curve2d::IsKind: handle to unbound Standard_Type
+Adaptor2d_Curve2d::Parabola: unbound type gp_Parab2d
+Adaptor3d_Curve::EvalD1: unbound type Geom_Curve::ResD1
+Adaptor3d_Curve::EvalD2: unbound type Geom_Curve::ResD2
+Adaptor3d_Curve::EvalD3: unbound type Geom_Curve::ResD3
+Adaptor3d_Curve::IsInstance: handle to unbound Standard_Type
+Adaptor3d_Curve::IsKind: handle to unbound Standard_Type
+Adaptor3d_Surface::EvalD1: unbound type Geom_Surface::ResD1
+Adaptor3d_Surface::EvalD2: unbound type Geom_Surface::ResD2
+Adaptor3d_Surface::EvalD3: unbound type Geom_Surface::ResD3
+Adaptor3d_Surface::IsInstance: handle to unbound Standard_Type
+Adaptor3d_Surface::IsKind: handle to unbound Standard_Type
 Bnd_Box::Center: unbound type std::optional<gp_Pnt>
 Bnd_Box::Get: unbound type Bnd_Box::Limits
 Bnd_Box::InitFromJson: unbound type const std::basic_stringstream<char>
 Bnd_OBB::GetHalfSizes: unbound type Bnd_OBB::HalfSizes
 Bnd_OBB::GetVertex: unsupported type gp_Pnt[8]
-Bnd_OBB::ReBuild: unbound type const NCollection_Array1<gp_Pnt>
+BOPAlgo_Builder::BOPAlgo_Builder: handle to unbound NCollection_BaseAllocator
+BOPAlgo_Builder::BuildBOP: unbound type const Message_ProgressRange
+BOPAlgo_Builder::Context: handle to unbound IntTools_Context
+BOPAlgo_Builder::Images: unbound type const NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher>
+BOPAlgo_Builder::Origins: unbound type const NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher>
+BOPAlgo_Builder::PDS: unsupported type BOPDS_DS *
+BOPAlgo_Builder::PerformWithFiller: unbound type const BOPAlgo_PaveFiller
+BOPAlgo_Builder::PPaveFiller: unsupported type BOPAlgo_PaveFiller *
+BOPAlgo_Options::AddError: handle to unbound Message_Alert
+BOPAlgo_Options::AddWarning: handle to unbound Message_Alert
+BOPAlgo_Options::Allocator: handle to unbound NCollection_BaseAllocator
+BOPAlgo_Options::BOPAlgo_Options: handle to unbound NCollection_BaseAllocator
+BOPAlgo_Options::DumpErrors: non-const reference to Standard_OStream &
+BOPAlgo_Options::DumpWarnings: non-const reference to Standard_OStream &
+BOPAlgo_Options::GetReport: handle to unbound Message_Report
+BOPAlgo_Options::HasError: handle to unbound Standard_Type
+BOPAlgo_Options::HasWarning: handle to unbound Standard_Type
+BOPAlgo_Splitter::BOPAlgo_Splitter: handle to unbound NCollection_BaseAllocator
+BOPAlgo_ToolsProvider::BOPAlgo_ToolsProvider: handle to unbound NCollection_BaseAllocator
+BRep_Builder::MakeEdge: handle to unbound Poly_Polygon3D
+BRep_Builder::MakeEdge: handle to unbound Poly_PolygonOnTriangulation
+BRep_Builder::MakeFace: unbound type const NCollection_List<opencascade::handle<Poly_Triangulation>>
+BRep_Builder::UpdateEdge: handle to unbound Poly_Polygon2D
+BRep_Builder::UpdateEdge: handle to unbound Poly_Polygon3D
+BRep_Builder::UpdateEdge: handle to unbound Poly_PolygonOnTriangulation
+BRep_Tool::CurveOnSurface: non-const reference to occ::handle<Geom2d_Curve> &
+BRep_Tool::Polygon3D: handle to unbound Poly_Polygon3D
+BRep_Tool::PolygonOnSurface: handle to unbound Poly_Polygon2D
+BRep_Tool::PolygonOnSurface: non-const reference to occ::handle<Poly_Polygon2D> &
+BRep_Tool::PolygonOnTriangulation: handle to unbound Poly_PolygonOnTriangulation
+BRep_Tool::PolygonOnTriangulation: non-const reference to occ::handle<Poly_PolygonOnTriangulation> &
+BRep_Tool::Triangulations: unbound type const NCollection_List<opencascade::handle<Poly_Triangulation>>
+BRepAdaptor_CompCurve::EvalD1: unbound type Geom_Curve::ResD1
+BRepAdaptor_CompCurve::EvalD2: unbound type Geom_Curve::ResD2
+BRepAdaptor_CompCurve::EvalD3: unbound type Geom_Curve::ResD3
+BRepAdaptor_Curve::ChangeCurve: returns non-const reference GeomAdaptor_Curve &
+BRepAdaptor_Curve::Curve: unsupported use of GeomAdaptor_Curve
+BRepAdaptor_Curve::CurveOnSurface: unbound type const Adaptor3d_CurveOnSurface
+BRepAdaptor_Curve::EvalD1: unbound type Geom_Curve::ResD1
+BRepAdaptor_Curve::EvalD2: unbound type Geom_Curve::ResD2
+BRepAdaptor_Curve::EvalD3: unbound type Geom_Curve::ResD3
+BRepAdaptor_Curve::LoadCurveOnSurface: handle to unbound Adaptor3d_CurveOnSurface
+BRepAdaptor_Surface::AdaptorSurfaceOriginal: unsupported use of GeomAdaptor_Surface
+BRepAdaptor_Surface::AdaptorSurfaceTransformed: unsupported use of GeomAdaptor_Surface
+BRepAdaptor_Surface::EvalD1: unbound type Geom_Surface::ResD1
+BRepAdaptor_Surface::EvalD2: unbound type Geom_Surface::ResD2
+BRepAdaptor_Surface::EvalD3: unbound type Geom_Surface::ResD3
+BRepAdaptor_Surface::GeomSurface: deprecated
+BRepAdaptor_Surface::Surface: deprecated
+BRepAlgoAPI_Algo::DumpErrors: non-const reference to Standard_OStream &
+BRepAlgoAPI_Algo::DumpWarnings: non-const reference to Standard_OStream &
+BRepAlgoAPI_Algo::GetReport: handle to unbound Message_Report
+BRepAlgoAPI_Algo::HasError: handle to unbound Standard_Type
+BRepAlgoAPI_Algo::HasWarning: handle to unbound Standard_Type
 BRepAlgoAPI_BooleanOperation::BRepAlgoAPI_BooleanOperation: unbound type const BOPAlgo_PaveFiller
-BRepAlgoAPI_BooleanOperation::SetTools: unbound type const NCollection_List<TopoDS_Shape>
-BRepAlgoAPI_BooleanOperation::Tools: unbound type const NCollection_List<TopoDS_Shape>
-BRepAlgoAPI_BuilderAlgo::Arguments: unbound type const NCollection_List<TopoDS_Shape>
 BRepAlgoAPI_BuilderAlgo::BRepAlgoAPI_BuilderAlgo: unbound type const BOPAlgo_PaveFiller
 BRepAlgoAPI_BuilderAlgo::Builder: unsupported type BOPAlgo_Builder *const
 BRepAlgoAPI_BuilderAlgo::DSFiller: unsupported type BOPAlgo_PaveFiller *const
-BRepAlgoAPI_BuilderAlgo::Generated: unbound type const NCollection_List<TopoDS_Shape>
-BRepAlgoAPI_BuilderAlgo::History: handle to unbound BRepTools_History
-BRepAlgoAPI_BuilderAlgo::Modified: unbound type const NCollection_List<TopoDS_Shape>
-BRepAlgoAPI_BuilderAlgo::SectionEdges: unbound type const NCollection_List<TopoDS_Shape>
-BRepAlgoAPI_BuilderAlgo::SetArguments: unbound type const NCollection_List<TopoDS_Shape>
 BRepAlgoAPI_Common::BRepAlgoAPI_Common: unbound type const BOPAlgo_PaveFiller
 BRepAlgoAPI_Cut::BRepAlgoAPI_Cut: unbound type const BOPAlgo_PaveFiller
 BRepAlgoAPI_Fuse::BRepAlgoAPI_Fuse: unbound type const BOPAlgo_PaveFiller
-BRepBuilderAPI_MakeShape::Generated: unbound type const NCollection_List<TopoDS_Shape>
-BRepBuilderAPI_MakeShape::Modified: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_Section::BRepAlgoAPI_Section: unbound type const BOPAlgo_PaveFiller
+BRepAlgoAPI_Splitter::BRepAlgoAPI_Splitter: unbound type const BOPAlgo_PaveFiller
+BRepBuilderAPI_Sewing::IsInstance: handle to unbound Standard_Type
+BRepBuilderAPI_Sewing::IsKind: handle to unbound Standard_Type
+BRepCheck_Analyzer::Result: handle to unbound BRepCheck_Result
+BRepClass3d_SolidClassifier::Perform: non-const reference to BRepClass3d_SolidExplorer &
+BRepClass3d_SolidClassifier::PerformInfinitePoint: non-const reference to BRepClass3d_SolidExplorer &
+BRepFeat_Form::Curves: non-const reference to NCollection_Sequence<occ::handle<Geom_Curve>> &
+BRepFeat_MakeDPrism::Curves: non-const reference to NCollection_Sequence<occ::handle<Geom_Curve>> &
+BRepFilletAPI_LocalOperation::Sect: handle to unbound NCollection_HArray1<ChFiDS_CircSection>
+BRepFilletAPI_MakeChamfer::Builder: handle to unbound TopOpeBRepBuild_HBuilder
+BRepFilletAPI_MakeChamfer::Sect: handle to unbound NCollection_HArray1<ChFiDS_CircSection>
+BRepFilletAPI_MakeFillet::Add: handle to unbound Law_Function
+BRepFilletAPI_MakeFillet::Builder: handle to unbound TopOpeBRepBuild_HBuilder
+BRepFilletAPI_MakeFillet::GetLaw: handle to unbound Law_Function
+BRepFilletAPI_MakeFillet::Sect: handle to unbound NCollection_HArray1<ChFiDS_CircSection>
+BRepFilletAPI_MakeFillet::SetLaw: handle to unbound Law_Function
+BRepFilletAPI_MakeFillet::SetRadius: handle to unbound Law_Function
+BRepGProp_Face::GetTKnots: deprecated
+BRepGProp_Face::GetUKnots: deprecated
+BRepIntCurveSurface_Inter::Point: unbound type IntCurveSurface_IntersectionPoint
+BRepLib::BuildPCurveForEdgeOnPlane: non-const reference to occ::handle<Geom2d_Curve> &
+BRepMesh_DiscretRoot::IsInstance: handle to unbound Standard_Type
+BRepMesh_DiscretRoot::IsKind: handle to unbound Standard_Type
+BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh: unbound type const IMeshTools_Parameters
+BRepMesh_IncrementalMesh::ChangeParameters: returns non-const reference IMeshTools_Parameters &
+BRepMesh_IncrementalMesh::Discret: non-const reference to BRepMesh_DiscretRoot *&
+BRepMesh_IncrementalMesh::Parameters: unbound type const IMeshTools_Parameters
+BRepMesh_IncrementalMesh::Perform: handle to unbound IMeshTools_Context
+BRepOffset_MakeOffset::CheckInputData: unbound type const Message_ProgressRange
+BRepOffset_MakeOffset::GetAnalyse: unbound type const BRepOffset_Analyse
+BRepOffset_MakeOffset::OffsetEdgesFromShapes: unbound type const BRepAlgo_Image
+BRepOffset_MakeOffset::OffsetFacesFromShapes: unbound type const BRepAlgo_Image
+BRepOffsetAPI_MakePipeShell::SetLaw: handle to unbound Law_Function
 BRepPrimAPI_MakeBox::Wedge: returns non-const reference BRepPrim_Wedge &
+BRepPrimAPI_MakeCone::Cone: returns non-const reference BRepPrim_Cone &
+BRepPrimAPI_MakeCone::OneAxis: unsupported type void *
 BRepPrimAPI_MakeCylinder::Cylinder: returns non-const reference BRepPrim_Cylinder &
 BRepPrimAPI_MakeCylinder::OneAxis: unsupported type void *
 BRepPrimAPI_MakeOneAxis::OneAxis: unsupported type void *
+BRepPrimAPI_MakePrism::Prism: unbound type const BRepSweep_Prism
+BRepPrimAPI_MakeRevol::Revol: unbound type const BRepSweep_Revol
+BRepPrimAPI_MakeSphere::OneAxis: unsupported type void *
+BRepPrimAPI_MakeSphere::Sphere: returns non-const reference BRepPrim_Sphere &
+BRepPrimAPI_MakeTorus::OneAxis: unsupported type void *
+BRepPrimAPI_MakeTorus::Torus: returns non-const reference BRepPrim_Torus &
+BRepPrimAPI_MakeWedge::Wedge: returns non-const reference BRepPrim_Wedge &
+BRepTools_History::IsInstance: handle to unbound Standard_Type
+BRepTools_History::IsKind: handle to unbound Standard_Type
+BRepTools_History::Merge: same C# signature as another overload
+BRepTools_ReShape::IsInstance: handle to unbound Standard_Type
+BRepTools_ReShape::IsKind: handle to unbound Standard_Type
+BRepTools_ReShape::ModeConsiderLocation: returns non-const reference bool &
+BRepTools::AddUVBounds: non-const reference to Bnd_Box2d &
+BRepTools::Read: non-const reference to Standard_IStream &
+BRepTools::Write: non-const reference to Standard_OStream &
+Geom_BezierCurve::EvalD1: unbound type Geom_Curve::ResD1
+Geom_BezierCurve::EvalD2: unbound type Geom_Curve::ResD2
+Geom_BezierCurve::EvalD3: unbound type Geom_Curve::ResD3
+Geom_BezierCurve::EvalRepresentation: handle to unbound Base
+Geom_BezierCurve::Poles: deprecated
+Geom_BezierCurve::SetEvalRepresentation: handle to unbound Base
+Geom_BezierCurve::Weights: deprecated
+Geom_BezierCurve::Weights: unsupported type const NCollection_Array1<double> *
+Geom_BezierSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_BezierSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_BezierSurface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_BezierSurface::EvalRepresentation: handle to unbound Base
+Geom_BezierSurface::Poles: deprecated
+Geom_BezierSurface::SetEvalRepresentation: handle to unbound Base
+Geom_BezierSurface::Weights: deprecated
+Geom_BezierSurface::Weights: unsupported type const NCollection_Array2<double> *
+Geom_BSplineCurve::EvalD1: unbound type Geom_Curve::ResD1
+Geom_BSplineCurve::EvalD2: unbound type Geom_Curve::ResD2
+Geom_BSplineCurve::EvalD3: unbound type Geom_Curve::ResD3
+Geom_BSplineCurve::EvalRepresentation: handle to unbound Base
+Geom_BSplineCurve::Knots: deprecated
+Geom_BSplineCurve::KnotSequence: deprecated
+Geom_BSplineCurve::Multiplicities: deprecated
+Geom_BSplineCurve::Poles: deprecated
+Geom_BSplineCurve::SetEvalRepresentation: handle to unbound Base
+Geom_BSplineCurve::Weights: deprecated
+Geom_BSplineCurve::Weights: unsupported type const NCollection_Array1<double> *
+Geom_BSplineSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_BSplineSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_BSplineSurface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_BSplineSurface::EvalRepresentation: handle to unbound Base
+Geom_BSplineSurface::Poles: deprecated
+Geom_BSplineSurface::SetEvalRepresentation: handle to unbound Base
+Geom_BSplineSurface::UKnots: deprecated
+Geom_BSplineSurface::UKnotSequence: deprecated
+Geom_BSplineSurface::UMultiplicities: deprecated
+Geom_BSplineSurface::VKnots: deprecated
+Geom_BSplineSurface::VKnotSequence: deprecated
+Geom_BSplineSurface::VMultiplicities: deprecated
+Geom_BSplineSurface::Weights: deprecated
+Geom_BSplineSurface::Weights: unsupported type const NCollection_Array2<double> *
+Geom_Circle::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Circle::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Circle::EvalD3: unbound type Geom_Curve::ResD3
+Geom_ConicalSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_ConicalSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_ConicalSurface::EvalD3: unbound type Geom_Surface::ResD3
 Geom_Curve::EvalD1: unbound type Geom_Curve::ResD1
 Geom_Curve::EvalD2: unbound type Geom_Curve::ResD2
 Geom_Curve::EvalD3: unbound type Geom_Curve::ResD3
+Geom_CylindricalSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_CylindricalSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_CylindricalSurface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_Ellipse::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Ellipse::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Ellipse::EvalD3: unbound type Geom_Curve::ResD3
 Geom_Geometry::IsInstance: handle to unbound Standard_Type
 Geom_Geometry::IsKind: handle to unbound Standard_Type
+Geom_Hyperbola::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Hyperbola::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Hyperbola::EvalD3: unbound type Geom_Curve::ResD3
 Geom_Line::EvalD1: unbound type Geom_Curve::ResD1
 Geom_Line::EvalD2: unbound type Geom_Curve::ResD2
 Geom_Line::EvalD3: unbound type Geom_Curve::ResD3
+Geom_OffsetCurve::EvalD1: unbound type Geom_Curve::ResD1
+Geom_OffsetCurve::EvalD2: unbound type Geom_Curve::ResD2
+Geom_OffsetCurve::EvalD3: unbound type Geom_Curve::ResD3
+Geom_OffsetCurve::EvalRepresentation: handle to unbound Base
+Geom_OffsetCurve::SetEvalRepresentation: handle to unbound Base
+Geom_OffsetSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_OffsetSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_OffsetSurface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_OffsetSurface::EvalRepresentation: handle to unbound Base
+Geom_OffsetSurface::SetEvalRepresentation: handle to unbound Base
+Geom_OffsetSurface::UOsculatingSurface: non-const reference to occ::handle<Geom_BSplineSurface> &
+Geom_OffsetSurface::VOsculatingSurface: non-const reference to occ::handle<Geom_BSplineSurface> &
+Geom_Parabola::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Parabola::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Parabola::EvalD3: unbound type Geom_Curve::ResD3
 Geom_Plane::EvalD1: unbound type Geom_Surface::ResD1
 Geom_Plane::EvalD2: unbound type Geom_Surface::ResD2
 Geom_Plane::EvalD3: unbound type Geom_Surface::ResD3
-Geom_Plane::ParametricTransformation: unbound type gp_GTrsf2d
+Geom_RectangularTrimmedSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_RectangularTrimmedSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_RectangularTrimmedSurface::EvalD3: unbound type Geom_Surface::ResD3
+Geom_SphericalSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_SphericalSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_SphericalSurface::EvalD3: unbound type Geom_Surface::ResD3
 Geom_Surface::EvalD1: unbound type Geom_Surface::ResD1
 Geom_Surface::EvalD2: unbound type Geom_Surface::ResD2
 Geom_Surface::EvalD3: unbound type Geom_Surface::ResD3
-Geom_Surface::ParametricTransformation: unbound type gp_GTrsf2d
+Geom_SurfaceOfLinearExtrusion::EvalD1: unbound type Geom_Surface::ResD1
+Geom_SurfaceOfLinearExtrusion::EvalD2: unbound type Geom_Surface::ResD2
+Geom_SurfaceOfLinearExtrusion::EvalD3: unbound type Geom_Surface::ResD3
+Geom_SurfaceOfLinearExtrusion::EvalRepresentation: handle to unbound Base
+Geom_SurfaceOfLinearExtrusion::SetEvalRepresentation: handle to unbound Base
+Geom_SurfaceOfRevolution::EvalD1: unbound type Geom_Surface::ResD1
+Geom_SurfaceOfRevolution::EvalD2: unbound type Geom_Surface::ResD2
+Geom_SurfaceOfRevolution::EvalD3: unbound type Geom_Surface::ResD3
+Geom_SurfaceOfRevolution::EvalRepresentation: handle to unbound Base
+Geom_SurfaceOfRevolution::SetEvalRepresentation: handle to unbound Base
+Geom_ToroidalSurface::EvalD1: unbound type Geom_Surface::ResD1
+Geom_ToroidalSurface::EvalD2: unbound type Geom_Surface::ResD2
+Geom_ToroidalSurface::EvalD3: unbound type Geom_Surface::ResD3
 Geom_TrimmedCurve::EvalD1: unbound type Geom_Curve::ResD1
 Geom_TrimmedCurve::EvalD2: unbound type Geom_Curve::ResD2
 Geom_TrimmedCurve::EvalD3: unbound type Geom_Curve::ResD3
+Geom2d_BSplineCurve::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_BSplineCurve::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_BSplineCurve::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2d_BSplineCurve::EvalRepresentation: handle to unbound Base
+Geom2d_BSplineCurve::Knots: deprecated
+Geom2d_BSplineCurve::KnotSequence: deprecated
+Geom2d_BSplineCurve::Multiplicities: deprecated
+Geom2d_BSplineCurve::Poles: deprecated
+Geom2d_BSplineCurve::SetEvalRepresentation: handle to unbound Base
+Geom2d_BSplineCurve::Weights: deprecated
+Geom2d_BSplineCurve::Weights: unsupported type const NCollection_Array1<double> *
+Geom2d_Circle::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_Circle::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_Circle::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2d_Curve::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_Curve::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_Curve::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2d_Ellipse::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_Ellipse::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_Ellipse::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2d_Geometry::IsInstance: handle to unbound Standard_Type
+Geom2d_Geometry::IsKind: handle to unbound Standard_Type
+Geom2d_Line::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_Line::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_Line::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2d_TrimmedCurve::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2d_TrimmedCurve::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2d_TrimmedCurve::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2dAdaptor_Curve::Bezier: handle to unbound Geom2d_BezierCurve
+Geom2dAdaptor_Curve::EvalD1: unbound type Geom2d_Curve::ResD1
+Geom2dAdaptor_Curve::EvalD2: unbound type Geom2d_Curve::ResD2
+Geom2dAdaptor_Curve::EvalD3: unbound type Geom2d_Curve::ResD3
+Geom2dAdaptor_Curve::Hyperbola: unbound type gp_Hypr2d
+Geom2dAdaptor_Curve::Parabola: unbound type gp_Parab2d
+Geom2dAPI_InterCurveCurve::Intersector: unbound type const Geom2dInt_GInter
+Geom2dAPI_InterCurveCurve::Segment: non-const reference to occ::handle<Geom2d_Curve> &
+Geom2dAPI_ProjectPointOnCurve::Extrema: unbound type const Extrema_GGExtPC<Adaptor2d_Curve2d, Extrema_Curve2dTool, Extrema_ExtPElC2d, gp_Pnt2d, gp_Vec2d, Extrema_POnCurv2d, NCollection_Sequence<Extrema_POnCurv2d>, Extrema_GGenExtPC<Adaptor2d_Curve2d, Extrema_Curve2dTool, Extrema_POnCurv2d, gp_Pnt2d, Extrema_GFuncExtPC<Adaptor2d_Curve2d, Extrema_Curve2dTool, Extrema_POnCurv2d, gp_Pnt2d, gp_Vec2d, NCollection_Sequence<Extrema_POnCurv2d>>>>
+Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve: non-const reference to occ::handle<NCollection_HArray1<occ::handle<Geom2d_BSplineCurve>>> &
+Geom2dConvert::C0BSplineToC1BSplineCurve: non-const reference to occ::handle<Geom2d_BSplineCurve> &
+Geom2dConvert::ConcatC1: non-const reference to NCollection_Array1<occ::handle<Geom2d_BSplineCurve>> &
+Geom2dConvert::ConcatG1: non-const reference to NCollection_Array1<occ::handle<Geom2d_BSplineCurve>> &
+GeomAdaptor_Curve::EvalD1: unbound type Geom_Curve::ResD1
+GeomAdaptor_Curve::EvalD2: unbound type Geom_Curve::ResD2
+GeomAdaptor_Curve::EvalD3: unbound type Geom_Curve::ResD3
+GeomAdaptor_Surface::EvalD1: unbound type Geom_Surface::ResD1
+GeomAdaptor_Surface::EvalD2: unbound type Geom_Surface::ResD2
+GeomAdaptor_Surface::EvalD3: unbound type Geom_Surface::ResD3
+GeomAPI_ProjectPointOnSurf::Extrema: unbound type const Extrema_ExtPS
+GeomConvert::C0BSplineToArrayOfC1BSplineCurve: non-const reference to occ::handle<NCollection_HArray1<occ::handle<Geom_BSplineCurve>>> &
+GeomConvert::C0BSplineToC1BSplineCurve: non-const reference to occ::handle<Geom_BSplineCurve> &
+GeomConvert::ConcatC1: non-const reference to NCollection_Array1<occ::handle<Geom_BSplineCurve>> &
+GeomConvert::ConcatG1: non-const reference to NCollection_Array1<occ::handle<Geom_BSplineCurve>> &
+GeomFill_TrihedronLaw::IsInstance: handle to unbound Standard_Type
+GeomFill_TrihedronLaw::IsKind: handle to unbound Standard_Type
 gp_Ax1::gp_Ax1: nested enum const gp_Dir::D
 gp_Ax1::InitFromJson: unbound type const std::basic_stringstream<char>
 gp_Ax2::gp_Ax2: nested enum const gp_Dir::D
 gp_Ax2::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Ax2d::gp_Ax2d: nested enum const gp_Dir2d::D
 gp_Ax3::gp_Ax3: nested enum const gp_Dir::D
 gp_Ax3::InitFromJson: unbound type const std::basic_stringstream<char>
 gp_Dir::gp_Dir: nested enum const gp_Dir::D
 gp_Dir::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Dir2d::gp_Dir2d: nested enum const gp_Dir2d::D
+gp_GTrsf2d::gp_GTrsf2d: unbound type const gp_Mat2d
+gp_GTrsf2d::SetVectorialPart: unbound type const gp_Mat2d
+gp_GTrsf2d::VectorialPart: unbound type const gp_Mat2d
 gp_Mat::ChangeValue: returns non-const reference double &
 gp_Pnt::ChangeCoord: returns non-const reference gp_XYZ &
 gp_Pnt::InitFromJson: unbound type const std::basic_stringstream<char>
-gp_Trsf::gp_Trsf: unbound type const gp_Trsf2d
+gp_Pnt2d::ChangeCoord: returns non-const reference gp_XY &
 gp_Trsf::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Trsf2d::HVectorialPart: unbound type const gp_Mat2d
+gp_Trsf2d::VectorialPart: unbound type gp_Mat2d
+gp_XY::ChangeCoord: returns non-const reference double &
+gp_XY::Multiplied: unbound type const gp_Mat2d
+gp_XY::Multiply: unbound type const gp_Mat2d
 gp_XYZ::ChangeCoord: returns non-const reference double &
 gp_XYZ::ChangeData: unsupported type double *
 gp_XYZ::GetData: unsupported type const double *
 gp_XYZ::InitFromJson: unbound type const std::basic_stringstream<char>
-gp::DX2d: unbound type const gp_Dir2d
-gp::DY2d: unbound type const gp_Dir2d
-gp::Origin2d: unbound type const gp_Pnt2d
-gp::OX2d: unbound type const gp_Ax2d
-gp::OY2d: unbound type const gp_Ax2d
-GProp_GProps::PrincipalProperties: unbound type GProp_PrincipalProps
+Poly_Triangle::ChangeValue: returns non-const reference int &
+Poly_Triangulation::ChangeTriangle: deprecated
+Poly_Triangulation::ChangeTriangles: deprecated
+Poly_Triangulation::InternalNodes: returns non-const reference Poly_ArrayOfNodes &
+Poly_Triangulation::InternalNormals: returns non-const reference NCollection_Array1<NCollection_Vec3<float>> &
+Poly_Triangulation::InternalTriangles: returns non-const reference NCollection_Array1<Poly_Triangle> &
+Poly_Triangulation::InternalUVNodes: returns non-const reference Poly_ArrayOfUVNodes &
+Poly_Triangulation::IsInstance: handle to unbound Standard_Type
+Poly_Triangulation::IsKind: handle to unbound Standard_Type
+Poly_Triangulation::MapNormalArray: handle to unbound NCollection_HArray1<float>
+Poly_Triangulation::MapTriangleArray: handle to unbound NCollection_HArray1<Poly_Triangle>
+Poly_Triangulation::MapUVNodeArray: handle to unbound NCollection_HArray1<gp_Pnt2d>
+Poly_Triangulation::Normal: non-const reference to NCollection_Vec3<float> &
+Poly_Triangulation::Parameters: handle to unbound Poly_TriangulationParameters
+Poly_Triangulation::Poly_Triangulation: unbound type const NCollection_Array1<Poly_Triangle>
+Poly_Triangulation::SetNormal: unbound type const NCollection_Vec3<float>
+Poly_Triangulation::SetNormals: deprecated
+Poly_Triangulation::Triangles: deprecated
 Quantity_Color::ColorFromName: non-const reference to Quantity_NameOfColor &
 Quantity_Color::ColorToHex: unbound type TCollection_AsciiString
 Quantity_Color::Convert_HLS_To_LinearRGB: unbound type NCollection_Vec3<float>
@@ -89,11 +366,87 @@ Quantity_ColorRGBA::Convert_LinearRGB_To_sRGB: unbound type NCollection_Vec4<flo
 Quantity_ColorRGBA::Convert_sRGB_To_LinearRGB: unbound type NCollection_Vec4<float>
 Quantity_ColorRGBA::InitFromJson: unbound type const std::basic_stringstream<char>
 Quantity_ColorRGBA::Quantity_ColorRGBA: unbound type const NCollection_Vec4<float>
+ShapeAnalysis_Curve::FillBndBox: non-const reference to Bnd_Box2d &
+ShapeAnalysis_Curve::GetSamplePoints: non-const reference to NCollection_Sequence<gp_Pnt> &
+ShapeAnalysis_Curve::GetSamplePoints: non-const reference to NCollection_Sequence<gp_Pnt2d> &
+ShapeAnalysis_Edge::Curve3d: non-const reference to occ::handle<Geom_Curve> &
+ShapeAnalysis_Edge::PCurve: non-const reference to occ::handle<Geom2d_Curve> &
+ShapeAnalysis_FreeBounds::ConnectEdgesToWires: deprecated
+ShapeAnalysis_FreeBounds::ConnectWiresToWires: deprecated
+ShapeAnalysis_FreeBounds::SplitWires: non-const reference to occ::handle<NCollection_HSequence<TopoDS_Shape>> &
+ShapeAnalysis_Surface::IsInstance: handle to unbound Standard_Type
+ShapeAnalysis_Surface::IsKind: handle to unbound Standard_Type
+ShapeAnalysis_Surface::ProjectDegenerated: unbound type const NCollection_Sequence<gp_Pnt>
+ShapeCustom_RestrictionParameters::ConvertBezierSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertConicalSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertCurve2d: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertCurve3d: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertCylindricalSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertExtrusionSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertOffsetCurv2d: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertOffsetCurv3d: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertOffsetSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertPlane: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertRevolutionSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertSphericalSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::ConvertToroidalSurf: returns non-const reference bool &
+ShapeCustom_RestrictionParameters::GMaxDegree: returns non-const reference int &
+ShapeCustom_RestrictionParameters::GMaxSeg: returns non-const reference int &
+ShapeCustom_RestrictionParameters::IsInstance: handle to unbound Standard_Type
+ShapeCustom_RestrictionParameters::IsKind: handle to unbound Standard_Type
+ShapeCustom_RestrictionParameters::SegmentSurfaceMode: returns non-const reference bool &
+ShapeCustom::ApplyModifier: handle to unbound BRepTools_Modification
+ShapeFix_Face::AutoCorrectPrecisionMode: returns non-const reference int &
+ShapeFix_Face::FixAddNaturalBoundMode: returns non-const reference int &
+ShapeFix_Face::FixIntersectingWiresMode: returns non-const reference int &
+ShapeFix_Face::FixLoopWiresMode: returns non-const reference int &
+ShapeFix_Face::FixMissingSeamMode: returns non-const reference int &
+ShapeFix_Face::FixOrientation: non-const reference to NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher> &
+ShapeFix_Face::FixOrientationMode: returns non-const reference int &
+ShapeFix_Face::FixPeriodicDegeneratedMode: returns non-const reference int &
+ShapeFix_Face::FixSmallAreaWireMode: returns non-const reference int &
+ShapeFix_Face::FixSplitFace: unbound type const NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher>
+ShapeFix_Face::FixSplitFaceMode: returns non-const reference int &
+ShapeFix_Face::FixWireMode: returns non-const reference int &
+ShapeFix_Face::FixWireTool: handle to unbound ShapeFix_Wire
+ShapeFix_Face::RemoveSmallAreaFaceMode: returns non-const reference int &
+ShapeFix_Face::SetMsgRegistrator: handle to unbound ShapeExtend_BasicMsgRegistrator
+ShapeFix_Root::Context: handle to unbound ShapeBuild_ReShape
+ShapeFix_Root::IsInstance: handle to unbound Standard_Type
+ShapeFix_Root::IsKind: handle to unbound Standard_Type
+ShapeFix_Root::MsgRegistrator: handle to unbound ShapeExtend_BasicMsgRegistrator
+ShapeFix_Root::SendFail: unbound type const Message_Msg
+ShapeFix_Root::SendMsg: unbound type const Message_Msg
+ShapeFix_Root::SendWarning: unbound type const Message_Msg
+ShapeFix_Root::SetContext: handle to unbound ShapeBuild_ReShape
+ShapeFix_Root::SetMsgRegistrator: handle to unbound ShapeExtend_BasicMsgRegistrator
+ShapeFix_Shape::FixEdgeTool: handle to unbound ShapeFix_Edge
+ShapeFix_Shape::FixFreeFaceMode: returns non-const reference int &
+ShapeFix_Shape::FixFreeShellMode: returns non-const reference int &
+ShapeFix_Shape::FixFreeWireMode: returns non-const reference int &
+ShapeFix_Shape::FixSameParameterMode: returns non-const reference int &
+ShapeFix_Shape::FixShellTool: handle to unbound ShapeFix_Shell
+ShapeFix_Shape::FixSolidMode: returns non-const reference int &
+ShapeFix_Shape::FixVertexPositionMode: returns non-const reference int &
+ShapeFix_Shape::FixVertexTolMode: returns non-const reference int &
+ShapeFix_Shape::FixWireTool: handle to unbound ShapeFix_Wire
+ShapeFix_Shape::SetMsgRegistrator: handle to unbound ShapeExtend_BasicMsgRegistrator
+ShapeFix_Solid::CreateOpenSolidMode: returns non-const reference bool &
+ShapeFix_Solid::FixShellMode: returns non-const reference int &
+ShapeFix_Solid::FixShellOrientationMode: returns non-const reference int &
+ShapeFix_Solid::FixShellTool: handle to unbound ShapeFix_Shell
+ShapeFix_Solid::SetMsgRegistrator: handle to unbound ShapeExtend_BasicMsgRegistrator
+ShapeFix_Wireframe::CheckSmallEdges: non-const reference to NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher> &
+ShapeFix_Wireframe::MergeSmallEdges: non-const reference to NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher> &
+ShapeFix_Wireframe::ModeDropSmallEdges: returns non-const reference bool &
+ShapeUpgrade_UnifySameDomain::History: returns non-const reference occ::handle<BRepTools_History> &
+ShapeUpgrade_UnifySameDomain::IsInstance: handle to unbound Standard_Type
+ShapeUpgrade_UnifySameDomain::IsKind: handle to unbound Standard_Type
 STEPControl_Reader::FileUnits: non-const reference to NCollection_Sequence<TCollection_AsciiString> &
 STEPControl_Reader::GetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
 STEPControl_Reader::GetShapeProcessFlags: unbound type const std::pair<std::bitset<18>, bool>
-STEPControl_Reader::GetStatsTransfer: handle to unbound NCollection_HSequence
-STEPControl_Reader::GiveList: handle to unbound NCollection_HSequence
+STEPControl_Reader::GetStatsTransfer: handle to unbound NCollection_HSequence<handle<Standard_Transient>>
+STEPControl_Reader::GiveList: handle to unbound NCollection_HSequence<handle<Standard_Transient>>
 STEPControl_Reader::Model: handle to unbound Interface_InterfaceModel
 STEPControl_Reader::PrintCheckLoad: non-const reference to Standard_OStream &
 STEPControl_Reader::PrintCheckTransfer: non-const reference to Standard_OStream &
@@ -110,7 +463,7 @@ STEPControl_Reader::SetWS: handle to unbound XSControl_WorkSession
 STEPControl_Reader::STEPControl_Reader: handle to unbound XSControl_WorkSession
 STEPControl_Reader::StepModel: handle to unbound StepData_StepModel
 STEPControl_Reader::TransferEntity: handle to unbound Standard_Transient
-STEPControl_Reader::TransferList: handle to unbound NCollection_HSequence
+STEPControl_Reader::TransferList: handle to unbound NCollection_HSequence<handle<Standard_Transient>>
 STEPControl_Reader::WS: handle to unbound XSControl_WorkSession
 STEPControl_Writer::GetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
 STEPControl_Writer::GetShapeProcessFlags: unbound type const std::pair<std::bitset<18>, bool>
@@ -124,13 +477,16 @@ STEPControl_Writer::STEPControl_Writer: handle to unbound XSControl_WorkSession
 STEPControl_Writer::Transfer: unbound type const DESTEP_Parameters
 STEPControl_Writer::WriteStream: non-const reference to std::ostream &
 STEPControl_Writer::WS: handle to unbound XSControl_WorkSession
+TopExp_Explorer::begin: unbound type NCollection_ForwardRangeIterator<TopExp_Explorer>
+TopExp_Explorer::end: unbound type NCollection_ForwardRangeSentinel
 TopLoc_Location::FirstDatum: handle to unbound TopLoc_Datum3D
 TopLoc_Location::ShallowDump: non-const reference to Standard_OStream &
 TopLoc_Location::TopLoc_Location: handle to unbound TopLoc_Datum3D
+TopoDS_Iterator::begin: unbound type NCollection_ForwardRangeIterator<TopoDS_Iterator>
+TopoDS_Iterator::end: unbound type NCollection_ForwardRangeSentinel
 TopoDS_Shape::TShape: handle to unbound TopoDS_TShape
 TopoDS::Compound: returns non-const reference TopoDS_Compound &
 TopoDS::CompSolid: returns non-const reference TopoDS_CompSolid &
-TopoDS::CompSolid: unbound type const TopoDS_CompSolid
 TopoDS::Edge: returns non-const reference TopoDS_Edge &
 TopoDS::Face: returns non-const reference TopoDS_Face &
 TopoDS::Shell: returns non-const reference TopoDS_Shell &

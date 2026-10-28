@@ -23,6 +23,15 @@ public partial class BRepGProp : OcctObject
         return __r;
     }
 
+    public BRepGProp() : this(__New0()) { }
+
+    private static IntPtr __New0()
+    {
+        var __r = __N.b3d_BRepGProp_new(out var __err);
+        OcctException.ThrowIfError(__err);
+        return __r;
+    }
+
     public static void LinearProperties(TopoDS_Shape S, GProp_GProps LProps)
     {
         ArgumentNullException.ThrowIfNull(S);
@@ -352,6 +361,8 @@ public partial class BRepGProp : OcctObject
         internal static partial void b3d_BRepGProp_delete(IntPtr p);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial IntPtr b3d_BRepGProp_copy(IntPtr p, out IntPtr err);
+        [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr b3d_BRepGProp_new(out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps(IntPtr S, IntPtr LProps, out IntPtr err);
         [LibraryImport("b3docct", StringMarshalling = StringMarshalling.Utf8)]

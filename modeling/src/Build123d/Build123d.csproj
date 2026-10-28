@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Build123d.Occt\Build123d.Occt.csproj" />
+    <!-- Packed locally by tools/pack-bento.ps1 until it is published -->
+    <PackageReference Include="Bento.Collections" Version="0.4.0" />
   </ItemGroup>
 
 </Project>

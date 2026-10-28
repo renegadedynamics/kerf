@@ -44,6 +44,9 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>A vector from an OCCT gp_Dir.</summary>
     public Vector(gp_Dir dir) : this(dir.X(), dir.Y(), dir.Z()) { }
 
+    /// <summary>The point a vertex is at.</summary>
+    public Vector(Vertex vertex) => this = vertex.ToVector();
+
     /// <summary>The vector (x, y, 0).</summary>
     public static implicit operator Vector((double X, double Y) v) => new(v.X, v.Y);
 
@@ -86,6 +89,12 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public static Vector? operator &(Vector a, Axis b) => a.Intersect(b);
     public static Vector? operator &(Vector a, Plane b) => a.Intersect(b);
     public static Vector? operator &(Vector a, Location b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this vector (the shape's <see cref="Shape.Intersect(object[])"/>).</summary>
+    public static ShapeList<Shape> operator &(Vector a, Shape b) => a.Intersect(b);
+
+    /// <summary>Where a shape meets this vector (the shape's <see cref="Shape.Intersect(object[])"/>), empty if nowhere.</summary>
+    public ShapeList<Shape> Intersect(Shape shape) => shape.Intersect(this);
 #pragma warning restore CS1591
 
     /// <summary>The vector scaled to length 1.</summary>
@@ -222,6 +231,9 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
         string c(double v) => PyFormat.Component(v, ".6g");
         return $"Vector: (X={c(X)}, Y={c(Y)}, Z={c(Z)})";
     }
+
+    /// <summary>Python's repr: "Vector(1, 2.5, 3)", with components to 13 significant figures.</summary>
+    public string Repr() => "Vector" + ToString(".13g");
 
     /// <summary>
     /// "(x, y, z)" with each component formatted by <paramref name="format"/>. Python-style "f" and "g"

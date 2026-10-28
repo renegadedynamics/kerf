@@ -57,6 +57,26 @@ public sealed class BoundBox
     /// <summary>A bounding box from an OCCT Bnd_Box (copied).</summary>
     public static BoundBox FromBndBox(Bnd_Box box) => new(new Bnd_Box(box));
 
+    /// <summary>
+    /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
+    /// shape is removed first, as it can affect the box.
+    /// </summary>
+    public static BoundBox FromShape(Shape shape, double? tolerance = null, bool optimal = true) =>
+        shape.IsEmpty ? Empty : FromTopoDS(shape.TopoShape, tolerance, optimal);
+
+    /// <summary>The bounding box of an OCCT shape (see <see cref="FromShape"/>).</summary>
+    public static BoundBox FromTopoDS(TopoDS_Shape shape, double? tolerance = null, bool optimal = true)
+    {
+        _ = tolerance;   // accepted, as build123d accepts it, but unused
+        var box = new Bnd_Box();
+        BRepTools.Clean(shape);   // remove a mesh, which may affect the box
+        if (optimal)
+            BRepBndLib.AddOptimal(shape, box);
+        else
+            BRepBndLib.Add(shape, box, true);
+        return new BoundBox(box);
+    }
+
     /// <summary>True for the bounding box of nothing, which has zero size and contains, covers, touches and intersects nothing.</summary>
     public bool IsEmpty => Wrapped is null;
 

@@ -14,19 +14,32 @@ var report = args.Length > 4 ? args[4] : null;
 var config = Config.Load(whitelist);
 
 // Parse every whitelisted header as one translation unit
-var umbrella = Path.Combine(Path.GetTempPath(), $"occtgen_{Environment.ProcessId}.cpp");
-File.WriteAllText(umbrella, string.Join("\n", config.Classes.Select(c => $"#include <{c}.hxx>")) + "\n");
 string[] clangArgs = ["-x", "c++", "-std=c++17", $"-I{include}", "-Wno-everything",
                       .. OperatingSystem.IsWindows() ? new[] { "-fms-compatibility", "-fms-extensions" } : []];
-
 using var index = CXIndex.Create();
-var status = CXTranslationUnit.TryParse(index, umbrella, clangArgs, [],
-    CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies, out var handle);
-File.Delete(umbrella);
-if (status != CXErrorCode.CXError_Success)
+
+CXTranslationUnit Parse(IEnumerable<string> extra)
 {
-    Console.Error.WriteLine($"clang failed: {status}");
-    return 1;
+    var umbrella = Path.Combine(Path.GetTempPath(), $"occtgen_{Environment.ProcessId}.cpp");
+    File.WriteAllText(umbrella, string.Join("\n", config.Classes.Select(c => $"#include <{c}.hxx>").Concat(extra)) + "\n");
+    var status = CXTranslationUnit.TryParse(index, umbrella, clangArgs, [],
+        CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies, out var h);
+    File.Delete(umbrella);
+    if (status != CXErrorCode.CXError_Success)
+        throw new InvalidOperationException($"clang failed: {status}");
+    return h;
+}
+
+var handle = Parse([]);
+// A template alias is only instantiated where it's used; make clang instantiate the whitelisted ones
+{
+    // (the probe isn't disposed: that would dispose the handle it wraps)
+    var probe = TranslationUnit.GetOrCreate(handle);
+    var pending = Model.TemplateAliases(probe, config).Where(a => a.Value.Def is null).Select(a => a.Key).ToList();
+    if (pending.Count > 0)
+    {
+        handle = Parse(pending.Select(a => $"static_assert(sizeof({a}) > 0, \"\");"));
+    }
 }
 
 int errors = 0;
@@ -46,8 +59,15 @@ using var tu = TranslationUnit.GetOrCreate(handle);
 var model = Model.Build(tu, config);
 
 CppEmitter.Emit(model, cppOut);
-Writer.Prune(cppOut, "*.cpp", model.Classes.Keys.Select(c => Path.Combine(cppOut, c + ".cpp")));
-var csFiles = CsEmitter.Emit(model, csOut);
+var bound = model.Classes.Keys.Concat(model.Collections.Values.Select(c => c.Name)).ToHashSet();
+Writer.Prune(cppOut, "*.cpp", bound.Select(c => Path.Combine(cppOut, c + ".cpp")));
+var csFiles = CsEmitter.Emit(model, csOut).ToList();
+foreach (var c in model.Collections.Values.Distinct())
+{
+    var path = Path.Combine(csOut, c.Name + ".g.cs");
+    Writer.WriteIfChanged(path, CollectionEmitter.EmitCs(c.Collection!));
+    csFiles.Add(path);
+}
 Writer.Prune(csOut, "*.g.cs", csFiles);
 
 if (report != null)

@@ -17,7 +17,7 @@ if(NOT OpenCASCADE_VERSION VERSION_GREATER_EQUAL 8.0 OR OpenCASCADE_VERSION VERS
 endif()
 
 file(GLOB GENERATED CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generated/*.cpp)
-add_library(b3docct SHARED src/b3d_shim.cpp ${GENERATED})
+add_library(b3docct SHARED src/b3d_shim.cpp src/b3d_extras.cpp ${GENERATED})
 target_include_directories(b3docct PRIVATE include)
 # Link every OCCT toolkit; the linker drops the ones nothing references
 target_link_libraries(b3docct PRIVATE ${OpenCASCADE_LIBRARIES})
