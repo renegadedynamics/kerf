@@ -28,3 +28,22 @@ Then build:
 ```sh
 ./native/build-deps.sh                   # Linux/macOS, host runtime by default
 ```
+
+## Building the bindings
+
+The OCCT bindings are generated from the whitelist [bindings/occt.txt](bindings/occt.txt). The
+generated C++ and C# are committed, so you only need to regenerate after editing the whitelist:
+
+```powershell
+./tools/generate-bindings.ps1            # parses the OCCT headers from .deps/install
+```
+
+Build the native shim (`b3docct`), then the .NET solution:
+
+```powershell
+./native/build-shim.ps1                  # Windows; ./native/build-shim.sh <rid> on Linux/macOS
+dotnet test
+```
+
+`Build123d.Occt` copies the OCCT, FreeType and shim libraries for the host runtime into the output
+directory of anything that references it.

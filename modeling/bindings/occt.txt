@@ -1,0 +1,51 @@
+# OCCT classes bound by tools/OcctGen. One class per line; "-Class::Member" excludes a member.
+# Regenerate with tools/generate-bindings.ps1 after editing.
+
+# Geometry values
+gp
+gp_XYZ
+gp_Pnt
+gp_Vec
+gp_Dir
+gp_Ax1
+gp_Ax2
+gp_Trsf
+
+# Topology
+TopoDS
+TopoDS_Shape
+TopoDS_Vertex
+TopoDS_Edge
+TopoDS_Wire
+TopoDS_Face
+TopoDS_Shell
+TopoDS_Solid
+TopoDS_Compound
+TopLoc_Location
+
+# Curves (exercise reference-counted handles)
+Geom_Geometry
+Geom_Curve
+Geom_BoundedCurve
+Geom_Line
+Geom_TrimmedCurve
+
+# Construction
+BRepBuilderAPI_MakeShape
+BRepPrimAPI_MakeBox
+BRepPrimAPI_MakeOneAxis
+BRepPrimAPI_MakeCylinder
+BRepAlgoAPI_Algo
+BRepAlgoAPI_BuilderAlgo
+BRepAlgoAPI_BooleanOperation
+BRepAlgoAPI_Cut
+BRepAlgoAPI_Fuse
+BRepAlgoAPI_Common
+
+# Properties
+GProp_GProps
+BRepGProp
+
+# Exchange
+STEPControl_Writer
+STEPControl_Reader

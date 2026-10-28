@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Build123d.Occt</RootNamespace>
+    <Description>Low-level .NET bindings to the subset of OpenCascade (OCCT) that build123d uses.</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Generated wrappers keep OCCT's names (gp_Pnt, BRepAlgoAPI_Cut, ...) and are not documented -->
+    <NoWarn>$(NoWarn);CS1591;CS8981;IDE1006</NoWarn>
+  </PropertyGroup>
+
+  <!-- Native libraries for local builds and tests: OCCT + FreeType from the superbuild, and the shim -->
+  <PropertyGroup>
+    <OcctNativeDir>$(RepoRoot).deps/install/$(NativeRid)/</OcctNativeDir>
+    <ShimNativeDir>$(RepoRoot)native/out/$(NativeRid)/</ShimNativeDir>
+  </PropertyGroup>
+  <ItemGroup Condition="$(NativeRid.StartsWith('win'))">
+    <NativeLib Include="$(OcctNativeDir)bin/*.dll;$(ShimNativeDir)bin/*.dll" />
+  </ItemGroup>
+  <ItemGroup Condition="$(NativeRid.StartsWith('linux'))">
+    <NativeLib Include="$(OcctNativeDir)lib/*.so*;$(ShimNativeDir)lib/*.so*" />
+  </ItemGroup>
+  <ItemGroup Condition="$(NativeRid.StartsWith('osx'))">
+    <NativeLib Include="$(OcctNativeDir)lib/*.dylib;$(ShimNativeDir)lib/*.dylib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="@(NativeLib)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,116 @@
+# Members skipped by OcctGen, and why. Generated; do not edit.
+BRepAlgoAPI_BooleanOperation::BRepAlgoAPI_BooleanOperation: unbound type const BOPAlgo_PaveFiller
+BRepAlgoAPI_BooleanOperation::SetTools: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BooleanOperation::Tools: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BuilderAlgo::Arguments: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BuilderAlgo::BRepAlgoAPI_BuilderAlgo: unbound type const BOPAlgo_PaveFiller
+BRepAlgoAPI_BuilderAlgo::Builder: unsupported type BOPAlgo_Builder *const
+BRepAlgoAPI_BuilderAlgo::DSFiller: unsupported type BOPAlgo_PaveFiller *const
+BRepAlgoAPI_BuilderAlgo::Generated: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BuilderAlgo::History: handle to unbound BRepTools_History
+BRepAlgoAPI_BuilderAlgo::Modified: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BuilderAlgo::SectionEdges: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_BuilderAlgo::SetArguments: unbound type const NCollection_List<TopoDS_Shape>
+BRepAlgoAPI_Common::BRepAlgoAPI_Common: unbound type const BOPAlgo_PaveFiller
+BRepAlgoAPI_Cut::BRepAlgoAPI_Cut: unbound type const BOPAlgo_PaveFiller
+BRepAlgoAPI_Fuse::BRepAlgoAPI_Fuse: unbound type const BOPAlgo_PaveFiller
+BRepBuilderAPI_MakeShape::Generated: unbound type const NCollection_List<TopoDS_Shape>
+BRepBuilderAPI_MakeShape::Modified: unbound type const NCollection_List<TopoDS_Shape>
+BRepGProp::VolumePropertiesGK: unbound type const gp_Pln
+BRepPrimAPI_MakeBox::Wedge: returns non-const reference BRepPrim_Wedge &
+BRepPrimAPI_MakeCylinder::Cylinder: returns non-const reference BRepPrim_Cylinder &
+BRepPrimAPI_MakeCylinder::OneAxis: unsupported type void *
+BRepPrimAPI_MakeOneAxis::OneAxis: unsupported type void *
+Geom_Curve::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Curve::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Curve::EvalD3: unbound type Geom_Curve::ResD3
+Geom_Geometry::IsInstance: handle to unbound Standard_Type
+Geom_Geometry::IsKind: handle to unbound Standard_Type
+Geom_Line::EvalD1: unbound type Geom_Curve::ResD1
+Geom_Line::EvalD2: unbound type Geom_Curve::ResD2
+Geom_Line::EvalD3: unbound type Geom_Curve::ResD3
+Geom_Line::Geom_Line: unbound type const gp_Lin
+Geom_Line::Lin: unbound type gp_Lin
+Geom_Line::SetLin: unbound type const gp_Lin
+Geom_TrimmedCurve::EvalD1: unbound type Geom_Curve::ResD1
+Geom_TrimmedCurve::EvalD2: unbound type Geom_Curve::ResD2
+Geom_TrimmedCurve::EvalD3: unbound type Geom_Curve::ResD3
+gp_Ax1::gp_Ax1: nested enum const gp_Dir::D
+gp_Ax1::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Ax2::gp_Ax2: nested enum const gp_Dir::D
+gp_Ax2::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Dir::gp_Dir: nested enum const gp_Dir::D
+gp_Dir::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Pnt::ChangeCoord: returns non-const reference gp_XYZ &
+gp_Pnt::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Trsf::GetRotation: unbound type gp_Quaternion
+gp_Trsf::gp_Trsf: unbound type const gp_Trsf2d
+gp_Trsf::HVectorialPart: unbound type const gp_Mat
+gp_Trsf::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_Trsf::SetDisplacement: unbound type const gp_Ax3
+gp_Trsf::SetRotation: unbound type const gp_Quaternion
+gp_Trsf::SetRotationPart: unbound type const gp_Quaternion
+gp_Trsf::SetTransformation: unbound type const gp_Ax3
+gp_Trsf::SetTransformation: unbound type const gp_Quaternion
+gp_Trsf::VectorialPart: unbound type gp_Mat
+gp_XYZ::ChangeCoord: returns non-const reference double &
+gp_XYZ::ChangeData: unsupported type double *
+gp_XYZ::GetData: unsupported type const double *
+gp_XYZ::InitFromJson: unbound type const std::basic_stringstream<char>
+gp_XYZ::Multiplied: unbound type const gp_Mat
+gp_XYZ::Multiply: unbound type const gp_Mat
+gp::DX2d: unbound type const gp_Dir2d
+gp::DY2d: unbound type const gp_Dir2d
+gp::Origin2d: unbound type const gp_Pnt2d
+gp::OX2d: unbound type const gp_Ax2d
+gp::OY2d: unbound type const gp_Ax2d
+GProp_GProps::MatrixOfInertia: unbound type gp_Mat
+GProp_GProps::PrincipalProperties: unbound type GProp_PrincipalProps
+STEPControl_Reader::FileUnits: non-const reference to NCollection_Sequence<TCollection_AsciiString> &
+STEPControl_Reader::GetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
+STEPControl_Reader::GetShapeProcessFlags: unbound type const std::pair<std::bitset<18>, bool>
+STEPControl_Reader::GetStatsTransfer: handle to unbound NCollection_HSequence
+STEPControl_Reader::GiveList: handle to unbound NCollection_HSequence
+STEPControl_Reader::Model: handle to unbound Interface_InterfaceModel
+STEPControl_Reader::PrintCheckLoad: non-const reference to Standard_OStream &
+STEPControl_Reader::PrintCheckTransfer: non-const reference to Standard_OStream &
+STEPControl_Reader::PrintStatsTransfer: non-const reference to Standard_OStream &
+STEPControl_Reader::ReadFile: unbound type const DESTEP_Parameters
+STEPControl_Reader::ReadStream: non-const reference to std::istream &
+STEPControl_Reader::ReadStream: unbound type const DESTEP_Parameters
+STEPControl_Reader::RootForTransfer: handle to unbound Standard_Transient
+STEPControl_Reader::SetShapeFixParameters: rvalue reference
+STEPControl_Reader::SetShapeFixParameters: unbound type const DE_ShapeFixParameters
+STEPControl_Reader::SetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
+STEPControl_Reader::SetShapeProcessFlags: unbound type const std::bitset<18>
+STEPControl_Reader::SetWS: handle to unbound XSControl_WorkSession
+STEPControl_Reader::STEPControl_Reader: handle to unbound XSControl_WorkSession
+STEPControl_Reader::StepModel: handle to unbound StepData_StepModel
+STEPControl_Reader::TransferEntity: handle to unbound Standard_Transient
+STEPControl_Reader::TransferList: handle to unbound NCollection_HSequence
+STEPControl_Reader::WS: handle to unbound XSControl_WorkSession
+STEPControl_Writer::GetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
+STEPControl_Writer::GetShapeProcessFlags: unbound type const std::pair<std::bitset<18>, bool>
+STEPControl_Writer::Model: handle to unbound StepData_StepModel
+STEPControl_Writer::SetShapeFixParameters: rvalue reference
+STEPControl_Writer::SetShapeFixParameters: unbound type const DE_ShapeFixParameters
+STEPControl_Writer::SetShapeFixParameters: unbound type const NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>
+STEPControl_Writer::SetShapeProcessFlags: unbound type const std::bitset<18>
+STEPControl_Writer::SetWS: handle to unbound XSControl_WorkSession
+STEPControl_Writer::STEPControl_Writer: handle to unbound XSControl_WorkSession
+STEPControl_Writer::Transfer: unbound type const DESTEP_Parameters
+STEPControl_Writer::WriteStream: non-const reference to std::ostream &
+STEPControl_Writer::WS: handle to unbound XSControl_WorkSession
+TopLoc_Location::FirstDatum: handle to unbound TopLoc_Datum3D
+TopLoc_Location::ShallowDump: non-const reference to Standard_OStream &
+TopLoc_Location::TopLoc_Location: handle to unbound TopLoc_Datum3D
+TopoDS_Shape::TShape: handle to unbound TopoDS_TShape
+TopoDS::Compound: returns non-const reference TopoDS_Compound &
+TopoDS::CompSolid: returns non-const reference TopoDS_CompSolid &
+TopoDS::CompSolid: unbound type const TopoDS_CompSolid
+TopoDS::Edge: returns non-const reference TopoDS_Edge &
+TopoDS::Face: returns non-const reference TopoDS_Face &
+TopoDS::Shell: returns non-const reference TopoDS_Shell &
+TopoDS::Solid: returns non-const reference TopoDS_Solid &
+TopoDS::Vertex: returns non-const reference TopoDS_Vertex &
+TopoDS::Wire: returns non-const reference TopoDS_Wire &

@@ -53,6 +53,28 @@ no aliasing surprises.
 `BRepAlgoAPI_Cut(a, b).Shape()` port almost one-to-one. Only `Build123d` itself exposes idiomatic
 .NET names. `Shape.Wrapped` remains as an escape hatch to the raw OCCT handle.
 
+#### How the bindings work
+
+`tools/OcctGen` parses the OCCT headers with ClangSharp and binds every class (or namespace) listed in
+`bindings/occt.txt`. It emits a C++ shim (`native/shim/generated`, built into `b3docct`) and C# wrappers
+(`src/Build123d.Occt/Generated`). The generated code is committed, so building needs no libclang.
+`bindings/occt.skipped.txt` lists every member left out, and why.
+
+- **Objects** cross the C ABI as opaque pointers.
+  - Value classes (`gp_Pnt`, `TopoDS_Shape`, …) are heap copies that the wrapper owns.
+  - Transients (`Standard_Transient` subclasses, held by `occ::handle`) are handed out with one
+    reference taken, which the wrapper releases.
+  - Wrappers free their object on `Dispose()` or finalisation.
+- **Returns** of `const T&` are copied. Returns of a non-const `T&` are skipped, because a copy can't
+  honour writes into the object's state.
+- **Errors:** each shim function catches C++ exceptions and reports them through a trailing out-parameter,
+  which the wrapper turns into `OcctException` (with `OcctType`, e.g. `Standard_DomainError`).
+- **Inheritance** mirrors OCCT. A class's C# base is its nearest whitelisted ancestor. Methods of
+  ancestors that aren't whitelisted are flattened into the class. Base-class pointers come from generated
+  cast functions, which is needed because OCCT uses some multiple inheritance.
+- **Default arguments** become one overload per arity, because OCCT defaults are often non-constant.
+- **Namespaces of free functions** (OCCT 8 turned `TopoDS` into one) become static classes.
+
 ### 3. Behavioural parity is tested, not assumed
 
 - The pytest suite is ported module by module, alongside the code it tests.

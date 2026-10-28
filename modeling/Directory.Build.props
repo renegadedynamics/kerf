@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+    <!-- Runtime whose native build (OCCT + shim) local builds and tests use -->
+    <NativeRid Condition="'$(NativeRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)</NativeRid>
+  </PropertyGroup>
+</Project>
