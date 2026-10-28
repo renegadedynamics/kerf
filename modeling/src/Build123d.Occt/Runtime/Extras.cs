@@ -34,8 +34,24 @@ public static partial class Extras
         return r < 0 ? null : r == 1;
     }
 
+    /// <summary>
+    /// A copy of a history with its maps copied as they are. <c>Merge</c> into an empty history isn't a copy: it drops
+    /// the removal of a shape that also generated or was modified.
+    /// </summary>
+    public static BRepTools_History CopyHistory(BRepTools_History history)
+    {
+        ArgumentNullException.ThrowIfNull(history);
+        var r = N.b3d_BRepTools_History_copy(history.PtrAs_BRepTools_History(), out var err);
+        GC.KeepAlive(history);
+        OcctException.ThrowIfError(err);
+        return new BRepTools_History(r);
+    }
+
     internal static partial class N
     {
+        [LibraryImport("b3docct")]
+        internal static partial IntPtr b3d_BRepTools_History_copy(IntPtr history, out IntPtr err);
+
         [LibraryImport("b3docct")]
         internal static partial ulong b3d_TopoDS_Shape_hash(IntPtr shape);
 

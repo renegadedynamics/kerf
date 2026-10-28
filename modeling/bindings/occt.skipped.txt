@@ -287,6 +287,21 @@ Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve: non-const reference to occ::han
 Geom2dConvert::C0BSplineToC1BSplineCurve: non-const reference to occ::handle<Geom2d_BSplineCurve> &
 Geom2dConvert::ConcatC1: non-const reference to NCollection_Array1<occ::handle<Geom2d_BSplineCurve>> &
 Geom2dConvert::ConcatG1: non-const reference to NCollection_Array1<occ::handle<Geom2d_BSplineCurve>> &
+Geom2dGcc_Circ2d2TanOn::Results: unbound type const GccAna_Circ2d2TanOn
+Geom2dGcc_Circ2d2TanOn::Results: unbound type const Geom2dGcc_Circ2d2TanOnGeo
+Geom2dGcc_Circ2d2TanOn::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Circ2d2TanRad::Results: unbound type const GccAna_Circ2d2TanRad
+Geom2dGcc_Circ2d2TanRad::Results: unbound type const Geom2dGcc_Circ2d2TanRadGeo
+Geom2dGcc_Circ2d2TanRad::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Circ2d3Tan::Results: unbound type const GccAna_Circ2d3Tan
+Geom2dGcc_Circ2d3Tan::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Circ2dTanCen::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Circ2dTanOnRad::Results: unbound type const GccAna_Circ2dTanOnRad
+Geom2dGcc_Circ2dTanOnRad::Results: unbound type const Geom2dGcc_Circ2dTanOnRadGeo
+Geom2dGcc_Circ2dTanOnRad::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Lin2d2Tan::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_Lin2dTanObl::WhichQualifier: non-const reference to GccEnt_Position &
+Geom2dGcc_QualifiedCurve::Qualified: unsupported use of Geom2dAdaptor_Curve
 GeomAdaptor_Curve::EvalD1: unbound type Geom_Curve::ResD1
 GeomAdaptor_Curve::EvalD2: unbound type Geom_Curve::ResD2
 GeomAdaptor_Curve::EvalD3: unbound type Geom_Curve::ResD3
@@ -327,6 +342,12 @@ gp_XYZ::ChangeCoord: returns non-const reference double &
 gp_XYZ::ChangeData: unsupported type double *
 gp_XYZ::GetData: unsupported type const double *
 gp_XYZ::InitFromJson: unbound type const std::basic_stringstream<char>
+IntAna2d_AnaIntersection::IntAna2d_AnaIntersection: unbound type const gp_Hypr2d
+IntAna2d_AnaIntersection::IntAna2d_AnaIntersection: unbound type const gp_Parab2d
+IntAna2d_AnaIntersection::IntAna2d_AnaIntersection: unbound type const IntAna2d_Conic
+IntAna2d_AnaIntersection::Perform: unbound type const gp_Hypr2d
+IntAna2d_AnaIntersection::Perform: unbound type const gp_Parab2d
+IntAna2d_AnaIntersection::Perform: unbound type const IntAna2d_Conic
 Poly_Triangle::ChangeValue: returns non-const reference int &
 Poly_Triangulation::ChangeTriangle: deprecated
 Poly_Triangulation::ChangeTriangles: deprecated

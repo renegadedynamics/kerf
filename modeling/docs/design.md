@@ -108,6 +108,19 @@ no aliasing surprises.
   template collections (`NCollection_List<TopoDS_Shape>` and friends) are bound under their legacy names
   (`TopTools_ListOfShape`, …) and enumerate as `IEnumerable`.
 
+#### Objects
+
+- **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,
+  as in build123d. Each computes its shape in a static method and hands it to its base constructor
+  (`BasePartObject`, `BaseSketchObject`, `BaseEdgeObject`, `BaseLineObject`, `BaseCurveObject`), which
+  aligns and rotates it. An object's parameters are read-only properties, and the self-typed operations
+  keep the class, so `box.Moved(loc)` is still a `Box` with its `Length`.
+- **Defaults.** `align: null` means the object's own default (centred for most), and `Align.None` means
+  none, so a caller can ask for either. A `Mode` is stored on every object for the builders of phase 5;
+  algebra mode ignores it.
+- **Python's union arguments** become overloads: an arc's size is a `double` or a `CurveLimit` (a shape,
+  axis, location, plane or point it's trimmed to). Constrained arcs and lines take `Tangent` targets.
+
 ### 3. Behavioural parity is tested, not assumed
 
 - The pytest suite is ported module by module, alongside the code it tests.
@@ -121,8 +134,28 @@ no aliasing surprises.
    and `STEPControl`; make a box minus a cylinder and export it to STEP from C#, in CI.
 1. `geometry.py`: Vector, Axis, Plane, Location, BoundBox, Color, Matrix.
 2. Topology core: Shape, ShapeList, Vertex, Edge, Wire, Face, Shell, Solid, Compound.
-3. Objects and operations in algebra mode.
-4. Builders (`build_common`, BuildLine, BuildSketch, BuildPart), including `Fork()`.
-5. Import and export: STEP, STL and BREP first, then SVG, DXF, 3MF and glTF. glTF needs OCCT's
+3. Objects and operations in algebra mode, with the constrained arc and line solvers the objects need.
+4. **Bento readiness**, for the first user, Bento's 3D-models extension (see
+   [bento-integration.md](bento-integration.md)), in its order of priority:
+   1. **Packaging.** NuGet packages (`Build123d`, `Build123d.Occt`) on a local folder feed, with every
+      native DLL flat under `runtimes/win-x64/native`. A test loads the library through a fresh
+      collectible `AssemblyLoadContext` from another folder and tessellates a box. The native set is
+      pruned by actual dependencies, and `THIRD-PARTY-NOTICES.md` and a changelog are added.
+   2. **No mutation, thread safety.** Meshing works on a copy, not the shared `TShape`. Bounding
+      boxes don't `BRepTools::Clean` the shape. `Fix()` and the other ShapeFix calls work on a copy.
+      Booleans run non-destructive. Warnings belong to the operation, not a static event. A test runs
+      every public operation, from several threads, and checks that the inputs' BRep bytes are
+      unchanged. BRep to bytes, needed for it, is brought forward from import and export.
+   3. **Tessellation.** A structured, immutable mesh per shape (faces, edges and vertices in the order
+      of `Faces()`, `Edges()` and `Vertices()`, with nodes shared within a face, normals and correct
+      winding), copied out in bulk by shim functions. It gets default tolerances from the bounding box,
+      and supports instances and the assembly tree.
+   4. **Errors and memory.** OCCT signal handling on each thread, context on OCCT failures, memory
+      pressure for new results and meshes, and malformed inputs as test cases.
+   5. **Selectors with plain values,** with the lambda overloads kept.
+   6. **Bytes in and out** for BREP, STEP and STL, through streams, with limits for untrusted input.
+   7. **Cancellation and progress** (`CancellationToken`, `IProgress<double>`) and the missing measurements.
+5. Builders (`build_common`, BuildLine, BuildSketch, BuildPart), including `Fork()`.
+6. Import and export: SVG, DXF, 3MF and glTF (STEP, STL and BREP come in phase 4). glTF needs OCCT's
    `TKDEGLTF`, which builds only with RapidJSON, so add RapidJSON to the native superbuild first.
-6. Advanced: joints, drafting, text, sheet metal, `brep_from_stl`, `uv_write`, constrained lines.
+7. Advanced: joints, drafting, text, sheet metal, `brep_from_stl`, `uv_write`.

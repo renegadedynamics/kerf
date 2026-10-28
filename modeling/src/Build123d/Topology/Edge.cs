@@ -6,7 +6,7 @@ namespace Build123d;
 /// A one-dimensional piece of a curve (a line, an arc, a spline, …): the building block of wires, faces and the
 /// operations on them such as fillets and chamfers.
 /// </summary>
-public class Edge : Shape1D
+public partial class Edge : Shape1D
 {
     /// <summary>The empty Edge.</summary>
     public Edge() : base(null) { }

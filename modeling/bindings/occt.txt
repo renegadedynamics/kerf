@@ -150,6 +150,17 @@ GeomAPI_ProjectPointOnCurve
 GeomAPI_ProjectPointOnSurf
 Extrema_POnCurv
 Geom2dAPI_InterCurveCurve
+Geom2dGcc_QualifiedCurve
+Geom2dGcc_Circ2d2TanRad
+Geom2dGcc_Circ2d2TanOn
+Geom2dGcc_Circ2d3Tan
+Geom2dGcc_Circ2dTanCen
+Geom2dGcc_Circ2dTanOnRad
+Geom2dGcc_Lin2d2Tan
+Geom2dGcc_Lin2dTanObl
+-Geom2dGcc_Lin2dTanObl::IsParallel2   # declared but not defined in OCCT 8.0.1
+IntAna2d_AnaIntersection
+IntAna2d_IntPoint
 Geom2dAPI_ProjectPointOnCurve
 GeomConvert
 GeomConvert_ApproxCurve

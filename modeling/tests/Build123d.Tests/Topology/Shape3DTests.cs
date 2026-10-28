@@ -2,11 +2,12 @@
 // Box and Cylinder (centred Parts in build123d) are Parts of solids made with the direct API. The radii in the fillet
 // messages read 3.0 and 6.0 where build123d's tests pass the ints 3 and 6; the kernel failure is the inner exception
 // (an OcctException) where Python chains it as __cause__. Omitted:
-// - TestFilletFailures.test_operation: the fillet() operation and BuildPart.
-// - TestFilletFailures.test_tangent_chain: RectangleRounded and extrude().
+// - TestFilletFailures.test_operation's builder half: BuildPart (phase 5).
 // - TestFilletFailures.test_diagnostic_readback_failure, test_group_failure_reasons,
 //   TestMixin3D.test_chamfer_invalid_shape_raises_error: mock the OCP builder or Shape.is_valid.
 using Build123d.Occt;
+
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -32,6 +33,38 @@ public class FilletFailuresTests
             var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, e.Message);
             Assert.IsAssignableFrom<OcctException>(e.InnerException);
+        }
+    }
+
+    [Fact]
+    public void Operation()
+    {
+        // The fillet operation reports the same edges as the method
+        var e = Assert.Throws<ArgumentException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
+        Assert.Equal(PlateMessage, e.Message);
+    }
+
+    [Fact]
+    public void TangentChain()
+    {
+        // Unselected tangent edges are counted, with a point on a curved selection
+        var rounded = Ops.Extrude(new RectangleRounded(20, 10, 3), 2);
+        var topEdges = rounded.Edges().GroupBy(Axis.Z)[^1];
+        (ShapeList<Edge> Selection, string Details)[] cases =
+        [
+            (topEdges.FilterBy(GeomType.Line)[..1],
+             "1 of 1 edges (no starting solution: [0] at (-10, 0, 2), 7 additional tangent edges)"),
+            (topEdges.FilterBy(GeomType.Circle)[..1],
+             "1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)"),
+            (topEdges[..7],
+             "7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
+             + "[3] at (9.12132, -4.12132, 2), [4] at (10, 0, 2), [5] at (9.12132, 4.12132, 2), [6] at (0, 5, 2), "
+             + "1 additional tangent edge)"),
+        ];
+        foreach (var (selection, details) in cases)
+        {
+            var e = Assert.Throws<ArgumentException>(() => rounded.Fillet(3, selection));
+            Assert.Equal("Failed creating a fillet with radius of 3.0 on " + details + Advice, e.Message);
         }
     }
 

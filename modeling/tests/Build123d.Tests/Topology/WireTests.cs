@@ -1,17 +1,18 @@
 // Ported from build123d tests/test_direct_api/test_wire.py.
 // Omitted:
-// - TestWire.test_fillet_2d, test_fillet_non_planar, test_bad_vertex, test_fillet_non_plane_xy: Wire.fillet_2d isn't ported yet.
-// - TestWire.test_param_at_point_reversed_edges: needs BuildLine and the fillet operation.
-// - TestWire._reversed_wires "mirrored rounded rectangle": RectangleRounded needs Face.fillet_2d.
+// - TestWire.test_fillet_2d, test_fillet_non_planar, test_bad_vertex, test_fillet_non_plane_xy: ported in
+//   Objects/Fillet2DTests.cs.
 // - TestWire.test_offset_2d_fits_splines_to_offset_curves: the STEP round trip of the extruded ring (no STEP exporter yet).
 // - TestWire.test_constructor: Wire(bob="fred") is a run-time argument check the compiler rules out.
-// - TestWireFilletHelpers (all): private fillet_2d helpers, not ported, and mocks.
+// - TestWireFilletHelpers: the cases that don't use mocks are ported in Objects/Fillet2DTests.cs.
 // - TestWireParamAtExceptions (all), TestWireValidation.test_make_wire_empty, test_make_wire_non_manifold,
 //   test_chamfer_2d_internal_error, test_param_at_point_no_extrema, test_to_bspline_add_failure,
 //   test_to_bspline_edge_failure: patch OCCT classes with mocks.
-// - TestWireValidation.test_fillet_2d_vertex_not_on_wire: Wire.fillet_2d isn't ported yet.
+// - TestWireValidation.test_fillet_2d_vertex_not_on_wire: ported in Objects/Fillet2DTests.cs.
+// test_param_at_point_reversed_edges's BuildLine on Plane.YZ is the filleted line placed on Plane.YZ.
 // Python's random u values in test_param_at_point are fixed values here.
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 using Rot = Build123d.Rotation;
 
 namespace Build123d.Tests.Topology;
@@ -167,6 +168,18 @@ public class WireTests
     }
 
     [Fact]
+    public void ParamAtPointReversedEdges()
+    {
+        var l1 = new Line((0, 65), (80.0 / 2 + 1.526 * 4, 65));
+        var l2 = new PolarLine(l1.PositionAt(1), 20.371288916, direction: new Vector(0, 1, 0).Rotate(Axis.X, -75));
+        var w = Plane.YZ * (Wire)Ops.Fillet((l1 + l2).Vertices(), 7);
+        var parameters = Enumerable.Range(0, 21).Select(i => w.ParamAtPoint(w.PositionAt(i / 20.0))).ToList();
+        Assert.Equal(parameters.Order(), parameters);
+        for (int i = 0; i < parameters.Count; i++)
+            Check.AlmostEqual(i / 20.0, parameters[i], 6);
+    }
+
+    [Fact]
     public void ParamAtPointNativeParameterOnMultiedgeAndReversedWires()
     {
         var wire = new Wire([Edge.MakeLine((0, 0, 0), (10, 0, 0)), Edge.MakeLine((10, 0, 0), (10, 10, 0))], sequenced: true);
@@ -300,6 +313,7 @@ public class WireTests
             ["open, edges in both directions"] = Flipped(mixed),
             ["single edge"] = Flipped(new Wire([Edge.MakeLine((0, 0), (4, 0))])),
             ["mirrored rectangle"] = new Sketch([Face.MakeRect(2, 2)]).Mirror().SingleWire(),
+            ["mirrored rounded rectangle"] = new RectangleRounded(4, 3, 0.5).Mirror(Plane.YZ).SingleWire(),
             ["outer wire of a flipped face"] = ((Face)(-Face.MakeRect(2, 2))).OuterWire(),
         };
         Assert.DoesNotContain(wires.Values, w => w.IsForward);

@@ -1,9 +1,9 @@
 // Ported from build123d tests/test_direct_api/test_geom_equal.py.
 // Omitted:
-// - TestEdgeGeomEqualCircle.test_different_circle_from_revolve: needs RadiusArc, make_face and revolve (operations).
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -73,6 +73,20 @@ public class EdgeGeomEqualLineTests
 
 public class EdgeGeomEqualCircleTests
 {
+    [Fact]
+    public void DifferentCircleFromRevolve()
+    {
+        // Two circles with same radius/endpoints but different center/axis
+        var f1 = Ops.MakeFace(new RadiusArc((5, 0), (-5, 0), 15) + new Line((5, 0), (-5, 0)));
+        var p1 = Ops.Revolve(f1, Axis.X, 90);
+        var circles = p1.Edges().FilterBy(GeomType.Circle);
+        Assert.Equal(2, circles.Count);
+        var value1 = circles[0];
+        var value2 = circles[1].Reversed();
+        // These circles have same endpoints after reversal but different center/axis
+        Assert.False(value1.GeomEqual(value2));
+    }
+
     [Fact]
     public void SameCircle()
     {

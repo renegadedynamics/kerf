@@ -88,15 +88,37 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `show_topology("Face")` | `ShowTopology(ShapeType.Face)` |
 | `filter_by_value(Edge.length, 3)` | `FilterByValue(e => e.Length, 3)` |
 | `ShapeHistory.merge` (in place) | `Merge` returns a new record |
+| `make_constrained_arcs(a, b, radius=r)`, `(a, b, c)`, `(a, center=p)`, `(a, radius=r, center_on=c)` | `Edge.MakeConstrainedArcs(…)` overloads, each target a `Tangent` (from an `Edge`, `Axis`, `Vector`, `Vertex` or `(edge, Tangency)`) |
+| `make_constrained_arcs(a, b, center_on=c)` | `Edge.MakeConstrainedArcsCenteredOn(a, b, c)`: three targets would be ambiguous with the three-tangent form |
+| `make_constrained_lines(a, b)`, `(a, axis, angle=…)`, `(a, axis, direction=…)` | `Edge.MakeConstrainedLines(…)` overloads |
+
+## Objects
+
+| Python | .NET |
+|---|---|
+| `Box(1, 2, 3, align=…, rotation=…)` | `new Box(1, 2, 3, rotation: …, align: …)`; `align: null` is the object's default, `Align.None` no alignment |
+| `rotation=(x, y, z)` | A `Rotation`, also from a `(x, y, z)` tuple |
+| `box.box_height`, `rect.rectangle_height` | `BoxHeight`, `RectangleHeight` (as Python names them) |
+| `Line(p1, p2)`, `Polyline(*pts, close=…)` | `new Line(p1, p2)`, `new Polyline(pts, close: …)` or `new Polyline(p1, p2, …)` |
+| `CenterArc(c, r, start, arc_size)` with a float or a limit (`Shape`, `Axis`, …) | Two overloads: `double arcSize`, or a `CurveLimit` (from a shape, axis, location, plane or point); the same for `JernArc`, the conic arcs and `PolarLine`'s length |
+| `ConstrainedArcs(…, selector=lambda arcs: …)` | `new ConstrainedArcs(…, selector: arcs => …)`, the selector returning edges; `center_on` with two targets is `ConstrainedArcs.CenteredOn(…)` |
+| `GridLocations(…) * Circle(1)` | The same operator over the `LocationList` |
+
+## Operations
+
+| Python | .NET |
+|---|---|
+| `extrude(face, 5)`, `fillet(edges, 1)`, … | `Operations.Extrude(face, 5)`, `Operations.Fillet(edges, 1)`, …; with `using static Build123d.Operations;` just `Extrude(face, 5)` |
+| A union return (`Part \| Sketch \| Curve \| Compound`) | `Compound`, which is a `Part`, `Sketch` or `Curve` at run time by Python's dimension rule |
+| `chamfer`/`fillet` of edges, of vertices | `Part`, and `Shape` (a `Sketch`, `Wire` or `Shell`) |
+| `project(points, workplane)` | `ProjectPoints(points, workplane)`, returning the points |
+| `full_round` (scipy's Voronoi) | `FullRound`, over a small Delaunay triangulation of its own |
+| `insert`, `add`, `make_brake_formed`, sheet-metal `thicken` | Not yet ported (builder mode; sheet metal in phase 7) |
 
 ## Not yet ported
 
-- Text (`Compound.make_text`, fonts), constrained arcs and lines, and `Wire.fillet_2d` / `Face.fillet_2d`
-  (which use the constrained-arc solvers): phase 6.
-- `project_to_viewport` (hidden-line removal): with the SVG and DXF exporters, phase 5.
-- Materials and mass (`material`, `mass()`), joints, `uv_face`, `uv_frame`, `wrap`, `unfold`,
-  `make_gordon_surface`, `tessellate_with_uvs`: phase 6.
-- `Face.length` and `width` of a cylindrical face, which need `uv_face`.
+- Text (`Compound.make_text`, fonts and the `Text` object): phase 7.
+- Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
 
 ## Deliberate differences
 
@@ -106,3 +128,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
   change in meaning, and the port has only ever had the new meaning: a 2-tuple is a local coordinate.
 - Run-time argument-type checks (for example `Rotation("text")` raising TypeError) have no
   counterpart, because the compiler rules those calls out.
+- Exceptions: `ValueError` becomes `ArgumentException`, except where the shape being operated on is empty,
+  which throws `InvalidOperationException` (the object's state, not an argument, is at fault).
+  `RuntimeError` becomes `InvalidOperationException`. The messages are Python's.
+- A `Vertex` given as a constrained-arc target or centre is its point. build123d adds the vertex's
+  position to its point, which counts the position twice for a moved vertex.

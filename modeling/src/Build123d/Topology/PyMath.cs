@@ -105,4 +105,107 @@ internal static class PyMath
         }
         return (xf, fx);
     }
+
+    /// <summary>
+    /// SciPy's Nelder-Mead minimisation of a function of one variable within bounds (<c>minimize(method="Nelder-Mead",
+    /// bounds=[(lower, upper)], tol=tol)</c>), returning the minimising x.
+    /// </summary>
+    internal static double MinimizeNelderMead(Func<double, double> func, double x0, double lower, double upper, double tol)
+    {
+        const double rho = 1, chi = 2, psi = 0.5, sigma = 0.5;
+        const int maxIterations = 200, maxCalls = 200;
+        double Clip(double x) => Math.Clamp(x, lower, upper);
+
+        x0 = Clip(x0);
+        double[] sim = [x0, x0 != 0 ? (1 + 0.05) * x0 : 0.00025];
+        // Reflect a vertex above the upper bound into the interior, then clip
+        for (int k = 0; k < 2; k++)
+            sim[k] = Clip(sim[k] > upper ? 2 * upper - sim[k] : sim[k]);
+
+        int calls = 0;
+        double? F(double x)
+        {
+            if (calls >= maxCalls)
+                return null;
+            calls++;
+            return func(x);
+        }
+        double[] fsim = [double.PositiveInfinity, double.PositiveInfinity];
+        void Sort()
+        {
+            // argsort of two values: stable
+            if (fsim[1] < fsim[0])
+            {
+                (sim[0], sim[1]) = (sim[1], sim[0]);
+                (fsim[0], fsim[1]) = (fsim[1], fsim[0]);
+            }
+        }
+        for (int k = 0; k < 2; k++)
+        {
+            if (F(sim[k]) is not { } f)
+                break;
+            fsim[k] = f;
+        }
+        Sort();
+
+        int iterations = 1;
+        while (calls < maxCalls && iterations < maxIterations)
+        {
+            if (Math.Abs(sim[1] - sim[0]) <= tol && Math.Abs(fsim[0] - fsim[1]) <= tol)
+                break;
+            if (Step() is false)
+            {
+                Sort();
+                continue;
+            }
+            iterations++;
+            Sort();
+        }
+        return sim[0];
+
+        // One iteration; false when the call budget ran out part way
+        bool Step()
+        {
+            var xbar = sim[0];
+            var xr = Clip((1 + rho) * xbar - rho * sim[1]);
+            if (F(xr) is not { } fxr)
+                return false;
+            if (fxr < fsim[0])
+            {
+                var xe = Clip((1 + rho * chi) * xbar - rho * chi * sim[1]);
+                if (F(xe) is not { } fxe)
+                    return false;
+                (sim[1], fsim[1]) = fxe < fxr ? (xe, fxe) : (xr, fxr);
+                return true;
+            }
+            // With one variable fsim[-2] is fsim[0], so the reflection is never kept here
+            bool shrink;
+            if (fxr < fsim[1])
+            {
+                var xc = Clip((1 + psi * rho) * xbar - psi * rho * sim[1]);
+                if (F(xc) is not { } fxc)
+                    return false;
+                shrink = !(fxc <= fxr);
+                if (!shrink)
+                    (sim[1], fsim[1]) = (xc, fxc);
+            }
+            else
+            {
+                var xcc = Clip((1 - psi) * xbar + psi * sim[1]);
+                if (F(xcc) is not { } fxcc)
+                    return false;
+                shrink = !(fxcc < fsim[1]);
+                if (!shrink)
+                    (sim[1], fsim[1]) = (xcc, fxcc);
+            }
+            if (shrink)
+            {
+                sim[1] = Clip(sim[0] + sigma * (sim[1] - sim[0]));
+                if (F(sim[1]) is not { } fs)
+                    return false;
+                fsim[1] = fs;
+            }
+            return true;
+        }
+    }
 }

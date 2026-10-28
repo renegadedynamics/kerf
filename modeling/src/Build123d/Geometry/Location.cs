@@ -276,6 +276,9 @@ public class Rotation : Location
     /// <summary>A copy of another rotation.</summary>
     public Rotation(Rotation rotation) : base(rotation) { }
 
+    /// <summary>A rotation by Euler angles (X, Y, Z) in degrees, as build123d's <c>RotationLike</c> tuples are.</summary>
+    public static implicit operator Rotation((double X, double Y, double Z) angles) => new(angles.X, angles.Y, angles.Z);
+
     static TopLoc_Location AboutAxis(Axis axis, double angle)
     {
         using var trsf = new gp_Trsf();

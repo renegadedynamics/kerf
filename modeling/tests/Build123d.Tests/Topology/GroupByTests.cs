@@ -1,6 +1,5 @@
 // Ported from build123d tests/test_direct_api/test_group_by.py. Omitted:
 // - test_str, test_pp: pretty-printing (repr, as ToString, is ported).
-// - test_properties, test_callable: need Edge.make_constrained_lines (constrained lines, phase 6) and CenterArc.
 namespace Build123d.Tests.Topology;
 
 public class GroupByTests
@@ -48,5 +47,23 @@ public class GroupByTests
         var cyl = Solid.MakeCylinder(1, 2, new Plane((0, 0, -1)));
         var grouped = cyl.Faces().GroupBy(f => f.MatrixOfInertia);
         Assert.Equal(2, grouped.Count);
+    }
+
+    private static ShapeList<Edge> TangentLines() =>
+        Edge.MakeConstrainedLines(new CenterArc((-5, 0), 2, 0, 360), new CenterArc((5, 0), 4, 0, 360));
+
+    [Fact]
+    public void Properties()
+    {
+        var longestLines = TangentLines().GroupBy(e => e.Length).Last;
+        Assert.Equal(2, longestLines.Count);
+    }
+
+    [Fact]
+    public void Callable()
+    {
+        static double EdgeLength(Edge e) => e.Length;
+        var longestLines = TangentLines().GroupBy(EdgeLength).Last;
+        Assert.Equal(2, longestLines.Count);
     }
 }

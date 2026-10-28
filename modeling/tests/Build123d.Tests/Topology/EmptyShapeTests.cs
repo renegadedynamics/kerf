@@ -5,15 +5,15 @@
 // - test_is_null_is_deprecated: is_null is IsEmpty, without a deprecated alias.
 // - TestEmptyShapeCopying: copy.copy, copy.deepcopy and pickle have no counterpart (shapes are immutable).
 // - test_moving_keeps_the_zero's move/locate "is" checks: those are mutators; the copies are checked instead.
-// - test_face_without_a_surface's uv_face: phase 6.
+// - test_face_without_a_surface's uv_face: phase 7.
 // - test_a_boolean_that_leaves_nothing_returns_a_typed_zero's _bool_op_list checks: the method is private.
-// - TestEmptyShapeBuilders, test_operations_on_a_zero, test_an_empty_section_is_no_section, and the fillet, chamfer
-//   and sweep cases of test_operations_that_need_something: builders and operations aren't ported yet.
+// - TestEmptyShapeBuilders: builders aren't ported yet.
 // - test_split_sides_that_have_nothing's last check (Box.split is a Part): the split here is always a list.
 // - TestEmptyShapeExport: the exporters aren't ported yet.
 // - test_a_kernel_empty_is_the_zero_of_any_class's Face(empty): the Face constructor takes a TopoDS_Face, and
 //   Shape.Cast is static, so Solid.cast's class-specific result is checked through the internal CastLike.
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -411,9 +411,50 @@ public class EmptyShapeOperationsTests
     // An operation on nothing gives nothing, of the dimension it would make
 
     [Fact]
+    public void OperationsOnAZero()
+    {
+        var line = Edge.MakeLine((0, 0, 0), (1, 0, 0));
+        (string Name, Func<Shape> Operation, Type Class)[] cases =
+        [
+            ("extrude", () => Ops.Extrude(new Sketch(), 1), typeof(Part)),
+            ("revolve", () => Ops.Revolve(new Sketch(), Axis.X), typeof(Part)),
+            ("offset part", () => Ops.Offset(new Part(), 1), typeof(Part)),
+            ("offset sketch", () => Ops.Offset(new Sketch(), 1), typeof(Sketch)),
+            ("mirror", () => Ops.Mirror(new Part(), Plane.XY), typeof(Part)),
+            ("scale", () => Ops.Scale(new Part(), 2), typeof(Part)),
+            ("split", () => Ops.Split(new Part(), Plane.XY), typeof(Part)),
+            ("project", () => Ops.Project(new Face(), Plane.XY), typeof(Sketch)),
+            ("section", () => Ops.Section(new Part(), Plane.XY), typeof(Sketch)),
+            ("thicken", () => Ops.Thicken(new Sketch(), 1), typeof(Part)),
+            ("sweep", () => Ops.Sweep(new Sketch(), line), typeof(Part)),
+            ("loft", () => Ops.Loft([new Face(), new Face()]), typeof(Part)),
+            ("make_face", () => Ops.MakeFace(new Curve()), typeof(Sketch)),
+            ("make_hull", () => Ops.MakeHull(new Curve().Edges()), typeof(Sketch)),
+            ("trace", () => Ops.Trace(new Curve(), 1), typeof(Sketch)),
+            ("bounding_box", () => Ops.BoundingBox(new Part()), typeof(Part)),
+        ];
+        foreach (var (name, operation, cls) in cases)
+        {
+            var result = operation();
+            Assert.True(cls == result.GetType(), $"{name} gave a {result.GetType().Name}");
+            Assert.True(result.IsEmpty, $"{name} gave something");
+        }
+    }
+
+    [Fact]
+    public void AnEmptySectionIsNoSection()
+    {
+        // a loft through one real section and one empty one has one section
+        var e = Assert.Throws<ArgumentException>(() => Ops.Loft([new Rectangle(1, 1), new Face()]));
+        Assert.Contains("More than one", e.Message);
+    }
+
+    [Fact]
     public void OperationsThatNeedSomething()
     {
-        // The fillet, chamfer and sweep cases use operations that aren't ported yet
+        Assert.Contains("Nothing to fillet", Assert.Throws<ArgumentException>(() => Ops.Fillet(ShapeList<Edge>.Empty, 1)).Message);
+        Assert.Contains("Nothing to chamfer", Assert.Throws<ArgumentException>(() => Ops.Chamfer(ShapeList<Edge>.Empty, 1)).Message);
+        Assert.Contains("empty path", Assert.Throws<ArgumentException>(() => Ops.Sweep(new Rectangle(1, 1), new Curve())).Message);
         Assert.Contains("empty tool",
                         Assert.Throws<ArgumentException>(() => Solid.MakeBox(1, 1, 1).Split(new Face())).Message);
     }

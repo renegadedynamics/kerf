@@ -2,13 +2,10 @@
 // Omitted:
 // - TestEdge.test_trim_invalid_parameter, test_init: run-time argument-type checks the compiler rules out.
 // - TestEdge.test_make_spline_failure, test_make_spline_approx_failure: patch OCCT classes with mocks.
-// - TestEdge.test_is_interior: needs sweep() and RegularPolygon (phase 3/4).
-// - TestEdge.test_convexity_moved: needs extrude() (phase 4).
-// - TestEdge.test_convexity_of_creases: only the Box part is ported; the extruded cross needs extrude().
-// - TestEdge.test_convexity_smooth: only the Cylinder seam part is ported; the rounded box needs fillet().
 // - TestEdgeParamAt.test_param_at_point_fallback_returns_native_parameter_in_both_modes,
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
 using Build123d.Occt;
+using static Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -455,15 +452,51 @@ public class EdgeTests
     }
 
     [Fact]
+    public void IsInterior()
+    {
+        var path = new RegularPolygon(5, 5).SingleFace().OuterWire();
+        var profile = path.LocationAt(0) * (new Circle(0.6) & new Rectangle(2, 1));
+        var target = Sweep(profile, path, transition: Transition.Right);
+        var insideEdges = target.Edges().FilterBy(e => e.IsInterior);
+        Assert.Equal(5, insideEdges.Count);
+        Assert.All(insideEdges, e => Assert.Equal(GeomType.Ellipse, e.GeomType));
+    }
+
+    private static Shape Cross() => (new Rectangle(8, 2) + new Rectangle(2, 8)).SingleFace();
+
+    [Fact]
+    public void ConvexityMoved()
+    {
+        // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
+        // be found by TShape, not Location
+        var moved = new Pos(10) * Extrude(Cross(), 2).SingleSolid();
+        var insideEdges = moved.Edges().FilterBy(e => e.IsInterior);
+        Assert.Equal(4, insideEdges.Count);
+        Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
+    }
+
+    [Fact]
     public void ConvexityOfCreases()
     {
-        var box = Solid.MakeBox(10, 10, 10, new Plane((-5, -5, -5)));
+        var box = new Box(10, 10, 10);
         Assert.All(box.Edges(), e => Assert.Equal(Convexity.Convex, e.Convexity));
+
+        var cross = Extrude(Cross(), 2);
+        var concave = cross.Edges().FilterBy(Convexity.Concave);
+        Assert.Equal(4, concave.Count);
+        Assert.All(concave, e => Assert.True(e.IsInterior));
+        Assert.Equal(32, cross.Edges().FilterBy(Convexity.Convex).Count);
+        // the re-entrant edges are the vertical ones nearest the axis
+        Assert.All(concave, e => Assert.True(Math.Abs(e.Center().X) == 1 && Math.Abs(e.Center().Y) == 1));
     }
 
     [Fact]
     public void ConvexitySmooth()
     {
+        // a fillet meets the faces it blends into without a crease
+        var rounded = Fillet(new Box(10, 10, 10).Edges(), 2);
+        Assert.All(rounded.Edges(), e => Assert.Equal(Convexity.Smooth, e.Convexity));
+        Assert.DoesNotContain(rounded.Edges(), e => e.IsInterior);
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane((0, 0, -2.5)));
         var seam = Cylinder().Edges().FilterBy(GeomType.Line)[0];

@@ -7,8 +7,8 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
-// - AlgebraSelect.operations_other_than_booleans: needs the fillet operation (operations_generic).
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -362,6 +362,14 @@ public class ShapeHistoryTests
 /// <summary>Select.Last and Select.New on the result of an Algebra operation.</summary>
 public class AlgebraSelectTests
 {
+    [Fact]
+    public void OperationsOtherThanBooleans()
+    {
+        var rounded = Ops.Fillet(new Box(10, 10, 10).Edges().FilterBy(Axis.Z), 1);
+        Assert.Equal(4, rounded.Faces(Select.Last).Count);
+        Assert.Equal(16, rounded.Edges(Select.New).Count);
+    }
+
     [Fact]
     public void FusedSketch()
     {

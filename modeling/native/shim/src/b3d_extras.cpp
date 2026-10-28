@@ -3,6 +3,7 @@
 
 #include <BRep_CurveRepresentation.hxx>
 #include <BRep_TEdge.hxx>
+#include <BRepTools_History.hxx>
 #include <Geom_Curve.hxx>
 #include <ShapeAnalysis_Curve.hxx>
 #include <TopoDS_Edge.hxx>
@@ -35,4 +36,17 @@ B3D_API int32_t b3d_edge_curve3d_is_planar(const void* edge, const void* normal,
   }
   B3D_CATCH(err)
   return -1;
+}
+
+//! A copy of a history: its maps copied as they are (merging into an empty history drops the removal of a shape
+//! that also generated or was modified).
+B3D_API void* b3d_BRepTools_History_copy(const void* history, b3d_error** err)
+{
+  *err = nullptr;
+  try
+  {
+    return b3d_retain(new BRepTools_History(*static_cast<const BRepTools_History*>(history)));
+  }
+  B3D_CATCH(err)
+  return nullptr;
 }

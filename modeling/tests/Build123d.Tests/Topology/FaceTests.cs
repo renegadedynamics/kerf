@@ -2,14 +2,12 @@
 // Omitted:
 // - test_project_to_face_with_compound_boolean_result: patches an internal OCCT boolean (mock).
 // - test_fillet_2d_mixed_profile_case, _regression, test_fillet_2d_holes_regression,
-//   test_fillet_geom2dgcc_circ2d2tanrad_algorithm, TestFillet2DNoVertices: Face.fillet_2d is not yet ported
-//   (and they use Sketch/Ellipse/BuildSketch).
+//   test_fillet_geom2dgcc_circ2d2tanrad_algorithm, TestFillet2DNoVertices: ported in Objects/Fillet2DTests.cs.
 // - test_length_width_of_a_cylinder, _do_not_depend_on_orientation, test_length_follows_a_curved_trim: length and
 //   width of a cylindrical face are not yet ported.
 // - test_uv_face, test_wrap, test_wrap_across_the_seam, test_wrap_faces: uv_face and wrap are not yet ported.
 // - test_make_gordon_surface, test_make_gordon_surface_input_types: make_gordon_surface is not yet ported.
 // - test_import_stl: STL import/export is not ported.
-// - test_is_convex_concave: needs BuildPart, offset() and fillet().
 // - test_constructor (Face(bob="fred")) and test_surface_from_curves_type_checks: argument-type checks the
 //   compiler rules out; likewise the bad-argument calls normal_at(0), location_at(0), normal_at(center=...),
 //   location_at(center=...) and make_surface(<a single Edge>).
@@ -25,7 +23,9 @@
 // the number of axes only, as the Python's other two assertions are on generators and always pass.
 // test_wire is SingleWire (the C# name of wire(); a method can't be named after the Wire type it uses).
 // test_zero_offset_returns_a_copy doesn't check identity: shapes are immutable, so returning the same face is fine.
+// test_is_convex_concave's BuildPart is the offset and fillet operations in algebra form.
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
 
@@ -289,6 +289,23 @@ public class FaceTests
         var leftEdge = flipped.Edges().SortBy(Axis.X)[0];
         var parentFace = (Face)leftEdge.TopoParent!;
         Check.AlmostEqual(parentFace.NormalAt(), flipped.NormalAt(), 5);
+    }
+
+    [Fact]
+    public void IsConvexConcave()
+    {
+        var box = new Box(20, 20, 5);
+        var openBox = Ops.Offset(box, amount: -2, openings: [box.Faces().SortBy(Axis.Z)[^1]]);
+        var filleted = Ops.Fillet(openBox.Edges(), 0.5);
+
+        var outsideFillets = filleted.Faces().FilterBy(f => f.IsCircularConvex);
+        var insideFillets = filleted.Faces().FilterBy(f => f.IsCircularConcave);
+        Assert.Equal(24, outsideFillets.Count);
+        Assert.Equal(12, insideFillets.Count);
+        // where the rim fillet blends into an inside corner fillet the patch curves both ways, so it is neither
+        var blends = filleted.Faces().FilterBy(Convexity.Saddle);
+        Assert.Equal(4, blends.Count);
+        Assert.All(blends, f => Assert.Equal(GeomType.Torus, f.GeomType));
     }
 
     [Fact]

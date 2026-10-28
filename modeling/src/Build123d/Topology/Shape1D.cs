@@ -434,7 +434,7 @@ public abstract partial class Shape1D : Shape
                 int n = line.GeomType == GeomType.Line ? 2 : 8;
                 points.AddRange(Enumerable.Range(0, n).Select(i => line.PositionAt(i / (double)(n - 1))));
             }
-            points = points.Distinct().ToList();   // unique points
+            points = PySet.Distinct(points);   // unique points, in the order of a Python set
             // The points making the largest triangle make the most accurate plane; on ties the last such found wins
             double bestArea = double.NegativeInfinity;
             (Vector, Vector, Vector) extremes = default;

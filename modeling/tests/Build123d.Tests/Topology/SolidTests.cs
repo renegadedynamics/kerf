@@ -2,7 +2,6 @@
 // direct API. Omitted:
 // - Part of test_extrude (Solid.extrude of a Solid) and test_constructor (Solid(foo="bar")): type errors the compiler
 //   rules out.
-// - test_extrude_taper_draft_falls_back_to_loft: needs Face.fillet_2d (phase 6).
 // - TestSolidThicken (both cases), TestSolidDraft.test_adddone_failure_raises_draftangleerror and
 //   test_build_failure_raises_draftangleerror: mock the OCP builders.
 using Build123d.Occt;
@@ -80,6 +79,19 @@ public class SolidTests
             Check.AlmostEqual((-size, -size, -h), bbox.Min, 1);
             Check.AlmostEqual((size, size, 0), bbox.Max, 1);
         }
+    }
+
+    [Fact]
+    public void ExtrudeTaperDraftFallsBackToLoft()
+    {
+        // A cross with rounded inner corners, as cut for a Phillips recess, cannot be drafted at this angle but can be
+        // lofted
+        var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
+        var inner = new ShapeList<Vertex>(cross.Vertices()).SortByDistance((0, 0, 0))[..4];
+        var recess = cross.Fillet2D(5.3 / 3, inner);
+        var tapered = Solid.ExtrudeTaper(recess, (0, 0, -3.27), 20);
+        Assert.True(tapered.IsValid);
+        Check.AlmostEqual(-3.27, tapered.BoundingBox().Min.Z, 5);
     }
 
     [Fact]

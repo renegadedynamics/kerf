@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_shape.py. Box(l, w, h) and Cylinder(r, h) are the centred direct-API
 // solids (a Solid, where build123d's objects are a Part). Omitted:
-// - test_compute_mass, and compute_mass in test_empty_shape: materials and mass are phase 6.
+// - test_compute_mass, and compute_mass in test_empty_shape: materials and mass are phase 7.
 // - test_max_fillet_invalid_shape_raises_error, test_tessellate_missing_triangulation, TestMakeComposite: they patch
 //   library internals with mocks.
 // - test_copy_vertex: copy.copy and copy.deepcopy have no counterpart (shapes are immutable).
@@ -8,8 +8,8 @@
 // - test_boolean_zero_cut_multi_args, test_boolean_zero_fuse_multi_args, test_boolean_zero_fuse_multi_tools: _bool_op
 //   is private.
 // - test_project_to_viewport: hidden-line removal is phase 5.
-// - test_compound, and the error case of test_shell: they need text (phase 6) and extrude().
-// - test_copy_attributes_to: joints, children and topo_parent setters (joints are phase 6; children hold no parent).
+// - test_compound, and the error case of test_shell: they need text (phase 7) and extrude().
+// - test_copy_attributes_to: joints, children and topo_parent setters (joints are phase 7; children hold no parent).
 // - test_empty_shape's locate/move "is" checks: those are mutators; the copies are checked empty instead.
 // - test_rmul_iterable_non_location, test_rmul_non_iterable_non_location: run-time type checks the compiler rules out.
 // - TestGlobalLocation: needs parent links and global_location, which the port's assemblies don't have.

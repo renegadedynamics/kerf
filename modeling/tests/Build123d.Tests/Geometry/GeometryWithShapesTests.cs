@@ -6,16 +6,18 @@
 // - test_plane: Plane(edge), to_local_coords("box"), shift_origin(edge) TypeErrors: the compiler rules them out.
 // - test_plane: copy.deepcopy of a plane: planes are immutable.
 // - test_plane_from_face_with_origin_warns: Plane(face) takes no origin in the port.
-// - test_shift_origin_axis/_vertex/_vector: need BuildPart, BuildSketch, Locations, extrude, fillet, insert.
+// - test_shift_origin_axis/_vertex/_vector: the BuildPart (insert, a BuildSketch on the plane, a subtracting extrude)
+//   is written in algebra form.
 // - test_local_coords_of_an_unknown_shape_type: a Solid can't be made to wrap a TopoDS_CompSolid.
 // - test_bound_box test_constructor_errors: argument-type validation is the compiler's job.
 // - test_bound_box find_outside_box_2d (in test_basic_bounding_box): deprecated, not ported.
 // - test_combined_center_of_boundbox: empty in Python.
 // - test_oriented_bound_box test_requires_a_bnd_obb_or_a_shape: argument-type validation.
-// - test_location test_mult_iterable: needs GridLocations. (test_intersection's e1.intersect("line") is kept as the
-//   ArgumentException the port's object overload throws.)
+// (test_location test_intersection's e1.intersect("line") is kept as the ArgumentException the port's object
+// overload throws.)
 // - test_rotation.py and test_matrix.py: no cases use topology.
 using Build123d.Occt;
+using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Geometry;
 
@@ -171,6 +173,37 @@ public class PlaneWithShapesTests
         Assert.IsType<Plane>(new Plane(Face.MakeRect(1, 1)));
         var cyl = Solid.MakeCylinder(1, 4).Faces().FilterBy(GeomType.Plane, reverse: true)[0];
         Assert.Throws<ArgumentException>(() => new Plane(cyl));
+    }
+
+    [Fact]
+    public void ShiftOriginAxis()
+    {
+        var cyl = new Cylinder(1, 2, align: Align.Min);
+        var top = cyl.Faces().SortBy(Axis.Z)[^1];
+        var pln = new Plane(top).ShiftOrigin(Axis.Z);
+        var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), amount: -2);
+        Check.AlmostEqual(Math.PI * (1 - 0.5 * 0.5) * 2, p.Volume, 5);
+    }
+
+    [Fact]
+    public void ShiftOriginVertex()
+    {
+        var box = new Box(1, 1, 1, align: Align.Min);
+        var front = box.Faces().SortBy(Axis.X)[^1];
+        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].SortBy(Axis.Y)[^1]);
+        var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), amount: -1);
+        Check.AlmostEqual(1 - Math.PI * 0.5 * 0.5 * 1, p.Volume, 5);
+    }
+
+    [Fact]
+    public void ShiftOriginVector()
+    {
+        var b = Ops.Fillet(new Box(4, 4, 2).Edges().FilterBy(Axis.Z), 0.5);
+        var top = b.Faces().SortBy(Axis.Z)[^1];
+        var reference = top.Edges().FilterBy(GeomType.Circle).GroupBy(Axis.X)[^1].SortBy(Axis.Y)[0].ArcCenter;
+        var pln = new Plane(top, xDir: (0, 1, 0)).ShiftOrigin(reference);
+        var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), amount: -1);
+        Check.AlmostEqual(b.Volume - 2 * 2 * 1, p.Volume, 5);
     }
 
     [Fact]
@@ -479,6 +512,14 @@ public class VectorWithShapesTests
 
 public class LocationWithShapesTests
 {
+    [Fact]
+    public void MultIterable()
+    {
+        var locs = new Location((1, 2, 0)) * new GridLocations(4, 4, 2, 1);
+        Check.AlmostEqual((-1, 2, 0), locs[0].Position, 5);
+        Check.AlmostEqual((3, 2, 0), locs[1].Position, 5);
+    }
+
     [Fact]
     public void Intersection()
     {

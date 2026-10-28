@@ -5,7 +5,7 @@ namespace Build123d;
 /// <summary>
 /// A sequence of connected edges forming a continuous path: the boundary of a face, or a path to sweep along.
 /// </summary>
-public class Wire : Shape1D
+public partial class Wire : Shape1D
 {
     /// <summary>The empty Wire.</summary>
     public Wire() : base(null) { }
@@ -592,10 +592,6 @@ public class Wire : Shape1D
         // Clean the wires: projection can split edges artificially
         return new ShapeList<Wire>(output.Select(w => w.Clean()));
     }
-
-    /// <summary>The 2D fillet of a wire's corners isn't ported yet: it needs the constrained-arc solvers (phase 6).</summary>
-    public Wire Fillet2D(double radius, IEnumerable<Vertex> vertices) =>
-        throw new NotImplementedException("Wire.Fillet2D needs the constrained-arc solvers, which come with phase 6");
 }
 
 /// <summary>Computes the edges of a 2D convex hull, as <c>scipy.spatial.ConvexHull(points).simplices</c> does.</summary>

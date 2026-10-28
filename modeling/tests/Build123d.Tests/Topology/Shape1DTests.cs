@@ -3,12 +3,13 @@
 // - TestMixin1D.test_positions_missing_arguments, test_tangent_at_error, test_locations_missing_arguments: argument
 //   checks the compiler rules out.
 // - TestMixin1D.test_positions_deflection_failure, test_offset_2d_builder_failure: patch OCCT classes with mocks.
-// - TestMixin1D.test_offset_2d: needs Wire.fillet_2d and Compound.make_text (not yet ported).
+// - TestMixin1D.test_offset_2d's offset of the outline of an "h": needs Compound.make_text (text, phase 7).
 // - TestMixin1D.test_edge_mass, test_wire_mass: mass() is not yet ported.
-// - TestMixin1D.test_edges_topo_parent: needs extrude() and fillet() (phase 4).
 // - TestMixin1D.test_topo_path_survives_copying: uses the copy module.
 // - TestMixin1D.test_topo_parent_assignment_replaces_the_path: assigns topo_parent, which has no public counterpart.
 // - TestMixin1D.test_project_to_viewport: project_to_viewport is not yet ported.
+using Ops = Build123d.Operations;
+
 namespace Build123d.Tests.Topology;
 
 public class Shape1DTests
@@ -375,6 +376,35 @@ public class Shape1DTests
         Assert.False(holeEdges.SortBy(Axis.Z)[0].IsForward);
         var e = new Edge();
         Assert.Throws<InvalidOperationException>(() => e.IsForward);
+    }
+
+    [Fact]
+    public void Offset2D()
+    {
+        var baseWire = Wire.MakePolygon([(0, 0), (1, 0), (1, 1)], close: false);
+        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].SortBy(Axis.X)[^1];
+        baseWire = baseWire.Fillet2D(0.4, [corner]);
+        var offsetWire = baseWire.Offset2D(0.1, side: Side.Left);
+        Assert.True(offsetWire.IsClosed);
+        Assert.Equal(6, offsetWire.Edges().FilterBy(GeomType.Line).Count);
+        Assert.Equal(2, offsetWire.Edges().FilterBy(GeomType.Circle).Count);
+        var offsetWireRight = baseWire.Offset2D(0.1, side: Side.Right);
+        Check.AlmostEqual(0.5, offsetWireRight.Edges().FilterBy(GeomType.Circle).SortBy(SortBy.Radius)[^1].Radius, 4);
+    }
+
+    [Fact]
+    public void EdgesTopoParent()
+    {
+        var phoneCasePlan = Face.MakeRect(80, 150) - Face.MakeRect(25, 25, new Plane((-20, 55)));
+        var phoneCase = Ops.Extrude(phoneCasePlan, 2);
+        var windowEdges = phoneCase.Faces().SortBy(Axis.Z)[^1].InnerWires()[0].Edges();
+        Assert.All(windowEdges, e => Assert.Equal(phoneCase, e.TopoParent));
+        var phoneCaseF = Ops.Fillet(windowEdges, 1);
+        Assert.True(phoneCaseF.Volume < phoneCase.Volume);
+        var perimeter = phoneCaseF.Faces().SortBy(Axis.Z)[^1].OuterWire().Edges();
+        Assert.All(perimeter, e => Assert.Equal(phoneCaseF, e.TopoParent));
+        var phoneCaseFF = Ops.Fillet(perimeter, 1);
+        Assert.True(phoneCaseFF.Volume < phoneCaseF.Volume);
     }
 
     [Fact]

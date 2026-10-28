@@ -72,8 +72,7 @@ public sealed class ShapeHistory
     public static ShapeHistory FromHistory(BRepTools_History? history, IEnumerable<TopoDS_Shape>? before = null,
                                            IEnumerable<TopoDS_Shape>? brought = null)
     {
-        var own = new BRepTools_History();
-        own.Merge(history);
+        var own = history is null ? new BRepTools_History() : Extras.CopyHistory(history);
         return new ShapeHistory(own, before ?? [], brought ?? []);
     }
 
@@ -232,9 +231,8 @@ public sealed class ShapeHistory
 
     private BRepTools_History Copy()
     {
-        var copy = new BRepTools_History();
-        copy.Merge(_wrapped);
-        return copy;
+        // As build123d merges in place: Merge into an empty history isn't a copy
+        return Extras.CopyHistory(_wrapped);
     }
 
     private (ShapeTrace Before, ShapeTrace Brought) Traces => _traces ??= (new ShapeTrace(this, Before), new ShapeTrace(this, Brought));
