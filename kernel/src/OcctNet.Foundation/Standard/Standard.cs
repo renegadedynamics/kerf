@@ -91,6 +91,96 @@ public static class Standard
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_RangeError_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_RangeError(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_DimensionMismatch_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_DimensionMismatch(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_NoSuchObject_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_NoSuchObject(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_NumericError_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_NumericError(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_NegativeValue_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_NegativeValue(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_TypeMismatch_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_TypeMismatch(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_DivideByZero_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_DivideByZero(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_NoMoreObject_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_NoMoreObject(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void StdFail_InfiniteSolutions_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new StdFail_InfiniteSolutions(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void StdFail_UndefinedDerivative_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new StdFail_UndefinedDerivative(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void gp_VectorWithNullMagnitude_Raise_if(bool condition, string? message = null)
     {
         if (condition)

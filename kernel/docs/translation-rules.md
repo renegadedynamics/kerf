@@ -138,27 +138,58 @@ Port what OCCT does, not what it should do, so results match the reference. Mark
 starts `// OCCT` and add it to [occt-issues.md](occt-issues.md). Fixes are a decision for later, made once the
 oracle tests can show what changes.
 
-## 8. Handle classes (from phase 2)
-
-These rules are provisional until the Geom package is ported:
+## 8. Handle classes
 
 - `Handle(T)`/`occ::handle<T>` → a reference to class `T` (nullable). `IsNull()` → `is null`;
-  `Handle(T)::DownCast(x)` → `x as T`.
-- `Standard_Transient` subclasses → classes. Their mutators are `internal` too. Objects a caller can see
-  (curves, surfaces, shapes) are frozen once built, and a mutator called on a frozen object throws
-  `Standard_ImmutableObject`. That keeps OCCT's algorithms from changing shared input geometry, which is the
-  hazard build123d.NET had to work around.
+  `Nullify()` → `= null`; `Handle(T)::DownCast(x)` → `x as T`; `occ::handle<T> h = new T(...)` → `T h = new T(...)`.
+- `Standard_Transient` subclasses → classes deriving from `Standard_Transient`. `DEFINE_STANDARD_RTTIEXT` and
+  `IMPLEMENT_STANDARD_RTTIEXT` go; `DynamicType()`, `IsKind` and `IsInstance` work through .NET types.
+- Their mutators are `internal` too. From phase 2, objects a caller can see (curves, surfaces, shapes) are frozen
+  once built, and a mutator called on a frozen object throws `Standard_ImmutableObject`. That keeps OCCT's
+  algorithms from changing shared input geometry, which is the hazard build123d.NET had to work around. The
+  freezing mechanism is designed with the Geom package.
+- Abstract interfaces (math_Function and the like, pure virtual classes) → `abstract class` with `abstract`
+  members; virtual → `virtual`/`override`. Keep C++ multiple inheritance of interfaces as C# interfaces only when
+  a class really has two bases; otherwise a single base class.
 
-## 9. Collections and performance
+## 9. Collections, pointers and performance
 
-- Inside algorithms, NCollection containers become .NET arrays, `Span<T>` and lists. 1-based OCCT arrays keep
-  their bounds through `NCollection_Array1<T>` (phase 1), so index arithmetic ports unchanged.
+- **NCollection containers** are ported in `src/OcctNet.Foundation/NCollection` with OCCT's API over .NET storage:
+  `NCollection_Array1/Array2/HArray1/HArray2` (arbitrary bounds), `NCollection_Sequence/HSequence` (1-based),
+  `NCollection_List` (with its `Iterator`: More/Next/Value), `NCollection_DynamicArray`/`NCollection_Vector`,
+  `NCollection_LocalArray`, `NCollection_Map/IndexedMap/DataMap/IndexedDataMap`. Ported code uses them unchanged.
+  - **They are classes.** A C++ copy (`NCollection_Array1<double> a(b);`, `a = b;`, pass or return by value) must be
+    written as a copy: `new(b)` or `a.Assign(b)`. A plain C# assignment shares the container. Check every
+    by-value use of a container when porting.
+  - Elements are default-constructed as in C++ (`gp_Dir` elements are (1, 0, 0)).
+  - `a(i)`, `a[i]`, `a.ChangeValue(i)` → `a[i]` (a `ref` indexer, for reading and writing); `a.Value(i)` stays.
+  - The "buffer" constructors (`NCollection_Array1<T> a(b(i), lower, upper)`, an array over another's memory) →
+    `new(b, i, lower, upper)`, which shares `b`'s storage.
+  - Allocator arguments (`NCollection_BaseAllocator`, `NCollection_IncAllocator`) are dropped.
+  - Hasher template arguments become an `IEqualityComparer<TKey>` constructor argument. The unordered maps don't
+    iterate in OCCT's order; if a ported algorithm's result depends on that order, note it.
+  - Typedefs (`TColStd_Array1OfReal`, `TColgp_Array1OfPnt`) are written out as the NCollection type.
+- **Raw pointers and array references.** OCCT often passes the start of an array as `double*` or `double&` and does
+  pointer arithmetic (PLib, BSplCLib). Port these as `Span<double>` (`ReadOnlySpan<double>` when const);
+  `p + k` → `p[k..]` or `p.Slice(k)`; `&a(i)` / `a.ChangeValue(i)` passed as a start → `a.AsSpan(i)`. A pointer that
+  is moved along (`p++`, `p += n`) becomes an index into the span.
+- **Templates** → generics where the parameter is a type the code works on (`math_VectorBase<T>`); where C++ uses a
+  template only for speed over a few fixed types, port the instantiations OCCT uses. `.gxx` "generic" files
+  (included with macros defining the types) are ported once per instantiation OCCT makes, named as OCCT names them.
+- `TCollection_AsciiString`, `TCollection_ExtendedString` → `string`. `Standard_OStream`/`Standard_SStream` → `TextWriter`/`StringBuilder`.
+- `OSD_Parallel::For` → `Parallel.For` (and keep any `theIsSequential` flag). Mutexes (`Standard_Mutex`) → `Lock`.
+- **Progress**: `Message_ProgressRange` and `Message_ProgressScope` keep OCCT's API (More, Next, UserBreak).
+  A C# caller makes a `Message_ProgressIndicator` from a `CancellationToken` and an `IProgress<double>`.
+  Where the C++ relies on a scope's destructor, use `using var aPS = new Message_ProgressScope(...)`.
 - **Returned immutable collections** are `IBentoList<T>` and the other Bento.Collections interfaces. For
   numeric arrays (poles, knots, mesh nodes) return a `PackedList<T>`: one contiguous array implementing
-  `IBentoList<T>`, readable as a `ReadOnlySpan<T>` without copying.
+  `IBentoList<T>`, readable as a `ReadOnlySpan<T>` without copying. Low-level APIs (BSplCLib, PLib, math) keep
+  OCCT's NCollection and span parameters: they are tools for ported code, not values for callers.
 - Pass structs `in`; use `stackalloc` for small fixed scratch buffers; no LINQ or allocations in inner loops.
 - Floating-point parity with OCCT isn't required everywhere, but keeping the C++ order of operations costs
   nothing and keeps most results bit-identical. Don't reassociate or fuse arithmetic.
+- Anonymous-namespace and file-`static` functions → `private static` (or `internal static` if several files need
+  them) methods on the class of the file that holds them, or on a static class named after the file.
 
 ## 10. Tests
 

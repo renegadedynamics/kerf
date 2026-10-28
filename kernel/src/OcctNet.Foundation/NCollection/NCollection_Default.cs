@@ -1,0 +1,34 @@
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using System.Diagnostics.CodeAnalysis;
+
+namespace Occt;
+
+/// <summary>
+/// The value C++ would default-construct for <typeparamref name="T"/>. For structs with a parameterless constructor
+/// (gp_Dir, gp_Trsf, gp_Ax2, ...) that is not all zeros, so new arrays are filled with it, as OCCT's containers
+/// construct their elements.
+/// </summary>
+internal static class NCollection_Default<T>
+{
+    private static readonly T? s_value = Create();
+    private static readonly bool s_isZero = !typeof(T).IsValueType || EqualityComparer<T>.Default.Equals(s_value, default);
+
+    public static T Value => s_value!;
+
+    public static T[] NewArray(int theSize)
+    {
+        var anArray = theSize == 0 ? [] : new T[theSize];
+        if (!s_isZero)
+        {
+            Array.Fill(anArray, s_value!);
+        }
+
+        return anArray;
+    }
+
+    // The value types with parameterless constructors are OCCT.NET's own, which construct them directly elsewhere,
+    // so trimming keeps the constructors. Recorded in docs/decisions.md.
+    [UnconditionalSuppressMessage("Trimming", "IL2091", Justification = "OCCT.NET's value types keep their constructors")]
+    private static T? Create() => typeof(T).IsValueType ? Activator.CreateInstance<T>() : default;
+}

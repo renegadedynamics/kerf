@@ -32,3 +32,26 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     from scratch for the modelling algorithms.
 14. **Coefficient arrays of gp quadrics** (`gp_Pln::Coefficients` and friends) use `out` parameters, and
     `gp_Torus::Coefficients` a `Span<double>` of 35 indexed from 0 (OCCT fills a 1-based `NCollection_Array1`).
+
+## Phase 1 (28 October 2026, overnight)
+
+15. **NCollection is reimplemented, not ported line for line**: OCCT's API (bounds, Value/ChangeValue, More/Next
+    iterators, 1-based sequences and indexed maps) over .NET arrays, lists and dictionaries. OCCT's own
+    implementation is allocator and memory plumbing that .NET does differently. Behaviour that ported code can see
+    is kept: element default construction, the last key moving into a removed index of an indexed map, buffer
+    views sharing storage.
+16. **NCollection containers are classes**, so C++ copies must be written as copies (`new(b)`, `Assign`). Rejected
+    alternative: structs, which would still alias their storage and hide the problem. The rule is in
+    translation-rules.md section 9; a review step checks by-value uses.
+17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient,
+    since C# has single inheritance and arrays are references already.
+18. **The unordered maps don't keep OCCT's iteration order.** Ported code whose output depends on that order is
+    noted where found.
+19. **Raw array pointers become spans** (`double*`/`double&` plus pointer arithmetic → `Span<double>`).
+20. **Progress is OCCT's API on .NET types**: `Message_ProgressIndicator(CancellationToken, IProgress<double>)`.
+    This is how Bento will cancel long operations. Simplification: a range handed out by `Next()` and never closed
+    isn't counted, where OCCT counts it on destruction.
+21. **Low-level packages keep OCCT's mutable parameter types** (NCollection arrays, spans): BSplCLib, PLib and math
+    are tools for ported code. Immutability applies to values callers hold (gp now, Geom and TopoDS later).
+22. **Trimming**: default construction uses `Activator.CreateInstance<T>()`, with the trimming warning suppressed on
+    the grounds that OCCT.NET's value types keep their constructors. Revisit if Bento publishes with full trimming.
