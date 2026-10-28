@@ -15,3 +15,4 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `gp_GTrsf::Power`, `gp_Other` form | Treats any negative N other than -1 as \|N\|, without inverting | A general transformation raised to a negative power below -1 is not inverted |
 | `gp_Hypr::gp_Hypr()` | Sets the minor radius to `RealFirst()`, which is negative and which no constructor or Set method accepts | A default hyperbola is invalid; harmless until it is used |
 | `gp_Hypr::Asymptote2` | Its error message says "Asymptote1" | Cosmetic |
+| `ElSLib::TorusDN`, mixed branch (Nu > 0 and Nv > 0) | The odd/odd and even/even sub-branches never change sign, where the derivative's sign depends on (Nu + Nv) mod 4 | Mixed torus derivatives are reversed when Nu and Nv are both odd with Nu + Nv ≡ 0 (mod 4), e.g. (1, 3), (3, 1), or both even with Nu + Nv ≡ 2 (mod 4), e.g. (2, 4). (1, 1), (2, 2) and the odd/even orders are right. |
