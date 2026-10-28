@@ -1,0 +1,9 @@
+# Third-party sources, build trees and local feeds
+/.deps/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+/artifacts/

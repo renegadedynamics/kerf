@@ -1,0 +1,34 @@
+# Decisions
+
+Decisions made while porting, newest last, so they can be reviewed. Each says what was decided, why, and what
+would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) instead.
+
+## Phase 0 (28 October 2026)
+
+1. **Port from OCCT V8_0_1** (`b8f597c6`, 30 July 2026), the latest stable release and the one build123d.NET builds,
+   so its native build is the oracle. Upstream fixes are carried across later by diffing.
+2. **LGPL 2.1 with the Open CASCADE exception** for the whole port (owner's decision).
+3. **Mechanical, class-for-class port** keeping OCCT's names and layout, rather than a redesign. Makes review
+   against the C++ and carrying upstream fixes practical.
+4. **Value types are structs with internal mutators**, not `readonly struct`s. OCCT mutates in place everywhere;
+   keeping the mutators lets ported code stay line-for-line. Callers outside OCCT.NET see only `readonly`
+   members, so values are immutable to them. The hazard (mutating a defensive copy) is a compile error through
+   the OCCTNET0001 analyzer. Reconsider only if the analyzer proves leaky.
+5. **Every mutator gets a public non-mutating twin**: `WithFoo` for `SetFoo`, the past participle otherwise, and
+   static factories where a `Set` rebuilds the whole value (`gp_Trsf.Rotation`).
+6. **Methods stay methods** (`p.X()`), not properties, to keep ported code identical to the C++.
+7. **No implicit conversions** between gp types: C++'s converting constructors are written out (`new gp_Dir(v)`).
+8. **Exact equality** (`Equals`, `==`, `GetHashCode`) on all value types, for Bento; OCCT's tolerant comparisons
+   stay as `IsEqual(other, tol)`.
+9. **Argument checks always on.** OCCT's release builds compile most `Raise_if` checks out (`No_Exception`); the
+   port keeps them, preferring a clear exception to garbage geometry. Oracle tests use valid inputs.
+10. **OCCT's bugs are reproduced**, marked `// OCCT` and listed in occt-issues.md, to be fixed only once
+    consistent behaviour with native OCCT is proven (owner's decision).
+11. **Returned collections are Bento.Collections interfaces**; numeric arrays use `PackedList<T>`, a contiguous
+    `IBentoList<T>` readable as a span, because Bento's lists are trees of 32-element leaves.
+12. **Oracle via build123d.NET's bindings** (a sibling checkout), not bindings of our own: they exist, are generated,
+    and wrap the same OCCT build. Classes they lack are added to their whitelist when needed.
+13. **Draw-lite** (a small Tcl interpreter) to run OCCT's own 17,237 Draw test scripts, rather than writing tests
+    from scratch for the modelling algorithms.
+14. **Coefficient arrays of gp quadrics** (`gp_Pln::Coefficients` and friends) use `out` parameters, and
+    `gp_Torus::Coefficients` a `Span<double>` of 35 indexed from 0 (OCCT fills a 1-based `NCollection_Array1`).

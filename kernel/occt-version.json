@@ -1,0 +1,7 @@
+{
+  "comment": "The OCCT release this port follows. Every ported file names it; tools/get-occt.ps1 checks out exactly this commit.",
+  "repository": "https://github.com/Open-Cascade-SAS/OCCT.git",
+  "tag": "V8_0_1",
+  "commit": "b8f597c677811d1f9f4d8a97f5ae2825c0353a42",
+  "date": "2026-07-30"
+}

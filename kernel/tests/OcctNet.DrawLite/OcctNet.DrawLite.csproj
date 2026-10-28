@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>false</IsTestProject>
+    <Description>Draw-lite: runs OCCT's Draw test scripts against the port.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
+  </ItemGroup>
+
+</Project>

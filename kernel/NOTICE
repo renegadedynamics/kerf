@@ -1,0 +1,16 @@
+OCCT.NET
+Copyright (c) 2026 The OCCT.NET Contributors
+
+This software is a port to .NET of Open CASCADE Technology (OCCT), release V8_0_1:
+  https://github.com/Open-Cascade-SAS/OCCT
+  Copyright (c) 1991-1999 Matra Datavision
+  Copyright (c) 1999-2026 OPEN CASCADE SAS
+
+It makes use of, and is based on, facilities provided by the Open CASCADE Technology software.
+
+OCCT.NET is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser
+General Public License version 2.1 as published by the Free Software Foundation, with the special
+exception defined in OCCT_LGPL_EXCEPTION.txt. See LICENSE for the full text of the licence.
+
+OCCT.NET is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

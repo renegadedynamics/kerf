@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compares the port with native OCCT, through the generated bindings of a sibling build123d.NET checkout
+    (Build123dNetRoot, ../build123d.net by default), which builds the same OCCT release (V8_0_1).
+    Without that checkout and its native build, the project builds one test that says why it is skipped.
+  -->
+  <PropertyGroup>
+    <Build123dOcctProject>$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj</Build123dOcctProject>
+    <HasOracle Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNetRoot)native/out/win-x64/bin/b3docct.dll')">true</HasOracle>
+    <DefineConstants Condition="'$(HasOracle)' == 'true'">$(DefineConstants);HAS_ORACLE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
+    <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
+  </ItemGroup>
+
+</Project>

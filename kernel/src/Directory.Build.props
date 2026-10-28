@@ -1,0 +1,19 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsOcctPort Condition="'$(MSBuildProjectName)' != 'OcctNet.Analyzers'">true</IsOcctPort>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsOcctPort)' == 'true'">
+    <!-- OCCT's free functions (RealSmall(), Square(), IsOdd(), the Raise_if checks) are called unqualified, as in C++ -->
+    <Using Include="Occt.Standard" Static="true" />
+    <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)OcctNet.Analyzers/OcctNet.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!-- Every OCCT.NET assembly may use the internal mutators of the others -->
+    <InternalsVisibleTo Include="OcctNet.ModelingData" />
+    <InternalsVisibleTo Include="OcctNet.ModelingAlgorithms" />
+    <InternalsVisibleTo Include="OcctNet.DataExchange" />
+  </ItemGroup>
+</Project>
