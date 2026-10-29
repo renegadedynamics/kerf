@@ -16,9 +16,7 @@ until you say otherwise; changing one later is cheap unless the entry says so. N
    which [design.md](design.md) put in phase 5; and most topology GTests and 3,900 corpus cases need `MakeBox` /
    `pcylinder` (TKPrim). *Provisional:* pulled into phase 3 (units 3D–3K, and 3M for TKPrim), ~138k lines in all.
    design.md's phase table is updated to match.
-3. **OCCT's test data.** The Draw corpus restores 5,815 distinct data files; only 37 ship with the OCCT source. The
-   full test-data archive is several GB. *Provisional:* not downloaded; the corpus milestone uses the 37 files and the
-   cases that need no data file. Say if `tools/get-occt.ps1` should fetch the archive.
+3. **OCCT's test data.** *Decided by the owner (29 October): download it.* `tools/get-occt-testdata.ps1` fetches the dataset OCCT V8_0_1's own CI uses (opencascade-dataset-7.9.0, 99 MB, SHA-256 in occt-version.json) into `.deps/occt-testdata`. It holds 2,907 of the 6,939 files the corpus names (1,287 of 4,039 .brep, 870 of 1,156 .rle, 170 of 414 STEP); the rest are not published. MSBuild property `OcctTestDataDir` points at it.
 4. **A native oracle for BinTools.** build123d.NET doesn't bind BinTools (binary BRep). Changing that repository is
    yours to decide. *Provisional:* BinTools is checked by round trips and against the format as OCCT writes it, not
    against native output. Options: bind `BinTools` there, or add a binary twin of its `b3d_brep_write`/`read`.

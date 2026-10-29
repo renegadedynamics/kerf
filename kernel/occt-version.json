@@ -3,5 +3,12 @@
   "repository": "https://github.com/Open-Cascade-SAS/OCCT.git",
   "tag": "V8_0_1",
   "commit": "b8f597c677811d1f9f4d8a97f5ae2825c0353a42",
-  "date": "2026-07-30"
+  "date": "2026-07-30",
+  "testData": {
+    "comment": "The dataset OCCT V8_0_1's own CI uses (.github/actions); tools/get-occt-testdata.ps1 fetches and checks it.",
+    "file": "opencascade-dataset-7.9.0.tar.xz",
+    "url": "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_0_beta1/opencascade-dataset-7.9.0.tar.xz",
+    "size": 98739184,
+    "sha256": "a92ed91c3271c299287c1c404bb9454d463251094bfc848acc44aee60e6a026c"
+  }
 }
