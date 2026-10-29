@@ -157,7 +157,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         }
         else
         {
-            // OCCT dereferences the curve's Copy() before testing it
+            // OCCT dereferences the curve (Copy()) before testing it for null: an edge without a 3D curve crashes there
             Geom_Curve? C = (Geom_Curve)BRep_Tool.Curve(TopoDS.Edge(aGenE), out TopLoc_Location Loc, out _, out _)!.Copy();
             if (C is not null)
             {

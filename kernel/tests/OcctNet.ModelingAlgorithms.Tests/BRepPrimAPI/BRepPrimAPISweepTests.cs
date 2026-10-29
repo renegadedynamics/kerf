@@ -253,6 +253,25 @@ public class BRepPrimAPISweepTests
         Assert.Equal(1.0, Area(aS), Tol);
     }
 
+    [Fact]
+    public void An_unfrozen_profile_is_swept_in_place_as_OCCT_does()
+    {
+        // ported code passing its own unfrozen shape: no copy, the result holds the profile's own edges, which get
+        // their pcurves on the walls in place
+        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        var aMW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).InternalEdge());
+        TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(aMW.InternalWire(), true).InternalFace();
+        Assert.False(aDisk.TShape()!.IsFrozen());
+        var aMP = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 1));
+        TopoDS_Shape aS = aMP.Shape();
+        Assert.True(aMP.FirstShape().IsSame(aDisk));
+        TopoDS_Edge aCircle = TopoDS.Edge(new TopExp_Explorer(aDisk, TopAbs_EDGE).Current());
+        Assert.True(Contains(aS, aCircle));
+        TopoDS_Face aWall = TopoDS.Face(Assert.Single(aMP.Generated(aCircle)));
+        Assert.NotNull(BRep_Tool.CurveOnSurface(aCircle, aWall, out _, out _));
+        Assert.Equal(Math.PI, Volume(aS), 1e-9);
+    }
+
     // ------------------------------------------------------------ revolutions
 
     private static readonly gp_Ax1 OZ = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
