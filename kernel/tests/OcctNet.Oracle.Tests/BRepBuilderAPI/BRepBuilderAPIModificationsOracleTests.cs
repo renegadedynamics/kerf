@@ -15,9 +15,38 @@ namespace OcctNet.Oracle.Tests;
 /// identity, every vertex, edge and face, triangulations), each input sub-shape's ModifiedShape by its place in the
 /// result, and Modified. One framework is reused on several shapes, as Draw's commands do.
 /// </summary>
-public class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper output)
+public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper output) : IDisposable
 {
     private const int Scenes = 48;
+
+    private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-brepbuilderapi-mod-").FullName;
+    private int myFileNumber;
+
+    public void Dispose()
+    {
+        try
+        {
+            Directory.Delete(myDirectory, true);
+        }
+        catch (IOException)
+        {
+        }
+    }
+
+    // The native shape written to a file and read back by both sides (the port's frozen).
+    private Twin<N.TopoDS_Shape, TopoDS_Shape> ReadBoth(N.TopoDS_Shape theShape)
+    {
+        string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
+        Assert.True(N.BRepTools.Write(theShape, aFile));
+        var aNShape = new N.TopoDS_Shape();
+        using (var aBuilder = new N.BRep_Builder())
+        {
+            Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
+        }
+
+        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        return new(aNShape, aPShape);
+    }
 
     // Modified(S) of every input sub-shape: the number of images and each one's place in the result.
     private static void CompareModified(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theInput, N.TopoDS_Shape theNResult,
@@ -149,6 +178,86 @@ public class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper output)
 
         output.WriteLine($"{Scenes} scenes: {aCounts.Shapes} explored sub-shapes, {aCounts.Edges} edges, {aCounts.Faces} faces");
         anOracle.Report("BRepBuilderAPI_GTransform (BRepBuilderAPI_NurbsConvert, then the transformation) against native OCCT");
+    }
+
+    /// <summary>
+    /// Transform (with a copy of the geometry and a scaling, mirror or rigid motion), Copy and GTransform on random
+    /// native shapes (primitives, sweeps, Booleans, fillets, lofts, placed and meshed at random) that both sides read
+    /// from native OCCT's file.
+    /// </summary>
+    [Fact]
+    public void Modifications_of_native_shapes_answer_as_native_OCCT()
+    {
+        var anOracle = new Oracle(output, 31013);
+        var aCounts = new TopologyOracleTests.Counts();
+        const int Shapes = 60;
+        int aSurfaceless = 0;
+        for (int k = 0; k < Shapes; k++)
+        {
+            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out _));
+            switch (k % 3)
+            {
+                case 0:
+                {
+                    (N.gp_Trsf aNT, gp_Trsf aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, k % 4);
+                    using (aNT)
+                    {
+                        bool aCopyMesh = anOracle.Bool();
+                        using var aN = new N.BRepBuilderAPI_Transform(aShape.N, aNT, true, aCopyMesh);
+                        var aP = new BRepBuilderAPI_Transform(aShape.P, aT, true, aCopyMesh);
+                        BRepToolsModifierOracleTests.CompareResult(anOracle, aShape, aN.Shape(), aP.InternalShape(), aP.Shape,
+                                                                   aN.ModifiedShape, s => aP.ModifiedShape(s), aCounts);
+                    }
+                    break;
+                }
+                case 1:
+                {
+                    // twice through one framework: the second Perform sets the continuities of the first result's
+                    // edges again (fillets, sweeps), which the port skips on its published, frozen edges
+                    bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
+                    using var aN = new N.BRepBuilderAPI_Copy();
+                    var aP = new BRepBuilderAPI_Copy();
+                    for (int aRound = 0; aRound < 2; aRound++)
+                    {
+                        aN.Perform(aShape.N, aCopyGeom, aCopyMesh);
+                        aP.Perform(aShape.P, aCopyGeom, aCopyMesh);
+                        BRepToolsModifierOracleTests.CompareResult(anOracle, aShape, aN.Shape(), aP.InternalShape(), aP.Shape,
+                                                                   aN.ModifiedShape, s => aP.ModifiedShape(s), aCounts);
+                    }
+                    break;
+                }
+                default:
+                {
+                    (N.gp_GTrsf aNG, gp_GTrsf aG) = BRepToolsModifierOracleTests.RandomGTrsf(anOracle);
+                    using (aNG)
+                    {
+                        using var aN = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);
+                        var aP = new BRepBuilderAPI_GTransform(aShape.P, aG);
+                        // OCCT: a meshed face on a B-spline or Bezier surface comes out of the NURBS conversion without
+                        // its surface (occt-issues.md), on both sides; native BRepTools::UVBounds can't read such a face
+                        bool aGeometry = true;
+                        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in TopologyOracleTests.Explore(new(aN.Shape(), aP.InternalShape()), TopAbs_FACE))
+                        {
+                            bool aNNull = N.BRep_Tool.Surface(N.TopoDS.Face(aF.N)) is null;
+                            anOracle.Same(aNNull, BRep_Tool.Surface(TopoDS.Face(aF.P)) is null, "face without surface");
+                            aGeometry &= !aNNull;
+                        }
+                        if (!aGeometry)
+                        {
+                            aSurfaceless++;
+                        }
+
+                        BRepToolsModifierOracleTests.CompareResult(anOracle, aShape, aN.Shape(), aP.InternalShape(), aP.Shape,
+                                                                   aN.ModifiedShape, s => aP.ModifiedShape(s), aCounts, aGeometry);
+                    }
+                    break;
+                }
+            }
+        }
+
+        output.WriteLine($"{Shapes} native shapes: {aCounts.Shapes} explored sub-shapes, {aCounts.Edges} edges, {aCounts.Faces} faces; "
+                         + $"{aSurfaceless} GTransform results with faces left without surfaces (geometry not compared)");
+        anOracle.Report("BRepBuilderAPI_Transform, Copy and GTransform on native shapes against native OCCT");
     }
 }
 #endif

@@ -24,11 +24,16 @@ public class BRepBuilderAPI_Copy : BRepBuilderAPI_ModifyShape
         DoModif(S);
     }
 
-    /// <summary>Copies <paramref name="S"/> (again, even if it was the last shape copied).</summary>
+    /// <summary>
+    /// Copies <paramref name="S"/>. As in OCCT, copying again a shape this framework has copied before returns the same
+    /// result (the modifier keeps its images); use a new framework for a second, distinct copy.
+    /// </summary>
     public void Perform(in TopoDS_Shape S, bool copyGeom = true, bool copyMesh = false)
     {
         myModification = new BRepTools_CopyModification(copyGeom, copyMesh);
         NotDone(); // on force la copie si on vient deja d`en faire une
+        // OCCT: the modifier keeps the images it built, so copying a shape copied before returns the same result, with
+        // only its vertices made again (occt-issues.md)
         DoModif(S);
     }
 }

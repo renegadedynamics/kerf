@@ -371,6 +371,28 @@ public class BRepBuilderAPITests
     }
 
     [Fact]
+    public void Copy_reused_on_a_shape_with_continuities_does_not_write_into_its_published_result()
+    {
+        // a box whose first edge is G1 between its two faces: the modifier sets the continuity on the copied edge,
+        // and a second Perform on the same shape sets it again on the first result's edge, published (frozen) since
+        TopoDS_Shape aBox = TestShapes.Box(10.0, 10.0, 10.0);
+        var aMEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMEF);
+        TopoDS_Edge anE = TopoDS.Edge(aMEF.FindKey(1));
+        TopoDS_Face aF1 = TopoDS.Face(aMEF[1].First()), aF2 = TopoDS.Face(aMEF[1].Last());
+        new BRep_Builder().Continuity(anE, aF1, aF2, GeomAbs_Shape.GeomAbs_G1);
+        TestShapes.Frozen(aBox);
+
+        var aC = new BRepBuilderAPI_Copy(aBox);
+        TopoDS_Shape aFirst = aC.Shape();
+        TopoDS_Edge aCopiedE = TopoDS.Edge(aC.ModifiedShape(anE));
+        Assert.Equal(GeomAbs_Shape.GeomAbs_G1,
+                     BRep_Tool.Continuity(aCopiedE, TopoDS.Face(aC.ModifiedShape(aF1)), TopoDS.Face(aC.ModifiedShape(aF2))));
+        aC.Perform(aBox);
+        Assert.True(aC.Shape().IsPartner(aFirst));
+    }
+
+    [Fact]
     public void NurbsConvert_converts_curves_and_surfaces_and_keeps_the_input()
     {
         TopoDS_Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(2, 3));
@@ -396,6 +418,40 @@ public class BRepBuilderAPITests
             Assert.True(BRep_Tool.Tolerance(aV) >= BRep_Tool.Tolerance(TopoDS.Vertex(anExp.Current())));
         }
         aSnap.AssertUnchanged(aCyl);
+    }
+
+    // OCCT: NurbsConvertModification keeps a B-spline face's surface (NewSurface is false) but copies its
+    // triangulation, and BRepTools_Modifier then makes the face from the triangulation alone (occt-issues.md)
+    [Fact]
+    public void OcctIssue_NurbsConvert_of_a_meshed_BSpline_face_drops_its_surface()
+    {
+        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
+        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
+        aPoles[1, 2] = new gp_Pnt(0, 1, 0);
+        aPoles[2, 1] = new gp_Pnt(1, 0, 0);
+        aPoles[2, 2] = new gp_Pnt(1, 1, 0.5);
+        var aSurf = new Geom_BezierSurface(aPoles);
+        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, Precision.Confusion()).InternalFace();
+        var aTri = new Poly_Triangulation(4, 2, true);
+        (double u, double v)[] aUV = [(0, 0), (1, 0), (1, 1), (0, 1)];
+        for (int i = 0; i < 4; i++)
+        {
+            aTri.SetNode(i + 1, aSurf.Value(aUV[i].u, aUV[i].v));
+            aTri.SetUVNode(i + 1, new gp_Pnt2d(aUV[i].u, aUV[i].v));
+        }
+        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+        new BRep_Builder().UpdateFace(aF, aTri);
+        TestShapes.Frozen(aF);
+
+        TopoDS_Face aConverted = TopoDS.Face(new BRepBuilderAPI_NurbsConvert(aF).Shape());
+        Assert.Null(BRep_Tool.Surface(aConverted));
+        Assert.NotNull(BRep_Tool.Triangulation(aConverted, out _));
+        Assert.NotNull(BRep_Tool.Surface(aF));
+
+        // without the mesh the face keeps its surface
+        TopoDS_Face aBare = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, Precision.Confusion()).Face();
+        Assert.NotNull(BRep_Tool.Surface(TopoDS.Face(new BRepBuilderAPI_NurbsConvert(aBare).Shape())));
     }
 
     [Fact]

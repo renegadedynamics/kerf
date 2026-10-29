@@ -468,7 +468,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                                        TopoDS_Shape theResult, Func<TopoDS_Shape> thePublish,
                                        Func<N.TopoDS_Shape, N.TopoDS_Shape> theNModifiedShape,
                                        Func<TopoDS_Shape, TopoDS_Shape> theModifiedShape,
-                                       TopologyOracleTests.Counts theCounts)
+                                       TopologyOracleTests.Counts theCounts, bool theCompareGeometry = true)
     {
         Twin<N.TopoDS_Shape, TopoDS_Shape> aTwin = new(theNResult, theResult);
         // a result that is the input moved, or an earlier result, holds frozen TShapes
@@ -480,7 +480,10 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         Assert.True(aPublished.TShape()!.IsFrozen());
 
         TopologyOracleTests.CompareTopology(theOracle, aTwin, theCounts);
-        TopologyOracleTests.CompareGeometry(theOracle, aTwin, theCounts);
+        if (theCompareGeometry)
+        {
+            TopologyOracleTests.CompareGeometry(theOracle, aTwin, theCounts);
+        }
         CompareMeshes(theOracle, aTwin);
 
         foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aS in AllSubShapes(theInput))
