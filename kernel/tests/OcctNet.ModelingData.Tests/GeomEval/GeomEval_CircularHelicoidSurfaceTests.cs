@@ -7,7 +7,6 @@ using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 namespace OcctNet.ModelingData.Tests;
 
 // Left out: DumpJson_NoCrash (DumpJson is not ported).
-// TODO(1D): ComparisonWithHelix_ConstantV once GeomEval_CircularHelixCurve is merged into this branch.
 public class GeomEval_CircularHelicoidSurfaceTest
 {
     private const double THE_FD_TOL = 1e-5;
@@ -87,6 +86,25 @@ public class GeomEval_CircularHelicoidSurfaceTest
         {
             Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, 2.0);
             Assert.Equal(1.0, aD1.D1V.Magnitude(), Precision.Confusion());
+        }
+    }
+
+    [Fact]
+    public void ComparisonWithHelix_ConstantV()
+    {
+        gp_Ax3 anAx3 = new();
+        gp_Ax2 anAx2 = new(anAx3.Location(), anAx3.Direction(), anAx3.XDirection());
+        const double aP = 10.0, aR = 3.0;
+        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, aP);
+        GeomEval_CircularHelixCurve aHelix = new(anAx2, aR, aP);
+
+        // S(u, R) should trace the same path as the helix C(u)
+        double[] aParams = [0.0, 0.5, 1.0, M_PI, 2.0 * M_PI];
+        foreach (double aU in aParams)
+        {
+            gp_Pnt aPS = aSurf.EvalD0(aU, aR);
+            gp_Pnt aPH = aHelix.EvalD0(aU);
+            Assert.Equal(0.0, aPS.Distance(aPH), Precision.Confusion());
         }
     }
 
