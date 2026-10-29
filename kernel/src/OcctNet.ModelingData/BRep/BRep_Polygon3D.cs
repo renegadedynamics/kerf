@@ -17,7 +17,7 @@ public class BRep_Polygon3D : BRep_CurveRepresentation
 
     /// <summary>
     /// The polygon <paramref name="P"/> with location <paramref name="L"/>, frozen if <paramref name="theToFreeze"/>
-    /// (the mesher's non-freezing attach, decision 4003).
+    /// (the mesher's non-freezing attach, decision 488).
     /// </summary>
     internal BRep_Polygon3D(Poly_Polygon3D? P, in TopLoc_Location L, bool theToFreeze) : base(L)
     {
@@ -35,7 +35,7 @@ public class BRep_Polygon3D : BRep_CurveRepresentation
 
     internal override void Polygon3D(Poly_Polygon3D? P) => Polygon3D(P, true);
 
-    /// <summary>Sets the polygon, frozen if <paramref name="theToFreeze"/> (decision 4003).</summary>
+    /// <summary>Sets the polygon, frozen if <paramref name="theToFreeze"/> (decision 488).</summary>
     internal void Polygon3D(Poly_Polygon3D? P, bool theToFreeze)
     {
         CheckMutable();

@@ -10,7 +10,7 @@ namespace Occt;
 /// <summary>The meshing parameters.</summary>
 /// <remarks>
 /// <para>
-/// OCCT's struct with OCCT's public fields (decision 4004): a caller writes
+/// OCCT's struct with OCCT's public fields (decision 489): a caller writes
 /// <c>new IMeshTools_Parameters { Deflection = 0.1, Angle = 0.5, InParallel = true }</c>. It is a value, so changing a
 /// copy changes nothing shared, and it is equatable field by field (doubles compared exactly, as <c>double.Equals</c>
 /// does), so <c>(shape, parameters)</c> can key a cache of meshes.

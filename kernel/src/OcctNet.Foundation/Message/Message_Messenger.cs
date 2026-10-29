@@ -18,7 +18,7 @@ namespace Occt;
 /// The printers are set when the messenger is made (<see cref="Message_Messenger()"/> has one printer to the console,
 /// as OCCT's; <see cref="Message_Messenger(Message_Printer)"/> has the given one). The printer list's mutators
 /// (<see cref="AddPrinter"/>, <see cref="RemovePrinter"/>, <see cref="RemovePrinters"/>, <see cref="ChangePrinters"/>)
-/// are internal, because the process-wide <see cref="Message.DefaultMessenger"/> is one of these (decision 4008);
+/// are internal, because the process-wide <see cref="Message.DefaultMessenger"/> is one of these (decision 493);
 /// <see cref="Printers"/> returns a copy of the list.
 /// </para>
 /// <para>

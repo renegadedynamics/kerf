@@ -196,7 +196,7 @@ public abstract class BVH_QueueBuilder<T, TVec> : BVH_Builder<T, TVec>
 
         BVH_TypedBuildTool aBuildTool = new(theSet, theBVH, aBuildQueue, this);
 
-        // OCCT.NET: a runtime without threads (single-threaded WebAssembly) builds in the calling thread (decision 4002)
+        // OCCT.NET: a runtime without threads (single-threaded WebAssembly) builds in the calling thread (decision 487)
         if (myNumOfThreads > 1 && !OSD_Parallel.IsSerial())
         {
             // Reserve the maximum possible number of nodes in the BVH

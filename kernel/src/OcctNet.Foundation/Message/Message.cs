@@ -13,7 +13,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Decision 4008: OCCT's default messenger has one printer to <c>std::cout</c>; the port's has no printer, so a
+/// Decision 493: OCCT's default messenger has one printer to <c>std::cout</c>; the port's has no printer, so a
 /// library call (in a Bento cell, for example) never writes to the console. The messenger is replaced only through the
 /// internal <see cref="SetDefaultMessenger"/> (process-wide state, decision 415's rule); Draw-lite installs one that
 /// prints as DRAWEXE does.

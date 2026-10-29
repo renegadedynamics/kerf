@@ -21,7 +21,7 @@ public class BRep_PolygonOnClosedTriangulation : BRep_PolygonOnTriangulation
 
     /// <summary>
     /// The polygons <paramref name="P1"/> and <paramref name="P2"/> on <paramref name="T"/>, all frozen if
-    /// <paramref name="theToFreeze"/> (the mesher's non-freezing attach, decision 4003).
+    /// <paramref name="theToFreeze"/> (the mesher's non-freezing attach, decision 488).
     /// </summary>
     internal BRep_PolygonOnClosedTriangulation(Poly_PolygonOnTriangulation? P1,
                                                Poly_PolygonOnTriangulation? P2,

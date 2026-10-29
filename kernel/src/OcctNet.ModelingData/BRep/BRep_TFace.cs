@@ -115,7 +115,7 @@ public class BRep_TFace : TopoDS_TFace
     /// <param name="theTriangulation">The triangulation, or null to remove them all.</param>
     /// <param name="theToReset">Whether the list becomes just this triangulation.</param>
     /// <param name="theToFreeze">
-    /// False for the mesher's non-freezing attach (decision 4003): the triangulation freezes with the face's graph.
+    /// False for the mesher's non-freezing attach (decision 488): the triangulation freezes with the face's graph.
     /// </param>
     internal void Triangulation(Poly_Triangulation? theTriangulation, bool theToReset = true, bool theToFreeze = true)
     {

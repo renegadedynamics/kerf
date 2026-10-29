@@ -3,7 +3,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// GeomLib_CheckCurveOnSurface's parallel loop (moved onto OSD_Parallel, decision 4002): serial, parallel and the
+/// GeomLib_CheckCurveOnSurface's parallel loop (moved onto OSD_Parallel, decision 487): serial, parallel and the
 /// serial fallback of a parallel run give the same maximal distance and parameter, bit for bit.
 /// </summary>
 public class GeomLib_CheckCurveOnSurfaceParallelTest

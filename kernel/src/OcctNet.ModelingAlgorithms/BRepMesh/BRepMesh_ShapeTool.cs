@@ -17,10 +17,10 @@ namespace Occt;
 /// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace"/>, <see cref="NullifyFace"/>,
 /// <see cref="NullifyEdge(in TopoDS_Edge, Poly_Triangulation?, in TopLoc_Location)"/> and the <c>UpdateEdge</c>
 /// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's internal non-freezing
-/// forms (decision 4003): the mesher's triangulations and polygons stay unfrozen, so its post-processor can set each
+/// forms (decision 488): the mesher's triangulations and polygons stay unfrozen, so its post-processor can set each
 /// triangulation's deflection and parameters in place, and they freeze with the result when it is published
 /// (<c>FreezeGraph</c>). On a frozen face or edge they throw <see cref="Standard_ImmutableObject"/>: the mesher writes
-/// only into an unfrozen shape, or into an exact copy of a frozen one (decision 4004).
+/// only into an unfrozen shape, or into an exact copy of a frozen one (decision 489).
 /// </para>
 /// </remarks>
 public static class BRepMesh_ShapeTool
@@ -135,7 +135,7 @@ public static class BRepMesh_ShapeTool
     /// </summary>
     /// <remarks>
     /// Writes the nodes of <paramref name="theTriangulation"/> (unfrozen: the mesher's own) and attaches it to the face
-    /// unfrozen (decision 4003). OCCT passes the handle by reference without changing it; so does the port.
+    /// unfrozen (decision 488). OCCT passes the handle by reference without changing it; so does the port.
     /// </remarks>
     public static void AddInFace(in TopoDS_Face theFace, Poly_Triangulation theTriangulation)
     {
@@ -153,7 +153,7 @@ public static class BRepMesh_ShapeTool
         }
 
         BRep_Builder aBuilder = new();
-        aBuilder.UpdateFaceUnfrozen(theFace, theTriangulation); // OCCT.NET: the mesher's non-freezing attach (decision 4003)
+        aBuilder.UpdateFaceUnfrozen(theFace, theTriangulation); // OCCT.NET: the mesher's non-freezing attach (decision 488)
     }
 
     /// <summary>Removes the face's triangulation.</summary>

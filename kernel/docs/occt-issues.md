@@ -478,3 +478,16 @@ the corpus sees OCCT's behaviour; all were found by reading unless a test is nam
 | `BRepLib::UpdateTolerances` in place (`InternalUpdateTolerances` with `IsMutableInput`, then `UpdShTol`) | A vertex TShape reached at several locations is a key per location in an NCollection_DataMap hashed by TopTools_ShapeMapHasher (the TShape's address); with `theVForceUpdate` each key's tolerance is written into the shared TShape | The vertex keeps the tolerance of the key iterated last, in an order set by addresses: the result isn't reproducible. The port iterates in insertion order (decision 18). data/occ's solid.brep, mal_tige.brep and MODERN_MVCooker_1.brep (`updatetolerance s 1`) differ from native OCCT only there (DrawLiteConstructionOracleTests); the reshaper form makes a copy per location and is reproducible |
 | `proximity`, `selfintersect` (BRepTest_ExtremaCommands.cxx; a property, not a bug) | List the overlapping sub-shapes by iterating an `NCollection_DataMap<int, ...>` | The order of the printed names is the map's bucket order. The port prints them in ascending order; the names are the same |
 | lowalgos/extss/bug29712_44 (a test, not the library) | Computes `extrema s1 s1` and `extrema s2 s2`, each plane with itself, and expects the distance 10 between the two parallel planes | The distance is 0, so the case fails in DRAWEXE as in Draw-lite (`extrema s1 s2` was meant). By reading |
+
+## Phase 4: unit 4A, mesh foundations
+
+Found while porting Message, NCollection_MapAlgo, IMeshData, IMeshTools, BRepMeshData and BRepMesh's geometry tools.
+All are reproduced and pinned by unit tests.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_GeomTool::IntSegSeg` (BRepMesh_GeomTool.cxx) | `aPointHash[0]`/`[1]` classify the second segment's start/end on the first segment, `[2]`/`[3]` the first's on the second; the `PointOnSegment` branch returns the first segment's start for `[0]`, its end for `[1]`, the second's start for `[2]` and its end for `[3]` | The point given with `PointOnSegment` is an end point of the wrong segment. BRepMesh_Delaun, its only caller asking for it, recomputes the chopping point and ignores it, so meshes aren't affected. Kept (`// OCCT`); BRepMeshGeomToolTests |
+| `Message_Algorithm::AddStatus` (Message_Algorithm.cxx) | Copies the other algorithm's strings with `for (n = 1; n < Length; n++)` | The last string of each status is dropped. Kept; unit test |
+| `Message_Msg::Get` (Message_Msg.cxx) | Replaces the unfilled placeholders but keeps their positions | A second `Get` garbles the text ("a %s b" → "a UNKNOWN b" → "a UNKNOWNKNOWN b"); `SendStatusMessages` calls `Get` on a stored custom message, so sending it twice garbles it. Kept; unit test |
+| `Message_Msg::Set` (Message_Msg.cxx) | After "%%", reads the next characters as a format | "100%% done" gets a placeholder "% d": `Arg(7)` gives "100 7one". Kept; unit test |
+| `NCollection_MapAlgo::Differ` (NCollection_MapAlgo.hxx; a property, not a bug) | Reports a change by comparing the counts before and after | Swapping one key for another returns false. Kept; unit test |

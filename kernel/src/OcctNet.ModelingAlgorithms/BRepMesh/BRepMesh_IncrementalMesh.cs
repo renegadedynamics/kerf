@@ -12,7 +12,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Writing into the shape</b> (decision 4004). OCCT writes the triangulations into the faces of the shape it is
+/// <b>Writing into the shape</b> (decision 489). OCCT writes the triangulations into the faces of the shape it is
 /// given, and the polygons into its edges.
 /// <list type="bullet">
 /// <item>On a shape whose graph holds a frozen TShape (any shape a caller holds), the port meshes
@@ -34,14 +34,14 @@ namespace Occt;
 public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
 {
     // Default flag to control parallelization for BRepMesh_IncrementalMesh tool returned for Mesh Factory
-    // (process-wide, with an internal setter: decisions 415, 4007).
+    // (process-wide, with an internal setter: decisions 415, 492).
     private static volatile bool IS_IN_PARALLEL = false;
 
     protected IMeshTools_Parameters myParameters = new();
     protected bool myModified;
     protected int myStatus;
 
-    // OCCT.NET: the copy for write (decision 4004)
+    // OCCT.NET: the copy for write (decision 489)
     private BRepTools_History myHistory = new();
     private bool myToCopyAlways;
 
@@ -97,7 +97,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     {
         initParameters();
 
-        // OCCT.NET: a shape holding frozen TShapes is meshed on an exact copy (decision 4004)
+        // OCCT.NET: a shape holding frozen TShapes is meshed on an exact copy (decision 489)
         TopoDS_Shape anInput = Shape();
         bool isCopy = !anInput.IsNull() && (myToCopyAlways || BRepTools.HoldsFrozen(anInput));
         TopoDS_Shape aTarget = isCopy ? BRepTools.ExactCopyForWrite(anInput, out _) : anInput;
@@ -145,7 +145,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
 
     /// <summary>
     /// The functional form: the shape meshed with the parameters, frozen, sharing the input's sub-shapes wherever
-    /// meshing changed nothing. The input is never written, frozen or not (decision 4004).
+    /// meshing changed nothing. The input is never written, frozen or not (decision 489).
     /// </summary>
     /// <exception cref="Standard_NumericError">The deflection or the angle is too small.</exception>
     public static TopoDS_Shape Meshed(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters)
@@ -182,7 +182,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     public int GetStatusFlags() => myStatus;
 
     /// <summary>
-    /// The history of the meshed copy (OCCT.NET, decision 4004): the input's vertices, edges, faces and solids modified
+    /// The history of the meshed copy (OCCT.NET, decision 489): the input's vertices, edges, faces and solids modified
     /// into the result's. Empty when the shape was meshed in place, or left as it was.
     /// </summary>
     public BRepTools_History History() => myHistory;
@@ -253,7 +253,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
 
     /// <summary>
     /// Sets the parallel flag of <see cref="Discret"/>. Internal: a process-wide setting that only Draw-lite's
-    /// <c>mpparallel</c> changes (decision 4007).
+    /// <c>mpparallel</c> changes (decision 492).
     /// </summary>
     internal static void SetParallelDefault(bool theInParallel) => IS_IN_PARALLEL = theInParallel;
 }

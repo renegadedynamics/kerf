@@ -19,7 +19,7 @@ public class BRep_PolygonOnTriangulation : BRep_CurveRepresentation
 
     /// <summary>
     /// The polygon <paramref name="P"/> on <paramref name="T"/>, both frozen if <paramref name="theToFreeze"/> (the
-    /// mesher's non-freezing attach, decision 4003).
+    /// mesher's non-freezing attach, decision 488).
     /// </summary>
     internal BRep_PolygonOnTriangulation(Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L,
                                          bool theToFreeze)

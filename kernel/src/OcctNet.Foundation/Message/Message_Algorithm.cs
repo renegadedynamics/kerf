@@ -21,7 +21,7 @@ namespace Occt;
 /// A working object, as OCCT's: its status is set in place by the algorithm. The message for a status is taken from
 /// <see cref="Message_MsgFile"/> under "{class name}.{status name}" ("Message_Algorithm.Fail5"), trying the base
 /// classes up to <see cref="Standard_Transient"/> in turn. OCCT reads those texts from resource files, which the port
-/// doesn't load (decision 4008), so without an <see cref="Message_MsgFile.AddMsg"/> the text is the "Unknown message
+/// doesn't load (decision 493), so without an <see cref="Message_MsgFile.AddMsg"/> the text is the "Unknown message
 /// invoked with the keyword ..." surrogate, followed by nothing: the numbers and strings fill the message's
 /// placeholders, of which the surrogate has none. The class names are .NET's, which are OCCT's.
 /// </para>

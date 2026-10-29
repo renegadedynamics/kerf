@@ -225,7 +225,7 @@ public class BRepExtremaTests
     }
 
     /// <summary>
-    /// The loops moved onto OSD_Parallel (decision 4002): a multi-threaded run done by the serial fallback (no threads,
+    /// The loops moved onto OSD_Parallel (decision 487): a multi-threaded run done by the serial fallback (no threads,
     /// as in WebAssembly) gives the single-threaded run's solutions, in the same order.
     /// </summary>
     [Fact]

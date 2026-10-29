@@ -67,7 +67,7 @@ public abstract class BRep_CurveRepresentation : Standard_Transient
 
     /// <summary>
     /// Freezes the meshes the representation holds (OCCT.NET). Representations freeze what they take when they take
-    /// it, except the mesher's, which attaches its triangulations and polygons unfrozen (decision 4003); freezing the
+    /// it, except the mesher's, which attaches its triangulations and polygons unfrozen (decision 488); freezing the
     /// edge's graph (<c>BRep_TEdge.FreezeRepresentations</c>) freezes them through this.
     /// </summary>
     internal virtual void FreezeContents()

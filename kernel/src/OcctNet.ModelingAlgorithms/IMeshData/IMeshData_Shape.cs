@@ -12,7 +12,7 @@ namespace Occt;
 /// The discrete model is a working object of the mesher (decision 21): its entities are changed in place by the
 /// mesher's algorithms, as in OCCT. Handles of IMeshData (<c>IMeshData::IFaceHandle</c>, ...) are references to the
 /// classes; its raw pointers (<c>IMeshData::IFacePtr</c>, <c>IEdgePtr</c>) are the same references, and maps keyed by
-/// them compare by reference and iterate in insertion order (decision 4005).
+/// them compare by reference and iterate in insertion order (decision 490).
 /// </remarks>
 public abstract class IMeshData_Shape : Standard_Transient
 {

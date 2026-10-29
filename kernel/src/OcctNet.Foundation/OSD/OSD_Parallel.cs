@@ -8,7 +8,7 @@ using System.Runtime.ExceptionServices;
 namespace Occt;
 
 /// <summary>
-/// The one parallel-loop helper of the port (decision 4002): OCCT's <c>OSD_Parallel::For</c> and <c>ForEach</c>, with
+/// The one parallel-loop helper of the port (decision 487): OCCT's <c>OSD_Parallel::For</c> and <c>ForEach</c>, with
 /// their <c>isForceSingleThreadExecution</c> flag, over <see cref="Parallel"/>.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace Occt;
 /// A loop runs as a plain loop, on the calling thread and in order, when the flag is set, when there is one item, or
 /// when the runtime has no threads (<see cref="HasThreads"/>: browser WebAssembly and WASI, which Bento.Web is, where
 /// <see cref="Parallel"/> can't block on other threads). Every loop body of the port writes only its own item, so the
-/// plain loop gives the parallel loop's result (decision 4005).
+/// plain loop gives the parallel loop's result (decision 490).
 /// </para>
 /// <para>
 /// An exception thrown by a loop body is rethrown as itself, the first one of the <see cref="AggregateException"/>

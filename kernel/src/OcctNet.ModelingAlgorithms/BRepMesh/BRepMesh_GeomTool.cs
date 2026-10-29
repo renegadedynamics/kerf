@@ -299,6 +299,9 @@ public sealed class BRepMesh_GeomTool
         {
             if (isConsiderPointOnSegment)
             {
+                // OCCT: aPointHash[0] and [1] classify the second segment's end points on the first segment, [2] and
+                // [3] the first's on the second, but the point given back is the first segment's start for [0], its
+                // end for [1], ... (occt-issues.md, unit 4A). BRepMesh_Delaun doesn't use the point in this case.
                 if (aPointHash[0] == 1)
                 {
                     theIntPnt = new gp_Pnt2d(theStartPnt1);

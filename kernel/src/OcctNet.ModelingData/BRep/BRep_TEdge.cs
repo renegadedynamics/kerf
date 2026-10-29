@@ -149,7 +149,7 @@ public class BRep_TEdge : TopoDS_TEdge
     {
         foreach (BRep_CurveRepresentation aCR in myCurves)
         {
-            aCR.FreezeContents(); // the meshes the mesher attached unfrozen (decision 4003)
+            aCR.FreezeContents(); // the meshes the mesher attached unfrozen (decision 488)
             aCR.Freeze();
         }
     }

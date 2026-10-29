@@ -519,7 +519,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>
     /// <see cref="UpdateFace(in TopoDS_Face, Poly_Triangulation?, bool)"/> without freezing the triangulation: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 4003). The triangulation freezes with the face's graph when
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488). The triangulation freezes with the face's graph when
     /// the result is published.
     /// </summary>
     internal void UpdateFaceUnfrozen(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset = true)
@@ -752,7 +752,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>
     /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_Polygon3D?, in TopLoc_Location)"/> without freezing the polygon: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 4003).
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488).
     /// </summary>
     internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L) => updateEdge(E, P, L, false);
 
@@ -804,7 +804,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>
     /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
-    /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 4003).
+    /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 488).
     /// </summary>
     internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T,
                                      in TopLoc_Location L)
@@ -870,7 +870,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>
     /// The seam form of <see cref="UpdateEdgeUnfrozen(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
-    /// (decision 4003).
+    /// (decision 488).
     /// </summary>
     internal void UpdateEdgeUnfrozen(in TopoDS_Edge E,
                                      Poly_PolygonOnTriangulation? P1,

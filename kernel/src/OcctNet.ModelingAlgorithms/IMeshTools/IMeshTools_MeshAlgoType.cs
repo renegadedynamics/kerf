@@ -7,7 +7,7 @@ namespace Occt;
 /// <summary>The built-in 2D triangulation algorithms (factories of <see cref="IMeshTools_MeshAlgoFactory"/>).</summary>
 public enum IMeshTools_MeshAlgoType
 {
-    /// <summary>The global default: <see cref="IMeshTools_MeshAlgoType_Watson"/> (OCCT.NET doesn't read <c>CSF_MeshAlgo</c>, decision 4007).</summary>
+    /// <summary>The global default: <see cref="IMeshTools_MeshAlgoType_Watson"/> (OCCT.NET doesn't read <c>CSF_MeshAlgo</c>, decision 492).</summary>
     IMeshTools_MeshAlgoType_DEFAULT = -1,
 
     /// <summary>2D Delaunay triangulation by Watson's algorithm (BRepMesh_MeshAlgoFactory).</summary>

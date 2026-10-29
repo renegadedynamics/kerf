@@ -307,3 +307,21 @@ Phase 3 (part): Draw-lite construction, distance and modification commands.
   (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
   for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
   (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.
+
+Phase 4 (part): mesh foundations and data model (unit 4A).
+
+- `OcctNet.Foundation`: Message_Algorithm with its statuses (Message_ExecStatus, Message_Status), Message_Msg,
+  Message_Messenger and printers, and the `Message` statics, whose default messenger sends nothing;
+  NCollection_EBTree and NCollection_MapAlgo; an internal `OSD_Parallel` that every parallel loop of the port now uses,
+  with a sequential fallback where there are no threads (WebAssembly).
+- `OcctNet.ModelingAlgorithms`: IMeshData, IMeshTools (with `IMeshTools_Parameters`, an equatable value) and
+  BRepMeshData; BRepMesh_GeomTool, DefaultRangeSplitter, ShapeTool, Deflection, EdgeParameterProvider, DiscretRoot;
+  `BRepMesh_IncrementalMesh`'s copy-for-write shell: a frozen shape is meshed on a copy, `Shape()` returns the frozen
+  result with a `History()`, and `Meshed` is the functional form (the meshing algorithms themselves come in later
+  units).
+- `OcctNet.ModelingData`: the mesher's non-freezing attach of triangulations and polygons, frozen with the shape when
+  it is published.
+- Tests: the GTests of BRepMesh_GeomTool, Message_Messenger, OSD_Parallel and NCollection_UBTree's EBTree cases; unit
+  tests of the data model, the parameters, the shape tools and the copy for write; an oracle of GeomTool and Deflection
+  against native OCCT's free-edge polygons (300 edges, 6,126 points, every count equal, values within 5e-15 through
+  BRep text).
