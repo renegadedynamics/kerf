@@ -731,6 +731,7 @@ public sealed class ShapeAnalysis_Edge
         var aAdCurve1 = new BRepAdaptor_Curve(theFirstEdge);
         var aMinDist = new BRepExtrema_DistShapeShape();
         aMinDist.LoadS1(theSecEdge);
+        // OCCT: theStep is half the shorter edge's length, 0 for a degenerated edge, and the loop never ends
         for (double aS = theStartLength; aS <= theEndLength; aS += theStep / 2)
         {
             gp_Pnt aPoint;

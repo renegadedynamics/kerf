@@ -783,6 +783,7 @@ public sealed class ShapeAnalysis_WireOrder
                 XYZ(Ordered(n0), out f13d, out l13d);
             }
 
+            // OCCT: the last edge is also checked against the start of its own chain, so an open chain's start is appended twice
             n2 = (n1 == nb) ? n0 : (n1 + 1);
             XYZ(Ordered(n2), out f3d, out l3d);
             if (!f3d.IsEqual(l13d, gap))
@@ -844,7 +845,7 @@ public sealed class ShapeAnalysis_WireOrder
     /// <remarks>Not implemented in OCCT: it does nothing, and <see cref="NbCouples"/> stays 0.</remarks>
     public void SetCouples(double gap)
     {
-        _ = gap;
+        _ = gap; // OCCT: SetCouples is empty
     }
 
     /// <summary>The count of couples (always 0: <see cref="SetCouples"/> isn't implemented).</summary>
