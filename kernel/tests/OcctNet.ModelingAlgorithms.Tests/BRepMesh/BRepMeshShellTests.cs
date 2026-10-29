@@ -169,23 +169,33 @@ public class BRepMeshShellTests
     // ------------------------------------------------------------------------------------------- the copy for write
 
     [Fact]
-    public void Stub_mesher_gives_back_a_frozen_input_unchanged()
+    public void Remeshing_an_adequately_meshed_frozen_shape_gives_it_back()
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aSnapshot = ShapeSnapshot.Of(aBox);
 
-        // Unit 4A's default context meshes nothing: KeepUnchanged gives back the input itself.
+        // Unit 4D's default context meshes the copy; the input is never written.
         var aMesh = new BRepMesh_IncrementalMesh(aBox, 0.1);
         Assert.True(aMesh.IsDone());
-        Assert.Same(aBox.TShape(), aMesh.Shape().TShape());
-        Assert.True(aMesh.Shape().IsEqual(aBox));
-        Assert.Empty(aMesh.History().Modified(Faces(aBox)[0]));
         Assert.Equal(0, aMesh.GetStatusFlags());
+        TopoDS_Shape aMeshed = aMesh.Shape();
+        Assert.NotSame(aBox.TShape(), aMeshed.TShape());
+        Assert.Single(aMesh.History().Modified(Faces(aBox)[0]));
+        foreach (TopoDS_Face aF in Faces(aMeshed))
+        {
+            Assert.NotNull(Triangulation(aF));
+        }
         aSnapshot.AssertUnchanged(aBox);
 
-        TopoDS_Shape aTwin = BRepMesh_IncrementalMesh.Meshed(aBox, new IMeshTools_Parameters { Deflection = 0.1 }, out BRepTools_History aHistory);
-        Assert.Same(aBox.TShape(), aTwin.TShape());
-        Assert.Empty(aHistory.Modified(Faces(aBox)[0]));
+        // Meshing it again with the same parameters keeps every mesh: KeepUnchanged gives back the result itself.
+        var aMesh2 = new BRepMesh_IncrementalMesh(aMeshed, 0.1);
+        Assert.Same(aMeshed.TShape(), aMesh2.Shape().TShape());
+        Assert.True(aMesh2.Shape().IsEqual(aMeshed));
+        Assert.Empty(aMesh2.History().Modified(Faces(aMeshed)[0]));
+
+        TopoDS_Shape aTwin = BRepMesh_IncrementalMesh.Meshed(aMeshed, new IMeshTools_Parameters { Deflection = 0.1 }, out BRepTools_History aHistory);
+        Assert.Same(aMeshed.TShape(), aTwin.TShape());
+        Assert.Empty(aHistory.Modified(Faces(aMeshed)[0]));
     }
 
     [Fact]
@@ -297,12 +307,13 @@ public class BRepMeshShellTests
     public void Meshed_never_writes_its_input_even_unfrozen()
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
-        var aMesh = new BRepMesh_IncrementalMesh();
-        aMesh.SetShape(aBox);
-        // the stub's context through the twin isn't reachable, so the twin with unit 4A's default context changes nothing
         TopoDS_Shape aResult = BRepMesh_IncrementalMesh.Meshed(aBox, new IMeshTools_Parameters { Deflection = 0.1 });
         Assert.True(aResult.TShape()!.IsFrozen());
         foreach (TopoDS_Face aF in Faces(aResult))
+        {
+            Assert.NotNull(Triangulation(aF));
+        }
+        foreach (TopoDS_Face aF in Faces(aBox))
         {
             Assert.Null(Triangulation(aF));
         }
