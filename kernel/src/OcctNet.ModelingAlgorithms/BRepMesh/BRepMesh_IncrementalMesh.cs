@@ -26,9 +26,13 @@ namespace Occt;
 /// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in TopoDS_Shape, in IMeshTools_Parameters)"/>.
 /// </para>
 /// <para>
-/// <b>Unit 4A</b> ports this class's shell: the default <see cref="Perform(Message_ProgressRange)"/> uses a context
-/// without tools (which meshes nothing) until unit 4D's BRepMesh_Context replaces it; <see cref="Perform(IMeshTools_Context, Message_ProgressRange)"/>
-/// is OCCT's and runs any context.
+/// The default <see cref="Perform(Message_ProgressRange)"/> runs a <see cref="BRepMesh_Context"/> with the parameters'
+/// algorithm (Watson by default: <c>CSF_MeshAlgo</c> isn't read, decision 492);
+/// <see cref="Perform(IMeshTools_Context, Message_ProgressRange)"/> runs any context.
+/// </para>
+/// <para>
+/// <b>Determinism</b> (decision 490). With <c>InParallel</c>, the edges and then the faces are meshed in parallel;
+/// each loop body writes only its own edge or face, so the result is the serial one bit for bit, every run.
 /// </para>
 /// </remarks>
 public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
@@ -88,7 +92,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// <summary>Meshes the shape.</summary>
     public override void Perform(Message_ProgressRange theRange = default)
     {
-        IMeshTools_Context aContext = newDefaultContext();
+        BRepMesh_Context aContext = new(myParameters.MeshAlgo);
         Perform(aContext, theRange);
     }
 
@@ -219,13 +223,6 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
         {
             myParameters.AngleInterior = 2.0 * myParameters.Angle;
         }
-    }
-
-    // The context of Perform(): OCCT's `new BRepMesh_Context(myParameters.MeshAlgo)`. Unit 4D replaces this stub,
-    // a context without tools, which meshes nothing (IMeshTools_MeshBuilder sets Message_Fail1).
-    private IMeshTools_Context newDefaultContext()
-    {
-        return new IMeshTools_Context();
     }
 
     // plugin API

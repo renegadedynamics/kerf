@@ -10,9 +10,6 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 // checked for +2*PI. This test verifies that both orientations are handled correctly.
 public class BRepMesh_DelaunTest
 {
-    private const string NeedsIncrementalMesh = "Needs BRepMesh_IncrementalMesh's face meshing (unit 4D); "
-                                                + "BRepMeshDelaunTests.Square_with_a_square_hole covers the Delaunay part";
-
     [Fact]
     public void Vec2dAngleSignConvention()
     {
@@ -113,7 +110,7 @@ public class BRepMesh_DelaunTest
         Assert.True(isInsideNewFix, "New check also works for CW polygon");
     }
 
-    [Fact(Skip = NeedsIncrementalMesh)]
+    [Fact]
     public void MeshPlanarFaceWithHole()
     {
         // Create a planar face with a hole - this exercises the Delaunay triangulation
@@ -164,7 +161,7 @@ public class BRepMesh_DelaunTest
         Assert.True(aTri.NbNodes() > 0, "Should have nodes");
     }
 
-    [Fact(Skip = NeedsIncrementalMesh)]
+    [Fact]
     public void MeshBoxAllFaces()
     {
         // Create and mesh a box - tests triangulation on faces with different orientations
@@ -188,7 +185,7 @@ public class BRepMesh_DelaunTest
         Assert.Equal(6, aFaceCount);
     }
 
-    [Fact(Skip = NeedsIncrementalMesh)]
+    [Fact]
     public void MeshCylinderCurvedFaces()
     {
         // Create and mesh a cylinder - curved faces may have different polygon orientations

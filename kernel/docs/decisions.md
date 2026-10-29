@@ -4984,3 +4984,101 @@ numbers (486–497, 519–530).
       - one runs OCCT's own `delabella.cpp` on recorded point sets (DelabellaTests).
 
       The Delaunay core itself is compared with native OCCT through whole meshes in unit 4D.
+
+## Phase 4: unit 4D, face meshing and the incremental mesh
+
+BRepMesh's face algorithms, range splitters, factories and entry points, and XBRepMesh, in OcctNet.ModelingAlgorithms.
+The range splitters were ported in a forked worktree, reviewed and merged. Numbers from 4601 are placeholders,
+renumbered on merge; merged decisions are cited by their numbers (486–497, 519–546).
+
+547. **Placement.** BaseMeshAlgo, ConstrainedBaseMeshAlgo, DelaunayBaseMeshAlgo, CustomBaseMeshAlgo,
+      CustomDelaunayBaseMeshAlgo, DelabellaBaseMeshAlgo, the node-insertion generics, the range splitters (UVParam,
+      NURBS, Cylinder, Sphere, Torus, Extrusion, Undefined, BoundaryParams; Cone came with 4C, decision 531),
+      MeshAlgoFactory, DelabellaMeshAlgoFactory, FaceDiscret, Context, DiscretAlgoFactory, IncrementalMeshFactory and
+      DiscretFactory are in `src/OcctNet.ModelingAlgorithms/BRepMesh`; XBRepMesh_Factory (TKXMesh, one class over
+      TKMesh) in `src/OcctNet.ModelingAlgorithms/XBRepMesh`. All are public working objects (decision 21), as OCCT's.
+      Tests are in `tests/OcctNet.ModelingAlgorithms.Tests/BRepMesh` and `tests/OcctNet.Oracle.Tests/BRepMesh`.
+548. **The templates** (phase4-plan section 6).
+      - `BRepMesh_NodeInsertionMeshAlgo<RangeSplitter>`, `BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter>` and
+        `BRepMesh_DelaunayDeflectionControlMeshAlgo<RangeSplitter>` are generics over the range splitter
+        (`where RangeSplitter : BRepMesh_DefaultRangeSplitter, new()`), deriving from the Watson base
+        (BRepMesh_DelaunayBaseMeshAlgo): OCCT's instantiations over `BRepMesh_DelaunayBaseMeshAlgo`.
+      - OCCT's `BRepMesh_CustomDelaunayBaseMeshAlgo<BaseAlgo>` derives from its parameter and is instantiated only over
+        BRepMesh_DelabellaBaseMeshAlgo: it is the class `BRepMesh_CustomDelaunayBaseMeshAlgoOfDelabella`, named as
+        decision 202 names `.gxx` instantiations. The three node-insertion generics over it are
+        `BRepMesh_*MeshAlgoOfDelabella<RangeSplitter>`, written by `tools/gen-brepmesh-delabella.sh` from the Watson
+        files with only the names changed (re-running it reproduces them).
+      - Every splitter method a subclass redefines is virtual in OCCT and overrides here; none hides a non-virtual
+        base method, so dispatch through the generic is the template's.
+      - DeflectionControl's functors (NormalDeviation, LineDeviation) are private readonly structs over a private
+        interface, and its template `usePoint` a generic method constrained to `struct` (no boxing). OCCT's functors
+        keep references to the points; the structs copy them, which the functors' lifetimes make equivalent.
+      - NodeInsertion's wires are `NCollection_Sequence<gp_Pnt2d>` of the pcurves' points (OCCT keeps pointers to
+        them; decision 540's RegisterWire): the points don't change while the face is meshed.
+549. **The range splitters.** They keep OCCT's virtuals (`initParameters` and `getUndefinedIntervalNb` are protected
+      virtual). `IMeshData::IMapOfReal` is `NCollection_IndexedMap<double>`, in insertion order; `MapOfReal` is
+      `NCollection_Map<double>`, used only for membership. NURBSRangeSplitter's `std::sort` of distinct doubles is
+      `Span.Sort`, which gives the same order. The torus's in-place exchange sort and the AnalyticalFilter's shared
+      sequences (the second filter sees the first one's insertions) are kept as in OCCT. The cylinder splitter makes no
+      grid nodes (OCCT's V subdivision is commented out); Undefined returns null for infinite intervals.
+550. **BaseMeshAlgo.**
+      - The per-face structure, nodes and used-node map live only during `Perform`, as OCCT's handles. The 3D nodes
+        are an `NCollection_DynamicArray<gp_Pnt>` with OCCT's 256 increment. `myUsedNodes`
+        (`NCollection_DataMap<int, int>`) is looked up and bound, never iterated, so a Dictionary is exact.
+      - The triangulation's triangles are in `ElementsOfDomain()`'s order (OCCT's packed map, decision 541), and its
+        nodes are numbered as OCCT 8 numbers them (frontier and fixed nodes pre-bound to their structure index).
+      - `const_cast<BRepMesh_Edge&>(GetLink(i)).SetMovability(...)` is `ChangeLink(i).SetMovability(...)`.
+      - OCCT's `catch (Standard_Failure)` blocks (Perform, insertInternalVertex, FaceDiscret's process) use
+        `IMeshTools_ModelAlgo.IsCaughtFailure` (decision 529): a write into a frozen object is let through.
+        DelabellaBaseMeshAlgo's `catch (...)` turns any other exception into a Standard_Failure, as OCCT's.
+      - Progress scopes are disposed where the C++ destructors close them (FaceDiscret's functor scope, the
+        deflection control's scopes).
+551. **The Checked flag of the faces the mesher doesn't write.** Native BRepMesh_ShapeVisitor calls
+      `BRepTools::Update(face)`, which sets the face's Checked flag; BRepMesh_ShapeTool::AddInFace clears it again
+      (`Modified`). So natively a face whose mesh is reused, or that isn't meshed, keeps Checked = 1, and its BRep
+      text flags read `0111000`. The port meshes a frozen input on an exact copy, and `KeepUnchanged` gives back the
+      input's own face wherever meshing changed nothing (decision 489), with the input's flag (`0101000` for a face
+      read from a file). That is the only difference in the BRep text: the oracle compares texts byte for byte and,
+      when they differ, again with every Checked flag blanked, and counts those apart. Kept: milestone 1 requires that
+      meshing an adequately meshed shape give it back unchanged, and the Checked flag is a cache bit, not geometry.
+552. **The factory registry** (decision 492).
+      - `BRepMesh_DiscretAlgoFactory`'s static constructor registers OCCT's two self-registering factories, in the
+        order their libraries load: "FastDiscret" (BRepMesh_IncrementalMeshFactory, preferred, first) and "XBRepMesh".
+        Their constructors are private, since constructing one registers it process-wide; each type's internal
+        `Register` is OCCT's FactoryInitializer.
+      - `RegisterFactory` and `UnregisterFactory` are internal. The registry is locked; `Factories()` returns a copy.
+        Names compare equal ignoring the case of ASCII letters (`IsSameString(..., false)`).
+      - `BRepMesh_DiscretFactory.Get()` is a static singleton whose default name is volatile, with an internal
+        `SetDefaultName` (Draw-lite's `mpsetdefaultname`).
+      - `BRepMesh_FastDiscret` is only a deprecated typedef of IMeshTools_Parameters; C# can't publish a type alias,
+        so it isn't ported (its file holds the note).
+553. **BRepMesh_Context and BRepMesh_IncrementalMesh.** The context chains 4C's tools and the face discretizer with
+      the factory of the algorithm type; `IMeshTools_MeshAlgoType_DEFAULT` is Watson, since `CSF_MeshAlgo` isn't read
+      (decision 492; OCCT's warning about an unknown value goes with it). `BRepMesh_IncrementalMesh.Perform()` runs
+      `new BRepMesh_Context(MeshAlgo)` in 4A's copy-for-write shell (decision 526). The ported GTests read the meshed
+      face from `Shape()` (the makers' shapes hold frozen sub-shapes, so the mesher meshes a copy); the
+      internal-vertex GTests add their vertices to an exact copy for write, with an unfrozen BRep_Builder vertex.
+      BRepMesh_IncrementalMesh_Test's Fuse case is skipped until phase 6.
+554. **The parallel audit (decision 490).** FaceDiscret's loop body takes a new algorithm from the factory per face,
+      so the splitter, classifier, structure and nodes are its own. It writes only its own discrete face (status,
+      deflection), the indices of its face's pcurves (`GetPCurves(face)`), and its face's triangulation through the
+      non-freezing attach. It evaluates only its face's BRepAdaptor_Surface (the splitters, the deflection control's
+      `D0`, CellsCount) and its face's Geom_Surface (GeomLib.NormEstim, whose only cache is the volatile resolution of
+      decisions 126 and 135); it reads the edges' 3D points, which no face body writes. Two faces on one Geom_Surface
+      have two adaptors, so no evaluation cache is shared. Tested by the oracle's determinism test (4610) and
+      Delabella's unit test.
+555. **Oracle milestone 1** (decision 494; `BRepMeshIncrementalMeshOracleTests`). Native writes each shape without
+      meshes (F1); both sides read F1 and mesh it with the same five arguments; the BRep texts (with triangulations)
+      are compared byte for byte, then every face's nodes, UV nodes, triangles and deflection bit for bit through the
+      binding, and the status flags. Inputs: data/occ's .brep files under 1 MB (four settings: relative 0.05/0.5
+      serial, absolute 0.004 of the size/0.3 parallel, relative 0.02/0.1 parallel, absolute 0.01 of the size/0.5
+      serial); the 82 mesh-group data files in the public dataset (the group's `incmesh 0.1`, serial and parallel,
+      and relative 0.05/0.3 parallel); every second other dataset .brep under 120 KB (two settings); 80 random native
+      shapes (primitives, a filleted box, a fuse, a cut, a prism of a B-spline, a revolution; three settings); and
+      re-meshing of eight data/occ shapes carrying native meshes, coarser, equal and finer. A deflection below the
+      confusion tolerance must be rejected by both. BRepGProp (surface and linear) and BRepBndLib with triangulations
+      are compared on the port's meshes against native's on native meshes. The results are in CHANGELOG.md; the only
+      text difference is decision 551's Checked flag.
+556. **Determinism** (phase4-plan 2.2). The oracle meshes data/occ and every third mesh-group file serially, three
+      times in parallel and under `ForceSerialScope`, at two settings, and requires the same BRep text and the same
+      triangulation bits; it also meshes each natively serially and in parallel, and reports native differences.

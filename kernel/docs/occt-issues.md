@@ -555,3 +555,13 @@ circles' cells.
 | `BRepMesh_CircleInspector::Inspect` (OCCT's own comment) | Compares `d² - r²` with the square of the linear tolerance | The circles are effectively exact. OCCT keeps it because the correct test hangs "perf mesh bug27119". Kept |
 | `BRepMesh_Delaun` with free nodes only (a property, not a bug) | `frontierAdjust`'s `cleanupMesh` removes every triangle with a free link whose nodes no frontier holds, until none is left to remove | Triangulating points without a frontier keeps only an inner part of their Delaunay triangulation (nothing for three points). The mesher always has a frontier. Tested |
 | `BRepMesh_Delaun::createTrianglesOnNewVertices` (a property, not a bug) | `Contains` reports a non-free link when the node is within a fifth of its length, and a free node there is skipped | A free node closer to a frontier link than a fifth of the link's length is never inserted. Tested |
+
+## Phase 4: unit 4D, face meshing and the incremental mesh
+
+Found while porting the face algorithms, range splitters and factories. Reproduced in the port, each marked `// OCCT`.
+Native BRepMesh_IncrementalMesh (Watson) itself showed no bug in the oracle: every compared face is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_DelabellaMeshAlgoFactory::GetAlgo`, `default:` (BRepMesh_DelabellaMeshAlgoFactory.cxx) | Surfaces of extrusion, offset and other surfaces fall to the default branch, which uses `BRepMesh_NURBSRangeSplitter` (the Watson factory gives extrusions BRepMesh_ExtrusionRangeSplitter). Its `getUndefinedIntervalNb` asks the surface for `NbVPoles()`, and `GeomAdaptor_Surface::NbVPoles` throws Standard_NoSuchObject for a surface of extrusion | With `-algo 1` (Delabella) a face on a surface of extrusion is left without a mesh: BRepMesh_BaseMeshAlgo's `catch (Standard_Failure)` swallows the exception without setting a status, so GetStatusFlags() is 0. By reading OCCT's code; the port does the same. Pinned by `Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does_ReproducesOcctError` |
+| `BRepMesh_BaseMeshAlgo::Perform` (a property) | A failure caught while a face is meshed leaves the face without a triangulation and without a status; only FaceDiscret's own catch sets IMeshData_Failure | A face can be silently unmeshed (see the row above). Kept |
