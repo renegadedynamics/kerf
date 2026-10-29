@@ -112,3 +112,17 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 36. **NCollection_CellFilter** takes its inspector as a type parameter constrained to
     `INCollection_CellFilter_Inspector<TTarget, TPoint>` (static abstract `Coord`, static virtual `Dimension`
     and `IsEqual`), in place of OCCT's duck-typed template parameter.
+
+## Draw-lite: the Tcl core (29 October 2026)
+
+37. **Draw-lite runs OCCT's own DrawResources scripts** (StandardCommands, Geometry, TestCommands, CheckCommands,
+    Vector.tcl) rather than reimplementing the check commands in C#. `checkprops`, `checknbshapes`, `checkreal` and
+    the rest then behave exactly as in OCCT, on top of a few C++ primitives (nbshapes, sprops/lprops/vprops,
+    checkshape, tolerance, isdraw/dtyp/dname, ...) to be written as the geometry is ported.
+38. **Script writes never touch the disk**: `open ... w`, `file mkdir/delete/copy` go to an in-memory overlay that
+    later reads see. Integers are 64-bit (Tcl switches to bignums; Draw-lite to doubles). Regular expressions run on
+    .NET's engine with Tcl's syntax translated; .NET takes the first matching alternative where Tcl takes the
+    longest. Only the global namespace exists. `checkview` stays a no-op.
+39. **Each top-level evaluation runs on a thread with a 256 MB stack**, because debug builds overflowed the default
+    stack at about 270 nested procedure calls; the procedure-depth limit stays at Tcl's 1000. A `Deadline` stops a
+    runaway script and can't be caught by the script.
