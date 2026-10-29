@@ -61,8 +61,6 @@ public static partial class BRepLib
 
     internal static void UpdateTolerances(in TopoDS_Shape S, bool verifyFaceTolerance = false) => throw new NotImplementedException();
 
-    internal static void EncodeRegularity(in TopoDS_Shape S, double TolAng = 1.0e-10) => throw new NotImplementedException();
-
     /// <summary>
     /// The bounding sphere of the vertices of <paramref name="theLV"/>: its centre and radius, for a new vertex
     /// covering them all. With fewer than two vertices the outputs are left unchanged, as in OCCT.
