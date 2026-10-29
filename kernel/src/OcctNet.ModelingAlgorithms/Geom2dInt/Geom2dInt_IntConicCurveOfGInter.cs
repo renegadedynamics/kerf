@@ -7,7 +7,7 @@ namespace Occt;
 
 /// <summary>The intersection between a conic and a 2D curve that may be a conic or composite.</summary>
 /// <remarks>OCCT's instantiation of IntCurve_UserIntConicCurveGen.gxx over Adaptor2d_Curve2d (decision 321).</remarks>
-public sealed class Geom2dInt_IntConicCurveOfGInter
+public class Geom2dInt_IntConicCurveOfGInter
     : IntCurve_UserIntConicCurveGen<Adaptor2d_Curve2d, Geom2dInt_Geom2dCurveTool, Geom2dInt_TheProjPCurOfGInter,
                                Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter>
 {

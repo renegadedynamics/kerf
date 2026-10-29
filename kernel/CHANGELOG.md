@@ -195,3 +195,16 @@ Phase 3 (part): BRep input and output.
 - Tests: unit and fuzz tests of both formats; oracle tests against native `BRepTools::Write` and `Read`: random
   native shapes, shapes built identically on both sides, the port's files read natively, the 37 `.brep` files of
   OCCT's data and 2,327 files of its test dataset, all byte-identical.
+Phase 3 (part): classification and boxes.
+
+- `OcctNet.ModelingAlgorithms`: BRepClass (`BRepClass_FaceClassifier`: points in, out and on faces, in 2D or
+  projected from 3D, with its explorer, intersector and edge), BRepTopAdaptor (`BRepTopAdaptor_FClass2d`, the fast
+  polygon classifier of a face, and the topological tool), IntCurvesFace (line and curve against a face or a shape),
+  BRepClass3d (`BRepClass3d_SolidClassifier`: points in, out and on solids, the infinite point, the outer shell),
+  BRepIntCurveSurface (`BRepIntCurveSurface_Inter`: ray/shape intersection) and BRepBndLib (`Add`, `AddClose`,
+  `AddOptimal`, `AddOBB`, with functional forms `Box`, `BoxClose`, `BoxOptimal` and `OBB` returning a new box).
+  They only read their inputs.
+- Tests: the BRepClass3d_SolidClassifier GTests (with BRep_Builder shapes until the primitives are ported);
+  known-answer tests of every package; oracle tests of BRepClass3d_SolidClassifier, BRepIntCurveSurface_Inter and
+  every BRepBndLib form against native OCCT on random boxes, cylinders (also as surfaces of extrusion and
+  revolution), holed faces, natural and B-spline faces, compounds and meshed shapes, all bit-identical.
