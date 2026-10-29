@@ -21,6 +21,11 @@
       <_Parameter1>OcctSourceDir</_Parameter1>
       <_Parameter2>$(OcctSourceDir)</_Parameter2>
     </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1), for the BRep round trips of its .brep and .rle files -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
