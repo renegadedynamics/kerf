@@ -59,6 +59,18 @@ public class GProp_GProps
     }
 
     /// <summary>
+    /// C++ copy assignment (<c>a = b;</c>): this system takes the global properties of <paramref name="theOther"/>.
+    /// BRepGProp resets the caller's system this way (<c>Props = GProp_GProps(P);</c>).
+    /// </summary>
+    internal void Assign(GProp_GProps theOther)
+    {
+        g = theOther.g;
+        loc = theOther.loc;
+        dim = theOther.dim;
+        inertia = theOther.inertia;
+    }
+
+    /// <summary>
     /// Adds the global properties of <paramref name="Item"/>, with density <paramref name="Density"/>, to this
     /// system. Huygens' theorem moves the inertia of Item to the reference point of this system. A density already
     /// counted when Item was built (weighted points, a composed system) must not be given again.
