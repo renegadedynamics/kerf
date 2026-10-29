@@ -137,10 +137,22 @@ public class BRepToolsUntrustedTests
     [Fact]
     public void Nested_shapes_are_capped()
     {
-        TopoDS_Shape aDeep = Read(NestedCompounds(TopTools_ShapeSet.MaxShapeNesting - 1));
+        TopoDS_Shape aDeep = new();
+        RunWithStack(() => aDeep = Read(NestedCompounds(TopTools_ShapeSet.MaxShapeNesting - 1)), theStackSize: 4 << 20);
         Assert.Equal(TopAbs_COMPOUND, aDeep.ShapeType());
-        // and can be written back, on a 1 MB stack
-        RunWithStack(() => BRepTools.Write(aDeep, new StringWriter()));
+        // and can be written back: on 4 MB always; on 1 MB it depends on the JIT's frame sizes (tier-0 frames are
+        // larger), so there the writer may stop with its clean InsufficientExecutionStackException, never a crash
+        RunWithStack(() => BRepTools.Write(aDeep, new StringWriter()), theStackSize: 4 << 20);
+        RunWithStack(() =>
+        {
+            try
+            {
+                BRepTools.Write(aDeep, new StringWriter());
+            }
+            catch (InsufficientExecutionStackException)
+            {
+            }
+        });
         Rejects(NestedCompounds(TopTools_ShapeSet.MaxShapeNesting));
         Rejects(NestedCompounds(20000));
     }
@@ -218,9 +230,9 @@ public class BRepToolsUntrustedTests
     // ---------------------------------------------------------------------------------------------------------------
     // Fuzzing
 
-    private static void RunWithStack(Action theAction, TimeSpan? theTimeout = null)
+    private static void RunWithStack(Action theAction, TimeSpan? theTimeout = null, int theStackSize = 1 << 20)
     {
-        // a thread with a 1 MB stack, as the readers will meet in callers' threads
+        // a thread with a 1 MB stack by default, as the readers will meet in callers' threads
         Exception? anError = null;
         var aThread = new Thread(() =>
         {
@@ -232,7 +244,7 @@ public class BRepToolsUntrustedTests
             {
                 anError = anException;
             }
-        }, 1 << 20);
+        }, theStackSize);
         aThread.Start();
         Assert.True(aThread.Join(theTimeout ?? TimeSpan.FromMinutes(5)), "the readers took too long (a hang?)");
         if (anError is not null)

@@ -3279,6 +3279,9 @@ section 7, in these readers and in GeomTools'. Numbers from 3301 are renumbered 
       - *Writing*: `TopTools_ShapeSet.Add` recurses once per level; it calls
         `RuntimeHelpers.EnsureSufficientExecutionStack()`, so a shape built nested too deeply for the stack throws
         `InsufficientExecutionStackException` instead of ending the process (100,000 nested compounds are tested).
+        How deep a 1 MB stack reaches depends on the JIT: unoptimised (tier-0) frames are larger, so a shape at the
+        reading cap (`MaxShapeNesting` − 1) sometimes doesn't write on 1 MB and throws cleanly instead; 4 MB always
+        suffices. The test checks exactly that (corrected after phase 4, where the full-project run hit it).
       - Not checked, in either format: the node indices of triangles and of polygons on triangulations. A bad index
         reads, and a consumer gets an `IndexOutOfRangeException` from the mesh later, not memory corruption.
       The caps are the same values in BinTools (decision 386), declared per package.
