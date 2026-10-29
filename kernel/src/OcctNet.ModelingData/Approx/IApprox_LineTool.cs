@@ -7,7 +7,7 @@ namespace Occt;
 /// <see cref="IAppParCurves_LineTool{MultiLine}"/>, and the three that let a line tool add points to a MultiLine
 /// when an approximation fails (AppDef_MyLineTool never adds any; GeomInt's and BRepApprox's tools do).
 /// </summary>
-/// <remarks>Not an OCCT type (decisions 142 and 1602).</remarks>
+/// <remarks>Not an OCCT type (decisions 142 and 202).</remarks>
 /// <typeparam name="MultiLine">The MultiLine.</typeparam>
 public interface IApprox_LineTool<MultiLine> : IAppParCurves_LineTool<MultiLine>
 {

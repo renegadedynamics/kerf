@@ -12,7 +12,7 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21): AppDef_Variational sets its parameters, curve, estimations and weights, and
 /// reads the assembly data back. The arrays and the curve it is given or returns are shared, as OCCT's handles are
-/// (decision 1610).
+/// (decision 207).
 /// </remarks>
 public abstract class AppDef_SmoothCriterion : Standard_Transient
 {

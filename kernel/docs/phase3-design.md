@@ -399,7 +399,7 @@ and its history where OCCT keeps one. Every such twin goes in decisions.md, as e
   `EncodeRegularity`, `OrientClosedSolid` and `UpdateDeflection`.
 - The twins copy up front. An optimistic form (run in place, and on the first frozen write start again on a copy)
   could avoid the copy when nothing changes. It is left until profiling asks for it.
-- **Unit 3I's twins and makers copy exactly and keep what is unchanged** (decisions 416, 3407). CopyForWrite's
+- **Unit 3I's twins and makers copy exactly and keep what is unchanged** (decisions 416, 420). CopyForWrite's
   modifier isn't an exact copy (it re-ranges pcurves and stores planar ones), so an in-place static can give another
   result on it. `BRepTools.ExactCopyForWrite` copies the TShapes and representations as they are, and
   `BRepTools.KeepUnchanged` then gives back the input's own sub-shapes wherever the operation changed nothing: a twin

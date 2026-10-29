@@ -11,7 +11,7 @@ namespace Occt;
 /// Approximates an <see cref="AppDef_MultiLine"/> by one MultiBSpCurve (the engine of GeomAPI_PointsToBSpline):
 /// OCCT's instantiation of <see cref="Approx_BSplComputeLine{MultiLine, LineTool}"/> over AppDef_MyLineTool.
 /// </summary>
-/// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 1602); the members are the base class's.</remarks>
+/// <remarks>A sealed subclass with OCCT's constructors (decisions 142 and 202); the members are the base class's.</remarks>
 public sealed class AppDef_BSplineCompute : Approx_BSplComputeLine<AppDef_MultiLine, AppDef_MyLineTool>
 {
     /// <summary>

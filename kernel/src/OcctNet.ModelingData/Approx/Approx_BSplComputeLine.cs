@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The generic form of OCCT's <c>Approx_BSplComputeLine.gxx</c> (decisions 142 and 1602), instantiated by OCCT as
+/// The generic form of OCCT's <c>Approx_BSplComputeLine.gxx</c> (decisions 142 and 202), instantiated by OCCT as
 /// AppDef_BSplineCompute (over AppDef_MultiLine), and as GeomInt's and BRepApprox's BSpline approximators. The
 /// gxx's helper classes (Approx_MyBSplGradient, Approx_BSpParLeastSquareOfMyBSplGradient, Approx_MyGradientbis,
 /// ...) are, in every instantiation, the AppParCurves generics over the same MultiLine and tool, so this class

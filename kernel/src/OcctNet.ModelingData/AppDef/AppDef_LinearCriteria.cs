@@ -11,7 +11,7 @@ namespace Occt;
 /// The linear criteria used by <see cref="AppDef_Variational"/> to smooth points: the least-squares distance to the
 /// points plus the tension, flexion and jerk of the curve (FEmTool_LinearTension, LinearFlexion, LinearJerk).
 /// </summary>
-/// <remarks>A working object (decisions 21 and 1610); the MultiLine, parameters and curve it is given are shared.</remarks>
+/// <remarks>A working object (decisions 21 and 207); the MultiLine, parameters and curve it is given are shared.</remarks>
 public class AppDef_LinearCriteria : AppDef_SmoothCriterion
 {
     private readonly AppDef_MultiLine mySSP;

@@ -14,7 +14,7 @@ until you say otherwise; changing one later is cheap unless the entry says so. N
    *Evidence from unit 3I (decision 414 onwards):* the BRepLib makers reuse the caller's frozen sub-shapes, so 570
    of 2,015 maker outputs in the oracle differ from native only in the Free column, among them every face made
    from a planar wire and every solid made from those faces. Everything else in those files is identical.
-   *Unit 3M (decisions 467, 3204):* prisms and revolutions of frozen profiles share the profile's unchanged
+   *Unit 3M (decisions 467, 468):* prisms and revolutions of frozen profiles share the profile's unchanged
    sub-shapes: 122 of 474 prisms and 31 of 443 revolutions in the oracle differ from native only in the Free column
    (and 184 box faces asked for before the box was built, which the port hands out already in the shell).
 2. **Scope of phase 3.** BRepClass, BRepCheck, BRepClass3d and BRepExtrema need about 38k lines of TKGeomAlgo
