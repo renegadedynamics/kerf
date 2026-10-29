@@ -350,19 +350,88 @@ namespaces of function templates over duck-typed functors, returning result stru
      inputs: D0, DN (orders 1-4), LocalD3, Resolution, InsertKnots, RemoveKnot, Unperiodize, MovePoint,
      IncreaseDegree (non-periodic, and 2D) and Bezier D0-D3 were bit-identical on 1,100 random curves (about
      200,000 values). MovePointAndTangent was identical except three degree-1 cases, where its 2 × 2 system is
-     nearly singular. The harness should become oracle tests when that project reaches this code.
+     nearly singular. The harness should become oracle tests when that project reaches this code (done:
+     decision 91, which also explains the degree-1 differences).
      BSplCLib_ConsistencyTests (OCCT.NET's own) checks the operations against each other on random curves.
 
+## Phase 1: BSplSLib and Convert (29 October 2026)
+
+85. **BSplSLib follows BSplCLib's conventions** (decisions 72-83): optional weights and multiplicities are
+     nullable NCollection arrays (`BSplSLib.NoWeights()` is null), outputs are `out`, `Displ` is `in`, array starts
+     are spans by use (`RationalDerivative(..., ReadOnlySpan<double> HDerivatives, Span<double> RDerivatives, ...)`).
+     `(double*)&Poles(i, j)` is a private helper slicing `MemoryMarshal.Cast<gp_Pnt, double>(Poles.AsSpan())` at
+     the element's linear offset; fixed C arrays (`local_poles_array[3][3][3]`) are flat stack spans indexed
+     `i * 9 + j * 3 + k`; results written through `(double*)&aVec` are computed in spans and built with
+     `new gp_Vec(...)`. `BSplSLib.UnitWeights` returns, as OCCT, a non-owning view over `BSplCLib.UnitWeights` up to
+     2,049 weights (shared: don't modify) and a new array above. The 2D-array `CachePoles(i, j).SetX/SetY/SetZ`
+     writes are a `new gp_Pnt` from the same products.
+86. **BSplSLib's evaluation buffers are stack buffers sized by the degrees.** OCCT's `BSplSLib_DataContainer` is a
+     2,852-double stack struct sized for degree 25. The port keeps it as a private `ref struct` of four spans,
+     stackalloc'd in each evaluator (D0-D3, DN, the homogeneous forms, BuildCache) at 4(UDegree+1)(VDegree+1) poles,
+     2·max(UDegree, VDegree) knots twice and 48 derivatives, after the degree check. It is a C stack array, so
+     decision 74 allows stack use up to OCCT's size (21.6 KB at degree 25); sizing by the degrees zeroes only what is
+     used (68 doubles for a bicubic), and evaluation allocates nothing. Rejected: a [ThreadStatic] buffer (hidden
+     state, not reentrant). NCollection_LocalArray buffers (Iso, RationalDerivative, the cache evaluators,
+     BSplSLib_Cache) follow decision 74: stackalloc up to 128 doubles, heap above.
+87. **BSplSLib_Cache is BSplCLib_Cache's twin** (decision 79): a Standard_Transient class embedding two
+     `BSplCLib_CacheParams`, an `NCollection_Array2<double>` of coefficients allocated once in the constructor (OCCT:
+     an `NCollection_HArray2`), an internal `BuildCache` (a mutator) and public `IsCacheValid`, D0-D2 and
+     D0Local-D2Local. OCCT's `const int&`/`const double&` parameters are by value. Its evaluation allocates nothing
+     unless the smaller degree exceeds 9 (13 non-rational), where the derivatives' work array leaves
+     NCollection_LocalArray's stack buffer in OCCT too.
+88. **Convert's batch accessors return copies.** `Poles()`, `Weights()`, `Knots()`, `Multiplicities()`,
+     `UKnots()`, ... return a new NCollection array where OCCT returns a const reference to a field, so a
+     converter's result can't be changed through them. Every OCCT consumer (GeomConvert's BSplineCurveBuilder and
+     BSplineSurfaceBuilder, Geom2dConvert, GeomConvert_CompBezierSurfacesToBSplineSurface, AdvApprox, AppDef,
+     GeomFill) copies them into a new curve or surface anyway, and ported Geom code keeps passing NCollection arrays
+     to the Geom constructors. Rejected: PackedList (the Geom constructors take NCollection arrays, so every caller
+     would convert back) and returning the field (callers could change the converter, and two calls would share
+     storage). The cost is one allocation per accessor call. The per-index accessors OCCT deprecates (`Pole(i)`,
+     `Weight(i)`, ...) stay, without `[Obsolete]`, documented as deprecated.
+89. **Convert classes are classes, built in their constructors**, with OCCT's hierarchy; base classes have
+     protected constructors and protected fields with OCCT's names. The array outputs of the protected
+     `BuildCosAndSin` (and of `GridPolynomialToPoles.BuildArray`), which OCCT reassigns through references, are
+     `out`; the handle forms take `out NCollection_HArray1<...>` (`ref ...?` for the deprecated
+     `CompPolynomialToPoles.Poles/Knots/Multiplicities(handle&)`, which OCCT leaves unchanged when not done).
+     `Convert_ElementarySurfaceToBSplineSurface::Finalize` is `FinalizeArrays`, since `Finalize()` is .NET's
+     finaliser. `Convert_CosAndSinEvalFunction` is a delegate with a `Span<double>` result;
+     `BuildPolynomialCosAndSin` (not exported by OCCT) is internal. The builders
+     (`Convert_CompBezierCurves(2d)ToBSplineCurve(2d)`: `AddCurve`, `Perform`) keep public mutators (decision 21);
+     `AddCurve` copies its argument as C++ appends a copy.
+90. **Convert_CompBezierCurvesToBSplineCurveBase is generic over a public traits struct**
+     (`<PointType, VecType, Traits>`, `Convert_CompBezierCurvesTraits3d/2d` implementing
+     `IConvert_CompBezierCurvesTraits`), as BSplCLib_CurveComputation (decision 75). The traits are public because a
+     public class can't derive from a generic base over an internal type. `if constexpr (std::is_same_v<PointType,
+     gp_Pnt>)` is `Traits.Is3d`, a constant the JIT folds. `NCollection_Array2.ResizeWithTrim` was added (OCCT API,
+     used by Convert's FinalizeArrays): 2D-preserving copy, no reallocation when the dimensions don't change, empty
+     range rejected. Known difference left as is: the port's `NCollection_Array2.Resize(..., copy: true)` keeps the
+     2D layout, where OCCT V8_0_1's copies elements in linear order (different when the column count changes).
+91. **BSplCLib, BSplSLib (with BSplSLib_Cache) and Convert are oracle-tested** (`tests/OcctNet.Oracle.Tests/
+     {BSplCLib,BSplSLib,Convert}`), beyond what decision 23 expected. Native entry points, each mirrored exactly in
+     the test: Geom_BSplineCurve/Geom2d_BSplineCurve/Geom_BezierCurve for BSplCLib (from decision 84's harness);
+     Geom_BSplineSurface and Geom_BezierSurface for BSplSLib (OCCT 8 evaluates them through BSplSLib directly, not
+     the cache); GeomAdaptor_Surface for BSplSLib_Cache (its evaluators rebuild one cache when IsCacheValid fails,
+     and the test drives the port's cache with the same parameter sequence); GeomConvert/Geom2dConvert
+     `CurveToBSplineCurve` and `GeomConvert::SurfaceToBSplineSurface` for Convert, redoing GeomConvert's
+     post-processing in the test (2D poles lifted by `gp_Trsf.Transformation(Position, XOY)`, `SetPeriodic` for
+     whole conics, the mirror of a left-handed `gp_Ax22d`). Every compared value is bit-identical, about 5.3 million
+     in all, sin/cos/sqrt in Convert included. Left out: long RationalC1 arcs (GeomConvert joins two halves with
+     the unported GeomConvert_CompCurveToBSplineCurve), periodic IncreaseDegree (broken in OCCT), inputs OCCT's
+     release build doesn't check (a singular MovePointAndTangent system, MovePoint windows away from the point,
+     repeated knots in InsertKnots with Add false; occt-issues.md). Decision 84's degree-1 MovePointAndTangent
+     differences came from the harness, which built the deltas with `EvalDN` where Geom uses `Geom_Curve::D1`; the
+     two differ in the last bit and the nearly singular system magnified it. BSplCLib_Cache, BSplSLib.Iso,
+     CacheD0-D2 and FunctionMultiply have no native entry point in the bindings and are covered by unit tests only.
 ## Phase 2: geometry (29 October 2026)
 
-85. **Geometry and topology objects freeze when shared.** `Standard_Transient` has a one-way frozen flag
+92. **Geometry and topology objects freeze when shared.** `Standard_Transient` has a one-way frozen flag
     (`Freeze()` internal, `IsFrozen()` public, `CheckMutable()` as the first line of every ported mutator of
     Geom, Geom2d, attached Poly objects and topology). Mutators stay internal, so callers can't change these
     objects at all; freezing protects shared objects from the port's own algorithms. Rejected: freezing every object
     when its constructor finishes (OCCT's algorithms routinely build an object and then modify it, so every such
     sequence would have to be rewritten) and no freezing (the shared-geometry mutations build123d.NET hit would
     stay silent). The cost is one flag per object and one check per mutation.
-86. **A second assembly, OcctNet.ModelingData**, holds TKG2d, TKG3d, TKGeomBase and (phase 3) TKBRep, whose packages
+93. **A second assembly, OcctNet.ModelingData**, holds TKG2d, TKG3d, TKGeomBase and (phase 3) TKBRep, whose packages
     depend on each other in cycles and must therefore share an assembly. Test projects see every port assembly's
     internals (set once in src/Directory.Build.props).
 
@@ -371,7 +440,7 @@ namespaces of function templates over duck-typed functors, returning result stru
 The bases of Geom, Geom2d and the adaptors, TopAbs, and the evaluation-representation helpers of GeomEval and
 Geom2dEval, ported first so that the concrete classes can be ported in parallel (docs/phase2-plan.md).
 
-501. **Abstract and virtual mutators are `protected internal`; the others are `internal`.** The abstract ones are
+94. **Abstract and virtual mutators are `protected internal`; the others are `internal`.** The abstract ones are
      `Transform`, `Reverse`, `UReverse`, `VReverse`, `SetDirection`, `Cross` and `CrossCross`. Callers outside
      OCCT.NET still can't change an object they are given, because `protected` access only works through their
      own derived type. They can still derive their own curves and surfaces, as OCCT allows (an override is
@@ -379,27 +448,27 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
      internals). Every implementation starts with `CheckMutable()`, and so do the non-virtual mutators of the bases
      (`Mirror`, `Rotate`, `Scale`, `Translate`, `SetAxis`, ...).
      Rejected: `internal abstract`, which would forbid subclasses outside OCCT.NET altogether.
-502. **OCCT's return types are kept.** `Copy`, `Mirrored`, `Transformed`, `Reversed`, `Crossed`, ... return what
+95. **OCCT's return types are kept.** `Copy`, `Mirrored`, `Transformed`, `Reversed`, `Crossed`, ... return what
      OCCT returns (`Geom_Geometry`, `Geom_Curve`, `Geom_Vector`), not covariant types, so ported code reads as the
      C++ does (`(Geom_Line)L.Copy()` for `DownCast`). The `With` twins return the class that declares them
      (`Geom_Conic.WithAxis` returns a `Geom_Conic`); the concrete classes add their own. Revisit if callers find
      the casts heavy: covariant overrides of `Copy` would not break ported code.
-503. **Geom_Transformation and Geom2d_Transformation are freezable like geometry.** They get internal mutators with
+96. **Geom_Transformation and Geom2d_Transformation are freezable like geometry.** They get internal mutators with
      `CheckMutable`, `With` twins, static factories (as gp_Trsf), and an added `PreMultiplied`. OCCT's in-place
      compound operators (`*=` of Geom2d_Transformation, and `+=`, `-=`, `*=`, `/=` of Geom2d_VectorWithMagnitude)
      are left out. The binary operators are kept.
-504. **Evaluation results.** `Geom_Curve.ResD1/ResD2/ResD3` and `Geom_Surface.ResD1/...` (and the Geom2d ones) are
+97. **Evaluation results.** `Geom_Curve.ResD1/ResD2/ResD3` and `Geom_Surface.ResD1/...` (and the Geom2d ones) are
      nested structs with public fields, like decision 54's result structs. `D0` to `D3` take `out` parameters.
      `Bounds` takes `out`, `TransformParameters` `ref`, `Geom_Transformation.Transforms` `ref`.
-505. **Adaptors' `GetType()` hides `object.GetType()`** (`public new virtual GeomAbs_CurveType GetType()`), so
+98. **Adaptors' `GetType()` hides `object.GetType()`** (`public new virtual GeomAbs_CurveType GetType()`), so
      OCCT's name stays. Code wanting the .NET type uses `DynamicType()`. A ported GTest named `GetType` is renamed
      `GetType_` (xUnit rejects a test method hiding an `object` method).
-506. **Placeholders for concrete classes.** The bases need a few concrete classes as return types:
+99. **Placeholders for concrete classes.** The bases need a few concrete classes as return types:
      Geom_BezierCurve, Geom_BSplineCurve, Geom_OffsetCurve, Geom_BezierSurface, Geom_BSplineSurface,
      Geom2d_BezierCurve and Geom2d_BSplineCurve. Each is an empty abstract class in the file its port will replace,
      without a `Port of:` line, so port-status doesn't count it. Rejected: porting them here (14,000 lines, and
      BSplSLib isn't merged) and `object` return types.
-507. **GeomEval_RepCurveDesc, GeomEval_RepSurfaceDesc and Geom2dEval_RepCurveDesc are in the abstract layer**,
+100. **GeomEval_RepCurveDesc, GeomEval_RepSurfaceDesc and Geom2dEval_RepCurveDesc are in the abstract layer**,
      with RepUtils. Geom and Geom2d call them, and they need only the bases, so the Geom ⇄ GeomEval cycle
      disappears.
      - The C++ namespaces are static classes with nested types.
@@ -410,13 +479,13 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
        could therefore still be changed through a reference kept by whoever set it. The Geom porters keep
        `SetEvalRepresentation` internal, clone descriptors in `Copy` (as OCCT does), and don't return stored
        descriptors to callers.
-508. **Adaptors are working objects** (decision 21). Their setters (`Load`) are public, and the base adaptors are
+101. **Adaptors are working objects** (decision 21). Their setters (`Load`) are public, and the base adaptors are
      concrete classes whose virtuals throw `Standard_NotImplemented`, as in OCCT. Adaptor3d_Curve/Surface's `D0`
      to `DN` are non-virtual wrappers over `EvalD*`, as in OCCT 8. In Adaptor2d_Curve2d they stay virtual, and
      `EvalD*` call them.
-509. **`Geom_UndefinedDerivative_Raise_if` and `Geom_UndefinedValue_Raise_if`** (and the Geom2d ones) are not
+102. **`Geom_UndefinedDerivative_Raise_if` and `Geom_UndefinedValue_Raise_if`** (and the Geom2d ones) are not
      ported: OCCT defines them but never uses them. The exception classes are ported.
-510. **The phase 2 plan** (docs/phase2-plan.md) sets the order of everything else. There are 21 units of 8,000 to
+103. **The phase 2 plan** (docs/phase2-plan.md) sets the order of everything else. There are 21 units of 8,000 to
      15,000 lines in six waves, with the classes that close dependency cycles assigned explicitly: Geom_OffsetSurface
      and Adaptor3d_HSurfaceTool go with GeomAdaptor; GeomConvert_SurfToAnaSurf and Approx's SameParameter,
      CurveOnSurface and CurvlinFunc go with GeomLib; the elementary Extrema and ProjLib classes come early. The

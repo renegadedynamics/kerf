@@ -38,7 +38,7 @@ call sites.
 
   The bases refer to Geom_BezierCurve, Geom_BSplineCurve, Geom_OffsetCurve, Geom_BezierSurface,
   Geom_BSplineSurface, Geom2d_BezierCurve and Geom2d_BSplineCurve. Each of these exists as an empty abstract
-  **placeholder** in the file its port will replace (decision 506).
+  **placeholder** in the file its port will replace (decision 99).
 - **Outside these toolkits:** the only package that real code uses is `OSD_ThreadPool`, in
   GeomLib_CheckCurveOnSurface; use `Parallel.For`. Draw, DrawTrSurf and OSD appear only in debug code.
 - **Not needed in TKGeomBase:** the `DumpJson` code. TKG2d has it in 27 files and TKG3d in 50; it is left out by
@@ -216,22 +216,22 @@ classes.
 ## 4. Notes for porters
 
 - **Mutators.** Mutators of Geom, Geom2d and Geom*_Transformation are `internal` and start with `CheckMutable()`.
-  Overrides of the abstract mutators are `protected internal override` (decision 501):
+  Overrides of the abstract mutators are `protected internal override` (decision 94):
   - Geom_Geometry: `Transform`
   - Geom_Curve: `Reverse`
   - Geom_Surface: `UReverse`, `VReverse`
   - Geom_AxisPlacement: `SetDirection`
   - Geom_Vector: `Cross`, `CrossCross`
-- **Twins.** Every `SetFoo` gets a `WithFoo` returning a changed `Copy()` of the concrete type (decision 502).
+- **Twins.** Every `SetFoo` gets a `WithFoo` returning a changed `Copy()` of the concrete type (decision 95).
   Every other mutator needs its OCCT `-ed` twin, or one you add.
 - **Evaluation.** `EvalD0` to `EvalDN` are the virtuals. They return `Geom_Curve.ResD1/2/3` or
   `Geom_Surface.ResD1/2/3` (public-field structs). `D0` to `DN` are non-virtual wrappers with `out` parameters,
   except in Adaptor2d_Curve2d, where OCCT makes D0 to DN virtual and Eval* call them.
 - **Evaluation representations.** `SetEvalRepresentation` is a mutator (internal, with `CheckMutable`).
   Descriptors are mutable objects with public fields, as in OCCT. Clone them with `GeomEval_RepUtils.CloneCurveDesc`
-  in `Copy`, and don't hand a stored descriptor to callers (decision 507).
-- **Adaptors** are working objects: `Load` and the other setters are public (decision 508). `GetType()` hides
-  `object.GetType`; derived adaptors write `public override GeomAbs_CurveType GetType()` (decision 505).
+  in `Copy`, and don't hand a stored descriptor to callers (decision 100).
+- **Adaptors** are working objects: `Load` and the other setters are public (decision 101). `GetType()` hides
+  `object.GetType`; derived adaptors write `public override GeomAbs_CurveType GetType()` (decision 98).
 - **Placeholders.** Units 1A, 1B and 1C replace the placeholder files of their classes.
 - **Freezing.** When a ported algorithm mutates geometry it didn't create, copy first and note the place in
   decisions.md (section 8 of the rules).
