@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.gp;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>The gp package against native OCCT, on random inputs.</summary>
 public class GpOracleTests(ITestOutputHelper output)

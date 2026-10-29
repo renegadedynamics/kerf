@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Convert;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// The Convert package against native OCCT, through GeomConvert::CurveToBSplineCurve,

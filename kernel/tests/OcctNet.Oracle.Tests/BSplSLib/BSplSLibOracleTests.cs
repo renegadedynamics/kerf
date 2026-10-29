@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.BSplSLib;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// BSplSLib against native OCCT, through the native Geom_BSplineSurface and Geom_BezierSurface, which call BSplSLib

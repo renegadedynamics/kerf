@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.gce;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>The gce package against native OCCT, on random inputs.</summary>
 public class GceOracleTests(ITestOutputHelper output)

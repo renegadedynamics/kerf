@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.IntAna2d;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>IntAna2d_AnaIntersection and IntAna2d_IntPoint against native OCCT, on random inputs.</summary>
 public class IntAna2dOracleTests(ITestOutputHelper output)

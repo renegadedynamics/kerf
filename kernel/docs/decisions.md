@@ -649,3 +649,64 @@ POnCurv2d, POnSurf).
       Extrema_ExtElC between two lines through GC_MakeArcOfCircle. Random directions handed to native OCCT are
       first `Oracle.Settled` (normalised until the port's normalisation leaves them unchanged), and the port's and
       native axis systems are built from the same inputs, so that differences come from the code under test.
+## Phase 2: unit 1A, Geom curves (29 October 2026)
+
+Geom_Line, Circle, Ellipse, Hyperbola, Parabola, TrimmedCurve, BezierCurve, BSplineCurve (with
+Geom_BSplineCurve_1.cxx), OffsetCurve and Geom_OffsetCurveUtils.pxx.
+
+122. **Arrays are returned to callers as `PackedList` copies; ported code reads the stored arrays through
+     internal `Internal*` accessors.** Where OCCT returns a const reference to a curve's array, the public method
+     of the same name returns a `PackedList<T>` copy, indexed from 0: `Poles()`, `Knots()`, `Multiplicities()`,
+     `KnotSequence()`, `WeightsArray()` (always NbPoles values), and `Weights()`, which is null for a non-rational
+     curve as OCCT's pointer is. The internal `InternalPoles()`, `InternalKnots()`, `InternalMultiplicities()`,
+     `InternalKnotSequence()`, `InternalWeights()` (null when non-rational) and `InternalWeightsArray()` return the
+     stored `NCollection_Array1`s (shared: don't modify), so a ported `BSplCLib::D0(U, C->Poles(), C->Weights(), ...)`
+     becomes `BSplCLib.D0(U, C.InternalPoles(), C.InternalWeights(), ...)` without copying. OCCT's deprecated
+     overloads that fill a caller's array (`Poles(NCollection_Array1<gp_Pnt>&)`, ...) stay public. Why: the
+     NCollection arrays are mutable, so handing out the stored ones would let callers change a frozen curve, and
+     copying on every internal call would cost the adaptors' per-span caches. Rejected: public NCollection copies
+     (mutable values for callers, against section 9 of the rules) and `ReadOnlySpan`s (invalidated by later
+     modifications, and not storable). The same names are proposed for Geom2d (1B) and the surfaces (1C:
+     `InternalUKnots()`, ...).
+123. **Evaluation representations.** `HasEvalRepresentation()` is public. `EvalRepresentation()` (the stored
+     descriptor, which GeomAdaptor shares as OCCT does), `SetEvalRepresentation` and `ClearEvalRepresentation`
+     are internal, the setters with `CheckMutable()`. Callers use `WithEvalRepresentation(desc)`, which validates
+     the descriptor against the curve and stores a deep copy (`GeomEval_RepUtils.CloneCurveDesc`) in a copy of the
+     curve, so the caller's descriptor can't reach the curve later; null removes it. `Copy` clones it and
+     modifications drop it, as in OCCT.
+124. **Twins.** `Set*` → `With*` (`WithPole`, `WithWeight`, `WithKnot`, `WithKnots`, `WithOrigin`, `WithTrim`,
+     `WithBasisCurve`, `WithDirection`, `WithOffsetValue`, `WithRadius`, ...); `SetPeriodic`/`SetNotPeriodic` →
+     `WithPeriodic`/`WithNotPeriodic`. Other mutators → past participles: `Increased`, `PoleInsertedAfter`,
+     `PoleInsertedBefore`, `PoleRemoved`, `Segmented`, `DegreeIncreased`, `MultiplicityIncreased`,
+     `MultiplicityIncremented`, `KnotInserted`, `KnotsInserted`, `PointMoved` and `PointAndTangentMoved` (with
+     OCCT's output parameters), and `KnotRemoved`, which returns null where OCCT's `RemoveKnot` returns false.
+     Each returns the concrete class. `InsertKnots` keeps OCCT's default `Add = false` (BSplCLib's is true).
+125. **`final` members are `sealed override`** (including `Copy`); the classes themselves are not sealed, as in
+     OCCT.
+126. **`Resolution(Tolerance3D, out UTolerance)` of Bezier and B-spline curves is public and not a mutator**,
+     although non-const in OCCT: it only caches 1 / max derivative, so it works on frozen curves. The "cached"
+     flag is volatile; concurrent first calls compute the same value.
+127. **Composite curves share their basis as OCCT does.** `Geom_TrimmedCurve.BasisCurve()` and
+     `Geom_OffsetCurve.BasisCurve()` return the stored basis curve (the constructors copy the curve they are
+     given, as in OCCT). Callers can't change it. But `Freeze()` is not virtual, so freezing a trimmed or offset
+     curve doesn't freeze its basis, and ported code could still change the basis through `BasisCurve()`.
+     Whoever decides where topology freezes geometry (phase 3) should freeze the basis too, for instance by
+     making `Freeze` virtual.
+128. **Geom_OffsetCurveUtils' templates are ported per instantiation** (rules, section 9): `AdjustDerivative` over
+     `Geom_Curve` (Geom_OffsetCurve, GeomGridEval) and over `Adaptor3d_Curve` (GeomAdaptor_Curve's basis adaptor),
+     with identical bodies, and `EvaluateD0` to `EvaluateDN` over `Adaptor3d_Curve` only, the one instantiation
+     OCCT makes. Values read and written are `ref`, outputs `out`; the array of pointers to D2, D3 and D4 is a
+     switch. Rejected: an interface implemented by both bases, which would change the abstract layer for one
+     helper.
+129. **Default arguments that are function calls** (`Precision::PConfusion()` in `Segment`, `gp::Resolution()` in
+     `CalculateD0` to `D3`) are constants of the same value (`1e-7 * 0.01`, `RealSmallValue`); a unit test checks
+     the first.
+130. **Oracle tests of the curves** compare evaluation (D0 to D3, DN up to Degree + 1), properties, reversal,
+     transformation and every Bezier and B-spline modification on random curves, mutating the native curves and
+     going through the port's twins. Three choices: (a) transformed curves are evaluated at 1e-6, because native
+     and port rotations differ in the last bits (sin and cos) and high-degree rational derivatives amplify that by
+     up to 1e7, while what `Transform` computes (poles, axes) is compared at the default 1e-12; (b) `IsClosed` is
+     not compared for infinite curves (an offset of a parabola is evaluated at 1e100, where the 1e-17 difference
+     between a port axis and its native copy, which `Oracle.ToNative(gp_Ax2)` rebuilds, is multiplied by 1e200);
+     (c) `MovePointAndTangent` is not tried on degree 1 curves, whose 2 × 2 system is singular: native OCCT
+     inverts it without a check, the port throws (decisions 9 and 84).

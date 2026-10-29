@@ -43,3 +43,5 @@ angles), and say why.
   calls with which arguments (flat knots or knots with multiplicities, located span, periodic normalisation, the
   rationality flags it derives), and call the port the same way. Done that way, the B-spline packages are
   bit-identical.
+- All oracle tests are in the namespace `OcctNet.Oracle.Tests`, whatever their folder: a namespace named after an OCCT
+  package (`...Tests.BSplCLib`, `...Tests.gp`) hides the OCCT class of the same name from every other test file.

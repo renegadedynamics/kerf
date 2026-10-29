@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Extrema;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>The elementary Extrema classes against native OCCT, on random inputs.</summary>
 public class ExtremaOracleTests(ITestOutputHelper output)
