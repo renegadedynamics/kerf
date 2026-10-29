@@ -319,4 +319,48 @@ public class FEmTool_CurveTests
         }
         Assert.ThrowsAny<Standard_ConstructionError>(() => new FEmTool_ElementsOfRefMatrix(aBase, 4));
     }
+
+    [Fact]
+    public void D2_OfDegreeOneElements_ReadsAsOcct()
+    {
+        // OCCT evaluates the second derivative of a degree 1 element as a polynomial of degree -1: the coefficients
+        // just before the element's block (occt-issues.md). The port gives zero for the first element (OCCT reads
+        // before the array) and the previous element's top second-derivative coefficients for the others.
+        // A C0 base, where FEmTool_Curve::ReduceDegree may leave degree 1 elements; arbitrary coefficients.
+        PLib_HermitJacobi aBase = new(WorkDegree, GeomAbs_C0);
+        FEmTool_Curve aCurve = new(2, 2, aBase, 1e-7);
+        NCollection_Array1<double> aKnots = aCurve.Knots();
+        aKnots[1] = 0;
+        aKnots[2] = 1;
+        aKnots[3] = 3;
+        for (int e = 1; e <= 2; e++)
+        {
+            NCollection_Array2<double> aCoeffs = new(1, WorkDegree + 1, 1, 2);
+            for (int r = 1; r <= WorkDegree + 1; r++)
+            {
+                aCoeffs[r, 1] = 0.1 * r * e + 0.3;
+                aCoeffs[r, 2] = -0.2 * r + e;
+            }
+            aCurve.SetElement(e, aCoeffs);
+        }
+        NCollection_Array1<double> aV = new(1, 2);
+        aCurve.D2(0.5, aV); // computes element 1's second derivative
+
+        aCurve.SetDegree(2, 1);
+        NCollection_Array1<double> aPoly = new(1, 2 * 2 * (WorkDegree + 1));
+        aCurve.GetPolynom(aPoly);
+        aCurve.D2(2.0, aV);
+        double aS = 4.0 / ((3.0 - 1.0) * (3.0 - 1.0));
+        for (int j = 1; j <= 2; j++)
+        {
+            double aTop = 6 * (7 * aPoly[1 + 7 * 2 + j - 1]); // row 5 of element 1's second derivative
+            Assert.NotEqual(0.0, aTop);
+            Assert.Equal(aTop * aS, aV[j], 1e-12);
+        }
+
+        aCurve.SetDegree(1, 1);
+        aCurve.D2(0.5, aV);
+        Assert.Equal(0.0, aV[1]);
+        Assert.Equal(0.0, aV[2]);
+    }
 }
