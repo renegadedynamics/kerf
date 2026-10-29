@@ -15,7 +15,7 @@ namespace Occt;
 /// OCCT's default (and <c>new Bnd_Box2d()</c>) is a void box with a null gap. <c>default(Bnd_Box2d)</c> is not: it is
 /// a non-void box reduced to the origin. Ported code must write <c>new Bnd_Box2d()</c>.
 /// </remarks>
-public partial struct Bnd_Box2d : IEquatable<Bnd_Box2d>
+public partial struct Bnd_Box2d : IEquatable<Bnd_Box2d>, INCollection_UBTreeBnd<Bnd_Box2d>
 {
     /// <summary>The box limits (Xmin, Xmax, Ymin, Ymax), gap and open directions included.</summary>
     public readonly record struct Limits(double Xmin, double Xmax, double Ymin, double Ymax);
@@ -156,6 +156,9 @@ public partial struct Bnd_Box2d : IEquatable<Bnd_Box2d>
     internal void OpenYmin() => Flags |= YminMask;
 
     internal void OpenYmax() => Flags |= YmaxMask;
+
+    // NCollection_UBTree/EBTree<..., Bnd_Box2d> (IMeshData::BndBox2dTree)
+    void INCollection_UBTreeBnd<Bnd_Box2d>.Add(in Bnd_Box2d theOther) => Add(theOther);
 
     internal void Add(in Bnd_Box2d Other)
     {

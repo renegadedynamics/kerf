@@ -22,7 +22,7 @@ namespace Occt;
 /// </list>
 /// An array made over another array's storage (OCCT's "buffer" constructors) shares it, as in OCCT.
 /// </remarks>
-public class NCollection_Array1<T> : IEnumerable<T>
+public class NCollection_Array1<T> : IEnumerable<T>, INCollection_ArrayRead<T>
 {
     private T[] myData;
     private int myOffset;
