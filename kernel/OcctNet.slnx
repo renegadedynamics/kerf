@@ -2,11 +2,13 @@
   <Folder Name="/src/">
     <Project Path="src/OcctNet.Analyzers/OcctNet.Analyzers.csproj" />
     <Project Path="src/OcctNet.Foundation/OcctNet.Foundation.csproj" />
+    <Project Path="src/OcctNet.ModelingData/OcctNet.ModelingData.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/OcctNet.DrawLite.Tests/OcctNet.DrawLite.Tests.csproj" />
     <Project Path="tests/OcctNet.DrawLite/OcctNet.DrawLite.csproj" />
     <Project Path="tests/OcctNet.Foundation.Tests/OcctNet.Foundation.Tests.csproj" />
+    <Project Path="tests/OcctNet.ModelingData.Tests/OcctNet.ModelingData.Tests.csproj" />
     <Project Path="tests/OcctNet.Oracle.Tests/OcctNet.Oracle.Tests.csproj" />
   </Folder>
   <Project Path="../build123d.net/src/Build123d.Occt/Build123d.Occt.csproj" />

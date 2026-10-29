@@ -144,10 +144,22 @@ oracle tests can show what changes.
   `Nullify()` → `= null`; `Handle(T)::DownCast(x)` → `x as T`; `occ::handle<T> h = new T(...)` → `T h = new T(...)`.
 - `Standard_Transient` subclasses → classes deriving from `Standard_Transient`. `DEFINE_STANDARD_RTTIEXT` and
   `IMPLEMENT_STANDARD_RTTIEXT` go; `DynamicType()`, `IsKind` and `IsInstance` work through .NET types.
-- Their mutators are `internal` too. From phase 2, objects a caller can see (curves, surfaces, shapes) are frozen
-  once built, and a mutator called on a frozen object throws `Standard_ImmutableObject`. That keeps OCCT's
-  algorithms from changing shared input geometry, which is the hazard build123d.NET had to work around. The
-  freezing mechanism is designed with the Geom package.
+- **Geometry and topology classes** (Geom, Geom2d, Poly's triangulations and polygons once attached, TopoDS's
+  TShapes, BRep's representations) are immutable to callers and freezable inside the port:
+  - Their mutators (`SetRadius`, `SetPole`, `InsertKnot`, `Transform`, `Mirror`, ...) are `internal`, and the
+    **first line of each is `CheckMutable();`**, which throws `Standard_ImmutableObject` on a frozen object.
+    Mutators reached only through another mutator (private helpers) don't need the check.
+  - Constructors and queries are public. Callers transform with OCCT's own non-mutating forms
+    (`Geom_Geometry::Transformed`, `Mirrored`, `Rotated`, ..., which copy and then mutate the copy), and every
+    `SetFoo` gets a public `WithFoo` returning a mutated `Copy()` (as for value types).
+  - `Copy()` returns an unfrozen object, so algorithms can keep doing what OCCT does: copy, then modify.
+  - An object is **frozen** (`Freeze()`, internal, one-way) when it becomes shared: when topology takes it
+    (BRep_Builder storing a curve, surface or triangulation; phase 3 decides exactly where), and wherever a port
+    hands a long-lived internal object to a caller. Then any OCCT algorithm that tries to change shared geometry
+    in place throws instead of silently changing every shape that uses it — the hazard build123d.NET had to work
+    around. When that happens in ported code, the port copies first, and the place is noted in decisions.md.
+- Other transient classes (algorithms, caches, tools, math_Function implementations) keep OCCT's mutators
+  `internal` or public as their package decides (decision 21): they are working objects, not values.
 - Abstract interfaces (math_Function and the like, pure virtual classes) → `abstract class` with `abstract`
   members; virtual → `virtual`/`override`. Keep C++ multiple inheritance of interfaces as C# interfaces only when
   a class really has two bases; otherwise a single base class.

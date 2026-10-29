@@ -352,3 +352,16 @@ namespaces of function templates over duck-typed functors, returning result stru
      200,000 values). MovePointAndTangent was identical except three degree-1 cases, where its 2 × 2 system is
      nearly singular. The harness should become oracle tests when that project reaches this code.
      BSplCLib_ConsistencyTests (OCCT.NET's own) checks the operations against each other on random curves.
+
+## Phase 2: geometry (29 October 2026)
+
+85. **Geometry and topology objects freeze when shared.** `Standard_Transient` has a one-way frozen flag
+    (`Freeze()` internal, `IsFrozen()` public, `CheckMutable()` as the first line of every ported mutator of
+    Geom, Geom2d, attached Poly objects and topology). Mutators stay internal, so callers can't change these
+    objects at all; freezing protects shared objects from the port's own algorithms. Rejected: freezing every object
+    when its constructor finishes (OCCT's algorithms routinely build an object and then modify it, so every such
+    sequence would have to be rewritten) and no freezing (the shared-geometry mutations build123d.NET hit would
+    stay silent). The cost is one flag per object and one check per mutation.
+86. **A second assembly, OcctNet.ModelingData**, holds TKG2d, TKG3d, TKGeomBase and (phase 3) TKBRep, whose packages
+    depend on each other in cycles and must therefore share an assembly. Test projects see every port assembly's
+    internals (set once in src/Directory.Build.props).
