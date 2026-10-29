@@ -56,7 +56,7 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 32 / 470 | 14,224 / 132,410 | 10.7 |
+| FoundationClasses | TKernel | 34 / 470 | 14,954 / 132,410 | 11.3 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -74,7 +74,7 @@ broken down by package.
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 500 / 720 | 265,274 / 317,408 | 83.6 |
+| ModelingData | TKGeomBase | 631 / 720 | 290,368 / 317,408 | 91.5 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1307 | 510,703 / 2,897,781 | 17.6 |
+| **All** |  | 1440 | 536,527 / 2,897,781 | 18.5 |
 
 ## TKMath
 
@@ -117,7 +117,7 @@ broken down by package.
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
 | Message | 3 / 50 | 897 / 7,261 | 12.4 |
-| NCollection | 24 / 81 | 12,204 / 26,993 | 45.2 |
+| NCollection | 26 / 81 | 12,934 / 26,993 | 47.9 |
 | OSD | 0 / 94 | 0 / 19,678 | 0.0 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
@@ -165,17 +165,17 @@ broken down by package.
 | AppDef | 60 / 60 | 10,573 / 10,573 | 100.0 |
 | AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
 | Approx | 6 / 28 | 3,610 / 10,308 | 35.0 |
-| BndLib | 0 / 8 | 0 / 2,537 | 0.0 |
+| BndLib | 8 / 8 | 2,537 / 2,537 | 100.0 |
 | CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
-| Extrema | 63 / 104 | 13,257 / 22,613 | 58.6 |
-| ExtremaPC | 0 / 18 | 0 / 3,990 | 0.0 |
+| Extrema | 103 / 104 | 22,481 / 22,613 | 99.4 |
+| ExtremaPC | 18 / 18 | 3,990 / 3,990 | 100.0 |
 | FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
 | GC | 65 / 65 | 5,462 / 5,462 | 100.0 |
 | GCE2d | 0 / 15 | 0 / 432 | 0.0 |
 | GCPnts | 19 / 19 | 5,022 / 5,022 | 100.0 |
 | GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
 | Geom2dConvert | 14 / 14 | 4,160 / 4,160 | 100.0 |
-| GeomBndLib | 0 / 65 | 0 / 9,343 | 0.0 |
+| GeomBndLib | 65 / 65 | 9,343 / 9,343 | 100.0 |
 | GeomConvert | 31 / 33 | 8,060 / 9,390 | 85.8 |
 | GeomLProp | 10 / 10 | 2,214 / 2,214 | 100.0 |
 | GeomLib | 0 / 28 | 0 / 7,033 | 0.0 |
