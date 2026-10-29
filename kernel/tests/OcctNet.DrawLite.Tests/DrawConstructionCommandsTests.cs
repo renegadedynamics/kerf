@@ -292,6 +292,48 @@ public class DrawConstructionCommandsTests
         Assert.Equal("distmini             src/Draw/TKTopTest/BRepTest/BRepTest_ExtremaCommands.cxx", i.Eval("getsourcefile distmini"));
     }
 
+    [Fact]
+    public void Extrema_of_curves_and_surfaces()
+    {
+        (DrawInterpreter i, _) = Load();
+        i.Eval("line l1 0 0 0 1 0 0; line l2 0 0 1 0 1 0; line l3 0 1 0 1 0 0; plane p 0 0 5; circle c 0 0 0 1");
+        Assert.Equal("ext_1 ", i.Eval("extrema l1 l2"));
+        Assert.Equal(1.0, GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(DrawTrSurf_Curve(i, "ext_1"))), 15);
+        Assert.Equal("Infinite number of extremas, distance = 1\n", i.Eval("extrema l1 l3"));
+        Assert.Equal("Infinite number of extremas, distance = 4\n", i.Eval("extrema l2 p 1"));
+        Assert.Equal("Extrema 1 is point : 0 0 5\next_1_2 ext_1_3 prm_1_1 prm_3_1 prm_4_1 ", i.Eval("line l5 0 0 0 0 0 1; extrema l5 p 1"));
+        Assert.Equal(5.0, Number(i, "prm_1_1"));
+        Assert.Equal("Infinite number of extremas, distance = 5\n", i.Eval("extrema c p"));
+        Assert.Equal("Extrema 1 is point : 0 0 0\n", i.Eval("line l4 0 0 0 0 0 1; extrema l1 l4"));
+        Assert.Equal("", Error(i, "extrema l1 nothing"));
+    }
+
+    [Fact]
+    public void Geometry_transformations_bind_transformed_copies()
+    {
+        (DrawInterpreter i, _) = Load();
+        i.Eval("line l 0 0 0 1 0 0; point p 1 2 3; circle c 0 0 0 1; point q 1 2");
+        Assert.Equal("l p ", i.Eval("translate l p 0 0 5"));
+        Assert.Equal(new gp_Pnt(0, 0, 5), ((Geom_Line)((DrawGeometry)i.GetDrawable("l")!).Geometry).Lin().Location());
+        Assert.Equal(new gp_Pnt(1, 2, 8), (gp_Pnt)((DrawGeometry)i.GetDrawable("p")!).Geometry);
+
+        // pmirror and pscale leave the point's coordinates in the list of names, as OCCT does
+        Assert.Equal("p 0 0 0 ", i.Eval("pmirror p 0 0 0"));
+        Assert.Equal(new gp_Pnt(-1, -2, -8), (gp_Pnt)((DrawGeometry)i.GetDrawable("p")!).Geometry);
+        Assert.Equal("c 0 0 0 ", i.Eval("pscale c 0 0 0 2"));
+        Assert.Equal(2.0, ((Geom_Circle)((DrawGeometry)i.GetDrawable("c")!).Geometry).Radius());
+        Assert.Equal("c ", i.Eval("rotate c 0 0 0 1 0 0 90"));
+        Assert.Equal("c ", i.Eval("lmirror c 0 0 0 0 0 1"));
+        Assert.Equal("c ", i.Eval("smirror c 0 0 0 0 0 1"));
+        Assert.Equal("", Error(i, "translate c 1 2"));
+
+        Assert.Equal("q ", i.Eval("2dtranslate q 1 1"));
+        Assert.Equal(new gp_Pnt2d(2, 3), (gp_Pnt2d)((DrawGeometry)i.GetDrawable("q")!).Geometry);
+        i.Eval("line l2 0 0 1 0; 2drotate l2 0 0 90; 2dpmirror q 0 0; 2dlmirror q 0 0 1 0; 2dpscale q 0 0 2");
+        Assert.Equal(new gp_Pnt2d(-4, 6), (gp_Pnt2d)((DrawGeometry)i.GetDrawable("q")!).Geometry);
+        Assert.Equal(0.0, ((Geom2d_Line)((DrawGeometry)i.GetDrawable("l2")!).Geometry).Direction().X(), 15);
+    }
+
     private static Geom_Curve DrawTrSurf_Curve(DrawInterpreter theDI, string theName)
         => Assert.IsAssignableFrom<Geom_Curve>(((DrawGeometry)theDI.GetDrawable(theName)!).Geometry);
 

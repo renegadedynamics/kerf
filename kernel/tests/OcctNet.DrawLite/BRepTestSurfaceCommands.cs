@@ -11,7 +11,7 @@ namespace OcctNet.DrawLite;
 /// <remarks>
 /// Not here: quilt (BRepTools_Quilt), sewing and fastsewing (BRepBuilderAPI_Sewing, not ported), continuity
 /// (BRepOffsetAPI_FindContigousEdges). encoderegularity codes the regularity in place in OCCT; the port codes it on a
-/// structural copy and binds the copy to the name (decision 407).
+/// copy of the graph (DrawShapeCopy) and binds the copy to the name (decision 407).
 /// </remarks>
 internal static class BRepTestSurfaceCommands
 {
@@ -231,7 +231,7 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape aCopy = BRepTools.CopyForWrite(sh, out _);
+        TopoDS_Shape aCopy = DrawShapeCopy.Copy(sh);
         if (n == 2)
         {
             BRepLib.EncodeRegularity(aCopy);

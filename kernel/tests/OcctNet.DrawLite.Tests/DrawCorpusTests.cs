@@ -92,8 +92,11 @@ public class DrawCorpusTests(ITestOutputHelper output)
         "coord", "plane", "cone", "cylinder", "sphere", "torus", "beziersurf", "bsplinesurf", "upbsplinesurf",
         "vpbsplinesurf", "uvpbsplinesurf", "extsurf", "revsurf", "offset", "trim", "trimu", "trimv", "ureverse",
         "vreverse", "uiso", "viso", "svalue", "sderivative", "parameters", "bounds", "length",
-        // GeometryTest_ConstraintCommands
-        "gcarc",
+        // GeometryTest's gcarc and extrema
+        "gcarc", "extrema",
+        // DrawTrSurf's transformations
+        "translate", "rotate", "pmirror", "lmirror", "smirror", "pscale", "2dtranslate", "2drotate", "2dpmirror",
+        "2dlmirror", "2dpscale",
         // BRepTest_ExtremaCommands
         "dist", "distmini", "proximity", "selfintersect",
         // BRepTest_CurveCommands

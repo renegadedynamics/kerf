@@ -1,0 +1,100 @@
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Occt;
+
+namespace OcctNet.DrawLite;
+
+/// <summary>
+/// The copy a Draw-lite command writes into where OCCT's command changes its shape in place (sameparameter,
+/// updatetolerance, encoderegularity and mkedgecurve without a result name): every TShape copied once, with its
+/// flags, its representations (polygons and triangulations included) and its children at the same locations and
+/// orientations, sharing the frozen geometry. The copy has the shape's graph, so the shape OCCT's in-place algorithm
+/// makes of it writes the same BRep text as OCCT's.
+/// </summary>
+/// <remarks>
+/// BRepTools.CopyForWrite (BRepTools_Modifier with BRepTools_CopyModification) rebuilds the graph: shared sub-shapes
+/// at several locations come out with other locations, so its text differs from the in-place result's.
+/// </remarks>
+internal static class DrawShapeCopy
+{
+    public static TopoDS_Shape Copy(in TopoDS_Shape theShape)
+        => Copy(theShape, new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance));
+
+    private static TopoDS_Shape Copy(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap)
+    {
+        if (theShape.IsNull())
+        {
+            return theShape;
+        }
+
+        TopoDS_TShape aTShape = theShape.TShape()!;
+        if (!theMap.TryGetValue(aTShape, out TopoDS_TShape? aCopy))
+        {
+            aCopy = CopyRepresentations(aTShape);
+            aCopy.Free(aTShape.Free());
+            aCopy.Modified(aTShape.Modified());
+            aCopy.Checked(aTShape.Checked());
+            aCopy.Orientable(aTShape.Orientable());
+            aCopy.Closed(aTShape.Closed());
+            aCopy.Infinite(aTShape.Infinite());
+            aCopy.Convex(aTShape.Convex());
+            foreach (TopoDS_Shape aChild in aTShape.myShapes)
+            {
+                aCopy.myShapes.Append(Copy(aChild, theMap));
+            }
+
+            theMap.Add(aTShape, aCopy);
+        }
+
+        TopoDS_Shape aResult = theShape;
+        aResult.TShape(aCopy);
+        return aResult;
+    }
+
+    private static TopoDS_TShape CopyRepresentations(TopoDS_TShape theTShape)
+    {
+        switch (theTShape)
+        {
+            case BRep_TEdge anEdge:
+            {
+                var aCopy = new BRep_TEdge();
+                aCopy.Tolerance(anEdge.Tolerance());
+                foreach (BRep_CurveRepresentation aRep in anEdge.Curves())
+                {
+                    aCopy.ChangeCurves().Append(aRep.Copy());
+                }
+
+                aCopy.Degenerated(anEdge.Degenerated());
+                aCopy.SameParameter(anEdge.SameParameter());
+                aCopy.SameRange(anEdge.SameRange());
+                return aCopy;
+            }
+
+            case BRep_TFace aFace:
+            {
+                var aCopy = (BRep_TFace)aFace.EmptyCopy();
+                aCopy.NaturalRestriction(aFace.NaturalRestriction());
+                if (aFace.NbTriangulations() > 0)
+                {
+                    aCopy.Triangulations(new NCollection_List<Poly_Triangulation>(aFace.Triangulations()), aFace.ActiveTriangulation());
+                }
+
+                return aCopy;
+            }
+
+            case BRep_TVertex aVertex:
+            {
+                var aCopy = (BRep_TVertex)aVertex.EmptyCopy();
+                foreach (BRep_PointRepresentation aRep in aVertex.Points())
+                {
+                    aCopy.ChangePoints().Append(aRep);
+                }
+
+                return aCopy;
+            }
+
+            default:
+                return theTShape.EmptyCopy();
+        }
+    }
+}

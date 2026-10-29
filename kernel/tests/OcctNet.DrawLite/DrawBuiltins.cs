@@ -41,6 +41,7 @@ internal static class DrawBuiltins
         BRepTestSurfaceCommands.Register(theInterpreter);
         BRepTestModifyCommands.Register(theInterpreter);
         GeometryTestCommands.Register(theInterpreter);
+        DrawTrSurfCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops

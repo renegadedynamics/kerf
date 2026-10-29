@@ -12,7 +12,7 @@ namespace OcctNet.DrawLite;
 /// </summary>
 /// <remarks>
 /// sameparameter, updatetolerance and mkedgecurve change their shape in place when no result name is given; the
-/// port runs OCCT's in-place algorithm (BRepLib's internal forms) on a structural copy and binds the copy to the
+/// port runs OCCT's in-place algorithm (BRepLib's internal forms) on a copy of the graph (DrawShapeCopy) and binds it to the
 /// name, as decision 407 does for <c>add</c> and <c>setflags</c>. <c>precision</c> isn't here: it sets
 /// BRepBuilderAPI's process-wide precision, which Draw-lite's parallel runs share.
 /// </remarks>
@@ -166,8 +166,8 @@ internal static class BRepTestModifyCommands
         }
         else
         {
-            // in place in OCCT: on a copy here
-            TopoDS_Shape aCopy = BRepTools.CopyForWrite(anInpS, out _);
+            // in place in OCCT: on a copy of the graph here
+            TopoDS_Shape aCopy = DrawShapeCopy.Copy(anInpS);
             BRepLib.SameParameter(aCopy, aTol, force);
             theDI.SetShape(a[1], aCopy);
         }
@@ -203,8 +203,8 @@ internal static class BRepTestModifyCommands
         }
         else
         {
-            // in place in OCCT: on a copy here
-            TopoDS_Shape aCopy = BRepTools.CopyForWrite(anInpS, out _);
+            // in place in OCCT: on a copy of the graph here
+            TopoDS_Shape aCopy = DrawShapeCopy.Copy(anInpS);
             BRepLib.UpdateTolerances(aCopy, IsF);
             theDI.SetShape(a[1], aCopy);
         }
@@ -252,7 +252,7 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape aCopy = BRepTools.CopyForWrite(S, out _);
+        TopoDS_Shape aCopy = DrawShapeCopy.Copy(S);
         BRepLib.BuildCurves3d(aCopy, Tolerance);
         theDI.SetShape(a[1], aCopy);
         return 0;
