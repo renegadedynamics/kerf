@@ -62,6 +62,11 @@ public static class Standard_Stream
     /// fixed and exponent notation at that many significant digits, trailing zeros removed, at least two exponent
     /// digits. A precision of 0 is 1, as in C; a negative one is 6.
     /// </summary>
+    /// <remarks>
+    /// .NET's "G" format gives the same digits: exact, with ties rounded to even, as the C runtime's standard rounding
+    /// does (the default of programs built with a Windows 10 2004 or later SDK, which native OCCT is; the legacy
+    /// rounding of older programs rounded ties away from zero).
+    /// </remarks>
     public static string FormatReal(double theValue, int thePrecision)
     {
         if (double.IsNaN(theValue))
@@ -76,8 +81,8 @@ public static class Standard_Stream
 
         int aPrecision = thePrecision < 0 ? 6 : thePrecision == 0 ? 1 : thePrecision;
 
-        // .NET's "G" format rounds exactly, removes trailing zeros and switches to exponent notation where %g does
-        // (exponent below -4 or at least the precision); it writes "E+05" where C writes "e+05".
+        // .NET's "G" format switches to exponent notation where %g does (exponent below -4 or at least the precision)
+        // and removes trailing zeros; it writes "E+05" where C writes "e+05"
         return theValue.ToString("G" + aPrecision.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture)
                        .Replace('E', 'e');
     }

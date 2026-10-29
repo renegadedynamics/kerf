@@ -49,7 +49,7 @@ public class GeomHash_PortTests
                            : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
     }
 
-    private static Geom_Curve Curve(Random r, int theKind)
+    internal static Geom_Curve Curve(Random r, int theKind)
     {
         switch (theKind)
         {
@@ -83,7 +83,7 @@ public class GeomHash_PortTests
         }
     }
 
-    private static Geom_Surface Surface(Random r, int theKind)
+    internal static Geom_Surface Surface(Random r, int theKind)
     {
         switch (theKind)
         {
@@ -143,7 +143,7 @@ public class GeomHash_PortTests
         }
     }
 
-    private static Geom2d_Curve Curve2d(Random r, int theKind)
+    internal static Geom2d_Curve Curve2d(Random r, int theKind)
     {
         switch (theKind)
         {
