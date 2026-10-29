@@ -36,8 +36,11 @@ public class BRepCheck_Analyzer
 {
     private TopoDS_Shape myShape;
 
+    // OCCT declares this map without a hasher: the default one compares shapes with operator== (IsEqual), so a shape
+    // met with two orientations (a seam edge, a vertex shared by edges) has one result per orientation, and the face
+    // check (which skips shapes already seen with IsSame) puts the context on the first one only
     private readonly NCollection_IndexedDataMap<TopoDS_Shape, BRepCheck_Result?> myMap =
-        new(TopTools_ShapeMapHasher.Instance);
+        new(EqualityComparer<TopoDS_Shape>.Default);
 
     private bool myIsParallel;
     private bool myIsExact;
@@ -234,6 +237,12 @@ public class BRepCheck_Analyzer
         }
 
         var aArrayOfArray = new NCollection_Array1<TopoDS_Shape[]>(0, aNbTasks - 1);
+        // OCCT's arrays are default-constructed empty: chunks past the last shape stay empty
+        for (int anI = 0; anI < aNbTasks; ++anI)
+        {
+            aArrayOfArray[anI] = [];
+        }
+
         for (int anI = 1; anI <= aMapSize; ++anI)
         {
             int aVectIndex = (anI - 1) / aTaskSize;
