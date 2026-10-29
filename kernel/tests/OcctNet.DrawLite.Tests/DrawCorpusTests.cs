@@ -1,6 +1,5 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using System.Reflection;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
 
@@ -9,10 +8,7 @@ namespace OcctNet.DrawLite.Tests;
 /// <summary>Scans OCCT's own test corpus to show how much of it the port could run, and what to implement next.</summary>
 public class DrawCorpusTests(ITestOutputHelper output)
 {
-    private static string TestsDirectory
-        => Path.Combine(typeof(DrawCorpusTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
-                                                  .Single(a => a.Key == "OcctSourceDir").Value!,
-                        "tests");
+    private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
     [Fact]
     public void Every_case_parses_and_the_report_lists_missing_commands()
@@ -21,17 +17,20 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
         var aCorpus = new DrawCorpus(TestsDirectory);
         var anInterpreter = new DrawInterpreter();
-        var aScans = aCorpus.Cases().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
+        anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
+        var aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
 
         var aMissing = aScans.SelectMany(s => s.Missing)
                              .GroupBy(c => c)
                              .Select(g => (Command: g.Key, Cases: g.Count()))
                              .OrderByDescending(x => x.Cases)
+                             .ThenBy(x => x.Command, StringComparer.Ordinal)
                              .ToList();
 
         output.WriteLine($"{aScans.Count} cases, {aScans.Count(s => s.IsRunnable)} runnable with the commands implemented so far");
+        output.WriteLine($"{aScans.Count(s => s.Missing.Count == 1)} cases miss exactly one command; {aMissing.Count} distinct commands are missing");
         output.WriteLine("Most-needed commands (cases that use each):");
-        foreach (var (aCommand, aCases) in aMissing.Take(40))
+        foreach (var (aCommand, aCases) in aMissing.Take(60))
         {
             output.WriteLine($"  {aCommand,-24} {aCases}");
         }
@@ -40,5 +39,9 @@ public class DrawCorpusTests(ITestOutputHelper output)
         var anUnparsable = aScans.Where(s => s.Commands.Contains("<unparsable>")).Select(s => s.Case.Id).ToList();
         output.WriteLine($"{anUnparsable.Count} unparsable: {string.Join(", ", anUnparsable.Take(10))}");
         Assert.True(anUnparsable.Count < aScans.Count / 100, "the parser should read at least 99% of the corpus");
+
+        // Tcl's own commands are all implemented, so what is missing is Draw's (geometry and viewer) commands
+        string[] aTclCore = ["if", "expr", "proc", "lindex", "uplevel", "upvar", "string", "regexp", "foreach", "dict", "format", "catch", "global", "open"];
+        Assert.DoesNotContain(aMissing, m => aTclCore.Contains(m.Command));
     }
 }
