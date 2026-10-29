@@ -408,7 +408,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
             }
             theOut.Write('\n');
         }
-        theOut.Write("\nToler = " + Tolerance().ToString(CultureInfo.InvariantCulture));
+        theOut.Write("\nToler = " + Standard_Stream.FormatReal(Tolerance(), 6)); // std::cout << double
         theOut.Write('\n');
     }
 

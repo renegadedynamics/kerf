@@ -7,7 +7,7 @@ namespace Occt;
 
 /// <summary>
 /// An intersection line defined by a set of points (<see cref="IntSurf_LineOn2S"/>), from a walking algorithm
-/// (<c>IntPatch_WLine</c>) or on a restriction (<c>IntPatch_RLine</c>), with its vertices
+/// (<see cref="IntPatch_WLine"/>) or on a restriction (<see cref="IntPatch_RLine"/>), with its vertices
 /// (<see cref="IntPatch_Point"/>).
 /// </summary>
 /// <remarks>

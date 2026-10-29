@@ -11,8 +11,8 @@ namespace Occt;
 
 /// <summary>
 /// An intersection line between two surfaces: geometric (a line or a conic, <c>IntPatch_GLine</c>), analytic
-/// (<c>IntPatch_ALine</c>), a set of points from a walking algorithm (<c>IntPatch_WLine</c>) or a
-/// restriction (<c>IntPatch_RLine</c>); with the transitions of the line on each surface and its isoparametric
+/// (<c>IntPatch_ALine</c>), a set of points from a walking algorithm (<see cref="IntPatch_WLine"/>) or a
+/// restriction (<see cref="IntPatch_RLine"/>); with the transitions of the line on each surface and its isoparametric
 /// flags.
 /// </summary>
 /// <remarks>
