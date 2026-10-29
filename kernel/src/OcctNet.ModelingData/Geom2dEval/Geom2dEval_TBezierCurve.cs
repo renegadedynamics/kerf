@@ -17,7 +17,7 @@ namespace Occt;
 public sealed class Geom2dEval_TBezierCurve : Geom2d_BoundedCurve
 {
     // The numerators (N) and denominators (W) of the derivatives up to the order evaluated.
-    // OCCT's CurveBasisEval<theMaxOrder>.
+    // The C++ CurveBasisEval<theMaxOrder>.
     private struct CurveBasisEval
     {
         public gp_XY N0;
@@ -64,7 +64,7 @@ public sealed class Geom2dEval_TBezierCurve : Geom2d_BoundedCurve
         }
     }
 
-    // OCCT's template evalCurveBasis<theMaxOrder>: the `if constexpr` on the order are plain tests here.
+    // The C++ template evalCurveBasis<theMaxOrder>: the `if constexpr` on the order are plain tests here.
     private static void evalCurveBasis(int theMaxOrder,
                                        NCollection_Array1<gp_Pnt2d> thePoles,
                                        NCollection_Array1<double>? theWeights,
@@ -557,7 +557,7 @@ public sealed class Geom2dEval_TBezierCurve : Geom2d_BoundedCurve
         NCollection_Array1<NCollection_Array1<double>> aBasisDerivs = new(0, N);
         for (int d = 0; d <= N; ++d)
         {
-            // OCCT resizes a default-constructed element; C# elements of a class type start null.
+            // C++ resizes a default-constructed element; C# elements of a class type start null.
             aBasisDerivs[d] = new NCollection_Array1<double>(1, aNbPoles);
             if (d == 0)
             {

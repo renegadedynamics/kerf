@@ -55,7 +55,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         return theC3 * 6.0;
     }
 
-    // OCCT's template evalPolynomialSurfaceCubicNonRational<theMaxOrder>: the `if constexpr` are plain tests.
+    // The C++ template evalPolynomialSurfaceCubicNonRational<theMaxOrder>: the `if constexpr` are plain tests.
     private static void evalPolynomialSurfaceCubicNonRational(int theMaxOrder,
                                                               NCollection_Array2<gp_Pnt> thePoles,
                                                               double theU,
@@ -136,7 +136,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         }
     }
 
-    // OCCT's template evalPolynomialSurfaceNonRational<theMaxOrder>: the `if constexpr` are plain tests.
+    // The C++ template evalPolynomialSurfaceNonRational<theMaxOrder>: the `if constexpr` are plain tests.
     private static void evalPolynomialSurfaceNonRational(int theMaxOrder,
                                                          NCollection_Array2<gp_Pnt> thePoles,
                                                          int theDegreeU,
@@ -370,7 +370,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         return theDu * (theMaxV + 1) + theDv;
     }
 
-    // OCCT's null theWDerivs (non-rational) is an empty span here.
+    // A null theWDerivs (non-rational) in C++ is an empty span here.
     private static void evalTensorDerivs(NCollection_Array2<gp_Pnt> thePoles,
                                          NCollection_Array2<double>? theWeights,
                                          int theMaxU,

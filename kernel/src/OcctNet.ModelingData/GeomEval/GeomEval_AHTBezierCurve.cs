@@ -49,7 +49,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         return aRes;
     }
 
-    // OCCT's template evalPolynomialNonRational<theMaxOrder>.
+    // The C++ template evalPolynomialNonRational<theMaxOrder>.
     private static void evalPolynomialNonRational(int theMaxOrder,
                                                   NCollection_Array1<gp_Pnt> thePoles,
                                                   int theDegree,
@@ -78,7 +78,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         }
     }
 
-    // OCCT's template evalPolynomialRational<theMaxOrder>.
+    // The C++ template evalPolynomialRational<theMaxOrder>.
     private static void evalPolynomialRational(int theMaxOrder,
                                                NCollection_Array1<gp_Pnt> thePoles,
                                                NCollection_Array1<double> theWeights,
@@ -118,7 +118,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         }
     }
 
-    // OCCT's template evalMixedAHT<theMaxOrder, theIsRational>.
+    // The C++ template evalMixedAHT<theMaxOrder, theIsRational>.
     private static void evalMixedAHT(int theMaxOrder,
                                      bool theIsRational,
                                      NCollection_Array1<gp_Pnt> thePoles,
@@ -371,7 +371,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
                                      double theBeta)
     {
         myPoles = new NCollection_Array1<gp_Pnt>(thePoles);
-        // As OCCT: a non-rational curve has one weight (left uninitialised by OCCT, 0 here).
+        // OCCT: a non-rational curve has one weight, left uninitialised (0 here), which Weights() returns.
         myWeights = new NCollection_Array1<double>(1, 1);
         myAlgDegree = theAlgDegree;
         myAlpha = theAlpha;
@@ -762,7 +762,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             return new gp_Vec(aSum);
         }
 
-        // OCCT's NCollection_LocalArray<double, 16> and <gp_XYZ, 16>.
+        // C++: NCollection_LocalArray<double, 16> and <gp_XYZ, 16>.
         Span<double> aWDerivs = N + 1 <= 16 ? stackalloc double[16] : new double[N + 1];
         Span<gp_XYZ> aCDerivs = N + 1 <= 16 ? stackalloc gp_XYZ[16] : new gp_XYZ[N + 1];
 
@@ -771,7 +771,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         int aHyperIdx = aPoleLow + aPolyCount;
         int aTrigIdx = aHyperIdx + (myAlpha > 0.0 ? 2 : 0);
 
-        // OCCT's pointers to the poles, null when unused.
+        // The C++ pointers to the poles, null when unused.
         gp_XYZ aPoleSinh = new();
         gp_XYZ aPoleCosh = new();
         gp_XYZ aPoleSin = new();

@@ -422,3 +422,42 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
      CurveOnSurface and CurvlinFunc go with GeomLib; the elementary Extrema and ProjLib classes come early. The
      generated tables of AppCont and AdvApp2Var (148,000 lines) are produced by a generator script, as the PLib
      Jacobi tables were (decision 77).
+
+## Phase 2: unit 1D, Eval geometries (29 October 2026)
+
+GeomEval (SineWave and CircularHelix curves, TBezier and AHTBezier curves and surfaces, Ellipsoid, Hyperboloid,
+HypParaboloid, Paraboloid and CircularHelicoid surfaces) and Geom2dEval (SineWave, Archimedean and logarithmic
+spirals, CircleInvolute, TBezier and AHTBezier curves).
+
+801. **Poles and weights are returned as `PackedList<T>`**, 0-based: `Poles()` and `Weights()` of the TBezier and
+     AHTBezier curves, and of the surfaces row by row (the pole of U index i and V index j, from 0, is at
+     `i * NbVPoles() + j`). The classes keep OCCT's `NCollection_Array1/Array2` fields, copied from the
+     constructor's arguments with their bounds, so the evaluation code is OCCT's. Each call copies; nothing in
+     OCCT calls these accessors in a loop. A non-rational TBezier returns no weights, as OCCT's empty array.
+802. **The classes are `sealed`**: OCCT marks every one of their overrides `final`.
+803. **Unsupported operations keep OCCT's behaviour.** `Reverse`, `UReverse`, `VReverse` and `Transform` start with
+     `CheckMutable()` and then throw `Standard_NotImplemented`, as do `ReversedParameter`, `UIso` and `VIso`;
+     so `Reversed`, `Transformed`, `Mirrored` and the other copying forms throw too.
+804. **Setters of the elementary surfaces** (`SetSemiAxisA/B/C`, `SetR1`, `SetR2`, `SetMode`, `SetFocal`, `SetPitch`)
+     are internal with `CheckMutable()`, and each has a public `With` twin returning the concrete type
+     (`GeomEval_EllipsoidSurface.WithSemiAxisA`). `Coefficients` returns its ten values as `out double`, as the gp
+     quadrics do (decision 14). The nested `GeomEval_HyperboloidSurface.SheetMode` enum stays nested.
+805. **Templates over the derivative order** (`evalCurveBasis<theMaxOrder>`, `evalMixedAHT<theMaxOrder,
+     theIsRational>`, `evalTrigAxisDerivs<theMaxOrder>`, `evalPolynomialSurface*<theMaxOrder>`, ...) are private
+     static methods taking the order (and the rational flag) as parameters; `if constexpr` becomes `if`, and the
+     arithmetic is unchanged. Their result structs are private nested structs. `NCollection_LocalArray<T, 16>` is a
+     16-element `stackalloc` or, above that, a heap array (decision 74); a null weights pointer is a null array or
+     an empty span. Where C# forbids a local hiding one of an enclosing scope, the inner one is renamed (`aS` →
+     `aSr` in the rational branches of GeomEval_TBezierSurface; `aPoly*` in the polynomial branches of the AHTBezier
+     curves). OCCT's private helpers that nothing calls (`evalBasis`, `evalBasisDeriv`, `evalTrigBasis`, ...) are
+     ported anyway, for side-by-side review.
+806. **The 3D TBezier and AHTBezier curves were ported from the 2D ports** by substituting the types, then
+     aligned with the 3D C++ where it differs (the 3D AHTBezier indexes poles through `Value(Lower() + k)` and has no
+     `evalBasis` helpers). The arithmetic of the two versions is the same.
+807. **Tests.** The GTests are ported one xUnit class per suite (decision 60). GTests that compare with Geom classes
+     not yet ported (Geom_Circle, Geom_Ellipse, Geom2d_Circle, Geom2d_Ellipse, Geom_SphericalSurface) compare with
+     the gp value and ElCLib/ElSLib, which those classes evaluate through. Every class also gets a
+     `Derivatives_MatchFiniteDifferences` test (tests/OcctNet.ModelingData.Tests/EvalTestUtils.cs): each
+     derivative up to order 5 to 7 (curves) or 4 to 5 (surfaces) against the central difference of the one below,
+     and EvalD1/D2/D3 against EvalD0 and EvalDN, for non-rational and rational poles and every combination of the
+     AHT basis parts. There is no native oracle: build123d.NET doesn't bind these classes.

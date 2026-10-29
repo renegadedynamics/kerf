@@ -63,7 +63,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         }
     }
 
-    // OCCT's template evalTrigAxisDerivs<theMaxOrder>: the `if constexpr` on the order are plain tests here.
+    // The C++ template evalTrigAxisDerivs<theMaxOrder>: the `if constexpr` on the order are plain tests here.
     // theDerivs holds (theMaxOrder + 1) blocks of 2 * theOrder + 1 values, one per derivative order.
     private static void evalTrigAxisDerivs(int theMaxOrder, double theT, double theAlpha, int theOrder,
                                            Span<double> theDerivs)
