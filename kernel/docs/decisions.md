@@ -962,7 +962,7 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
 (1101-1109); Geom_BezierSurface and Geom_BSplineSurface (1110-1113).
 
 158. **The surfaces follow unit 1A's conventions for the curves**: OCCT's `final` members are `sealed override`
-      (`Copy` included) and the classes are not sealed (1A's 604); every `Set` method is internal with
+      (`Copy` included) and the classes are not sealed (decision 125); every `Set` method is internal with
       `CheckMutable()` and has a public `With` twin returning the concrete class: `WithPln`; `WithCylinder`,
       `WithRadius`; `WithCone`, `WithRadius`, `WithSemiAngle`; `WithSphere`, `WithRadius`; `WithTorus`,
       `WithMajorRadius`, `WithMinorRadius`; `WithAxis`, `WithDirection`, `WithBasisCurve`, `WithLocation` (revolution);
@@ -970,7 +970,7 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       eight-argument `SetTrim` stays private, without the check, as a helper reached only from mutators and
       constructors). Geom_ElementarySurface's `WithAxis`, `WithLocation`, `WithPosition` and the bases' `UReversed`,
       `VReversed`, `Transformed`, ... cover the rest.
-159. **Composite surfaces share their basis as OCCT does** (1A's 606): `Geom_RectangularTrimmedSurface.BasisSurface()`
+159. **Composite surfaces share their basis as OCCT does** (decision 127): `Geom_RectangularTrimmedSurface.BasisSurface()`
       and `Geom_SweptSurface.BasisCurve()` return the stored object, which the constructors and `SetBasisCurve` copy
       from the caller's, as in OCCT. Callers can't change it, but freezing a trimmed or swept surface doesn't freeze
       its basis, and the trimmed and swept surfaces' own `Transform`, `UReverse` and `VReverse` change the basis in
@@ -987,13 +987,13 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
 161. **Geom_RevolutionUtils and Geom_ExtrusionUtils are internal static classes.** Their `Calculate*` functions are
       ported as written (`in` inputs, `out` results). Their evaluator templates over the curve type are ported for
       `Adaptor3d_Curve` only, the one instantiation OCCT makes (GeomAdaptor_Surface; GeomGridEval uses the
-      `Calculate*` functions), as 1A's 607.
+      `Calculate*` functions), as decision 128.
 162. **Small translations.** `std::remainder` (closure and periodicity of trimmed surfaces) is `Math.IEEERemainder`,
       which has the same definition (quotient rounded to even). `Geom_RectangularTrimmedSurface::Copy` returns a null
       handle when neither direction is trimmed; no constructor or `SetTrim` can produce that state, so the port
       throws `Standard_ProgramError` there instead of returning null from a non-nullable `Copy`. OCCT's
       `Geom_SurfaceOfRevolution::ReferencePlane` throws `Standard_NotImplemented`, and so does the port's.
-163. **Evaluation representations of the swept surfaces** follow 1A's 602: `HasEvalRepresentation()` is public;
+163. **Evaluation representations of the swept surfaces** follow decision 123: `HasEvalRepresentation()` is public;
       `EvalRepresentation()`, `SetEvalRepresentation` and `ClearEvalRepresentation` are internal (the setters with
       `CheckMutable()`); callers use `WithEvalRepresentation(desc)`, which validates the descriptor and stores a
       deep copy in a copy of the surface. Every modification drops it, as in OCCT, and `Copy` clones it.
