@@ -16,7 +16,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): <c>Initialize</c> recomputes. The templates over the curve type are ported per
-/// instantiation (decision 2002).
+/// instantiation (decision 2004).
 /// </remarks>
 public sealed class GCPnts_QuasiUniformDeflection
 {
@@ -132,6 +132,7 @@ public sealed class GCPnts_QuasiUniformDeflection
     /// <exception cref="StdFail_NotDone">The computation failed.</exception>
     public gp_Pnt Value(int theIndex)
     {
+        // OCCT names the wrong class and method in the message (occt-issues.md).
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_QuasiUniformAbscissa::Parameter()");
         return myPoints.Value(theIndex);
     }

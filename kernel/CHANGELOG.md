@@ -54,3 +54,14 @@ Phase 2 (part): approximation leaves.
   `IAppParCurves_LineTool<MultiLine>`).
 - Tests: the GProp GTests; unit tests of AdvApprox, FEmTool and AppParCurves on known approximations; oracle tests
   of GProp_GProps and GProp_PrincipalProps against native OCCT (through BRepGProp), all bit-identical.
+
+Phase 2 (part): constructions and sampling.
+
+- `OcctNet.ModelingData`: GC (the makers of Geom and Geom2d curves, surfaces and transformations: arcs of conics,
+  segments, lines, circles, ellipses, hyperbolas, parabolas, planes, cylinders, cones, trimmed cylinders and cones,
+  mirrors, rotations, scales, translations), whose `Value()` returns its result frozen; CPnts and GCPnts (curve
+  lengths, points at a curvilinear distance, uniform-abscissa, uniform-deflection, quasi-uniform and tangential
+  deflection samplings), for 3D and 2D adaptors. GCE2d's deprecated aliases are not ported: use the GC 2D makers.
+- Tests: the GC and GCPnts GTests; oracle tests of the GC arc makers and of GCPnts_AbscissaPoint,
+  GCPnts_UniformDeflection and GCPnts_QuasiUniformDeflection against native OCCT, all bit-identical; test stand-ins
+  for GeomAdaptor_Curve and Geom2dAdaptor_Curve, bit-identical to the native adaptors.

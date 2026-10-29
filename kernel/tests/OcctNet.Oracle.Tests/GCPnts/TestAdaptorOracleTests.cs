@@ -73,7 +73,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         return aWeights;
     }
 
-    private static (N.Geom_Curve Native, Geom_Curve Port, string Kind) RandomCurve(Oracle theO)
+    internal static (N.Geom_Curve Native, Geom_Curve Port, string Kind) RandomCurve(Oracle theO)
     {
         switch (theO.Int(0, 6))
         {
@@ -165,7 +165,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         return (new N.gp_Ax2d(aNP, aND), new gp_Ax2d(aP, new gp_Dir2d(aX, aY)));
     }
 
-    private static (N.Geom2d_Curve Native, Geom2d_Curve Port, string Kind) RandomCurve2d(Oracle theO)
+    internal static (N.Geom2d_Curve Native, Geom2d_Curve Port, string Kind) RandomCurve2d(Oracle theO)
     {
         switch (theO.Int(0, 4))
         {
@@ -217,7 +217,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Random bounds: the curve's own when finite (or a sub-range of them), otherwise a range around 0.</summary>
-    private static (double First, double Last) Bounds(Oracle theO, double theFirst, double theLast, bool thePeriodic)
+    internal static (double First, double Last) Bounds(Oracle theO, double theFirst, double theLast, bool thePeriodic)
     {
         if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
         {

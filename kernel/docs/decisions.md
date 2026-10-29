@@ -1065,3 +1065,62 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       surfaces or with a window away from the point, RemoveUKnot/RemoveVKnot of the end knots of a periodic
       direction, CheckAndSegment over the whole range of a periodic direction, and periodic IncreaseDegree
       (decision 91).
+
+## Phase 2: unit 2E, constructions and sampling
+
+GC (the Geom-returning makers, 3D and 2D), GCE2d, CPnts and GCPnts.
+
+2001. **GC follows gce's conventions (decision 117).** GC_Root is a class with OCCT's protected `TheError`; each
+      GC_Make* is a sealed class computed by its constructor. `Value()` throws StdFail_NotDone on a failed
+      construction, where OCCT's release build returns a null handle. OCCT's implicit `operator const
+      occ::handle<T>&()` is an explicit conversion; GC has no `Operator()`. The transformation makers (Mirror,
+      Rotation, Scale, Translation and their 2D twins) don't derive from GC_Root and can't fail, as in OCCT.
+      Where GC converts a gce construction implicitly on a path that can fail, the port does what OCCT's release
+      build does when that is well defined: GC_MakeArcOfCircle2d(P1, V, P2) with P1 = P2 reads gce_MakeLin2d's
+      default line, as OCCT does (it then throws Standard_ConstructionError from gp_Dir2d, where OCCT computes NaN
+      parameters). GC_MakeSegment(P1, P2) with P1 = P2 throws StdFail_NotDone from `GC_MakeLine.Value()`, where
+      OCCT's release build crashes on a null line (occt-issues.md).
+2002. **`Value()` of a GC maker returns its result frozen** (rules, section 8), the same object at every call, as
+      OCCT's const-reference return is. A maker's result is a long-lived object handed to a caller, who may share
+      it between shapes. This covers the Geom_Transformation and Geom2d_Transformation results (decision 96).
+      Ported code that changes a GC result in place must `Copy()` it first; GC itself only changes a result before
+      handing it out (GC_MakeCylindricalSurface's `SetRadius`).
+2003. **GCE2d is not ported as types.** In OCCT 8 its headers are only deprecated `using` aliases of the GC 2D makers
+      (`GCE2d_Root` = `GC_Root`, `GCE2d_MakeArcOfCircle` = `GC_MakeArcOfCircle2d`, ...), and C# can't export a type
+      alias. Callers use the GC_*2d classes; a caller wanting the old names can declare its own `using` aliases.
+2004. **GCPnts's and CPnts's templates over the curve type are ported once per instantiation**, as overloads for
+      Adaptor3d_Curve and Adaptor2d_Curve2d with identical bodies (rules, section 9; as decisions 128 and 137).
+      GCPnts_TCurveTypes, the traits resolving the point, Bezier, B-spline and distance-function types, is
+      replaced by those types written out in each instantiation. The 2D bodies were generated from the 3D ones by
+      substituting the types, and a unit test (`GCPnts_PortTests.TwoD_MatchesThreeD`) checks that every algorithm
+      gives bit-identical parameters and points on a planar 3D curve and the 2D curve built from the same numbers.
+      Rejected: one generic body over a traits interface with static abstract members wrapping each adaptor
+      method: the two adaptors share no base, their points and vectors differ (gp_Pnt/gp_Pnt2d), and the wrapper
+      would add a layer between the port and OCCT's text for code that runs once per curve, not in an inner loop.
+2005. **CPnts's function pointers and `void*` curves.** `CPnts_RealFunction` (`double (*)(double, void*)`) is a
+      delegate taking the client data as an object; the two evaluators of CPnts_AbscissaPoint are allocated once.
+      CPnts_UniformDeflection keeps its curve as an object with OCCT's `my3d` flag. As in OCCT, the CPnts and
+      GCPnts objects that take a curve (CPnts_AbscissaPoint after `Init`, CPnts_UniformDeflection,
+      GCPnts_DistFunction) keep a reference to it. Functions that fail assign their `out` values (decision 32).
+2006. **GCPnts's algorithms are sealed working classes** (decision 21) with OCCT's API: `Initialize` recomputes,
+      results are read by index (`NbPoints`, `Parameter(i)`, `Value(i)`), and GCPnts_TangentialDeflection keeps its
+      public `AddPoint`. No collection accessors are added: the results are small working values, and a Bento
+      wrapper can copy them out. `NbPoints`, `Parameter` and `Value` check `IsDone`, which OCCT's release build
+      compiles out; GCPnts_QuasiUniformAbscissa, which reads a GCPnts_UniformAbscissa's results without checking,
+      uses internal unchecked accessors so that a failed computation is copied as OCCT copies it.
+2007. **Test stand-ins for the adaptors.** GeomAdaptor_Curve (unit 2A) and Geom2dAdaptor_Curve (unit 2B) are not
+      ported yet, and nothing in GCPnts constructs them. The tests use `TestGeomAdaptor_Curve` and
+      `TestGeom2dAdaptor_Curve` (tests/OcctNet.ModelingData.Tests/TestAdaptors.cs, compiled into the oracle tests
+      too), which mirror OCCT's adaptors for lines, conics, Bezier and B-spline curves (BSplCLib_Cache evaluation,
+      local evaluation at the bounds, continuity, intervals, resolution); offset curves and evaluation
+      representations go through the curve's own evaluation. An oracle test compares them with the native adaptors:
+      405,817 values, all bit-identical. Units 2A and 2B replace them with the real adaptors and keep that test as a
+      regression check.
+2008. **Oracle coverage.** build123d.NET binds GC_MakeArcOfCircle, ArcOfEllipse, ArcOfHyperbola and ArcOfParabola,
+      GCPnts_AbscissaPoint, GCPnts_UniformDeflection and GCPnts_QuasiUniformDeflection. On random lines, conics,
+      Bezier and B-spline curves (rational, periodic, with C0 to C2 breaks), 2D and 3D, the arc makers' status,
+      bounds, points and circles, and the lengths, abscissa points (every constructor) and both deflection
+      samplings (every point and parameter, with and without control, at C0, C1 and C2, on whole curves and on
+      reversed sub-ranges) are compared: 191,740 values, all bit-identical. GC_MakeSegment and the other makers,
+      GCPnts_UniformAbscissa, GCPnts_QuasiUniformAbscissa and GCPnts_TangentialDeflection are not bound and are
+      unit-tested only.

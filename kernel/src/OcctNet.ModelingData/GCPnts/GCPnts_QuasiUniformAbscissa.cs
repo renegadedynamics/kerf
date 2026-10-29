@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): <c>Initialize</c> recomputes. The templates over the curve type are ported per
-/// instantiation (decision 2002).
+/// instantiation (decision 2004).
 /// </remarks>
 public sealed class GCPnts_QuasiUniformAbscissa
 {
@@ -114,7 +114,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
             GCPnts_UniformAbscissa aUA = new(theC, theNbPoints, theU1, theU2);
             myDone = aUA.IsDone();
             // OCCT reads NbPoints() and Parameter() without checking IsDone(), whose checks its release build
-            // compiles out: a failed result is copied as it is (decision 2003).
+            // compiles out: a failed result is copied as it is (decision 2006).
             myNbPoints = aUA.NbPointsUnchecked();
             myParams = new NCollection_HArray1<double>(1, myNbPoints);
             for (int aPntIter = 1; aPntIter <= myNbPoints; ++aPntIter)
@@ -193,7 +193,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
             GCPnts_UniformAbscissa aUA = new(theC, theNbPoints, theU1, theU2);
             myDone = aUA.IsDone();
             // OCCT reads NbPoints() and Parameter() without checking IsDone(), whose checks its release build
-            // compiles out: a failed result is copied as it is (decision 2003).
+            // compiles out: a failed result is copied as it is (decision 2006).
             myNbPoints = aUA.NbPointsUnchecked();
             myParams = new NCollection_HArray1<double>(1, myNbPoints);
             for (int aPntIter = 1; aPntIter <= myNbPoints; ++aPntIter)

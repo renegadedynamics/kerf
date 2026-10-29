@@ -146,3 +146,13 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `Geom_BSplineSurface::RemoveUKnot`, `RemoveVKnot` on a periodic direction (Geom_BSplineSurface_1.cxx) | Accept `Index` equal to FirstUKnotIndex (1) or LastUKnotIndex, the knots that close the period | Removing one leaves knots and multiplicities inconsistent with periodicity; `BSplCLib::KnotSequence` then reads out of range (OCCT's release build reads past the array; the port throws `IndexOutOfRangeException`). Example: V-periodic degree 2, knots multiplicities (2, 1, 2), `RemoveVKnot(3, 0, 100)` |
 | `Geom_BezierSurface` edits (Geom_BezierSurface.cxx) | Only `Transform`, `UReverse` and `VReverse` clear the evaluation representation; `SetPole`, `SetWeight`, `Increase`, `Segment`, `ExchangeUV`, the pole row and column edits keep it (Geom_BSplineSurface clears it on every edit) | A Bezier surface with an evaluation representation goes on evaluating the old shape after those edits |
 | `Geom_BezierSurface::Increase`, V direction (Geom_BezierSurface.cxx) | Passes `UKnots()` as the V knots | Harmless: a Bezier surface's knots are (0, 1) in both directions |
+
+## Phase 2: unit 2E, constructions and sampling
+
+| Where | What | Effect |
+|---|---|---|
+| `GC_MakeSegment(const gp_Pnt&, const gp_Pnt&)` (GC_MakeSegment.cxx) | Converts `GC_MakeLine(P1, P2)` to a handle without checking its status | With coincident points OCCT's release build passes a null line to Geom_TrimmedCurve and crashes; the port throws StdFail_NotDone |
+| `GC_MakeArcOfCircle2d(P1, V, P2)` (GC_MakeArcOfCircle2d.cxx) | Converts `gce_MakeLin2d(P1, P2)` without checking its status | With P1 = P2 the release build goes on with the default line, finds the center at P1 with radius 0 and computes NaN parameters; the port throws Standard_ConstructionError from `ElCLib::Parameter` |
+| `GCPnts_QuasiUniformAbscissa::initialize` (GCPnts_QuasiUniformAbscissa.cxx) | Reads `NbPoints()` and `Parameter()` of its GCPnts_UniformAbscissa without checking `IsDone()` | The debug build throws StdFail_NotDone on curves other than Bezier and B-spline whose abscissa computation fails (a zero-length curve); the release build copies the failed result. The port copies it, as the release build does |
+| `GCPnts_TangentialDeflection::initialize` (GCPnts_TangentialDeflection.cxx) | `Standard_ConstructionError_Raise_if(...)` is followed by `myParameters.Clear();` without a semicolon in between | Harmless: both expansions of the macro still clear the parameters |
+| `GCPnts_UniformDeflection::Value`, `GCPnts_QuasiUniformDeflection::Value` | Their StdFail_NotDone messages name `GCPnts_UniformAbscissa::Parameter()` and `GCPnts_QuasiUniformAbscissa::Parameter()` | Cosmetic |

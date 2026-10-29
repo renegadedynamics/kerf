@@ -15,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): <c>Initialize</c> recomputes and <c>AddPoint</c> adds points, as in OCCT. The
-/// templates over the curve type are ported per instantiation (decision 2002).
+/// templates over the curve type are ported per instantiation (decision 2004).
 /// </remarks>
 public sealed class GCPnts_TangentialDeflection
 {
@@ -347,6 +347,7 @@ public sealed class GCPnts_TangentialDeflection
         Standard_ConstructionError_Raise_if(
             theCurvatureDeflection < Precision.Confusion() || theAngularDeflection < Precision.Angular(),
             "GCPnts_TangentialDeflection::Initialize - Zero Deflection");
+        // OCCT omits the semicolon between the check and the Clear below; harmless (occt-issues.md).
         myParameters.Clear();
         myPoints.Clear();
         if (theFirstParameter < theLastParameter)
@@ -975,6 +976,7 @@ public sealed class GCPnts_TangentialDeflection
         Standard_ConstructionError_Raise_if(
             theCurvatureDeflection < Precision.Confusion() || theAngularDeflection < Precision.Angular(),
             "GCPnts_TangentialDeflection::Initialize - Zero Deflection");
+        // OCCT omits the semicolon between the check and the Clear below; harmless (occt-issues.md).
         myParameters.Clear();
         myPoints.Clear();
         if (theFirstParameter < theLastParameter)

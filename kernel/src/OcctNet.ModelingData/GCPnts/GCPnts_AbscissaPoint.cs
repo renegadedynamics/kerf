@@ -15,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's function templates over the curve type are ported once per instantiation (Adaptor3d_Curve and
-/// Adaptor2d_Curve2d), with identical bodies (decision 2002). GCPnts_TCurveTypes, the traits that resolve the 2D
+/// Adaptor2d_Curve2d), with identical bodies (decision 2004). GCPnts_TCurveTypes, the traits that resolve the 2D
 /// and 3D classes, is replaced by the types written out in each instantiation.
 /// </remarks>
 public sealed class GCPnts_AbscissaPoint

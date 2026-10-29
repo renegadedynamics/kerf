@@ -15,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): <c>Initialize</c> recomputes. A tolerance of -1 (the default) means
-/// Precision::Confusion(). The templates over the curve type are ported per instantiation (decision 2002).
+/// Precision::Confusion(). The templates over the curve type are ported per instantiation (decision 2004).
 /// </remarks>
 public sealed class GCPnts_UniformAbscissa
 {
@@ -166,7 +166,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     // NbPoints and Parameter without the StdFail_NotDone check, which OCCT's release build compiles out
-    // (No_Exception): for ported callers that read a failed result as OCCT does (decision 2003).
+    // (No_Exception): for ported callers that read a failed result as OCCT does (decision 2006).
     internal int NbPointsUnchecked() => myNbPoints;
 
     internal double ParameterUnchecked(int Index) => myParams!.Value(Index);
