@@ -19,3 +19,11 @@ Phase 0: groundwork, ported from OCCT V8_0_1 (b8f597c6).
 - Tests: OCCT's gp GTests ported; oracle tests against native OCCT; Draw-lite, which parses all 17,237 cases
   of OCCT's Draw test corpus and lists the commands they need.
 - `tools/port-status.cs` writes `docs/port-status.md`.
+
+Phase 1 (part): bounding boxes and bounding volume hierarchies.
+
+- `OcctNet.Foundation`: NCollection_Vec2/3/4 and NCollection_Mat3/4 (generic structs), NCollection_LinearVector;
+  the Bnd package (Bnd_Box, Bnd_Box2d, Bnd_B2d/f, Bnd_B3d/f, Bnd_OBB, Bnd_Range, Bnd_Sphere, Bnd_BoundSortBox,
+  Bnd_Tools); the BVH package (boxes, trees, binned/linear/sweep-plane/spatial-median builders, sorters,
+  traversals, box sets, triangulations, distance fields), generic over the element and vector type.
+- Tests: the Bnd, BVH and NCollection_Vec4 GTests; oracle tests of Bnd_Box and Bnd_OBB against native OCCT.

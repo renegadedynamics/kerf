@@ -163,6 +163,15 @@ public static class Standard
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_MultiplyDefined_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_MultiplyDefined(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void StdFail_InfiniteSolutions_Raise_if(bool condition, string? message = null)
     {
         if (condition)
