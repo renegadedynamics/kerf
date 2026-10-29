@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 
 namespace Occt;
 
-// OCCT's template over <Point, Vector, Array1OfPoints, Dimension> is ported once, as generic methods over the
+// Note: OCCT's template over <Point, Vector, Array1OfPoints, Dimension> is ported once, as generic methods over the
 // point and vector types and a traits type. The traits are static abstract members of an interface implemented by
 // two empty structs (2D and 3D), so the JIT specialises each instantiation as the C++ compiler does. Besides
-// OCCT's traits operations, the interface carries the calls the template resolves by overload at instantiation
+// Note: OCCT's traits operations, the interface carries the calls the template resolves by overload at instantiation
 // (PLib::SetPoles/GetPoles, SetCoord, Translated). Arrays of points are read as arrays of doubles with
 // MemoryMarshal.Cast, as OCCT casts them with (double*); a point or vector OCCT writes through a (double*) is
 // computed in a stack buffer and then built from it.
@@ -1136,7 +1136,7 @@ internal static class BSplCLib_CurveComputation
         int Dimension = Traits.Dimension;
         double Inverse;
         Span<double> P = stackalloc double[Dimension];
-        Span<double> aWeightBuf = stackalloc double[1]; // OCCT passes &aWeight as a one-value result array
+        Span<double> aWeightBuf = stackalloc double[1]; // Note: OCCT passes &aWeight as a one-value result array
         ReadOnlySpan<double> PArray, WArray;
         int kk;
         PArray = MemoryMarshal.Cast<Point, double>(PolesArray.AsSpan());
@@ -1208,7 +1208,7 @@ internal static class BSplCLib_CurveComputation
         int Dimension = Traits.Dimension;
         double NewParameter, Inverse;
         ReadOnlySpan<double> PArray = MemoryMarshal.Cast<Point, double>(PolesArray.AsSpan());
-        Span<double> myPoint = stackalloc double[Dimension]; // OCCT writes through (double*)&aPoint
+        Span<double> myPoint = stackalloc double[Dimension]; // Note: OCCT writes through (double*)&aPoint
         NewParameter = (Parameter - CacheParameter) / SpanLenght;
         PLib.NoDerivativeEvalPolynomial(NewParameter,
                                         Degree,
@@ -1916,7 +1916,7 @@ internal static class BSplCLib_CurveComputation
         where Traits : struct, IBSplCLib_CurveTraits<Point, Vector>
     {
         int aDegree = Poles.Length() - 1;
-        // OCCT wraps the static table without copying; the port copies the 2 * (aDegree + 1) knots
+        // Note: OCCT wraps the static table without copying; the port copies the 2 * (aDegree + 1) knots
         NCollection_Array1<double> aBidFlatKnots =
           NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(aDegree).Slice(0, 2 * (aDegree + 1)), 1);
         BSplCLib_BuildCache<Point, Vector, Traits>(0.0,

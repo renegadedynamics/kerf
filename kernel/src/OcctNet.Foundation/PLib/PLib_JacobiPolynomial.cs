@@ -278,7 +278,7 @@ public sealed partial class PLib_JacobiPolynomial
         int aCutIdx = anIdx + 1;
 
         math_Vector aMaxErrDim = new(1, theDimension, 0.0);
-        // OCCT allocates an NCollection_Array1 (0, myDegree + 1) here; a stack buffer gives the same values
+        // Note: OCCT allocates an NCollection_Array1 (0, myDegree + 1) here; a stack buffer gives the same values
         Span<double> aTabMax = stackalloc double[myDegree + 2];
         MaxValue(aTabMax);
 

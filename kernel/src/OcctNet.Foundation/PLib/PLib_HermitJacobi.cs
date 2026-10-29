@@ -208,7 +208,7 @@ public sealed class PLib_HermitJacobi
 
         math_Matrix aHermiteMatrix = GetHermiteMatrix(aNivConstr);
 
-        // OCCT wraps the stack buffers in NCollection_Array1 (0, ...); spans indexed from 0 are the same
+        // Note: OCCT wraps the stack buffers in NCollection_Array1 (0, ...); spans indexed from 0 are the same
         Span<double> JacValue0 = jac0[..(Max(0, aJacDegree) + 1)];
         Span<double> WValues = wvalues[..(NDeriv + 1)];
         WValues.Clear();

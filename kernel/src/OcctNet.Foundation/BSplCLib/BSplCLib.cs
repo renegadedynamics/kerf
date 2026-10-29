@@ -43,7 +43,7 @@ public static partial class BSplCLib
     // purpose: Auxiliary class optimizing creation of matrix buffer for
     //         evaluation of bspline (using stack allocation for main matrix)
     //=======================================================================
-    // OCCT places the matrix on a zeroed 27 x 27 stack buffer; the port allocates a math_Matrix (also zeroed)
+    // Note: OCCT places the matrix on a zeroed 27 x 27 stack buffer; the port allocates a math_Matrix (also zeroed)
     private static math_Matrix BSplCLib_LocalMatrix(int DerivativeRequest, int Order)
     {
         Standard_OutOfRange_Raise_if(DerivativeRequest > BSplCLib.MaxDegree()
@@ -1803,7 +1803,7 @@ public static partial class BSplCLib
                                           double Tolerance, bool Add = true)
     {
         bool addflat = AddMults == null;
-        // OCCT leaves NbPoles and NbKnots unchanged when it returns false
+        // Note: OCCT leaves NbPoles and NbKnots unchanged when it returns false
         NbPoles = 0;
         NbKnots = 0;
 
@@ -2570,6 +2570,8 @@ public static partial class BSplCLib
 
         if (Periodic)
         {
+            // OCCT: for most periodic curves whose multiplicities are not all 1, the raised curve is not the
+            // input curve (found against native OCCT, whose poles the port reproduces exactly; not analysed)
             // Periodic curves are transformed in non-periodic curves
 
             nbwknots += f - Mults.Lower();
@@ -3271,7 +3273,7 @@ public static partial class BSplCLib
                                    out int InversionProblem)
     {
         int ErrorCode, UpperBandWidth, LowerBandWidth;
-        // OCCT uses a stack buffer of up to 2048 values for the matrix
+        // Note: OCCT uses a stack buffer of up to 2048 values for the matrix
         math_Matrix InterpolationMatrix = new(1, Parameters.Length(), 1, 2 * Degree + 1);
         ErrorCode = BSplCLib.BuildBSpMatrix(Parameters,
                                             ContactOrderArray,
@@ -3314,7 +3316,7 @@ public static partial class BSplCLib
                                    Span<double> Weights, out int InversionProblem)
     {
         int ErrorCode, UpperBandWidth, LowerBandWidth;
-        // OCCT uses a stack buffer of up to 2048 values for the matrix
+        // Note: OCCT uses a stack buffer of up to 2048 values for the matrix
         math_Matrix InterpolationMatrix = new(1, Parameters.Length(), 1, 2 * Degree + 1);
         ErrorCode = BSplCLib.BuildBSpMatrix(Parameters,
                                             ContactOrderArray,

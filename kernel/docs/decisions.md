@@ -112,3 +112,66 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 36. **NCollection_CellFilter** takes its inspector as a type parameter constrained to
     `INCollection_CellFilter_Inspector<TTarget, TPoint>` (static abstract `Coord`, static virtual `Dimension`
     and `IsEqual`), in place of OCCT's duck-typed template parameter.
+
+## Phase 1: PLib, BSplCLib, CSLib (28-29 October 2026)
+
+101. **Array starts become spans by use, not by C++ constness.** A `double&`/`double*`/`const double&` that is the
+     start of an array is a `ReadOnlySpan<double>` when the function only reads through it (OCCT often omits
+     `const`) and a `Span<double>` when it writes; a scalar `double&`/`int&` is `out` (`ref` when read first).
+     Optional array pointers (`const NCollection_Array1<double>*`) are nullable NCollection arrays, and
+     `PLib::NoWeights()`, `NoWeights2()`, `BSplCLib::NoWeights()`, `NoMults()` return null. Callers write
+     `A.AsSpan()` / `A.AsSpan(i)` for `A(A.Lower())` / `A(i)`, and `MemoryMarshal.Cast<gp_Pnt, double>(...)` where
+     OCCT casts an array of points to `double*`. Spans may alias, as OCCT's pointers do (`PLib::RationalDerivatives`
+     is documented to accept the same array twice).
+102. **`ExtrapMode` of the flat and gp `BSplCLib::Eval` is a `ReadOnlySpan<int>` of two modes**, not `ref int`:
+     OCCT's `int&` is read as a two-element array (start and end). A C++ caller's `int mode[2]` becomes
+     `stackalloc int[2]` or a collection expression.
+103. **`NCollection_LocalArray` and C stack arrays become `stackalloc`** up to OCCT's own buffer size (128 doubles
+     by default, or the template's N), and a heap array above it, never inside a loop. Stack memory is zeroed in
+     .NET where OCCT's is not; nothing ported reads it before writing, except the OCCT bug in `BSplCLib::Eval`
+     (occt-issues.md), where the port's zeros give the apparently intended result.
+104. **BSplCLib_CurveComputation.pxx is ported once, generically**: methods
+     `<Point, Vector, Traits> where Traits : struct, IBSplCLib_CurveTraits<Point, Vector>`, the interface's static
+     abstract members carrying OCCT's traits operations and the calls the template resolves by overload (PLib's
+     SetPoles/GetPoles, SetCoord, ...), implemented by `BSplCLib_CurveTraits3d` and `BSplCLib_CurveTraits2d`. The
+     JIT specialises value-type generics, so this costs what the C++ template does. BSplCLib_1 (2D) and
+     BSplCLib_3 (3D) keep OCCT's thin public wrappers. Single points written through `(double*)&aPoint` are
+     computed in a stack buffer and built from it.
+105. **PLib's polynomial evaluation specialises dimensions 1 to 4**, where OCCT's templates specialise 1 to 15:
+     a type parameter with a static abstract constant lets the JIT keep the accumulators in registers. Higher
+     dimensions run the general loops. The arithmetic is OCCT's, operation for operation.
+106. **Constant tables are `ReadOnlySpan<double>` properties over RVA data** (the Jacobi tables, generated from
+     OCCT's .pxx with every literal copied as written; the Bezier flat knots; the unit weights). `FlatBezierKnots`
+     returns a `ReadOnlySpan<double>`: a caller needing an array writes `NCollection_Array1<double>.From(...)`,
+     which copies. `UnitWeights(n)` returns, as OCCT, a non-owning view of a shared array of ones up to 2049
+     elements (shared: don't modify), and a new array above; `UnitWeightsData()` is a `ReadOnlySpan<double>`.
+107. **Small heap allocations remain where OCCT puts a math_Matrix on a stack buffer**: the flat `BSplCLib::Eval`
+     allocates its (exactly sized) B-spline basis matrix per call (184 bytes for a cubic), `BuildBSpMatrix` its
+     27 × 27 buffer and `Interpolate` its band matrix, because `math_Matrix` owns a `double[]`. The B-spline and
+     Bezier evaluators (D0 to DN, Bohm, de Boor), PLib's evaluators and BSplCLib_Cache's evaluation allocate
+     nothing; the Bezier evaluators share read-only per-degree knot arrays for that.
+108. **BSplCLib_Cache is a Standard_Transient class whose `BuildCache` is internal** (a mutator); `IsCacheValid`
+     and the evaluators are public. Its coefficients live in an `NCollection_Array2<double>` allocated once in
+     the constructor, where OCCT wraps a 128-double member buffer anew in each `BuildCache`.
+     **BSplCLib_CacheParams is a sealed class** (non-copyable in OCCT): its constant members are readonly fields,
+     and the span state is properties with internal setters.
+109. **PLib_JacobiPolynomial and PLib_HermitJacobi are sealed, immutable classes**: in V8_0_1 they are plain
+     classes with only const members, used by value, and a struct's `default` would be invalid. Their
+     `D0123` has an internal span overload so that PLib_HermitJacobi keeps OCCT's stack buffers.
+110. **`CSLib::Normal`'s `theNormal` is `ref gp_Dir`**: OCCT leaves it unchanged when the status says no normal
+     was computed. CSLib_Class2d is a sealed class (movable, not copyable in OCCT); its template constructor
+     over the container type is one private `init` taking the bounds and an accessor.
+111. **`out` parameters are always assigned**: `BSplCLib::PrepareInsertKnots` sets NbPoles and NbKnots to 0 when
+     it returns false, where OCCT leaves them unchanged. Parameters named `Epsilon` in BSplCLib.hxx and
+     `Tolerance` in BSplCLib.cxx take the .cxx name where `Epsilon` would hide `Standard.Epsilon()`.
+112. **BSplCLib_EvaluatorFunction is an abstract class** with
+     `Evaluate(int, ReadOnlySpan<double> theStartEnd, double, out double theResult, out int theErrorCode)`;
+     its `operator()` is left out.
+113. **BSplCLib is checked against native OCCT although decision 23 expected it only through Geom.** A throwaway
+     harness (scratch, not committed: the oracle test project is not on this branch) drove build123d.NET's
+     `Geom_BSplineCurve`, `Geom2d_BSplineCurve` and `Geom_BezierCurve` and the port's BSplCLib with the same
+     inputs: D0, DN (orders 1-4), LocalD3, Resolution, InsertKnots, RemoveKnot, Unperiodize, MovePoint,
+     IncreaseDegree (non-periodic, and 2D) and Bezier D0-D3 were bit-identical on 1,100 random curves (about
+     200,000 values). MovePointAndTangent was identical except three degree-1 cases, where its 2 × 2 system is
+     nearly singular. The harness should become oracle tests when that project reaches this code.
+     BSplCLib_ConsistencyTests (OCCT.NET's own) checks the operations against each other on random curves.

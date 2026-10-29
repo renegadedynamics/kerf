@@ -76,7 +76,7 @@ public sealed class CSLib_Class2d
         return theU;
     }
 
-    // OCCT's template over the container type: the container is given by its lower bound, length and accessor.
+    // Note: OCCT's template over the container type: the container is given by its lower bound, length and accessor.
     private void init(int aLower, int aLength, Func<int, gp_Pnt2d> thePnts2d,
                       double theTolU, double theTolV, double theUMin, double theVMin, double theUMax, double theVMax)
     {

@@ -1031,7 +1031,7 @@ public static class PLib
         double UParameter = U, VParameter = V;
         int UDerivativeRequest = UDerivativeOrder, VDerivativeRequest = VDerivativeOrder;
         int Udim = (VDegree + 1) * Dimension, index = Udim * UDerivativeRequest;
-        // OCCT allocates both work arrays as NCollection_Array1
+        // Note: OCCT allocates both work arrays as NCollection_Array1
         int aCurveSize = Udim * (UDerivativeRequest + 1);
         int aPointSize = Dimension * (VDerivativeRequest + 1);
         Span<double> Result = aCurveSize <= 128 ? stackalloc double[aCurveSize] : new double[aCurveSize];
@@ -1918,7 +1918,7 @@ public static class PLib
             }
 
             //  The solving of equations system A * X = B. Then B = X
-            // OCCT checks IsDone only after Solve, which (with its checks on, as in the port) throws
+            // Note: OCCT checks IsDone only after Solve, which (with its checks on, as in the port) throws
             // StdFail_NotDone first when A is singular
             Equations.Solve(B);
 

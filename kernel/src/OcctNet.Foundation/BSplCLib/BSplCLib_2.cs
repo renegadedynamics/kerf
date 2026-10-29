@@ -7,7 +7,7 @@ namespace Occt;
 // methods for 1 dimensional BSplines
 public static partial class BSplCLib
 {
-    // OCCT's BSplCLib_DataContainer (BSplCLib_DataContainer_T<1> of BSplCLib_CurveComputation.pxx): stack
+    // Note: OCCT's BSplCLib_DataContainer (BSplCLib_DataContainer_T<1> of BSplCLib_CurveComputation.pxx): stack
     // buffers for the poles, knots and derivatives of one span. The port allocates them with stackalloc.
     private const int DataContainer1_PolesSize = (BSplCLib_CurveComputation.THE_MAX_DEGREE + 1) * (1 + 1);
     private const int DataContainer1_KnotsSize = 2 * BSplCLib_CurveComputation.THE_MAX_DEGREE;

@@ -7,7 +7,7 @@ using static Occt.BSplCLib_CurveComputation;
 namespace Occt;
 
 // Bezier curves as B-splines: the knots {0, 1} with multiplicities {Degree + 1, Degree + 1}.
-// OCCT's file defines No_Standard_RangeError and No_Standard_OutOfRange; the port keeps its checks.
+// Note: OCCT's file defines No_Standard_RangeError and No_Standard_OutOfRange; the port keeps its checks.
 
 public static partial class BSplCLib
 {
