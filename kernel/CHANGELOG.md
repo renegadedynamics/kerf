@@ -142,3 +142,13 @@ Phase 2 (part): GeomLib and Approx.
 - Tests: the GeomLib_CheckCurveOnSurface GTest; unit tests of every class; oracle tests of GeomLib_IsPlanarSurface,
   and, through BRepLib and BRepTools, of Approx_SameParameter, GeomLib::BuildCurve3d, GeomLib::SameRange and
   GeomLib_CheckCurveOnSurface against native OCCT, all bit-identical.
+
+Phase 3 (part): global properties.
+
+- `OcctNet.ModelingAlgorithms`: BRepGProp (length, area, volume, centre of mass and inertia of shapes: the exact,
+  adaptive, Gauss-Kronrod and mesh-based forms, with functional overloads returning a new `GProp_GProps`, and the
+  integration classes); BRepCheck's statics, `BRepCheck_Status`, `BRepCheck_Result` and `BRepCheck_Shell`;
+  `BRepLib_ValidateEdge` and `BRepLib_CheckCurveOnSurface`.
+- Tests: the BRepGProp GTests (with BRep_Builder shapes until the primitives are ported); known-answer tests; oracle
+  tests of every BRepGProp form and of BRepGProp_Face against native OCCT, all bit-identical, and of BRepCheck_Shell
+  and BRepLib_ValidateEdge through BRepCheck_Analyzer.

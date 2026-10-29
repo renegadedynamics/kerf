@@ -882,6 +882,7 @@ public class BRepCheck_Shell : BRepCheck_Result
                         newCur = false;
                         if (theFaces.IsEmpty())
                         {
+                            // OCCT: leaves before the shell is appended, so a last set of one face is lost (occt-issues.md)
                             break;
                         }
 
