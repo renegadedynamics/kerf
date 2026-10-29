@@ -74,10 +74,7 @@ broken down by package.
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
 | ModelingData | TKG2d | 68 / 102 | 18,970 / 23,488 | 80.8 |
 | ModelingData | TKG3d | 137 / 237 | 45,424 / 70,301 | 64.6 |
-| ModelingData | TKGeomBase | 196 / 720 | 73,390 / 317,408 | 23.1 |
-| ModelingData | TKG2d | 64 / 102 | 17,144 / 23,488 | 73.0 |
-| ModelingData | TKG3d | 131 / 237 | 40,246 / 70,301 | 57.2 |
-| ModelingData | TKGeomBase | 216 / 720 | 86,381 / 317,408 | 27.2 |
+| ModelingData | TKGeomBase | 315 / 720 | 99,810 / 317,408 | 31.4 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -85,8 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 869 | 289,424 / 2,897,781 | 10.0 |
-| **All** |  | 879 | 295,411 / 2,897,781 | 10.2 |
+| **All** |  | 988 | 315,844 / 2,897,781 | 10.9 |
 
 ## TKMath
 
@@ -143,7 +139,6 @@ broken down by package.
 | Adaptor2d | 6 / 6 | 1,720 / 1,720 | 100.0 |
 | Geom2d | 44 / 44 | 11,019 / 11,019 | 100.0 |
 | Geom2dAdaptor | 4 / 4 | 1,826 / 1,826 | 100.0 |
-| Geom2dAdaptor | 0 / 4 | 0 / 1,826 | 0.0 |
 | Geom2dEval | 14 / 14 | 4,405 / 4,405 | 100.0 |
 | Geom2dGridEval | 0 / 20 | 0 / 3,491 | 0.0 |
 | Geom2dHash | 0 / 14 | 0 / 1,027 | 0.0 |
@@ -165,20 +160,19 @@ broken down by package.
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| AdvApp2Var | 13 / 35 | 37,426 / 51,697 | 72.4 |
 | AdvApp2Var | 35 / 35 | 51,697 / 51,697 | 100.0 |
 | AppCont | 0 / 9 | 0 / 125,352 | 0.0 |
 | AppDef | 10 / 60 | 1,120 / 10,573 | 10.6 |
 | AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
 | Approx | 0 / 28 | 0 / 10,308 | 0.0 |
 | BndLib | 0 / 8 | 0 / 2,537 | 0.0 |
-| CPnts | 0 / 13 | 0 / 1,665 | 0.0 |
+| CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
 | Extrema | 17 / 104 | 5,242 / 22,613 | 23.2 |
 | ExtremaPC | 0 / 18 | 0 / 3,990 | 0.0 |
 | FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
-| GC | 0 / 65 | 0 / 5,462 | 0.0 |
+| GC | 65 / 65 | 5,462 / 5,462 | 100.0 |
 | GCE2d | 0 / 15 | 0 / 432 | 0.0 |
-| GCPnts | 0 / 19 | 0 / 5,022 | 0.0 |
+| GCPnts | 19 / 19 | 5,022 / 5,022 | 100.0 |
 | GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
 | Geom2dConvert | 0 / 14 | 0 / 4,160 | 0.0 |
 | GeomBndLib | 0 / 65 | 0 / 9,343 | 0.0 |
@@ -188,7 +182,6 @@ broken down by package.
 | GeomProjLib | 0 / 2 | 0 / 491 | 0.0 |
 | GeomTools | 0 / 11 | 0 / 3,846 | 0.0 |
 | Hermit | 2 / 2 | 1,280 / 1,280 | 100.0 |
-| Hermit | 0 / 2 | 0 / 1,280 | 0.0 |
 | IntAna | 20 / 20 | 7,605 / 7,605 | 100.0 |
 | IntAna2d | 18 / 18 | 1,971 / 1,971 | 100.0 |
 | LProp | 0 / 9 | 0 / 843 | 0.0 |
