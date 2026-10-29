@@ -133,6 +133,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
 
             if ((Udeb - uTrim1 > Precision.PConfusion()) || (uTrim2 - Ufin > Precision.PConfusion()))
             {
+                // OCCT: the message names Geom_TrimmedCurve (cosmetic).
                 throw new Standard_ConstructionError("Geom_TrimmedCurve::parameters out of range");
             }
         }

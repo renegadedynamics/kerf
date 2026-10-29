@@ -251,6 +251,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         int Step = Degree - myDeg;
 
+        // OCCT: counts only the knots of the parameter range; on a curve not clamped at its ends the new pole count
+        // doesn't match the new multiplicities, or BSplCLib::IncreaseDegree writes past it (occt-issues.md).
         NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Length() + Step * (ToK2 - FromK1));
 
         int nbknots = BSplCLib.IncreaseDegreeCountKnots(myDeg, Degree, myPeriodic, myMults);
@@ -1848,7 +1850,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
     public gp_Vec2d LocalDN(double U, int FromK1, int ToK2, int N)
     {
-        // (sic) OCCT's message says LocalD3.
+        // OCCT: the message says LocalD3 (cosmetic).
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalD3");
 
         double u = U;

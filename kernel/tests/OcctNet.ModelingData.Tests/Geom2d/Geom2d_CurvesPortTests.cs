@@ -465,6 +465,41 @@ public class Geom2d_CurvesPortTest
     }
 
     /// <summary>
+    /// occt-issues.md: Geom2d_BSplineCurve::IncreaseDegree sizes the new poles as NbPoles + Step * (LastUKnotIndex -
+    /// FirstUKnotIndex), which counts only the knots inside the parameter range. On a non-periodic curve whose end
+    /// knots have multiplicity below Degree + 1 (unclamped), BSplCLib::IncreaseDegree raises every multiplicity, so
+    /// the pole count no longer matches the multiplicities. Native OCCT gives the same curve (oracle tests).
+    /// </summary>
+    [Fact]
+    public void OcctIssue_BSplineIncreaseDegree_UnclampedCurveInconsistent()
+    {
+        // Clamped at the start, multiplicity 2 at the end: 8 poles
+        NCollection_Array1<gp_Pnt2d> aPoles = Arr(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 2), new gp_Pnt2d(2, -1),
+                                                  new gp_Pnt2d(3, 2), new gp_Pnt2d(4, 0), new gp_Pnt2d(5, 1),
+                                                  new gp_Pnt2d(6, -1), new gp_Pnt2d(7, 0));
+        NCollection_Array1<double> aKnots = Arr(0.0, 1.0, 2.0, 3.0, 4.0);
+        NCollection_Array1<int> aMults = Arr(4, 2, 2, 2, 2);
+        Geom2d_BSplineCurve aCurve = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
+        Assert.Equal(BSplCLib.NbPoles(3, false, aCurve.MultiplicitiesRef()), aCurve.NbPoles());
+
+        aCurve.IncreaseDegree(4);
+        int anExpected = BSplCLib.NbPoles(aCurve.Degree(), false, aCurve.MultiplicitiesRef());
+        myOutput.WriteLine($"after IncreaseDegree(4): {aCurve.NbPoles()} poles, multiplicities "
+                           + $"[{string.Join(", ", aCurve.Multiplicities())}] need {anExpected}");
+        // OCCT: the pole count doesn't match the multiplicities
+        Assert.NotEqual(anExpected, aCurve.NbPoles());
+
+        // Unclamped at both ends, BSplCLib::IncreaseDegree writes past the new poles (native OCCT, whose
+        // NCollection range checks are on, throws Standard_OutOfRange too)
+        Geom2d_BSplineCurve anUnclamped = new Geom2d_BSplineCurve(
+            Arr(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 2), new gp_Pnt2d(2, -1), new gp_Pnt2d(3, 2), new gp_Pnt2d(4, 0)),
+            Arr(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0),
+            Arr(1, 1, 1, 1, 1, 1, 1, 1, 1),
+            3);
+        Assert.ThrowsAny<Standard_OutOfRange>(() => anUnclamped.IncreaseDegree(4));
+    }
+
+    /// <summary>
     /// occt-issues.md: Geom2d_BSplineCurve never drops an attached evaluation representation, so after Transform
     /// (or SetPole, ...) it still evaluates through the old representation. Geom_BSplineCurve drops it.
     /// </summary>

@@ -107,7 +107,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
 
         for (int i = 1; i <= nbpoles; i++)
         {
-            // OCCT indexes the weights from 1 whatever their lower bound.
+            // OCCT: indexes the weights from 1 whatever their lower bound (occt-issues.md).
             if (PoleWeights[i] <= gp.Resolution())
             {
                 throw new Standard_ConstructionError();
@@ -352,6 +352,8 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             }
         }
         myMaxDerivInvOk = false;
+        // OCCT: keeps the evaluation representation, as SetPole, SetWeight and Segment do; only init and Transform
+        // drop it (occt-issues.md).
     }
 
     /// <summary>1 - U.</summary>
