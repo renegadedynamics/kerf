@@ -765,6 +765,140 @@ public class BRepLibMakersTests
         Assert.False(BRepLib_MakeFace.IsDegenerated(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 1e-7, out _));
     }
 
+    // ---------------------------------------------------------------- faces through BRepLib's statics
+
+    [Fact]
+    public void Face_from_a_frozen_planar_wire_is_built_on_a_copy_for_write()
+    {
+        TopoDS_Wire aW = Square(1, 2, 3, true);
+        ShapeSnapshot aSnap = ShapeSnapshot.Of(aW);
+        var aMF = new BRepLib_MakeFace(aW, true);
+        Assert.True(aMF.IsDone());
+        Assert.Equal(BRepLib_FaceDone, aMF.Error());
+        TopoDS_Face aF = aMF.Face();
+        Assert.True(aF.TShape()!.IsFrozen());
+        aSnap.AssertUnchanged(aW);
+
+        // the face holds a copy of the wire, recorded in the history
+        BRepTools_History? aH = aMF.InternalHistory();
+        Assert.NotNull(aH);
+        TopoDS_Shape aFaceWire = new TopoDS_Iterator(aF).Value();
+        Assert.False(aFaceWire.IsSame(aW));
+        for (var anExp = new TopExp_Explorer(aW, TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            Assert.Single(aH!.Modified(anExp.Current()));
+        }
+        Assert.Equal(4, Count(aF, TopAbs_EDGE));
+        var aPlane = Assert.IsType<Geom_Plane>(BRep_Tool.Surface(aF));
+        Assert.Equal(1.0, Math.Abs(aPlane.Position().Direction().Z()), 1e-12);
+        Assert.Equal(TopAbs_OUT, new BRepTopAdaptor_FClass2d(aF, 0).PerformInfinitePoint());
+        for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            Assert.True(BRep_Tool.SameParameter(TopoDS.Edge(anExp.Current())));
+        }
+    }
+
+    [Fact]
+    public void Face_from_a_wire_that_is_not_planar_fails()
+    {
+        TopoDS_Wire aW = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0.5),
+                                                 new gp_Pnt(0, 1, 0), true).Wire();
+        var aMF = new BRepLib_MakeFace(aW);
+        Assert.False(aMF.IsDone());
+        Assert.Equal(BRepLib_NotPlanar, aMF.Error());
+    }
+
+    [Fact]
+    public void Face_on_an_offset_surface_is_made_same_parameter()
+    {
+        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var anOffset = new Geom_OffsetSurface(aCyl, 0.5);
+        var aMF = new BRepLib_MakeFace(anOffset, 0, Math.PI, 0, 3, Precision.Confusion());
+        Assert.True(aMF.IsDone());
+        TopoDS_Face aF = aMF.Face();
+        Assert.Equal(4, Count(aF, TopAbs_EDGE));
+        for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
+            Assert.True(BRep_Tool.SameParameter(anE));
+            Assert.True(BRep_Tool.Tolerance(anE) < 1e-5);
+        }
+    }
+
+    // ---------------------------------------------------------------- shells
+
+    private static Geom_BSplineSurface SurfaceWithAC1Knot()
+    {
+        // cubic in U with a double interior knot (C1 there), linear in V
+        var aPoles = new NCollection_Array2<gp_Pnt>(1, 6, 1, 2);
+        for (int i = 1; i <= 6; i++)
+        {
+            for (int j = 1; j <= 2; j++)
+            {
+                aPoles[i, j] = new gp_Pnt(i, 3 * j, (i % 2) * 0.5 + 0.1 * j);
+            }
+        }
+        var aUKnots = new NCollection_Array1<double>(1, 3);
+        aUKnots[1] = 0;
+        aUKnots[2] = 1;
+        aUKnots[3] = 2;
+        var aUMults = new NCollection_Array1<int>(1, 3);
+        aUMults[1] = 4;
+        aUMults[2] = 2;
+        aUMults[3] = 4;
+        var aVKnots = new NCollection_Array1<double>(1, 2);
+        aVKnots[1] = 0;
+        aVKnots[2] = 1;
+        var aVMults = new NCollection_Array1<int>(1, 2);
+        aVMults[1] = 2;
+        aVMults[2] = 2;
+        return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 1);
+    }
+
+    [Fact]
+    public void Shell_of_a_BSpline_surface_is_split_at_its_C1_knot()
+    {
+        Geom_BSplineSurface aS = SurfaceWithAC1Knot();
+        var aMS = new BRepLib_MakeShell(aS);
+        Assert.True(aMS.IsDone());
+        Assert.Equal(BRepLib_ShellDone, aMS.Error());
+        TopoDS_Shell aSh = aMS.Shell();
+        Assert.True(aSh.TShape()!.IsFrozen());
+        Assert.Equal(2, Count(aSh, TopAbs_FACE));
+        Assert.Equal(7, Count(aSh, TopAbs_EDGE)); // the shared edge once
+        Assert.Equal(6, Count(aSh, TopAbs_VERTEX));
+        Assert.False(aSh.Closed());
+        for (var anExp = new TopExp_Explorer(aSh, TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            Assert.NotNull(BRep_Tool.Curve(TopoDS.Edge(anExp.Current()), out _, out _)); // BuildCurves3d
+        }
+        // every face is on a copy of the whole surface
+        for (var anExp = new TopExp_Explorer(aSh, TopAbs_FACE); anExp.More(); anExp.Next())
+        {
+            var aFS = Assert.IsType<Geom_BSplineSurface>(BRep_Tool.Surface(TopoDS.Face(anExp.Current())));
+            Assert.NotSame(aS, aFS);
+            Assert.Equal(3, aFS.NbUKnots());
+        }
+
+        // with Segment, each face has its own segment
+        TopoDS_Shell aSeg = new BRepLib_MakeShell(aS, true).Shell();
+        for (var anExp = new TopExp_Explorer(aSeg, TopAbs_FACE); anExp.More(); anExp.Next())
+        {
+            var aFS = Assert.IsType<Geom_BSplineSurface>(BRep_Tool.Surface(TopoDS.Face(anExp.Current())));
+            Assert.Equal(2, aFS.NbUKnots());
+        }
+        Assert.False(aS.IsFrozen()); // the caller's surface is only copied
+    }
+
+    [Fact]
+    public void Shell_between_parameters_and_the_empty_maker()
+    {
+        var aMS = new BRepLib_MakeShell(SurfaceWithAC1Knot(), 0.5, 1.5, 0.2, 0.8);
+        Assert.True(aMS.IsDone());
+        Assert.Equal(2, Count(aMS.Shell(), TopAbs_FACE));
+        Assert.Equal(BRepLib_EmptyShell, new BRepLib_MakeShell().Error());
+    }
+
     // ---------------------------------------------------------------- solids
 
     [Fact]
