@@ -2280,3 +2280,83 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       pcurve itself; SameParameter's C0 B-spline pcurve branch needs `GeomConvert.C0BSplineToC1BSplineCurve` and
       Approx_CurvilinearParameter; the oracle tests' port sides (`ComputeTol`, `evaluateMaxSegment`) become BRepLib's
       own code then.
+
+## Phase 2: unit 6A, projection (29 October 2026)
+
+The rest of ProjLib (ProjectedCurve with the HProjectedCurve typedef, CompProjectedCurve with the
+HCompProjectedCurve typedef, ComputeApprox, ComputeApproxOnPolarSurface, ProjectOnPlane, ProjectOnSurface, PrjFunc,
+PrjResolve, ProjLib::MakePCurveOfType) and GeomProjLib. With unit 2F, all of ProjLib.
+
+330. **Results that a projection keeps are frozen when handed out; ported code reads them unfrozen** (decisions 243,
+      244 and 287). `BSpline()`/`Bezier()` of ProjLib_ComputeApprox, ProjLib_ComputeApproxOnPolarSurface (also
+      `Curve2d()`), ProjLib_ProjectOnPlane, ProjLib_ProjectOnSurface and ProjLib_ProjectedCurve, and
+      `GetResult2dC`/`GetResult3dC` of ProjLib_CompProjectedCurve, freeze the stored curve and return the same object
+      at each call. The internal `InternalBSpline()`/`InternalBezier()` (`InternalCurve2d()` for the polar class) return
+      it unfrozen for ported code that discards the algorithm: ProjLib_ProjectedCurve extends (ExtendC2d), re-ranges,
+      smooths (RemoveKnot) and translates into the surface's period the curves of its local ComputeApprox,
+      ComputeApproxOnPolarSurface and Approx_CurveOnSurface (`InternalCurve2d()`) and of Geom2dConvert's concatenation
+      (`InternalBSplineCurve()`), in place as OCCT does. GeomProjLib returns new curves the caller owns, unfrozen.
+      Decision 156's open point: **ProjLib_Projector's `BSpline()` and `Bezier()` now freeze** the stored curve too,
+      with internal unfrozen twins; `ProjLib.MakePCurveOfType` returns the projection's B-spline itself, frozen and
+      shared with the ProjLib_ProjectedCurve, as OCCT shares the handle. Query methods (`Degree`, `NbPoles`, ...) read
+      the internal curve, so asking about a result doesn't freeze it.
+331. **Working objects and adaptors** (decisions 21, 101 and 251). All the classes keep the caller's adaptors by
+      reference, as OCCT keeps its handles; the adaptors must outlive them. `Load`, `Perform`, `Init` and the setters
+      are public. ProjLib_ProjectedCurve, ProjLib_CompProjectedCurve (Adaptor2d_Curve2d) and ProjLib_ProjectOnPlane
+      (Adaptor3d_Curve, overriding the `Eval*` virtuals, `sealed` where OCCT has `final`) keep OCCT's adaptor API,
+      including the queries that throw Standard_NotImplemented. `GetSurface()`/`GetCurve()` are nullable; the curve of
+      a ProjLib_ProjectedCurve is a trimmed copy when the curve ends at a pole of the surface, as in OCCT.
+      `ProjLib_ProjectOnPlane.GetResult()` is the projector's own adaptor (OCCT's handle). OCCT's `myResult = P`,
+      slicing a ProjLib_Plane (Cylinder, ...) into ProjLib_ProjectedCurve's ProjLib_Projector member, and ShallowCopy's
+      copy of that member, are the internal `ProjLib_Projector.Assign`, sharing the curves as the handles are shared.
+      OCCT's `GeomAdaptor_Curve a(c); h = new GeomAdaptor_Curve(a)` is a single construction.
+332. **ProjLib_ProjectedCurve's period count keeps OCCT's map order** (decision 18). Perform picks the period holding
+      most sample points of the result, the first one met on ties, from an `NCollection_DataMap<int, int>`; .NET's
+      order would choose differently on ties. The internal nested `IntDataMap` reproduces OCCT's buckets for integer
+      keys (identity hash sign-extended to size_t, bucket `hash % NbBuckets + 1`, chains headed by the newest key,
+      resizing to `NCollection_Primes.NextPrimeForMap`), as decisions 66 and 67 did for Poly; tested. File-local
+      functions and classes of every file (the AppCont_Function subclasses ProjLib_Function, ProjLib_PolarFunction,
+      ProjLib_OnPlane, ProjLib_OnSurface; ProjLib_MaxCurvature; CompProjectedCurve's SplitDS; ComputeApprox's
+      PlaneProjector, a private readonly struct) are private nested classes and private statics with `out`/`ref`
+      outputs (decision 281); C++ fixed arrays are `stackalloc` spans; `int SingularCase[2]` (uninitialised in OCCT,
+      read only where set) starts at zero; outputs OCCT leaves unset on failure are 0 (decision 32: CompProjectedCurve's
+      InitialPoint, ComputeApprox's Function_D1). The `OCCT_DEBUG_CHRONO`/OSD_Timer code and ProjectOnSurface's
+      std::cout message are left out.
+333. **Smaller API choices.** ProjLib_CompProjectedCurve's `Bounds`, `IsSinglePnt`, `IsUIso`, `IsVIso` and
+      `GetTolerance` take `out`; `GetSequence()` returns a deep copy (OCCT returns its own sequences, which its
+      shallow copies share; no OCCT caller reads them); `Trim` copies with `MemberwiseClone`, sharing what OCCT's copy
+      constructor shares; the fields OCCT's default constructor leaves uninitialised are 0, C0 and false.
+      ProjLib_ComputeApproxOnPolarSurface's `Perform(InitialCurve2d, C, S)` and `ProjectUsingInitialCurve2d` return new
+      curves the caller owns, unfrozen, and don't store them; as in OCCT, `BuildInitialCurve2d` stores its degree-1
+      curve as `BSpline()`, so after the three-argument Perform `BSpline()` is the initial curve. Its Concat raises the
+      degree of curves it has just built. ProjectOnPlane copies Bezier and B-spline inputs before setting poles, as
+      OCCT does, so the caller's curve is unchanged (tested). `ProjLib.MakePCurveOfType` has an `out` curve.
+      GeomProjLib's Tolerance is `ref`; its functions return null on failure, and `Project` on a non-planar surface
+      throws, as OCCT does, when the curve has no projection (CompProjectedCurve's `Bounds(1, ...)`).
+334. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/ProjLib/ProjLibProjectedCurveOracleTests.cs`; random curves
+      of every kind from AdaptorOracleInputs, random planes; all values bit-identical):
+      - ProjLib_ProjectedCurve on planes through GeomAPI::To2d (the port mirrors its body: ProjectedCurve, then
+        Geom2dAdaptor::MakeCurve): ProjLib_Plane for lines and conics, ProjLib_ComputeApprox's pole projection for
+        Bezier and B-spline curves, its approximation (Approx_FitAndDivide2d) for offset curves; trimmed curves of all
+        of them. 600 cases, 60,800 values (type, range, values along the range, B-spline structure).
+      - GeomProjLib::ProjectOnPlane, ProjLib_ProjectOnPlane (keeping the parametrization; its approximation for
+        offset curves) and ProjLib_ProjectedCurve through BRep_Tool::CurveOnSurface on edges having only a 3D curve
+        (BRep_Tool::CurveOnPlane, mirrored): 600 cases, 75,336 values.
+      No bound native path reaches ProjLib_ProjectedCurve on other surfaces with little enough processing around it
+      to mirror (BOPTools_AlgoTools2D, LocOpe_WiresOnShape, ShapeConstruct and ShapeUpgrade wrap it in their own
+      algorithms), nor ProjLib_ProjectOnSurface or GeomProjLib::Curve2d/Project. ComputeApprox on quadrics,
+      ComputeApproxOnPolarSurface and CompProjectedCurve are unit-tested (results mapped back through the surface
+      onto the curve) and were reviewed function by function against OCCT.
+335. **Tests.** OCCT's ProjLib_ComputeApproxOnPolarSurface GTest is ported. OCCT.NET's own tests cover every class:
+      projections on planes, cylinders, cones, spheres (through and near the poles), tori, surfaces of revolution (a
+      curve starting on the axis), B-spline, Bezier and offset surfaces; every branch of ProjLib_ProjectedCurve's
+      Perform (the ComputeApprox fallback, the trimming at poles and the extension back, the polar approximation,
+      CompProjectedCurve with Approx_CurveOnSurface, the period placement); iso and single-point parts, several parts
+      with MaxDist; the frozen results and the unchanged inputs; the map order; and each reachable OCCT issue, pinned.
+336. **For phase 3.** BRepLib (BuildPCurveForEdgeOnPlane), BRep_Tool::CurveOnPlane and BOPTools_AlgoTools2D call
+      `new ProjLib_ProjectedCurve(HS, HC[, Tol])`, then `ProjLib.MakePCurveOfType(Proj, out C2D)` or
+      `Geom2dAdaptor.MakeCurve(Proj)`; the B-spline they get is frozen and shared with the projection, so code that
+      changes it in place (BOPTools' translation into a period) must copy first. The oracle tests' `CurveOnPlane` becomes
+      BRep_Tool's own code. BRepAlgo_NormalProjection, GeomPlate and Draft read ProjLib_CompProjectedCurve's frozen
+      `GetResult2dC`/`GetResult3dC`. BRepProj_Projection makes no ProjLib call of its own (it is built on
+      BRepAlgoAPI_Section and BRepFill), so its oracle belongs with the Boolean units.

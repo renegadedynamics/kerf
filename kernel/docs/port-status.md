@@ -74,7 +74,7 @@ broken down by package.
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 683 / 720 | 305,429 / 317,408 | 96.2 |
+| ModelingData | TKGeomBase | 703 / 720 | 316,755 / 317,408 | 99.8 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1492 | 551,588 / 2,897,781 | 19.0 |
+| **All** |  | 1512 | 562,914 / 2,897,781 | 19.4 |
 
 ## TKMath
 
@@ -179,12 +179,12 @@ broken down by package.
 | GeomConvert | 33 / 33 | 9,390 / 9,390 | 100.0 |
 | GeomLProp | 10 / 10 | 2,214 / 2,214 | 100.0 |
 | GeomLib | 28 / 28 | 7,033 / 7,033 | 100.0 |
-| GeomProjLib | 0 / 2 | 0 / 491 | 0.0 |
+| GeomProjLib | 2 / 2 | 491 / 491 | 100.0 |
 | GeomTools | 10 / 11 | 3,757 / 3,846 | 97.7 |
 | Hermit | 2 / 2 | 1,280 / 1,280 | 100.0 |
 | IntAna | 20 / 20 | 7,605 / 7,605 | 100.0 |
 | IntAna2d | 18 / 18 | 1,971 / 1,971 | 100.0 |
 | LProp | 9 / 9 | 843 / 843 | 100.0 |
-| ProjLib | 14 / 32 | 2,012 / 12,847 | 15.7 |
+| ProjLib | 32 / 32 | 12,847 / 12,847 | 100.0 |
 | gce | 48 / 48 | 4,513 / 4,513 | 100.0 |
 
