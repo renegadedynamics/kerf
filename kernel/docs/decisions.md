@@ -4787,3 +4787,109 @@ Numbers from 4101 are placeholders, renumbered on merge. Plan decisions are cite
       BRepMesh_GeomTool is a sealed working class, its `double (&)[2]` a `Span<double>` and `IntSegSeg`'s point `ref`
       (written only on some paths). `BRepMesh_ShapeTool.AddInFace` takes the triangulation by value (OCCT passes the
       handle by reference without changing it).
+
+## Phase 4: unit 4B, Delaunay core
+
+BRepMesh's Delaunay core and Delabella, in OcctNet.ModelingAlgorithms. Delabella was ported in a forked worktree,
+reviewed and merged. Numbers from 4401 are placeholders, renumbered on merge; merged decisions are cited by their
+numbers (486–497, 519–530).
+
+4401. **Placement.** BRepMesh's plain types (Vertex, Edge, OrientedEdge, Triangle, PairOfIndex, Circle,
+      DegreeOfFreedom), CircleInspector, VertexInspector, CircleTool, VertexTool, DataStructureOfDelaun,
+      SelectorOfDataStructureOfDelaun, Delaun, Classifier, MeshTool, Triangulator and `delabella.cs` are in
+      `src/OcctNet.ModelingAlgorithms/BRepMesh`; the two helpers they need, `std_heap` and `NCollection_IntDataMap`, in
+      OcctNet.Foundation (`Standard`, `NCollection`). IMeshData_Types.cs's table names the types 4B gives its
+      typedefs. Tests are in `tests/OcctNet.ModelingAlgorithms.Tests/BRepMesh` and `tests/OcctNet.Foundation.Tests`.
+4402. **The plain types are structs whose equality is exact; OCCT's equality is `IsEqual` and a `Hasher`.**
+      - OCCT's `operator==` for Vertex (within `PConfusion`), Edge (either orientation) and Triangle (any rotation)
+        never matches a deleted entity, not even itself. That can't be `Equals`, which Bento needs reflexive
+        (translation rules, section 3). So `Equals` and `==` compare the fields, `IsEqual` is OCCT's, and each type
+        has a nested `Hasher : IEqualityComparer<T>` with OCCT's hash and equality, which ported maps pass as OCCT's
+        hasher template argument.
+      - OrientedEdge's OCCT equality is exact, so its `Equals` and `GetHashCode` are OCCT's.
+      - Edge can't derive from OrientedEdge. It holds the nodes itself and converts implicitly, as C++ slices.
+      - Triangle's public `myEdges[3]`/`myOrientations[3]` are internal inline arrays, read as C++ does
+        (`var e = aElement.myEdges; e[i]`); callers use `Edges(Span, Span)`, `Edge(i)`, `Orientation(i)`.
+      - Mutators are internal, with `With...`/`Appended`/`IndexRemoved` twins.
+      - OrientedEdge, Edge (deleted, nodes -1) and PairOfIndex (-1, -1) have non-zero defaults, so ported code writes
+        `new T()`.
+4403. **The tools, the structure and the algorithms are working objects (decision 21) with OCCT's public API.**
+      - The allocator arguments go. Handles are references, and `occ::handle<MapOfInteger>` is a (nullable)
+        `NCollection_PackedMapOfInteger`.
+      - `int (&)[3]` and `bool (&)[3]` are spans. C++ outputs (`double&`, `gp_XY&`) are `out`, or `ref` where the
+        caller's value is kept on some paths (`findNextPolygonLink`).
+      - `const T&` getters return values, except:
+        - `ElementsConnectedTo`, which returns `ref readonly BRepMesh_PairOfIndex`: `killLinkTriangles` reads the
+          pair again after each deletion, as OCCT's reference does;
+        - the internal `ChangeLink` and `ChangeElement` and the tools' `GetVertex` and `Circle`, OCCT's `const_cast`
+          writes, which BaseMeshAlgo (4D) and MeshTool use.
+      - The index-vector constructors of BRepMesh_Delaun sort the caller's `NCollection_DynamicArray<int>` in place,
+        as OCCT's do.
+      - Classifier's `RegisterWire` takes the points (`NCollection_Sequence<gp_Pnt2d>`, not pointers) and value tuples
+        for `std::pair`.
+      - DataStructureOfDelaun's `Dump` and MeshTool's `DumpTriangles` are ported, writing BRep files.
+        `BRepMesh_DumpPoly` (OCCT_DEBUG) goes.
+      - The Triangulator reports to `Message.DefaultMessenger()` unless `SetMessenger` is called (decision 493).
+4404. **Three OCCT containers keep OCCT's semantics because the algorithm's result depends on them** (decision 491).
+      - **`IMeshData::MapOfIntegerInteger` is `NCollection_IntDataMap<bool>`, in OCCT's iteration order.** Delaun's
+        `createTriangles` makes its triangles in the order of the loop edges, which gives the triangles' indices and
+        the order of the result. Its cleanup and RemoveVertex also walk such maps. MapOfInteger is
+        NCollection_PackedMapOfInteger, which already iterates in OCCT's order (decision 67). The cell filter already
+        visits each cell's newest target first.
+      - **The links of a node are `BRepMesh_DataStructureOfDelaun.LinkedListOfInteger`**, a singly linked list with
+        NCollection_List's iterator. `killTrianglesAroundVertex` and `killTrianglesOnIntersectingLinks` walk a node's
+        list while `RemoveLink` removes links from it. In OCCT the removed node, freed into an incremental allocator,
+        keeps its link to the next, so the walk goes on there; the port's node keeps its `Next` too. The port's
+        NCollection_List is index-based and would skip or repeat items.
+      - **`IMeshData::IDMapOfLink` is a private indexed map whose nodes stay put.** It keeps OCCT's hash and equality.
+        Links are mutated in place (`RemoveLink`, `EraseFreeLinks`, BaseMeshAlgo), the triangles' pairs are read by
+        reference, and `Substitute` throws Standard_DomainError on an existing key, as OCCT's does.
+4405. **`std_heap`: C++'s heap algorithms as MSVC writes them** (decision 491).
+      - `make_heap`, `sort_heap`, `push_heap` and `pop_heap` follow MSVC 14.44's `__msvc_heap_algorithms.hpp` and
+        `<algorithm>` line for line: the same holes, the same comparisons, the same moves.
+      - The predicate is a struct implementing `std_heap.ILess<T>`. Delaun's is `ComparatorOfIndexedVertexOfDelaun`
+        (`x + y` of each node).
+      - It is public, as `std_mt19937` is: a tool for ported code that must sort as native OCCT does.
+      - Tested against orders recorded from an MSVC-built program on keys with ties (decision 4409).
+4406. **`NCollection_IntDataMap<TValue>`: OCCT's `NCollection_DataMap<int, T>` with OCCT's buckets**, as decisions 66,
+      67 and 332 did privately:
+      - identity hash, sign-extended to `size_t`;
+      - bucket `hash % NbBuckets + 1`, a new key at the head of its chain;
+      - the initial bucket count given, then `NextPrimeForMap(Extent())` before inserting into an empty map or one
+        with more keys than buckets;
+      - `Clear()` keeps the buckets, `Clear(true)` frees them;
+      - OCCT's iterator, and `Pairs()`.
+
+      It is public because MeshTool's public `EraseTriangle(s)` and `EraseFreeLinks` take it.
+4407. **Release-build behaviour where OCCT relies on it.**
+      - `NCollection_Sequence::Remove(from, from - 1)` removes nothing in OCCT's release build, where the range check
+        is compiled out. The port's Remove checks, so `meshPolygon` skips that call (`removeRange`).
+      - DataStructureOfDelaun's off-by-one element writes (occt-issues.md) write the next triangle, and nothing past
+        the end.
+      - Triangulator's `catch (...)` catches Standard_Failure and what decision 529 maps OCCT's caught failures to.
+        Its `catch (Standard_Failure&)` catches Standard_Failure.
+4408. **Delabella** (`delabella.cs`, decision 497). Its MIT notice is at the top of the file and in
+      THIRD-PARTY-NOTICES.md, which NOTICE and README point to and the package includes.
+      - **Types.** `DelaBella_Vertex` (`i`, `x`, `y`, `next`) and `DelaBella_Triangle` (`v[3]`, `f[3]`, `next`) are
+        public classes, valid until the next `Triangulate` or `Destroy`. `IDelaBella` is a public abstract class with
+        `Create()`.
+      - **Implementation.** `CDelaBella` is internal, with nested `Vert` and `Face`. Pointer arithmetic becomes array
+        positions. The duplicate removal copies Verts by value (`Assign`), as C++ does. The free list is kept.
+      - **Arithmetic.** `long double` is 64 bits under MSVC, the oracle's compiler, so every Signed*/Unsigned* type
+        is `double`, with C++'s operation order.
+      - **Sort.** `std::sort`'s comparison `u28cmp` ends on the unique input index. The order is therefore total, and
+        `Array.Sort` gives MSVC's result (decision 491's tie check). The exception is NaN coordinates, which aren't a
+        strict weak order in C++ either.
+      - **Triangulate.** Only the double overload is ported, with C++'s null `x`/`y` as empty spans. `advance_bytes`
+        stays in bytes, a multiple of `sizeof(double)`. Left out: the float overload, the deprecated `DelaBella()`
+        and the extern "C" wrappers.
+      - **Error log.** The printf-style callback becomes `Func<object?, string, int>`, given the formatted text
+        (invariant culture, trailing newline).
+4409. **How the native orders were recorded.** Neither the heap order nor Delabella has a native binding. Small
+      programs were built with Visual Studio 2022 Build Tools (MSVC 14.44.35207, `cl /O2`, x64), and their output is
+      pinned in the tests:
+      - one sorts index permutations by keys with ties through `std::make_heap` + `std::sort_heap`. Its source is in
+        `std_heapTests`'s remarks; its keys come from MSVC's `rand()`, which the test reproduces;
+      - one runs OCCT's own `delabella.cpp` on recorded point sets (DelabellaTests).
+
+      The Delaunay core itself is compared with native OCCT through whole meshes in unit 4D.

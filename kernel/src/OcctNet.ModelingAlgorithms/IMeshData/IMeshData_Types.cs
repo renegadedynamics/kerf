@@ -18,13 +18,18 @@ namespace Occt;
 //   Model::SequenceOf... (std::deque) List<...> inside BRepMeshData (OCCT's allocator dropped)
 //   ListOfInteger/Pnt2d/IPCurves      NCollection_List<int / gp_Pnt2d / IMeshData_PCurve>
 //   MapOfInteger                      NCollection_PackedMapOfInteger
-//   CircleCellFilter, VertexCellFilter NCollection_CellFilter<BRepMesh_CircleInspector / _VertexInspector> (4B)
+//   CircleCellFilter, VertexCellFilter NCollection_CellFilter<BRepMesh_CircleInspector / _VertexInspector, int, gp_XY>
 //   DMapOfShapeInteger                NCollection_DataMap<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance)
 //   DMapOfIFacePtrsListOfInteger      NCollection_DataMap<IMeshData_Face, NCollection_List<int>>(ReferenceEqualityComparer.Instance)
 //   MapOfIEdgePtr, MapOfIFacePtr      NCollection_Map<IMeshData_Edge / IMeshData_Face>(ReferenceEqualityComparer.Instance)
 //   IDMapOfIFacePtrsListOfIPCurves    NCollection_IndexedDataMap<IMeshData_Face, NCollection_List<IMeshData_PCurve>>(ReferenceEqualityComparer.Instance)
 //   DMapOfIFacePtrsMapOfIEdgePtrs     NCollection_DataMap<IMeshData_Face, NCollection_Map<IMeshData_Edge>>(ReferenceEqualityComparer.Instance)
-//   MapOfOrientedEdges, IDMapOfLink, DMapOfIntegerListOfInteger, MapOfIntegerInteger, MapOfReal, IMapOfReal,
+//   MapOfIntegerInteger               NCollection_IntDataMap<bool>: OCCT's iteration order, which Delaun's result
+//                                     depends on (decision 4404)
+//   IDMapOfLink                       BRepMesh_DataStructureOfDelaun's private link map (OCCT's equality, stable nodes)
+//   ListOfInteger of a node's links   BRepMesh_DataStructureOfDelaun.LinkedListOfInteger (OCCT's list semantics)
+//   MapOfOrientedEdges                NCollection_Map<BRepMesh_OrientedEdge> (its equality is OCCT's)
+//   DMapOfIntegerListOfInteger, MapOfReal, IMapOfReal,
 //   Array1OfInteger                   the NCollection maps and arrays of the same names' element types
 //
 // The maps keyed by pointers iterate in address order in OCCT; the port's compare by reference and iterate in

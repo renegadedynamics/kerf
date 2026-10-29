@@ -347,3 +347,18 @@ Phase 4 (part): mesh foundations and data model (unit 4A).
   tests of the data model, the parameters, the shape tools and the copy for write; an oracle of GeomTool and Deflection
   against native OCCT's free-edge polygons (300 edges, 6,126 points, every count equal, values within 5e-15 through
   BRep text).
+Phase 4 (part): the Delaunay core (unit 4B).
+
+- `OcctNet.ModelingAlgorithms`: BRepMesh's plain types (`BRepMesh_Vertex`, `Edge`, `OrientedEdge`, `Triangle`,
+  `PairOfIndex`, `Circle`, `DegreeOfFreedom`), the cell-filter inspectors and the circle and vertex tools,
+  `BRepMesh_DataStructureOfDelaun` and its selector, `BRepMesh_Delaun` (Watson's algorithm with constraint insertion and
+  frontier adjustment), `BRepMesh_MeshTool`, `BRepMesh_Classifier` and `BRepMesh_Triangulator`; Delabella, the MIT
+  Delaunay library inside OCCT (`IDelaBella`), with its notice kept and listed in THIRD-PARTY-NOTICES.md.
+- `OcctNet.Foundation`: `std_heap`, C++'s heap algorithms as MSVC implements them, so that ties sort in native OCCT's
+  order; `NCollection_IntDataMap`, OCCT's data map of integer keys iterating in OCCT's order.
+- Tests: OCCT's BRepMesh_CircleTool GTest and BRepMesh_Delaun GTests (three of the six wait for unit 4D's face
+  meshing); property tests of Watson's triangulation on random points, grids, collinear runs, duplicates and
+  near-cocircular points (empty circumcircles, Euler's formula, orientation, frontier and internal links kept, the same
+  result on every run and in parallel); Watson against Delabella on the same constrained point sets; the heap order
+  against orders recorded from an MSVC-built program; Delabella against output recorded from OCCT's own delabella.cpp
+  built with MSVC.
