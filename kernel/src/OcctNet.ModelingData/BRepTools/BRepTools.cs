@@ -20,7 +20,8 @@ namespace Occt;
 /// The statics that change the shape they are given (Update, UpdateFaceUVPoints, Clean, CleanGeometry,
 /// RemoveUnusedPCurves, the triangulation loaders, RemoveInternals, EvalAndUpdateTol) are internal: they work on
 /// unfrozen shapes inside OCCT.NET, and throw on frozen ones as BRep_Builder does. Their public functional twins,
-/// which return a changed copy, come with BRepTools_Modifier (unit 3B; docs/phase3-design.md, section 4.6).
+/// which return a changed copy (<see cref="Cleaned(in TopoDS_Shape, bool)"/>, <see cref="Updated(in TopoDS_Shape)"/>,
+/// ...), are in BRepTools.Twins.cs (docs/phase3-design.md, section 4.6).
 /// </para>
 /// </remarks>
 public static partial class BRepTools
