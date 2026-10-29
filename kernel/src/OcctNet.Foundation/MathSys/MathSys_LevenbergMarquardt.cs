@@ -506,6 +506,8 @@ public static partial class MathSys
                     aStepAccepted = true;
 
                     // Check X convergence
+                    // OCCT: tests the unclamped step aDeltaX, not the step actually taken, so at an active bound the
+                    // X criterion fails however small the real step is.
                     bool aXConverged = true;
                     for (int i = aVarLower; i <= aVarUpper; ++i)
                     {

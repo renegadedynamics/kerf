@@ -132,6 +132,7 @@ public static partial class MathSys
 
             if (aXConverged && aFConverged)
             {
+                // OCCT: the Jacobian returned is the one evaluated before the last step, not at the returned Solution.
                 aResult.Status = Status.OK;
                 aResult.NbIterations = anIter + 1;
                 aResult.Solution = aSol;
@@ -270,6 +271,7 @@ public static partial class MathSys
 
             if (aXConverged && aFConverged)
             {
+                // OCCT: the Jacobian returned is the one evaluated before the last step, not at the returned Solution.
                 aResult.Status = Status.OK;
                 aResult.NbIterations = anIter + 1;
                 aResult.Solution = aSol;

@@ -181,6 +181,8 @@ public static partial class MathSys
             return aRes;
         }
 
+        // OCCT: Solve2D clamps to the hard bounds and ignores AllowSoftBounds, which Solve2DSymmetric, Solve3D and
+        // Solve4D honour.
         detail.Clamp2D(ref aRes.X, theBounds, false, 0.0);
 
         double aTolSq = theOptions.FTolerance * theOptions.FTolerance;
