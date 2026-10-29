@@ -12,8 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// OCCT's BRepBuilderAPI_Copy GTests. BRepPrimAPI_MakeBox (unit 3M) is replaced by <see cref="TestShapes.Box"/>,
-/// frozen as the maker's result will be. The checks with BRepCheck_Analyzer (unit 3J, ported in parallel) wait for
-/// it: <c>TODO(3J)</c>.
+/// frozen as the maker's result will be.
 /// </summary>
 public class BRepBuilderAPI_CopyTest
 {
@@ -34,7 +33,7 @@ public class BRepBuilderAPI_CopyTest
         var aCopier = new BRepBuilderAPI_Copy(aBox);
         TopoDS_Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull(), "Copied shape is null");
-        // TODO(3J): BRepCheck_Analyzer(aCopy).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aCopy).IsValid(), "aCopy is not valid");
     }
 
     [Fact]
@@ -82,7 +81,7 @@ public class BRepBuilderAPI_CopyTest
         var aCopier = new BRepBuilderAPI_Copy(aBox, false);
         TopoDS_Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull(), "Copied shape is null");
-        // TODO(3J): BRepCheck_Analyzer(aCopy).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aCopy).IsValid(), "aCopy is not valid");
     }
 }
 
@@ -198,8 +197,7 @@ public class BRepBuilderAPI_MakeEdgeTest
 }
 
 /// <summary>
-/// OCCT's BRepBuilderAPI_MakeFace GTests. The checks with BRepCheck_Analyzer (unit 3J, ported in parallel) wait for
-/// it: <c>TODO(3J)</c>.
+/// OCCT's BRepBuilderAPI_MakeFace GTests.
 /// </summary>
 public class BRepBuilderAPI_MakeFaceTest
 {
@@ -247,7 +245,7 @@ public class BRepBuilderAPI_MakeFaceTest
 
         TopoDS_Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull());
-        // TODO(3J): BRepCheck_Analyzer(aFace).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
 
         // Area should be 10 * 5 = 50
         Assert.Equal(50.0, Area(aFace), Precision.Confusion());
@@ -262,7 +260,7 @@ public class BRepBuilderAPI_MakeFaceTest
 
         TopoDS_Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull());
-        // TODO(3J): BRepCheck_Analyzer(aFace).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
 
         Assert.Equal(50.0, Area(aFace), Precision.Confusion());
     }
@@ -279,7 +277,7 @@ public class BRepBuilderAPI_MakeFaceTest
 
         TopoDS_Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull());
-        // TODO(3J): BRepCheck_Analyzer(aFace).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
 
         // Area of cylinder: 2*PI*R*H = 2*PI*5*10 = 100*PI
         Assert.Equal(2.0 * Math.PI * 5.0 * 10.0, Area(aFace), 0.01);
@@ -338,8 +336,7 @@ public class BRepBuilderAPI_MakeWire_Test
 
 /// <summary>
 /// OCCT's BRepBuilderAPI_Transform GTests. BRepPrimAPI_MakeBox (unit 3M) is replaced by <see cref="TestShapes.Box"/>,
-/// frozen (the mirrored box at (10, 0, 0) is that box translated with BRepBuilderAPI_Transform). The check with
-/// BRepCheck_Analyzer (unit 3J) waits for it: <c>TODO(3J)</c>.
+/// frozen (the mirrored box at (10, 0, 0) is that box translated with BRepBuilderAPI_Transform).
 /// </summary>
 public class BRepBuilderAPI_TransformTest
 {
@@ -437,6 +434,6 @@ public class BRepBuilderAPI_TransformTest
         var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
         TopoDS_Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull(), "Transformed shape is null");
-        // TODO(3J): BRepCheck_Analyzer(aResult).IsValid()
+        Assert.True(new BRepCheck_Analyzer(aResult).IsValid(), "aResult is not valid");
     }
 }

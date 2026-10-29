@@ -69,7 +69,7 @@ broken down by package.
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
 | ModelingAlgorithms | TKPrim | 0 / 75 | 0 / 12,932 | 0.0 |
 | ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
-| ModelingAlgorithms | TKTopAlgo | 125 / 340 | 32,845 / 84,336 | 38.9 |
+| ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1994 | 669,488 / 2,897,781 | 23.1 |
+| **All** |  | 2081 | 689,382 / 2,897,781 | 23.8 |
 
 ## TKMath
 
@@ -176,11 +176,11 @@ broken down by package.
 |---|---:|---:|---:|
 | BRepApprox | 0 / 52 | 0 / 5,269 | 0.0 |
 | BRepBndLib | 3 / 3 | 1,430 / 1,430 | 100.0 |
-| BRepBuilderAPI | 0 / 52 | 0 / 14,345 | 0.0 |
-| BRepCheck | 7 / 19 | 1,631 / 7,467 | 21.8 |
+| BRepBuilderAPI | 43 / 52 | 6,340 / 14,345 | 44.2 |
+| BRepCheck | 19 / 19 | 7,467 / 7,467 | 100.0 |
 | BRepClass | 14 / 14 | 1,909 / 1,909 | 100.0 |
 | BRepClass3d | 15 / 15 | 3,428 / 3,428 | 100.0 |
-| BRepExtrema | 0 / 32 | 0 / 7,718 | 0.0 |
+| BRepExtrema | 32 / 32 | 7,718 / 7,718 | 100.0 |
 | BRepGProp | 30 / 30 | 7,451 / 7,451 | 100.0 |
 | BRepIntCurveSurface | 2 / 2 | 443 / 443 | 100.0 |
 | BRepLib | 41 / 41 | 13,241 / 13,241 | 100.0 |
