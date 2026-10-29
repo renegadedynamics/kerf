@@ -1707,9 +1707,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     public int UDegree() => (myPoles.ColLength() - 1);
 
     /// <summary>The U iso-curve (a Bezier curve in V) at U.</summary>
-    /// <remarks>Not available yet: needs the port of Geom_BezierCurve (unit 1A). Throws Standard_NotImplemented.</remarks>
     public sealed override Geom_Curve UIso(double U)
     {
+        Geom_BezierCurve UIsoCurve;
         NCollection_Array1<gp_Pnt> VCurvePoles = new NCollection_Array1<gp_Pnt>(1, myPoles.RowLength());
         if (myURational || myVRational)
         {
@@ -1724,8 +1724,14 @@ public class Geom_BezierSurface : Geom_BoundedSurface
                          false,
                          VCurvePoles,
                          VCurveWeights);
-            // TODO(1A): if (myURational) UIsoCurve = new Geom_BezierCurve(VCurvePoles, VCurveWeights);
-            //           else UIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            if (myURational)
+            {
+                UIsoCurve = new Geom_BezierCurve(VCurvePoles, VCurveWeights);
+            }
+            else
+            {
+                UIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            }
         }
         else
         {
@@ -1739,18 +1745,19 @@ public class Geom_BezierSurface : Geom_BoundedSurface
                          false,
                          VCurvePoles,
                          PLib.NoWeights());
-            // TODO(1A): UIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            UIsoCurve = new Geom_BezierCurve(VCurvePoles);
         }
-        throw new Standard_NotImplemented("Geom_BezierSurface::UIso: Geom_BezierCurve is not ported yet");
+        return UIsoCurve;
     }
 
     /// <summary>The degree in V: NbVPoles - 1.</summary>
     public int VDegree() => (myPoles.RowLength() - 1);
 
     /// <summary>The V iso-curve (a Bezier curve in U) at V.</summary>
-    /// <remarks>Not available yet: needs the port of Geom_BezierCurve (unit 1A). Throws Standard_NotImplemented.</remarks>
     public sealed override Geom_Curve VIso(double V)
     {
+        Geom_BezierCurve VIsoCurve;
+        // OCCT passes UKnots() as the V knots: the Bezier knots are (0, 1) in both directions.
         NCollection_Array1<gp_Pnt> VCurvePoles = new NCollection_Array1<gp_Pnt>(1, myPoles.ColLength());
         if (myVRational || myURational)
         {
@@ -1765,8 +1772,14 @@ public class Geom_BezierSurface : Geom_BoundedSurface
                          false,
                          VCurvePoles,
                          VCurveWeights);
-            // TODO(1A): if (myVRational) VIsoCurve = new Geom_BezierCurve(VCurvePoles, VCurveWeights);
-            //           else VIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            if (myVRational)
+            {
+                VIsoCurve = new Geom_BezierCurve(VCurvePoles, VCurveWeights);
+            }
+            else
+            {
+                VIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            }
         }
         else
         {
@@ -1780,9 +1793,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
                          false,
                          VCurvePoles,
                          PLib.NoWeights());
-            // TODO(1A): VIsoCurve = new Geom_BezierCurve(VCurvePoles);
+            VIsoCurve = new Geom_BezierCurve(VCurvePoles);
         }
-        throw new Standard_NotImplemented("Geom_BezierSurface::VIso: Geom_BezierCurve is not ported yet");
+        return VIsoCurve;
     }
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>

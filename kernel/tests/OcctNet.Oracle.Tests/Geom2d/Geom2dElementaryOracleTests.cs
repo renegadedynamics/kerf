@@ -3,6 +3,7 @@
 
 using Xunit.Abstractions;
 using N = Build123d.Occt;
+using static OcctNet.Oracle.Tests.Geom.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests.Geom2d;
 
@@ -54,8 +55,8 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax2d anAx = anOracle.Ax2d();
-            using var aNAx = Oracle.ToNative(anAx);
+            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            using var aNAxOwner = aNAx;
             using var aNative = new N.Geom2d_Line(aNAx);
             var aPort = new Geom2d_Line(anAx);
             CheckCurve(anOracle, aNative, aPort, "Line", true);
@@ -74,10 +75,10 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax2d anAx = anOracle.Ax2d();
+            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            using var aNAxOwner = aNAx;
             double aR = anOracle.Real(0.1, 50);
             bool aSense = anOracle.Bool();
-            using var aNAx = Oracle.ToNative(anAx);
             using var aNative = new N.Geom2d_Circle(aNAx, aR, aSense);
             var aPort = new Geom2d_Circle(anAx, aR, aSense);
             CheckCurve(anOracle, aNative, aPort, "Circle", false);
@@ -95,11 +96,11 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax2d anAx = anOracle.Ax2d();
+            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            using var aNAxOwner = aNAx;
             double aMaj = anOracle.Real(1.0, 50);
             double aMin = anOracle.Real(0.05, 0.95) * aMaj;
             bool aSense = anOracle.Bool();
-            using var aNAx = Oracle.ToNative(anAx);
             using var aNative = new N.Geom2d_Ellipse(aNAx, aMaj, aMin, aSense);
             var aPort = new Geom2d_Ellipse(anAx, aMaj, aMin, aSense);
             CheckCurve(anOracle, aNative, aPort, "Ellipse", false);

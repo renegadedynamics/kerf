@@ -95,6 +95,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
+        OwnBasisCurve();
         basisCurve!.Reverse();
     }
 
@@ -237,11 +238,9 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     /// <summary>The U iso-curve: the line through the point of parameter U of the basis curve, along the direction.</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        // TODO(1A): Geom_Line is ported by unit 1A.
-        //   occ::handle<Geom_Line> L;
-        //   L = new Geom_Line(basisCurve->Value(U), direction);
-        //   return L;
-        throw new Standard_NotImplemented("Geom_SurfaceOfLinearExtrusion::UIso needs Geom_Line (unit 1A)");
+        Geom_Line L;
+        L = new Geom_Line(basisCurve!.Value(U), direction);
+        return L;
     }
 
     /// <summary>The V iso-curve: a copy of the basis curve translated by V * Direction.</summary>
@@ -271,6 +270,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
         CheckMutable();
         ClearEvalRepresentation();
         direction.Transform(T);
+        OwnBasisCurve();
         basisCurve!.Transform(T);
     }
 

@@ -164,19 +164,15 @@ public class Geom_Plane : Geom_ElementarySurface
     /// <summary>The U iso-parametric line (a Geom_Line).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        // TODO(1A): Geom_Line is ported by unit 1A.
-        //   occ::handle<Geom_Line> GL = new Geom_Line(ElSLib::PlaneUIso(pos, U));
-        //   return GL;
-        throw new Standard_NotImplemented("Geom_Plane::UIso needs Geom_Line (unit 1A)");
+        Geom_Line GL = new Geom_Line(ElSLib.PlaneUIso(pos, U));
+        return GL;
     }
 
     /// <summary>The V iso-parametric line (a Geom_Line).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        // TODO(1A): Geom_Line is ported by unit 1A.
-        //   occ::handle<Geom_Line> GL = new Geom_Line(ElSLib::PlaneVIso(pos, V));
-        //   return GL;
-        throw new Standard_NotImplemented("Geom_Plane::VIso needs Geom_Line (unit 1A)");
+        Geom_Line GL = new Geom_Line(ElSLib.PlaneVIso(pos, V));
+        return GL;
     }
 
     /// <summary>(U, V) scaled by |T.ScaleFactor()| (infinite values unchanged).</summary>

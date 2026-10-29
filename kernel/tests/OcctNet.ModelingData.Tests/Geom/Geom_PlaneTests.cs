@@ -4,9 +4,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// Geom_Plane. UIso and VIso return Geom_Line, ported by unit 1A: until then they throw Standard_NotImplemented,
-/// and the two GTests check that (rename them back when 1A is merged). Transform is internal: the port's test
-/// goes through Transformed.
+/// Geom_Plane. Transform is internal: the port's test goes through Transformed.
 /// </summary>
 public class Geom_PlaneTests
 {
@@ -49,19 +47,34 @@ public class Geom_PlaneTests
         Assert.Equal(-5.0, aD, Precision.Confusion());
     }
 
-    // TODO(1A): OCCT's UIso and VIso tests check a Geom_Line through (2, *, 0) and (*, 3, 0).
     [Fact]
-    public void UIso_NotImplementedUntil1A()
+    public void UIso()
     {
         Geom_Plane aPlane = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        Assert.Throws<Standard_NotImplemented>(() => aPlane.UIso(2.0));
+        Geom_Curve aUIso = aPlane.UIso(2.0);
+        Assert.NotNull(aUIso);
+
+        // UIso at U=2 on XY plane should be a line at x=2, varying in Y
+        Geom_Line? aLine = aUIso as Geom_Line;
+        Assert.NotNull(aLine);
+
+        aLine.D0(0.0, out gp_Pnt aPnt);
+        Assert.Equal(2.0, aPnt.X(), Precision.Confusion());
     }
 
     [Fact]
-    public void VIso_NotImplementedUntil1A()
+    public void VIso()
     {
         Geom_Plane aPlane = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        Assert.Throws<Standard_NotImplemented>(() => aPlane.VIso(3.0));
+        Geom_Curve aVIso = aPlane.VIso(3.0);
+        Assert.NotNull(aVIso);
+
+        // VIso at V=3 on XY plane should be a line at y=3, varying in X
+        Geom_Line? aLine = aVIso as Geom_Line;
+        Assert.NotNull(aLine);
+
+        aLine.D0(0.0, out gp_Pnt aPnt);
+        Assert.Equal(3.0, aPnt.Y(), Precision.Confusion());
     }
 
     [Fact]

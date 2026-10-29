@@ -35,12 +35,14 @@ angles), and say why.
 - Build the inputs on both sides from the same raw values through the same constructors. `Oracle.ToNative(gp_Dir)`
   and `ToNative(gp_Ax3)` hand native OCCT the port's normalised values, which the native constructors normalise
   (and orthogonalise) again: the inputs can then differ in the last bit, and so does everything computed from them.
-  The Geom tests' `GeomOracleInputs` builds directions, axes and transformations that way; with it, even rotations
-  (sin, cos) compare bit-identical.
+  `GeomOracleInputs` builds directions, axes and transformations that way, in 3D and 2D, for the Geom and Geom2d
+  tests (curves and surfaces); with it, even rotations (sin, cos) compare bit-identical, and the curve tests went
+  from 90.9% to 100% bit-identical values (decision 175).
 - OCCT's release builds compile most argument checks out (`No_Exception`), and the port always checks. Keep oracle
   inputs valid; test invalid inputs in the unit tests instead.
 - Native results differ from the port's in the last bits mostly where transcendental functions are involved
-  (`acos`, `asin`, `sin`, `cos`): MSVC's maths library and .NET's don't always round the same way.
+  (`acos`, `asin`, `sin`, `cos`): MSVC's maths library and .NET's don't always round the same way. Check the
+  inputs first: the differences the curve tests blamed on sin and cos were differences of the inputs.
 - When native OCCT computes an input itself (a Geom method that evaluates the curve first, like
   MovePointAndTangent's `Geom_Curve::D1`), build the port's input with the same native call: `EvalDN` and `D1` can
   differ in the last bit, and an ill-conditioned step magnifies it.

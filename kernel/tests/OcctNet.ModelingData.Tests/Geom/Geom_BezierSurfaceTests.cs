@@ -4,9 +4,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// Geom_BezierSurface. Not ported: UIso, VIso, RationalSurface_UIso and VIso_Rational (the iso-curves are
-/// Geom_BezierCurve, unit 1A: until then UIso/VIso throw Standard_NotImplemented, see
-/// IsoCurves_NotImplementedUntil1A). PolesAccess and WeightsArray_* check copies, since the port returns copies where
+/// Geom_BezierSurface. PolesAccess and WeightsArray_* check copies, since the port returns copies where
 /// OCCT returns references (IsDeletable and reference identity don't apply).
 /// </summary>
 public class Geom_BezierSurfaceTests
@@ -240,6 +238,34 @@ public class Geom_BezierSurfaceTests
     }
 
     [Fact]
+    public void UIso()
+    {
+        Geom_Curve anIso = myOriginalSurface.UIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double v = 0.0; v <= 1.0; v += 0.25)
+        {
+            gp_Pnt aSurfPnt = myOriginalSurface.Value(0.5, v);
+            gp_Pnt anIsoPnt = anIso.Value(v);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
+    public void VIso()
+    {
+        Geom_Curve anIso = myOriginalSurface.VIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double u = 0.0; u <= 1.0; u += 0.25)
+        {
+            gp_Pnt aSurfPnt = myOriginalSurface.Value(u, 0.5);
+            gp_Pnt anIsoPnt = anIso.Value(u);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
     public void Resolution()
     {
         myOriginalSurface.Resolution(1.0, out double aUTol, out double aVTol);
@@ -338,6 +364,33 @@ public class Geom_BezierSurfaceTests
     }
 
     [Fact]
+    public void RationalSurface_UIso()
+    {
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        NCollection_Array2<double> aWeights = new(1, 2, 1, 2);
+        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
+        aPoles[1, 2] = new gp_Pnt(1, 0, 0);
+        aPoles[2, 1] = new gp_Pnt(0, 1, 0);
+        aPoles[2, 2] = new gp_Pnt(1, 1, 0);
+        aWeights[1, 1] = 1.0;
+        aWeights[1, 2] = 2.0;
+        aWeights[2, 1] = 2.0;
+        aWeights[2, 2] = 1.0;
+
+        Geom_BezierSurface aSurf = new(aPoles, aWeights);
+
+        Geom_Curve anIso = aSurf.UIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double v = 0.0; v <= 1.0; v += 0.25)
+        {
+            gp_Pnt aSurfPnt = aSurf.Value(0.5, v);
+            gp_Pnt anIsoPnt = anIso.Value(v);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
     public void Evaluation_D3()
     {
         myOriginalSurface.D3(0.5, 0.5, out _, out _, out _, out _, out _, out _, out gp_Vec aD3U, out gp_Vec aD3V, out _, out _);
@@ -423,6 +476,33 @@ public class Geom_BezierSurfaceTests
     }
 
     [Fact]
+    public void VIso_Rational()
+    {
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        NCollection_Array2<double> aWeights = new(1, 2, 1, 2);
+        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
+        aPoles[1, 2] = new gp_Pnt(1, 0, 0);
+        aPoles[2, 1] = new gp_Pnt(0, 1, 0);
+        aPoles[2, 2] = new gp_Pnt(1, 1, 0);
+        aWeights[1, 1] = 1.0;
+        aWeights[1, 2] = 2.0;
+        aWeights[2, 1] = 2.0;
+        aWeights[2, 2] = 1.0;
+
+        Geom_BezierSurface aSurf = new(aPoles, aWeights);
+
+        Geom_Curve anIso = aSurf.VIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double u = 0.0; u <= 1.0; u += 0.25)
+        {
+            gp_Pnt aSurfPnt = aSurf.Value(u, 0.5);
+            gp_Pnt anIsoPnt = anIso.Value(u);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
     public void SetPoleWithWeight()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 2.0));
@@ -479,11 +559,28 @@ public class Geom_BezierSurfaceTests
     //=============================================================================================
 
     [Fact]
-    public void IsoCurves_NotImplementedUntil1A()
+    public void IsoCurves_AreBezierCurves()
     {
-        // TODO(1A): replace by OCCT's UIso, VIso, RationalSurface_UIso and VIso_Rational once Geom_BezierCurve is ported.
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.UIso(0.5));
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.VIso(0.5));
+        Geom_BezierCurve aU = Assert.IsType<Geom_BezierCurve>(myOriginalSurface.UIso(0.5));
+        Assert.Equal(myOriginalSurface.VDegree(), aU.Degree());
+        Assert.False(aU.IsRational());
+        Geom_BezierCurve aV = Assert.IsType<Geom_BezierCurve>(myOriginalSurface.VIso(0.5));
+        Assert.Equal(myOriginalSurface.UDegree(), aV.Degree());
+
+        // Weights varying along V only (OCCT's "U rational"): the U iso-curves are rational, the V ones are not
+        NCollection_Array2<double> aWeights = new(1, myOriginalSurface.NbUPoles(), 1, myOriginalSurface.NbVPoles());
+        aWeights.Init(1.0);
+        for (int i = 1; i <= myOriginalSurface.NbUPoles(); ++i)
+        {
+            aWeights[i, 2] = 3.0;
+        }
+        Geom_BezierSurface aRational = new(myOriginalSurface.Poles(), aWeights);
+        Assert.True(aRational.IsURational());
+        Assert.False(aRational.IsVRational());
+        Assert.True(((Geom_BezierCurve)aRational.UIso(0.4)).IsRational());
+        Assert.False(((Geom_BezierCurve)aRational.VIso(0.4)).IsRational());
+        Assert.True(aRational.UIso(0.4).Value(0.3).IsEqual(aRational.Value(0.4, 0.3), 1e-14));
+        Assert.True(aRational.VIso(0.4).Value(0.3).IsEqual(aRational.Value(0.3, 0.4), 1e-14));
     }
 
     [Fact]

@@ -3,6 +3,7 @@
 
 using Xunit.Abstractions;
 using N = Build123d.Occt;
+using static OcctNet.Oracle.Tests.Geom.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests.Geom2d;
 
@@ -14,8 +15,8 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
     /// <summary>A random basis curve on both sides.</summary>
     private static (Geom2d_Curve Port, N.Geom2d_Curve Native) Basis(Oracle theOracle, int theKind)
     {
-        gp_Ax2d anAx = theOracle.Ax2d();
-        using var aNAx = Oracle.ToNative(anAx);
+        (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(theOracle);
+        using var aNAxOwner = aNAx;
         switch (theKind)
         {
             case 0:

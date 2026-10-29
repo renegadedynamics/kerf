@@ -714,6 +714,8 @@ Geom_BSplineCurve_1.cxx), OffsetCurve and Geom_OffsetCurveUtils.pxx.
      between a port axis and its native copy, which `Oracle.ToNative(gp_Ax2)` rebuilds, is multiplied by 1e200);
      (c) `MovePointAndTangent` is not tried on degree 1 curves, whose 2 × 2 system is singular: native OCCT
      inverts it without a check, the port throws (decisions 9 and 84).
+     (a) and (b) withdrawn by 1705: with inputs built identically, transformed curves and the closure of infinite
+     curves compare bit-identical.
 ## Phase 2: unit 1B, Geom2d curves (29 October 2026)
 
 Geom2d_Line, Circle, Ellipse, Hyperbola, Parabola, TrimmedCurve, BezierCurve, BSplineCurve, OffsetCurve with
@@ -776,6 +778,7 @@ Geom2d_OffsetCurveUtils, and Adaptor2d_OffsetCurve.
      IndexOutOfRangeException. The edit chains stop at a curve that `IncreaseDegree` left inconsistent
      (occt-issues.md), and leave rotations out of composed transformations, whose last-bit sin/cos differences
      grow to about 1e-9 after several edits.
+     Rotations are back in the edit chains since 1705 (bit-identical).
 
 ## Phase 2: curve consistency (29 October 2026)
 
@@ -970,12 +973,17 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       eight-argument `SetTrim` stays private, without the check, as a helper reached only from mutators and
       constructors). Geom_ElementarySurface's `WithAxis`, `WithLocation`, `WithPosition` and the bases' `UReversed`,
       `VReversed`, `Transformed`, ... cover the rest.
-159. **Composite surfaces share their basis as OCCT does** (decision 127): `Geom_RectangularTrimmedSurface.BasisSurface()`
-      and `Geom_SweptSurface.BasisCurve()` return the stored object, which the constructors and `SetBasisCurve` copy
-      from the caller's, as in OCCT. Callers can't change it, but freezing a trimmed or swept surface doesn't freeze
-      its basis, and the trimmed and swept surfaces' own `Transform`, `UReverse` and `VReverse` change the basis in
-      place (OCCT's code). Phase 3, which decides where topology freezes geometry, should freeze the basis with its
-      owner (or make `Freeze` virtual); these mutators are then only reached on unfrozen owners.
+159. **Composite surfaces share their basis as OCCT does, frozen, and copy it on write** (as the curves, decision 127; changed in 1702). `Geom_RectangularTrimmedSurface.BasisSurface()` and `Geom_SweptSurface.BasisCurve()`
+      freeze the stored object (which the constructors and `SetBasisCurve` copy from the caller's, as in OCCT) and
+      return it, the same object each time. The owners' own mutators that change the basis copy a frozen basis first:
+      the trimmed surface's `UReverse`, `VReverse` (both also reached through `SetTrim`) and `Transform`, the surface
+      of revolution's `VReverse` and `Transform` (its `UReverse` only reverses the axis direction), the extrusion's
+      `UReverse` and `Transform` (its `VReverse` only reverses the direction). A basis that was handed out never
+      changes, and ported code that tries to change it through `BasisSurface()`/`BasisCurve()` throws (rules,
+      section 8). A trimmed surface built from a trimmed surface copies the inner basis without freezing it. Every
+      path was checked against OCCT: a copy evaluates as its original, so the values are OCCT's (oracle shares
+      unchanged, all bit-identical). First version: the basis was returned unfrozen, and the owners' mutators changed
+      it in place, so a caller holding it saw it change.
 160. **Iso-curves that build unported curves throw until unit 1A is merged.** `UIso`/`VIso` of the elementary
       surfaces (Geom_Line, Geom_Circle, Geom_TrimmedCurve), `VIso` of Geom_SurfaceOfRevolution (Geom_Circle), `UIso` of
       Geom_SurfaceOfLinearExtrusion (Geom_Line) and the trimmed-direction iso-curves of Geom_RectangularTrimmedSurface
@@ -984,6 +992,7 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       `*_NotImplementedUntil1A` flag them for the merge. Geom_RectangularTrimmedSurface's constructors turn an
       offset basis into an offset of a trimmed surface; Geom_OffsetSurface is unit 2A's, so that code is a
       `// TODO(2A)` comment (until then no surface can be an offset surface).
+      Superseded by 1701: unit 1A is merged, and the iso-curves are OCCT's.
 161. **Geom_RevolutionUtils and Geom_ExtrusionUtils are internal static classes.** Their `Calculate*` functions are
       ported as written (`in` inputs, `out` results). Their evaluator templates over the curve type are ported for
       `Adaptor3d_Curve` only, the one instantiation OCCT makes (GeomAdaptor_Surface; GeomGridEval uses the
@@ -1003,6 +1012,7 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       (ElCLib's evaluators; BSplCLib's D0-D3 on the knots with multiplicities after LocateParameter, DN on the flat
       knots; BSplCLib's Reverse; poles transformed one by one). They don't mirror Geom_BSplineCurve's continuity or
       closure, which the oracle tests then don't compare. Replace them with the real classes after the merge.
+      Superseded by 1703: the stand-ins are deleted.
 165. **Oracle inputs are built identically on both sides.** `Oracle.ToNative(gp_Dir)` and `ToNative(gp_Ax3)` pass
       the port's normalised (and orthogonalised) values to native constructors that normalise them again, which can
       change the last bit of the input. The Geom oracle tests therefore build directions, axes, coordinate systems
@@ -1054,6 +1064,7 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       gp::Resolution(), rationality; then IsEqual on poles and weights, the knots, multiplicities and degree being
       shared). The oracle tests find it identical to OCCT, throwing included. Replace both with OCCT's code once
       the curves are merged.
+      Superseded by 1701: the iso-curves and IsUClosed/IsVClosed are OCCT's code.
 170. **Geom_BSplineSurface and Geom_BezierSurface are oracle-tested** (`tests/OcctNet.Oracle.Tests/Geom`): random
       surfaces (B-spline: degrees 1 to 5, every periodicity, rational in U, V or both, some closed; Bezier: degrees 1
       to 8), every field and D0-D3, DN, local evaluation, LocateU/V, Resolution, PeriodicNormalization and the
@@ -1065,3 +1076,53 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       surfaces or with a window away from the point, RemoveUKnot/RemoveVKnot of the end knots of a periodic
       direction, CheckAndSegment over the whole range of a periodic direction, and periodic IncreaseDegree
       (decision 91).
+
+## Phase 2: surfaces against the real curves (29 October 2026)
+
+Unit 1C's surfaces finished against unit 1A's curves, and aligned with their conventions.
+
+171. **The iso-curves are OCCT's.** Every `// TODO(1A)` of the surfaces is replaced by OCCT's code: `UIso`/`VIso`
+      of the elementary surfaces build Geom_Line, Geom_Circle and (sphere `UIso`) a Geom_TrimmedCurve on
+      [-PI/2, PI/2], which Geom_TrimmedCurve brings into [3PI/2, 5PI/2]; Geom_SurfaceOfRevolution's `VIso` the
+      circle of the basis curve's point; Geom_SurfaceOfLinearExtrusion's `UIso` a line; Geom_RectangularTrimmedSurface
+      a Geom_TrimmedCurve in a trimmed direction; Geom_BezierSurface and Geom_BSplineSurface (with the
+      `CheckRational` overloads) Bezier and B-spline curves from BSplSLib::Iso's poles. Geom_BSplineSurface's
+      `IsUClosed`/`IsVClosed` are OCCT's `UIso(U1)->IsEqual(UIso(U2), Precision::Confusion())`; the private
+      `IsoCurvesEqual` (decision 169), which reproduced it on the iso-curves' data, is deleted (the oracle tests had
+      found it identical, and still do). The `*_NotImplementedUntil1A` unit tests are OCCT's GTests again (Geom_Plane
+      `UIso`, `VIso`; Geom_BSplineSurface `UIso`, `VIso`, `RationalSurface_UIso`; Geom_BezierSurface `UIso`, `VIso`,
+      `RationalSurface_UIso`, `VIso_Rational`). Still open: the offset basis of Geom_RectangularTrimmedSurface's
+      constructors (`// TODO(2A)`, Geom_OffsetSurface), and the GTests that need GeomAdaptor or Geom_OffsetSurface.
+172. **Surfaces freeze their shared basis and copy it on write** (decision 159, rewritten), for the same reasons as
+      the curves (127, 132): `BasisSurface()`/`BasisCurve()` freeze and return the stored object; `UReverse`,
+      `VReverse` and `Transform`, where they change the basis, copy it first if it is frozen
+      (`Geom_SweptSurface.OwnBasisCurve()`, private protected, for both swept surfaces). The iso-curves that reuse
+      the basis curve (revolution `UIso`, extrusion `VIso`) already copy it, as in OCCT, so they are never frozen.
+      Unit tests check that a handed-out basis is frozen, the same object each time, unchanged by its owner's
+      reversal and transformation, and that the owner's values are unchanged.
+173. **The tests use the real curves.** The stand-ins of decision 164 (`TestCircle` in the unit tests, `PortCircle`
+      and `PortBSplineCurve` in the oracle tests) are deleted: the swept surfaces revolve and extrude Geom_Line,
+      Geom_Circle and Geom_BSplineCurve, and the oracle tests now compare the swept surfaces' continuity on B-spline
+      curves too. `TestLine` stays: it tests the abstract layer (Geom_Curve's own non-virtual members).
+174. **The iso-curves are oracle-tested** (`GeomIsoCurveCompare`): the curve's class, its definition (line axis;
+      circle radius and axes; trimmed curve's basis, recursively; Bezier and B-spline poles, weights, knots,
+      multiplicities, degree, rationality), parameters, closure, periodicity, continuity, and D0-D3 and DN at the
+      ends and inside. `UIso` and `VIso` at the bounds, inside, and a period on in a periodic direction, of every
+      elementary surface, of surfaces of revolution and extrusion of circles and B-spline curves, of B-spline
+      surfaces, of their U and V reversed and transformed copies and of trimmed ones (Geom_SurfacesOracleTests
+      `Iso_curves`, 4.24 million values), of random B-spline surfaces with and without `CheckRational` (0.67 million)
+      and random Bezier surfaces (0.37 million), and in the swept surfaces' test. Every value is bit-identical. The
+      inputs are built as decision 165 says.
+175. **The curve oracle tests build their inputs as the surface ones do** (decision 165). GeomCurveOracleTests'
+      directions, axes and transformations come from `GeomOracleInputs` (`Dirs`, `Ax1s`, and `Ax2sFromDirection`,
+      gp_Ax2 from a point and a main direction); the Geom2d tests' from its new 2D functions (`Dir2ds`, `Ax2ds`). Each
+      draws the same random numbers as the `Oracle` function it replaces, so the test cases are unchanged.
+      Bit-identical shares of the Geom curve tests, before and after: line and conics 77.8% → 100% (292,372 values),
+      Geom_TrimmedCurve 85.5% → 100% (340,084), Geom_OffsetCurve 75.8% → 100% (594,219), Bezier evaluation (the rest)
+      97.0% → 100% (234,003; largest difference before 6.5e-9), B-spline evaluation (the rest) 96.8% → 100% (397,581);
+      the other five tests were already 100%. In all, 2,780,858 of 3,058,431 values (90.9%) → all of them. The "trig"
+      differences of decision 130 (a) were differences of the inputs: native and port sin and cos agree on them. So
+      the 1e-6 tolerance of transformed curves is gone (default 1e-12, and still bit-identical), and `IsClosed` is
+      compared on infinite curves again (130 (b)). The Geom2d tests were already 100% (their directions were settled
+      with `Oracle.Settled`) and stay so; their B-spline edit chains now include rotations (decision 139),
+      bit-identical too (304,072 values).

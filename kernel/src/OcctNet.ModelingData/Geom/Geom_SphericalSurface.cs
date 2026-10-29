@@ -215,20 +215,16 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     /// <summary>The U iso-parametric half circle (a Geom_TrimmedCurve on a Geom_Circle, in [-PI/2, PI/2]).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        // TODO(1A): Geom_Circle and Geom_TrimmedCurve are ported by unit 1A.
-        //   occ::handle<Geom_Circle>       GC  = new Geom_Circle(ElSLib::SphereUIso(pos, radius, U));
-        //   occ::handle<Geom_TrimmedCurve> iso = new Geom_TrimmedCurve(GC, -M_PI / 2., M_PI / 2);
-        //   return iso;
-        throw new Standard_NotImplemented("Geom_SphericalSurface::UIso needs Geom_Circle and Geom_TrimmedCurve (unit 1A)");
+        Geom_Circle GC = new Geom_Circle(ElSLib.SphereUIso(pos, radius, U));
+        Geom_TrimmedCurve iso = new Geom_TrimmedCurve(GC, -M_PI / 2.0, M_PI / 2);
+        return iso;
     }
 
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        // TODO(1A): Geom_Circle is ported by unit 1A.
-        //   occ::handle<Geom_Circle> GC = new Geom_Circle(ElSLib::SphereVIso(pos, radius, V));
-        //   return GC;
-        throw new Standard_NotImplemented("Geom_SphericalSurface::VIso needs Geom_Circle (unit 1A)");
+        Geom_Circle GC = new Geom_Circle(ElSLib.SphereVIso(pos, radius, V));
+        return GC;
     }
 
     /// <summary>The volume, 4 * PI * R**3 / 3.</summary>

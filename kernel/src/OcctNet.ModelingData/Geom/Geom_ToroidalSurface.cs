@@ -223,21 +223,15 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     /// <summary>The U iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        // TODO(1A): Geom_Circle is ported by unit 1A.
-        //   occ::handle<Geom_Circle> GC =
-        //     new Geom_Circle(ElSLib::TorusUIso(pos, majorRadius, minorRadius, U));
-        //   return GC;
-        throw new Standard_NotImplemented("Geom_ToroidalSurface::UIso needs Geom_Circle (unit 1A)");
+        Geom_Circle GC = new Geom_Circle(ElSLib.TorusUIso(pos, majorRadius, minorRadius, U));
+        return GC;
     }
 
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        // TODO(1A): Geom_Circle is ported by unit 1A.
-        //   occ::handle<Geom_Circle> GC =
-        //     new Geom_Circle(ElSLib::TorusVIso(pos, majorRadius, minorRadius, V));
-        //   return GC;
-        throw new Standard_NotImplemented("Geom_ToroidalSurface::VIso needs Geom_Circle (unit 1A)");
+        Geom_Circle GC = new Geom_Circle(ElSLib.TorusVIso(pos, majorRadius, minorRadius, V));
+        return GC;
     }
 
     /// <summary>The volume, PI * R2**2 * 2 * PI * R1.</summary>

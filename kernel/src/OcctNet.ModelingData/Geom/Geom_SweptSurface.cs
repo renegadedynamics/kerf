@@ -21,6 +21,26 @@ public abstract class Geom_SweptSurface : Geom_Surface
     public gp_Dir Direction() => direction;
 
     /// <summary>The swept curve: the revolved curve, or the extruded curve.</summary>
-    /// <remarks>Set by the constructors of the derived classes; null only while one is running.</remarks>
-    public Geom_Curve BasisCurve() => basisCurve!;
+    /// <remarks>
+    /// The surface's own copy, frozen and shared, as OCCT returns its handle; the same object each time. The
+    /// surface's mutators copy it again before changing it (decision 159). Set by the constructors of the derived
+    /// classes; null only while one is running.
+    /// </remarks>
+    public Geom_Curve BasisCurve()
+    {
+        basisCurve!.Freeze();
+        return basisCurve;
+    }
+
+    /// <summary>
+    /// OCCT.NET: the basis curve may have been handed out (and frozen) by <see cref="BasisCurve"/>; the derived
+    /// classes' mutators call this to copy it before changing it.
+    /// </summary>
+    private protected void OwnBasisCurve()
+    {
+        if (basisCurve!.IsFrozen())
+        {
+            basisCurve = (Geom_Curve)basisCurve.Copy();
+        }
+    }
 }
