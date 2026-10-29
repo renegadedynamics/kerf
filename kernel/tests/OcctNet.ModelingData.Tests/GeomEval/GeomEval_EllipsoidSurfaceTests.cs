@@ -7,40 +7,11 @@ using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 namespace OcctNet.ModelingData.Tests;
 
 // Left out: DumpJson_NoCrash (DumpJson is not ported).
-// The *_MatchesSphere tests compare with ElSLib's sphere evaluators, which are what Geom_SphericalSurface's
-// EvalD0 to EvalD3 call (Geom_SphericalSurface is not ported yet).
+// The *_MatchesSphere tests compare with ElSLib's sphere evaluators (GeomEval_SurfaceTestHelpers), which are
+// what Geom_SphericalSurface's EvalD0 to EvalD3 call (Geom_SphericalSurface is not ported yet).
 public class GeomEval_EllipsoidSurfaceTest
 {
     private const double THE_FD_TOL = 1e-5;
-
-    private static gp_Pnt SphereEvalD0(in gp_Ax3 thePos, double theR, double theU, double theV)
-    {
-        ElSLib.SphereD0(theU, theV, thePos, theR, out gp_Pnt aP);
-        return aP;
-    }
-
-    private static Geom_Surface.ResD1 SphereEvalD1(in gp_Ax3 thePos, double theR, double theU, double theV)
-    {
-        Geom_Surface.ResD1 aR;
-        ElSLib.SphereD1(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V);
-        return aR;
-    }
-
-    private static Geom_Surface.ResD2 SphereEvalD2(in gp_Ax3 thePos, double theR, double theU, double theV)
-    {
-        Geom_Surface.ResD2 aR;
-        ElSLib.SphereD2(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
-                        out aR.D2U, out aR.D2V, out aR.D2UV);
-        return aR;
-    }
-
-    private static Geom_Surface.ResD3 SphereEvalD3(in gp_Ax3 thePos, double theR, double theU, double theV)
-    {
-        Geom_Surface.ResD3 aR;
-        ElSLib.SphereD3(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
-                        out aR.D2U, out aR.D2V, out aR.D2UV, out aR.D3U, out aR.D3V, out aR.D3UUV, out aR.D3UVV);
-        return aR;
-    }
 
     // Test construction with valid parameters
     [Fact]

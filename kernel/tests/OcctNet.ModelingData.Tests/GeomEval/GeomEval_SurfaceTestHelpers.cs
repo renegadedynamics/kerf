@@ -2,7 +2,10 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-/// <summary>Component-wise EXPECT_NEAR on points and vectors, for the ported GeomEval surface GTests.</summary>
+/// <summary>
+/// Component-wise EXPECT_NEAR on points and vectors, and stand-ins for unported Geom surfaces, for the ported
+/// GeomEval surface GTests.
+/// </summary>
 internal static class GeomEval_SurfaceTestHelpers
 {
     public static void ExpectNear(in gp_Vec theActual, in gp_Vec theExpected, double theTol)
@@ -27,5 +30,35 @@ internal static class GeomEval_SurfaceTestHelpers
         return aA1 * aX * aX + aA2 * aY * aY + aA3 * aZ * aZ
                + 2.0 * (aB1 * aX * aY + aB2 * aX * aZ + aB3 * aY * aZ)
                + 2.0 * (aC1 * aX + aC2 * aY + aC3 * aZ) + aD;
+    }
+
+    // Geom_SphericalSurface (unit 1C) evaluates through ElSLib; these are its EvalD0 to EvalD3.
+    public static gp_Pnt SphereEvalD0(in gp_Ax3 thePos, double theR, double theU, double theV)
+    {
+        ElSLib.SphereD0(theU, theV, thePos, theR, out gp_Pnt aP);
+        return aP;
+    }
+
+    public static Geom_Surface.ResD1 SphereEvalD1(in gp_Ax3 thePos, double theR, double theU, double theV)
+    {
+        Geom_Surface.ResD1 aR;
+        ElSLib.SphereD1(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V);
+        return aR;
+    }
+
+    public static Geom_Surface.ResD2 SphereEvalD2(in gp_Ax3 thePos, double theR, double theU, double theV)
+    {
+        Geom_Surface.ResD2 aR;
+        ElSLib.SphereD2(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
+                        out aR.D2U, out aR.D2V, out aR.D2UV);
+        return aR;
+    }
+
+    public static Geom_Surface.ResD3 SphereEvalD3(in gp_Ax3 thePos, double theR, double theU, double theV)
+    {
+        Geom_Surface.ResD3 aR;
+        ElSLib.SphereD3(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
+                        out aR.D2U, out aR.D2V, out aR.D2UV, out aR.D3U, out aR.D3V, out aR.D3UUV, out aR.D3UVV);
+        return aR;
     }
 }
