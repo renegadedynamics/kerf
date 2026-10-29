@@ -3,6 +3,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Occt;
@@ -79,6 +80,13 @@ internal static class NCollection_VecTools
 
         return ref Unsafe.Add(ref Unsafe.As<TVec, T>(ref theVec), theIndex);
     }
+
+    /// <summary>The components of a vector of any dimension, for writing (OCCT's <c>ChangeData()</c>).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Span<T> ChangeData<T, TVec>(ref TVec theVec)
+        where T : unmanaged, INumber<T>
+        where TVec : unmanaged, INCollection_Vec<T, TVec>
+        => MemoryMarshal.CreateSpan(ref Unsafe.As<TVec, T>(ref theVec), TVec.Length());
 
     /// <summary>True for <c>float</c> and <c>double</c>, for which OCCT specialises vector division by a scalar.</summary>
     internal static bool IsReal<T>() => typeof(T) == typeof(float) || typeof(T) == typeof(double);
