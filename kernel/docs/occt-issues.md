@@ -478,3 +478,21 @@ the corpus sees OCCT's behaviour; all were found by reading unless a test is nam
 | `BRepLib::UpdateTolerances` in place (`InternalUpdateTolerances` with `IsMutableInput`, then `UpdShTol`) | A vertex TShape reached at several locations is a key per location in an NCollection_DataMap hashed by TopTools_ShapeMapHasher (the TShape's address); with `theVForceUpdate` each key's tolerance is written into the shared TShape | The vertex keeps the tolerance of the key iterated last, in an order set by addresses: the result isn't reproducible. The port iterates in insertion order (decision 18). data/occ's solid.brep, mal_tige.brep and MODERN_MVCooker_1.brep (`updatetolerance s 1`) differ from native OCCT only there (DrawLiteConstructionOracleTests); the reshaper form makes a copy per location and is reproducible |
 | `proximity`, `selfintersect` (BRepTest_ExtremaCommands.cxx; a property, not a bug) | List the overlapping sub-shapes by iterating an `NCollection_DataMap<int, ...>` | The order of the printed names is the map's bucket order. The port prints them in ascending order; the names are the same |
 | lowalgos/extss/bug29712_44 (a test, not the library) | Computes `extrema s1 s1` and `extrema s2 s2`, each plane with itself, and expects the distance 10 between the two parallel planes | The distance is 0, so the case fails in DRAWEXE as in Draw-lite (`extrema s1 s2` was meant). By reading |
+
+## Phase 4: unit 4S, ShapeAnalysis
+
+Found while porting ShapeExtend, ShapeAnalysis's wire analysis and ShapeBuild. Reproduced in the port, each marked
+`// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeAnalysis_Curve::ValidateRange` (ShapeAnalysis_Curve.cxx) | Tests `IsPeriodic` on the basis curve (through trimmed and offset curves), but passes the curve's own `[cf, cl]` to `ElCLib::AdjustPeriodic` as the period | On a trimmed arc of a circle, the trimmed range is taken as the period: the reversed range (2, 1) on the arc [0, 3] becomes (2, 4), past the arc's end. By reading; pinned by `ValidateRange_on_a_trimmed_arc_wraps_with_the_trimmed_range_ReproducesOcctError`; the oracle matches native on trimmed circles |
+| `ShapeAnalysis_Edge::CheckOverlapping` through the static `IsOverlapPartEdges` (ShapeAnalysis_Edge.cxx) | The sampling step is half the shorter edge's length | With a degenerated (zero-length) edge whose vertex is within tolerance of the other edge, the step is 0 and the loop never ends. Found when the first oracle run hung; the oracle skips degenerated edges. Not pinned (it would hang) |
+| `ShapeAnalysis_Edge::CheckOverlapping` | Doesn't reset the status; in the domain branch, the `aStartLength < 0` case sets `aEndLength`, which the next line overwrites | Status flags add up across calls. By reading |
+| `ShapeAnalysis_Edge::CheckVerticesWithCurve3d` and `CheckVerticesWithPCurve` | OR the enumerator `ShapeExtend_DONE1` into the status, not its encoding | Harmless: equal for DONE1 and DONE2. By reading |
+| `ShapeExtend_WireData::Add(const Handle(ShapeExtend_WireData)&, int)` | In non-manifold mode adds `wire->Edge(i)` where it means `wire->NonmanifoldEdge(i)` | The other wire's INTERNAL/EXTERNAL edges are lost and ordinary edges added twice. Pinned by `Add_wire_data_in_non_manifold_mode_adds_the_wrong_edges` |
+| `ShapeAnalysis_WireOrder::SetChains` | Also checks the wrap-around from the last edge to the start of its own chain | On an open chain the last chain's start is appended twice: 3 chains, the second the empty range (3, 2). Pinned by `Chains_of_an_open_and_a_closed_wire` |
+| `ShapeAnalysis_WireOrder::Gap(0)`, `SetCouples` | `myGap` is never computed, and SetCouples is empty | `Gap()` is always 0 and `NbCouples()` always 0. Pinned |
+| `ShapeAnalysis_TransferParameters` constructors | Leave `myMaxTolerance` uninitialised | Undefined until `SetMaxTolerance`; the port starts it at 0 |
+| `ShapeAnalysis_Wire::CheckLoop` (ShapeAnalysis_Wire.cxx) | Sets the analyser's precision to `Precision::Infinite()` and, on the FAIL2 return for an edge without vertices, doesn't restore it | Later checks on the same analyser run with an infinite precision and pass everything. By reading |
+| `ShapeAnalysis::TotCross2D` | With no pcurve of the wire on the face, the points stay at their defaults | The result is 0, so `IsOuterBound` counts such a wire as outer. By reading |
