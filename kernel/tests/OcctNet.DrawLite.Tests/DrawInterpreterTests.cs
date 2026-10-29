@@ -66,4 +66,101 @@ public class DrawInterpreterTests
 
         Assert.Equal("6", anInterpreter.Eval("set x 3\nsum 1 2 $x"));
     }
+
+    [Fact]
+    public void Parses_tcl_words_strictly()
+    {
+        Assert.Equal("{]}", Tcl.Eval("set x [list \"]\"]"));
+        Assert.Equal("a;b", Tcl.Eval("set x [string map {, ;} a,b]"));
+        Assert.Equal("{a b}", Tcl.Eval("set x [list [list a b]]"));
+        Assert.Equal("extra characters after close-quote", Tcl.Error("set x \"a\"b"));
+        Assert.Equal("extra characters after close-brace", Tcl.Error("set x {a}b"));
+        Assert.Equal("missing close-brace", Tcl.Error("set x {a"));
+        Assert.Equal("missing close-bracket", Tcl.Error("set x [list a"));
+        Assert.Equal("missing \"", Tcl.Error("set x \"a"));
+        Assert.Equal("a\"b", Tcl.Eval("set x a\"b"));
+        Assert.Equal("#not-a-comment", Tcl.Eval("set x #not-a-comment"));
+    }
+
+    [Fact]
+    public void Errors_carry_the_line_and_file()
+    {
+        string aPath = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(aPath, "set a 1\n\nnosuch 2\n");
+            var anError = Assert.Throws<DrawCommandNotFoundException>(() => new DrawInterpreter().Source(aPath.Replace('\\', '/')));
+            Assert.Equal(3, anError.Line);
+            Assert.Equal(aPath.Replace('\\', '/'), anError.File);
+        }
+        finally
+        {
+            File.Delete(aPath);
+        }
+    }
+
+    [Fact]
+    public void An_unknown_procedure_receives_calls_of_missing_commands()
+        => Assert.Equal("stub:box b 1", new DrawInterpreter().Eval("proc unknown {args} {return \"stub:$args\"}; box b 1"));
+
+    [Fact]
+    public void Commands_registered_from_csharp_can_set_variables_in_the_calling_proc()
+    {
+        var anInterpreter = new DrawInterpreter();
+        anInterpreter.Register("setfive", static (i, a) =>
+        {
+            i.SetVariable(a[1], "5");
+            return "";
+        });
+        Assert.Equal("5 0", anInterpreter.Eval("proc p {} {setfive v; return $v}; list [p] [info exists v]"));
+    }
+
+    [Fact]
+    public void Subcommands_may_be_abbreviated()
+    {
+        var anInterpreter = new DrawInterpreter();
+        Assert.Equal("1 3 1 a.b", anInterpreter.Eval("set x 1; list [info exist x] [string len abc] [string is int 5] [file ta /d/a.b]"));
+        Assert.StartsWith("ambiguous subcommand \"t\": must be bytelength, cat, compare,", Assert.ThrowsAny<DrawException>(() => anInterpreter.Eval("string t abc")).Reason);
+        Assert.StartsWith("unknown or ambiguous subcommand \"zz\"", Assert.ThrowsAny<DrawException>(() => anInterpreter.Eval("info zz")).Reason);
+        Assert.Equal("c b a", anInterpreter.Eval("lsort -decr {a c b}"));
+    }
+
+    [Fact]
+    public void A_deadline_stops_a_runaway_script_and_cannot_be_caught()
+    {
+        var anInterpreter = new DrawInterpreter { Deadline = DateTime.UtcNow.AddMilliseconds(200) };
+        Assert.Throws<DrawTimeoutException>(() => anInterpreter.Eval("while 1 { catch { while 1 {} } }"));
+    }
+
+    [Fact]
+    public void Deep_recursion_within_tcl_limits_works()
+    {
+        Assert.Equal("900", new DrawInterpreter().Eval("proc d {n} {if {$n == 0} {return 0}; expr {1 + [d [expr {$n - 1}]]}}; d 900"));
+        Assert.Contains("too many nested evaluations", Assert.ThrowsAny<DrawException>(() => new DrawInterpreter().Eval("set s {eval $s}; eval $s")).Reason);
+    }
+
+    [Fact]
+    public void Corpus_cases_run_as_the_harness_runs_them()
+    {
+        string aRoot = Directory.CreateTempSubdirectory("drawlite-corpus").FullName;
+        try
+        {
+            string aGrid = Path.Combine(aRoot, "group", "grid");
+            Directory.CreateDirectory(aGrid);
+            File.WriteAllText(Path.Combine(aRoot, "group", "begin"), "set log group-begin\n");
+            File.WriteAllText(Path.Combine(aGrid, "begin"), "lappend log grid-begin\n");
+            File.WriteAllText(Path.Combine(aGrid, "case1"), "lappend log \"$groupname/$gridname/$casename\" [file tail [info script]]\n");
+            File.WriteAllText(Path.Combine(aGrid, "end"), "lappend log grid-end\n");
+            var aCorpus = new DrawCorpus(aRoot);
+            DrawTestCase aCase = Assert.Single(aCorpus.Cases());
+            var anInterpreter = new DrawInterpreter();
+            aCorpus.Run(aCase, anInterpreter);
+            Assert.True(anInterpreter.TryGetVariable("log", out string aLog));
+            Assert.Equal("group-begin grid-begin group/grid/case1 case1 grid-end", aLog);
+        }
+        finally
+        {
+            Directory.Delete(aRoot, recursive: true);
+        }
+    }
 }

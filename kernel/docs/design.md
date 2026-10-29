@@ -33,6 +33,25 @@ Three layers, all from phase 0:
    small Tcl interpreter to which modelling commands are added as packages are ported. Its scan lists the
    commands the corpus needs, most-used first.
 
+### Draw-lite
+
+Draw-lite implements Tcl 8.6 itself, so it can run OCCT's test scripts and OCCT's own Tcl procedures
+(`resources/DrawResources`: `checkprops`, `checknbshapes`, `locate_data_file`, ...) unchanged. It has substitution
+and `{*}`, procedures with their own frames, `upvar`/`uplevel`/`global`, the control commands and return codes,
+`expr` with Tcl's types and number formatting, lists with Tcl's quoting, `string`, `format`/`scan`,
+`regexp`/`regsub` (on .NET's regex engine), arrays, dicts, `file`/`open`/`gets`/`source`, `clock` and `info`.
+`LoadDrawResources` sources what DRAWEXE sources at start; `DrawCorpus.Run` runs a case as OCCT's harness does.
+Where it departs from Tcl:
+
+- Writes (`open ... w`, `file mkdir`/`delete`) go to an in-memory overlay; a test never changes the disk.
+- Integers are 64-bit: what would become a bignum in Tcl continues as a double.
+- Regular expressions: .NET takes the first matching alternative where Tcl takes the longest (`a|ab`).
+- Only the global namespace: `::name` and `namespace eval` work, but there are no other namespaces.
+- No viewer: the viewer commands, and `checkview`, do nothing.
+
+The corpus scan follows calls into procedures, so the commands it reports missing are the C++ primitives still to
+port (`isdraw`, `checkshape`, `sprops`, `brestore`, ...).
+
 Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-status.md](port-status.md).
 
 ## Phases
