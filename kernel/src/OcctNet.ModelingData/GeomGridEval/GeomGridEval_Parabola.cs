@@ -8,6 +8,10 @@ namespace Occt;
 /// <summary>
 /// Efficient batch evaluator for parabola grid points: P(u) = C + (u^2 / 4F) * X + u * Y.
 /// </summary>
+/// <remarks>
+/// As in OCCT, a parabola of focal length 0 (a line, which ElCLib evaluates as Location + U * XDir) gives
+/// infinite and NaN values (occt-issues.md).
+/// </remarks>
 public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
 {
     private readonly Geom_Parabola? myGeom;
@@ -48,6 +52,7 @@ public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
+        // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double aCoeff = 1.0 / (4.0 * aFocal);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
@@ -91,6 +96,7 @@ public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
+        // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double aCoeff = 1.0 / (4.0 * aFocal);
         double aCoeff2 = 1.0 / (2.0 * aFocal); // Derivative of u^2/4F is 2u/4F = u/2F
 
@@ -142,6 +148,7 @@ public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
+        // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double aCoeff = 1.0 / (4.0 * aFocal);
         double aCoeff2 = 1.0 / (2.0 * aFocal);
         double aCoeff3 = aCoeff2; // Derivative of u/2F is 1/2F
@@ -199,6 +206,7 @@ public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
+        // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double aCoeff = 1.0 / (4.0 * aFocal);
         double aCoeff2 = 1.0 / (2.0 * aFocal);
         double aCoeff3 = aCoeff2;
@@ -250,6 +258,7 @@ public sealed class GeomGridEval_Parabola : GeomGridEval.ICurveEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
+        // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double aCoeff2 = 1.0 / (2.0 * aFocal);
 
         if (theN == 1)
