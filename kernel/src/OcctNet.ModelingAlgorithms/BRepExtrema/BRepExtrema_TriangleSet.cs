@@ -167,6 +167,8 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     {
         myTriangles.Clear(true);
         myVertexArray.Clear(true);
+        // OCCT: myShapeIdxOfVtxVec, myNumVtxInShapeVec and myNumTrgInShapeVec are not cleared, so after a second
+        // Init the shape of a vertex is read from the first set's entries (occt-issues.md)
     }
 
     /// <summary>
@@ -177,7 +179,7 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     {
         Clear();
 
-        bool isOK = true;
+        bool isOK = true; // OCCT: isOK stops the loop at a shape without a mesh, but Init returns true regardless
         for (int aShapeIdx = 0; aShapeIdx < theShapes.Length() && isOK; ++aShapeIdx)
         {
             if (theShapes[aShapeIdx].ShapeType() == TopAbs_FACE)

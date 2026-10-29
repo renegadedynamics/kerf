@@ -50,6 +50,7 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
         mySet1 = theSet1;
         mySet2 = theSet2;
 
+        // OCCT: the result maps aren't cleared, so a second Perform adds to the first one's pairs
         myIsDone = false;
     }
 

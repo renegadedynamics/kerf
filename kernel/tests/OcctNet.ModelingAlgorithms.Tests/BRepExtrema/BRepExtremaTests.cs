@@ -456,4 +456,164 @@ public class BRepExtremaTests
         Assert.Equal(TopAbs_REVERSED, aD.SupportOnShape1(1).Orientation());
         Assert.Equal(TopAbs_FACE, aD.SupportOnShape1(1).ShapeType());
     }
+
+    // A segment edge with a 3D polygon of the given number of evenly spaced nodes.
+    private static TopoDS_Edge PolygonSegment(in gp_Pnt theP1, in gp_Pnt theP2, int theNbNodes)
+    {
+        TopoDS_Edge anEdge = new BRepLib_MakeEdge(theP1, theP2).InternalEdge();
+        var aNodes = new NCollection_Array1<gp_Pnt>(1, theNbNodes);
+        for (int i = 1; i <= theNbNodes; i++)
+        {
+            double t = (double)(i - 1) / (theNbNodes - 1);
+            aNodes[i] = new gp_Pnt(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
+        }
+        new BRep_Builder().UpdateEdge(anEdge, new Poly_Polygon3D(aNodes));
+        return TestShapes.Frozen(anEdge);
+    }
+
+    // A unit square face at height z (plane surface) with an n x n grid triangulation.
+    private static TopoDS_Face GridSquare(double z, int n)
+    {
+        TopoDS_Face aF = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).InternalFace();
+        var aTri = new Poly_Triangulation((n + 1) * (n + 1), 2 * n * n, false);
+        for (int j = 0; j <= n; j++)
+        {
+            for (int i = 0; i <= n; i++)
+            {
+                aTri.SetNode(j * (n + 1) + i + 1, new gp_Pnt((double)i / n, (double)j / n, z));
+            }
+        }
+        int k = 1;
+        for (int j = 0; j < n; j++)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                int a = j * (n + 1) + i + 1, b = a + 1, c = a + n + 2, d = a + n + 1;
+                aTri.SetTriangle(k++, new Poly_Triangle(a, b, c));
+                aTri.SetTriangle(k++, new Poly_Triangle(a, c, d));
+            }
+        }
+        new BRep_Builder().UpdateFace(aF, aTri);
+        return TestShapes.Frozen(aF);
+    }
+
+    [Fact]
+    public void ProximityValue_EdgesWithRefinement()
+    {
+        // the second edge's polygon is coarser: it is refined to the first's step
+        TopoDS_Edge e1 = PolygonSegment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), 11);
+        TopoDS_Edge e2 = PolygonSegment(new gp_Pnt(0, 1, 0), new gp_Pnt(10, 1, 0), 3);
+        var aProx = new BRepExtrema_ShapeProximity(e1, e2);
+        aProx.Perform();
+        Assert.True(aProx.IsDone());
+        Assert.Equal(1.0, aProx.Proximity(), Tol);
+        Assert.Equal(1.0, aProx.ProximityPoint1().Distance(aProx.ProximityPoint2()), Tol);
+        Assert.NotEqual(BRepExtrema_ProximityDistTool.ProxPnt_Status.ProxPnt_Status_UNKNOWN, aProx.ProxPntStatus1());
+
+        // more samples than nodes on both
+        var aSampled = new BRepExtrema_ShapeProximity(e1, e2);
+        aSampled.SetNbSamples1(40);
+        aSampled.SetNbSamples2(40);
+        aSampled.Perform();
+        Assert.True(aSampled.IsDone());
+        Assert.Equal(1.0, aSampled.Proximity(), Tol);
+    }
+
+    [Fact]
+    public void ProximityValue_FacesWithRefinement()
+    {
+        TopoDS_Face aCoarse = GridSquare(0, 1), aFine = GridSquare(0.5, 4);
+        var aProx = new BRepExtrema_ShapeProximity(aCoarse, aFine);
+        aProx.Perform();
+        Assert.True(aProx.IsDone());
+        Assert.Equal(0.5, aProx.Proximity(), Tol);
+
+        var aTool = new BRepExtrema_ProximityValueTool();
+        var aList1 = new NCollection_DynamicArray<TopoDS_Shape>();
+        aList1.Append(aCoarse);
+        var aList2 = new NCollection_DynamicArray<TopoDS_Shape>();
+        aList2.Append(aFine);
+        aTool.LoadTriangleSets(new BRepExtrema_TriangleSet(aList1), new BRepExtrema_TriangleSet(aList2));
+        aTool.LoadShapeLists(aList1, aList2);
+        double aTol = 0;
+        aTool.Perform(ref aTol);
+        Assert.True(aTool.IsDone());
+        Assert.Equal(aTool.Distance(), aTol);
+        Assert.Equal(0.5, aTol, Tol);
+        aTool.ProximityPoints(out gp_Pnt p1, out gp_Pnt p2);
+        Assert.Equal(0.5, p1.Distance(p2), Tol);
+    }
+
+    [Fact]
+    public void SelfIntersection_WithTolerance()
+    {
+        // two parallel squares 0.1 apart: no intersection, but closer than the tolerance
+        TopoDS_Compound aC = TopoDS_Builder.MakeCompound(MeshSquare(0), MeshSquare(0.1));
+        var anExact = new BRepExtrema_SelfIntersection(aC);
+        anExact.Perform();
+        Assert.Equal(0, anExact.OverlapElements().Extent());
+        var aTolerant = new BRepExtrema_SelfIntersection(aC, 0.2);
+        Assert.Equal(0.2, aTolerant.Tolerance());
+        aTolerant.Perform();
+        Assert.True(aTolerant.IsDone());
+        Assert.True(aTolerant.OverlapElements().IsBound(0) || aTolerant.OverlapElements().IsBound(1));
+        Assert.NotNull(aTolerant.ElementSet());
+    }
+
+    // ------------------------------------------------------------------ OCCT issues, pinned (occt-issues.md)
+
+    private static TopoDS_Face MeshTriangle(double z)
+        => TestShapes.Frozen(BRepGPropTestShapes.MeshFace([new gp_Pnt(0, 0, z), new gp_Pnt(1, 0, z), new gp_Pnt(0, 1, z)], (1, 2, 3)));
+
+    [Fact]
+    public void OcctIssue_TriangleSet_InitAgainKeepsTheFirstShapesVertexIds()
+    {
+        var aFirst = new NCollection_DynamicArray<TopoDS_Shape>();
+        aFirst.Append(MeshTriangle(0)); // 3 nodes
+        aFirst.Append(MeshSquare(1)); // 4 nodes
+        var aSet = new BRepExtrema_TriangleSet(aFirst);
+        Assert.Equal(1, aSet.GetShapeIDOfVtx(3));
+
+        var aSecond = new NCollection_DynamicArray<TopoDS_Shape>();
+        aSecond.Append(MeshSquare(1));
+        aSecond.Append(MeshTriangle(0));
+        Assert.True(aSet.Init(aSecond));
+        Assert.Equal(7, aSet.GetVertices().Size());
+        // vertex 3 is the square's (shape 0), but OCCT reads the first Init's entry
+        Assert.Equal(1, aSet.GetShapeIDOfVtx(3));
+    }
+
+    [Fact]
+    public void OcctIssue_TriangleSet_InitIsTrueWithoutMeshes()
+    {
+        var aShapes = new NCollection_DynamicArray<TopoDS_Shape>();
+        aShapes.Append(Square(0, 0, 0, 1)); // no triangulation
+        aShapes.Append(MeshSquare(1));
+        var aSet = new BRepExtrema_TriangleSet();
+        Assert.True(aSet.Init(aShapes));
+        Assert.Equal(0, aSet.Size()); // stopped at the first shape
+    }
+
+    [Fact]
+    public void OcctIssue_OverlapTool_KeepsOldPairs()
+    {
+        TopoDS_Face a = MeshSquare(0), b = MeshSquare(0.3);
+        var aProx = new BRepExtrema_ShapeProximity(a, b, 0.5);
+        aProx.Perform();
+        Assert.True(aProx.IsDone());
+        Assert.True(aProx.LoadShape2(MeshSquare(5)));
+        aProx.Perform();
+        Assert.False(aProx.IsDone());
+        Assert.True(aProx.OverlapSubShapes1().IsBound(0)); // the first Perform's pair is still there
+    }
+
+    [Fact]
+    public void OcctIssue_ShapeProximity_ValueBecomesTheTolerance()
+    {
+        TopoDS_Face aCoarse = GridSquare(0, 1), aFine = GridSquare(0.5, 2);
+        var aProx = new BRepExtrema_ShapeProximity(aCoarse, aFine);
+        Assert.Equal(Precision.Infinite(), aProx.Tolerance());
+        aProx.Perform();
+        Assert.Equal(0.5, aProx.Tolerance(), Tol);
+    }
 }

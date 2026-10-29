@@ -57,7 +57,7 @@ public sealed class BRepExtrema_VertexInspector : INCollection_CellFilter_Inspec
     /// </remarks>
     public NCollection_CellFilter_Action Inspect(int theTarget)
     {
-        myIsNeedAdd = true;
+        myIsNeedAdd = true; // OCCT: reset for every target, so a coincidence found before a later target is forgotten
 
         gp_XYZ aPnt = myPoints.Value(theTarget - 1);
         double aDx, aDy, aDz;

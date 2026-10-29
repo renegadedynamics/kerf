@@ -177,6 +177,7 @@ public sealed class BRepExtrema_ShapeProximity
             myProxValTool.LoadShapeLists(myShapeList1, myShapeList2);
             myProxValTool.SetNbSamplePoints(myNbSamples1, myNbSamples2);
 
+            // OCCT: the proximity value is written into myTolerance, so the next Load and Perform test overlaps with it
             myProxValTool.Perform(ref myTolerance);
             myProxValTool.ProximityPoints(out myProxPoint1, out myProxPoint2);
             myProxValTool.ProximityPointsStatus(out myProxPntStatus1, out myProxPntStatus2);
