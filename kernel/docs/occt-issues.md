@@ -15,3 +15,8 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `gp_GTrsf::Power`, `gp_Other` form | Treats any negative N other than -1 as \|N\|, without inverting | A general transformation raised to a negative power below -1 is not inverted |
 | `gp_Hypr::gp_Hypr()` | Sets the minor radius to `RealFirst()`, which is negative and which no constructor or Set method accepts | A default hyperbola is invalid; harmless until it is used |
 | `gp_Hypr::Asymptote2` | Its error message says "Asymptote1" | Cosmetic |
+| `Bnd_Sphere::Add` (Bnd_Sphere.cxx) | Treats a negative radius as "not initialised yet", but the default constructor sets the radius to 0 | Adding a sphere to a default-constructed `Bnd_Sphere` also encloses the origin instead of copying the other sphere |
+| `Bnd_OBB::ReBuild`, two coincident points (Bnd_OBB.cxx) | Calls `ProcessOnePoint`, which resets `myHDims` to 0, then enlarges by `myHDims[1] + Precision::Confusion()` | The point tolerances are dropped: the half-sizes are `Precision::Confusion()` instead of the larger tolerance plus Confusion |
+| `NCollection_Mat3::Adjoint` | Documented as the adjugate, returns the cofactor matrix (its transpose); `Inverted` transposes it back | Callers expecting the adjugate get its transpose |
+| `NCollection_Mat4::Adjoint` | `crossVec4` returns the negated minors, so the result is the negated cofactor matrix, not the adjugate and not Mat3's convention | Wrong sign and transposition; nothing in OCCT calls it |
+| `BVH::SquareDistanceToObject`, `SquareDistanceToGeomerty` (BVH_DistanceField.lxx) | Return `false` (a zero distance) when the tree is null | Dead code (`BVH()` never returns null); cosmetic |

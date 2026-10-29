@@ -55,3 +55,48 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     are tools for ported code. Immutability applies to values callers hold (gp now, Geom and TopoDS later).
 22. **Trimming**: default construction uses `Activator.CreateInstance<T>()`, with the trimming warning suppressed on
     the grounds that OCCT.NET's value types keep their constructors. Revisit if Bento publishes with full trimming.
+
+## Phase 1: Bnd, BVH and the NCollection vectors (29 October 2026)
+
+23. **NCollection_Vec2/3/4 and NCollection_Mat3/4 are generic structs** (`where T : unmanaged, INumber<T>`) over
+    `[InlineArray]` storage, so `v[i]` and `myMat[i]` read as in the C++. They follow the value-type rules: the
+    non-const `x()` and `operator[]` become an indexer with an internal setter and an internal `ChangeData()` span;
+    `GetData()` becomes `CopyTo`; converting constructors become static `From<TOther>`. Mat3/Mat4 default to the
+    identity (`new()`), `default` is zero. OCCT's float/double specialisation of `Vec3`/`Vec4 /= scalar`
+    (multiply by the inverse) is kept. `Mat3.Inverted(ref, out)` takes `ref` because OCCT leaves the output
+    untouched for a singular matrix.
+24. **BVH is generic over the element type and the vector type**, `BVH_Box<T, TVec>` with `TVec` one of the
+    NCollection vectors, instead of OCCT's `BVH_Box<T, N>`: C# has no integer type parameters, and the vector type
+    fixes the dimension. The vectors implement `INCollection_Vec<T, TSelf>` (static abstract `Length`, `Create`,
+    operators, component access); generic code writes a component through an internal `Unsafe` helper. The JIT
+    specialises every instantiation, so there is no interface dispatch in the inner loops. Rejected: concrete
+    classes per (T, N), six copies of every builder. `BVH_Box<double, 3>` is spelled
+    `BVH_Box<double, NCollection_Vec3<double>>`; the tests have global aliases for OCCT's typedefs (`BVH_Vec3d`).
+    N = 1, declared but never instantiated by OCCT, is not ported.
+25. **BVH template specialisations and int template arguments**: the binary tree is `BVH_Tree<T, TVec>` and the quad
+    tree `BVH_QuadTree<T, TVec>` (OCCT's arity tags dropped); `Child<K>(n)` is `Child(K, n)`; the binned builder's
+    `Bins` is its constructor's last argument; `BVH_Transform<T, N>` exists only for N = 4, so it is
+    `BVH_Transform<T>`; the 3D-only `BVH_Box::Transform`/`Transformed` are extension methods. OCCT's
+    `BVHSetType = void` is a generic overload without the set type (`BVH_Traverse<T, TVec, TMetric>`), and
+    `Select()` finds the tree of a `BVH_PrimitiveSet` or `BVH_Geometry` set by type. `RejectNode` returns its
+    metric through `out`.
+26. **BVH_Set is an interface**, because `BVH_PrimitiveSet` is both a set and a `BVH_Object` (OCCT's multiple
+    inheritance); its default `Box()` is the static `BVH_Set.Box(set)`.
+27. **BVH's classes keep OCCT's public mutators** (trees, sets, builders), like math and BSplCLib (decision 21): they
+    are tools for ported code, and users extend them (custom sets, traversals). Only the value types (`BVH_Box`,
+    `BVH_Ray`, the vectors) follow the internal-mutator rule.
+28. **std::partition and std::sort.** The radix sorter's `std::partition` is ported as Microsoft's implementation,
+    so the linear builder (used by `Bnd_OBB`) orders primitives as native OCCT does on Windows. `BVH_QuickSorter`
+    uses .NET's span sort instead of `std::sort`: both are unstable introsorts, but primitives with equal centroids
+    may end up in a different order, and trees built by the sweep-plane builder may differ.
+29. **OSD_Parallel → Parallel.For/ForEach** with OCCT's sequential flag; `OSD_Thread` → `Thread`;
+    `std::mutex` → `Lock`; atomics → `Interlocked`/`Volatile`.
+30. **NCollection_LinearVector** is reimplemented over an array (decision 15), API subset only (no move operations,
+    iterators as `AsSpan()`); its 912-line GTest is not ported yet.
+31. **Bnd_B2/Bnd_B3 are ported once per instantiation** (`Bnd_B2d`/`Bnd_B2f`, `Bnd_B3d`/`Bnd_B3f`), the float files
+    generated from the double ones by a file-level `using RealType`, to keep C++'s float/double promotions exactly.
+    C++ `std::optional` returns become nullable structs, and multi-value returns `readonly record struct`s
+    (`Bnd_Box.Limits`, `Bnd_Range.Bounds`, `Bnd_OBB.HalfSizes`) for structured bindings.
+32. **Twins for Bnd's bare `Set` and `Add` methods**: `Bnd_Box.FromPoint`, `Bnd_Box.Void()`, `Bnd_OBB.FromPoints`,
+    `Bnd_OBB.Void()` (static factories), and `Added`, `Enlarged`, `Opened*`, `Updated`, `Limited`, ... Methods whose
+    output OCCT leaves untouched in some cases take `ref` rather than `out` (`Bnd_Range.GetMin/GetMax/GetBounds`).
