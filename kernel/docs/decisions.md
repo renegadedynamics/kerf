@@ -1065,3 +1065,71 @@ Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionU
       surfaces or with a window away from the point, RemoveUKnot/RemoveVKnot of the end knots of a periodic
       direction, CheckAndSegment over the whole range of a periodic direction, and periodic IncreaseDegree
       (decision 91).
+
+## Phase 2: unit 2B, adaptors on surfaces (29 October 2026)
+
+Geom2dAdaptor (Geom2dAdaptor_Curve, MakeCurve), Adaptor3d_CurveOnSurface, Adaptor3d_IsoCurve, Adaptor3d_TopolTool and
+Hermit.
+
+1801. **Geom2dAdaptor_Curve's `std::variant` of curve data is an `object?` field**: null (monostate), a boxed gp
+      value (`gp_Lin2d`, `gp_Circ2d`, ...; never changed once boxed, so a shallow copy shares it where C++ copies
+      it) or one of the nested data classes `OffsetData`, `BezierData`, `BSplineData`, read with type patterns where
+      OCCT uses `std::get`/`get_if`. The data classes are internal and the field `private protected`: they hold the
+      evaluation caches and the stored evaluation-representation descriptors, which callers must not reach
+      (decision 100). OCCT's protected fields `myCurve`, `myTypeCurve`, `myFirst` and `myLast` stay protected
+      (BRepAdaptor_Curve2d derives from the class). `ShallowCopy` builds new data objects, so caches are never
+      shared, as in OCCT. `final` evaluators are `sealed override`. Rejected: one field per alternative (more code
+      to diff against OCCT, for no gain).
+1802. **Geom2dAdaptor_Curve reads curves as OCCT does, without copying.** B-spline paths pass `InternalKnots()`,
+      `InternalMultiplicities()`, `InternalKnotSequence()`, `InternalPoles()` and `InternalWeights()` to BSplCLib and
+      BSplCLib_Cache (decisions 131, 140). The Bezier cache's flat knots, which OCCT wraps from
+      `BSplCLib::FlatBezierKnots(deg)` on every rebuild, are the curve's `InternalKnotSequence()`: the same values,
+      shared per degree, without an allocation. `IsBoundary` and `BSplCLib.LocateParameter` return their spans
+      through `out`. `Bezier()` and `BSpline()` keep the base's non-nullable signatures and return null for another
+      curve type, as OCCT returns a null handle; `Curve()` is nullable. The adaptor keeps the caller's curve, as
+      OCCT's handle does (no copy, no freeze: adaptors are working objects). `Geom2dAdaptor` is a static class;
+      `MakeCurve` returns the adapted Bezier, B-spline or offset curve itself, as OCCT does.
+1803. **Geom2dAdaptor_Curve is oracle-tested** (`tests/OcctNet.Oracle.Tests/Geom2dAdaptor`) on the curve types
+      native OCCT binds: random B-splines (degrees 1 to 5, rational or not, periodic or not; over their whole range,
+      a random part and, when periodic, a range shifted across the period start), lines, circles and ellipses, each
+      also through a Geom2d_TrimmedCurve. Compared: D0 to D3, Value, EvalD0, DN and EvalDN up to degree + 1 at the
+      ends (the B-spline boundary-span path), at the knots and at random parameters; the type, range, closure,
+      periodicity, period, continuity, NbIntervals and Intervals for C0 to CN, Resolution, NbSamples, the B-spline
+      counts and the elementary values; on the adaptor, its Trim and its ShallowCopy, and after a reload with
+      another range. 1,029,496 values, all bit-identical. Hyperbolas, parabolas, Bezier and offset curves are not
+      bound natively; the unit tests compare them with the curves' own evaluation.
+1804. **Adaptor3d_IsoCurve.** OCCT's implicit copy constructor (used by `Trim`, sharing the surface) is a private
+      constructor; `ShallowCopy` shallow-copies the surface, as in OCCT. `Bezier()` and `BSpline()` on Bezier and
+      B-spline surfaces go through `Geom_BezierSurface/Geom_BSplineSurface.UIso/VIso`, which still throw
+      `Standard_NotImplemented` behind unit 1C's `TODO(1A)` (decision 169); they will work once those are replaced,
+      with no change here. On surfaces of revolution and extrusion they copy the basis curve before rotating or
+      translating it, as OCCT does, so a frozen basis curve is never changed.
+1805. **Adaptor3d_CurveOnSurface** is a working object: `Load(Surface)`, `Load(Curve2d)` and `Load(Curve2d, Surface)`
+      are public; `GetCurve()`/`GetSurface()` return the stored adaptors. OCCT's `ChangeCurve()`/`ChangeSurface()`
+      (a `handle&` to the field) are `public ref Adaptor2d_Curve2d? ChangeCurve() => ref myCurve;` (a reference to a
+      class field needs no `[UnscopedRef]`); assigning through them doesn't recompute the special cases, as in OCCT.
+      The interval cache that the const `NbIntervals` writes through `const_cast` is two plain fields;
+      `ShallowCopy` shares the sequence as OCCT shares the handle, which is safe because `NbIntervals` replaces it
+      rather than changing it. `Standard_ASSERT_RAISE` in `Intervals` throws `Standard_ProgramError`, as OCCT does in
+      every build. The `constexpr Precision::PConfusion() / 10` tolerances are computed, not written as literals, so
+      they match OCCT's to the bit. Curve and surface arrays are read through the `Internal*` accessors. The private
+      member `FindBounds` declared in the .hxx is neither defined nor used in OCCT and is not ported.
+1806. **Adaptor3d_TopolTool** is a working object: OCCT's virtuals stay public virtual and its protected fields
+      (`myS`, `myNbSamplesU/V`, `myUPars/myVPars`) protected, for BRepTopAdaptor_TopolTool. `Edge()`, a `void*` in
+      OCCT, returns `object?` (null here). `SamplePoint` and `GetConeApexParam` return through `out`; `UParameters`
+      and `VParameters` copy into the caller's array with `Assign` (OCCT's array assignment). `ComputeSamplePoints`
+      reads poles through `InternalPoles()`. The `GeomAdaptor_Surface.hxx` include is unused: no GeomAdaptor is
+      needed.
+1807. **Hermit is a static class.** `Solutionbis` takes `Knotmin` and `Knotmax` as `ref`: OCCT writes only one of
+      them in some branches. Hermit reads the caller's curve through the `Internal*` accessors (copying the knots
+      before `BSplCLib::Reparametrize`, as OCCT does) and mutates only the two Geom2d_BSplineCurves it builds
+      (`InsertKnot`, `SetPole`), so frozen input curves work and the returned curve is unfrozen. The duplicated 3D
+      and 2D helpers stay overloads, as in OCCT; `std::sort` of the knots is `Span.Sort` (no ties that matter).
+      Hermit is not bound natively: GTests only.
+1808. **Test adaptors until unit 2A.** `tests/OcctNet.ModelingData.Tests/TestAdaptors.cs` has `TestCurveAdaptor` and
+      `TestSurfaceAdaptor`, minimal adaptors over Geom curves and surfaces (evaluation through the Geom object, the
+      type queries, one interval per direction unless interior bounds are given), so the adaptors on surfaces can be
+      tested before GeomAdaptor_Curve/Surface exist. Adaptor3d_CurveOnSurface, IsoCurve and TopolTool are tested
+      against the surface evaluated directly (a curve on a surface's derivatives by the chain rule); none of them can
+      be built through the native bindings, so they have no oracle tests. Replace the stand-ins with GeomAdaptor
+      once 2A is merged.
