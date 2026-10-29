@@ -398,3 +398,25 @@ Phase 4 (part): face meshing and the incremental mesh (unit 4D). Shapes now mesh
   re-meshed shapes. Every compared face is bit-identical to native (nodes, UV nodes, triangles, deflection), every
   BRep text is byte-identical but for the Checked flag of faces the mesher keeps (decision 4605), the status flags
   agree, and BRepGProp and BRepBndLib on the meshes are bit-identical; the port's parallel runs equal its serial run.
+
+Phase 4 (part): Draw-lite incmesh and the corpus milestone (unit 4L2).
+
+- `OcctNet.ModelingAlgorithms`: meshing for display as OCCT's presentations do it: `Prs3d_Drawer` (its deflection
+  settings: type of deflection, deviation coefficient and angle, maximal chordial deviation, automatic
+  triangulation, links), `Prs3d.GetDeflection`, `StdPrs_ToolTriangulatedShape` (`GetDeflection`, `IsTessellated`,
+  `Tessellate`, with a twin returning the meshed copy and its history), `Aspect_TypeOfDeflection`.
+- Draw-lite (tests, not packaged): `incmesh` with all its options (`-a`, `-min`, `-relative`, `-parallel`, `-algo`,
+  `-di`, `-ai`, `-prs`, `-surf_def_all`, `-surf_def_off`, `-int_vert_off`, `-force_face_def`, `-decrease`,
+  `-adjust_min`), `tessellate`, `mpnames`, `mpsetdefaultname`, `mpgetdefaultname`, `mpincmesh`; `mpparallel` sets the
+  mesher's process-wide default. Commands that change a shape in place in OCCT (incmesh, mpincmesh, tclean,
+  trmergenodes, correctnormals, and the viewer's meshing) now rebind every variable that shares the changed
+  sub-shapes, as in DRAWEXE. `vdisplay`, `vsetdispmode`, `vdefaults`, `vinit`, `vclose`, `verase`, `vremove`, `vclear`
+  and `vdisplayall` mesh what they display as AIS does (selection and shaded presentation); `vglinfo` is ignored.
+  The corpus scan knows the mesh group's STEP-only branch. Tcl's `time` returns an integer for one iteration.
+- Tests: unit tests of every command and of the StdPrs port; oracle tests of incmesh (deflection, `-relative`, `-a`,
+  `-parallel`) and of vdisplay's meshing against native OCCT on 72 shapes: 288 runs, every BRep text byte-identical
+  (4 but for the Checked flag of decision 551), every exploded face rebound to native's mesh, 1,656 values equal.
+  **The corpus milestone**: 21,068 cases, 1,834 runnable (961 before), 841 OK, 28 BAD (OCCT's own TODOs),
+  1 IMPROVEMENT, 947 SKIPPED (data files the public dataset lacks), 17 FAILED (later commands, viewer queries,
+  plugin loading, an OCCT test bug; none on a port bug). The mesh group: 684 of its 699 cases runnable, 233 OK,
+  16 BAD (OCCT's TODOs), 435 SKIPPED, none FAILED.

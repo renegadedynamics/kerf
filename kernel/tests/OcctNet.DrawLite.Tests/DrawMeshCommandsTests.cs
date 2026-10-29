@@ -134,11 +134,13 @@ public class DrawMeshCommandsTests
         Assert.Equal("", i.Eval("tclean s t"));
         TopoDS_Shape anAfter = i.GetShape("s");
 
-        // the name is bound to a cleaned copy (decision 480); the faces exploded before keep their meshes
+        // the name is bound to a cleaned copy (decision 480); the faces exploded before are rebound to the copy's, as
+        // in DRAWEXE where tclean writes into them (decision 495)
         Assert.False(anAfter.IsSame(aBefore));
         Assert.Contains("8 empty faces", i.Eval("trinfo s"), StringComparison.Ordinal);
         Assert.Contains("8 empty faces", i.Eval("trinfo t"), StringComparison.Ordinal);
-        Assert.DoesNotContain("empty", i.Eval("trinfo s_1"), StringComparison.Ordinal);
+        Assert.Contains("1 empty faces", i.Eval("trinfo s_1"), StringComparison.Ordinal);
+        Assert.True(i.GetShape("s_1").IsSame(FirstFace(anAfter)));
         Assert.Equal("This shape seems to be valid", i.Eval("checkshape s"));
 
         // -geom drops the surfaces and curves as well

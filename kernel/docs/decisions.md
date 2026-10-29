@@ -5082,3 +5082,120 @@ renumbered on merge; merged decisions are cited by their numbers (486–497, 519
 556. **Determinism** (phase4-plan 2.2). The oracle meshes data/occ and every third mesh-group file serially, three
       times in parallel and under `ForceSerialScope`, at two settings, and requires the same BRep text and the same
       triangulation bits; it also meshes each natively serially and in parallel, and reports native differences.
+
+## Phase 4: unit 4L2, incmesh and the corpus
+
+Draw-lite's mesher commands and the viewer commands that mesh what they display, with the port of what AIS's meshing
+needs (Prs3d_Drawer's deflection settings, Prs3d::GetDeflection, StdPrs_ToolTriangulatedShape) in
+OcctNet.ModelingAlgorithms. Numbers from 4701 are placeholders, renumbered on merge; merged decisions are cited by
+their numbers (437–445, 476–485, 489–490, 495–505, 547–556).
+
+557. **Placement.** `incmesh`, `tessellate`, `mpnames`, `mpsetdefaultname`, `mpgetdefaultname` and `mpincmesh` join
+      4L1's commands in `MeshTestCommands`, written as MeshTest.cxx and MeshTest_PluginCommands.cxx write them over
+      DrawCxx (decision 499: `di <<` is the result, printf and Message::SendFail the output). The viewer commands
+      that mesh (`vinit`, `vclose`, `vdisplay`, `vdisplayall`, `vsetdispmode`, `vunsetdispmode`, `vdefaults`, `verase`,
+      `vremove`, `vclear`) are in the new `ViewerTestCommands`; `vglinfo`, a query of the OpenGL driver, joins the
+      ignored viewer commands. The rebinding is `DrawShapeRebind`. Unit tests: `DrawMeshingCommandsTests` (Draw-lite)
+      and `StdPrsToolTriangulatedShapeTests`; oracle: `DrawLiteIncMeshOracleTests`.
+558. **Rebinding through the graph (decision 495).** OCCT's incmesh, mpincmesh, tclean, trmergenodes, correctnormals
+      and AIS write into the TShapes of their shape, so every Draw variable holding one of them sees the change. The
+      port changes a copy (BRepMesh_IncrementalMesh's, decision 489, or DrawShapeCopy's, decision 480); then
+      `DrawShapeRebind.Rebind(original, result)` maps each TShape of the original to the one at the same place in the
+      result (the two graphs have the same structure; an original TShape that KeepUnchanged kept keeps its sub-graph),
+      and every shape the interpreter holds (the variables of the global frame and of the procedures running, their
+      array elements, and the shapes the viewer displays) gets the result's TShape wherever it held a changed one.
+      The TShapes above a replaced one are copied once (DrawShapeCopy.CopyNode: flags and representations) and the
+      new graph is frozen, so sub-shapes shared between variables stay shared. The DrawShape objects are updated in
+      place, keeping their names and protection. The structural map is used rather than `History()`: the history
+      records only vertices, edges, faces and solids, and the DrawShapeCopy commands have none. This replaces
+      decision 500's rule that other variables keep the old TShapes: `explode` before `incmesh` or `tclean` now sees
+      the change, as in DRAWEXE.
+559. **incmesh** builds IMeshTools_Parameters as MeshTest.cxx does (every option, `Draw::ParseOnOff[No]Iterator`,
+      `IsRealValue(true)` for the deflection, at least Precision::Confusion()), runs
+      `BRepMesh_IncrementalMesh.Perform(context)` with a `new BRepMesh_Context()` whose face discretizer `-algo`
+      replaces (`BRepMesh_MeshAlgoFactory` or `BRepMesh_DelabellaMeshAlgoFactory`), on a compound when several shapes
+      are named. `-prs` takes StdPrs_ToolTriangulatedShape::GetDeflection with a new Prs3d_Drawer (a deflection given
+      becomes its deviation coefficient) and the drawer's 20 degrees. The statuses line is MeshTest's, from
+      `GetStatusFlags()`. Draw_ProgressIndicator prints nothing in DRAWEXE's test mode, so none is made.
+560. **vdisplay meshes as AIS does.** The context (per interpreter) holds a default drawer (`SetupOwnDefaults`: a
+      relative deflection, coefficient 0.001, 20 degrees, automatic triangulation), the display mode, and ViewerTest's
+      map of displayed objects by name, each an AIS_Shape with its own drawer linked to the default one.
+      - `vdisplay` (VDisplay2's options) computes the object's presentation in its display mode and its selection
+        (mode 0, unless `-noselect`) at once, as AIS_InteractiveContext::Display does. The shaded mode (1) of a solid,
+        shell, face or compound tessellates it (StdPrs_ShadedShape::Add: StdPrs_ToolTriangulatedShape::Tessellate
+        through the mesh factory); the selection meshes a shape that misses a triangulation or a polygon
+        (StdSelect_BRepSelectionTool::Load: BRepMesh_IncrementalMesh, serial, with the same deflection and angle).
+        Both only with automatic triangulation (`vdefaults -autoTriang`, `vdisplay -autoTriang`). The wireframe and
+        bounding-box modes don't mesh. A name already displayed is echoed ("Display name"), updated to its
+        variable's shape, and recomputed if the shape changed or with `-redisplay`.
+      - `vsetdispmode` (of the context or of an object) computes the displayed objects in the new mode; `vdefaults`
+        sets and prints the default drawer as VDefaults does; `vinit` makes the context, and `vclose` of its last view
+        drops it with its objects; `verase`, `vremove`, `vclear` and `vdisplayall` keep the map. Commands that need a
+        context fail without one ("Error: no active viewer"), as in DRAWEXE.
+      - Not reproduced: a name that holds no shape is skipped silently (in DRAWEXE it may be an AIS object other
+        commands made, which Draw-lite ignores, or OCCT's "does not exist" error); `vinit` and `vclose` return nothing
+        and aren't logged, as when they were no-ops (DRAWEXE returns the view's name); highlighting, picking and
+        drawing don't exist. `vglinfo` returns nothing, so a case that parses its text fails (v3d/bugs/bug29020).
+561. **Meshing for display in src** (`src/OcctNet.ModelingAlgorithms/Aspect`, `Prs3d`, `StdPrs`): Aspect_TypeOfDeflection;
+      Prs3d_Drawer with only its deflection settings (the type of deflection, the maximal chordial deviation, the
+      deviation coefficient and angle with their previous values, automatic triangulation, the link, and
+      SetupOwnDefaults' values for them); Prs3d.GetDeflection (both overloads); StdPrs_ToolTriangulatedShape's
+      IsTriangulated, GetDeflection (which stores the absolute deflection into the drawer, as OCCT's), IsTessellated
+      and Tessellate, which meshes through `BRepMesh_DiscretFactory.Get().Discret`. Its twin with an `out` meshed shape
+      and history returns the copy a frozen shape is meshed on (decision 489). Not ported: IsClosed (back-face
+      culling) and ClearOnOwnDeflectionChange (an object's own deviation, which Draw-lite's commands can't set). The
+      rest of TKV3d draws, and the port has no viewer.
+562. **Process-wide mesher defaults.** `mpparallel` now sets BRepMesh_IncrementalMesh's parallel default
+      (`SetParallelDefault`) and `mpsetdefaultname` BRepMesh_DiscretFactory's default name, as in OCCT; decision 502's
+      per-interpreter flag goes. In a parallel corpus run one case's `mpparallel 1` can reach another case's meshing,
+      whose result doesn't change (decision 490); only `mpparallel`'s own line could print another case's setting
+      (two cases use it). The Draw-lite tests that change these defaults run in one xUnit collection and restore them.
+563. **The scan knows the mesh group's data-file branch.** The mesh `end` script restores a `.brep` or `.rle` file and
+      reads any other with `stepread` and `tpcompound`. `DrawCorpus.DataFileBranches` records that branch (group,
+      commands, the file names that skip it); the scan drops those commands from a case of the group whose last
+      `set TheFileName` names a .brep or .rle file, or nothing. `KnowsDataFileBranches = false` gives the former scan.
+      Of the group's 699 cases, 684 are runnable; 9 need the STEP commands (their data is STEP), 3 `pipe`, 3 `bcut`.
+564. **tessellate** builds the face with natural bounds with BRepBuilderAPI_MakeFace, whose face is frozen, and writes
+      the triangulation and the polygons into a DrawShapeCopy of it (decision 480) before binding it.
+565. **Tcl's `time` with one iteration returns an integer** (Tcl_TimeObjCmd, Tcl bug 1202178); Draw-lite returned a
+      double. OCCT's timing checks divide it by 10^6 with expr: bugs/mesh/bug25503_1 and _2 failed ("second time must
+      be quicker") whenever the second run took any time. A port bug the new cases found; fixed, unit test.
+566. **Tests.**
+      - Draw-lite (`DrawMeshingCommandsTests`, 9 tests): incmesh's text and trinfo after it, the copy bound and the
+        input untouched, `Reused` on a second run, `-decrease`, the command log; each option against
+        BRepMesh_IncrementalMesh with the parameters it stands for on CrankArm (19 option sets) and `-prs`; the
+        errors; the rebinding of exploded faces, of a compound of them and through a procedure's upvar, and several
+        shapes at once; tessellate (a plane, a closed cylinder, the errors); the factory commands' texts, mpincmesh
+        and mpparallel; vdisplay in the wireframe and shaded modes, without selection, without automatic
+        triangulation, with an absolute deflection, vdefaults and vclose; the mesh group's shading sequence.
+        `StdPrsToolTriangulatedShapeTests` (4): the drawer's links and defaults, Prs3d's deflection, the relative and
+        absolute deflections, Tessellate on a frozen shape. 4L1's tclean test now expects the exploded face rebound.
+      - Oracle (`DrawLiteIncMeshOracleTests`): data/occ's 31 .brep files under 1 MB and every second one of the mesh
+        group's public data files (41). Native writes each without meshes; Draw-lite restores it, explodes its faces
+        and runs `incmesh s D` (D = 0.004 of its size), `incmesh s 0.05 -relative -a 20`, `incmesh s D' -a 30
+        -parallel` (D' = 0.01 of its size) and `vinit; vdisplay s; vsetdispmode 1`; native meshes the same file in
+        place with the five-argument constructor (for vdisplay: Prs3d's deflection on the native box, 20 degrees,
+        serial). 288 runs: 284 BRep texts byte-identical, 4 but for decision 551's Checked flags, none different; the
+        first exploded face (200 runs whose shape isn't itself a face: explode skips the shape) equal to the native
+        face meshed in place; the statuses line and trinfo's faces, triangles, nodes and maximal deflection, 1,656
+        values, all equal. The options the five-argument constructor can't express are checked by the Draw-lite test
+        against the port's BRepMesh_IncrementalMesh, which 4D's oracle validated.
+567. **The corpus milestone** (`DrawCorpusTests`; `Unit4L2Commands`, `Before4L2`: 4L1's Draw-lite with the former scan).
+      - Cases: 21,068 (17,237 in the grids without a cases.list, 3,831 in those with one; the mesh group 699).
+      - Runnable: 961 before 4L2 (none in the cases.list grids), 1,834 after (684 of them in the mesh group).
+      - Before 4L2: 452 OK, 12 BAD, 1 IMPROVEMENT, 468 SKIPPED, 28 FAILED. After: 841 OK, 28 BAD, 1 IMPROVEMENT,
+        947 SKIPPED, 17 FAILED. The mesh group: 233 OK, 16 BAD, 435 SKIPPED (data files the public dataset lacks),
+        no FAILED.
+      - The 16 BAD of the mesh group are OCCT's TODOs (the `bug_*` variables of the case scripts, turned into TODOs
+        by the end script): free nodes (B5, P8), faces without triangulation (V6, V7, A6), the meshing failure of A6,
+        and the optional area TODO of standard_shading/M4 (`TODO ?OCC22687`: the area difference 1.918% against the
+        1.9456% the shading grid expects; the incmesh grids' 1.54% passes). The other 12 BAD are those of 4L1.
+      - The 12 cases 4L1 found failing because Draw-lite's vdisplay didn't mesh (decision 504) now pass.
+      - FAILED, classified: 13 demo/samples cases on later commands (bcut, blend, bcommon, bfuse, fixshape,
+        NewDocument, and vbackground in a sourced sample script: missing commands); v3d/materials/phong1, vbackground
+        in the same sourced script (missing command, newly reached); v3d/bugs/bug29020, which parses vglinfo's text
+        (a viewer query Draw-lite ignores, decision 560); bugs/fclasses/bug1281, which tests `pload ALL`'s plugin
+        loading (a no-op in Draw-lite); lowalgos/extss/bug29712_44 (an OCCT test bug, as in 4L1). No failure on a
+        port bug: the one the new cases found (decision 565) is fixed.
+      - The cases that miss one command: DT_SplitAngle 800, bcut 436, thrusections 362, bfuse 316, chamf 285,
+        blend 284, bcommon 269, bsection 165, fixshape 146, prj 76.

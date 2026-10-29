@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace OcctNet.DrawLite;
 
@@ -42,7 +43,26 @@ public sealed class DrawCorpus(string theTestsDirectory)
         ["compute_chamf"] = ["chamf"],
     };
 
+    /// <summary>
+    /// Commands a group's scripts call only in a branch on the case's data file (<c>TheFileName</c>), and the data
+    /// files that don't take that branch: the mesh group's end script reads a .brep or .rle file with brestore and
+    /// any other (STEP) file with <c>stepread</c> and <c>tpcompound</c>. A case whose data file matches the pattern,
+    /// or that sets none, doesn't need the commands.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string[] Commands, Regex SkippedFor)> DataFileBranches { get; } =
+    [
+        ("mesh", ["stepread", "tpcompound"], new Regex(@"\.(brep|rle)", RegexOptions.CultureInvariant)),
+    ];
+
+    private static readonly Regex s_theFileName = new(@"^\s*set\s+TheFileName\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
     private readonly ConcurrentDictionary<string, IReadOnlySet<string>> myProcCalls = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether the scan knows the branches of <see cref="DataFileBranches"/> (unit 4L2); false counts the commands of
+    /// every branch, as before.
+    /// </summary>
+    public bool KnowsDataFileBranches { get; init; } = true;
 
     public string TestsDirectory { get; } = theTestsDirectory;
 
@@ -257,6 +277,24 @@ public sealed class DrawCorpus(string theTestsDirectory)
         }
 
         var aMissing = aCommands.Where(c => !theInterpreter.HasCommand(c) && !aDefined.Contains(c)).ToHashSet(StringComparer.Ordinal);
+        if (KnowsDataFileBranches)
+        {
+            foreach ((string aGroup, string[] aBranchCommands, Regex aSkippedFor) in DataFileBranches)
+            {
+                if (aGroup != theCase.Group)
+                {
+                    continue;
+                }
+
+                // the case's data file, as the case sets it (the last set wins, as when it runs)
+                Match? aSet = s_theFileName.Matches(File.ReadAllText(theCase.Path)).LastOrDefault();
+                if (aSet is null || aSet.Groups[1].Value is "\"\"" or "{}" || aSkippedFor.IsMatch(aSet.Groups[1].Value))
+                {
+                    aMissing.ExceptWith(aBranchCommands);
+                }
+            }
+        }
+
         return new DrawCaseScan(theCase, aCommands, aMissing);
     }
 
