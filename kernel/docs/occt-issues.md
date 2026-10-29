@@ -525,3 +525,14 @@ All are reproduced and pinned by unit tests.
 | `Message_Msg::Get` (Message_Msg.cxx) | Replaces the unfilled placeholders but keeps their positions | A second `Get` garbles the text ("a %s b" → "a UNKNOWN b" → "a UNKNOWNKNOWN b"); `SendStatusMessages` calls `Get` on a stored custom message, so sending it twice garbles it. Kept; unit test |
 | `Message_Msg::Set` (Message_Msg.cxx) | After "%%", reads the next characters as a format | "100%% done" gets a placeholder "% d": `Arg(7)` gives "100 7one". Kept; unit test |
 | `NCollection_MapAlgo::Differ` (NCollection_MapAlgo.hxx; a property, not a bug) | Reports a change by comparing the counts before and after | Swapping one key for another returns false. Kept; unit test |
+
+## Phase 4: unit 4B, Delaunay core
+
+Found while porting the Delaunay core and Delabella. Reproduced in the port, each marked `// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `CDelaBella::Triangulate` (delabella.cpp), all points cocircular | With more than 3 points, all cocircular ("[NFO] all input points are cocircular."), the last point is retracted and made the cone's top, which is coplanar with the base; no point is left for the main loop, and the final loop over `2 * points - 4` faces reads the adjacency (`f[0..2]`) of faces this run never allocated | Native (MSVC, release) crashes with an access violation, confirmed on the unit square's corners and on the twelve integer points of the circle of radius 5. The port throws NullReferenceException. Pinned by `Exactly_cocircular_points_fail_as_in_OCCT_ReproducesOcctError`. BRepMesh_DelabellaBaseMeshAlgo adds the four corners of an enlarged box to the face's nodes, so it can't reach this with distinct nodes |
+| `CDelaBella::Triangulate`, 0 points | The duplicate removal starts with `w = 0, r = 1` and ends with `w = 1`: it reports "detected -1 dups" and sets `points = 1`, then the single-point branch writes `vert_alloc[0]` of an empty allocation (null on a first call) | Undefined behaviour natively; the port throws NullReferenceException. Pinned by `No_points_fail_as_in_OCCT_ReproducesOcctError` |
+| `CDelaBella::Triangulate`, `assert(0)` and `assert(_f != face_alloc)` | Release builds compile the asserts out: a coplanar point that is on neither side of the contour is taken as `last` without being linked in; the emergency search for a visible face runs below `face_alloc` when none is visible | Undefined behaviour natively (the port throws IndexOutOfRangeException in the second case). By reading; not reached by any test |
+| `IDelaBella::Triangulate` (a property, not a bug) | The header says triangles are returned clockwise "in abc"; the Delaunay triangles (lifted faces with `n.z < 0`) are clockwise in `v[0..2]`, and the hull contour counter-clockwise | BRepMesh_DelabellaBaseMeshAlgo takes `v[0], v[2], v[1]` to get counter-clockwise triangles. Tested |
