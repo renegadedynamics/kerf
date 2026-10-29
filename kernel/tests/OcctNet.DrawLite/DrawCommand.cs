@@ -20,18 +20,33 @@ internal static class DrawCxx
     public static void Add(DrawInterpreter theInterpreter, string theName, DrawCxxCommand theCommand)
         => theInterpreter.Register(theName, (i, a) =>
         {
+            // CommandCmd logs the command's words and then its result, except for dlog and decho (decision 3551)
+            bool aDoLog = i.DoLog && theName is not ("dlog" or "decho");
+            if (aDoLog)
+            {
+                i.Output.Write(string.Concat(a.Select(w => w + " ")) + "\n");
+            }
+
             var aResult = new DrawResult();
             int aStatus;
+            string aText;
             try
             {
                 aStatus = theCommand(i, aResult, a);
+                aText = aResult.ToString();
             }
             catch (Standard_Failure aFailure)
             {
-                throw new DrawException("An exception was caught " + Print(aFailure));
+                aStatus = 1;
+                aText = "An exception was caught " + Print(aFailure);
             }
 
-            return aStatus == 0 ? aResult.ToString() : throw new DrawException(aResult.ToString());
+            if (aDoLog && aText.Length > 0)
+            {
+                i.Output.Write(aText + "\n");
+            }
+
+            return aStatus == 0 ? aText : throw new DrawException(aText);
         });
 
     /// <summary>Standard_Failure::Print: the type, then ": " and the message when there is one.</summary>

@@ -135,6 +135,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
         // an empty, writable image directory, as the harness makes for each case: in the overlay, as every write
         string anImages = TclFileSystem.Slashes(Path.Combine(Path.GetTempPath(), "drawlite-images", theCase.Group, theCase.Grid, theCase.Name));
         anInterpreter.Files.MakeDirectory(anImages);
+        // _run_test logs the commands and their results (dlog on)
+        anInterpreter.DoLog = true;
         theSetup?.Invoke(anInterpreter);
         anInterpreter.Deadline = DateTime.UtcNow + theTimeLimit;
         try
