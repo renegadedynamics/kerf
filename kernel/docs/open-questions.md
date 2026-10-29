@@ -11,6 +11,9 @@ until you say otherwise; changing one later is cheap unless the entry says so. N
    text never changes once published; the cost is that a file written after building a compound from frozen shapes
    shows `Free = 1` where native OCCT shows 0. Byte-identical round trips of files *read* are unaffected.
    Alternative: clear it as OCCT does (OCCT's bytes in every history, but a shared shape's text changes).
+   *Evidence from unit 3I (decision 414 onwards):* the BRepLib makers reuse the caller's frozen sub-shapes, so 570
+   of 2,015 maker outputs in the oracle differ from native only in the Free column, among them every face made
+   from a planar wire and every solid made from those faces. Everything else in those files is identical.
 2. **Scope of phase 3.** BRepClass, BRepCheck, BRepClass3d and BRepExtrema need about 38k lines of TKGeomAlgo
    intersections (IntRes2d, IntCurve, Geom2dInt, IntCurveSurface, ...) plus BRepLib and BRepBuilderAPI's makers,
    which [design.md](design.md) put in phase 5; and most topology GTests and 3,900 corpus cases need `MakeBox` /

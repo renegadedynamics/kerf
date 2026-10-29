@@ -69,7 +69,7 @@ broken down by package.
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
 | ModelingAlgorithms | TKPrim | 0 / 75 | 0 / 12,932 | 0.0 |
 | ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
-| ModelingAlgorithms | TKTopAlgo | 41 / 340 | 9,624 / 84,336 | 11.4 |
+| ModelingAlgorithms | TKTopAlgo | 125 / 340 | 32,845 / 84,336 | 38.9 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1910 | 646,267 / 2,897,781 | 22.3 |
+| **All** |  | 1994 | 669,488 / 2,897,781 | 23.1 |
 
 ## TKMath
 
@@ -175,19 +175,19 @@ broken down by package.
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
 | BRepApprox | 0 / 52 | 0 / 5,269 | 0.0 |
-| BRepBndLib | 0 / 3 | 0 / 1,430 | 0.0 |
+| BRepBndLib | 3 / 3 | 1,430 / 1,430 | 100.0 |
 | BRepBuilderAPI | 0 / 52 | 0 / 14,345 | 0.0 |
 | BRepCheck | 7 / 19 | 1,631 / 7,467 | 21.8 |
-| BRepClass | 0 / 14 | 0 / 1,909 | 0.0 |
-| BRepClass3d | 0 / 15 | 0 / 3,428 | 0.0 |
+| BRepClass | 14 / 14 | 1,909 / 1,909 | 100.0 |
+| BRepClass3d | 15 / 15 | 3,428 / 3,428 | 100.0 |
 | BRepExtrema | 0 / 32 | 0 / 7,718 | 0.0 |
 | BRepGProp | 30 / 30 | 7,451 / 7,451 | 100.0 |
-| BRepIntCurveSurface | 0 / 2 | 0 / 443 | 0.0 |
-| BRepLib | 4 / 41 | 542 / 13,241 | 4.1 |
+| BRepIntCurveSurface | 2 / 2 | 443 / 443 | 100.0 |
+| BRepLib | 41 / 41 | 13,241 / 13,241 | 100.0 |
 | BRepMAT2d | 0 / 6 | 0 / 1,642 | 0.0 |
-| BRepTopAdaptor | 0 / 8 | 0 / 2,140 | 0.0 |
+| BRepTopAdaptor | 8 / 8 | 2,140 / 2,140 | 100.0 |
 | Bisector | 0 / 22 | 0 / 7,520 | 0.0 |
-| IntCurvesFace | 0 / 5 | 0 / 1,172 | 0.0 |
+| IntCurvesFace | 5 / 5 | 1,172 / 1,172 | 100.0 |
 | MAT | 0 / 25 | 0 / 3,179 | 0.0 |
 | MAT2d | 0 / 14 | 0 / 5,982 | 0.0 |
 
