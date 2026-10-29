@@ -36,3 +36,11 @@ Phase 1 (part): meshes.
   tools); NCollection_AliasedArray, NCollection_PackedMapOfInteger, NCollection_Primes.
 - Tests: unit tests of the Poly package (OCCT has no Poly GTests); oracle tests of Poly_Triangulation and
   Poly_Triangle against native OCCT.
+
+Phase 1 (part): B-spline surfaces and conversions.
+
+- `OcctNet.Foundation`: the BSplSLib package (B-spline and Bezier surface evaluation, knot insertion and removal,
+  degree elevation, interpolation, BSplSLib_Cache); the Convert package (conics and quadrics to B-splines,
+  composite Bezier curves and polynomial curves and grids to B-splines). Converters return copies of their results.
+- Tests: the BSplSLib and Convert GTests; oracle tests of BSplCLib, BSplSLib, BSplSLib_Cache and Convert against
+  native OCCT, all bit-identical.

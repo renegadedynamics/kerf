@@ -1874,6 +1874,8 @@ public static partial class BSplCLib
                 amult = Max(0, AddMults![ak]);
             }
 
+            // OCCT: with Add false, equal entries of AddKnots count once with the first one's multiplicity here, but
+            // InsertKnots processes each of them, so the two can disagree on the result
             while ((ak < AddKnots.Upper()) && (Math.Abs(au - AddKnots[ak + 1]) <= Eps))
             {
                 ak++;
