@@ -2566,8 +2566,19 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         NCollection_Array1<double> aWeights1 = new NCollection_Array1<double>(1, aNb);
         NCollection_Array1<double> aWeights2 = new NCollection_Array1<double>(1, aNb);
         NCollection_Array2<double>? aWeights = aRat ? InternalWeights() : BSplSLib.NoWeights();
+
+        // Geom_BSplineCurve's constructor checks the iso-curve's data first (it throws if a modification left the
+        // surface inconsistent, see occt-issues.md)
+        NCollection_Array1<double> aKnots = theIsU ? myVKnots : myUKnots;
+        NCollection_Array1<int> aMults = theIsU ? myVMults : myUMults;
+        int aCDeg = theIsU ? myVDeg : myUDeg;
+        bool aCPer = theIsU ? myVPeriodic : myUPeriodic;
+        CheckIsoCurveData(aNb, aKnots, aMults, aCDeg, aCPer);
+
         BSplSLib.Iso(theP1, theIsU, myPoles, aWeights, aFlatKnots, BSplCLib.NoMults(), aDeg, aPer, aPoles1, aWeights1);
+        CheckIsoWeights(aRat, aWeights1);
         BSplSLib.Iso(theP2, theIsU, myPoles, aWeights, aFlatKnots, BSplCLib.NoMults(), aDeg, aPer, aPoles2, aWeights2);
+        CheckIsoWeights(aRat, aWeights2);
 
         // Geom_BSplineCurve's constructor: rational only if the weights differ by more than gp::Resolution()
         bool aRat1 = aRat && IsoWeightsRational(aWeights1);
@@ -2602,6 +2613,56 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             }
         }
         return true;
+    }
+
+    /// <summary>Geom_BSplineCurve's CheckCurveData, for an iso-curve of theNbPoles poles.</summary>
+    private static void CheckIsoCurveData(int theNbPoles, NCollection_Array1<double> CKnots, NCollection_Array1<int> CMults,
+                                          int Degree, bool Periodic)
+    {
+        if (Degree < 1 || Degree > BSplCLib.MaxDegree())
+        {
+            throw new Standard_ConstructionError("BSpline curve: invalid degree");
+        }
+
+        if (theNbPoles < 2)
+        {
+            throw new Standard_ConstructionError("BSpline curve: at least 2 poles required");
+        }
+
+        if (CKnots.Length() != CMults.Length())
+        {
+            throw new Standard_ConstructionError("BSpline curve: Knot and Mult array size mismatch");
+        }
+
+        for (int I = CKnots.Lower(); I < CKnots.Upper(); I++)
+        {
+            if (CKnots[I + 1] - CKnots[I] <= Epsilon(Math.Abs(CKnots[I])))
+            {
+                throw new Standard_ConstructionError("BSpline curve: Knots interval values too close");
+            }
+        }
+
+        if (theNbPoles != BSplCLib.NbPoles(Degree, Periodic, CMults))
+        {
+            throw new Standard_ConstructionError("BSpline curve: # Poles and degree mismatch");
+        }
+    }
+
+    /// <summary>Geom_BSplineCurve's constructor with weights: each weight must exceed gp::Resolution().</summary>
+    private static void CheckIsoWeights(bool theRational, NCollection_Array1<double> theWeights)
+    {
+        if (!theRational)
+        {
+            return;
+        }
+
+        for (int i = theWeights.Lower(); i <= theWeights.Upper(); i++)
+        {
+            if (theWeights[i] <= gp.Resolution())
+            {
+                throw new Standard_ConstructionError("Geom_BSplineCurve: Weights values too small");
+            }
+        }
     }
 
     private static bool IsoWeightsRational(NCollection_Array1<double> theWeights)
