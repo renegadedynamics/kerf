@@ -407,7 +407,7 @@ public static partial class BRepLib
                 }
             }
         }
-        catch (Standard_Failure)
+        catch (Standard_Failure anException) when (anException is not TopoDS_LockedShape) // OCCT.NET: frozen
         {
         }
     }
@@ -458,7 +458,9 @@ public static partial class BRepLib
                 GeomAbs_Shape aCont = ContinuityOfFaces(E, F1, F2, TolAng);
                 B.Continuity(E, F1, F2, aCont);
             }
-            catch (Standard_Failure)
+            // OCCT.NET: frozen. OCCT swallows the TopoDS_LockedShape of a locked edge; a frozen one is a write into a
+            // shape the caller holds, which must not pass silently.
+            catch (Standard_Failure) when (!E.TShape()!.IsFrozen())
             {
             }
         }
@@ -897,7 +899,6 @@ public static partial class BRepLib
     /// Fills <paramref name="LF"/> with the faces of <paramref name="Sh"/> in the reverse order of complexity: faces
     /// without a surface, others, tori, spheres, cones, cylinders, planes.
     /// </summary>
-    /// <remarks>Unlike SortFaces, OCCT doesn't look through a trimmed surface here (a trimmed plane counts as other).</remarks>
     public static void ReverseSortFaces(in TopoDS_Shape Sh, NCollection_List<TopoDS_Shape> LF)
     {
         LF.Clear();
