@@ -1201,7 +1201,39 @@ public class Intf_Tool
             }
         }
 
-        return SortAndMergeIntersections(nbpi);
+        int aNbDiffPoints = nbpi;
+
+        // Sort parint and check if parint contains several
+        // matched values. If that is true they will be deleted.
+        for (int i = nbpi - 1; i > 0; i--)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (parint[i] <= parint[j])
+                {
+                    (parint[i], parint[j]) = (parint[j], parint[i]);
+                    (zint[i], zint[j]) = (zint[j], zint[i]);
+                    (yint[i], yint[j]) = (yint[j], yint[i]);
+                    (xint[i], xint[j]) = (xint[j], xint[i]);
+                    (bord[i], bord[j]) = (bord[j], bord[i]);
+                }
+
+                if ((i < nbpi - 1) && IsEqual(parint[i], parint[i + 1]))
+                {
+                    aNbDiffPoints--;
+                    for (int k = i; k < aNbDiffPoints; k++)
+                    {
+                        parint[k] = parint[k + 1];
+                        zint[k] = zint[k + 1];
+                        yint[k] = yint[k + 1];
+                        xint[k] = xint[k + 1];
+                        bord[k] = bord[k + 1];
+                    }
+                }
+            }
+        }
+
+        return aNbDiffPoints;
     }
 
     private int Inters3d(in gp_Parab theCurv, in Bnd_Box Domain)
@@ -1350,14 +1382,6 @@ public class Intf_Tool
             }
         }
 
-        return SortAndMergeIntersections(nbpi);
-    }
-
-    /// <summary>
-    /// The tail shared by both Inters3d in OCCT (written out twice there): sorts parint and removes repeated values.
-    /// </summary>
-    private int SortAndMergeIntersections(int nbpi)
-    {
         int aNbDiffPoints = nbpi;
 
         // Sort parint and check if parint contains several

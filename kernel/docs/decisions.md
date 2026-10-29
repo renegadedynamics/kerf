@@ -2112,3 +2112,121 @@ The design of immutable topology ([phase3-design.md](phase3-design.md)) and the 
           IntCurveSurface, TopClass, TopTrans, parts of GeomAPI and Geom2dAPI; 38,000 lines),
         - BRepLib and BRepBuilderAPI's makers (19,000 lines).
       - **Units:** 12 units in 6 waves, 125,000 lines. TKPrim is recommended as a 13th unit (owner's decision).
+
+## Phase 3: unit 3D, 2D intersection bases
+
+IntRes2d, IntImpParGen (with IntImpParGen_Intersector.gxx), Intf (without Intf_InterferencePolygonPolyhedron.gxx,
+unit 3F), TopTrans and TopClass, in the new assembly OcctNet.ModelingAlgorithms.
+
+3401. **A third assembly, OcctNet.ModelingAlgorithms** (decision 93's naming), holds TKGeomAlgo, TKTopAlgo and TKPrim.
+      It references OcctNet.ModelingData (and through it Foundation); `src/Directory.Build.props` already lets it
+      and its tests see the other assemblies' internals. Its tests are `tests/OcctNet.ModelingAlgorithms.Tests`
+      (namespace `OcctNet.ModelingAlgorithms.Tests`, with the OcctSourceDir metadata of the ModelingData tests), and
+      `tests/OcctNet.Oracle.Tests` references it for the oracle tests of later units. Both projects are in
+      `OcctNet.slnx`.
+3402. **IntRes2d's results are structs** (decision 117): IntRes2d_Transition, IntRes2d_IntersectionPoint,
+      IntRes2d_IntersectionSegment and IntRes2d_Domain, with the three enums.
+      - `SetValue`, `SetValues`, `SetPosition` and `SetEquivalentParameters` are internal. The constructors are
+        their twins (each `SetValues` rebuilds the whole value), with `WithPosition` and `WithEquivalentParameters`.
+      - OCCT's defaults are the parameterless constructors: an undecided transition at Middle, parameters at
+        RealLast for a point, the zero infinite domain (also `default(IntRes2d_Domain)`).
+      - `EquivalentParameters` has `out` results; the DomainError OCCT documents on an open domain is not raised
+        (OCCT doesn't either). Accessors returning `const T&` return copies.
+      - **IntRes2d_Intersection is an abstract class** with OCCT's protected fields and methods (`lpnt`, `lseg`,
+        `done`, `reverse`, `Insert`, `Append`, `SetValues`, `ResetFields`, `ReversedParameters`), its protected
+        copy constructor, and `Assign` for its default assignment operator. The file-static helpers
+        (`TransitionEqual`, `InternalVerifyPosition`, the `PARAMEQUAL` macro) are private statics.
+3403. **Intf's results.**
+      - Intf_SectionPoint is a struct whose default is all zeros. OCCT's `operator==` is `IsEqual` (the logical
+        information only: types and addresses); the port's `==`/`Equals` compare every field exactly (rules,
+        section 3), so ported code that uses C++ `==` writes `IsEqual` (as Intf_SectionLine::IsClosed does).
+        `Merge` (which changes both points) is internal, without a twin: nothing in OCCT calls it.
+      - Intf_TangentZone and Intf_SectionLine are **sealed classes**, because they hold a sequence (a struct would
+        share it between copies). C++ copies are written `new Intf_TangentZone(z)` and `new Intf_SectionLine(l)`
+        (which, as OCCT's, doesn't copy the closed flag). Their mutators (`Append`, `Prepend`, `InsertBefore`,
+        `PolygonInsert`, `Reverse`, `Close`, ...) are internal, so the stored zones and lines that
+        `Intf_Interference.ZoneValue` and `LineValue` return can't be changed by callers.
+      - In `Intf_Interference::Insert(zone)` the C++ copies a zone and then removes it from the sequence; the port
+        re-inserts the removed object itself.
+      - Intf_Interference and Intf_Polygon2d are abstract classes; Intf is a static class. The `Dump` methods, which
+        print to std::cout or only in debug builds, are left out (ToString instead).
+3404. **Intf_Tool is a class** (a working tool, decision 21) whose fixed C++ arrays are .NET arrays allocated with
+      the object. The domain boxes are `in` and the result boxes `ref` (OCCT calls SetVoid on them, then reads them
+      back through Add and Update). The sorting tail that OCCT writes out in both Inters3d is kept twice.
+3405. **IntImpParGen.**
+      - The package class is a static class. The free functions of IntImpParGen_Tool.hxx (`NormalizeOnDomain`,
+        `Determine_Position`, `Determine_Transition`: older variants, used by IntCurve_IntConicConic) are the
+        internal static class `IntImpParGen_Tool`.
+      - Tangents and transitions that the functions change are `ref`, `DeterminePosition`'s position is `out`, and
+        `NormalizeOnDomain` takes its parameter by value (OCCT's `double&` is only read). The unused tolerance
+        arguments are kept.
+      - **IntImpParGen_Intersector.gxx is a generic class** (decision 202's approach),
+        `IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool> : IntRes2d_Intersection`,
+        with one interface per macro:
+        - `IIntImpParGen_ImpTool`: OCCT's IntImpParGen_ImpTool.hxx, the template class of an implicit curve (Value,
+          D1, D2, Distance, GradDistance, FindParameter), as instance methods; IntCurve_IConicTool implements it.
+        - `IIntImpParGen_ParTool<ParCurve>` (static abstract EpsX, NbSamples(C, U0, U1), Value, D2) and
+          `IIntImpParGen_ProjectOnPCurveTool<ParCurve>` (static abstract FindParameter, both forms), implemented by
+          IntCurve_PConicTool or Geom2dInt_Geom2dCurveTool, and IntCurve_ProjectOnPConicTool or
+          Geom2dInt_TheProjPCurOfGInter.
+        - `IIntImpParGen_MyImpParTool<TSelf, ImpTool, ParCurve>`: the math_FunctionWithDerivative that OCCT
+          constructs from the two curves, with a static abstract `Create(in ImpTool, in ParCurve)` for that
+          constructor.
+      - Curves and tools are passed `in`. The class is not abstract: OCCT's instantiations
+        (IntCurve_IntImpConicParConic, Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter) become sealed subclasses
+        with OCCT's constructors forwarded, in unit 3E. The public `FindU`, `FindV` and
+        `And_Domaine_Objet1_Intersections` keep OCCT's signatures (`out` points, `ref int NbResultats`).
+      Rejected: porting per instantiation here, since the instantiating types are IntCurve's and Geom2dInt's.
+3406. **TopClass is two internal static classes of generic methods.** OCCT 8's TopClass is two private headers
+      (`.pxx`) of inline template functions over the fields of the classifiers that include them
+      (BRepClass_FClass2dOfFClassifier and BRepClass_FClassifier in unit 3G, Geom2dHatch later), passed by
+      reference.
+      - They are `TopClass_Classifier2d.Reset/Compare` and `TopClass_FaceClassifier.Perform/State/Edge/
+        EdgeParameter`, with the fields as `ref` parameters (`out` where OCCT only writes them).
+      - The template parameters are constrained to internal interfaces naming what the bodies call:
+        - `ITopClass_Intersector<TheEdge>` (Perform, LocalGeometry); the intersector is also constrained to
+          IntRes2d_Intersection, for its results;
+        - `ITopClass_FaceExplorer<TheEdge>` (CheckPoint by `ref`, Segment and OtherSegment with `out` line and
+          parameter, the wire and edge iteration, CurrentEdge with `out` edge and orientation);
+        - `ITopClass_FClass2d<TheEdge>` (Reset, Compare, Parameter, ClosestIntersection, State, IsHeadOrEnd, and
+          `Intersector()` returning IntRes2d_Intersection, which a classifier implements explicitly over its own
+          intersector).
+      - OCCT's pointer to the closest intersection point is a copy (the points are values).
+      Rejected: per-instantiation copies (the bodies would be duplicated into BRepClass and Geom2dHatch, packages
+      of other units), and generics over the classifier's whole state (OCCT keeps that state in the classifiers).
+3407. **TopTrans_CurveTransition and TopTrans_SurfaceTransition are classes** (working objects, decision 21) with
+      OCCT's public Reset, Compare, StateBefore, StateAfter and the static GetBefore/GetAfter. OCCT never copies
+      them; the classifiers hold one and reset it. SurfaceTransition's 2×2 tables are NCollection_Array2 (1..2,
+      1..2); its file-static helpers and macros are private statics (`M_Unknown` is −100, as in the release
+      build). OCCT declares SurfaceTransition's private `UpdateReference` and `ComputeCos` but never defines them:
+      left out. A CurveTransition not yet Reset reports OUT/IN, as OCCT's does.
+3408. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 67). OCCT's GTests Intf_Tool (5) and
+      TopTrans_SurfaceTransition (2), and unit tests of known configurations:
+      - IntRes2d's values and result merging (through a test subclass of IntRes2d_Intersection);
+      - IntImpParGen's transitions and positions, and the generic intersector instantiated over a test implicit
+        circle and parametric segment (crossing, end point, arc domain, reversed parameters, errors);
+      - Intf's points, lines and zones, and 2D polygon interferences (crossing, at a vertex, overlap into a tangent
+        zone, self-intersection); Intf_Tool's boxes of lines and conics;
+      - TopTrans's curve and surface transitions;
+      - TopClass's face classifier instantiated over polygonal faces with a segment intersector (IN, OUT, ON,
+        through a vertex via TopTrans, a hole, no wires, rejection).
+      There is no native oracle for these packages; units 3E and 3G cover them indirectly.
+3409. **For later units.**
+      - 3E (IntCurve, Geom2dInt): instantiate IntImpParGen_Intersector as sealed subclasses (decision 3405).
+        IntCurve_IConicTool implements `IIntImpParGen_ImpTool`, the PConic and Geom2d curve tools the static
+        interfaces, and the MyImpParTool classes `IIntImpParGen_MyImpParTool` with `Create`. Derived intersections
+        use IntRes2d_Intersection's protected members as OCCT does; C++ `inter = other` between intersections is
+        `SetValues(other)` or `Assign(other)`. IntCurve_IntConicConic uses `IntImpParGen.DeterminePosition` and
+        `using static Occt.IntImpParGen_Tool` for `Determine_Transition` and `NormalizeOnDomain`. IntCurve's polygons
+        derive from the abstract Intf_Polygon2d (they fill `myBox`; `Segment` has `out` points), and
+        IntCurve_IntPolyPolyGen reads Intf_InterferencePolygon2d's points (`PntValue`, values) and zones
+        (`ZoneValue`, the stored zone). Domains are built with the constructors and closed with
+        `WithEquivalentParameters`, or with the internal `SetEquivalentParameters` on a local.
+      - 3F (Intf_InterferencePolygonPolyhedron, IntCurveSurface): use the internal mutators of Intf_TangentZone and
+        Intf_SectionLine, `Intf.PlaneEquation` and `Contain` (`out` results), and write C++ `==` on section points
+        as `IsEqual`.
+      - 3G (BRepClass): BRepClass_Intersector implements `ITopClass_Intersector<BRepClass_Edge>`,
+        BRepClass_FaceExplorer `ITopClass_FaceExplorer<BRepClass_Edge>`, and BRepClass_FClass2dOfFClassifier
+        `ITopClass_FClass2d<BRepClass_Edge>`, holding its fields and a TopTrans_CurveTransition as
+        `tests/OcctNet.ModelingAlgorithms.Tests/TopClass/TopClassTests.cs` does. If BRepClass_Edge is a class,
+        `CurrentEdge` must give a new edge each time, since the face classifier keeps the closest one.
