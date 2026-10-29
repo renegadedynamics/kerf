@@ -2931,7 +2931,8 @@ BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers f
 348. **BRepTools_NurbsConvertModification waits for 6A where it projects.**
       - NewCurve2d recomputes pcurves with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface,
         which unit 6A ports. Those three places throw `Standard_NotImplemented`, with a `TODO(6A)` describing OCCT's
-        code. So converting a shape with faces throws until 6A merges; a lone edge converts.
+        code. So converting a shape with faces throws until 6A merges; a lone edge converts. *Resolved by unit 3X
+        (decision 3902).*
       - The maps of converted geometry compare handles by reference (as decision 227).
       - `GetUpdatedEdges` returns the modifier's unfrozen edges, which BRepBuilderAPI_NurbsConvert goes on updating,
         so it is internal and returns the list itself.
@@ -3042,7 +3043,7 @@ BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers f
         - BRepTools_Modifier with BRepTools_CopyModification against BRepBuilderAPI_Copy (637,287 values);
         - with BRepTools_TrsfModification against BRepBuilderAPI_Transform with scalings, point and plane mirrors and
           rigid motions (588,203 values; faces on planes skipped until 6A, since OCCT computes their pcurves with
-          CurveOnPlane);
+          CurveOnPlane; included by unit 3X, decision 3903);
         - with BRepTools_GTrsfModification against BRepBuilderAPI_GTransform on B-spline faces (124,928 values);
         - CopyForWrite against BRepBuilderAPI_Copy(false, true), with its history (635,519 values);
         - History.Merge on random histories (36,350 values);
@@ -3068,7 +3069,7 @@ Numbers from 3801 are renumbered on merge.
       `BRepAdaptor_Curve::Initialize(E)` does: the 3D curve and its range, else the first curve on surface, and the
       location as the transformation. BRepGProp_Cinert and BRepGProp_EdgeTool take a `GeomAdaptor_TransformedCurve`,
       so a BRepAdaptor_Curve will be accepted unchanged; 3B replaces the helper's calls (BRepGProp.LinearProperties,
-      BRepLib_CheckCurveOnSurface.Init) and may narrow the signatures.
+      BRepLib_CheckCurveOnSurface.Init) and may narrow the signatures. *Resolved by unit 3X (decision 3901).*
 362. **BRepGProp's statics reset the caller's GProp_GProps in place.** OCCT assigns `Props = GProp_GProps(P)`; the
       port calls the new internal `GProp_GProps.Assign` (C++ copy assignment), so the caller's object, of any derived
       type, is the one filled. Each non-Eps form also has a functional overload returning a new system, for Bento:
@@ -3109,7 +3110,8 @@ Numbers from 3801 are renumbered on merge.
       GeomLib_CheckCurveOnSurface (decision 293); they keep the caller's adaptors; `UpdateTolerance` takes `ref double`.
 370. **A Foundation divergence found on the way:** the port's `NCollection_DataMap.Bound` keeps an existing value,
       where OCCT's Bound replaces it (that is OCCT's `TryBound`). Nothing in this unit calls Bound on a bound key; left
-      for Foundation to fix, with a check of its callers.
+      for Foundation to fix, with a check of its callers. *Fixed by unit 3X (decision 3904): Bound replaces, and
+      TryBind and TryBound are added; no ported caller's behaviour changes.*
 371. **Tests.**
       - Ported GTests: BRepGProp_Test (9 of 10; OCC49_CutShapeHasNoSymmetryAxis waits for BRepAlgoAPI_Cut). Their makers
         are replaced by BRep_Builder shapes (TestShapes, BRepGPropTestShapes), frozen; the sphere is one natural face
@@ -3133,3 +3135,64 @@ Numbers from 3801 are renumbered on merge.
         verdicts, all equal. Native BRepCheck_Shell, ValidateEdge and CheckCurveOnSurface aren't bound.
       - Not covered natively: polygon-only edges (Poly_Polygon3D isn't bound), BRepGProp_Vinert, Sinert, VinertGK and
         the functions directly (not bound; reached through the statics).
+
+## Phase 3: unit 3X, cross-unit integration
+
+The placeholders that units 3B and 3H left for each other and for unit 6A, replaced by OCCT's code now that all of them
+are merged, and a Foundation divergence fixed. Numbers from 3901 are renumbered on merge.
+
+3901. **BRepAdaptor_Curve replaces 3H's stand-in** (decision 361). `BRepGProp.LinearProperties` declares one
+      `BRepAdaptor_Curve` and calls `Initialize(aE)` for each edge, and `BRepLib_CheckCurveOnSurface.Init` makes a
+      `new BRepAdaptor_Curve(theEdge)`, as OCCT does; the internal helper `BRepLib_CheckCurveOnSurface.BRepAdaptorCurve`
+      is deleted. `BRepGProp_Cinert` (constructor and Perform) and every `BRepGProp_EdgeTool` method take a
+      `BRepAdaptor_Curve`, as OCCT's do; the remarks about the stand-in are gone from the generated documentation. The
+      values are unchanged: the helper built the same base-class adaptor as `BRepAdaptor_Curve::Initialize` (the
+      BRepGProp oracle tests stay bit-identical).
+3902. **BRepTools_NurbsConvertModification projects its pcurves** (decision 348). NewCurve2d's three
+      `Standard_NotImplemented` placeholders are OCCT's code: on a plane, `ProjLib_ComputeApprox` of the new 3D curve
+      (its B-spline, or its Bezier converted); elsewhere `ProjLib_ComputeApproxOnPolarSurface` from the old pcurve on
+      the surface widened by a tenth within its periods, translated back by a period when its start lands more than
+      half a period from the old pcurve's, or the old pcurve converted when the projection fails; on a seam, the
+      two-pcurve form, whose second curve is kept for the edge's second pass. The seam branch builds the adaptors and
+      the widened bounds that the placeholder left out.
+      - The projection is discarded at once, so the curve is read with `InternalBSpline()`, `InternalBezier()` and
+        `InternalCurve2d()` (decision 330): unfrozen, like the other branches' conversions, and frozen by BRep_Builder
+        when the modifier stores it.
+      - OCCT's `GeomAdaptor_Surface GAS(...); GAHS = new GeomAdaptor_Surface(GAS)` is a single construction (decision
+        331). OCCT declares `newTol`, `GAHS` and `ProjOnCurve` again in nested scopes, which C# forbids, so the plane
+        branch's last update and the polar projection are in their own blocks. The unused locals `myT` and
+        `TheTypeC2dBis` of the seam branch are left out.
+      - `BRep_Tool.CurveOnPlane`'s `Standard_NotImplemented` documentation, stale since 6A merged, is removed.
+3903. **Oracle coverage.**
+      - BRepBuilderAPI_NurbsConvert isn't bound, but BRepBuilderAPI_GTransform runs it before its own modifier. The new
+        `NURBS_conversion_answers_as_BRepBuilderAPI_GTransform` mirrors both steps on the port's side
+        (BRepBuilderAPI_NurbsConvert::Perform, with CorrectVertexTol, then the modifier with
+        BRepTools_GTrsfModification) on the global properties oracle's scenes (boxes, closed cylinders with their seam
+        and discs, holed faces, compounds at rigid, reversed and scaled locations, natural spheres, tori and patches,
+        B-spline faces, meshed boxes), with an identity or a random affine transformation: 48 scenes, 337 faces, 1,229
+        edges, 530,149 values, all bit-identical. CorrectVertexTol never had to replace a vertex in these scenes.
+      - The TrsfModification comparison now includes the faces on planes (their pcurves come from
+        `BRep_Tool::CurveOnPlane` on both sides): 637,103 values (588,203 before), all bit-identical. The face filter
+        that `CompareGeometry` took for it is removed.
+3904. **NCollection_DataMap.Bound replaces an existing value** (decision 370). OCCT 8's `Bound` (`emplaceImpl`
+      with `IsTry` false) destroys and reconstructs the value of a bound key and returns a pointer to it; `TryBound`
+      keeps it.
+      The port's `Bound` now replaces and returns a `ref`; `TryBind` (bool) and `TryBound` (ref) are added with OCCT's
+      keep-the-value meaning. `Bind` already replaced, and the other maps already matched OCCT (`NCollection_Map.Add`
+      and `NCollection_IndexedMap.Add` keep the existing key, `NCollection_IndexedDataMap.Add` ignores the item of a
+      bound key, ProjLib's IntDataMap.Bind replaces); the port has no NCollection_DoubleMap.
+      - **The audit.** OCCT calls `Bound` in two ported files. `BRepCheck_Shell` binds a new status list in `Minimum`
+        (only while `myMin` is false, that is right after Init has cleared the map, so the key isn't bound) and in
+        `InContext` (after an `IsBound` return): no change. `BRepTools_History` (AddGenerated, AddModified,
+        ReplaceGenerated, ReplaceModified, Merge) was ported with `Find` and `Bind` rather than `Bound`, with OCCT's
+        replacing meaning. No other ported code
+        calls Bound, TryBind or TryBound, so **no caller's behaviour changes**.
+3905. **Tests.**
+      - Foundation: OCCT's NCollection_DataMap GTests Rebind, TryBind_NewKey, TryBind_ExistingKey, TryBound_NewKey and
+        TryBound_ExistingKey, and three of the port's own for Bound (new key, existing key, a replaced list).
+      - ModelingData: the NURBS conversion of a frozen box (pcurves projected on the planes, the old parametrization
+        kept) and of a frozen cylinder face (circles projected on the polar surface, the seam with both pcurves a
+        period apart): every face on a B-spline surface, every curve and pcurve a B-spline, the pcurves on the surface
+        within the edge's tolerance of the 3D curve, the input unchanged and the result frozen. These replace the test
+        that expected `Standard_NotImplemented`.
+      - Oracle: decision 3903.

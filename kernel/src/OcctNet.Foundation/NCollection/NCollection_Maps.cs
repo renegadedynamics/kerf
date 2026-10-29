@@ -200,8 +200,25 @@ public class NCollection_DataMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
         return anIsNew;
     }
 
-    /// <summary>Binds the key if it isn't bound yet, and returns its value for writing.</summary>
+    /// <summary>
+    /// Binds the key to the value, replacing any existing value (as <see cref="Bind"/>), and returns the value for
+    /// writing (OCCT returns a pointer to it).
+    /// </summary>
     public ref TValue Bound(TKey theKey, TValue theItem)
+    {
+        ref TValue? aValue = ref CollectionsMarshal.GetValueRefOrAddDefault(myItems, theKey, out _);
+        aValue = theItem;
+        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref aValue);
+    }
+
+    /// <summary>Binds the key to the value only if the key isn't bound yet; false if it was (its value is kept).</summary>
+    public bool TryBind(TKey theKey, TValue theItem) => myItems.TryAdd(theKey, theItem);
+
+    /// <summary>
+    /// Binds the key to the value only if the key isn't bound yet, and returns the key's value (the existing one or
+    /// the new one) for writing.
+    /// </summary>
+    public ref TValue TryBound(TKey theKey, TValue theItem)
     {
         ref TValue? aValue = ref CollectionsMarshal.GetValueRefOrAddDefault(myItems, theKey, out bool anExists);
         if (!anExists)

@@ -43,8 +43,7 @@ public class BRepLib_CheckCurveOnSurface
         }
 
         // 3D curve initialization
-        // TODO(3B): new BRepAdaptor_Curve(theEdge)
-        Adaptor3d_Curve anAdaptor3dCurve = BRepAdaptorCurve(theEdge);
+        Adaptor3d_Curve anAdaptor3dCurve = new BRepAdaptor_Curve(theEdge);
 
         // Surface initialization
         Geom2d_Curve? aGeom2dCurve = BRep_Tool.CurveOnSurface(theEdge, theFace, out double aFirstParam, out double aLastParam);
@@ -106,42 +105,5 @@ public class BRepLib_CheckCurveOnSurface
     {
         myCOnSurfGeom.SetParallel(myIsParallel);
         myCOnSurfGeom.Perform(theCurveOnSurface);
-    }
-
-    /// <summary>
-    /// Stand-in for <c>new BRepAdaptor_Curve(E)</c> until unit 3B ports BRepAdaptor_Curve: its base class,
-    /// initialised as <c>BRepAdaptor_Curve::Initialize(E)</c> does.
-    /// </summary>
-    // TODO(3B): replace by BRepAdaptor_Curve
-    internal static GeomAdaptor_TransformedCurve BRepAdaptorCurve(in TopoDS_Edge E)
-    {
-        var aCurve = new GeomAdaptor_TransformedCurve();
-        TopLoc_Location L;
-        Geom_Curve? C = BRep_Tool.Curve(E, out L, out double pf, out double pl);
-        if (C is not null)
-        {
-            aCurve.Load(C, pf, pl);
-        }
-        else
-        {
-            BRep_Tool.CurveOnSurface(E, out Geom2d_Curve? PC, out Geom_Surface? S, out L, out pf, out pl);
-            if (PC is not null)
-            {
-                var HS = new GeomAdaptor_Surface();
-                HS.Load(S!);
-                var HC = new Geom2dAdaptor_Curve();
-                HC.Load(PC, pf, pl);
-                var aConSurf = new Adaptor3d_CurveOnSurface();
-                aConSurf.Load(HC, HS);
-                aCurve.LoadCurveOnSurface(aConSurf);
-            }
-            else
-            {
-                throw new Standard_NullObject("BRepAdaptor_Curve::No geometry");
-            }
-        }
-
-        aCurve.SetTrsf(L.Transformation());
-        return aCurve;
     }
 }

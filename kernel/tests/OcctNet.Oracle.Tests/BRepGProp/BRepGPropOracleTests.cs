@@ -70,7 +70,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
     // Scenes
 
-    private static (Twin<N.TopoDS_Shape, TopoDS_Shape>, bool) RandomScene(Oracle theOracle, int theScene)
+    internal static (Twin<N.TopoDS_Shape, TopoDS_Shape>, bool) RandomScene(Oracle theOracle, int theScene)
     {
         var aTwins = new GPropTwins();
         switch (theScene % 8)

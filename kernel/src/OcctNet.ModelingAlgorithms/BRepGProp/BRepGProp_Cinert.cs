@@ -11,10 +11,6 @@ namespace Occt;
 /// The global properties of a bounded curve in 3D space (the curve of an edge), by Gauss integration over each interval
 /// of continuity. The curve must be at least C1.
 /// </summary>
-/// <remarks>
-/// OCCT takes a BRepAdaptor_Curve; the port takes its base class, <see cref="GeomAdaptor_TransformedCurve"/>, until
-/// unit 3B ports BRepAdaptor_Curve (TODO(3B)).
-/// </remarks>
 public class BRepGProp_Cinert : GProp_GProps
 {
     /// <summary>An empty system.</summary>
@@ -23,7 +19,7 @@ public class BRepGProp_Cinert : GProp_GProps
     }
 
     /// <summary>The global properties of <paramref name="C"/>, inertia at <paramref name="CLocation"/>.</summary>
-    public BRepGProp_Cinert(GeomAdaptor_TransformedCurve C, in gp_Pnt CLocation)
+    public BRepGProp_Cinert(BRepAdaptor_Curve C, in gp_Pnt CLocation)
     {
         SetLocation(CLocation);
         Perform(C);
@@ -33,7 +29,7 @@ public class BRepGProp_Cinert : GProp_GProps
     public void SetLocation(in gp_Pnt CLocation) => loc = CLocation;
 
     /// <summary>Computes the global properties of <paramref name="C"/>.</summary>
-    public void Perform(GeomAdaptor_TransformedCurve C)
+    public void Perform(BRepAdaptor_Curve C)
     {
         double Ix, Iy, Iz, Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
         dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;

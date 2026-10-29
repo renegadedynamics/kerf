@@ -416,8 +416,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         theOracle.Same(N.BRep_Tool.Tolerance(theN), BRep_Tool.Tolerance(theP), theWhat + " tolerance");
     }
 
-    internal static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts,
-                                         Func<TopoDS_Face, bool>? theFaceFilter = null)
+    internal static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
     {
         foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE })
         {
@@ -457,12 +456,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
         foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in Explore(theShape, TopAbs_FACE))
         {
-            N.TopoDS_Face aNF = N.TopoDS.Face(aF.N);
-            TopoDS_Face aPF = TopoDS.Face(aF.P);
-            if (theFaceFilter is null || theFaceFilter(aPF))
-            {
-                CompareFace(theOracle, aNF, aPF, theCounts);
-            }
+            CompareFace(theOracle, N.TopoDS.Face(aF.N), TopoDS.Face(aF.P), theCounts);
         }
     }
 
