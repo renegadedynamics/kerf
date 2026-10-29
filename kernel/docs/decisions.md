@@ -2966,7 +2966,8 @@ BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers f
 352. **BRepTools_PurgeLocations** is a sealed public working object. `GetResult` and `ModifiedShape` freeze what they
       return; inside, it uses the modifier's and ReShape's internal forms.
       - TopTools_LocationSet comes with unit 3C, so its Add, Location and Index are private methods over a
-        `NCollection_IndexedMap<TopLoc_Location>` (`TODO(3C)`).
+        `NCollection_IndexedMap<TopLoc_Location>` (`TODO(3C)`). *Resolved after 3C merged:* it now holds a
+        `TopTools_LocationSet`, whose Add, Location and Index are the same code.
       - The replacements are recorded in the map's order, which isn't OCCT's (decision 18). They replace distinct
         shapes, so the result doesn't depend on it.
 353. **BRepAdaptor_Curve** derives from GeomAdaptor_TransformedCurve (decision 268), whose curve on surface is already

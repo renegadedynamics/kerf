@@ -18,9 +18,7 @@ public sealed class BRepTools_PurgeLocations
     private bool myDone;
     private TopoDS_Shape myShape = new();
     private readonly NCollection_IndexedMap<TopoDS_Shape> myMapShapes = new(TopTools_ShapeMapHasher.Instance);
-    // TODO(3C): TopTools_LocationSet, which unit 3C ports; locationSetAdd, locationSetLocation and locationSetIndex are
-    // its Add, Location and Index on this map.
-    private readonly NCollection_IndexedMap<TopLoc_Location> myLocations = new();
+    private readonly TopTools_LocationSet myLocations = new();
     private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMapNewShapes = new(TopTools_ShapeMapHasher.Instance);
     private BRepTools_ReShape? myReShape;
 
@@ -44,7 +42,7 @@ public sealed class BRepTools_PurgeLocations
         var aBadTrsfInds = new NCollection_DynamicArray<int>();
         for (ind = 1; ; ++ind)
         {
-            TopLoc_Location aLoc = locationSetLocation(ind);
+            TopLoc_Location aLoc = myLocations.Location(ind);
 
             if (aLoc.IsIdentity())
             {
@@ -72,7 +70,7 @@ public sealed class BRepTools_PurgeLocations
         for (inds = 1; inds <= aNbShapes; ++inds)
         {
             TopoDS_Shape anS = myMapShapes[inds];
-            int aLocInd = locationSetIndex(anS.Location());
+            int aLocInd = myLocations.Index(anS.Location());
             if (aLocInd == 0)
             {
                 continue;
@@ -165,7 +163,7 @@ public sealed class BRepTools_PurgeLocations
     private void AddShape(in TopoDS_Shape theS)
     {
         myMapShapes.Add(theS);
-        locationSetAdd(theS.Location());
+        myLocations.Add(theS.Location());
 
         var It = new TopoDS_Iterator(theS, false, false);
         while (It.More())
@@ -173,47 +171,6 @@ public sealed class BRepTools_PurgeLocations
             AddShape(It.Value());
             It.Next();
         }
-    }
-
-    // TopTools_LocationSet::Add: the location's elementary data first, then the location itself.
-    private int locationSetAdd(in TopLoc_Location L)
-    {
-        if (L.IsIdentity())
-        {
-            return 0;
-        }
-        int n = myLocations.FindIndex(L);
-        if (n > 0)
-        {
-            return n;
-        }
-        TopLoc_Location N = L;
-        do
-        {
-            myLocations.Add(new TopLoc_Location(N.FirstDatum()));
-            N = N.NextLocation();
-        } while (!N.IsIdentity());
-        return myLocations.Add(L);
-    }
-
-    // TopTools_LocationSet::Location: the identity out of range.
-    private TopLoc_Location locationSetLocation(int I)
-    {
-        if (I <= 0 || I > myLocations.Extent())
-        {
-            return new TopLoc_Location();
-        }
-        return myLocations[I];
-    }
-
-    // TopTools_LocationSet::Index
-    private int locationSetIndex(in TopLoc_Location L)
-    {
-        if (L.IsIdentity())
-        {
-            return 0;
-        }
-        return myLocations.FindIndex(L);
     }
 
     /// <summary>The shape without the locations that aren't rigid motions, frozen.</summary>
