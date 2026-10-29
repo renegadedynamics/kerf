@@ -68,6 +68,9 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
                 double aMinDiff = Min(aDirectDiff, Min(aCrossPeriodDiff1, aCrossPeriodDiff2));
                 if (aMinDiff < aSegmentTol)
                 {
+                    // OCCT: aMinDiff is 0 when U2 ends a whole period from U1 to the last bit (U2 = Last - an ulp);
+                    // Segment with a tolerance of 0 then leaves a pole unwritten, which OCCT reads uninitialised and
+                    // the port reads as 0 (occt-issues.md).
                     aSegmentTol = aMinDiff * 0.01;
                 }
             }
