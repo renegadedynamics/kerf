@@ -68,6 +68,8 @@ public class BRepMesh_DelabellaMeshAlgoFactory : IMeshTools_MeshAlgoFactory
 
             default:
             {
+                // OCCT: surfaces of extrusion, offset and other surfaces get the NURBS splitter too, which asks a
+                // surface of extrusion for its V poles (Standard_NoSuchObject): the face is left unmeshed
                 BRepMesh_DelaunayDeflectionControlMeshAlgoOfDelabella<BRepMesh_NURBSRangeSplitter> aMeshAlgo = new();
                 aMeshAlgo.SetPreProcessSurfaceNodes(true);
                 return aMeshAlgo;

@@ -377,3 +377,24 @@ Phase 4 (part): the Delaunay core (unit 4B).
   result on every run and in parallel); Watson against Delabella on the same constrained point sets; the heap order
   against orders recorded from an MSVC-built program; Delabella against output recorded from OCCT's own delabella.cpp
   built with MSVC.
+
+Phase 4 (part): face meshing and the incremental mesh (unit 4D). Shapes now mesh as native OCCT meshes them.
+
+- `OcctNet.ModelingAlgorithms`: the face algorithms (`BRepMesh_BaseMeshAlgo`, `ConstrainedBaseMeshAlgo`,
+  `DelaunayBaseMeshAlgo`, `CustomBaseMeshAlgo`, `DelabellaBaseMeshAlgo`; the node-insertion, Delaunay node-insertion and
+  deflection-control algorithms as generics over the range splitter, for Watson and, as `...OfDelabella`, for
+  Delabella); the range splitters of every surface type (UVParam, NURBS, Cylinder, Sphere, Torus, Extrusion, Undefined,
+  BoundaryParams); `BRepMesh_MeshAlgoFactory` and `BRepMesh_DelabellaMeshAlgoFactory`; `BRepMesh_FaceDiscret`;
+  `BRepMesh_Context`; the plugin registry (`BRepMesh_DiscretAlgoFactory` with "FastDiscret" and `XBRepMesh_Factory`'s
+  "XBRepMesh", `BRepMesh_DiscretFactory`). `BRepMesh_IncrementalMesh` now meshes: a frozen shape on a copy, whose
+  frozen result is `Shape()` with a `History()`, or functionally with `BRepMesh_IncrementalMesh.Meshed(shape,
+  parameters)`. Parallel meshing gives the serial result bit for bit.
+- Tests: OCCT's BRepMesh_BaseMeshAlgo, BRepMesh_DiscretAlgoFactory and BRepMesh_IncrementalMesh GTests (the Fuse case
+  waits for phase 6) and the three BRepMesh_Delaun GTests that waited for face meshing; unit tests of the range
+  splitters, of Watson and Delabella on every surface type, of the parameters native OCCT's binding can't set, and of
+  Delabella in parallel. Oracle milestone 1 against native BRepMesh_IncrementalMesh on the same input, with several
+  deflections and angles, relative and absolute, serial and parallel: data/occ, the mesh group's 82 public data
+  files, the public dataset's .brep files, random native shapes (primitives, fillets, Booleans, sweeps) and
+  re-meshed shapes. Every compared face is bit-identical to native (nodes, UV nodes, triangles, deflection), every
+  BRep text is byte-identical but for the Checked flag of faces the mesher keeps (decision 4605), the status flags
+  agree, and BRepGProp and BRepBndLib on the meshes are bit-identical; the port's parallel runs equal its serial run.
