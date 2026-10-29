@@ -440,3 +440,17 @@ Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spi
   oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
   (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
   6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).
+
+Phase 6 (part): sewing (unit 6S).
+
+- `OcctNet.ModelingAlgorithms`: BRepBuilderAPI_Sewing (free, contiguous, multiple and degenerated edges, cutting of
+  bounds, non-manifold mode, `Modified`/`ModifiedSubShape`, the context), BRepBuilderAPI_FastSewing,
+  BRepBuilderAPI_VertexInspector and BRepBuilderAPI_BndBoxTreeSelector. What sewing hands out is frozen; given frozen
+  shapes it sews an exact copy and gives back the caller's own sub-shapes wherever it changed nothing, so the inputs
+  are never written.
+- Tests: OCCT's BRepBuilderAPI_Sewing GTests; unit tests of sewing and fast sewing; oracle tests against native
+  sewing, as Draw's `sewing` sets it up, on the exploded faces of 35 data/occ shapes at 1e-6, 1e-2, 1 and 100 (140
+  sewings) and on the sewing group's 501 public cases at their grids' tolerances and their 499 inputs at 1e-6:
+  every sewn shape, edge list, `Modified` and `ModifiedSubShape` equal through BRep text (5,261 of 5,807 texts
+  byte-identical, the rest but for the Free flag), every count equal; where native OCCT varies from run to run (2
+  sewings) the port gives one of its results.

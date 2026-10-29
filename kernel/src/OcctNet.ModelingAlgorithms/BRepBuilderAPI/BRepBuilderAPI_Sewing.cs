@@ -1071,7 +1071,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             }
 
             // Make second PCurve sameRange with the 3d curve
-            c2d2 = (Geom2d_Curve)c2d2!.Copy();
+            c2d2 = (Geom2d_Curve)c2d2!.Copy(); // OCCT: null when only the seam's reversed pcurve exists
 
             if (!secForward)
             {
@@ -4833,7 +4833,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             aPS.Next();
         }
 
-        myMergedEdges.Clear();
+        myMergedEdges.Clear(); // OCCT: CreateOutputInformations reads it afterwards, so no section is bound after sewing
     }
 
     //=================================================================================================
@@ -5143,7 +5143,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 for (; iter.More(); iter.Next())
                 {
                     TopoDS_Shape section = iter.Value();
-                    if (!myMergedEdges.Contains(section))
+                    if (!myMergedEdges.Contains(section)) // OCCT: empty after EdgeRegularity when sewing
                     {
                         continue;
                     }

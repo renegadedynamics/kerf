@@ -589,3 +589,17 @@ float-identical to native's on every compared face and edge.
 |---|---|---|
 | build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
 | BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |
+
+## Phase 6: unit 6S, Sewing
+
+Found while porting BRepBuilderAPI_Sewing and FastSewing. Reproduced in the port, each marked `// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepBuilderAPI_Sewing::Perform` → `EdgeRegularity` (BRepBuilderAPI_Sewing.cxx) | EdgeRegularity ends with `myMergedEdges.Clear()`, and CreateOutputInformations, called after it, binds a section to its boundary only if the section is in `myMergedEdges` | With sewing on (the default), `IsSectionBound` is always false and `SectionToBoundary` always throws; they work only in analysis mode (`option1 = false`). Pinned by `A_bound_is_cut_at_a_T_junction_and_its_sections_know_their_boundary`; the oracle compares the number of bound sections with native's |
+| `BRepBuilderAPI_Sewing::SameParameterEdge` (the two-edge form) | When the second edge has only the reversed pcurve of a seam on a face (`c2d2` null, `c2d21` not), dereferences the null `c2d2` | A crash in native OCCT; a NullReferenceException in the port. By reading |
+| `FreeEdge`, `MultipleEdge`, `ContigousEdge`, `ContigousEdgeCouple`, `DeletedFace`, `DegeneratedShape` | The range checks accept index 0 (`index < 0 \|\| index > Nb...`) | Index 0 then fails in the map (Standard_OutOfRange) instead of the method's own check. Kept |
+| `BRepBuilderAPI_Sewing::EdgeRegularity` | Iterates `myMergedEdges` (a map keyed by shapes) in address order | Harmless: each edge's regularity is encoded on its own. The port iterates in insertion order |
+| `BRepBuilderAPI_Sewing::Dump` | Writes to `std::cout` only | The port adds `Dump(TextWriter)` |
+| `BRepBuilderAPI_Sewing` (native runs, found by the oracle) | The sewn shape's sub-shapes come out in an order that can change from run to run of the same sewing in one process (address-ordered maps; plan 2.4) | tests/sewing tol_0_01/Q5 and CNP001_projoiei.rle at 1e-6 gave two native orders over seven runs; the port's order is one of them, the same every run. The oracle compares with every native variant |
+| `BRepBuilderAPI_Sewing` (in place, found by the oracle) | Sews its inputs in place: in a few cases (tests/sewing G3, G4 at 0.01, Y7 at 100; CCH_propag.rle, CCH_r2.rle at 1e-6) it writes into input edges or vertices (SameParameterShape runs BRepLib::SameParameter on every edge of the result, the inputs' own edges included), and then answers that they aren't modified (`IsModified`, `IsModifiedSubShape`) | The port never writes a frozen input: it sews a copy (decision 6802) and answers that those inputs are modified, giving the changed copy. Expected; the oracle detects the native write and compares everything else |
