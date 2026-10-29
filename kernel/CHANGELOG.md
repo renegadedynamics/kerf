@@ -129,3 +129,16 @@ Phase 2 (part): bounding boxes.
 - Tests: the BndLib and GeomBndLib GTests; OCCT's box errors pinned; oracle tests of the boxes through native
   BRepBndLib (Add, AddOptimal, AddOBB on edges and faces) and of Extrema_ExtCS's analytic cases through
   BRepExtrema_DistShapeShape.
+
+Phase 2 (part): GeomLib and Approx.
+
+- `OcctNet.ModelingData`: GeomLib (the statics: 3D curves from 2D curves and from curves on surfaces, range changes,
+  curve and surface extensions, inertia axes, closure and normal estimation; `GeomLib_CheckCurveOnSurface`,
+  `GeomLib_Tool`, `GeomLib_IsPlanarSurface`, `GeomLib_Interpolate`, the tangent checks and the small classes); the
+  rest of Approx (`Approx_SameParameter`, `Approx_CurveOnSurface`, `Approx_Curve2d`, `Approx_Curve3d`,
+  `Approx_FitAndDivide` and `Approx_FitAndDivide2d`, `Approx_CurvlinFunc`, `Approx_CurvilinearParameter`,
+  `Approx_SweepFunction`, `Approx_SweepApproximation`); `GeomConvert_SurfToAnaSurf`. GeomLib's functions never change
+  the caller's geometry: where OCCT changes it in place, the port changes a copy.
+- Tests: the GeomLib_CheckCurveOnSurface GTest; unit tests of every class; oracle tests of GeomLib_IsPlanarSurface,
+  and, through BRepLib and BRepTools, of Approx_SameParameter, GeomLib::BuildCurve3d, GeomLib::SameRange and
+  GeomLib_CheckCurveOnSurface against native OCCT, all bit-identical.
