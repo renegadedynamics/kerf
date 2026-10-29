@@ -36,7 +36,7 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     {
         myDeflection = 0.0;
         myNodes = new NCollection_Array1<int>(1, Nodes.Length());
-        myNodes.Assign(Nodes);
+        myNodes.Assign(Nodes); // OCCT: the bounds of Nodes are taken too
     }
 
     /// <summary>

@@ -214,6 +214,8 @@ public class Poly_Connect
     /// </summary>
     public void Triangles(int T, out int t1, out int t2, out int t3)
     {
+        // OCCT documents t1, t2, t3 as across n2-n3, n3-n1, n1-n2
+
         int index = 6 * (T - 1);
         t1 = myAdjacents[index + 1];
         t2 = myAdjacents[index + 2];

@@ -161,6 +161,7 @@ public class Poly_MergeNodesTool : Standard_Transient
         }
 
         // compress data
+        // OCCT: throws Standard_RangeError when no node was added (an aliased array can't be empty)
         myPolyData.ResizeNodes(myNbNodes, true);
         myPolyData.ResizeTriangles(myNbElems, true);
         return myPolyData;
@@ -539,7 +540,8 @@ public class Poly_MergeNodesTool : Standard_Transient
             _ = theNorm;
             if (myInvTol <= 0.0f)
             {
-                // compute DJB2 hash of a string; the bytes are signed (MSVC's char), as in OCCT on Windows
+                // compute DJB2 hash of a string
+                // OCCT hashes the bytes as char: signed on MSVC (followed here), unsigned on ARM/GCC
                 ReadOnlySpan<byte> aBytes = MemoryMarshal.AsBytes(new ReadOnlySpan<NCollection_Vec3<float>>(in thePos));
                 uint aHashCode = 0;
                 foreach (byte c in aBytes)

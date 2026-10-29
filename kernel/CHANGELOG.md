@@ -27,3 +27,12 @@ Phase 1 (part): bounding boxes and bounding volume hierarchies.
   Bnd_Tools); the BVH package (boxes, trees, binned/linear/sweep-plane/spatial-median builders, sorters,
   traversals, box sets, triangulations, distance fields), generic over the element and vector type.
 - Tests: the Bnd, BVH and NCollection_Vec4 GTests; oracle tests of Bnd_Box and Bnd_OBB against native OCCT.
+
+Phase 1 (part): meshes.
+
+- `OcctNet.Foundation`: the Poly package (Poly_Triangulation with run-time single or double precision nodes and
+  span access for bulk reads, Poly_Triangle, polygons in 2D, 3D and on triangulations, Poly_Connect,
+  Poly_MergeNodesTool, Poly_CoherentTriangulation, Poly_MakeLoops, Poly's reading, writing and intersection
+  tools); NCollection_AliasedArray, NCollection_PackedMapOfInteger, NCollection_Primes.
+- Tests: unit tests of the Poly package (OCCT has no Poly GTests); oracle tests of Poly_Triangulation and
+  Poly_Triangle against native OCCT.

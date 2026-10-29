@@ -36,6 +36,7 @@ public class Poly_CoherentNode
         myIndex = -1;
         myUV0 = Precision.Infinite();
         myUV1 = Precision.Infinite();
+        // OCCT leaves myNormal uninitialised
     }
 
     /// <summary>A node at a point, without UV coordinates, normal or triangles.</summary>

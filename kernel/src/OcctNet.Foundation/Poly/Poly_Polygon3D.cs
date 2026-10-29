@@ -97,6 +97,7 @@ public class Poly_Polygon3D : Standard_Transient
     /// </summary>
     public NCollection_Array1<double> Parameters()
     {
+        // OCCT dereferences the null handle
         Standard_NullObject_Raise_if(myParameters is null, "Poly_Polygon3D::Parameters : parameters is NULL");
         return myParameters!.Array1();
     }

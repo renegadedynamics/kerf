@@ -171,3 +171,54 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 49. **Twins for Bnd's bare `Set` and `Add` methods**: `Bnd_Box.FromPoint`, `Bnd_Box.Void()`, `Bnd_OBB.FromPoints`,
     `Bnd_OBB.Void()` (static factories), and `Added`, `Enlarged`, `Opened*`, `Updated`, `Limited`, ... Methods whose
     output OCCT leaves untouched in some cases take `ref` rather than `out` (`Bnd_Range.GetMin/GetMax/GetBounds`).
+
+## Phase 1: Poly (29 October 2026)
+
+301. **Poly_ArrayOfNodes and Poly_ArrayOfUVNodes keep OCCT's run-time precision** through a port of
+     `NCollection_AliasedArray` that holds a .NET array of the element type (`gp_Pnt[]` or
+     `NCollection_Vec3<float>[]`, `gp_Pnt2d[]` or `NCollection_Vec2<float>[]`, chosen by the stride) plus a byte
+     offset, and reads it through typed references (`Unsafe.As`, `MemoryMarshal`). Rejected: a `byte[]` buffer
+     (MapNodeArray couldn't share it as a `gp_Pnt` array) and two typed arrays in one class (OCCT's stride-based
+     API wouldn't carry over). The "wrapping" constructors take an array and a start index and share it, as OCCT's
+     share memory; `Move` leaves the moved-from array referring to the storage, as in OCCT.
+302. **Bulk reads for Bento** (additions on Poly_Triangulation): `NodeCoordinates()`/`NodeCoordinatesF()` (x, y, z
+     per node, without copying, in the stored precision; the other precision throws `Standard_TypeMismatch`),
+     `CopyNodeCoordinatesTo(Span<double>)`/`(Span<float>)` (either precision), `TriangleIndices()` (three 1-based
+     indices per triangle), `TriangleSpan()`, `UVNodeCoordinates()`/`UVNodeCoordinatesF()`, `NormalComponents()`.
+     The spans are valid until the arrays are resized. Poly_Triangle is exactly three `int`s so the triangle
+     array casts to indices.
+303. **Poly_Triangulation and the polygon classes keep public mutators**: they are mutable mesh containers filled
+     by the mesher (decision 21). Their mutators are to become internal (or to throw once frozen) when
+     triangulations are attached to shapes. Poly_Triangle follows the value-type rules: `Set` and `ChangeValue` are
+     internal, the twins are the constructor (for `Set(n1, n2, n3)`) and `WithNode`.
+304. **Poly_CoherentNode, Poly_CoherentTriangle and Poly_CoherentLink are classes**, not structs, although OCCT uses
+     them by value: the coherent triangulation stores pointers to its triangles and links (neighbours, per-node ring
+     lists) and compares addresses, so they need identity. C++ assignments of them (`theTriangle =
+     Poly_CoherentTriangle(...)`) are an internal `Assign`. Poly_CoherentNode holds a gp_XYZ instead of deriving from
+     it. Allocator arguments are dropped. The triangulation's iterators, like OCCT's, don't visit elements appended
+     during the iteration.
+305. **Poly_Connect, Poly_MakeLoops and Poly_MergeNodesTool are classes** (algorithms; OCCT's first two are used by
+     value). Poly_MakeLoops' helpers are abstract classes; `OnAddLink`, called only by OCCT's debug builds, is
+     never called. `Poly_MakeLoops.Link` is a struct with public fields as in OCCT, public `Reverse`/`Nullify`, and
+     OCCT's unordered `operator==` as `Equals`/`==` (the equality its maps use).
+306. **Poly_MergeNodesTool's node map is ported with OCCT's buckets**: NCollection_BaseMap's bucket counts
+     (`NCollection_Primes`, added), resizing and rehash order, the DJB2 hash of the float position with MSVC's
+     signed `char`, and the cell hash. When several merged nodes could match a new one, the first found depends on
+     the bucket chains, so this keeps OCCT's choice. The element map, whose order doesn't matter, is an
+     `NCollection_Map`.
+307. **`NCollection_PackedMapOfInteger`** (OCCT's `NCollection_PackedMap<int>`, alias `TColStd_PackedMapOfInteger`)
+     is ported with its buckets and iteration order, because Poly_MakeLoops takes its next start link from that
+     order. 32-bit instantiation and set operations only (no boolean operations between maps).
+308. **Poly's streams**: `Write`/`Dump` take a `TextWriter` and format numbers as a default C++ stream does (`%g`
+     with six digits: .NET's "G6" with a lowercase exponent; `inf`, `nan`), `std::setw` as padding, so files are
+     OCCT's byte for byte. `Read*` take a `TextReader` and follow C++ extraction: a failed read gives 0 and fails
+     every later read. `Poly::PolygonProperties`, a template on the container, has overloads for
+     NCollection_Array1 and NCollection_Sequence (the instantiations OCCT uses). `Poly::Intersect` and
+     `IntersectTriLine` take their outputs by `ref` (unchanged on a miss).
+309. **Left out of Poly_Triangulation**: the `OSD_FileSystem` argument of the deferred-loading methods (the methods
+     are kept, without it), `DumpJson`, the `size_t` overloads of the node arrays. `MapNormalArray` returns a copy:
+     a .NET float array can't alias an array of vectors. The cached range is a `StrongBox<Bnd_Box>` behind a `Lock`
+     (OCCT: an atomic pointer and a shared mutex). Poly_MeshPurpose is a `[Flags]` enum over `uint`.
+310. **`NCollection_IndexedMap.Substitute`** was added (Poly_MakeLoops replaces keys in place). Known difference left
+     as is: OCCT's `NCollection_Array1::Resize(lower, upper)` throws for an empty range, the port's doesn't, so
+     `Poly_Triangulation.ResizeTriangles(0)` succeeds in the port where OCCT throws.

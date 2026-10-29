@@ -252,6 +252,7 @@ public class NCollection_AliasedArray
 
     public T Last<T>() where T : unmanaged => Value<T>(mySize - 1);
 
+    // OCCT returns Value<>() here, which doesn't compile if used
     public ref T ChangeLast<T>() where T : unmanaged => ref ChangeValue<T>(mySize - 1);
 
     /// <summary>

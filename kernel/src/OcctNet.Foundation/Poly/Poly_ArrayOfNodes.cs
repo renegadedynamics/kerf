@@ -39,6 +39,7 @@ public class Poly_ArrayOfNodes : NCollection_AliasedArray
     public Poly_ArrayOfNodes(NCollection_Vec3<float>[] theBegin, int theStart, int theLength)
         : base(theBegin, theStart * THE_FLOAT_STRIDE, THE_FLOAT_STRIDE, theLength) { }
 
+    // OCCT allocates without initialising the nodes; .NET arrays are zeroed
     protected override Array allocate(int theLength)
         => myStride == THE_DOUBLE_STRIDE ? new gp_Pnt[theLength] : new NCollection_Vec3<float>[theLength];
 
