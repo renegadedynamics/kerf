@@ -4701,3 +4701,89 @@ numbers (486–497).
       - Phase 7: ShapeFix works on its own copies and calls the internal in-place writers of ShapeBuild_Edge,
         `TransferRange`, `InternalCopyNMVertex` and `ShapeExtend_WireData.Reverse(face)` on edges it owns. CheckTail's
         parts arrive frozen. `ShapeExtend.Init` loads SHMessage then.
+## Phase 4: unit 4A, mesh foundations (29 October 2026)
+
+Numbers from 4101 are placeholders, renumbered on merge. Plan decisions are cited by their merged numbers (486–497).
+
+519. **Placement.** Message (Algorithm, ExecStatus, Status, StatusType, Gravity, ConsoleColor, Msg, MsgFile's
+      registry, Printer, PrinterOStream, Messenger, the `Message` statics), NCollection_EBTree, NCollection_MapAlgo,
+      NCollection_PackedMapAlgo.Unite and `OSD_Parallel` are in OcctNet.Foundation (TKernel); IMeshData, IMeshTools,
+      BRepMeshData and BRepMesh in OcctNet.ModelingAlgorithms (TKMesh depends on TKTopAlgo). Tests are in
+      `tests/OcctNet.Foundation.Tests/{Message,NCollection,OSD}`, `tests/OcctNet.ModelingAlgorithms.Tests/BRepMesh` and
+      `tests/OcctNet.Oracle.Tests/BRepMesh`.
+520. **Message for 4A.** Left out: Report, Alert, Attribute(Meter/Object/Stream), Level, CompositeAlerts,
+      PrinterSystemLog, PrinterToReport, `DefaultReport`, the metric helpers, DumpJson. Message_MsgFile is only its
+      in-memory table: `Load`, `LoadFile`, `LoadFromEnv` and `LoadFromString` are left out, so no result depends on
+      files or the environment, and `AddMsg` is internal. TCollection's string overloads are one `string` overload;
+      Msg's ExtendedString `Arg` is `ArgExtended`. An algorithm's message is looked up under its .NET class name
+      (OCCT's), then its base classes' up to Standard_Transient; without an `AddMsg` the text is OCCT's "Unknown
+      message invoked with the keyword ..." surrogate. `Message_ExecStatus` is a struct with internal mutators and
+      public twins (`With`, `Without`, `Added`, `|`, `&`); Message_Algorithm, Msg and Messenger are working objects.
+521. **Decision 493's messenger.** The process-wide default messenger has no printer; `Message.SetDefaultMessenger` is
+      internal (Draw-lite installs a printer). A messenger's printer list changes only internally (`AddPrinter`,
+      `RemovePrinter(s)`, `ChangePrinters`); `Printers()` returns a copy; `new Message_Messenger()` keeps OCCT's console
+      printer, so only an explicit construction prints. The C++ stream buffer's `<<` is `Append` and its destructor
+      `Flush`/`Dispose`: ported code writes `Message.SendFail().Append(...).Flush()`.
+522. **`OSD_Parallel` (decision 487).** `For(begin, end, Action<int>, isForceSingleThreadExecution)` and
+      `ForEach<T>(IEnumerable<T>, Action<T>, ..., nbItems)` run a plain loop when the flag is set, when there is at most
+      one item, or when the runtime has no threads (`OperatingSystem.IsBrowser()` or `IsWasi()`, checked once); the
+      first inner exception of an `AggregateException` is rethrown with its stack (decision 431). `NbLogicalProcessors()`
+      is always `Environment.ProcessorCount`, even when serial: DistShapeShape, BRepCheck and CheckCurveOnSurface split
+      their work by it and the split can decide the result, so a serial run must split as a parallel one does.
+      `ForceSerialScope()` is an `AsyncLocal` test hook. Left out: `ToUseOcctThreads`, OSD_ThreadPool and its Launcher.
+      The loops of phases 1 to 3 moved onto it, keeping each sequential flag: BVH_DistanceField, BVH_LinearBuilder,
+      BVH_RadixSorter, BRepCheck_Analyzer (also its thread count), BRepExtrema_DistShapeShape (its private
+      `ParallelFor` removed; a body's exception is now unwrapped, as decision 431 asks) and GeomLib_CheckCurveOnSurface
+      (thread count; any exception type unwrapped). BVH_QueueBuilder's OSD_Thread path builds on the calling thread when
+      `OSD_Parallel` is serial. Each has a test that the serial fallback gives the normal result.
+523. **NCollection_EBTree, NCollection_MapAlgo.** EBTree derives from the ported UBTree, maps objects to their leaves
+      (with an optional comparer) and redoes OCCT's node fix-ups after Gemmate and Kill. MapAlgo is generic over
+      `NCollection_Map<TKey>`; OCCT's `Exchange` into a temporary map is a copy and `Clear` (`NCollection_Map.Exchange`
+      added). Only `Unite` of PackedMapAlgo is ported (for Message_Algorithm); `NCollection_PackedMapOfInteger.Assign`
+      copies node for node. `Bnd_Box2d` implements `INCollection_UBTreeBnd` (IMeshData's BndBox2dTree).
+524. **BRepMesh_ShapeTool::Range without ShapeAnalysis.** OCCT calls `ShapeAnalysis_Edge::PCurve` and `Curve3d`
+      (unit 4S). So that 4A doesn't wait for 4S, ShapeTool holds private copies of those two bodies
+      (`shapeAnalysisEdgePCurve`, `shapeAnalysisEdgeCurve3d`), to be replaced by `new ShapeAnalysis_Edge()` calls once
+      4S is merged.
+525. **The mesher's non-freezing attach (decision 488).** `BRep_Builder.UpdateFaceUnfrozen` and three
+      `UpdateEdgeUnfrozen` forms (3D polygon; polygon on triangulation; a seam's pair) are internal forms of
+      UpdateFace/UpdateEdge that don't freeze the triangulation or polygons they attach (the representations'
+      constructors, `BRep_Polygon3D.Polygon3D` and `BRep_TFace.Triangulation` take a `theToFreeze` flag). Only
+      BRepMesh_ShapeTool calls them, for every write (AddInFace, NullifyFace, NullifyEdge, UpdateEdge). They still throw
+      on a frozen face or edge. `FreezeGraph` freezes what they attached: `BRep_TEdge.FreezeRepresentations` calls the
+      new `BRep_CurveRepresentation.FreezeContents` (the polygons and triangulations of the polygon representations);
+      faces already froze their triangulations. Tested on a published graph (triangulations, polygons on
+      triangulation, seam pairs, 3D polygons).
+526. **The copy-for-write shell of BRepMesh_IncrementalMesh (decision 489).** `Perform(IMeshTools_Context)` is OCCT's,
+      wrapped: on a shape whose graph holds a frozen TShape (`BRepTools.HoldsFrozen`, new, internal), it meshes
+      `ExactCopyForWrite` of it, then `KeepUnchanged` gives back the input's unchanged sub-shapes, the result's graph is
+      frozen and becomes `Shape()`, and `History()` (new) maps the input's sub-shapes to it. An unfrozen shape is meshed
+      in place with an empty history; a user break leaves `Shape()` the input. `Meshed(shape, parameters[, out
+      history])` is the functional twin: it always copies, and returns a frozen result. Unit 4A's `Perform()` uses a
+      context without tools (`newDefaultContext`, which unit 4D replaces by `new BRepMesh_Context(MeshAlgo)`), so it
+      meshes nothing and gives back a frozen input itself. `SetParallelDefault` is internal (decision 492). Tested with
+      a stub mesher: a frozen input is never written, a meshed result shares the input's vertices and maps each face,
+      re-meshing an adequately meshed result gives it back, and an unfrozen shape is meshed in place.
+527. **IMeshData's shapes.** Handles and raw pointers are references to the classes; maps keyed by pointers take
+      `ReferenceEqualityComparer.Instance` and iterate in insertion order (NCollection_Map is a HashSet, whose
+      enumeration order doesn't depend on hash codes, so decision 490 holds without a new map). IMeshData_StatusOwner is
+      an interface implemented by Face, Wire and Edge, each holding its status mask. `std::pair<double, double>` is a
+      value tuple `(double first, double second)`. IMeshData_Types.hxx's typedefs are written out (its file holds the
+      table). BRepMeshData's `std::deque`s are lists, and the accessors returning `T&` return `ref T` into the list (not
+      to be kept across an insertion or a removal). The allocators go; the preallocation sizes stay.
+528. **IMeshTools_Parameters** is OCCT's struct with public fields, an explicit parameterless constructor with OCCT's
+      defaults (`default(T)` differs, documented), and field-by-field equality and hash (doubles by `double.Equals`,
+      so NaN equals itself and the struct can key a cache).
+529. **Exceptions in the mesher.** `IMeshTools_ModelAlgo.Perform` and `IMeshTools_ModelBuilder.Perform` catch what
+      OCCT's `catch (Standard_Failure)` under OCC_CATCH_SIGNALS catches (Standard_Failure, and the .NET forms of access
+      violations: null reference, invalid cast, index and argument out of range, division by zero) through
+      `IMeshTools_ModelAlgo.IsCaughtFailure`, which 4C and 4D use for their per-face and per-edge catches too. A write
+      into a frozen object (Standard_ImmutableObject, TopoDS_LockedShape) is let through, as decision 423.
+530. **Generics and statics.** `BRepMesh_EdgeParameterProvider<ParametersCollection>` is constrained to the new
+      `INCollection_ArrayRead<T>` (Lower, Upper, Value), which NCollection_Array1 and IMeshData_ParametersListArrayAdaptor
+      implement. BRepMesh_DefaultRangeSplitter keeps OCCT's virtuals (4D's splitters derive from it, with
+      `where RangeSplitter : BRepMesh_DefaultRangeSplitter, new()`); `Scale` and `Point` aren't virtual in OCCT either.
+      BRepMesh_Deflection and BRepMesh_ShapeTool, Standard_Transients with only statics in OCCT, are static classes;
+      BRepMesh_GeomTool is a sealed working class, its `double (&)[2]` a `Span<double>` and `IntSegSeg`'s point `ref`
+      (written only on some paths). `BRepMesh_ShapeTool.AddInFace` takes the triangulation by value (OCCT passes the
+      handle by reference without changing it).

@@ -512,3 +512,16 @@ Found while porting ShapeExtend, ShapeAnalysis's wire analysis and ShapeBuild. R
 | `ShapeAnalysis_TransferParameters` constructors | Leave `myMaxTolerance` uninitialised | Undefined until `SetMaxTolerance`; the port starts it at 0 |
 | `ShapeAnalysis_Wire::CheckLoop` (ShapeAnalysis_Wire.cxx) | Sets the analyser's precision to `Precision::Infinite()` and, on the FAIL2 return for an edge without vertices, doesn't restore it | Later checks on the same analyser run with an infinite precision and pass everything. By reading |
 | `ShapeAnalysis::TotCross2D` | With no pcurve of the wire on the face, the points stay at their defaults | The result is 0, so `IsOuterBound` counts such a wire as outer. By reading |
+
+## Phase 4: unit 4A, mesh foundations
+
+Found while porting Message, NCollection_MapAlgo, IMeshData, IMeshTools, BRepMeshData and BRepMesh's geometry tools.
+All are reproduced and pinned by unit tests.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_GeomTool::IntSegSeg` (BRepMesh_GeomTool.cxx) | `aPointHash[0]`/`[1]` classify the second segment's start/end on the first segment, `[2]`/`[3]` the first's on the second; the `PointOnSegment` branch returns the first segment's start for `[0]`, its end for `[1]`, the second's start for `[2]` and its end for `[3]` | The point given with `PointOnSegment` is an end point of the wrong segment. BRepMesh_Delaun, its only caller asking for it, recomputes the chopping point and ignores it, so meshes aren't affected. Kept (`// OCCT`); BRepMeshGeomToolTests |
+| `Message_Algorithm::AddStatus` (Message_Algorithm.cxx) | Copies the other algorithm's strings with `for (n = 1; n < Length; n++)` | The last string of each status is dropped. Kept; unit test |
+| `Message_Msg::Get` (Message_Msg.cxx) | Replaces the unfilled placeholders but keeps their positions | A second `Get` garbles the text ("a %s b" → "a UNKNOWN b" → "a UNKNOWNKNOWN b"); `SendStatusMessages` calls `Get` on a stored custom message, so sending it twice garbles it. Kept; unit test |
+| `Message_Msg::Set` (Message_Msg.cxx) | After "%%", reads the next characters as a format | "100%% done" gets a placeholder "% d": `Arg(7)` gives "100 7one". Kept; unit test |
+| `NCollection_MapAlgo::Differ` (NCollection_MapAlgo.hxx; a property, not a bug) | Reports a change by comparing the counts before and after | Swapping one key for another returns false. Kept; unit test |

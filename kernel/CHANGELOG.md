@@ -330,3 +330,20 @@ Phase 4 (part): ShapeAnalysis's wire analysis.
 - Tests: OCCT's ShapeAnalysis_Edge GTest; known-answer tests (wire order of shuffled and reversed edges, outer wires of
   faces with holes, every wire check, projections, UV on every surface kind including singular ones); oracle tests of
   ShapeAnalysis_Curve, Surface and Edge against native OCCT, 907,014 values, all bit-identical.
+Phase 4 (part): mesh foundations and data model (unit 4A).
+
+- `OcctNet.Foundation`: Message_Algorithm with its statuses (Message_ExecStatus, Message_Status), Message_Msg,
+  Message_Messenger and printers, and the `Message` statics, whose default messenger sends nothing;
+  NCollection_EBTree and NCollection_MapAlgo; an internal `OSD_Parallel` that every parallel loop of the port now uses,
+  with a sequential fallback where there are no threads (WebAssembly).
+- `OcctNet.ModelingAlgorithms`: IMeshData, IMeshTools (with `IMeshTools_Parameters`, an equatable value) and
+  BRepMeshData; BRepMesh_GeomTool, DefaultRangeSplitter, ShapeTool, Deflection, EdgeParameterProvider, DiscretRoot;
+  `BRepMesh_IncrementalMesh`'s copy-for-write shell: a frozen shape is meshed on a copy, `Shape()` returns the frozen
+  result with a `History()`, and `Meshed` is the functional form (the meshing algorithms themselves come in later
+  units).
+- `OcctNet.ModelingData`: the mesher's non-freezing attach of triangulations and polygons, frozen with the shape when
+  it is published.
+- Tests: the GTests of BRepMesh_GeomTool, Message_Messenger, OSD_Parallel and NCollection_UBTree's EBTree cases; unit
+  tests of the data model, the parameters, the shape tools and the copy for write; an oracle of GeomTool and Deflection
+  against native OCCT's free-edge polygons (300 edges, 6,126 points, every count equal, values within 5e-15 through
+  BRep text).

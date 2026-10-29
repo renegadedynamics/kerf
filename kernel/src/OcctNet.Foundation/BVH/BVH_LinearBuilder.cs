@@ -231,17 +231,7 @@ public static partial class BVH
                 {
                     // OSD_Parallel::ForEach(..., !myIsParallel)
                     UpdateBoundTask<T, TVec> aTask = new(myIsParallel);
-                    if (myIsParallel)
-                    {
-                        Parallel.ForEach(aList, aTask.Invoke);
-                    }
-                    else
-                    {
-                        foreach (BoundData<T, TVec> anItem in aList)
-                        {
-                            aTask.Invoke(anItem);
-                        }
-                    }
+                    OSD_Parallel.ForEach(aList, aTask.Invoke, !myIsParallel);
                 }
 
                 TVec aLftMinPoint = theData.myBVH.MinPointBuffer()[aLftChild];

@@ -25,6 +25,49 @@ public static partial class BRepTools
         ExactCopyForWrite(theShape, out theHistory, out _);
 
     /// <summary>
+    /// True if the shape's graph holds a frozen TShape (the shape's own or a sub-shape's): an in-place operation must
+    /// then work on <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/> of it. Each TShape is
+    /// visited once; a frozen TShape's sub-graph is frozen, so the walk stops there.
+    /// </summary>
+    internal static bool HoldsFrozen(in TopoDS_Shape theShape)
+    {
+        TopoDS_TShape? aRoot = theShape.TShape();
+        if (aRoot is null)
+        {
+            return false;
+        }
+
+        var aVisited = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        var aStack = new Stack<TopoDS_TShape>();
+        aStack.Push(aRoot);
+        while (aStack.Count > 0)
+        {
+            TopoDS_TShape aTShape = aStack.Pop();
+            if (aTShape.IsFrozen())
+            {
+                return true;
+            }
+
+            if (!aVisited.Add(aTShape))
+            {
+                continue;
+            }
+
+            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aTShape, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD));
+                 anIt.More(); anIt.Next())
+            {
+                TopoDS_TShape? aChild = anIt.Value().TShape();
+                if (aChild is not null)
+                {
+                    aStack.Push(aChild);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/>, with the copy of each TShape of the
     /// shape in <paramref name="theCopies"/> (by reference), for <see cref="KeepUnchangedIn"/>.
     /// </summary>

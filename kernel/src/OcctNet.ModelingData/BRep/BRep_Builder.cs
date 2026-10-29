@@ -515,6 +515,18 @@ internal sealed class BRep_Builder : TopoDS_Builder
     /// triangulations becomes just this one; otherwise it becomes active, replacing the active one if not in the list.
     /// </summary>
     internal void UpdateFace(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset = true)
+        => updateFace(theFace, theTriangulation, theToReset, true);
+
+    /// <summary>
+    /// <see cref="UpdateFace(in TopoDS_Face, Poly_Triangulation?, bool)"/> without freezing the triangulation: the
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488). The triangulation freezes with the face's graph when
+    /// the result is published.
+    /// </summary>
+    internal void UpdateFaceUnfrozen(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset = true)
+        => updateFace(theFace, theTriangulation, theToReset, false);
+
+    private static void updateFace(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset,
+                                   bool theToFreeze)
     {
         BRep_TFace aTFace = (BRep_TFace)theFace.TShape()!;
         if (aTFace.Locked())
@@ -522,7 +534,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateFace");
         }
 
-        aTFace.Triangulation(theTriangulation, theToReset);
+        aTFace.Triangulation(theTriangulation, theToReset, theToFreeze);
         theFace.TShape()!.Modified(true);
     }
 
@@ -736,7 +748,15 @@ internal sealed class BRep_Builder : TopoDS_Builder
     internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon3D? P) => UpdateEdge(E, P, new TopLoc_Location());
 
     /// <summary>Sets the edge's 3D polygon (frozen here; removes it if null) with a location.</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L)
+    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L) => updateEdge(E, P, L, true);
+
+    /// <summary>
+    /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_Polygon3D?, in TopLoc_Location)"/> without freezing the polygon: the
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488).
+    /// </summary>
+    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L) => updateEdge(E, P, L, false);
+
+    private static void updateEdge(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L, bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -757,7 +777,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
                 }
                 else
                 {
-                    itcr.Value().Polygon3D(P);
+                    ((BRep_Polygon3D)itcr.Value()).Polygon3D(P, theToFreeze);
                 }
 
                 TE.Modified(true);
@@ -768,7 +788,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
         }
 
         TopLoc_Location l = L.Predivided(E.Location());
-        BRep_Polygon3D P3d = new BRep_Polygon3D(P, l);
+        BRep_Polygon3D P3d = new BRep_Polygon3D(P, l, theToFreeze);
         lcr.Append(P3d);
 
         TE.Modified(true);
@@ -780,6 +800,18 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>Sets the edge's polygon on the triangulation (both frozen here; removes it if null) with a location.</summary>
     internal void UpdateEdge(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L)
+        => updateEdge(E, P, T, L, true);
+
+    /// <summary>
+    /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
+    /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 488).
+    /// </summary>
+    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T,
+                                     in TopLoc_Location L)
+        => updateEdge(E, P, T, L, false);
+
+    private static void updateEdge(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T,
+                                   in TopLoc_Location L, bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -808,7 +840,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
         if (P is not null)
         {
-            BRep_PolygonOnTriangulation PT = new BRep_PolygonOnTriangulation(P, T, l);
+            BRep_PolygonOnTriangulation PT = new BRep_PolygonOnTriangulation(P, T, l, theToFreeze);
             lcr.Append(PT);
             isModified = true;
         }
@@ -834,6 +866,25 @@ internal sealed class BRep_Builder : TopoDS_Builder
                              Poly_PolygonOnTriangulation? P2,
                              Poly_Triangulation? T,
                              in TopLoc_Location L)
+        => updateEdge(E, P1, P2, T, L, true);
+
+    /// <summary>
+    /// The seam form of <see cref="UpdateEdgeUnfrozen(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
+    /// (decision 488).
+    /// </summary>
+    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E,
+                                     Poly_PolygonOnTriangulation? P1,
+                                     Poly_PolygonOnTriangulation? P2,
+                                     Poly_Triangulation? T,
+                                     in TopLoc_Location L)
+        => updateEdge(E, P1, P2, T, L, false);
+
+    private static void updateEdge(in TopoDS_Edge E,
+                                   Poly_PolygonOnTriangulation? P1,
+                                   Poly_PolygonOnTriangulation? P2,
+                                   Poly_Triangulation? T,
+                                   in TopLoc_Location L,
+                                   bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -862,7 +913,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
 
         if (P1 is not null && P2 is not null)
         {
-            BRep_PolygonOnClosedTriangulation PT = new BRep_PolygonOnClosedTriangulation(P1, P2, T, l);
+            BRep_PolygonOnClosedTriangulation PT = new BRep_PolygonOnClosedTriangulation(P1, P2, T, l, theToFreeze);
             lcr.Append(PT);
             isModified = true;
         }
