@@ -351,12 +351,12 @@ namespaces of function templates over duck-typed functors, returning result stru
      IncreaseDegree (non-periodic, and 2D) and Bezier D0-D3 were bit-identical on 1,100 random curves (about
      200,000 values). MovePointAndTangent was identical except three degree-1 cases, where its 2 × 2 system is
      nearly singular. The harness should become oracle tests when that project reaches this code (done:
-     decision 407, which also explains the degree-1 differences).
+     decision 91, which also explains the degree-1 differences).
      BSplCLib_ConsistencyTests (OCCT.NET's own) checks the operations against each other on random curves.
 
 ## Phase 1: BSplSLib and Convert (29 October 2026)
 
-401. **BSplSLib follows BSplCLib's conventions** (decisions 72-83): optional weights and multiplicities are
+85. **BSplSLib follows BSplCLib's conventions** (decisions 72-83): optional weights and multiplicities are
      nullable NCollection arrays (`BSplSLib.NoWeights()` is null), outputs are `out`, `Displ` is `in`, array starts
      are spans by use (`RationalDerivative(..., ReadOnlySpan<double> HDerivatives, Span<double> RDerivatives, ...)`).
      `(double*)&Poles(i, j)` is a private helper slicing `MemoryMarshal.Cast<gp_Pnt, double>(Poles.AsSpan())` at
@@ -365,7 +365,7 @@ namespaces of function templates over duck-typed functors, returning result stru
      `new gp_Vec(...)`. `BSplSLib.UnitWeights` returns, as OCCT, a non-owning view over `BSplCLib.UnitWeights` up to
      2,049 weights (shared: don't modify) and a new array above. The 2D-array `CachePoles(i, j).SetX/SetY/SetZ`
      writes are a `new gp_Pnt` from the same products.
-402. **BSplSLib's evaluation buffers are stack buffers sized by the degrees.** OCCT's `BSplSLib_DataContainer` is a
+86. **BSplSLib's evaluation buffers are stack buffers sized by the degrees.** OCCT's `BSplSLib_DataContainer` is a
      2,852-double stack struct sized for degree 25. The port keeps it as a private `ref struct` of four spans,
      stackalloc'd in each evaluator (D0-D3, DN, the homogeneous forms, BuildCache) at 4(UDegree+1)(VDegree+1) poles,
      2·max(UDegree, VDegree) knots twice and 48 derivatives, after the degree check. It is a C stack array, so
@@ -373,13 +373,13 @@ namespaces of function templates over duck-typed functors, returning result stru
      used (68 doubles for a bicubic), and evaluation allocates nothing. Rejected: a [ThreadStatic] buffer (hidden
      state, not reentrant). NCollection_LocalArray buffers (Iso, RationalDerivative, the cache evaluators,
      BSplSLib_Cache) follow decision 74: stackalloc up to 128 doubles, heap above.
-403. **BSplSLib_Cache is BSplCLib_Cache's twin** (decision 79): a Standard_Transient class embedding two
+87. **BSplSLib_Cache is BSplCLib_Cache's twin** (decision 79): a Standard_Transient class embedding two
      `BSplCLib_CacheParams`, an `NCollection_Array2<double>` of coefficients allocated once in the constructor (OCCT:
      an `NCollection_HArray2`), an internal `BuildCache` (a mutator) and public `IsCacheValid`, D0-D2 and
      D0Local-D2Local. OCCT's `const int&`/`const double&` parameters are by value. Its evaluation allocates nothing
      unless the smaller degree exceeds 9 (13 non-rational), where the derivatives' work array leaves
      NCollection_LocalArray's stack buffer in OCCT too.
-404. **Convert's batch accessors return copies.** `Poles()`, `Weights()`, `Knots()`, `Multiplicities()`,
+88. **Convert's batch accessors return copies.** `Poles()`, `Weights()`, `Knots()`, `Multiplicities()`,
      `UKnots()`, ... return a new NCollection array where OCCT returns a const reference to a field, so a
      converter's result can't be changed through them. Every OCCT consumer (GeomConvert's BSplineCurveBuilder and
      BSplineSurfaceBuilder, Geom2dConvert, GeomConvert_CompBezierSurfacesToBSplineSurface, AdvApprox, AppDef,
@@ -388,7 +388,7 @@ namespaces of function templates over duck-typed functors, returning result stru
      would convert back) and returning the field (callers could change the converter, and two calls would share
      storage). The cost is one allocation per accessor call. The per-index accessors OCCT deprecates (`Pole(i)`,
      `Weight(i)`, ...) stay, without `[Obsolete]`, documented as deprecated.
-405. **Convert classes are classes, built in their constructors**, with OCCT's hierarchy; base classes have
+89. **Convert classes are classes, built in their constructors**, with OCCT's hierarchy; base classes have
      protected constructors and protected fields with OCCT's names. The array outputs of the protected
      `BuildCosAndSin` (and of `GridPolynomialToPoles.BuildArray`), which OCCT reassigns through references, are
      `out`; the handle forms take `out NCollection_HArray1<...>` (`ref ...?` for the deprecated
@@ -398,7 +398,7 @@ namespaces of function templates over duck-typed functors, returning result stru
      `BuildPolynomialCosAndSin` (not exported by OCCT) is internal. The builders
      (`Convert_CompBezierCurves(2d)ToBSplineCurve(2d)`: `AddCurve`, `Perform`) keep public mutators (decision 21);
      `AddCurve` copies its argument as C++ appends a copy.
-406. **Convert_CompBezierCurvesToBSplineCurveBase is generic over a public traits struct**
+90. **Convert_CompBezierCurvesToBSplineCurveBase is generic over a public traits struct**
      (`<PointType, VecType, Traits>`, `Convert_CompBezierCurvesTraits3d/2d` implementing
      `IConvert_CompBezierCurvesTraits`), as BSplCLib_CurveComputation (decision 75). The traits are public because a
      public class can't derive from a generic base over an internal type. `if constexpr (std::is_same_v<PointType,
@@ -406,7 +406,7 @@ namespaces of function templates over duck-typed functors, returning result stru
      used by Convert's FinalizeArrays): 2D-preserving copy, no reallocation when the dimensions don't change, empty
      range rejected. Known difference left as is: the port's `NCollection_Array2.Resize(..., copy: true)` keeps the
      2D layout, where OCCT V8_0_1's copies elements in linear order (different when the column count changes).
-407. **BSplCLib, BSplSLib (with BSplSLib_Cache) and Convert are oracle-tested** (`tests/OcctNet.Oracle.Tests/
+91. **BSplCLib, BSplSLib (with BSplSLib_Cache) and Convert are oracle-tested** (`tests/OcctNet.Oracle.Tests/
      {BSplCLib,BSplSLib,Convert}`), beyond what decision 23 expected. Native entry points, each mirrored exactly in
      the test: Geom_BSplineCurve/Geom2d_BSplineCurve/Geom_BezierCurve for BSplCLib (from decision 84's harness);
      Geom_BSplineSurface and Geom_BezierSurface for BSplSLib (OCCT 8 evaluates them through BSplSLib directly, not
