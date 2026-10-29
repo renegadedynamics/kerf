@@ -459,6 +459,8 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             }
         }
 
+        // OCCT checks the natural range only when the parameters come reversed (occt-issues.md): ordered parameters
+        // outside it are accepted.
         if (S.IsUPeriodic())
         {
             ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);

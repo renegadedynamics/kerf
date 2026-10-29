@@ -410,6 +410,8 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
             myShape.Closed(true);
         }
 
+        // OCCT resets the error here, so a NonManifoldWire found above is never reported (occt-issues.md); only VF
+        // and VL, nullified, remember it.
         myError = BRepLib_WireDone;
         Done();
     }
