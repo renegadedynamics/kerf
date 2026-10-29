@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Globalization;
 using System.Text;
 
 namespace OcctNet.DrawLite;
@@ -9,13 +10,20 @@ public abstract record WordPart
 {
     public sealed record Text(string Value) : WordPart;
 
-    public sealed record Variable(string Name) : WordPart;
+    /// <summary>
+    /// <c>$name</c>, <c>${name}</c> or <c>$name(index)</c>. The index of an array element is itself substituted,
+    /// so it is kept as parts; it is null for a scalar.
+    /// </summary>
+    public sealed record Variable(string Name, IReadOnlyList<WordPart>? Index = null) : WordPart;
 
     public sealed record Command(string Script) : WordPart;
 }
 
-/// <summary>A word of a command. A braced word is one literal part and is never substituted.</summary>
-public sealed record Word(IReadOnlyList<WordPart> Parts, bool IsBraced)
+/// <summary>
+/// A word of a command. A braced word is one literal part and is never substituted. An expanded word
+/// (<c>{*}$list</c>) contributes each element of its value as a separate word.
+/// </summary>
+public sealed record Word(IReadOnlyList<WordPart> Parts, bool IsBraced, bool IsExpanded = false)
 {
     /// <summary>The word's text when it has no substitutions, otherwise null.</summary>
     public string? Literal => Parts switch
@@ -30,58 +38,136 @@ public sealed record Word(IReadOnlyList<WordPart> Parts, bool IsBraced)
 public sealed record Command(IReadOnlyList<Word> Words, int Line);
 
 /// <summary>
-/// Parses the subset of Tcl that OCCT's Draw test scripts use: words, "quotes", {braces}, [commands],
-/// $variables, ${variables}, $array(index), backslash escapes and continuations, comments and semicolons.
+/// Parses Tcl scripts by the rules of Tcl's man page (the "dodekalogue"): words, "quotes", {braces}, [commands],
+/// $variables, ${variables}, $array(index), {*} expansion, backslash escapes and continuations, comments and
+/// semicolons. Line ends may be CRLF.
 /// </summary>
 public static class TclParser
 {
     public static IReadOnlyList<Command> Parse(string theScript)
     {
-        var aCommands = new List<Command>();
+        string s = theScript.Contains('\r') ? theScript.Replace("\r\n", "\n") : theScript;
         int aPos = 0;
         int aLine = 1;
-        while (aPos < theScript.Length)
+        return ParseScript(s, ref aPos, ref aLine, theNested: false);
+    }
+
+    /// <summary>
+    /// The parts of a string after <c>subst</c>'s substitutions, as if it were a quoted word with no closing quote.
+    /// </summary>
+    public static IReadOnlyList<WordPart> ParseSubst(string theText, bool theBackslashes = true, bool theVariables = true, bool theCommands = true)
+    {
+        var aParts = new List<WordPart>();
+        var aText = new StringBuilder();
+        int aPos = 0;
+        int aLine = 1;
+        string s = theText;
+        while (aPos < s.Length)
         {
-            SkipCommandSeparators(theScript, ref aPos, ref aLine);
-            if (aPos >= theScript.Length)
+            char c = s[aPos];
+            if (c == '\\' && theBackslashes)
+            {
+                aText.Append(ReadEscape(s, ref aPos, ref aLine));
+            }
+            else if (c == '$' && theVariables && ReadVariable(s, ref aPos, ref aLine) is { } aVariable)
+            {
+                Flush(aParts, aText);
+                aParts.Add(aVariable);
+            }
+            else if (c == '[' && theCommands)
+            {
+                Flush(aParts, aText);
+                aParts.Add(new WordPart.Command(ReadBracketed(s, ref aPos, ref aLine)));
+            }
+            else
+            {
+                aText.Append(c);
+                aPos++;
+            }
+        }
+
+        Flush(aParts, aText);
+        return aParts;
+    }
+
+    /// <summary>True when a script is complete: its braces, quotes and brackets are closed.</summary>
+    public static bool IsComplete(string theScript)
+    {
+        try
+        {
+            Parse(theScript);
+            return true;
+        }
+        catch (DrawException)
+        {
+            return false;
+        }
+    }
+
+    private static List<Command> ParseScript(string s, ref int aPos, ref int aLine, bool theNested)
+    {
+        var aCommands = new List<Command>();
+        while (aPos < s.Length)
+        {
+            SkipCommandSeparators(s, ref aPos, ref aLine);
+            if (aPos >= s.Length || (theNested && s[aPos] == ']'))
             {
                 break;
             }
 
-            if (theScript[aPos] == '#')
+            if (s[aPos] == '#')
             {
-                SkipComment(theScript, ref aPos, ref aLine);
+                SkipComment(s, ref aPos, ref aLine);
                 continue;
             }
 
             int aStartLine = aLine;
             var aWords = new List<Word>();
-            while (aPos < theScript.Length)
+            while (aPos < s.Length)
             {
-                SkipBlanks(theScript, ref aPos, ref aLine);
-                if (aPos >= theScript.Length || theScript[aPos] is '\n' or ';')
+                SkipBlanks(s, ref aPos, ref aLine);
+                if (aPos >= s.Length || s[aPos] is '\n' or ';' || (theNested && s[aPos] == ']'))
                 {
                     break;
                 }
 
-                aWords.Add(ParseWord(theScript, ref aPos, ref aLine));
+                aWords.Add(ParseWord(s, ref aPos, ref aLine, theNested));
             }
 
             if (aWords.Count > 0)
             {
                 aCommands.Add(new Command(aWords, aStartLine));
             }
+
+            if (theNested && aPos < s.Length && s[aPos] == ']')
+            {
+                break;
+            }
         }
 
         return aCommands;
     }
 
-    private static Word ParseWord(string s, ref int aPos, ref int aLine)
+    private static Word ParseWord(string s, ref int aPos, ref int aLine, bool theNested)
     {
         char aFirst = s[aPos];
         if (aFirst == '{')
         {
-            return new Word([new WordPart.Text(ReadBraced(s, ref aPos, ref aLine))], IsBraced: true);
+            // {*} followed by a word expands that word's list into separate words
+            if (aPos + 3 < s.Length && s[aPos + 1] == '*' && s[aPos + 2] == '}' && !IsWordEnd(s[aPos + 3], theNested))
+            {
+                aPos += 3;
+                Word anInner = ParseWord(s, ref aPos, ref aLine, theNested);
+                return anInner with { IsExpanded = true };
+            }
+
+            var aBraced = new Word([new WordPart.Text(ReadBraced(s, ref aPos, ref aLine))], IsBraced: true);
+            if (aPos < s.Length && !IsWordEnd(s[aPos], theNested))
+            {
+                throw new DrawException("extra characters after close-brace", aLine);
+            }
+
+            return aBraced;
         }
 
         bool aQuoted = aFirst == '"';
@@ -92,14 +178,16 @@ public static class TclParser
 
         var aParts = new List<WordPart>();
         var aText = new StringBuilder();
+        bool aClosed = !aQuoted;
         while (aPos < s.Length)
         {
             char c = s[aPos];
-            if (aQuoted ? c == '"' : c is ' ' or '\t' or '\r' or '\n' or ';')
+            if (aQuoted ? c == '"' : IsWordEnd(c, theNested))
             {
                 if (aQuoted)
                 {
                     aPos++;
+                    aClosed = true;
                 }
 
                 break;
@@ -111,17 +199,16 @@ public static class TclParser
                     aText.Append(ReadEscape(s, ref aPos, ref aLine));
                     break;
                 case '$':
-                    string? aName = ReadVariableName(s, ref aPos);
-                    if (aName is null)
+                    if (ReadVariable(s, ref aPos, ref aLine) is { } aVariable)
+                    {
+                        Flush(aParts, aText);
+                        aParts.Add(aVariable);
+                    }
+                    else
                     {
                         // A lone $ is literal
                         aText.Append('$');
                         aPos++;
-                    }
-                    else
-                    {
-                        Flush(aParts, aText);
-                        aParts.Add(new WordPart.Variable(aName));
                     }
 
                     break;
@@ -141,9 +228,21 @@ public static class TclParser
             }
         }
 
+        if (!aClosed)
+        {
+            throw new DrawException("missing \"", aLine);
+        }
+
+        if (aQuoted && aPos < s.Length && !IsWordEnd(s[aPos], theNested))
+        {
+            throw new DrawException("extra characters after close-quote", aLine);
+        }
+
         Flush(aParts, aText);
         return new Word(aParts, IsBraced: false);
     }
+
+    private static bool IsWordEnd(char c, bool theNested) => c is ' ' or '\t' or '\r' or '\n' or ';' || (theNested && c == ']');
 
     private static void Flush(List<WordPart> theParts, StringBuilder theText)
     {
@@ -154,17 +253,39 @@ public static class TclParser
         }
     }
 
-    /// <summary>The text between matching braces, without them; nested braces and escaped braces are kept.</summary>
-    private static string ReadBraced(string s, ref int aPos, ref int aLine)
+    /// <summary>
+    /// The text between matching braces, without them; nested braces and escaped braces are kept. As in Tcl, a
+    /// backslash-newline (and the blanks after it) becomes one space even inside braces.
+    /// </summary>
+    internal static string ReadBraced(string s, ref int aPos, ref int aLine)
     {
         int aDepth = 0;
         int aStart = aPos + 1;
+        StringBuilder? aBuilder = null;
+        int aCopied = aStart;
         for (; aPos < s.Length; aPos++)
         {
             char c = s[aPos];
             if (c == '\\')
             {
-                aPos++;
+                if (aPos + 1 < s.Length && s[aPos + 1] == '\n')
+                {
+                    aBuilder ??= new StringBuilder();
+                    aBuilder.Append(s, aCopied, aPos - aCopied).Append(' ');
+                    aPos += 2;
+                    aLine++;
+                    while (aPos < s.Length && s[aPos] is ' ' or '\t')
+                    {
+                        aPos++;
+                    }
+
+                    aCopied = aPos;
+                    aPos--;
+                }
+                else
+                {
+                    aPos++;
+                }
             }
             else if (c == '\n')
             {
@@ -176,50 +297,31 @@ public static class TclParser
             }
             else if (c == '}' && --aDepth == 0)
             {
-                return s[aStart..aPos++];
+                string aText = aBuilder is null ? s[aStart..aPos] : aBuilder.Append(s, aCopied, aPos - aCopied).ToString();
+                aPos++;
+                return aText;
             }
         }
 
         throw new DrawException("missing close-brace", aLine);
     }
 
-    /// <summary>The script between matching brackets, without them.</summary>
-    private static string ReadBracketed(string s, ref int aPos, ref int aLine)
+    /// <summary>The script between matching brackets, without them. The script is parsed to find its end.</summary>
+    internal static string ReadBracketed(string s, ref int aPos, ref int aLine)
     {
-        int aDepth = 0;
         int aStart = aPos + 1;
-        for (; aPos < s.Length; aPos++)
+        aPos = aStart;
+        ParseScript(s, ref aPos, ref aLine, theNested: true);
+        if (aPos >= s.Length || s[aPos] != ']')
         {
-            char c = s[aPos];
-            switch (c)
-            {
-                case '\\':
-                    aPos++;
-                    break;
-                case '\n':
-                    aLine++;
-                    break;
-                case '{':
-                    ReadBraced(s, ref aPos, ref aLine);
-                    aPos--;
-                    break;
-                case '[':
-                    aDepth++;
-                    break;
-                case ']':
-                    if (--aDepth == 0)
-                    {
-                        return s[aStart..aPos++];
-                    }
-
-                    break;
-            }
+            throw new DrawException("missing close-bracket", aLine);
         }
 
-        throw new DrawException("missing close-bracket", aLine);
+        return s[aStart..aPos++];
     }
 
-    private static string? ReadVariableName(string s, ref int aPos)
+    /// <summary>A variable reference at <paramref name="aPos"/> (on its $), or null when the $ is literal.</summary>
+    internal static WordPart.Variable? ReadVariable(string s, ref int aPos, ref int aLine)
     {
         int aStart = aPos + 1;
         if (aStart < s.Length && s[aStart] == '{')
@@ -227,40 +329,97 @@ public static class TclParser
             int anEnd = s.IndexOf('}', aStart);
             if (anEnd < 0)
             {
-                return null;
+                throw new DrawException("missing close-brace for variable name", aLine);
             }
 
             aPos = anEnd + 1;
-            return s[(aStart + 1)..anEnd];
+            return new WordPart.Variable(s[(aStart + 1)..anEnd]);
         }
 
         int i = aStart;
-        while (i < s.Length && (char.IsLetterOrDigit(s[i]) || s[i] == '_' || (s[i] == ':' && i + 1 < s.Length && s[i + 1] == ':')))
+        while (i < s.Length)
         {
-            i += s[i] == ':' ? 2 : 1;
+            if (char.IsLetterOrDigit(s[i]) || s[i] == '_')
+            {
+                i++;
+            }
+            else if (s[i] == ':' && i + 1 < s.Length && s[i + 1] == ':')
+            {
+                i += 2;
+                while (i < s.Length && s[i] == ':')
+                {
+                    i++;
+                }
+            }
+            else
+            {
+                break;
+            }
         }
 
-        if (i == aStart)
+        bool anArray = i < s.Length && s[i] == '(';
+        if (i == aStart && !anArray)
         {
             return null;
         }
 
-        // An array element: $name(index), whose index is kept literally
-        if (i < s.Length && s[i] == '(')
+        string aName = s[aStart..i];
+        if (!anArray)
         {
-            int anEnd = s.IndexOf(')', i);
-            if (anEnd > 0)
+            aPos = i;
+            return new WordPart.Variable(aName);
+        }
+
+        // An array element: the index runs to the first unescaped ")" and is substituted
+        int aPosIndex = i + 1;
+        var aParts = new List<WordPart>();
+        var aText = new StringBuilder();
+        while (true)
+        {
+            if (aPosIndex >= s.Length)
             {
-                aPos = anEnd + 1;
-                return s[aStart..aPos];
+                throw new DrawException("missing )", aLine);
+            }
+
+            char c = s[aPosIndex];
+            if (c == ')')
+            {
+                aPosIndex++;
+                break;
+            }
+
+            switch (c)
+            {
+                case '\\':
+                    aText.Append(ReadEscape(s, ref aPosIndex, ref aLine));
+                    break;
+                case '$' when ReadVariable(s, ref aPosIndex, ref aLine) is { } aVariable:
+                    Flush(aParts, aText);
+                    aParts.Add(aVariable);
+                    break;
+                case '[':
+                    Flush(aParts, aText);
+                    aParts.Add(new WordPart.Command(ReadBracketed(s, ref aPosIndex, ref aLine)));
+                    break;
+                default:
+                    if (c == '\n')
+                    {
+                        aLine++;
+                    }
+
+                    aText.Append(c);
+                    aPosIndex++;
+                    break;
             }
         }
 
-        aPos = i;
-        return s[aStart..i];
+        Flush(aParts, aText);
+        aPos = aPosIndex;
+        return new WordPart.Variable(aName, aParts);
     }
 
-    private static string ReadEscape(string s, ref int aPos, ref int aLine)
+    /// <summary>A backslash sequence at <paramref name="aPos"/> (on its backslash), substituted.</summary>
+    internal static string ReadEscape(string s, ref int aPos, ref int aLine)
     {
         aPos++;
         if (aPos >= s.Length)
@@ -271,10 +430,37 @@ public static class TclParser
         char c = s[aPos++];
         switch (c)
         {
+            case 'a':
+                return "\a";
+            case 'b':
+                return "\b";
+            case 'f':
+                return "\f";
             case 'n':
                 return "\n";
+            case 'r':
+                return "\r";
             case 't':
                 return "\t";
+            case 'v':
+                return "\v";
+            case 'x':
+                return ReadHex(s, ref aPos, 2, "x");
+            case 'u':
+                return ReadHex(s, ref aPos, 4, "u");
+            case 'U':
+                return ReadHex(s, ref aPos, 8, "U");
+            case >= '0' and <= '7':
+            {
+                int aValue = c - '0';
+                for (int k = 0; k < 2 && aPos < s.Length && s[aPos] is >= '0' and <= '7'; k++)
+                {
+                    aValue = (aValue * 8) + (s[aPos++] - '0');
+                }
+
+                return ((char)(aValue & 0xFF)).ToString();
+            }
+
             case '\n':
                 // A continuation: the newline and the next line's leading blanks become one space
                 aLine++;
@@ -289,11 +475,33 @@ public static class TclParser
         }
     }
 
+    private static string ReadHex(string s, ref int aPos, int theMaxDigits, string theLetter)
+    {
+        int aStart = aPos;
+        while (aPos < s.Length && aPos - aStart < theMaxDigits && char.IsAsciiHexDigit(s[aPos]))
+        {
+            aPos++;
+        }
+
+        if (aPos == aStart)
+        {
+            return theLetter;
+        }
+
+        int aValue = int.Parse(s.AsSpan(aStart, aPos - aStart), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        if (theLetter == "x")
+        {
+            aValue &= 0xFF;
+        }
+
+        return aValue is >= 0 and <= 0x10FFFF and not (>= 0xD800 and <= 0xDFFF) ? char.ConvertFromUtf32(aValue) : "�";
+    }
+
     private static void SkipBlanks(string s, ref int aPos, ref int aLine)
     {
         while (aPos < s.Length)
         {
-            if (s[aPos] is ' ' or '\t' or '\r')
+            if (s[aPos] is ' ' or '\t' or '\r' or '\f' or '\v')
             {
                 aPos++;
             }
@@ -311,14 +519,26 @@ public static class TclParser
 
     private static void SkipCommandSeparators(string s, ref int aPos, ref int aLine)
     {
-        while (aPos < s.Length && s[aPos] is ' ' or '\t' or '\r' or '\n' or ';')
+        while (aPos < s.Length)
         {
-            if (s[aPos] == '\n')
+            if (s[aPos] is ' ' or '\t' or '\r' or '\n' or ';' or '\f' or '\v')
             {
+                if (s[aPos] == '\n')
+                {
+                    aLine++;
+                }
+
+                aPos++;
+            }
+            else if (s[aPos] == '\\' && aPos + 1 < s.Length && s[aPos + 1] == '\n')
+            {
+                aPos += 2;
                 aLine++;
             }
-
-            aPos++;
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -327,10 +547,14 @@ public static class TclParser
         while (aPos < s.Length && s[aPos] != '\n')
         {
             // A comment continues onto the next line after a backslash
-            if (s[aPos] == '\\' && aPos + 1 < s.Length && s[aPos + 1] == '\n')
+            if (s[aPos] == '\\' && aPos + 1 < s.Length)
             {
+                if (s[aPos + 1] == '\n')
+                {
+                    aLine++;
+                }
+
                 aPos++;
-                aLine++;
             }
 
             aPos++;
