@@ -13,7 +13,7 @@ namespace OcctNet.Oracle.Tests;
 /// same raw numbers (TestAdaptorOracleTests' generators): Extrema_ExtPC directly (build123d.NET binds it), and
 /// Extrema_ExtPC, Extrema_ExtPC2d and Extrema_ExtCC through the native callers GeomAPI_ProjectPointOnCurve,
 /// Geom2dAPI_ProjectPointOnCurve and BRepExtrema_DistShapeShape, whose call paths the port's side mirrors. Native OCCT
-/// works on its GeomAdaptor_Curve, the port on the test stand-in (TODO(2A)) or the real Geom2dAdaptor_Curve.
+/// works on its GeomAdaptor_Curve, the port on its own GeomAdaptor_Curve or Geom2dAdaptor_Curve.
 /// </summary>
 public class ExtremaCurveOracleTests(ITestOutputHelper output)
 {
@@ -132,16 +132,13 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 aPC = new Geom_OffsetCurve(aPC, anOffset, aD);
                 aKind = "offset " + aKind;
             }
-            // The test stand-in evaluates offset curves through Geom_OffsetCurve, where native GeomAdaptor_Curve
-            // has its own evaluation: last-bit differences, which the root search amplifies (TODO(2A))
-            double aTol = aKind.StartsWith("offset", StringComparison.Ordinal) ? 1e-9 : Oracle.Tolerance;
+            double aTol = Oracle.Tolerance;
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
                     aPC.LastParameter(), aPC.IsPeriodic());
                 using var aNA = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
-                // TODO(2A): GeomAdaptor_Curve; the test stand-in until unit 2A is merged
-                var aPA = new TestGeomAdaptor_Curve(aPC, aFirst, aLast);
+                var aPA = new GeomAdaptor_Curve(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
 
                 for (int k = 0; k < 3; k++)
@@ -208,7 +205,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     aPC.LastParameter(), aPC.IsPeriodic());
                 // The port's side of GeomAPI_ProjectPointOnCurve::Init: myC.Load(Curve[, Umin, Usup]);
                 // myExtPC.Initialize(myC, myC.FirstParameter(), myC.LastParameter()); myExtPC.Perform(P)
-                var aMyC = aWithRange ? new TestGeomAdaptor_Curve(aPC, aFirst, aLast) : new TestGeomAdaptor_Curve(aPC);
+                var aMyC = aWithRange ? new GeomAdaptor_Curve(aPC, aFirst, aLast) : new GeomAdaptor_Curve(aPC);
                 string aW = $"{aKind} #{c}" + (aWithRange ? $" [{aFirst:R}, {aLast:R}]" : "");
                 for (int k = 0; k < 3; k++)
                 {
@@ -378,8 +375,8 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE1, aNE2);
 
                 // The port's side of BRepExtrema_ExtCC(E1, E2): Initialize(E2), then Perform(E1)
-                var aC1 = new TestGeomAdaptor_Curve(aPC1, aF1, aL1);
-                var aC2 = new TestGeomAdaptor_Curve(aPC2, aF2, aL2);
+                var aC1 = new GeomAdaptor_Curve(aPC1, aF1, aL1);
+                var aC2 = new GeomAdaptor_Curve(aPC2, aF2, aL2);
                 var aPort = new Extrema_ExtCC();
                 double aTol2 = Math.Max(aC2.Resolution(Math.Min(Precision.Confusion(), Precision.Confusion())), Precision.PConfusion());
                 aPort.SetCurve(2, aC2, aF2, aL2);

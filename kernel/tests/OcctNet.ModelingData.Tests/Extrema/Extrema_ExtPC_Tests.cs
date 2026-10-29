@@ -18,8 +18,7 @@ public class Extrema_ExtPC_Test
         // Circle for projection
         gp_Ax2 aAxis = new(new gp_Pnt(0, 843.257, 0), gp.DY().Reversed(), gp.DX());
         Geom_Circle aCircle = new(aAxis, 1725.9708621929999);
-        // TODO(2A): GeomAdaptor_Curve; the test stand-in until unit 2A is merged
-        TestGeomAdaptor_Curve aC3D = new(aCircle);
+        GeomAdaptor_Curve aC3D = new(aCircle);
 
         // Project point onto circle
         Extrema_ExtPC aExtPC = new(aP3D, aC3D);
