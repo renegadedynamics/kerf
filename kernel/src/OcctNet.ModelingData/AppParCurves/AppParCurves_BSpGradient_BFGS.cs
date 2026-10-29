@@ -11,7 +11,7 @@ namespace Occt;
 /// the tolerances.
 /// </summary>
 /// <remarks>
-/// OCCT has no <c>.gxx</c> for this class: its CDL generator wrote one copy per instantiation (AppDef_Gradient_BFGSOf...,
+/// OCCT has no <c>.gxx</c> for this class: its CDL generator wrote one copy per instantiation (AppDef_BSpGradient_BFGSOf...,
 /// GeomInt_..., BRepApprox_...), all identical but for the function type. The port is the generic form of those
 /// copies (decision 1202), with AppDef's as the source. The minimisation runs in the constructor.
 /// </remarks>
