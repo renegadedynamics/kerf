@@ -196,6 +196,24 @@ public class NCollection_Array2<T>
             = (aNewData, 0, theRowLower, theColLower, aNbRows, aNbCols, true);
     }
 
+    /// <summary>
+    /// Resizes keeping the 2D layout: with <paramref name="theToCopyData"/>, the common top-left block keeps its
+    /// (row, column) offsets from the lower bounds. As in OCCT, the new range may not be empty, and nothing is
+    /// reallocated when the dimensions don't change.
+    /// </summary>
+    public void ResizeWithTrim(int theRowLower, int theRowUpper, int theColLower, int theColUpper, bool theToCopyData)
+    {
+        Standard_RangeError_Raise_if(theRowUpper < theRowLower || theColUpper < theColLower, "NCollection_Array2::Resize");
+        if (theToCopyData && mySizeRow == theRowUpper - theRowLower + 1 && mySizeCol == theColUpper - theColLower + 1)
+        {
+            myLowerRow = theRowLower;
+            myLowerCol = theColLower;
+            return;
+        }
+
+        Resize(theRowLower, theRowUpper, theColLower, theColUpper, theToCopyData);
+    }
+
     /// <summary>The elements row by row, without copying.</summary>
     public Span<T> AsSpan() => new(myData, myOffset, mySizeRow * mySizeCol);
 
