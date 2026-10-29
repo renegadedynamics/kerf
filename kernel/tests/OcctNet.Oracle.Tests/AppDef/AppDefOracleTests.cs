@@ -20,7 +20,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     private const int Cases = 300;
 
     // A point set: samples of a random smooth curve, with random noise and random parameter spacing.
-    private static NCollection_Array1<gp_Pnt> Points(Oracle theOracle)
+    internal static NCollection_Array1<gp_Pnt> Points(Oracle theOracle)
     {
         int aNb = theOracle.Int(2, 40);
         int aKind = theOracle.Int(0, 3);
@@ -54,7 +54,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         return aPoints;
     }
 
-    private static GeomAbs_Shape Continuity(Oracle theOracle) => theOracle.Int(0, 3) switch
+    internal static GeomAbs_Shape Continuity(Oracle theOracle) => theOracle.Int(0, 3) switch
     {
         0 => GeomAbs_Shape.GeomAbs_C0,
         1 => GeomAbs_Shape.GeomAbs_C1,
@@ -62,7 +62,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         _ => GeomAbs_Shape.GeomAbs_C3,
     };
 
-    private static double Tolerance(Oracle theOracle) => theOracle.Int(0, 4) switch
+    internal static double Tolerance(Oracle theOracle) => theOracle.Int(0, 4) switch
     {
         0 => 1.0e-6,
         1 => 1.0e-3,
