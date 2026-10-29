@@ -38,6 +38,8 @@ internal static class OSD_Parallel
 
     private static readonly AsyncLocal<bool> theForceSerial = new();
 
+    private static readonly AsyncLocal<int> theMaxDegree = new();
+
     /// <summary>
     /// For tests: while set, every loop started from this execution flow runs as a plain loop, as without threads.
     /// The setting flows into tasks started from the flow (it is an <see cref="AsyncLocal{T}"/>), so tests running in
@@ -49,6 +51,33 @@ internal static class OSD_Parallel
         theForceSerial.Value = true;
         return new SerialScope(aPrevious);
     }
+
+    /// <summary>
+    /// For tests (the determinism harness of decision 5005): while set, every parallel loop started from this execution
+    /// flow runs on at most <paramref name="theMaxDegree"/> threads at a time (<see
+    /// cref="ParallelOptions.MaxDegreeOfParallelism"/>), so a test can run the same algorithm at several degrees of
+    /// parallelism. It flows as <see cref="ForceSerialScope"/> does. Dispose the returned scope to restore the previous
+    /// setting.
+    /// </summary>
+    internal static IDisposable MaxDegreeOfParallelismScope(int theMaxDegree)
+    {
+        if (theMaxDegree < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(theMaxDegree), "The degree of parallelism must be at least 1.");
+        }
+        int aPrevious = OSD_Parallel.theMaxDegree.Value;
+        OSD_Parallel.theMaxDegree.Value = theMaxDegree;
+        return new DegreeScope(aPrevious);
+    }
+
+    // The options of a parallel loop: the test scope's degree of parallelism, if any.
+    private static ParallelOptions LoopOptions()
+    {
+        int aMaxDegree = theMaxDegree.Value;
+        return aMaxDegree > 0 ? new ParallelOptions { MaxDegreeOfParallelism = aMaxDegree } : DefaultOptions;
+    }
+
+    private static readonly ParallelOptions DefaultOptions = new();
 
     /// <summary>True if loops started from this execution flow run as plain loops (no threads, or a test scope).</summary>
     internal static bool IsSerial() => !HasThreads || theForceSerial.Value;
@@ -83,7 +112,7 @@ internal static class OSD_Parallel
         {
             try
             {
-                Parallel.For(theBegin, theEnd, theFunctor);
+                Parallel.For(theBegin, theEnd, LoopOptions(), theFunctor);
             }
             catch (AggregateException anAggregate) when (anAggregate.InnerExceptions.Count > 0)
             {
@@ -112,7 +141,7 @@ internal static class OSD_Parallel
         {
             try
             {
-                Parallel.ForEach(theItems, theFunctor);
+                Parallel.ForEach(theItems, LoopOptions(), theFunctor);
             }
             catch (AggregateException anAggregate) when (anAggregate.InnerExceptions.Count > 0)
             {
@@ -131,6 +160,20 @@ internal static class OSD_Parallel
             if (!myIsDisposed)
             {
                 theForceSerial.Value = thePrevious;
+                myIsDisposed = true;
+            }
+        }
+    }
+
+    private sealed class DegreeScope(int thePrevious) : IDisposable
+    {
+        private bool myIsDisposed;
+
+        public void Dispose()
+        {
+            if (!myIsDisposed)
+            {
+                theMaxDegree.Value = thePrevious;
                 myIsDisposed = true;
             }
         }
