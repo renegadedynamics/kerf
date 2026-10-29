@@ -11,6 +11,7 @@ public class TopoDS_TSolid : TopoDS_TShape
     /// <summary>An empty TSolid.</summary>
     public TopoDS_TSolid() : base(TopAbs_ShapeEnum.TopAbs_SOLID)
     {
+        Orientable(false);
     }
 
     /// <summary>An empty TSolid.</summary>

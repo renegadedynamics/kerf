@@ -11,5 +11,7 @@ public abstract class TopoDS_TVertex : TopoDS_TShape
     /// <summary>An empty TVertex.</summary>
     protected TopoDS_TVertex() : base(TopAbs_ShapeEnum.TopAbs_VERTEX)
     {
+        Closed(true);
+        Convex(true);
     }
 }

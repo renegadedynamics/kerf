@@ -11,6 +11,7 @@ public class TopoDS_TCompound : TopoDS_TShape
     /// <summary>An empty TCompound.</summary>
     public TopoDS_TCompound() : base(TopAbs_ShapeEnum.TopAbs_COMPOUND)
     {
+        Orientable(false);
     }
 
     /// <summary>An empty TCompound.</summary>
