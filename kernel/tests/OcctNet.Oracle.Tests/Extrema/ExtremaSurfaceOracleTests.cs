@@ -361,12 +361,13 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Extrema_GenExtCS through BRepExtrema_DistShapeShape between an edge on a Bezier or B-spline curve (smooth: no C1
-    /// break, so Extrema_ExtCS adds no sharp points) and a face. BRepExtrema_ExtCF loads the face's surface on its UV
-    /// bounds and initialises Extrema_ExtCS with the tolerances max(Resolution(min(tolerance, Confusion)),
-    /// PConfusion); for these curves Extrema_ExtCS calls Extrema_GenExtCS (Initialize(S, 10, 10, TolS), Perform(C, 13
-    /// for a B-spline and 12 for a Bezier curve, TolC)) and keeps each extremum inside the ranges after putting its
-    /// surface parameters in their periods (AddSolution). The port's side does the same; each native solution inside
+    /// Extrema_GenExtCS through BRepExtrema_DistShapeShape between an edge and a face: on a Bezier or B-spline curve
+    /// (smooth: no C1 break, so Extrema_ExtCS adds no sharp points), or on a conic Extrema_ExtCS doesn't solve
+    /// analytically on that surface (GenExtCS's three paths: general, conic and quadric). BRepExtrema_ExtCF loads the
+    /// face's surface on its UV bounds and initialises Extrema_ExtCS with the tolerances max(Resolution(min(tolerance,
+    /// Confusion)), PConfusion); for these curves Extrema_ExtCS calls Extrema_GenExtCS (Initialize(S, 10, 10, TolS),
+    /// Perform(C, 13 on circles and B-splines, 12 otherwise, TolC), hyperbolas within [-20, 20]) and keeps each
+    /// extremum inside the ranges after putting its parameters in their periods (AddSolution). The port's side does the same; each native solution inside
     /// the edge and the face must be one of the port's.
     /// </summary>
     [Fact]
@@ -374,7 +375,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 20261103);
         int aCompared = 0, aCases = 0;
-        for (int c = 0; c < 400; c++)
+        for (int c = 0; c < 700; c++)
         {
             int aKind = c % 10;
             var aFace = RandomFace(anOracle, aKind);
@@ -385,29 +386,55 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             (N.TopoDS_Face aNF, Geom_Surface aPS, string aKindName) = aFace.Value;
             N.Geom_Curve aNC;
             Geom_Curve aPC;
-            bool aBezier = anOracle.Bool();
-            if (aBezier)
+            // A Bezier curve, a smooth B-spline curve, or a conic Extrema_ExtCS doesn't solve analytically on this
+            // surface (a circle off planes, cylinders and spheres, a hyperbola off planes, any ellipse or parabola)
+            int aCurveKind = anOracle.Int(0, 2) < 2 ? anOracle.Int(5, 6) : anOracle.Int(1, 4);
+            if ((aCurveKind == 1 && (aKind == 0 || aKind == 1 || aKind == 3)) || (aCurveKind == 3 && aKind == 0))
+            {
+                aCurveKind = 2;
+            }
+            double aF, aL;
+            if (aCurveKind == 5)
             {
                 (N.Geom_BezierCurve aNB, Geom_BezierCurve aPB) = AdaptorOracleInputs.RandomBezierCurve(anOracle, 5);
                 (aNC, aPC) = (aNB, aPB);
             }
-            else
+            else if (aCurveKind == 6)
             {
                 (N.Geom_BSplineCurve aNB, Geom_BSplineCurve aPB) =
                     AdaptorOracleInputs.RandomBSplineCurve(anOracle, false, 2, 5, 4);
                 (aNC, aPC) = (aNB, aPB);
             }
-            using (aNF)
-            using (aNC)
+            else
             {
-                (double aU1, double aU2, double aV1, double aV2) = UVBounds(aNF);
-                double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                (aNC, aPC, _) = AdaptorOracleInputs.RandomCurve(anOracle, aCurveKind);
+            }
+            string aCurveName = AdaptorOracleInputs.CurveKinds[aCurveKind];
+            if (aPC.IsPeriodic())
+            {
+                aF = anOracle.Real(-Math.PI, Math.PI);
+                aL = aF + anOracle.Real(0.5, 2 * Math.PI);
+            }
+            else if (Precision.IsInfinite(aPC.FirstParameter()) || Precision.IsInfinite(aPC.LastParameter()))
+            {
+                aF = anOracle.Real(-4, 1);
+                aL = aF + anOracle.Real(1, 4);
+            }
+            else
+            {
+                aF = aPC.FirstParameter();
+                aL = aPC.LastParameter();
                 if (anOracle.Bool())
                 {
                     double a = anOracle.Real(aF, aF + 0.4 * (aL - aF));
                     aL = anOracle.Real(aF + 0.6 * (aL - aF), aL);
                     aF = a;
                 }
+            }
+            using (aNF)
+            using (aNC)
+            {
+                (double aU1, double aU2, double aV1, double aV2) = UVBounds(aNF);
                 // Move the curve so that it passes near (or through) a point of the face
                 gp_Pnt aOnS = aPS.Value(anOracle.Real(aU1, aU2), anOracle.Real(aV1, aV2));
                 gp_Pnt aOnC = aPC.Value(anOracle.Real(aF, aL));
@@ -419,7 +446,16 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     aNC.Translate(aNMove);
                 }
                 aPC.Translate(aMove);
-                string aW = $"{(aBezier ? "Bezier" : "B-spline")} [{aF:R}, {aL:R}] / {aKindName} #{c}";
+                string aW = $"{aCurveName} [{aF:R}, {aL:R}] / {aKindName} #{c}";
+
+                using var aME = new N.BRepBuilderAPI_MakeEdge(aNC, aF, aL);
+                if (!aME.IsDone())
+                {
+                    continue;
+                }
+                using N.TopoDS_Edge aNE = aME.Edge();
+                // BRepLib_MakeEdge puts a periodic curve's range in the period: the edge's range is the one used
+                N.BRep_Tool.Range(aNE, ref aF, ref aL);
 
                 // The port's side of BRepExtrema_ExtCF(E, F) and Extrema_ExtCS's generic path
                 var aCurve = new GeomAdaptor_Curve(aPC, aF, aL);
@@ -427,12 +463,6 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 {
                     continue;
                 }
-                using var aME = new N.BRepBuilderAPI_MakeEdge(aNC, aF, aL);
-                if (!aME.IsDone())
-                {
-                    continue;
-                }
-                using N.TopoDS_Edge aNE = aME.Edge();
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE, aNF);
 
                 var aSurf = new GeomAdaptor_TransformedSurface(aPS, aU1, aU2, aV1, aV2, new gp_Trsf()); // BRepAdaptor_Surface
@@ -444,7 +474,17 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 aTolC = Math.Max(aTolC, Precision.PConfusion());
                 var aGen = new Extrema_GenExtCS();
                 aGen.Initialize(aSurf, 10, 10, aTolS);
-                aGen.Perform(aCurve, aBezier ? 12 : 13, aTolC);
+                // Extrema_ExtCS::Perform: 13 samples on circles and B-spline curves, 12 otherwise; hyperbolas within
+                // [-20, 20]
+                int aNbT = aCurveKind == 1 || aCurveKind == 6 ? 13 : 12;
+                if (aCurveKind == 3)
+                {
+                    aGen.Perform(aCurve, aNbT, Math.Max(-20.0, aCurve.FirstParameter()), Math.Min(20.0, aCurve.LastParameter()), aTolC);
+                }
+                else
+                {
+                    aGen.Perform(aCurve, aNbT, aTolC);
+                }
                 aCases++;
                 List<(double T, double U, double V, gp_Pnt PC, gp_Pnt PS, double D2)> aSols = [];
                 if (aGen.IsDone())
@@ -454,7 +494,12 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         Extrema_POnCurv aPOnC = aGen.PointOnCurve(j);
                         Extrema_POnSurf aPOnS = aGen.PointOnSurface(j);
                         aPOnS.Parameter(out double aU, out double aV);
-                        // Extrema_ExtCS::AddSolution (the curve is not periodic)
+                        // Extrema_ExtCS::AddSolution
+                        double aT = aPOnC.Parameter();
+                        if (aCurve.IsPeriodic())
+                        {
+                            aT = ElCLib.InPeriod(aT, aF, aF + aCurve.Period());
+                        }
                         if (aSurf.IsUPeriodic())
                         {
                             aU = ElCLib.InPeriod(aU, aU1, aU1 + aSurf.UPeriod());
@@ -463,7 +508,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         {
                             aV = ElCLib.InPeriod(aV, aV1, aV1 + aSurf.VPeriod());
                         }
-                        aSols.Add((aPOnC.Parameter(), aU, aV, aPOnC.Value(), aPOnS.Value(), aGen.SquareDistance(j)));
+                        aSols.Add((aT, aU, aV, aPOnC.Value(), aPOnS.Value(), aGen.SquareDistance(j)));
                     }
                 }
 

@@ -182,6 +182,24 @@ public class Extrema_SurfacePSTests
         }
     }
 
+    /// <summary>
+    /// OCCT's tree search for the maximum starts its selector at a maximal distance of 0, which Bnd_Sphere::IsOut reads
+    /// as "reject every sphere farther than 0": nothing is selected, and the solution is refined from the first grid
+    /// node instead of the farthest one (occt-issues.md). The gradient search finds the farthest point.
+    /// </summary>
+    [Fact]
+    public void GenExtPS_TreeMax_StartsFromTheFirstNode_AsInOcct()
+    {
+        GeomAdaptor_Surface aBump = new(MakeBump());
+        gp_Pnt aP = new(4.0, 4.0, -10.0);
+        Extrema_GenExtPS aGrad = new(aP, aBump, 20, 20, 1e-9, 1e-9, Extrema_ExtFlag_MAX, Extrema_ExtAlgo_Grad);
+        Extrema_GenExtPS aTree = new(aP, aBump, 20, 20, 1e-9, 1e-9, Extrema_ExtFlag_MAX, Extrema_ExtAlgo_Tree);
+        Assert.True(aGrad.IsDone() && aTree.IsDone());
+        double aGradMax = Enumerable.Range(1, aGrad.NbExt()).Max(aGrad.SquareDistance);
+        double aTreeMax = aTree.NbExt() == 0 ? 0.0 : Enumerable.Range(1, aTree.NbExt()).Max(aTree.SquareDistance);
+        Assert.True(aTreeMax < aGradMax - 1.0, $"tree {aTreeMax}, gradient {aGradMax}");
+    }
+
     [Fact]
     public void GenExtPS_Errors()
     {

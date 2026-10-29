@@ -93,6 +93,8 @@ public class Extrema_GenExtPS
         public Bnd_SphereUBTreeSelectorMax(NCollection_HArray1<Bnd_Sphere> theSphereArray, in Bnd_Sphere theSol)
             : base(theSphereArray, theSol)
         {
+            // OCCT: Reject reads this as a maximal distance (Bnd_Sphere::IsOut), so with 0 every sphere is rejected
+            // and the search for the maximum starts from the first grid node
             myMaxDist = 0;
         }
 
