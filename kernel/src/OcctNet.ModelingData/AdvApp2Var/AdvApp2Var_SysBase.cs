@@ -40,7 +40,7 @@ internal sealed class AdvApp2Var_SysBase
         mcrstac_ = new mcrstac_t();
     }
 
-    // OCCT's destructor asserts that every allocation was deleted (mcrgene_.ncore == 0); a managed block left
+    // The C++ destructor asserts that every allocation was deleted (mcrgene_.ncore == 0); a managed block left
     // allocated is simply collected.
 
     /* Maximum number of allowed allocation requests.
@@ -65,14 +65,14 @@ internal sealed class AdvApp2Var_SysBase
         public byte prot;
         public byte unit; // unit of allocation: 1, 2, 4 or 8
         public int reqsize;
-        public Array? loc; // OCCT: reference address of the table (the port: the block it now points to)
+        public Array? loc; // C++: reference address of the table (the port: the block it now points to)
         public int offset;
         public byte alloctype; // static_allocation or heap_allocation
         public int size;
-        public Array? addr; // OCCT: address of the beginning of allocation (the port: the block)
+        public Array? addr; // C++: address of the beginning of allocation (the port: the block)
         public int userzone; // not used
-        public int startaddr; // OCCT: address of the start flag (the port: its byte offset in the block, or -1)
-        public int endaddr; // OCCT: address of the end flag (the port: its byte offset in the block, or -1)
+        public int startaddr; // C++: address of the start flag (the port: its byte offset in the block, or -1)
+        public int endaddr; // C++: address of the end flag (the port: its byte offset in the block, or -1)
         public int rank;
     }
 
@@ -388,7 +388,7 @@ internal sealed class AdvApp2Var_SysBase
         /*        -1 MESSAGE INEXISTING (1 INTEGER AND 1 CHAIN) */
 
         inum = -1;
-        // OCCT's table of messages (French, German, English) is commented out.
+        // The C++ table of messages (French, German, English) is commented out.
 
         /* --------------------------------------------------------------------- */
         /*  IMPLEMENTATION OF WRITE , WITH OR WITHOUT DATA : */
@@ -553,7 +553,7 @@ internal sealed class AdvApp2Var_SysBase
                 i__1 = nbfois;
                 for (nufois = 1; nufois <= i__1; ++nufois)
                 {
-                    mcrfill_<double>(c__504, buff0, xtab + ((nufois - 1) * 63 + 1));
+                    mcrfill_(c__504, buff0, xtab + ((nufois - 1) * 63 + 1));
                     /* L1000: */
                 }
             }
@@ -561,7 +561,7 @@ internal sealed class AdvApp2Var_SysBase
             if (nreste >= 1)
             {
                 i__1 = nreste << 3;
-                mcrfill_<double>(i__1, buff0, xtab + (noffst + 1));
+                mcrfill_(i__1, buff0, xtab + (noffst + 1));
             }
         }
         else
@@ -576,7 +576,7 @@ internal sealed class AdvApp2Var_SysBase
                 i__1 = nbfois;
                 for (nufois = 1; nufois <= i__1; ++nufois)
                 {
-                    mcrfill_<double>(c__504, buffx, xtab + ((nufois - 1) * 63 + 1));
+                    mcrfill_(c__504, buffx, xtab + ((nufois - 1) * 63 + 1));
                     /* L3000: */
                 }
             }
@@ -584,7 +584,7 @@ internal sealed class AdvApp2Var_SysBase
             if (nreste >= 1)
             {
                 i__1 = nreste << 3;
-                mcrfill_<double>(i__1, buffx, xtab + (noffst + 1));
+                mcrfill_(i__1, buffx, xtab + (noffst + 1));
             }
         }
 
@@ -668,13 +668,13 @@ internal sealed class AdvApp2Var_SysBase
         if (nbentr < 63)
         {
             nrest = nbentr << 3;
-            mcrfill_<double>(nrest, buff, dtable + 1);
+            mcrfill_(nrest, buff, dtable + 1);
         }
         else
         {
             /* Start & initialization */
             ioct = 504;
-            mcrfill_<double>(ioct, buff, dtable + 1);
+            mcrfill_(ioct, buff, dtable + 1);
             indic = 63;
 
             /* Loop. The upper limit is the int value of the logarithm of base 2
@@ -684,7 +684,7 @@ internal sealed class AdvApp2Var_SysBase
             i__1 = (int)(MathF.Log((float)nbentr / (float)63.0) / MathF.Log((float)2.0));
             for (ibid = 1; ibid <= i__1; ++ibid)
             {
-                mcrfill_<double>(ioct, dtable + 1, dtable + (indic + 1));
+                mcrfill_(ioct, dtable + 1, dtable + (indic + 1));
                 ioct += ioct;
                 indic += indic;
 
@@ -695,7 +695,7 @@ internal sealed class AdvApp2Var_SysBase
 
             if (nrest > 0)
             {
-                mcrfill_<double>(nrest, dtable + 1, dtable + (indic + 1));
+                mcrfill_(nrest, dtable + 1, dtable + (indic + 1));
             }
         }
         return 0;
@@ -780,7 +780,7 @@ internal sealed class AdvApp2Var_SysBase
 
         /* Local variables */
         int ideb;
-        // OCCT: NCollection_Array1<double> dtab(0, 32000 - 1), of which only addresses are used.
+        // C++: NCollection_Array1<double> dtab(0, 32000 - 1), of which only addresses are used.
         NCollection_Array1<int> itab = new(0, 160 - 1); // was [4][40] but now flattened to a single array
         int ipre;
         int i__, j, k;
@@ -839,7 +839,7 @@ internal sealed class AdvApp2Var_SysBase
                     itab[(i__ << 2) - 4] = noct / 8 + 1;
                     itab[(i__ << 2) - 3] = ipre;
                     itab[(i__ << 2) - 2] = noct;
-                    iadr = ipre - 1; // OCCT: &dtab[ipre - 1]
+                    iadr = ipre - 1; // C++: &dtab[ipre - 1]
                     itab[(i__ << 2) - 1] = iadr;
                     goto L9900;
                 }
@@ -982,7 +982,7 @@ internal sealed class AdvApp2Var_SysBase
         /* REMOVAL OF PARAMETERS IN MCRGENE */
         if (n < MAX_ALLOC_NB - 1)
         {
-            noct = mcrgene_.ncore - (n + 1); // OCCT: in bytes, copied with mcrfill_
+            noct = mcrgene_.ncore - (n + 1); // C++: in bytes, copied with mcrfill_
             Array.Copy(mcrgene_.icore, n + 1, mcrgene_.icore, n, noct);
         }
         --mcrgene_.ncore;
@@ -990,7 +990,7 @@ internal sealed class AdvApp2Var_SysBase
         /* *** Set to overflow of IOFSET */
         {
             /* assign max positive int to *iofset */
-            iofset = int.MaxValue; // OCCT: the maximum intptr_t (2147483647 for 32bit)
+            iofset = int.MaxValue; // C++: the maximum intptr_t (2147483647 for 32bit)
         }
         goto L9900;
 
@@ -1024,7 +1024,7 @@ internal sealed class AdvApp2Var_SysBase
         return 0;
     } /* mcrdelt_ */
 
-    // OCCT's `loc == mcrgene_.icore[i__].loc`: whether the pointer T is the block (decision 904).
+    // The C++ `loc == mcrgene_.icore[i__].loc`: whether the pointer T is the block (decision 904).
     private static bool SameBlock<T>(F2cPtr<T> t, Array? theBlock)
         where T : unmanaged
     {
@@ -1038,13 +1038,18 @@ internal sealed class AdvApp2Var_SysBase
     /// Transfer a memory zone of SIZE octets into another, managing intersections (as memmove). The port copies
     /// arrays of one element type; SIZE stays in octets.
     /// </summary>
-    public static int mcrfill_<T>(int size, F2cConstPtr<T> tin, F2cPtr<T> tout)
+    public static int mcrfill_(int size, F2cConstPtr<double> tin, F2cPtr<double> tout) => mcrfill_core(size, tin, tout);
+
+    /// <summary>Transfer a memory zone of SIZE octets into another, as <see cref="mcrfill_(int, F2cConstPtr{double}, F2cPtr{double})"/>.</summary>
+    public static int mcrfill_(int size, F2cConstPtr<int> tin, F2cPtr<int> tout) => mcrfill_core(size, tin, tout);
+
+    private static int mcrfill_core<T>(int size, F2cConstPtr<T> tin, F2cPtr<T> tout)
         where T : unmanaged
     {
         int aCount = (size + Unsafe.SizeOf<T>() - 1) / Unsafe.SizeOf<T>();
         ReadOnlySpan<byte> jmin = MemoryMarshal.AsBytes(tin.AsSpan(aCount)).Slice(0, size);
         Span<byte> jmout = MemoryMarshal.AsBytes(tout.AsSpan(aCount)).Slice(0, size);
-        // OCCT copies with memcpy when the zones don't overlap, and byte by byte forwards or backwards otherwise:
+        // The C++ copies with memcpy when the zones don't overlap, and byte by byte forwards or backwards otherwise:
         // the result is memmove's, which Span.CopyTo is.
         jmin.CopyTo(jmout);
         return 0;
@@ -1323,7 +1328,12 @@ internal sealed class AdvApp2Var_SysBase
     //=================================================================================================
 
     /// <summary>Reset to zero TAILLE octets of a table of logic or integer.</summary>
-    public static void miraz_<T>(int taille, F2cPtr<T> adt)
+    public static void miraz_(int taille, F2cPtr<double> adt) => miraz_core(taille, adt);
+
+    /// <summary>Reset to zero TAILLE octets of a table of integers.</summary>
+    public static void miraz_(int taille, F2cPtr<int> adt) => miraz_core(taille, adt);
+
+    private static void miraz_core<T>(int taille, F2cPtr<T> adt)
         where T : unmanaged
     {
         int aCount = (taille + Unsafe.SizeOf<T>() - 1) / Unsafe.SizeOf<T>();
@@ -1403,8 +1413,7 @@ internal sealed class AdvApp2Var_SysBase
     //=================================================================================================
 
     /// <summary>Reset to zero a table of TAILLE DOUBLE PRECISION (TAILLE * 8 octets, whatever the element type).</summary>
-    public static void mvriraz_<T>(int taille, F2cPtr<T> adt)
-        where T : unmanaged
+    public static void mvriraz_(int taille, F2cPtr<double> adt)
     {
         int offset;
         offset = taille * 8;

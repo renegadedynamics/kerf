@@ -24,7 +24,7 @@ internal static partial class AdvApp2Var_Data
 {
     public static mmcmcnp_1_ Getmmcmcnp() => new(s_e_Mmcmcnp);
 
-    // OCCT: static double e_1[3721], cast to mmcmcnp_1_.
+    // C++: static double e_1[3721], cast to mmcmcnp_1_.
     private static ReadOnlySpan<double> s_e_Mmcmcnp => [
         1.0, 1.0,
         1.0, 1.0,

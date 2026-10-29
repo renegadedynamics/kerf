@@ -28,7 +28,7 @@ internal static partial class AdvApp2Var_Data
 {
     public static mmapgs1_1_ Getmmapgs1() => new(s_e_Mmapgs1);
 
-    // OCCT: static double e_1[4551], cast to mmapgs1_1_.
+    // C++: static double e_1[4551], cast to mmapgs1_1_.
     private static ReadOnlySpan<double> s_e_Mmapgs1 => [
         .375693680937234041301644955593695, .182311890642854011583827835693142,
         .0329219793988290852585859638846444, 6.80427331044466112674073984687531e-4,

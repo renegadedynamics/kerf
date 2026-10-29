@@ -28,7 +28,7 @@ internal static partial class AdvApp2Var_Data
 {
     public static mmjcobi_1_ Getmmjcobi() => new(s_e_Mmjcobi);
 
-    // OCCT: static double e_1[7936], cast to mmjcobi_1_.
+    // C++: static double e_1[7936], cast to mmjcobi_1_.
     private static ReadOnlySpan<double> s_e_Mmjcobi => [
         .70710678118654752440084436210485, -.79056941504209483299972338610818,
         .79549512883486596495094990736796, -.79672179899887262969191001703481,

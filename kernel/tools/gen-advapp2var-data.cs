@@ -78,7 +78,7 @@ foreach (var aTable in aTables)
         {
             public static {{aTable.Struct}} {{aTable.Getter}}() => new(s_e_{{aTable.File}});
 
-            // OCCT: static double e_1[{{aTable.Size}}], cast to {{aTable.Struct}}.
+            // C++: static double e_1[{{aTable.Size}}], cast to {{aTable.Struct}}.
             private static ReadOnlySpan<double> s_e_{{aTable.File}} => [
 
         """);
@@ -125,7 +125,7 @@ foreach (var aTable in aTables)
 
             public static minombr_1_ Getminombr() => new(s_nbr);
 
-            // OCCT: minombr_1_::nbr[1001].
+            // C++: minombr_1_::nbr[1001].
             private static ReadOnlySpan<int> s_nbr => [
 
         """);

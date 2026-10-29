@@ -32,7 +32,7 @@ internal static partial class AdvApp2Var_Data
 {
     public static mlgdrtl_1_ Getmlgdrtl() => new(s_e_Mlgdrtl);
 
-    // OCCT: static double e_1[1891], cast to mlgdrtl_1_.
+    // C++: static double e_1[1891], cast to mlgdrtl_1_.
     private static ReadOnlySpan<double> s_e_Mlgdrtl => [
         .577350269189625764509148780501958, .339981043584856264802665759103245,
         .86113631159405257522394648889281, .238619186083196908630501721680712,

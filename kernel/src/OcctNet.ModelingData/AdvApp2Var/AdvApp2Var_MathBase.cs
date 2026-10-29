@@ -6,7 +6,7 @@
 namespace Occt;
 
 /// <summary>
-/// The function evaluated by <see cref="AdvApp2Var_MathBase.mmgaus1_"/> (OCCT: <c>int (*bfunx)(int* ninteg,
+/// The function evaluated by <see cref="AdvApp2Var_MathBase.mmgaus1_"/> (C++: <c>int (*bfunx)(int* ninteg,
 /// double* parame, double* vfunj1, int* iercod)</c>, mmfunj1_() from Smoothing.cxx).
 /// </summary>
 internal delegate int AdvApp2Var_MathBase_bfunx(int ninteg, double parame, F2cPtr<double> vfunj1, ref int iercod);
@@ -49,8 +49,9 @@ internal static class AdvApp2Var_MathBase
         public static int niterm, niterr;
     }
 
-    // The cache of mmherm0_'s Hermite coefficients, read by mmherm1_. OCCT's is a static struct shared by all
-    // threads, which makes concurrent approximations race on it; the port's is per thread (decision 903).
+    // The cache of mmherm0_'s Hermite coefficients, read by mmherm1_.
+    // OCCT: a static struct shared by all threads, which concurrent approximations race on (mmherm0_ zeroes and
+    // refills it while another thread may read it); the port's is per thread (decision 903, occt-issues.md).
     private sealed class mmcmher_t
     {
         public double tdebut, tfinal, verifi;
@@ -75,6 +76,8 @@ internal static class AdvApp2Var_MathBase
 
         /* Local variables */
         int i__ = 0;
+        // OCCT: a null pointer (the Fortran had DIFFER(100)), used unallocated when NDIMEN <= 100: the C++
+        // dereferences null, the port throws IndexOutOfRangeException (occt-issues.md).
         F2cPtr<double> differ = default;
         int ier = 0;
         int iofset = 0;
@@ -4323,6 +4326,8 @@ internal static class AdvApp2Var_MathBase
             }
             /* L100: */
         }
+        // OCCT: when MAXSZ2 > JSIZE1 the elements of WORK past JSIZE1 in each line were never written: the C++
+        // copies uninitialised heap memory into TABLE2, the port zeros (occt-issues.md).
         ilong = isize << 3;
         AdvApp2Var_SysBase.mcrfill_(ilong, work + iofst, table2 + table2_offset);
 
@@ -5974,7 +5979,7 @@ internal static class AdvApp2Var_MathBase
         int i__1 = 0;
 
         /* Local variables */
-        // OCCT: double vjacc[80] = {}, viewed as NCollection_Array1<double> vjac[vjacc[0], 1, 80]
+        // C++: double vjacc[80] = {}, viewed as NCollection_Array1<double> vjac(vjacc[0], 1, 80)
         F2cPtr<double> herm = new F2cPtr<double>(stackalloc double[24]);
         NCollection_Array1<double> vjac = new(1, 80);
         F2cPtr<int> iord = new F2cPtr<int>(stackalloc int[2]);
@@ -6848,6 +6853,8 @@ internal static class AdvApp2Var_MathBase
 
         /* Local variables */
         bool ldbg = false;
+        // OCCT: mcho, v1 to v4, hchole and matsym are null pointers (the Fortran had arrays of 100), used
+        // unallocated when a dimension is <= 100: the C++ dereferences null, the port throws (occt-issues.md).
         F2cPtr<double> mcho = default;
         int jmin = 0;
         int jmax = 0;
@@ -9727,7 +9734,7 @@ internal static class AdvApp2Var_MathBase
         int i__1 = 0;
 
         /* Local variables */
-        // OCCT: double tampc[40] = {}, viewed as NCollection_Array1<double> tamp[tampc[0], 1, 40]
+        // C++: double tampc[40] = {}, viewed as NCollection_Array1<double> tamp(tampc[0], 1, 40)
         NCollection_Array1<double> tamp = new(1, 40);
         int ndegl = 0;
         int kg = 0;
