@@ -72,12 +72,9 @@ broken down by package.
 | ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
-| ModelingData | TKG2d | 82 / 102 | 19,997 / 23,488 | 85.1 |
-| ModelingData | TKG3d | 194 / 237 | 60,101 / 70,301 | 85.5 |
+| ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
+| ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
 | ModelingData | TKGeomBase | 455 / 720 | 253,054 / 317,408 | 79.7 |
-| ModelingData | TKG2d | 88 / 102 | 22,461 / 23,488 | 95.6 |
-| ModelingData | TKG3d | 201 / 237 | 67,501 / 70,301 | 96.0 |
-| ModelingData | TKGeomBase | 380 / 720 | 238,225 / 317,408 | 75.1 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -85,8 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1199 | 484,792 / 2,897,781 | 16.7 |
-| **All** |  | 1137 | 479,827 / 2,897,781 | 16.6 |
+| **All** |  | 1262 | 498,483 / 2,897,781 | 17.2 |
 
 ## TKMath
 
@@ -144,10 +140,8 @@ broken down by package.
 | Geom2d | 44 / 44 | 11,019 / 11,019 | 100.0 |
 | Geom2dAdaptor | 4 / 4 | 1,826 / 1,826 | 100.0 |
 | Geom2dEval | 14 / 14 | 4,405 / 4,405 | 100.0 |
-| Geom2dGridEval | 0 / 20 | 0 / 3,491 | 0.0 |
-| Geom2dHash | 14 / 14 | 1,027 / 1,027 | 100.0 |
 | Geom2dGridEval | 20 / 20 | 3,491 / 3,491 | 100.0 |
-| Geom2dHash | 0 / 14 | 0 / 1,027 | 0.0 |
+| Geom2dHash | 14 / 14 | 1,027 / 1,027 | 100.0 |
 
 ## TKG3d
 
@@ -158,10 +152,8 @@ broken down by package.
 | Geom | 84 / 84 | 30,530 / 30,530 | 100.0 |
 | GeomAdaptor | 14 / 14 | 7,175 / 7,175 | 100.0 |
 | GeomEval | 25 / 25 | 9,820 / 9,820 | 100.0 |
-| GeomGridEval | 0 / 43 | 0 / 10,200 | 0.0 |
-| GeomHash | 36 / 36 | 2,800 / 2,800 | 100.0 |
 | GeomGridEval | 43 / 43 | 10,200 / 10,200 | 100.0 |
-| GeomHash | 0 / 36 | 0 / 2,800 | 0.0 |
+| GeomHash | 36 / 36 | 2,800 / 2,800 | 100.0 |
 | TopAbs | 5 / 5 | 418 / 418 | 100.0 |
 
 ## TKGeomBase
