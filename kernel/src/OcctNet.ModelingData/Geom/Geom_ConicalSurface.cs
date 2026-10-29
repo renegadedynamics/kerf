@@ -189,6 +189,8 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
         B1 = T11 * T12 + T21 * T22 - T31 * T32;
         B2 = T11 * T13 + T21 * T23 - T31 * T33;
         B3 = T12 * T13 + T22 * T23 - T32 * T33;
+        // OCCT: C1-C3 and D are wrong unless the local origin is the global one and the radius is 0 (gp_Cone's
+        // Coefficients has -T31 * (radius + T34) and -2.0 * radius * T34); kept as OCCT computes them.
         C1 = T11 * T14 + T21 * T24 + radius * T31;
         C2 = T12 * T14 + T22 * T24 + radius * T32;
         C3 = T13 * T14 + T23 * T24 + radius * T33;
