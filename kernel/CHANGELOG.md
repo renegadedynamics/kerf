@@ -153,3 +153,13 @@ Phase 2 (part): projection.
 - Tests: the ProjLib_ComputeApproxOnPolarSurface GTest; unit tests of every class; oracle tests of
   ProjLib_ProjectedCurve, ProjLib_ProjectOnPlane and GeomProjLib::ProjectOnPlane through GeomAPI::To2d and
   BRep_Tool::CurveOnSurface against native OCCT, all bit-identical.
+Phase 3 (part): curve-surface intersection.
+
+- `OcctNet.ModelingAlgorithms`: IntCurveSurface_HInter (curve/surface intersection: analytic for conics on
+  quadrics, by the quadric's equation for other curves on quadrics, by polygon/polyhedron interference refined by
+  Newton otherwise), generic over its curve, surface and tools as OCCT's templates are;
+  Intf_InterferencePolygonPolyhedron, IntImp_IntCS, IntImp_ZerCSParFunc, IntImp_ComputeTangence; IntSurf_Quadric and
+  IntSurf_QuadricTool; GeomAPI: To3d, ProjectPointOnCurve, ProjectPointOnSurf, ExtremaCurveCurve, ExtremaCurveSurface,
+  ExtremaSurfaceSurface, Interpolate, PointsToBSpline and IntCS.
+- Tests: the IntCurveSurface, IntSurf_Quadric and GeomAPI GTests; unit tests on known intersections; oracle tests of
+  GeomAPI_IntCS on every kind of curve and surface, and of the GeomAPI projections, Interpolate and PointsToBSpline.

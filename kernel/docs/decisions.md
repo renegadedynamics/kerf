@@ -2741,3 +2741,150 @@ PrjResolve, ProjLib::MakePCurveOfType) and GeomProjLib. With unit 2F, all of Pro
       BRep_Tool's own code. BRepAlgo_NormalProjection, GeomPlate and Draft read ProjLib_CompProjectedCurve's frozen
       `GetResult2dC`/`GetResult3dC`. BRepProj_Projection makes no ProjLib call of its own (it is built on
       BRepAlgoAPI_Section and BRepFill), so its oracle belongs with the Boolean units.
+## Phase 3: unit 3F, curve-surface intersection
+
+IntCurveSurface (HInter, OCCT 8's templates IntCurveSurface_Inter.pxx, InterUtils.pxx, PolygonUtils.pxx,
+PolyhedronUtils.pxx and QuadricCurveExactInterUtils.pxx, and the HInter instantiation classes),
+Intf_InterferencePolygonPolyhedron.gxx, IntImp_IntCS.gxx, IntImp_ZerCSParFunc.gxx, IntImp_ComputeTangence, IntSurf_Quadric
+and IntSurf_QuadricTool, and GeomAPI (the package, ProjectPointOnCurve, ProjectPointOnSurf, ExtremaCurveCurve,
+ExtremaCurveSurface, ExtremaSurfaceSurface, Interpolate, PointsToBSpline, IntCS), in OcctNet.ModelingAlgorithms.
+
+337. **The curve/surface intersection is generic over static-abstract interfaces** (decisions 202 and 284), because
+      OCCT instantiates its templates more than once: IntImp_IntCS for IntPatch_CurvIntSurf (over a 2D curve) and
+      HLRBRep_TheExactInterCSurf (over gp_Lin), the whole of IntCurveSurface_Inter.pxx for HLRBRep_InterCSurf, the
+      polyhedron helpers for IntPatch_Polyhedron, Intf_InterferencePolygonPolyhedron.gxx for HLRBRep.
+      - `IntImp_ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>`,
+        `IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>` and
+        `Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron, ToolPolyh>` are generic classes;
+        OCCT's instantiations (IntCurveSurface_TheCSFunctionOfHInter, TheExactHInter, TheInterferenceOfHInter) are
+        sealed subclasses with OCCT's constructors forwarded.
+      - OCCT 8's IntCurveSurface_Inter.pxx is a namespace of template functions that IntCurveSurface_HInter calls with
+        lambdas calling back its own methods (`[this]() { this->ResetFields(); }`, `this->PerformConicSurf`,
+        `this->InternalPerform`, `this->Append`). It is the generic class `IntCurveSurface_Inter<TheCurve,
+        TheCurveTool, TheSurface, TheSurfaceTool, ThePolygon, ThePolyhedron, TheInterference, TheCSFunction,
+        TheExactInter, TheQuadCurvExactInter> : IntCurveSurface_Intersection`, whose methods are HInter's (the public
+        `Perform` overloads, the protected `Perform` on bounds, `InternalPerform`, `PerformConicSurf`, `AppendIntAna`,
+        ...), each with the body of the InterImpl function it calls, the lambdas being direct calls (the InterImpl
+        name is in each summary). IntCurveSurface_HInter is a sealed subclass with no code. Rejected: delegates for the
+        lambdas (OCCT passes a generic lambda for the five conics, which would need five delegates, and every lambda
+        calls back the same object).
+      - The template parameters OCCT constructs (polygon, polyhedron, interference, function, exact intersections, the
+        quadric function) implement interfaces with a static abstract `Create` mirroring OCCT's constructors
+        (`IIntCurveSurface_ThePolygon<TSelf, TheCurve>`, `ThePolyhedron`, `TheInterference`, `TheCSFunction`,
+        `TheExactInter`, `TheQuadCurvExactInter`, `TheQuadCurvFunc`), implemented explicitly. What the helpers only
+        read is in non-generic interfaces (`IIntCurveSurface_Polygon`: InfParameter, SupParameter,
+        ApproxParamOnCurve; `IIntCurveSurface_Polyhedron`: Bounding, Triangle, Point, Parameters), so that the
+        InterUtils GTest's test polyhedron and polygon (and IntPatch_Polyhedron later) implement only those.
+      - The tool interfaces build on each other: `IIntImp_CurveTool<C>` (First/LastParameter, Resolution: all that
+        IntImp_IntCS calls, so that IntPatch's 2D curve tool can implement it), `IIntImp_ZerCSParCurveTool<C>` (+ Value,
+        D1), `IIntCurveSurface_CurveTool<C>` (+ GetType, the conics, intervals, period, D0, NbSamples, SamplePars), and
+        likewise `IIntImp_PSurfaceTool<S>`, `IIntImp_ZerCSParPSurfaceTool<S>` and `IIntCurveSurface_SurfaceTool<S>`;
+        `IIntImp_CSFunction<S, C>` is what IntImp_IntCS reads from its function (Point, Root, AuxillarSurface,
+        AuxillarCurve). Curves and surfaces are passed `in` (HLRBRep's curve is a gp_Lin).
+      - The .pxx namespaces of helpers are internal static classes (`IntCurveSurface_InterUtils`, `PolygonUtils`,
+        `PolyhedronUtils`, `QuadricCurveExactInterUtils`), their templates generic methods with the same constraints.
+        InterUtils' `SortedStartPoints` is a sealed class (it holds three arrays) and `UVBounds` a readonly struct.
+338. **The static tool classes are readonly structs** with static members, so that they can be type arguments:
+      IntCurveSurface_TheHCurveTool, IntCurveSurface_ThePolygonToolOfHInter and IntCurveSurface_ThePolyhedronToolOfHInter
+      (calls such as `IntCurveSurface_TheHCurveTool.Value(C, U)` read as in C++). OCCT passes Adaptor3d_HSurfaceTool, a
+      static class of OcctNet.ModelingData that can't implement this assembly's interfaces, so the new
+      `IntCurveSurface_TheHSurfaceTool` (named after TheHCurveTool) forwards each member to it; IntPatch and the other
+      instantiations over Adaptor3d_HSurfaceTool should use it. The deprecated `SamplePars` overload with an output
+      handle and the tools' `Dump` (to std::cout) are left out.
+339. **IntSurf_Quadric is a value type** (OCCT copies it: IntPatch's lines and functions keep copies). The `SetValue`
+      overloads are internal; the constructors are their twins (each SetValue rebuilds the quadric). `new()` is OCCT's
+      empty quadric (GeomAbs_OtherSurface), `default` is zeros. `ValAndGrad`, `D1` and `Parameters` take `ref`: on an
+      empty quadric OCCT leaves the arguments unchanged (decision 57); `IntSurf_QuadricTool` (a static class) passes
+      them on. The torus block that OCCT repeats in Distance, Gradient, ValAndGrad and Normale is the private
+      `TorusPoint` (decision 265's approach). Implicit gp_Dir to gp_Vec conversions are written out.
+340. **Results and working objects.**
+      - IntCurveSurface_IntersectionPoint and IntersectionSegment are structs (decision 117) with internal `SetValues`
+        (the constructors are the twins) and `Values` with `out`; `new()` and `default` agree (OCCT's default is zero
+        parameters and a tangent transition). IntCurveSurface_Intersection is an abstract class with OCCT's protected
+        fields and methods; `Dump` is ToString.
+      - The polygon and the polyhedron are sealed working classes with OCCT's public mutators (decision 21). The
+        polyhedron's `void*` arrays are .NET arrays of the same size, indexed from 1; `Destroy` (public, as in OCCT,
+        whose destructor calls it) drops them. `ComponentsBounding()` returns the polyhedron's own array.
+      - IntImp_IntCS keeps the function it is given, where OCCT copies it into the object: the C++ callers build the
+        function, pass it and never use it again, and the math_FunctionSetRoot is built on the object's function (in
+        OCCT, the copy), so the sharing is invisible. `Function()` returns it.
+      - Bnd_BoundSortBox is passed as a reference (a class). OCCT's `maliste = PolyhGrid.Compare(box)` copies the
+        sorter's list; the port keeps the reference, which the loop reads before the next Compare.
+      - Code that OCCT writes twice verbatim is a private helper: the body of both Intf_InterferencePolygonPolyhedron
+        `Intersect` methods after their plane equation (`IntersectWithPlane`), and the body of InterImpl's
+        InternalPerform and InternalPerformBSB after the interference is built (`InternalPerformInterference`). The
+        `Intersect` variant OCCT compiles out (`#if 0`) is not ported; HInter's private DoSurface and DoNewBounds, never
+        called, are not on the class (their InterUtils bodies are ported).
+      - The free function `IntImp_ComputeTangence` is `IntImp_ComputeTangence.ComputeTangence` (C# can't name a member
+        as its class), next to `ChoixRef`; its arrays are spans.
+341. **GeomAPI's algorithm classes are working objects with OCCT's public API** (decisions 21, 117, 220). Results are
+      returned by value and multi-value outputs are `out`; `TotalNearestPoints` and `TotalLowerDistanceParameters`
+      take `ref`, since they return false without writing (decision 57). OCCT's implicit conversions are explicit
+      operators (decision 28); ExtremaCurveCurve's `operator int` reads `myExtCC.NbExt()` as OCCT does, so it throws
+      when the computation failed, where `NbExtrema()` returns 0. `Extrema()` returns the held algorithm.
+      - **ProjectPointOnSurf keeps one default Extrema_ExtPS and its own GeomAdaptor_Surface** for its lifetime
+        (decisions 251, 260, 261): each `Init` loads the adaptor, calls `SetAlgo`, then `Initialize`; a flag set with
+        `SetExtremaFlag` survives `Init`. ProjectPointOnCurve likewise keeps its Extrema_ExtPC and adaptor.
+      - **ExtremaSurfaceSurface keeps the constructed Extrema_ExtSS** (decision 224's approach for OCCT's by-value
+        copy); ExtremaCurveSurface builds its adaptors in `Init`, as OCCT's locals (OCCT hands Extrema_ExtCS a pointer
+        to a local adaptor that dangles after Init: harmless in C#, noted in the class's remarks).
+      - **Interpolate and PointsToBSpline freeze the curve they hand out** (decision 243): `Curve()` and the explicit
+        conversion return the stored, frozen curve. As in OCCT, Interpolate keeps the caller's points array and Load's
+        flags array, and `Perform` sets the computed end-tangent flags in the caller's array. Its static helpers read
+        the points through `MemoryMarshal.Cast<gp_Pnt, double>` spans for PLib.EvalLagrange. OCCT declares
+        `ClearTangents` but never defines it: left out. PointsToBSpline's duplicated continuity switch is one private
+        helper; OCCT's implicit `TheComputer.Perform(Points)` is `new AppDef_MultiLine(Points)` (decision 201).
+      - `GeomAPI` is a `public static partial class` (decision 50). `To3d` is ported; `To2d` needs
+        ProjLib_ProjectedCurve and throws Standard_NotImplemented (`TODO(6A)`).
+      - GeomAPI_IntCS keeps the curve and an IntCurveSurface_HInter; `Segment` builds a new Geom_TrimmedCurve (HInter
+        makes no segments, so it is never reached).
+      - Not ported: GeomAPI_PointsToBSplineSurface (needs GeomFill_AppSurf) and GeomAPI_IntSS (needs GeomInt).
+342. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 62 new, 129 in all). OCCT's GTests IntSurf_Quadric_Test (1),
+      IntCurveSurface_IntersectionPoint (3), IntCurveSurface_InterUtils (1, with a test polyhedron and polygon over the
+      non-generic interfaces), IntCurveSurface_ThePolygonOfHInter_Test (1), IntCurveSurface_ThePolyhedronOfHInter (6),
+      GeomAPI_ProjectPointOnSurf, GeomAPI_PointsToBSpline, and TKG3d's GeomAPI_ExtremaCurveCurve and GeomAPI_Interpolate.
+      The suites whose C++ names are also OCCT class names get a `Test` suffix, as Intf_ToolTest. IntSurf_LineOn2S_Test
+      waits for IntSurf_LineOn2S. Known answers: IntSurf_Quadric on the five quadrics (zero distance on the surface,
+      gradient against finite differences, Parameters inverting Value, DN against D1, normals), IntImp_ComputeTangence,
+      and GeomAPI_IntCS / IntCurveSurface_HInter on line/plane (with the transition), a line parallel to and in a plane
+      (IsParallel), line/sphere (two points, In then Out), a line tangent to a sphere (Tangent), line/torus (four
+      points), circle/cylinder, a B-spline curve and a plane (the curve/quadric path), a B-spline curve and a B-spline
+      surface (the exact paraboloid z = x² + y²: polyhedron and Newton), a line through its apex, a line and an
+      infinite extrusion (estimated bounds), no intersection, not done; and the other GeomAPI classes, pinning two
+      OCCT bugs (occt-issues.md).
+343. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/GeomAPI`).
+      - GeomAPI_IntCS on random curves of every kind (line, conics, Bezier, B-spline, periodic B-spline, offset,
+        trimmed) against random surfaces of every kind (elementary, revolution, extrusion, Bezier, B-spline, offset,
+        trimmed), the curve moved to meet the surface (a quarter of the time slightly off it), 660 pairs: every path of
+        IntCurveSurface runs (IntAna, IntAna_IntLinTorus, the curve/quadric roots, the polygon/polyhedron interference
+        with Bnd_BoundSortBox, IntImp_IntCS, the bounds of infinite swept and offset surfaces). 1,355 points, all 10,110
+        values bit-identical.
+      - Lines tangent to every kind of surface (198 cases). A tangency is ill-conditioned: moving the line by one ulp
+        changes how many points native OCCT itself returns (the cluster of Newton solutions around a double root, and
+        far points at the 1e50 clamp on infinite swept and offset surfaces), so a last-bit difference anywhere shows.
+        The test checks that both sides find the tangency or neither (except on tori, where IntAna_IntLinTorus decides
+        a quartic's double root by a sign that is zero to the rounding error), and compares every value where both
+        return the same number of points (171 cases) within 1e-5: 7,865 of 8,334 values bit-identical, the others
+        within 1.7e-6.
+      - GeomAPI_ProjectPointOnCurve (Init then Perform: 21,895 values), ProjectPointOnSurf (35,552), Interpolate (600
+        cases, 75,144 values) and PointsToBSpline (its three methods, 30,394 values): all bit-identical. The 3B and 4A
+        tests that mirrored GeomAPI's call path now run the real classes, still bit-identical (Extrema_ExtPC through
+        ProjectPointOnCurve, 19,741 values; Extrema_ExtPS through ProjectPointOnSurf, 34,830 values).
+      - Not compared natively: HInter's Perform overloads with a given polygon or polyhedron (not bound; 3G's
+        BRepIntCurveSurface_Inter reaches them), IsParallel (GeomAPI_IntCS doesn't expose it), ExtremaCurveCurve,
+        ExtremaCurveSurface and ExtremaSurfaceSurface (not bound; their extrema classes have oracle tests).
+344. **For later units.**
+      - 3G (IntCurvesFace, BRepIntCurveSurface, BRepClass3d): IntCurvesFace_Intersector builds and keeps an
+        `IntCurveSurface_ThePolyhedronOfHInter` (`(surface, nbsu, nbsv, u1, v1, u2, v2)`, or with parameter arrays) and
+        a `Bnd_BoundSortBox`, and calls the HInter overloads `Perform(curve, polygon, surface, polyhedron[, bsb])` with
+        an `IntCurveSurface_ThePolygonOfHInter`; it uses `IntCurveSurface_TheHCurveTool` and
+        `GeomAPI_ProjectPointOnCurve` (`Init(curve, Umin, Usup)`, `Perform(point)`, `NbPoints`,
+        `LowerDistanceParameter`). Curves and surfaces are Adaptor3d_Curve/Adaptor3d_Surface (BRepAdaptor_Surface
+        derives from GeomAdaptor_TransformedSurface). HInter reports points only (no segments), and IsParallel only in
+        the analytic cases.
+      - IntPatch: IntPatch_CurvIntSurf is `IntImp_IntCS<IntPatch_CSFunction, Adaptor3d_Surface,
+        IntCurveSurface_TheHSurfaceTool, Adaptor2d_Curve2d, IntPatch_HCurve2dTool>`, with IntPatch_HCurve2dTool
+        implementing `IIntImp_CurveTool<Adaptor2d_Curve2d>` and IntPatch_CSFunction `IIntImp_CSFunction`;
+        IntPatch_Polyhedron uses `IntCurveSurface_PolyhedronUtils` and implements `IIntCurveSurface_Polyhedron` for
+        ComputeMaxDeflection. IntSurf_Quadric's internal `SetValue` serves IntPatch's quadric fields.
+      - HLRBRep: HLRBRep_InterCSurf is a sealed subclass of `IntCurveSurface_Inter` over gp_Lin and its own tools.

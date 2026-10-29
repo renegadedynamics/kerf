@@ -314,3 +314,12 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `ProjLib_ProjectOnPlane::Load`, parabola projected to a line | Builds a Geom_Line, then calls GetTrimmedResult with the null parabola | Null dereference in OCCT, NullReferenceException in the port (`Parabola_ProjectedToLine_OcctDereferencesNull`) |
 | `ProjLib_ProjectOnPlane` (callers of PerformApprox) | Dereferences a null curve when the approximation fails (`!IsAllApproximated`) | Null dereference. Not reached by a test |
 | `ProjLib_ProjectOnSurface::Load` | `MC.Curve(1, Poles)` fills the result array instead of `LocalPoles`, which stays at the origin; and passes the increment `Inc` where `BSplCLib::IncreaseDegree` takes the new degree | The result curve's poles are lost: it ends at the origin (`Load_PolesLost_OcctBug`). No OCCT code calls this class |
+
+## Phase 3: unit 3F, curve-surface intersection
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomAPI_ExtremaCurveCurve::TotalPerform` (GeomAPI_ExtremaCurveCurve.cxx) | Compares each pair of end points with the first total distance (`aTotalDist2`), which it never updates | A later pair can replace a nearer one: segments [1, 2] on the X and Y axes give a `TotalLowerDistance` of √8 instead of √2. Pinned by `ExtremaCurveCurve_TotalReachesTheEnds` |
+| `GeomAPI_ExtremaCurveCurve::Init` with ranges (GeomAPI_ExtremaCurveCurve.cxx) | Loads the whole curves (`myC1.Load(C1)`, no range) for the total distance | The Total methods report the curves' natural end parameters with the ranges' end points and project onto the whole curves: ranges [1, 2] of the segments [0, 3] give a total distance 1 at parameters (0, 0), where the answer is √2. Pinned by `ExtremaCurveCurve_TotalOnRangesReportsTheCurveEnds` |
+| `GeomAPI_Interpolate` (`BuildParameters`, `Interpolate`), `GeomAPI_PointsToBSpline::Init(Points, Params, ...)` (GeomAPI_Interpolate.cxx, GeomAPI_PointsToBSpline.cxx) | Index the caller's arrays from 1 (`ParametersPtr->Value(ii)` at a point index, `Value(1)`, `SetValue(1)`, `Params(i)`) | Arrays with another lower bound are read at the wrong places, or out of range. Not reproduced |
+| `GeomAPI_ExtremaCurveSurface::Init` (GeomAPI_ExtremaCurveSurface.cxx) | Hands Extrema_ExtCS a pointer to a local GeomAdaptor_Surface | The pointer dangles after Init (Extrema_ExtCS reads it again in later calls). Harmless in the port, which keeps a reference |
