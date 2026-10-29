@@ -710,3 +710,64 @@ Geom_BSplineCurve_1.cxx), OffsetCurve and Geom_OffsetCurveUtils.pxx.
      between a port axis and its native copy, which `Oracle.ToNative(gp_Ax2)` rebuilds, is multiplied by 1e200);
      (c) `MovePointAndTangent` is not tried on degree 1 curves, whose 2 × 2 system is singular: native OCCT
      inverts it without a check, the port throws (decisions 9 and 84).
+## Phase 2: unit 1B, Geom2d curves (29 October 2026)
+
+Geom2d_Line, Circle, Ellipse, Hyperbola, Parabola, TrimmedCurve, BezierCurve, BSplineCurve, OffsetCurve with
+Geom2d_OffsetCurveUtils, and Adaptor2d_OffsetCurve.
+
+131. **Pole, weight and knot arrays: `PackedList<T>` copies for callers, the arrays themselves for ported code.**
+     Where OCCT returns a const reference to an internal array (`Poles()`, `Knots()`, `Multiplicities()`,
+     `KnotSequence()`, `WeightsArray()`, and the `Weights()` pointer), the public method returns a new
+     `PackedList<T>`. `Weights()` returns null for a non-rational curve, as OCCT returns `BSplCLib::NoWeights()`.
+     A copy can't change when the curve is modified later, and it is what decision 11 asks for numeric arrays.
+     Ported code gets the arrays themselves, without copying, through internal accessors named with a `Ref`
+     suffix (`PolesRef()`, `WeightsRef()` (null if not rational), `WeightsArrayRef()`, `KnotsRef()`,
+     `MultiplicitiesRef()`, `KnotSequenceRef()`), to pass to BSplCLib as OCCT does. It must not modify them (the
+     unit weights and the Bezier knot arrays are shared). A ported `C->Poles()` passed to BSplCLib doesn't compile
+     until it is changed to `PolesRef()`. OCCT's deprecated copy-out overloads (`Poles(NCollection_Array1&)`, ...)
+     are public. The indexed accessors (`Pole(i)`, `Knot(i)`, `Weight(i)`) don't allocate.
+     Rejected: returning the internal arrays publicly (callers could write into them) and a `PackedList` view of
+     them (it would change when the curve is modified). Caching the copies in the curve is easy if profiling
+     ever shows a need.
+132. **Basis curves shared by Geom2d_TrimmedCurve and Geom2d_OffsetCurve are frozen, and copied on write.**
+     OCCT's `BasisCurve()` returns the stored handle, and Geom2d_OffsetCurve stores the caller's curve without
+     copying it (Geom2d_TrimmedCurve copies it in its constructor). The port keeps that sharing: `BasisCurve()`
+     freezes the stored curve and returns it, and `Geom2d_OffsetCurve.SetBasisCurve` freezes the caller's curve
+     that it keeps. The owners' own mutators (`Reverse`, `Transform`) copy a frozen basis curve before changing
+     it, so a basis curve that was handed out or shared never changes. `BasisCurve()` returns the same object
+     each time, as ported code may expect. Rejected: copying in `BasisCurve()` (an allocation per call, and a
+     different object each time) and not freezing (the hazard of section 8 of the rules).
+133. **Names of the added twins.** `Set` mutators get `With` twins (`WithRadius`, `WithPole`, `WithKnot`,
+     `WithKnots`, `WithTrim`, `WithBasisCurve`, `WithOffsetValue`; `SetPeriodic`, `SetNotPeriodic` and
+     `SetOrigin` give `WithPeriodic`, `WithNotPeriodic` and `WithOrigin`). The others get past participles:
+     `Increased` (Bezier), `DegreeIncreased`, `MultiplicityIncreased`, `MultiplicityIncremented`, `KnotInserted`,
+     `KnotsInserted` (Add defaults to false, as in Geom2d_BSplineCurve), `KnotRemoved` (null when the knot can't
+     be removed within the tolerance), `PoleInsertedAfter`, `PoleInsertedBefore`, `PoleRemoved`, `Segmented`,
+     `PointMoved` and `PointAndTangentMoved` (with OCCT's `out` results). `SetEvalRepresentation` gives
+     `WithEvalRepresentation`, which stores a clone of the descriptor so that the caller's descriptor can't
+     change the curve later, and `ClearEvalRepresentation` gives `WithoutEvalRepresentation`.
+     `EvalRepresentation()` is internal (decision 507).
+134. **`final` overrides are `sealed override`; the classes are not sealed**, as in OCCT, where the classes can
+     be derived from but those methods can't be redefined.
+135. **`Resolution` of the Bezier and B-spline curves stays public**: OCCT makes it non-const only because it
+     fills a cache. The port writes the cached value before its flag (`Volatile.Write`), so concurrent callers
+     on a shared curve compute it at most a few times and never read a half-written value.
+136. **Geom2d_BezierCurve's `init` never writes into the shared unit weights.** It resizes and fills `myWeights`,
+     which for a non-rational curve is a view of `BSplCLib::UnitWeights`, and a resize to the same size keeps the
+     view. OCCT's callers always change the size, so this can't happen there; the port replaces a non-owning
+     array first, in case a later port calls `init` otherwise.
+137. **Geom2d_OffsetCurveUtils' templates are ported per instantiation**, as overloads for `Geom2d_Curve` and
+     `Adaptor2d_Curve2d` (Geom2dAdaptor_Curve and Geom2dGridEval will use the second). In-out references are
+     `ref`, outputs `out`; `AdjustDerivative`'s array of pointers to the derivatives is a switch over the `ref`
+     parameters.
+138. **`BSplCLib.InsertKnots` is always given `Add` explicitly** (Geom2d_BSplineCurve's default is false,
+     BSplCLib's true): `InsertKnots` passes its own `Add`, `Segment` false, `IncreaseMultiplicity` and
+     `IncrementMultiplicity` true. The tolerance parameter takes the .hxx name `ParametricTolerance`, not the
+     .cxx name `Epsilon`, which would hide `Standard.Epsilon()` (as in decision 82).
+139. **Oracle tests skip the inputs only the port rejects.** On random B-splines, `MovePointAndTangent` can meet
+     a singular 2 × 2 system (mostly at degree 1): the port's `gp_Mat2d::Invert` throws, where native OCCT's
+     release build divides by zero. Some edits of unclamped curves are invalid on both sides: native OCCT throws
+     Standard_OutOfRange (its NCollection range checks are on), the port Standard_OutOfRange or an
+     IndexOutOfRangeException. The edit chains stop at a curve that `IncreaseDegree` left inconsistent
+     (occt-issues.md), and leave rotations out of composed transformations, whose last-bit sin/cos differences
+     grow to about 1e-9 after several edits.

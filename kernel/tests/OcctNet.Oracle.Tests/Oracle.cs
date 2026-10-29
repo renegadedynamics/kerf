@@ -134,6 +134,8 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public gp_Pnt2d Pnt2d() => new(Real(), Real());
 
+    public gp_Vec2d Vec2d() => new(Real(), Real());
+
     /// <summary>A random 2D direction, kept away from zero so it can be normalised, and <see cref="Settled(gp_Dir2d)"/>.</summary>
     public gp_Dir2d Dir2d()
     {
@@ -329,6 +331,10 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public static gp_Vec2d FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
 
+    public static gp_XY FromNative(N.gp_Dir2d theD) => new(theD.X(), theD.Y());
+
+    public static gp_XY FromNative(N.gp_XY theXY) => new(theXY.X(), theXY.Y());
+
     public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
     public static gp_Pnt FromNative(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
@@ -416,6 +422,20 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
         Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
     }
+
+    // 2D comparisons against the port's gp_XY coordinates (the Geom2d tests compare XY() of points, vectors and directions)
+
+    public void Same(in gp_XY theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    {
+        Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
+        Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
+    }
+
+    public void Same(in gp_Pnt2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+        => Same(theNative.XY(), thePort, theWhat, theTolerance);
+
+    public void Same(in gp_Vec2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+        => Same(theNative.XY(), thePort, theWhat, theTolerance);
 
     public void Same(in gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTolerance = Tolerance)
     {
