@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Geom;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// Geom_BezierSurface against native OCCT: random surfaces (degrees 1 to 8 in each direction, rational half the time,

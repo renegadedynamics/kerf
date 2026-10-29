@@ -1416,3 +1416,78 @@ Approx_ParametrizationType, Approx_Status and Approx_MCurvesToBSpCurve.
       with parameters and 15,905 for the variational form (161 curves, C1 and C2 only: decision 206), all
       bit-identical. AppDef_Compute, AppCont_LeastSquare and the Approx classes have no native entry point in the
       bindings; unit tests cover them.
+
+## Phase 2: unit 2A, offset surfaces and GeomAdaptor
+
+Geom_OffsetSurface with Geom_OffsetSurfaceUtils.pxx and Geom_OsculatingSurface.pxx; GeomAdaptor (GeomAdaptor,
+GeomAdaptor_Curve, GeomAdaptor_Surface, GeomAdaptor_SurfaceOfRevolution, GeomAdaptor_SurfaceOfLinearExtrusion,
+GeomAdaptor_TransformedCurve, GeomAdaptor_TransformedSurface); Adaptor3d_HSurfaceTool.
+
+210. **The adaptors' `std::variant` of evaluation data is an `object?` field.** GeomAdaptor_Curve's
+      `myCurveData` and GeomAdaptor_Surface's `mySurfaceData` hold null (`std::monostate`), a boxed gp value
+      (gp_Lin, gp_Circ, ..., gp_Pln, gp_Torus) or one of OCCT's data structs, which are internal sealed nested
+      classes with OCCT's names and public fields (`OffsetData`, `BezierData`, `BSplineData`, `ExtrusionData`,
+      `RevolutionData`; the cache is a plain mutable field where OCCT marks it `mutable`). `std::get<T>` is a cast,
+      `std::get_if<T>` an `is` pattern, so the code reads as OCCT's. Boxed values are never changed in place, so
+      `ShallowCopy` shares them as OCCT copies them. No other package uses the structs (checked across OCCT), so
+      they are internal; GeomAdaptor_Surface's field is `private protected` for the two derived adaptors, its other
+      fields `protected` as in OCCT. Rejected: one typed field per alternative (eleven fields, and every
+      `Load`/`ShallowCopy` resetting them) and a class hierarchy (a redesign). Unboxing copies a gp value per
+      evaluation, without allocating.
+211. **Geom_OffsetSurface shares its basis frozen, and copies it on write** (as the other composite surfaces,
+      decisions 159 and 172). The constructor and `SetBasisSurface` copy the caller's surface (flattening trimmed
+      and offset surfaces as OCCT does); `BasisSurface()` freezes the stored basis and returns it, the same object
+      each time; `UReverse`, `VReverse` and `Transform` copy a frozen basis before changing it. `Surface()` returns
+      that frozen basis for a zero offset (OCCT returns the handle), and a new surface otherwise. The osculating
+      surfaces are frozen when built: copies of an offset surface share them, as OCCT's copy constructor shares the
+      handles, and `UOsculatingSurface`/`VOsculatingSurface` hand them out. Every path was checked against OCCT; the
+      values are OCCT's (oracle, all bit-identical).
+212. **Geom_OffsetSurfaceUtils' templates are generic methods over a struct basis.** OCCT instantiates them over
+      `Geom_Surface*` (Geom_OffsetSurface) and `handle<GeomAdaptor_Surface>` (GeomAdaptor_Surface); the bodies are
+      1,800 lines, so they are written once, `where TBasis : struct, IBasisSurface`, with two readonly struct
+      wrappers (`GeomSurfaceBasis`, `AdaptorBasis`) that the JIT specialises (rules, section 9; decision 41's
+      pattern). The osculating-surface query is a nullable `Geom_OsculatingSurface` in both: OCCT's
+      GeomAdaptor_Surface asks the Geom_OffsetSurface, whose answer is `myOscSurf && myOscSurf->...`, so it passes
+      the offset surface's internal `OsculatingSurface()`. The query's `bool&`/`handle&` results are `ref` (left
+      unchanged when the query is false, decision 57). OCCT's NCollection_LocalArray buffers under NCollection_Array2
+      are NCollection_Array2 allocations (decision 78): only in D2, D3, DN and the singular paths. Rejected:
+      overloads per instantiation as decision 128 did for the 300-line curve helpers (two copies of 1,800 lines).
+213. **Geom_OffsetSurface's API follows the other surfaces** (decisions 158, 163): `SetBasisSurface`,
+      `SetOffsetValue`, `SetEvalRepresentation` and `ClearEvalRepresentation` are internal with `CheckMutable()`;
+      the twins are `WithBasisSurface`, `WithOffsetValue`, `WithEvalRepresentation` (stores a clone) and
+      `WithoutEvalRepresentation`; `EvalRepresentation()` is internal (GeomAdaptor shares it, as OCCT does). The
+      iso-curve evaluators are private nested `AdvApprox_EvaluatorFunction`s. Geom_OsculatingSurface, a private
+      .pxx class in OCCT, is internal sealed, immutable after `Init`.
+214. **Adaptors are working objects** (decision 101): `Load`, `Reset`, `SetTrsf` and `LoadCurveOnSurface` are
+      public. `Curve()`, `Surface()`, `BSpline()`, `Bezier()`, `OffsetCurve()` return the loaded geometry itself
+      (OCCT's handles): frozen when it came out of a composite (`Load` of a trimmed curve or surface reads
+      `BasisCurve()`/`BasisSurface()`), the caller's object otherwise; the adaptors never change it. `Curve()` and
+      `Surface()` are nullable (null before a `Load`). The embedded adaptors of GeomAdaptor_TransformedCurve and
+      GeomAdaptor_TransformedSurface (C++ members by value) are owned objects, and `Curve()`, `ChangeCurve()` and
+      `AdaptorSurfaceOriginal()` return them; OCCT's deprecated `Surface()` and `GeomSurface()` are `[Obsolete]`.
+      `ShallowCopy` never shares a cache, as in OCCT; where OCCT copies a GeomAdaptor_Surface by value (the
+      transformed surface's cached adaptor, sharing its cache handle), the port shallow-copies it, so no two
+      adaptors share a cache. Evaluation results are OCCT's either way.
+215. **GeomAdaptor_TransformedCurve's curve on surface is typed `Adaptor3d_Curve`** until unit 2B's
+      Adaptor3d_CurveOnSurface is merged (`TODO(2B)` on the field, `LoadCurveOnSurface` and `CurveOnSurface()`):
+      every call it makes is an Adaptor3d_Curve virtual, so only those three declarations change then.
+216. **Adaptor3d_HSurfaceTool is a static class over `Adaptor3d_Surface`** (OCCT passes handles). `IsSurfG1`'s
+      default `Precision::Angular()` is a constant (decision 129). `GetType(Adaptor3d_Surface)` is a static
+      overload, so it doesn't hide `object.GetType`.
+217. **Oracle tests** (`tests/OcctNet.Oracle.Tests/GeomAdaptor`, `Geom/Geom_OffsetSurfaceOracleTests.cs`; shared
+      random inputs in `AdaptorOracleInputs`, built identically on both sides as decision 165 says).
+      GeomAdaptor_Curve on lines, conics, Bezier, B-spline, periodic B-spline, offset and trimmed curves, whole and
+      bounded, reloaded: parameters, continuity, NbIntervals/Intervals for every GeomAbs_Shape (throwing on both
+      sides or neither), resolution, type and its data, degree, poles, knots, closure, periodicity, D0-D3 and DN on
+      shuffled sequences through spans, knots and bounds (the cache and the boundary `Local*` evaluation), Trim and
+      ShallowCopy: 1,496,907 values. GeomAdaptor_Surface on every surface kind, whole and bounded with snapping
+      tolerances: the same queries, U and V intervals, resolutions, D0-D3 and DN at bounds, within tolerances and on
+      knots, UTrim/VTrim, BasisCurve/BasisSurface: 2,074,589 values. Geom_OffsetSurface on offsets of every basis
+      (equivalent surfaces with flipped and degenerate radii, C0 bases with and without the check, nested and
+      trimmed), reversed, transformed (TransformParameters, ParametricTransformation), with a new offset, trimmed,
+      through GeomAdaptor_Surface, and their iso-curves (AdvApprox): 567,104 values; at singular points (collapsed
+      pole rows of B-spline and Bezier surfaces with their osculating surfaces, at one end and at both; sphere-like
+      revolutions; a cone apex through a surface of revolution), through the surface and the adaptor, and
+      reversed: 1,082,775 values. All 5,221,375 values are bit-identical. GeomAdaptor_SurfaceOfRevolution,
+      GeomAdaptor_SurfaceOfLinearExtrusion, the transformed adaptors, GeomAdaptor and Adaptor3d_HSurfaceTool have no
+      native binding: the ported GTests and OCCT.NET's own unit tests cover them.

@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 using static Occt.GeomAbs_BSplKnotDistribution;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Geom2d;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>Geom2d_BSplineCurve against native OCCT: evaluation, queries and every bound edit, on random curves.</summary>
 public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)

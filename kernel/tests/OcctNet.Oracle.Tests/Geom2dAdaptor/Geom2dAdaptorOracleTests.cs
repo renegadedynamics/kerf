@@ -1,7 +1,6 @@
 #if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using OcctNet.Oracle.Tests.Geom2d;
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 

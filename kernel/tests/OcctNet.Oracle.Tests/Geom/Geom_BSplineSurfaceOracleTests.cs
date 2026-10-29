@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
-namespace OcctNet.Oracle.Tests.Geom;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// Geom_BSplineSurface against native OCCT: random surfaces (degrees 1 to 5 in each direction, every combination

@@ -4,8 +4,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// The EvalD* methods of the Geom surfaces. Not ported: OffsetSurface_EvalD0_ValidOnRegularSurface
-/// (Geom_OffsetSurface, unit 2A).
+/// The EvalD* methods of the Geom surfaces.
 /// </summary>
 public class Geom_SurfaceEvalTests
 {
@@ -200,5 +199,21 @@ public class Geom_SurfaceEvalTests
         Assert.Equal(0.0, aD1.D1V.X(), Precision.Confusion());
         Assert.Equal(0.0, aD1.D1V.Y(), Precision.Confusion());
         Assert.Equal(1.0, aD1.D1V.Z(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void OffsetSurface_EvalD0_ValidOnRegularSurface()
+    {
+        // Create a plane offset by a distance
+        Geom_Plane aPlane = new(new gp_Pln(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)));
+
+        Geom_OffsetSurface anOffset = new(aPlane, 3.0);
+
+        gp_Pnt aResult = anOffset.EvalD0(1.0, 2.0);
+
+        // Offset plane at distance 3 in Z direction
+        Assert.Equal(1.0, aResult.X(), Precision.Confusion());
+        Assert.Equal(2.0, aResult.Y(), Precision.Confusion());
+        Assert.Equal(3.0, aResult.Z(), Precision.Confusion());
     }
 }

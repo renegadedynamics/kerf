@@ -183,3 +183,11 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `AppDef_Variational::InitCriterionEstimations` (AppDef_Variational.cxx) | Calls `EstTangent(myFirstPoint + 2)` for a line of two points | Reads past the points; the port throws Standard_OutOfRange |
 | `AppDef_Variational::Init` (AppDef_Variational.cxx) | Never resets `myIsOverConstr` to false | After an over-constrained setup, `SetConstraints` with feasible constraints returns false and `IsOverConstrained()` stays true, although the object approximates |
 | `AppDef_LinearCriteria::Gradient` (AppDef_LinearCriteria.cxx) | Takes `&myCache->Value(1)` before its loop, even for an element without points | Dereferences a null cache; the port reads the cache inside the loop only |
+
+## Phase 2: unit 2A, offset surfaces and GeomAdaptor
+
+| Where | What | Effect |
+|---|---|---|
+| `Geom_OffsetSurface::TransformParameters` (Geom_OffsetSurface.cxx) | Transforms the parameters with the basis surface, then again with the equivalent surface (the evaluation representation) when there is one, although the offset surface has the basis surface's parametrization | Parameters are transformed twice: for an offset of a plane and a scale of 2, U and V are multiplied by 4; it disagrees with `ParametricTransformation`, which uses the basis only. Confirmed against native OCCT (oracle); a unit test pins it |
+| `Geom_OffsetSurface::UReverse`, `VReverse`, `Transform` (Geom_OffsetSurface.cxx) | Clear the evaluation representation (the equivalent plane, cylinder, ... built from `Surface()`) and don't rebuild it, where `SetOffsetValue` and `SetBasisSurface` do | After a reversal or a transformation, the surface is evaluated through the general offset formula instead of the equivalent surface (equal to rounding), `UIso`/`VIso` return AdvApprox approximations instead of exact lines and circles, and `TransformParameters` stops transforming twice |
+| `GeomAdaptor_SurfaceOfLinearExtrusion::VTrim`, `UTrim` (GeomAdaptor_SurfaceOfLinearExtrusion.cxx) | `VTrim` trims the basis curve, which carries U; `UTrim` ignores its parameters and returns the untrimmed extrusion | Trimming in V restricts U instead (V stays unbounded), and trimming in U does nothing. A unit test pins it |

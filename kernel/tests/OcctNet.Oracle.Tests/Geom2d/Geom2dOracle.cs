@@ -3,7 +3,7 @@
 
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Geom2d;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>A random B-spline curve definition, built identically on both sides.</summary>
 internal sealed class BSplineSpec

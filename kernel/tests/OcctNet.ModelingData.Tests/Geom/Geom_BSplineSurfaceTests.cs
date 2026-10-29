@@ -4,7 +4,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// Geom_BSplineSurface. Not ported: OCC30990_CacheConsistencyAtKnots (GeomAdaptor_Surface, unit 2A). WeightsArray_* check copies, since the port
+/// Geom_BSplineSurface. WeightsArray_* check copies, since the port
 /// returns copies where OCCT returns references (IsDeletable and reference identity don't apply).
 /// </summary>
 public class Geom_BSplineSurfaceTests
@@ -781,5 +781,78 @@ public class Geom_BSplineSurfaceTests
         aSurf.SetPole(1, 1, new gp_Pnt(1, 1, 0.2));
         Assert.False(aSurf.HasEvalRepresentation());
         Assert.True(aSurf.Value(0.5, 0.5).IsEqual(myOriginalSurface.Value(0.5, 0.5), 1e-15));
+    }
+
+    // OCC30990: Foundation Classes - unexpected change in numerical results on bsplines after 0029769
+    // Verify that evaluating a B-Spline surface at a knot gives consistent results regardless of
+    // which span was evaluated beforehand (i.e., the cache is updated correctly).
+    [Fact]
+    public void OCC30990_CacheConsistencyAtKnots()
+    {
+        // Build a degree-3 B-Spline surface with 3 interior knots in U (4 spans) and 2 in V (3 spans).
+        // Poles: 7 x 5
+        const int aNbU = 7;
+        const int aNbV = 5;
+        NCollection_Array2<gp_Pnt> aPoles = new(1, aNbU, 1, aNbV);
+        for (int i = 1; i <= aNbU; ++i)
+        {
+            for (int j = 1; j <= aNbV; ++j)
+            {
+                aPoles[i, j] = new gp_Pnt(i - 1, j - 1, Math.Sin(i * 0.5) * Math.Cos(j * 0.7));
+            }
+        }
+
+        Geom_BSplineSurface aSurf = new(aPoles, Knots(0.0, 0.25, 0.5, 0.75, 1.0), Knots(0.0, 0.5, 1.0),
+                                        Mults(4, 1, 1, 1, 4), Mults(4, 1, 4), 3, 3);
+
+        GeomAdaptor_Surface aAdaptor = new(aSurf);
+
+        // For each interior U knot, verify that evaluation at the knot is consistent
+        // regardless of whether the previous evaluation was in the span before or after.
+        int aNbErr = 0;
+        for (int i = 2; i < aSurf.NbUKnots(); ++i)
+        {
+            double aUknot = aSurf.UKnot(i);
+            double aUprev = 0.5 * (aUknot + aSurf.UKnot(i - 1));
+            double aUnext = 0.5 * (aUknot + aSurf.UKnot(i + 1));
+
+            for (int j = 1; j < aSurf.NbVKnots(); ++j)
+            {
+                double aV = 0.5 * (aSurf.VKnot(j) + aSurf.VKnot(j + 1));
+                aAdaptor.Value(aUprev, aV); // populate cache from span before
+                gp_Pnt aP1 = aAdaptor.Value(aUknot, aV);
+                aAdaptor.Value(aUnext, aV); // populate cache from span after
+                gp_Pnt aP2 = aAdaptor.Value(aUknot, aV);
+
+                if (aP1.X() != aP2.X() || aP1.Y() != aP2.Y() || aP1.Z() != aP2.Z())
+                {
+                    ++aNbErr;
+                }
+            }
+        }
+
+        // Same check for interior V knots
+        for (int j = 2; j < aSurf.NbVKnots(); ++j)
+        {
+            double aVknot = aSurf.VKnot(j);
+            double aVprev = 0.5 * (aVknot + aSurf.VKnot(j - 1));
+            double aVnext = 0.5 * (aVknot + aSurf.VKnot(j + 1));
+
+            for (int i = 1; i < aSurf.NbUKnots(); ++i)
+            {
+                double aU = 0.5 * (aSurf.UKnot(i) + aSurf.UKnot(i + 1));
+                aAdaptor.Value(aU, aVprev);
+                gp_Pnt aP1 = aAdaptor.Value(aU, aVknot);
+                aAdaptor.Value(aU, aVnext);
+                gp_Pnt aP2 = aAdaptor.Value(aU, aVknot);
+
+                if (aP1.X() != aP2.X() || aP1.Y() != aP2.Y() || aP1.Z() != aP2.Z())
+                {
+                    ++aNbErr;
+                }
+            }
+        }
+
+        Assert.Equal(0, aNbErr);
     }
 }

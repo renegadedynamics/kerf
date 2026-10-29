@@ -3,7 +3,7 @@
 
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Geom;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// Compares a native curve returned by a surface's UIso or VIso with the port's: its class, its definition (axes,

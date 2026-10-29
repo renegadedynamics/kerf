@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.GProp;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// GProp_GProps and GProp_PrincipalProps against native OCCT. Native global properties come from BRepGProp on

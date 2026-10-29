@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
-namespace OcctNet.Oracle.Tests.Geom2d;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>Geom2d_TrimmedCurve over lines, circles, ellipses and B-splines against native OCCT.</summary>
 public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)

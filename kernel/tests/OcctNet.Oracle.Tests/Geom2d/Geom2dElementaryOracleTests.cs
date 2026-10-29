@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
-namespace OcctNet.Oracle.Tests.Geom2d;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>Geom2d_Line, Geom2d_Circle and Geom2d_Ellipse against native OCCT, on random inputs.</summary>
 public class Geom2dElementaryOracleTests(ITestOutputHelper output)
