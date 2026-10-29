@@ -17,6 +17,8 @@
   <ItemGroup>
     <!-- BRep_Builder shapes for the topology tests, until the makers are ported (units 3K, 3M), shared with the ModelingData tests -->
     <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\TestShapes.cs" Link="TestShapes.cs" />
+    <!-- A record of a shape graph, to check that the in-place statics' twins leave their inputs unchanged -->
+    <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\ShapeSnapshot.cs" Link="ShapeSnapshot.cs" />
   </ItemGroup>
 
   <ItemGroup>

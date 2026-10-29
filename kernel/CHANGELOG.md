@@ -220,3 +220,20 @@ Phase 3 (part): Draw-lite shape commands.
   `checkmaxtol` run on them. `DrawCorpus.RunAndCheck` runs a corpus case and judges its log with OCCT's `_check_log`.
 - Tests: every command's text against Draw's source; oracle tests of the commands on OCCT's 42 data/occ files and of
   the transformation and copy commands against BRepBuilderAPI_Transform and BRepBuilderAPI_Copy, all bit-identical.
+Phase 3 (part): BRepLib.
+
+- `OcctNet.ModelingAlgorithms`: the BRepLib makers (`BRepLib_MakeVertex`, `MakeEdge`, `MakeEdge2d`, `MakeWire`,
+  `MakePolygon`, `MakeFace`, `MakeShell`, `MakeSolid`), whose results are frozen; `BRepLib_FindSurface`;
+  `BRepLib_FuseEdges`; `BRepLib_PointCloudShape` and `BRepLib_ToolTriangulatedShape`; BRepLib's queries
+  (`CheckSameRange`, `ContinuityOfFaces`, `SortFaces`, `FindValidRange`, `BoundingVertex`, `ExtendFace`, ...), OCCT's
+  non-destructive `SameParameter` and `UpdateTolerances` with a `BRepTools_ReShape`, and functional twins of the
+  in-place statics (`SameParametered`, `TolerancesUpdated`, `InnerTolerancesUpdated`, `Curves3dBuilt`,
+  `RegularityEncoded`, `DeflectionUpdated`, `NormalConsistencyEnsured`, `ClosedSolidOriented`) that return a new frozen
+  shape sharing every sub-shape they leave unchanged. A face made from a frozen wire keeps the wire's edges, so faces
+  built on shared edges share them.
+- `OcctNet.ModelingData`: an exact copy for write and its counterpart that gives back the original's unchanged
+  sub-shapes (internal).
+- Tests: the BRepLib_MakeWire GTest; known-answer tests of every class; oracle tests of the makers against
+  native BRepBuilderAPI makers, of FindSurface, of the statics and their twins against native in-place statics, and
+  of regularity, face extension and mesh statics on random native shapes, byte-identical (apart from the Free flag of
+  reused frozen inputs).
