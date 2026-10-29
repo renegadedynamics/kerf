@@ -139,6 +139,7 @@ public class Extrema_PCFOfEPCOfExtPC : math_FunctionWithDerivative
         gp_Vec D1c;
         Extrema_CurveTool.D1(myC!, myU, out myPc, out D1c);
 
+        // OCCT tests X and Y only, never Z
         if (Precision.IsInfinite(D1c.X()) || Precision.IsInfinite(D1c.Y()))
         {
             theF = Precision.Infinite();

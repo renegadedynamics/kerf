@@ -100,6 +100,7 @@ public class Extrema_ECC
     /// <summary>Computes the minimal distances.</summary>
     public void Perform()
     {
+        // OCCT doesn't clear myPoints1 and myPoints2: a second Perform appends to the first one's solutions
         myDone = false;
         myParallel = false;
 

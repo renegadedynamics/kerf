@@ -518,6 +518,8 @@ public class Extrema_ExtCC2d
         Extrema_POnCurv2d P1, P2;
 
         myDone = AlgExt.IsDone();
+        // OCCT asks IsParallel before checking IsDone: an Extrema_ExtElC2d that is not done throws StdFail_NotDone
+        // here (a circle and a concentric circular ellipse) instead of leaving this algorithm not done
         myIsPar = AlgExt.IsParallel();
         if (myDone)
         {

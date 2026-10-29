@@ -397,6 +397,30 @@ public class Extrema_CurvePortTests
     }
 
     [Fact]
+    public void ExtCC2d_NotDoneElementary_Throws_AsInOcct()
+    {
+        // A circle and a concentric ellipse of equal radii: Extrema_ExtElC2d is not done, and Extrema_ExtCC2d asks
+        // its IsParallel first (occt-issues.md), which throws in OCCT's release build too
+        gp_Ax2d anAx = new(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0));
+        Geom2dAdaptor_Curve aC = new(new Geom2d_Circle(anAx, 1.0));
+        Geom2dAdaptor_Curve anE = new(new Geom2d_Ellipse(anAx, 3.0, 3.0));
+        Assert.Throws<StdFail_NotDone>(() => new Extrema_ExtCC2d(aC, anE));
+    }
+
+    [Fact]
+    public void ECC_PerformTwice_AccumulatesSolutions_AsInOcct()
+    {
+        // Extrema_GGenExtCC::Perform doesn't clear the solutions of a previous Perform (occt-issues.md)
+        TestGeomAdaptor_Curve aA = new(BSpline3d()), aB = new(BSpline3d(3, 2.5));
+        Extrema_ECC anECC = new(aA, aB);
+        anECC.Perform();
+        int aNb = anECC.NbExt();
+        Assert.True(aNb > 0);
+        anECC.Perform();
+        Assert.Equal(2 * aNb, anECC.NbExt());
+    }
+
+    [Fact]
     public void LocateExtCC_FromNearbyParameters()
     {
         TestGeomAdaptor_Curve aL1 = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), -10, 10);
