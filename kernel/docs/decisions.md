@@ -5430,3 +5430,64 @@ placeholders, renumbered on merge.
 
       What blocks most afterwards is phase 7's (`DT_*` heal tools 1,600, `blend`, `chamf`, `depouille`) and phase 8's
       `stepread`.
+
+## Phase 5: unit 5E, IntPolyh
+
+All of IntPolyh (7,806 lines): MaillageAffinage, Triangle, Point, Edge, Couple, StartPoint, SectionLine,
+Intersection, Tools, the arrays and their typedefs. Numbers from 5501 are placeholders, renumbered on merge; the plan's
+decisions are cited by their placeholders (50xx). IntPolyh needs nothing from unit 5A: its only outside types are
+Adaptor3d_Surface, Bnd_Box, the BVH box sets and IntCurveSurface_ThePolyhedronOfHInter, all ported.
+
+5501. **`IntPolyh_Array<T>`: OCCT's dynamic array with OCCT's storage behaviour.**
+      - The items live in blocks of 256 that never move (OCCT's `NCollection_DynamicArray`), so a `ref` to an item
+        stays valid while the array grows. `IntPolyh_Triangle::MiddleRefinement` relies on it: it is called on an item
+        of the array it appends triangles to, and C++'s `this` is that item. `NCollection_DynamicArray`'s port is
+        List-backed and would move them.
+      - Items are constructed with OCCT's default constructors: value types are copied from one `new T()`;
+        `IntPolyh_SectionLine`, a class, is constructed for each item.
+      - `Init(N)` sets item N to a default one and keeps the others, as `SetValue(N, T())` does in OCCT. The
+        enlarged-zone retry depends on it (occt-issues.md, unit 5E).
+      - Readers (`Value`, `NbItems`, `GetN`, `Dump`) are public, mutators (the `ref` indexer, `Init`,
+        `IncrementNbItems`, `SetNbItems`, `Copy`) internal: a working object (decision 21).
+      - The typedef headers (ArrayOfPoints, ArrayOfEdges, ArrayOfTriangles, ArrayOfTangentZones, ArrayOfSectionLines,
+        ArrayOfPointNormal) are written out as `IntPolyh_Array<T>`; `IntPolyh_PMaillageAffinage` (a raw pointer) is a
+        reference to the class. Their `Port of:` lines are in IntPolyh_Array.cs.
+5502. **The BVH pairs' `std::sort` needs no MSVC helper.** `GetInterferingTriangles` sorts the pairs of triangles whose
+      boxes interfere by (first, second). Each pair of leaves is visited once and a box set's elements are distinct
+      triangles, so the pairs are distinct: there are no ties, and `List.Sort` gives MSVC's order. The indexed map
+      of couples is then filled in that order (decision 18's insertion order is OCCT's here). MergeCouples' fence map
+      only tests membership; its hash (`IntPolyh_Couple.Hasher`, OCCT's unordered equality) can differ from
+      `std::hash` without changing anything.
+5503. **IntPolyh is serial and the same every run** (decision 490's rule). OCCT has no parallel loop in IntPolyh; the
+      only parallel code reached is BVH_LinearBuilder's radix sort, which goes through `OSD_Parallel` and builds the
+      same tree serially. Tests compare every couple and every start point bit for bit over repeated runs, on fresh
+      adaptors, and under `OSD_Parallel.ForceSerialScope`.
+5504. **The plain classes are structs with OCCT's defaults**: IntPolyh_Point (`PartOfCommon` 1), Edge (indices -1),
+      Couple (-1, -1, angle -2), Triangle (points and edges -1, intersection possible, a void box), StartPoint (lambdas
+      -1, angle -2, edges -2), PointNormal (zeros).
+      - Setters are internal with public `With` twins (translation rules 3); `Middle` and `Cross` have `Middled` and
+        `Crossed`.
+      - Triangle's `int[3]` members are inline arrays. Its refining members (`MiddleRefinement`,
+        `MultipleMiddleRefinement`, `LinkEdges2Triangle`, `ComputeDeflection`, `BoundingBox`) write into the arrays and
+        cache in the triangle: internal, without twins. `CachedBoundingBox()` reads the cache.
+      - `Equals` and `==` compare the fields exactly; OCCT's `IntPolyh_Couple::operator==` (the same indices in either
+        order) is `IsEqual`, and maps take `IntPolyh_Couple.Hasher` (decision 539's pattern).
+5505. **IntPolyh_SectionLine is a class**, because OCCT copies it by value with a deep copy of its sequence (copy
+      constructor, `operator=`): ported as `new IntPolyh_SectionLine(other)` and `Copy`. Its spare last item (an
+      initialized line has one start point more than `NbStartPoints()`) is kept.
+5506. **Prints.** OCCT's unconditional debug prints to standard output are left out: `CheckSameSP`'s "Can't Check" with
+      the two points' dumps, and TriangleEdgeContact's "Cote PT2PT3 nul1". The results don't change. The public dumps
+      write OCCT's `printf` format to a `TextWriter` (`IntPolyh_Format`); `IntPolyh_IDump` is what
+      `IntPolyh_Array::Dump` calls, for the items that have a `Dump()`.
+5507. **Signatures.**
+      - `const double* theDeflTol = nullptr` → `double? theDeflTol = null`.
+      - Output references: `GetLinePoint`, `GetTangentZonePoint`, `IsEnlargePossible`, `CommonBox`'s limits are `out`;
+        `TriContact`'s angle is `ref` (left unchanged when a normal vanishes, which TriangleCompare relies on);
+        `GetEdgePoints`'s points are `ref` (left unchanged for an edge number other than 1 to 3); the start points
+        filled by the research functions are `ref`.
+      - The `PRINT` argument of MaillageAffinage's constructors is ignored, as OCCT ignores it.
+      - `GetFinTE` and `GetFinTT` are left out: OCCT declares them and never defines them.
+5508. **The couple list.** `NCollection_List` is List-backed: MergeCouples' removals are O(n) each, where OCCT's linked
+      list removes in O(1). The lists hold at most a few thousand couples. The iterator copies of
+      `CheckCoupleAndGetAngle2` (`theItCT11 = aIt`) are `Reset` to the same index, and stay valid because nothing is
+      removed while start points are chained.

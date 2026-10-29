@@ -440,3 +440,16 @@ Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spi
   oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
   (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
   6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).
+
+Phase 5 (part): intersection of triangulated surfaces (unit 5E).
+
+- `OcctNet.ModelingAlgorithms`: the IntPolyh package, all of it. `IntPolyh_Intersection` intersects two surfaces
+  through their triangulations (a 10 x 10 or given sampling, refinement by deflection, the interfering triangles by a
+  BVH of their boxes, the four shifted intersections when the standard one finds too few) and gives section lines
+  and tangent zones, the start points of IntPatch's parametric intersections. `IntPolyh_MaillageAffinage` (the
+  algorithm), `IntPolyh_Triangle`, `Point`, `Edge`, `Couple`, `StartPoint`, `SectionLine`, `Tools` and
+  `IntPolyh_Array`, whose items never move as it grows. Serial, and the same every run.
+- Tests: OCCT's IntPolyh_Point and IntPolyh_Intersection GTests; unit tests on B-spline pairs (couples are real
+  contacts of refined triangles in BVH order, start points lie on both surfaces, every bit the same over repeated,
+  fresh and serial runs; the advanced intersection on tangent surfaces; the enlarged-zone retry and the other OCCT
+  bugs reproduced); the array, section line, couple hasher and dumps.
