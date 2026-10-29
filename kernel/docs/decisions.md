@@ -2112,3 +2112,12 @@ The design of immutable topology ([phase3-design.md](phase3-design.md)) and the 
           IntCurveSurface, TopClass, TopTrans, parts of GeomAPI and Geom2dAPI; 38,000 lines),
         - BRepLib and BRepBuilderAPI's makers (19,000 lines).
       - **Units:** 12 units in 6 waves, 125,000 lines. TKPrim is recommended as a 13th unit (owner's decision).
+
+## OCCT's test data (29 October 2026)
+
+279. **The Draw corpus uses OCCT's published test dataset** (owner's decision): opencascade-dataset-7.9.0, the archive
+     OCCT V8_0_1's own CI downloads (from the V7_9_0_beta1 release; 99 MB, 3,389 files). `tools/get-occt-testdata.ps1`
+     fetches it into `.deps/occt-testdata`, checks the SHA-256 recorded in occt-version.json, and extracts it as data
+     only. The MSBuild property `OcctTestDataDir` points at it (OCCT's `CSF_TestDataPath`). It holds 2,907 of the
+     6,939 data files the corpus names, including 1,287 of the 4,039 `.brep` and 870 of the 1,156 `.rle` files; the
+     rest are not published, so the cases that need them stay out of reach.
