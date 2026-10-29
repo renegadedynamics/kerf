@@ -56,7 +56,7 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 35 / 470 | 14,988 / 132,410 | 11.3 |
+| FoundationClasses | TKernel | 62 / 470 | 20,296 / 132,410 | 15.3 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -65,10 +65,10 @@ broken down by package.
 | ModelingAlgorithms | TKGeomAlgo | 186 / 868 | 39,663 / 218,548 | 18.1 |
 | ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
-| ModelingAlgorithms | TKMesh | 0 / 156 | 0 / 19,930 | 0.0 |
+| ModelingAlgorithms | TKMesh | 113 / 156 | 15,497 / 19,930 | 77.8 |
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
 | ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
-| ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
+| ModelingAlgorithms | TKShHealing | 32 / 258 | 14,100 / 88,297 | 16.0 |
 | ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 2156 | 702,314 / 2,897,781 | 24.2 |
+| **All** |  | 2329 | 737,219 / 2,897,781 | 25.4 |
 
 ## TKMath
 
@@ -116,9 +116,9 @@ broken down by package.
 |---|---:|---:|---:|
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
-| Message | 3 / 50 | 897 / 7,261 | 12.4 |
-| NCollection | 26 / 81 | 12,934 / 26,993 | 47.9 |
-| OSD | 0 / 94 | 0 / 19,678 | 0.0 |
+| Message | 24 / 50 | 4,552 / 7,261 | 62.7 |
+| NCollection | 30 / 81 | 13,941 / 26,993 | 51.6 |
+| OSD | 2 / 94 | 646 / 19,678 | 3.3 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
 | Quantity | 0 / 14 | 0 / 6,917 | 0.0 |
@@ -170,6 +170,15 @@ broken down by package.
 | TopClass | 2 / 2 | 405 / 405 | 100.0 |
 | TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
 
+## TKMesh
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepMesh | 59 / 102 | 12,393 / 16,826 | 73.7 |
+| BRepMeshData | 12 / 12 | 919 / 919 | 100.0 |
+| IMeshData | 22 / 22 | 1,077 / 1,077 | 100.0 |
+| IMeshTools | 20 / 20 | 1,108 / 1,108 | 100.0 |
+
 ## TKPrim
 
 | Package | Files ported | Lines ported | % of lines |
@@ -179,6 +188,22 @@ broken down by package.
 | BRepPrimAPI | 23 / 23 | 3,076 / 3,076 | 100.0 |
 | BRepSweep | 20 / 20 | 4,049 / 4,049 | 100.0 |
 | Sweep | 8 / 8 | 626 / 626 | 100.0 |
+
+## TKShHealing
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| SHMessage | 0 / 2 | 0 / 572 | 0.0 |
+| ShapeAlgo | 0 / 7 | 0 / 1,048 | 0.0 |
+| ShapeAnalysis | 18 / 44 | 11,359 / 19,056 | 59.6 |
+| ShapeBuild | 6 / 8 | 1,233 / 1,692 | 72.9 |
+| ShapeConstruct | 0 / 8 | 0 / 5,043 | 0.0 |
+| ShapeCustom | 0 / 27 | 0 / 6,081 | 0.0 |
+| ShapeExtend | 8 / 18 | 1,508 / 3,427 | 44.0 |
+| ShapeFix | 0 / 53 | 0 / 31,777 | 0.0 |
+| ShapeProcess | 0 / 13 | 0 / 2,983 | 0.0 |
+| ShapeProcessAPI | 0 / 2 | 0 / 254 | 0.0 |
+| ShapeUpgrade | 0 / 76 | 0 / 16,364 | 0.0 |
 
 ## TKTopAlgo
 
