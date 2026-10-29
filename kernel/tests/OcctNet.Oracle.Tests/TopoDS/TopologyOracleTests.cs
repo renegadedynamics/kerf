@@ -255,7 +255,8 @@ public class TopologyOracleTests(ITestOutputHelper output)
         return aList;
     }
 
-    internal static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
+    // A frozen shape is Locked; with theStoredLocked the stored bit is compared (a result that shares frozen TShapes).
+    internal static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, bool theStoredLocked = false)
     {
         foreach (TopAbs_ShapeEnum aType in theTypes)
         {
@@ -268,7 +269,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 theOracle.Same(aS.N.Closed(), aS.P.Closed(), "Closed");
                 theOracle.Same(aS.N.Infinite(), aS.P.Infinite(), "Infinite");
                 theOracle.Same(aS.N.Convex(), aS.P.Convex(), "Convex");
-                theOracle.Same(aS.N.Locked(), aS.P.Locked(), "Locked (unfrozen)");
+                theOracle.Same(aS.N.Locked(), theStoredLocked ? aS.P.TShape()!.LockedFlag() : aS.P.Locked(), "Locked (unfrozen)");
             }
         }
     }

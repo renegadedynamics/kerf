@@ -12,20 +12,20 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// Known-answer tests of BRepExtrema: the distance between vertices, edges, faces and solids (supports, parameters,
 /// inner solutions, parallel cases, several solutions, located shapes, multi-threading, deflection), the Ext*
 /// tools, and the mesh-based tools (triangle sets, overlap, self-intersection, proximity, BRepExtrema_Poly). Inputs
-/// are frozen as callers hold them, and checked unchanged. The makers are BRepLib's (BRepBuilderAPI wraps them).
+/// are frozen as callers hold them, and checked unchanged. The shapes are built with the BRepBuilderAPI makers.
 /// </summary>
 public class BRepExtremaTests
 {
     private const double Tol = 1.0e-9;
 
-    private static TopoDS_Vertex V(double x, double y, double z) => new BRepLib_MakeVertex(new gp_Pnt(x, y, z)).Vertex();
+    private static TopoDS_Vertex V(double x, double y, double z) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, y, z)).Vertex();
 
     private static TopoDS_Edge E(double x1, double y1, double z1, double x2, double y2, double z2)
-        => new BRepLib_MakeEdge(new gp_Pnt(x1, y1, z1), new gp_Pnt(x2, y2, z2)).Edge();
+        => new BRepBuilderAPI_MakeEdge(new gp_Pnt(x1, y1, z1), new gp_Pnt(x2, y2, z2)).Edge();
 
     // A square [x0, x0 + s] x [y0, y0 + s] in the plane z = z0, normal +Z.
     private static TopoDS_Face Square(double x0, double y0, double z0, double s)
-        => new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(x0, y0, z0), new gp_Dir(0, 0, 1)), 0, s, 0, s).Face();
+        => new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(x0, y0, z0), new gp_Dir(0, 0, 1)), 0, s, 0, s).Face();
 
     private static void AssertPnt(in gp_Pnt theExpected, in gp_Pnt theActual, double theTol = Tol)
     {
@@ -253,7 +253,7 @@ public class BRepExtremaTests
     public void InfiniteEdge_IsTrimmed_AndTheSupportIsFrozen()
     {
         var aLine = new Geom_Line(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0));
-        TopoDS_Edge anInfinite = new BRepLib_MakeEdge(aLine).Edge();
+        TopoDS_Edge anInfinite = new BRepBuilderAPI_MakeEdge(aLine).Edge();
         TopoDS_Edge aFinite = E(3, -1, 0, 3, 1, 0);
         var aD = new BRepExtrema_DistShapeShape(anInfinite, aFinite);
         Assert.True(aD.IsDone());
@@ -460,7 +460,7 @@ public class BRepExtremaTests
     // A segment edge with a 3D polygon of the given number of evenly spaced nodes.
     private static TopoDS_Edge PolygonSegment(in gp_Pnt theP1, in gp_Pnt theP2, int theNbNodes)
     {
-        TopoDS_Edge anEdge = new BRepLib_MakeEdge(theP1, theP2).InternalEdge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(theP1, theP2).InternalEdge();
         var aNodes = new NCollection_Array1<gp_Pnt>(1, theNbNodes);
         for (int i = 1; i <= theNbNodes; i++)
         {
@@ -474,7 +474,7 @@ public class BRepExtremaTests
     // A unit square face at height z (plane surface) with an n x n grid triangulation.
     private static TopoDS_Face GridSquare(double z, int n)
     {
-        TopoDS_Face aF = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).InternalFace();
+        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).InternalFace();
         var aTri = new Poly_Triangulation((n + 1) * (n + 1), 2 * n * n, false);
         for (int j = 0; j <= n; j++)
         {

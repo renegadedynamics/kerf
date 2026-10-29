@@ -7,9 +7,8 @@ using Occt;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// OCCT's BRepExtrema_DistShapeShape GTests. BRepBuilderAPI_MakeEdge, MakeVertex and MakeFace (unit 3K, ported in
-/// parallel) are replaced by the BRepLib makers they wrap; their public results are frozen, as the BRepBuilderAPI
-/// makers' will be. The edges whose 3D curve OCCT removes with BRep_Builder are built unfrozen and frozen after.
+/// OCCT's BRepExtrema_DistShapeShape GTests, with the BRepBuilderAPI makers. The edges whose 3D curve OCCT removes
+/// with BRep_Builder are built unfrozen (InternalEdge) and frozen after.
 /// </summary>
 public class BRepExtrema_DistShapeShapeTest
 {
@@ -20,8 +19,8 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void BUC60870_EdgeToVertexMinimumDistance()
     {
-        TopoDS_Edge anEdge = new BRepLib_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 1, 0)).Edge();
-        TopoDS_Vertex aVertex = new BRepLib_MakeVertex(new gp_Pnt(0, 0.3, 1)).Vertex();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 1, 0)).Edge();
+        TopoDS_Vertex aVertex = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0.3, 1)).Vertex();
 
         var aDist = new BRepExtrema_DistShapeShape(anEdge, aVertex, 2.0);
 
@@ -39,10 +38,10 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void EdgeEdge_Null3DCurve_NoCrash()
     {
-        TopoDS_Edge aEdge1 = new BRepLib_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge aEdge1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
 
         var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
-        TopoDS_Edge aEdge2 = new BRepLib_MakeEdge(aCircle).InternalEdge();
+        TopoDS_Edge aEdge2 = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
         var aBuilder = new BRep_Builder();
         aBuilder.UpdateEdge(aEdge2, (Geom_Curve?)null, 1e-7);
@@ -59,13 +58,13 @@ public class BRepExtrema_DistShapeShapeTest
     public void EdgeFace_Null3DCurve_NoCrash()
     {
         var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
-        TopoDS_Edge aEdge = new BRepLib_MakeEdge(aCircle).InternalEdge();
+        TopoDS_Edge aEdge = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
         var aBuilder = new BRep_Builder();
         aBuilder.UpdateEdge(aEdge, (Geom_Curve?)null, 1e-7);
         aEdge.TShape()!.FreezeGraph();
 
-        TopoDS_Face aFace = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 5), new gp_Dir(0, 0, 1)), -10, 10, -10, 10).Face();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 5), new gp_Dir(0, 0, 1)), -10, 10, -10, 10).Face();
 
         var aDist = new BRepExtrema_DistShapeShape(aEdge, aFace, 10.0);
         _ = aDist;

@@ -9,8 +9,8 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's BRepAdaptor_CompCurve GTests, on <see cref="TestShapes"/> in place of BRepBuilderAPI_MakeEdge,
-/// BRepBuilderAPI_MakeWire and GC_MakeArcOfCircle (unit 3K), and further tests of the composite curve.
+/// OCCT's BRepAdaptor_CompCurve GTests, with BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire and GC_MakeArcOfCircle,
+/// and further tests of the composite curve (on <see cref="TestShapes"/>).
 /// </summary>
 public class BRepAdaptor_CompCurveTests
 {
@@ -41,10 +41,10 @@ public class BRepAdaptor_CompCurveTests
     public void OCC5696_EdgeMethod()
     {
         // Create a simple edge from two points
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0));
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
 
         // Create a wire from the edge
-        TopoDS_Wire aWire = MakeWire(anEdge);
+        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
 
         // Create a composite curve adaptor
         var aCurve = new BRepAdaptor_CompCurve(aWire);
@@ -79,9 +79,14 @@ public class BRepAdaptor_CompCurveTests
     {
         double r45 = Math.PI / 4.0, r225 = 3.0 * Math.PI / 4.0;
 
-        var aCircle = new Geom_Circle(new gp_Circ(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0));
-        // GC_MakeArcOfCircle(circ, r45, r225, true) is a trimmed circle; BRepBuilderAPI_MakeEdge keeps its basis and range
-        TopoDS_Wire aWire = MakeWire(TestShapes.Edge(aCircle, r45, r225));
+        var arcMaker = new GC_MakeArcOfCircle(
+            new gp_Circ(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0),
+            r45,
+            r225,
+            true);
+        var edgeMaker = new BRepBuilderAPI_MakeEdge(arcMaker.Value());
+        var wireMaker = new BRepBuilderAPI_MakeWire(edgeMaker.Edge());
+        TopoDS_Wire aWire = wireMaker.Wire();
 
         var aCurve = new BRepAdaptor_CompCurve(aWire);
         gp_Pnt aStartPt = aCurve.Value(aCurve.FirstParameter());
@@ -124,12 +129,12 @@ public class BRepAdaptor_CompCurveTests
         double t1 = Math.PI / 2.0;
         double t2 = 3.0 * Math.PI / 2.0;
 
-        // BRepBuilderAPI_MakeEdge of the trimmed circle: the circle over [t1, t2]
-        TopoDS_Edge anEdge = TestShapes.Edge(aCircle, t1, t2);
+        var aTrimmed = new Geom_TrimmedCurve(aCircle, t1, t2);
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aTrimmed).Edge();
 
         // Reverse the edge, then wrap it in a wire
         anEdge = TopoDS.Edge(anEdge.Oriented(TopAbs_REVERSED));
-        TopoDS_Wire aWire = MakeWire(anEdge);
+        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
 
         var aBACC = new BRepAdaptor_CompCurve(aWire);
         double aFirst = aBACC.FirstParameter();

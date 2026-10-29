@@ -5,8 +5,8 @@ using static Occt.TopAbs_Orientation;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// Shapes built with BRep_Builder for the topology tests, until the makers (BRepBuilderAPI, unit 3K; BRepPrimAPI,
-/// unit 3M) are ported. They have the topology the GTests expect of the makers' results: a vertex, an edge with its
+/// Shapes built with BRep_Builder for the topology tests: boxes and cylinder faces until BRepPrimAPI (unit 3M) is
+/// ported, and shapes the tests then change with BRep_Builder. They have the topology the GTests expect of the makers' results: a vertex, an edge with its
 /// two vertices (one, used twice, on a closed curve), and a box of 8 vertices, 12 edges, 6 wires, 6 faces with pcurves
 /// on planes, a shell and a solid.
 /// </summary>

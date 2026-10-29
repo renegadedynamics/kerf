@@ -269,8 +269,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         using var aNP = Oracle.ToNative(theP);
         using var aNMaker = new N.BRepBuilderAPI_MakeVertex(aNP);
-        // TODO(3K-merge): BRepBuilderAPI_MakeVertex
-        return new(aNMaker.Vertex(), new BRepLib_MakeVertex(theP).Vertex());
+        return new(aNMaker.Vertex(), new BRepBuilderAPI_MakeVertex(theP).Vertex());
     }
 
     // A direction that native OCCT and the port normalise to the same numbers.
@@ -295,8 +294,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         using var aND = Oracle.ToNative(aD);
         using var aNL = new N.gp_Lin(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeEdge(aNL);
-        // TODO(3K-merge): BRepBuilderAPI_MakeEdge
-        return new(aNMaker.Edge(), new BRepLib_MakeEdge(new gp_Lin(theP, aD)).Edge());
+        return new(aNMaker.Edge(), new BRepBuilderAPI_MakeEdge(new gp_Lin(theP, aD)).Edge());
     }
 
     /// <summary>An infinite horizontal plane at the point's height, as a face.</summary>
@@ -306,8 +304,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         using var aND = new N.gp_Dir(0, 0, 1);
         using var aNPl = new N.gp_Pln(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeFace(aNPl);
-        // TODO(3K-merge): BRepBuilderAPI_MakeFace
-        return new(aNMaker.Face(), new BRepLib_MakeFace(new gp_Pln(theP, new gp_Dir(0, 0, 1))).Face());
+        return new(aNMaker.Face(), new BRepBuilderAPI_MakeFace(new gp_Pln(theP, new gp_Dir(0, 0, 1))).Face());
     }
 
     [Fact]

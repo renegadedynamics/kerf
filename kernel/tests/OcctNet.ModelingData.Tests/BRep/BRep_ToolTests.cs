@@ -8,8 +8,9 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's BRep_Tool GTests, on <see cref="TestShapes"/> in place of BRepPrimAPI_MakeBox (3M) and
-/// BRepBuilderAPI_MakeEdge (3K), and further tests of BRep_Tool and BRep_Builder.
+/// OCCT's BRep_Tool GTests, with BRepBuilderAPI_MakeEdge (its internal accessor where the test goes on changing the
+/// edge with BRep_Builder) and <see cref="TestShapes.Box"/> in place of BRepPrimAPI_MakeBox (3M), and further tests of
+/// BRep_Tool and BRep_Builder.
 /// </summary>
 public class BRep_ToolTests
 {
@@ -18,8 +19,7 @@ public class BRep_ToolTests
     private static TopoDS_Edge FullCircleEdge() =>
         FullCircleEdge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0));
 
-    private static TopoDS_Edge FullCircleEdge(Geom_Circle aCircle) =>
-        TestShapes.Edge(aCircle, aCircle.FirstParameter(), aCircle.LastParameter());
+    private static TopoDS_Edge FullCircleEdge(Geom_Circle aCircle) => new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
     [Fact]
     public void Pnt_FromVertex()
@@ -89,7 +89,7 @@ public class BRep_ToolTests
     [Fact]
     public void IsClosed_LineEdge()
     {
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0)));
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0)).Edge();
         Assert.False(BRep_Tool.IsClosed(anEdge));
     }
 
@@ -109,7 +109,7 @@ public class BRep_ToolTests
         aPoles.SetValue(2, new gp_Pnt(0.5, 0.25, 0.0));
         aPoles.SetValue(3, new gp_Pnt(1.0, 0.0, 0.0));
         var aCurve = new Geom_BezierCurve(aPoles);
-        TopoDS_Edge anEdge = TestShapes.Edge(aCurve, aCurve.FirstParameter(), aCurve.LastParameter());
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).InternalEdge();
 
         const double THE_EDGE_FIRST = -0.000002673149646;
         const double THE_EDGE_LAST = 0.999997326850354;
@@ -141,13 +141,14 @@ public class BRep_ToolTests
         Assert.Equal(aRangeLast, aLast);
     }
 
-    // OCCT builds the edge with BRepBuilderAPI_MakeEdge(aCircle, 0, 0), which widens the equal parameters to a whole
-    // period; the edge here is built with that range directly
+    // BRepBuilderAPI_MakeEdge(aCircle, 0, 0) widens the equal parameters to a whole period
     [Fact]
     public void CurveOnPlane_ProjectsPeriodicEdgeBuiltFromEqualParameters()
     {
         var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
-        TopoDS_Edge anEdge = FullCircleEdge(aCircle);
+        var anEdgeMaker = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, 0.0);
+        Assert.True(anEdgeMaker.IsDone());
+        TopoDS_Edge anEdge = anEdgeMaker.Edge();
 
         BRep_Tool.Range(anEdge, out double aEdgeFirst, out double aEdgeLast);
         Assert.Equal(aCircle.Period(), aEdgeLast - aEdgeFirst, Precision.PConfusion());

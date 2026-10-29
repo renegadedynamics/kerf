@@ -248,8 +248,7 @@ public sealed class BRepExtrema_DistanceSS
             }
 
             Geom_Curve result = new Geom_TrimmedCurve(pCurv!, Umin, Umax);
-            // TODO(3K-merge): BRepBuilderAPI_MakeEdge
-            aResEdge = new BRepLib_MakeEdge(result).Edge();
+            aResEdge = new BRepBuilderAPI_MakeEdge(result).Edge();
         }
     }
 
@@ -483,8 +482,7 @@ public sealed class BRepExtrema_DistanceSS
             }
 
             Geom_Surface result = new Geom_RectangularTrimmedSurface(pSurf, Umin, Umax, Vmin, Vmax);
-            // TODO(3K-merge): BRepBuilderAPI_MakeFace
-            aResFace = new BRepLib_MakeFace(result, Precision.Confusion()).Face();
+            aResFace = new BRepBuilderAPI_MakeFace(result, Precision.Confusion()).Face();
 
             bIsInfinit = true;
         }
@@ -559,8 +557,8 @@ public sealed class BRepExtrema_DistanceSS
                 {
                     double aParameter = arrInter[i];
                     gp_Pnt aPnt = aAdaptorCurve.Value(aParameter);
-                    // TODO(3K-merge): BRepBuilderAPI_MakeVertex (a local vertex, never handed out)
-                    TopoDS_Vertex V1 = new BRepLib_MakeVertex(aPnt).Vertex();
+                    // a local vertex, never handed out: not frozen
+                    TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
                     var Ext = new BRepExtrema_ExtPC(V1, Eother);
                     int NbExtrema = Ext.IsDone() ? Ext.NbExt() : 0;
@@ -1129,8 +1127,8 @@ public sealed class BRepExtrema_DistanceSS
             {
                 double aParameter = arrInter[i];
                 gp_Pnt aPnt = aAdaptorCurve.Value(aParameter);
-                // TODO(3K-merge): BRepBuilderAPI_MakeVertex (a local vertex, never handed out)
-                TopoDS_Vertex V1 = new BRepLib_MakeVertex(aPnt).Vertex();
+                // a local vertex, never handed out: not frozen
+                TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
                 var ExtPF = new BRepExtrema_ExtPF(V1, theS2);
                 int NbExtremaPF = ExtPF.IsDone() ? ExtPF.NbExt() : 0;
