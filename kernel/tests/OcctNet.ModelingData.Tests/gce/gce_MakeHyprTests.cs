@@ -1,0 +1,286 @@
+// Port of: src/ModelingData/TKGeomBase/GTests/gce_MakeHypr_Test.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using static Occt.gce_ErrorType;
+
+namespace OcctNet.ModelingData.Tests;
+
+public class gce_MakeHyprTest
+{
+    [Fact]
+    public void FromAxis_ValidRadii_Done()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), 10.0, 5.0);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr aHypr = aMaker.Value();
+        Assert.Equal(10.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromAxis_MajorLessThanMinor_Done()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), 3.0, 7.0);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr aHypr = aMaker.Value();
+        Assert.Equal(3.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromAxis_EqualRadii_Done()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), 5.0, 5.0);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAxis_ZeroRadii_Done()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), 0.0, 0.0);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAxis_NegativeMajor_NegativeRadius()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), -1.0, 5.0);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAxis_NegativeMinor_NegativeRadius()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), 5.0, -1.0);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAxis_BothNegative_NegativeRadius()
+    {
+        gce_MakeHypr aMaker = new(new gp_Ax2(), -3.0, -2.0);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_Valid_Done()
+    {
+        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        gp_Pnt aS1 = new(10.0, 0.0, 0.0);
+        gp_Pnt aS2 = new(0.0, 5.0, 0.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr aHypr = aMaker.Value();
+        Assert.Equal(10.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromPoints_MajorLessThanMinor_Done()
+    {
+        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        gp_Pnt aS1 = new(3.0, 0.0, 0.0);
+        gp_Pnt aS2 = new(0.0, 7.0, 0.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr aHypr = aMaker.Value();
+        Assert.Equal(3.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromPoints_ConfusedS1Center_ConfusedPoints()
+    {
+        gp_Pnt aCenter = new(1.0, 2.0, 3.0);
+        gp_Pnt aS1 = new(1.0, 2.0, 3.0);
+        gp_Pnt aS2 = new(4.0, 5.0, 6.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_ConfusedS2Center_ConfusedPoints()
+    {
+        gp_Pnt aCenter = new(1.0, 2.0, 3.0);
+        gp_Pnt aS1 = new(4.0, 5.0, 6.0);
+        gp_Pnt aS2 = new(1.0, 2.0, 3.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_ConfusedS1S2_ConfusedPoints()
+    {
+        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        gp_Pnt aS1 = new(5.0, 5.0, 5.0);
+        gp_Pnt aS2 = new(5.0, 5.0, 5.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_Collinear_ColinearPoints()
+    {
+        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        gp_Pnt aS1 = new(10.0, 0.0, 0.0);
+        gp_Pnt aS2 = new(5.0, 0.0, 0.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ColinearPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_TinyScale_ConfusedPoints()
+    {
+        double aRes = gp.Resolution();
+        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        gp_Pnt aS1 = new(2.0 * aRes, 0.0, 0.0);
+        gp_Pnt aS2 = new(0.0, 1.1 * aRes, 0.0);
+
+        gce_MakeHypr aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+}
+
+public class gce_MakeHypr2dTest
+{
+    [Fact]
+    public void FromMajorAxis_ValidRadii_Done()
+    {
+        gce_MakeHypr2d aMaker = new(new gp_Ax2d(), 10.0, 5.0, true);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr2d aHypr = aMaker.Value();
+        Assert.Equal(10.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromMajorAxis_MajorLessThanMinor_Done()
+    {
+        gce_MakeHypr2d aMaker = new(new gp_Ax2d(), 3.0, 7.0, true);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr2d aHypr = aMaker.Value();
+        Assert.Equal(3.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromMajorAxis_NegativeRadius_NegativeRadius()
+    {
+        gce_MakeHypr2d aMaker = new(new gp_Ax2d(), -1.0, 5.0, true);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAx22d_ValidRadii_Done()
+    {
+        gce_MakeHypr2d aMaker = new(new gp_Ax22d(), 8.0, 4.0);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromAx22d_NegativeRadius_NegativeRadius()
+    {
+        gce_MakeHypr2d aMaker = new(new gp_Ax22d(), 5.0, -2.0);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_Valid_Done()
+    {
+        gp_Pnt2d aCenter = new(0.0, 0.0);
+        gp_Pnt2d aS1 = new(10.0, 0.0);
+        gp_Pnt2d aS2 = new(0.0, 5.0);
+
+        gce_MakeHypr2d aMaker = new(aS1, aS2, aCenter);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr2d aHypr = aMaker.Value();
+        Assert.Equal(10.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromPoints_MajorLessThanMinor_Done()
+    {
+        gp_Pnt2d aCenter = new(0.0, 0.0);
+        gp_Pnt2d aS1 = new(3.0, 0.0);
+        gp_Pnt2d aS2 = new(0.0, 7.0);
+
+        gce_MakeHypr2d aMaker = new(aS1, aS2, aCenter);
+        Assert.True(aMaker.IsDone());
+        Assert.Equal(gce_Done, aMaker.Status());
+
+        gp_Hypr2d aHypr = aMaker.Value();
+        Assert.Equal(3.0, aHypr.MajorRadius(), Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void FromPoints_ConfusedS1Center_ConfusedPoints()
+    {
+        gp_Pnt2d aCenter = new(1.0, 2.0);
+        gp_Pnt2d aS1 = new(1.0, 2.0);
+        gp_Pnt2d aS2 = new(4.0, 5.0);
+
+        gce_MakeHypr2d aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_ConfusedS2Center_ConfusedPoints()
+    {
+        gp_Pnt2d aCenter = new(1.0, 2.0);
+        gp_Pnt2d aS1 = new(4.0, 5.0);
+        gp_Pnt2d aS2 = new(1.0, 2.0);
+
+        gce_MakeHypr2d aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ConfusedPoints, aMaker.Status());
+    }
+
+    [Fact]
+    public void FromPoints_Collinear_ColinearPoints()
+    {
+        gp_Pnt2d aCenter = new(0.0, 0.0);
+        gp_Pnt2d aS1 = new(10.0, 0.0);
+        gp_Pnt2d aS2 = new(5.0, 0.0);
+
+        gce_MakeHypr2d aMaker = new(aS1, aS2, aCenter);
+        Assert.False(aMaker.IsDone());
+        Assert.Equal(gce_ColinearPoints, aMaker.Status());
+    }
+}
