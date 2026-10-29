@@ -15,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The generic form of OCCT's <c>Approx_ComputeLine.gxx</c> (decisions 142 and 1602), instantiated by OCCT as
+/// The generic form of OCCT's <c>Approx_ComputeLine.gxx</c> (decisions 142 and 202), instantiated by OCCT as
 /// AppDef_Compute (over AppDef_MultiLine) and as GeomInt's and BRepApprox's Bezier approximators. The gxx's helper
 /// classes (Approx_MyGradient, Approx_ParLeastSquareOfMyGradient, ...) are, in every instantiation, the
 /// AppParCurves generics over the same MultiLine and tool, so this class names them directly.

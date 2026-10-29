@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>OcctNet.ModelingAlgorithms.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.Analyzers\OcctNet.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctSourceDir</_Parameter1>
+      <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- BRep_Builder shapes for the topology tests (boxes until BRepPrimAPI, unit 3M), shared with the ModelingData tests -->
+    <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\TestShapes.cs" Link="TestShapes.cs" />
+    <!-- A record of a shape graph, to check that the in-place statics' twins leave their inputs unchanged -->
+    <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\ShapeSnapshot.cs" Link="ShapeSnapshot.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Occt.Standard" Static="true" />
+  </ItemGroup>
+
+</Project>

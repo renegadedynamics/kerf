@@ -228,6 +228,8 @@ That is 125,000 lines of OCCT, or 138,000 with TKPrim, plus about 5,000 lines of
   - Narrow with `TopoDS.Edge(S)`.
   - Pass a subtype variable to a `ref TopoDS_Shape` that OCCT changes only through `TopoDS.AsShapeRef(ref e)`.
   - `TopoDS_Builder.Add` and `Remove` take the parent by `in`.
+  - The builders' Make methods take the shape by `ref`: `TopoDS_Wire W = new(); B.MakeWire(ref W);` (decision 307).
+  - `EmptyCopied` is internal (decision 306); representation lists (`Curves()`, `Points()`, `Triangulations()`) too.
 - **Maps of shapes** take an explicit comparer: `TopTools_ShapeMapHasher.Instance` for every `TopTools_*` typedef
   (OCCTNET0002).
 - **Freezing.**

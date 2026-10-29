@@ -8,7 +8,7 @@ namespace Occt;
 /// <summary>OCCT's instantiation of the constraint resolution over <see cref="AppDef_MultiLine"/>: <see cref="AppParCurves_ResolConstraint{MultiLine, ToolLine}"/>.</summary>
 /// <remarks>
 /// OCCT generates this class from AppParCurves' generic code with AppDef_MyLineTool; the port derives it from the
-/// generic class, which the generic algorithms use directly (decisions 142 and 1602).
+/// generic class, which the generic algorithms use directly (decisions 142 and 202).
 /// </remarks>
 public sealed class AppDef_ResConstraintOfMyGradientOfCompute : AppParCurves_ResolConstraint<AppDef_MultiLine, AppDef_MyLineTool>
 {

@@ -186,8 +186,9 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// GeomAPI_ProjectPointOnCurve, which loads its GeomAdaptor_Curve with the curve (and the range, if given) and runs
-    /// Extrema_ExtPC over the adaptor's range; the port's Extrema_ExtPC is driven the same way.
+    /// Extrema_ExtPC through GeomAPI_ProjectPointOnCurve (which loads its GeomAdaptor_Curve with the curve, and the
+    /// range if given, and runs Extrema_ExtPC over the adaptor's range), native against the port's
+    /// GeomAPI_ProjectPointOnCurve (unit 3F; until then the port's side mirrored its call path).
     /// </summary>
     [Fact]
     public void GeomAPI_ProjectPointOnCurve()
@@ -203,8 +204,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                                   || Precision.IsInfinite(aPC.LastParameter());
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
                     aPC.LastParameter(), aPC.IsPeriodic());
-                // The port's side of GeomAPI_ProjectPointOnCurve::Init: myC.Load(Curve[, Umin, Usup]);
-                // myExtPC.Initialize(myC, myC.FirstParameter(), myC.LastParameter()); myExtPC.Perform(P)
+                // For the random points only
                 var aMyC = aWithRange ? new GeomAdaptor_Curve(aPC, aFirst, aLast) : new GeomAdaptor_Curve(aPC);
                 string aW = $"{aKind} #{c}" + (aWithRange ? $" [{aFirst:R}, {aLast:R}]" : "");
                 for (int k = 0; k < 3; k++)
@@ -212,43 +212,33 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     gp_Pnt aP = RandomPoint(anOracle, aMyC);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     N.GeomAPI_ProjectPointOnCurve? aN = null;
-                    var aPort = new Extrema_ExtPC();
+                    GeomAPI_ProjectPointOnCurve? aPort = null;
                     if (!Both(anOracle,
                             () => aN = aWithRange ? new N.GeomAPI_ProjectPointOnCurve(aNP, aNC, aFirst, aLast)
                                                   : new N.GeomAPI_ProjectPointOnCurve(aNP, aNC),
-                            () =>
-                            {
-                                aPort.Initialize(aMyC, aMyC.FirstParameter(), aMyC.LastParameter());
-                                aPort.Perform(aP);
-                            }, aW))
+                            () => aPort = aWithRange ? new GeomAPI_ProjectPointOnCurve(aP, aPC, aFirst, aLast)
+                                                     : new GeomAPI_ProjectPointOnCurve(aP, aPC),
+                            aW))
                     {
                         continue;
                     }
                     using (aN)
                     {
-                        bool isDone = aPort.IsDone() && aPort.NbExt() > 0;
-                        int aNb = isDone ? aPort.NbExt() : 0;
+                        int aNb = aPort!.NbPoints();
                         anOracle.Same(aN!.NbPoints(), aNb, $"{aW} NbPoints");
-                        int anIndex = 0;
-                        double aMin = 0.0;
                         for (int j = 1; j <= aNb; j++)
                         {
                             using N.gp_Pnt aNPt = aN.Point(j);
-                            anOracle.Same(aN.Parameter(j), aPort.Point(j).Parameter(), $"{aW} Parameter({j})");
-                            anOracle.Same(aNPt, aPort.Point(j).Value(), $"{aW} Point({j})");
-                            anOracle.Same(aN.Distance(j), Math.Sqrt(aPort.SquareDistance(j)), $"{aW} Distance({j})");
-                            if (j == 1 || aPort.SquareDistance(j) < aMin)
-                            {
-                                aMin = aPort.SquareDistance(j);
-                                anIndex = j;
-                            }
+                            anOracle.Same(aN.Parameter(j), aPort.Parameter(j), $"{aW} Parameter({j})");
+                            anOracle.Same(aNPt, aPort.Point(j), $"{aW} Point({j})");
+                            anOracle.Same(aN.Distance(j), aPort.Distance(j), $"{aW} Distance({j})");
                             aPoints++;
                         }
                         if (aNb > 0)
                         {
-                            anOracle.Same(aN.LowerDistanceParameter(), aPort.Point(anIndex).Parameter(),
+                            anOracle.Same(aN.LowerDistanceParameter(), aPort.LowerDistanceParameter(),
                                 $"{aW} LowerDistanceParameter");
-                            anOracle.Same(aN.LowerDistance(), Math.Sqrt(aMin), $"{aW} LowerDistance");
+                            anOracle.Same(aN.LowerDistance(), aPort.LowerDistance(), $"{aW} LowerDistance");
                         }
                     }
                 }

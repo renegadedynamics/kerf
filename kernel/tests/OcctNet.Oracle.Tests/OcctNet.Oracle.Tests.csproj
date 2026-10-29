@@ -14,11 +14,19 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.ModelingData\OcctNet.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+    <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
+    <ProjectReference Include="..\OcctNet.DrawLite\OcctNet.DrawLite.csproj" />
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
     <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OcctSourceDir</_Parameter1>
       <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1), for the BRep round trips of its .brep and .rle files -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 

@@ -213,6 +213,22 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 double aNative = N.BRepTools.EvalAndUpdateTol(aNE, aNC, aNC2, aNS, aF, aL);
                 double aPort = EvalAndUpdateTol(aTol, aPC, aPC2, aPS, aF, aL, out int aStatus);
                 anOracle.Same(aNative, aPort, $"kind {aKind} #{c} [{aF:R}, {aL:R}] status {aStatus}");
+
+                // the port's own EvalAndUpdateTol on an unfrozen edge, and its functional twin on a frozen one
+                var aB = new BRep_Builder();
+                TopoDS_Edge anE = new();
+                aB.MakeEdge(ref anE);
+                aB.UpdateEdge(anE, aTol);
+                TopoDS_Edge aFrozenE = new();
+                aB.MakeEdge(ref aFrozenE);
+                aB.UpdateEdge(aFrozenE, aTol);
+                aFrozenE.TShape()!.FreezeGraph();
+                anOracle.Same(aNative, BRepTools.EvalAndUpdateTol(anE, aPC, aPC2, aPS, aF, aL), "BRepTools.EvalAndUpdateTol");
+                anOracle.Same(N.BRep_Tool.Tolerance(aNE), BRep_Tool.Tolerance(anE), "the edge's updated tolerance");
+                TopoDS_Edge aTwinE = BRepTools.TolEvaluatedAndUpdated(aFrozenE, aPC, aPC2, aPS, aF, aL, out double aTwinTol);
+                anOracle.Same(aNative, aTwinTol, "BRepTools.TolEvaluatedAndUpdated");
+                anOracle.Same(N.BRep_Tool.Tolerance(aNE), BRep_Tool.Tolerance(aTwinE), "the twin's tolerance");
+                Assert.Equal(aTol, BRep_Tool.Tolerance(aFrozenE));
                 aCases++;
                 aKinds[aKind]++;
                 if (aNative > aTol)

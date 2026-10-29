@@ -1,0 +1,282 @@
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using static Occt.Intf_PIType;
+
+namespace OcctNet.ModelingAlgorithms.Tests;
+
+/// <summary>Intf's statics, section points, lines and zones, and the 2D polygon interference on known polygons.</summary>
+public class IntfTests
+{
+    /// <summary>A polyline through the given points.</summary>
+    private sealed class TestPolygon : Intf_Polygon2d
+    {
+        private readonly gp_Pnt2d[] myPoints;
+        private readonly double myDeflection;
+        private readonly bool myClosed;
+
+        public TestPolygon(double theDeflection, bool theClosed, params (double X, double Y)[] thePoints)
+        {
+            myPoints = [.. thePoints.Select(p => new gp_Pnt2d(p.X, p.Y))];
+            myDeflection = theDeflection;
+            myClosed = theClosed;
+            foreach (gp_Pnt2d aP in myPoints)
+            {
+                myBox.Add(aP);
+            }
+
+            myBox.Enlarge(theDeflection);
+        }
+
+        public override bool Closed() => myClosed;
+
+        public override double DeflectionOverEstimation() => myDeflection;
+
+        public override int NbSegments() => myPoints.Length - 1;
+
+        public override void Segment(int theIndex, out gp_Pnt2d theBegin, out gp_Pnt2d theEnd)
+        {
+            theBegin = myPoints[theIndex - 1];
+            theEnd = myPoints[theIndex];
+        }
+    }
+
+    private static Intf_SectionPoint SP(int i)
+        => new(new gp_Pnt2d(i, 0), Intf_VERTEX, i, 0.0, Intf_VERTEX, i, 0.0, 0.0);
+
+    [Fact]
+    public void PlaneEquationAndContain()
+    {
+        gp_Pnt aP1 = new(0, 0, 2), aP2 = new(1, 0, 2), aP3 = new(0, 1, 2);
+        Intf.PlaneEquation(aP1, aP2, aP3, out gp_XYZ aNormal, out double aDist);
+        Assert.Equal(0, aNormal.X(), 15);
+        Assert.Equal(0, aNormal.Y(), 15);
+        Assert.Equal(1, aNormal.Z(), 15);
+        Assert.Equal(2, aDist, 15);
+
+        Intf.PlaneEquation(aP1, aP1, aP2, out _, out aDist);
+        Assert.Equal(0, aDist);
+
+        Assert.True(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(0.2, 0.2, 2)));
+        Assert.True(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(0.5, 0, 2)));
+        Assert.False(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(1, 1, 2)));
+    }
+
+    [Fact]
+    public void SectionPoint_IsEqualComparesLogicalInformation()
+    {
+        var aA = new Intf_SectionPoint(new gp_Pnt2d(1, 2), Intf_EDGE, 3, 0.25, Intf_VERTEX, 4, 0.0, 0.5);
+        var aB = new Intf_SectionPoint(new gp_Pnt2d(5, 6), Intf_EDGE, 3, 0.75, Intf_VERTEX, 4, 0.0, 0.1);
+        Assert.True(aA.IsEqual(aB)); // OCCT's operator==
+        Assert.False(aA == aB);      // exact comparison
+        Assert.Equal(2.25, aA.ParamOnFirst());
+        Assert.Equal(3.0, aA.ParamOnSecond());
+        Assert.Equal(new gp_Pnt(1, 2, 0), aA.Pnt());
+
+        aA.InfoFirst(out Intf_PIType aDim, out int anAdd1, out int anAdd2, out double aParam);
+        Assert.Equal((Intf_EDGE, 0, 3, 0.25), (aDim, anAdd1, anAdd2, aParam));
+        aA.InfoSecond(out aDim, out int anAdd, out aParam);
+        Assert.Equal((Intf_VERTEX, 4, 0.0), (aDim, anAdd, aParam));
+        Assert.Equal(new Intf_SectionPoint(), default);
+    }
+
+    [Fact]
+    public void SectionPoint_IsOnSameEdge()
+    {
+        gp_Pnt aP = new(0, 0, 0);
+        var anEdge12 = new Intf_SectionPoint(aP, Intf_EDGE, 1, 2, 0.5, Intf_FACE, 7, 8, 0.0, 0.0);
+        var anEdge12b = new Intf_SectionPoint(aP, Intf_EDGE, 1, 2, 0.1, Intf_FACE, 9, 10, 0.0, 0.0);
+        var aVertex2 = new Intf_SectionPoint(aP, Intf_VERTEX, 2, 0, 0.0, Intf_FACE, 9, 10, 0.0, 0.0);
+        Assert.True(anEdge12.IsOnSameEdge(anEdge12b));
+        Assert.True(aVertex2.IsOnSameEdge(anEdge12));
+
+        // OCCT: two points on the same vertex of the first argument compare the second argument's IndexT1
+        var aVertex5a = new Intf_SectionPoint(aP, Intf_VERTEX, 5, 0, 0.0, Intf_FACE, 1, 2, 0.0, 0.0);
+        var aVertex5b = new Intf_SectionPoint(aP, Intf_VERTEX, 5, 0, 0.0, Intf_FACE, 3, 4, 0.0, 0.0);
+        Assert.False(aVertex5a.IsOnSameEdge(aVertex5b));
+    }
+
+    [Fact]
+    public void SectionPoint_MergeKeepsHigherDimension()
+    {
+        var aA = new Intf_SectionPoint(new gp_Pnt(1, 1, 1), Intf_EDGE, 1, 2, 0.5, Intf_FACE, 3, 4, 0.1, 0.0);
+        var aB = new Intf_SectionPoint(new gp_Pnt(2, 2, 2), Intf_VERTEX, 7, 0, 0.0, Intf_EDGE, 5, 6, 0.2, 0.0);
+        aA.Merge(ref aB);
+        Assert.True(aA.IsEqual(aB));
+        Assert.Equal(Intf_VERTEX, aA.TypeOnFirst());
+        Assert.Equal(Intf_EDGE, aA.TypeOnSecond());
+        Assert.Equal(new gp_Pnt(1, 1, 1), aB.Pnt());
+    }
+
+    [Fact]
+    public void SectionLine_AppendPrependAndEnds()
+    {
+        var aLine = new Intf_SectionLine();
+        aLine.Append(SP(2));
+        aLine.Append(SP(3));
+        aLine.Prepend(SP(1));
+        Assert.Equal(3, aLine.NumberOfPoints());
+        Assert.Equal(1, aLine.IsEnd(SP(1)));
+        Assert.Equal(3, aLine.IsEnd(SP(3)));
+        Assert.Equal(0, aLine.IsEnd(SP(2)));
+        Assert.True(aLine.Contains(SP(2)));
+        Assert.False(aLine.IsClosed());
+
+        var aCopy = new Intf_SectionLine(aLine);
+        aLine.Reverse();
+        Assert.Equal(SP(3), aLine.GetPoint(1));
+        Assert.Equal(SP(1), aCopy.GetPoint(1));
+        Assert.False(aLine.IsEqual(aCopy));
+        aLine.Reverse();
+        Assert.True(aLine.IsEqual(aCopy));
+
+        aLine.Append(SP(1));
+        Assert.True(aLine.IsClosed()); // the ends are logically equal; the closed flag isn't read
+    }
+
+    [Fact]
+    public void TangentZone_RangesAndPolygonInsert()
+    {
+        var aZone = new Intf_TangentZone();
+        var aP1 = new Intf_SectionPoint(new gp_Pnt2d(0, 0), Intf_EDGE, 2, 0.5, Intf_EDGE, 3, 0.25, 0.0);
+        var aP2 = new Intf_SectionPoint(new gp_Pnt2d(1, 0), Intf_VERTEX, 3, 0.0, Intf_EDGE, 4, 0.75, 0.0);
+        var aP3 = new Intf_SectionPoint(new gp_Pnt2d(2, 0), Intf_EDGE, 2, 0.75, Intf_EDGE, 3, 0.5, 0.0);
+        aZone.PolygonInsert(aP1);
+        aZone.PolygonInsert(aP2);
+        aZone.PolygonInsert(aP3); // inside the range on the first argument: inserted first
+        Assert.Equal(3, aZone.NumberOfPoints());
+        Assert.Equal(aP3, aZone.GetPoint(1));
+        aZone.ParamOnFirst(out double aMin, out double aMax);
+        Assert.Equal((1.5, 2.0), (aMin, aMax));
+        aZone.InfoSecond(out int aSegMin, out double aParMin, out int aSegMax, out double aParMax);
+        Assert.Equal((2, 0.25, 3, 0.75), (aSegMin, aParMin, aSegMax, aParMax));
+        Assert.True(aZone.Contains(aP2));
+        Assert.True(aZone.RangeContains(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 2, 0.6, Intf_EDGE, 3, 0.9, 0.0)));
+        Assert.False(aZone.Insert(aP1)); // OCCT's Insert does nothing
+
+        var anOther = new Intf_TangentZone();
+        anOther.Append(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 2, 0.9, Intf_EDGE, 4, 0.5, 0.0));
+        Assert.True(aZone.HasCommonRange(anOther));
+        var aFar = new Intf_TangentZone();
+        aFar.Append(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 9, 0.5, Intf_EDGE, 4, 0.9, 0.0));
+        Assert.False(aZone.HasCommonRange(aFar));
+
+        var aCopy = new Intf_TangentZone(aZone);
+        aZone.Append(anOther);
+        Assert.Equal(4, aZone.NumberOfPoints());
+        Assert.Equal(3, aCopy.NumberOfPoints());
+        Assert.False(aZone.IsEqual(aCopy));
+    }
+
+    [Fact]
+    public void Interference_InsertBuildsAndJoinsSectionLines()
+    {
+        var anInter = new Intf_InterferencePolygon2d();
+        anInter.Insert(SP(1), SP(2));
+        anInter.Insert(SP(2), SP(3));
+        anInter.Insert(SP(4), SP(1));
+        Assert.Equal(1, anInter.NbSectionLines());
+        Assert.Equal(4, anInter.LineValue(1).NumberOfPoints());
+        Assert.Equal(SP(4), anInter.LineValue(1).GetPoint(1));
+        Assert.False(anInter.LineValue(1).IsClosed());
+        anInter.Insert(SP(3), SP(4));
+        Assert.Equal(5, anInter.LineValue(1).NumberOfPoints());
+        Assert.True(anInter.LineValue(1).IsClosed());
+        Assert.True(anInter.Contains(SP(2)));
+        Assert.False(anInter.Contains(SP(9)));
+
+        // two lines joined by a segment between their ends
+        var aJoin = new Intf_InterferencePolygon2d();
+        aJoin.Insert(SP(1), SP(2));
+        aJoin.Insert(SP(3), SP(4));
+        Assert.Equal(2, aJoin.NbSectionLines());
+        aJoin.Insert(SP(2), SP(3));
+        Assert.Equal(1, aJoin.NbSectionLines());
+        Intf_SectionLine aLine = aJoin.LineValue(1);
+        Assert.Equal(4, aLine.NumberOfPoints());
+        for (int i = 1; i <= 4; i++)
+        {
+            Assert.Equal(SP(i), aLine.GetPoint(i));
+        }
+    }
+
+    [Fact]
+    public void InterferencePolygon2d_CrossingSegments()
+    {
+        var aP1 = new TestPolygon(0, false, (0, 0), (2, 2));
+        var aP2 = new TestPolygon(0, false, (0, 2), (2, 0));
+        var anInter = new Intf_InterferencePolygon2d(aP1, aP2);
+
+        Assert.Equal(1, anInter.NbSectionPoints());
+        Assert.Equal(0, anInter.NbTangentZones());
+        Assert.Equal(Epsilon(1000.0), anInter.GetTolerance());
+        Intf_SectionPoint aPt = anInter.PntValue(1);
+        Assert.Equal(Intf_EDGE, aPt.TypeOnFirst());
+        Assert.Equal(Intf_EDGE, aPt.TypeOnSecond());
+        Assert.Equal(0.5, aPt.ParamOnFirst(), 15);
+        Assert.Equal(0.5, aPt.ParamOnSecond(), 15);
+        Assert.Equal(1.0, aPt.Incidence(), 15);
+        Assert.Equal(new gp_Pnt2d(1, 1), anInter.Pnt2dValue(1));
+    }
+
+    [Fact]
+    public void InterferencePolygon2d_CrossingAtVertex()
+    {
+        // The first polyline turns at (1, 1), on the second: each of its segments gives an EDGE/EDGE point there.
+        var aP1 = new TestPolygon(0, false, (0, 0), (1, 1), (2, 0));
+        var aP2 = new TestPolygon(0, false, (1, 0), (1, 2));
+        var anInter = new Intf_InterferencePolygon2d(aP1, aP2);
+        Assert.Equal(2, anInter.NbSectionPoints());
+        for (int i = 1; i <= 2; i++)
+        {
+            Assert.Equal(1.0, anInter.PntValue(i).ParamOnFirst(), 15);
+            Assert.Equal(0.5, anInter.PntValue(i).ParamOnSecond(), 15);
+            Assert.Equal(1.0, anInter.Pnt2dValue(i).X(), 15);
+            Assert.Equal(1.0, anInter.Pnt2dValue(i).Y(), 15);
+        }
+    }
+
+    [Fact]
+    public void InterferencePolygon2d_OverlapGivesTangentZone()
+    {
+        var aP1 = new TestPolygon(0, false, (0, 0), (2, 0));
+        var aP2 = new TestPolygon(0, false, (1, 0), (3, 0));
+        var anInter = new Intf_InterferencePolygon2d(aP1, aP2);
+        Assert.Equal(0, anInter.NbSectionPoints());
+        Assert.Equal(1, anInter.NbTangentZones());
+        Intf_TangentZone aZone = anInter.ZoneValue(1);
+        Assert.Equal(2, aZone.NumberOfPoints());
+        aZone.ParamOnFirst(out double aMin, out double aMax);
+        Assert.Equal((0.5, 1.0), (aMin, aMax));
+        aZone.ParamOnSecond(out aMin, out aMax);
+        Assert.Equal((0.0, 0.5), (aMin, aMax));
+    }
+
+    [Fact]
+    public void InterferencePolygon2d_DisjointAndPerform()
+    {
+        var aP1 = new TestPolygon(0, false, (0, 0), (1, 0));
+        var aP2 = new TestPolygon(0, false, (0, 5), (1, 5));
+        var anInter = new Intf_InterferencePolygon2d(aP1, aP2);
+        Assert.Equal(0, anInter.NbSectionPoints());
+        Assert.Equal(0.0, anInter.GetTolerance()); // the boxes don't meet: nothing computed
+
+        anInter.Perform(aP1, new TestPolygon(0, false, (0.5, -1), (0.5, 1)));
+        Assert.Equal(1, anInter.NbSectionPoints());
+        anInter.Perform(aP1, aP2);
+        Assert.Equal(0, anInter.NbSectionPoints());
+    }
+
+    [Fact]
+    public void InterferencePolygon2d_SelfIntersection()
+    {
+        // (0,0)-(2,2)-(2,0)-(0,2): the first and third segments cross at (1, 1); neighbours are skipped.
+        var aP = new TestPolygon(0, false, (0, 0), (2, 2), (2, 0), (0, 2));
+        var anInter = new Intf_InterferencePolygon2d(aP);
+        Assert.Equal(1, anInter.NbSectionPoints());
+        Assert.Equal(0.5, anInter.PntValue(1).ParamOnFirst(), 15);
+        Assert.Equal(2.5, anInter.PntValue(1).ParamOnSecond(), 15);
+        Assert.Equal(new gp_Pnt2d(1, 1), anInter.Pnt2dValue(1));
+
+        Assert.Equal(0, new Intf_InterferencePolygon2d(new TestPolygon(0, false, (0, 0), (1, 0), (2, 1))).NbSectionPoints());
+    }
+}

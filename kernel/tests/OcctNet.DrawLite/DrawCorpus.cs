@@ -16,6 +16,13 @@ public sealed record DrawCaseScan(DrawTestCase Case, IReadOnlySet<string> Comman
     public bool IsRunnable => Missing.Count == 0;
 }
 
+/// <summary>A case run, with the status OCCT's _check_log gives its log (OK, BAD, IMPROVEMENT, SKIPPED, FAILED ...).</summary>
+public sealed record DrawCaseRun(DrawTestCase Case, string Status, string Log)
+{
+    /// <summary>OK, or BAD (known problem): OCCT's harness counts both as passing.</summary>
+    public bool Passed => Status.StartsWith("OK", StringComparison.Ordinal) || Status.StartsWith("BAD", StringComparison.Ordinal);
+}
+
 /// <summary>
 /// OCCT's Draw test corpus (tests/ in the OCCT source). A case runs as group/begin, grid/begin, the case,
 /// grid/end, group/end, which is how OCCT's own test harness assembles it.
@@ -95,6 +102,80 @@ public sealed class DrawCorpus(string theTestsDirectory)
         }
 
         theInterpreter.Eval(aScript.ToString());
+    }
+
+    /// <summary>
+    /// Runs a case in a new interpreter with the DrawResources loaded, as OCCT's harness does (an error ends the
+    /// script with "Tcl Exception: ..." in the log), then judges its log with the harness's own <c>_check_log</c>
+    /// (TestCommands.tcl: parse.rules, TODO and REQUIRED statements, "TEST COMPLETED"). The status is _check_log's:
+    /// OK, BAD (known problem), IMPROVEMENT, SKIPPED or FAILED, with its reason.
+    /// </summary>
+    /// <param name="theCase">The case.</param>
+    /// <param name="theResourcesDirectory">OCCT's resources/DrawResources.</param>
+    /// <param name="theDataPath">CSF_TestDataPath: directories of data files, separated by ';'.</param>
+    /// <param name="theTimeLimit">The time after which the case stops ("Process killed by elapsed limit").</param>
+    /// <param name="theSetup">Runs on the interpreter before the case (to remove commands, for one).</param>
+    public DrawCaseRun RunAndCheck(DrawTestCase theCase, string theResourcesDirectory, string? theDataPath, TimeSpan theTimeLimit,
+                                   Action<DrawInterpreter>? theSetup = null)
+    {
+        var aLog = new StringWriter { NewLine = "\n" };
+        var anInterpreter = new DrawInterpreter(aLog);
+        anInterpreter.LoadDrawResources(theResourcesDirectory);
+        if (theDataPath is not null)
+        {
+            anInterpreter.SetVariable("env(CSF_TestDataPath)", theDataPath);
+        }
+
+        // the environment DRAWEXE has: OCCT's root (the parent of tests/), its resources and data
+        string aRoot = TclFileSystem.Slashes(Path.GetDirectoryName(Path.GetFullPath(TestsDirectory).TrimEnd('\\', '/'))!);
+        anInterpreter.SetVariable("env(CASROOT)", aRoot);
+        anInterpreter.SetVariable("env(CSF_OCCTResourcePath)", aRoot + "/resources");
+        anInterpreter.SetVariable("env(CSF_OCCTDataPath)", aRoot + "/data");
+
+        // an empty, writable image directory, as the harness makes for each case: in the overlay, as every write
+        string anImages = TclFileSystem.Slashes(Path.Combine(Path.GetTempPath(), "drawlite-images", theCase.Group, theCase.Grid, theCase.Name));
+        anInterpreter.Files.MakeDirectory(anImages);
+        // _run_test logs the commands and their results (dlog on)
+        anInterpreter.DoLog = true;
+        theSetup?.Invoke(anInterpreter);
+        anInterpreter.Deadline = DateTime.UtcNow + theTimeLimit;
+        try
+        {
+            Run(theCase, anInterpreter, anImages);
+        }
+        catch (DrawException anError)
+        {
+            aLog.WriteLine("Tcl Exception: " + anError.Reason);
+        }
+        catch (DrawTimeoutException)
+        {
+            aLog.WriteLine("Process killed by elapsed limit");
+        }
+        catch (Exception anError) when (anError is not OutOfMemoryException)
+        {
+            // an exception from the port that a command didn't turn into a Tcl error
+            aLog.WriteLine("Tcl Exception: " + anError.GetType().Name + ": " + anError.Message);
+        }
+
+        string aText = aLog.ToString();
+        var aChecker = new DrawInterpreter();
+        aChecker.LoadDrawResources(theResourcesDirectory);
+        aChecker.SetVariable("log", aText);
+        string aStatus;
+        try
+        {
+            aChecker.Eval($"_check_log {TclList.Quote(TclFileSystem.Slashes(TestsDirectory))} {TclList.Quote(theCase.Group)} "
+                          + $"{TclList.Quote(theCase.Grid)} {TclList.Quote(theCase.Name)} 0 $log summary html_log");
+            string aSummary = aChecker.Eval("set summary");
+            int aColon = aSummary.IndexOf(": ", StringComparison.Ordinal);
+            aStatus = aColon >= 0 ? aSummary[(aColon + 2)..].Trim() : aSummary;
+        }
+        catch (DrawException anError)
+        {
+            aStatus = "FAILED (_check_log: " + anError.Reason + ")";
+        }
+
+        return new DrawCaseRun(theCase, aStatus, aText);
     }
 
     /// <summary>

@@ -52,9 +52,9 @@ public class DrawInterpreterTests
     [Fact]
     public void Unknown_commands_are_reported_with_their_line()
     {
-        var anError = Assert.Throws<DrawCommandNotFoundException>(() => new DrawInterpreter().Eval("set a 1\nbox b 1 2 3"));
+        var anError = Assert.Throws<DrawCommandNotFoundException>(() => new DrawInterpreter().Eval("set a 1\nbcut r a b"));
 
-        Assert.Equal("box", anError.Command);
+        Assert.Equal("bcut", anError.Command);
         Assert.Equal(2, anError.Line);
     }
 
@@ -101,7 +101,7 @@ public class DrawInterpreterTests
 
     [Fact]
     public void An_unknown_procedure_receives_calls_of_missing_commands()
-        => Assert.Equal("stub:box b 1", new DrawInterpreter().Eval("proc unknown {args} {return \"stub:$args\"}; box b 1"));
+        => Assert.Equal("stub:bcut r 1", new DrawInterpreter().Eval("proc unknown {args} {return \"stub:$args\"}; bcut r 1"));
 
     [Fact]
     public void Commands_registered_from_csharp_can_set_variables_in_the_calling_proc()

@@ -21,7 +21,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 {
     protected GeomAdaptor_Surface mySurf;
     protected gp_Trsf myTrsf;
-    private GeomAdaptor_Surface? myTransformedAdaptor;
+    private protected GeomAdaptor_Surface? myTransformedAdaptor;
 
     /// <summary>An undefined surface with the identity transformation.</summary>
     public GeomAdaptor_TransformedSurface()

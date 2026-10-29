@@ -56,25 +56,25 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 34 / 470 | 14,954 / 132,410 | 11.3 |
+| FoundationClasses | TKernel | 35 / 470 | 14,988 / 132,410 | 11.3 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
 | ModelingAlgorithms | TKFeat | 0 / 96 | 0 / 32,591 | 0.0 |
 | ModelingAlgorithms | TKFillet | 0 / 261 | 0 / 97,078 | 0.0 |
-| ModelingAlgorithms | TKGeomAlgo | 0 / 868 | 0 / 218,548 | 0.0 |
+| ModelingAlgorithms | TKGeomAlgo | 186 / 868 | 39,663 / 218,548 | 18.1 |
 | ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
 | ModelingAlgorithms | TKMesh | 0 / 156 | 0 / 19,930 | 0.0 |
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
-| ModelingAlgorithms | TKPrim | 0 / 75 | 0 / 12,932 | 0.0 |
+| ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
 | ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
-| ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
+| ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
-| ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
+| ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 703 / 720 | 316,755 / 317,408 | 99.8 |
+| ModelingData | TKGeomBase | 704 / 720 | 316,887 / 317,408 | 99.8 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1512 | 562,914 / 2,897,781 | 19.4 |
+| **All** |  | 2156 | 702,314 / 2,897,781 | 24.2 |
 
 ## TKMath
 
@@ -125,12 +125,96 @@ broken down by package.
 | Resource | 0 / 15 | 0 / 28,170 | 0.0 |
 | Standard | 4 / 93 | 749 / 17,960 | 4.2 |
 | StdFail | 0 / 5 | 0 / 170 | 0.0 |
-| Storage | 0 / 38 | 0 / 3,922 | 0.0 |
+| Storage | 1 / 38 | 34 / 3,922 | 0.9 |
 | TColStd | 0 / 2 | 0 / 84 | 0.0 |
 | TCollection | 0 / 11 | 0 / 8,299 | 0.0 |
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
+
+## TKGeomAlgo
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| AppBlend | 0 / 5 | 0 / 1,463 | 0.0 |
+| ApproxInt | 0 / 9 | 0 / 4,210 | 0.0 |
+| FairCurve | 0 / 30 | 0 / 4,481 | 0.0 |
+| GccAna | 0 / 61 | 0 / 16,486 | 0.0 |
+| GccEnt | 0 / 8 | 0 / 556 | 0.0 |
+| GccInt | 0 / 15 | 0 / 670 | 0.0 |
+| Geom2dAPI | 9 / 13 | 1,021 / 2,706 | 37.7 |
+| Geom2dGcc | 0 / 54 | 0 / 15,966 | 0.0 |
+| Geom2dHatch | 0 / 16 | 0 / 3,936 | 0.0 |
+| Geom2dInt | 26 / 26 | 2,240 / 2,240 | 100.0 |
+| GeomAPI | 23 / 27 | 4,454 / 5,792 | 76.9 |
+| GeomFill | 0 / 127 | 0 / 33,355 | 0.0 |
+| GeomInt | 0 / 60 | 0 / 9,217 | 0.0 |
+| GeomPlate | 0 / 18 | 0 / 6,566 | 0.0 |
+| Hatch | 0 / 8 | 0 / 805 | 0.0 |
+| HatchGen | 0 / 12 | 0 / 1,368 | 0.0 |
+| IntCurve | 29 / 29 | 11,757 / 11,757 | 100.0 |
+| IntCurveSurface | 35 / 35 | 7,635 / 7,635 | 100.0 |
+| IntImp | 5 / 11 | 538 / 1,568 | 34.3 |
+| IntImpParGen | 6 / 6 | 1,446 / 1,446 | 100.0 |
+| IntPatch | 0 / 91 | 0 / 42,474 | 0.0 |
+| IntPolyh | 0 / 26 | 0 / 7,806 | 0.0 |
+| IntRes2d | 18 / 18 | 1,932 / 1,932 | 100.0 |
+| IntStart | 0 / 6 | 0 / 1,716 | 0.0 |
+| IntSurf | 6 / 32 | 919 / 2,743 | 33.5 |
+| IntWalk | 0 / 12 | 0 / 8,124 | 0.0 |
+| Intf | 23 / 23 | 5,951 / 5,951 | 100.0 |
+| Law | 0 / 22 | 0 / 5,410 | 0.0 |
+| LocalAnalysis | 0 / 7 | 0 / 2,193 | 0.0 |
+| NLPlate | 0 / 18 | 0 / 1,464 | 0.0 |
+| Plate | 0 / 37 | 0 / 4,742 | 0.0 |
+| TopClass | 2 / 2 | 405 / 405 | 100.0 |
+| TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
+
+## TKPrim
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepPreviewAPI | 2 / 2 | 174 / 174 | 100.0 |
+| BRepPrim | 22 / 22 | 5,007 / 5,007 | 100.0 |
+| BRepPrimAPI | 23 / 23 | 3,076 / 3,076 | 100.0 |
+| BRepSweep | 20 / 20 | 4,049 / 4,049 | 100.0 |
+| Sweep | 8 / 8 | 626 / 626 | 100.0 |
+
+## TKTopAlgo
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepApprox | 0 / 52 | 0 / 5,269 | 0.0 |
+| BRepBndLib | 3 / 3 | 1,430 / 1,430 | 100.0 |
+| BRepBuilderAPI | 43 / 52 | 6,340 / 14,345 | 44.2 |
+| BRepCheck | 19 / 19 | 7,467 / 7,467 | 100.0 |
+| BRepClass | 14 / 14 | 1,909 / 1,909 | 100.0 |
+| BRepClass3d | 15 / 15 | 3,428 / 3,428 | 100.0 |
+| BRepExtrema | 32 / 32 | 7,718 / 7,718 | 100.0 |
+| BRepGProp | 30 / 30 | 7,451 / 7,451 | 100.0 |
+| BRepIntCurveSurface | 2 / 2 | 443 / 443 | 100.0 |
+| BRepLib | 41 / 41 | 13,241 / 13,241 | 100.0 |
+| BRepMAT2d | 0 / 6 | 0 / 1,642 | 0.0 |
+| BRepTopAdaptor | 8 / 8 | 2,140 / 2,140 | 100.0 |
+| Bisector | 0 / 22 | 0 / 7,520 | 0.0 |
+| IntCurvesFace | 5 / 5 | 1,172 / 1,172 | 100.0 |
+| MAT | 0 / 25 | 0 / 3,179 | 0.0 |
+| MAT2d | 0 / 14 | 0 / 5,982 | 0.0 |
+
+## TKBRep
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRep | 50 / 50 | 8,105 / 8,105 | 100.0 |
+| BRepAdaptor | 8 / 8 | 1,384 / 1,384 | 100.0 |
+| BRepGraph | 0 / 83 | 0 / 44,744 | 0.0 |
+| BRepGraphInc | 0 / 18 | 0 / 11,240 | 0.0 |
+| BRepLProp | 6 / 6 | 430 / 430 | 100.0 |
+| BRepTools | 29 / 30 | 11,545 / 11,664 | 99.0 |
+| BinTools | 24 / 25 | 7,308 / 7,330 | 99.7 |
+| TopExp | 4 / 4 | 883 / 883 | 100.0 |
+| TopTools | 8 / 9 | 1,699 / 1,722 | 98.7 |
+| TopoDS | 40 / 44 | 2,546 / 2,777 | 91.7 |
 
 ## TKG2d
 
@@ -167,7 +251,7 @@ broken down by package.
 | Approx | 28 / 28 | 10,308 / 10,308 | 100.0 |
 | BndLib | 8 / 8 | 2,537 / 2,537 | 100.0 |
 | CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
-| Extrema | 103 / 104 | 22,481 / 22,613 | 99.4 |
+| Extrema | 104 / 104 | 22,613 / 22,613 | 100.0 |
 | ExtremaPC | 18 / 18 | 3,990 / 3,990 | 100.0 |
 | FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
 | GC | 65 / 65 | 5,462 / 5,462 | 100.0 |

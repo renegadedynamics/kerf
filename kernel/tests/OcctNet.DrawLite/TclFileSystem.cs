@@ -88,6 +88,44 @@ internal sealed class TclFileSystem
         return File.ReadAllText(aFull);
     }
 
+    /// <summary>
+    /// A file's bytes, for Draw's file commands (restore, readbrep): from the overlay (whose text holds a byte per
+    /// character, as <see cref="WriteBytes"/> stores it) or from disk. False if there is no such file.
+    /// </summary>
+    public bool TryReadBytes(string thePath, out byte[] theBytes)
+    {
+        string aFull = Full(thePath);
+        if (myFiles.TryGetValue(aFull, out StringBuilder? aText))
+        {
+            theBytes = Encoding.Latin1.GetBytes(aText.ToString());
+            return true;
+        }
+
+        theBytes = [];
+        if (myDeleted.Contains(aFull) || !File.Exists(aFull))
+        {
+            return false;
+        }
+
+        try
+        {
+            theBytes = File.ReadAllBytes(aFull);
+            return true;
+        }
+        catch (Exception anException) when (anException is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Writes a file written by a Draw command (bsave, writebrep, binsave) to the overlay, a character per byte.</summary>
+    public void WriteBytes(string thePath, byte[] theBytes)
+    {
+        string aFull = Full(thePath);
+        myFiles[aFull] = new StringBuilder(Encoding.Latin1.GetString(theBytes));
+        myDeleted.Remove(aFull);
+    }
+
     public long Size(string thePath)
     {
         string aFull = Full(thePath);

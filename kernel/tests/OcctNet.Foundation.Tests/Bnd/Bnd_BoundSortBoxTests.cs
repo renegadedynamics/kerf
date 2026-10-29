@@ -243,5 +243,5 @@ public class Bnd_BoundSortBoxTest
     }
 }
 
-// Bnd_BoundSortBox_Test.BUC60729_InitializeWithFaceBoxes is left out until TopoDS, BRepPrimAPI and BRepBndLib are
-// ported: it bounds the faces of a box solid.
+// Bnd_BoundSortBox_Test.BUC60729_InitializeWithFaceBoxes bounds the faces of a box solid (BRepPrimAPI, BRepBndLib):
+// it is in OcctNet.ModelingAlgorithms.Tests (Bnd/Bnd_ShapeGTests.cs).

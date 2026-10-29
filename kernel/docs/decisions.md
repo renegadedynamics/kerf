@@ -2121,6 +2121,123 @@ The design of immutable topology ([phase3-design.md](phase3-design.md)) and the 
      only. The MSBuild property `OcctTestDataDir` points at it (OCCT's `CSF_TestDataPath`). It holds 2,907 of the
      6,939 data files the corpus names, including 1,287 of the 4,039 `.brep` and 870 of the 1,156 `.rle` files; the
      rest are not published, so the cases that need them stay out of reach.
+## Phase 3: unit 3D, 2D intersection bases
+
+IntRes2d, IntImpParGen (with IntImpParGen_Intersector.gxx), Intf (without Intf_InterferencePolygonPolyhedron.gxx,
+unit 3F), TopTrans and TopClass, in the new assembly OcctNet.ModelingAlgorithms.
+
+280. **A third assembly, OcctNet.ModelingAlgorithms** (decision 93's naming), holds TKGeomAlgo, TKTopAlgo and TKPrim.
+      It references OcctNet.ModelingData (and through it Foundation); `src/Directory.Build.props` already lets it
+      and its tests see the other assemblies' internals. Its tests are `tests/OcctNet.ModelingAlgorithms.Tests`
+      (namespace `OcctNet.ModelingAlgorithms.Tests`, with the OcctSourceDir metadata of the ModelingData tests), and
+      `tests/OcctNet.Oracle.Tests` references it for the oracle tests of later units. Both projects are in
+      `OcctNet.slnx`.
+281. **IntRes2d's results are structs** (decision 117): IntRes2d_Transition, IntRes2d_IntersectionPoint,
+      IntRes2d_IntersectionSegment and IntRes2d_Domain, with the three enums.
+      - `SetValue`, `SetValues`, `SetPosition` and `SetEquivalentParameters` are internal. The constructors are
+        their twins (each `SetValues` rebuilds the whole value), with `WithPosition` and `WithEquivalentParameters`.
+      - OCCT's defaults are the parameterless constructors: an undecided transition at Middle, parameters at
+        RealLast for a point, the zero infinite domain (also `default(IntRes2d_Domain)`).
+      - `EquivalentParameters` has `out` results; the DomainError OCCT documents on an open domain is not raised
+        (OCCT doesn't either). Accessors returning `const T&` return copies.
+      - **IntRes2d_Intersection is an abstract class** with OCCT's protected fields and methods (`lpnt`, `lseg`,
+        `done`, `reverse`, `Insert`, `Append`, `SetValues`, `ResetFields`, `ReversedParameters`), its protected
+        copy constructor, and `Assign` for its default assignment operator. The file-static helpers
+        (`TransitionEqual`, `InternalVerifyPosition`, the `PARAMEQUAL` macro) are private statics.
+282. **Intf's results.**
+      - Intf_SectionPoint is a struct whose default is all zeros. OCCT's `operator==` is `IsEqual` (the logical
+        information only: types and addresses); the port's `==`/`Equals` compare every field exactly (rules,
+        section 3), so ported code that uses C++ `==` writes `IsEqual` (as Intf_SectionLine::IsClosed does).
+        `Merge` (which changes both points) is internal, without a twin: nothing in OCCT calls it.
+      - Intf_TangentZone and Intf_SectionLine are **sealed classes**, because they hold a sequence (a struct would
+        share it between copies). C++ copies are written `new Intf_TangentZone(z)` and `new Intf_SectionLine(l)`
+        (which, as OCCT's, doesn't copy the closed flag). Their mutators (`Append`, `Prepend`, `InsertBefore`,
+        `PolygonInsert`, `Reverse`, `Close`, ...) are internal, so the stored zones and lines that
+        `Intf_Interference.ZoneValue` and `LineValue` return can't be changed by callers.
+      - In `Intf_Interference::Insert(zone)` the C++ copies a zone and then removes it from the sequence; the port
+        re-inserts the removed object itself.
+      - Intf_Interference and Intf_Polygon2d are abstract classes; Intf is a static class. The `Dump` methods, which
+        print to std::cout or only in debug builds, are left out (ToString instead).
+283. **Intf_Tool is a class** (a working tool, decision 21) whose fixed C++ arrays are .NET arrays allocated with
+      the object. The domain boxes are `in` and the result boxes `ref` (OCCT calls SetVoid on them, then reads them
+      back through Add and Update). The sorting tail that OCCT writes out in both Inters3d is kept twice.
+284. **IntImpParGen.**
+      - The package class is a static class. The free functions of IntImpParGen_Tool.hxx (`NormalizeOnDomain`,
+        `Determine_Position`, `Determine_Transition`: older variants, used by IntCurve_IntConicConic) are the
+        internal static class `IntImpParGen_Tool`.
+      - Tangents and transitions that the functions change are `ref`, `DeterminePosition`'s position is `out`, and
+        `NormalizeOnDomain` takes its parameter by value (OCCT's `double&` is only read). The unused tolerance
+        arguments are kept.
+      - **IntImpParGen_Intersector.gxx is a generic class** (decision 202's approach),
+        `IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool> : IntRes2d_Intersection`,
+        with one interface per macro:
+        - `IIntImpParGen_ImpTool`: OCCT's IntImpParGen_ImpTool.hxx, the template class of an implicit curve (Value,
+          D1, D2, Distance, GradDistance, FindParameter), as instance methods; IntCurve_IConicTool implements it.
+        - `IIntImpParGen_ParTool<ParCurve>` (static abstract EpsX, NbSamples(C, U0, U1), Value, D2) and
+          `IIntImpParGen_ProjectOnPCurveTool<ParCurve>` (static abstract FindParameter, both forms), implemented by
+          IntCurve_PConicTool or Geom2dInt_Geom2dCurveTool, and IntCurve_ProjectOnPConicTool or
+          Geom2dInt_TheProjPCurOfGInter.
+        - `IIntImpParGen_MyImpParTool<TSelf, ImpTool, ParCurve>`: the math_FunctionWithDerivative that OCCT
+          constructs from the two curves, with a static abstract `Create(in ImpTool, in ParCurve)` for that
+          constructor.
+      - Curves and tools are passed `in`. The class is not abstract: OCCT's instantiations
+        (IntCurve_IntImpConicParConic, Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter) become sealed subclasses
+        with OCCT's constructors forwarded, in unit 3E. The public `FindU`, `FindV` and
+        `And_Domaine_Objet1_Intersections` keep OCCT's signatures (`out` points, `ref int NbResultats`).
+      Rejected: porting per instantiation here, since the instantiating types are IntCurve's and Geom2dInt's.
+285. **TopClass is two internal static classes of generic methods.** OCCT 8's TopClass is two private headers
+      (`.pxx`) of inline template functions over the fields of the classifiers that include them
+      (BRepClass_FClass2dOfFClassifier and BRepClass_FClassifier in unit 3G, Geom2dHatch later), passed by
+      reference.
+      - They are `TopClass_Classifier2d.Reset/Compare` and `TopClass_FaceClassifier.Perform/State/Edge/
+        EdgeParameter`, with the fields as `ref` parameters (`out` where OCCT only writes them).
+      - The template parameters are constrained to internal interfaces naming what the bodies call:
+        - `ITopClass_Intersector<TheEdge>` (Perform, LocalGeometry); the intersector is also constrained to
+          IntRes2d_Intersection, for its results;
+        - `ITopClass_FaceExplorer<TheEdge>` (CheckPoint by `ref`, Segment and OtherSegment with `out` line and
+          parameter, the wire and edge iteration, CurrentEdge with `out` edge and orientation);
+        - `ITopClass_FClass2d<TheEdge>` (Reset, Compare, Parameter, ClosestIntersection, State, IsHeadOrEnd, and
+          `Intersector()` returning IntRes2d_Intersection, which a classifier implements explicitly over its own
+          intersector).
+      - OCCT's pointer to the closest intersection point is a copy (the points are values).
+      Rejected: per-instantiation copies (the bodies would be duplicated into BRepClass and Geom2dHatch, packages
+      of other units), and generics over the classifier's whole state (OCCT keeps that state in the classifiers).
+286. **TopTrans_CurveTransition and TopTrans_SurfaceTransition are classes** (working objects, decision 21) with
+      OCCT's public Reset, Compare, StateBefore, StateAfter and the static GetBefore/GetAfter. OCCT never copies
+      them; the classifiers hold one and reset it. SurfaceTransition's 2×2 tables are NCollection_Array2 (1..2,
+      1..2); its file-static helpers and macros are private statics (`M_Unknown` is −100, as in the release
+      build). OCCT declares SurfaceTransition's private `UpdateReference` and `ComputeCos` but never defines them:
+      left out. A CurveTransition not yet Reset reports OUT/IN, as OCCT's does.
+287. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 67). OCCT's GTests Intf_Tool (5) and
+      TopTrans_SurfaceTransition (2), and unit tests of known configurations:
+      - IntRes2d's values and result merging (through a test subclass of IntRes2d_Intersection);
+      - IntImpParGen's transitions and positions, and the generic intersector instantiated over a test implicit
+        circle and parametric segment (crossing, end point, arc domain, reversed parameters, errors);
+      - Intf's points, lines and zones, and 2D polygon interferences (crossing, at a vertex, overlap into a tangent
+        zone, self-intersection); Intf_Tool's boxes of lines and conics;
+      - TopTrans's curve and surface transitions;
+      - TopClass's face classifier instantiated over polygonal faces with a segment intersector (IN, OUT, ON,
+        through a vertex via TopTrans, a hole, no wires, rejection).
+      There is no native oracle for these packages; units 3E and 3G cover them indirectly.
+288. **For later units.**
+      - 3E (IntCurve, Geom2dInt): instantiate IntImpParGen_Intersector as sealed subclasses (decision 284).
+        IntCurve_IConicTool implements `IIntImpParGen_ImpTool`, the PConic and Geom2d curve tools the static
+        interfaces, and the MyImpParTool classes `IIntImpParGen_MyImpParTool` with `Create`. Derived intersections
+        use IntRes2d_Intersection's protected members as OCCT does; C++ `inter = other` between intersections is
+        `SetValues(other)` or `Assign(other)`. IntCurve_IntConicConic uses `IntImpParGen.DeterminePosition` and
+        `using static Occt.IntImpParGen_Tool` for `Determine_Transition` and `NormalizeOnDomain`. IntCurve's polygons
+        derive from the abstract Intf_Polygon2d (they fill `myBox`; `Segment` has `out` points), and
+        IntCurve_IntPolyPolyGen reads Intf_InterferencePolygon2d's points (`PntValue`, values) and zones
+        (`ZoneValue`, the stored zone). Domains are built with the constructors and closed with
+        `WithEquivalentParameters`, or with the internal `SetEquivalentParameters` on a local.
+      - 3F (Intf_InterferencePolygonPolyhedron, IntCurveSurface): use the internal mutators of Intf_TangentZone and
+        Intf_SectionLine, `Intf.PlaneEquation` and `Contain` (`out` results), and write C++ `==` on section points
+        as `IsEqual`.
+      - 3G (BRepClass): BRepClass_Intersector implements `ITopClass_Intersector<BRepClass_Edge>`,
+        BRepClass_FaceExplorer `ITopClass_FaceExplorer<BRepClass_Edge>`, and BRepClass_FClass2dOfFClassifier
+        `ITopClass_FClass2d<BRepClass_Edge>`, holding its fields and a TopTrans_CurveTransition as
+        `tests/OcctNet.ModelingAlgorithms.Tests/TopClass/TopClassTests.cs` does. If BRepClass_Edge is a class,
+        `CurrentEdge` must give a new edge each time, since the face classifier keeps the closest one.
 
 ## Phase 2: unit 5A, GeomLib and Approx (29 October 2026)
 
@@ -2280,6 +2397,270 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       pcurve itself; SameParameter's C0 B-spline pcurve branch needs `GeomConvert.C0BSplineToC1BSplineCurve` and
       Approx_CurvilinearParameter; the oracle tests' port sides (`ComputeTol`, `evaluateMaxSegment`) become BRepLib's
       own code then.
+## Phase 3: unit 3A, topology core
+
+TopoDS (the shape structs and their generated subtypes, the TShapes, Builder, Iterator, HShape, exceptions), TopExp,
+TopTools (package, ShapeMapHasher, FormatVersion), BRep (TVertex, TEdge, TFace, every representation, Builder, Tool),
+BRepTools.cxx's statics except Read, Write and Dump, BRepAdaptor_Surface; the freezing infrastructure of
+[phase3-design.md](phase3-design.md), `CheckMutable` in Poly, `TopoDS_Builder.MakeCompound` and analyzer rule
+OCCTNET0002. Numbers from 3101 are renumbered on merge.
+
+304. **The shape structs as designed (270, 271).** `TopoDS_Shape` holds `TopoDS_TShape? myTShape`, a
+      `TopLoc_Location` and the orientation. The members between the `<generated-members>` markers of
+      TopoDS_Shape.cs are copied verbatim into the eight subtypes by `tools/gen-topods-subtypes.cs` (`--check` reports
+      stale files; a unit test compares the members by reflection), so they keep OCCT's types: `Reversed()` of an edge
+      returns a `TopoDS_Shape`, as in C++. Each subtype adds its constructors, `IEquatable<itself>`, `==`, `!=` and the
+      implicit conversion to TopoDS_Shape, which goes through an internal field constructor; `TopoDS.Edge(S)` and the
+      others check the type and build the subtype the same way. Only `TopoDS.AsShapeRef(ref e)` reinterprets
+      (`Unsafe.As`), for ported code that passes a subtype variable to a non-const `TopoDS_Shape&`.
+      - `GetHashCode` is `RuntimeHelpers.GetHashCode(TShape)`, combined (`HashCode.Combine`) with the location's
+        `HashCode()` when that isn't 0, as OCCT's `std::hash` combines the address with the location's hash.
+      - A query that needs the TShape (`ShapeType`, the flag getters) on a null shape throws `Standard_NullObject`;
+        OCCT dereferences a null handle. `ToString()` is the type and orientation ("EDGE FORWARD") or "NULL".
+      - Boxed shapes compare across the nine types (`TopoDS_Shape.EqualsObject`).
+305. **Flags.** TopoDS_TShape's setters are internal and start with `CheckMutable()`; `Locked()` is the stored bit or
+      `IsFrozen()`, and the internal `LockedFlag()` is the stored bit, for the file writers (unit 3C). The shape's
+      flag setters are `internal readonly`: they change the shared TShape, not the value, so OCCTNET0001 doesn't
+      flag them on a read-only copy (OCCT's are callable on a `const` shape too, through the handle). The TShape
+      constructors set OCCT's initial flags (Free, Modified, Orientable; TCompound and TSolid not orientable; TVertex
+      closed and convex). `BitLayout` is a public nested enum, as OCCT's.
+306. **`EmptyCopy` and `EmptyCopied` of a shape are internal** (the design listed `EmptyCopied` among the public
+      `-ed` forms). They create an unfrozen TShape, and the rule of design 4.2 is that nothing a caller can reach is
+      unfrozen; a caller couldn't fill the empty shape anyway, since TopoDS_Builder is internal. Ported code uses them
+      as OCCT does. `TopoDS_TShape.EmptyCopy()` stays public: like Geom's `Copy()` it returns a new unfrozen object, but
+      a caller can't attach it to a shape (`TShape(t)` is internal). phase3-design.md, section 2, is updated.
+307. **Builder signatures.** The Make methods take the shape by `ref` (C++ `T&`; BRep_Builder's MakeFace and MakeEdge
+      read it first and throw `TopoDS_LockedShape` if it holds a locked shape, so a variable holding a frozen shape
+      can't be remade in place, as in OCCT for locked ones): ported code writes
+      `TopoDS_Wire W = new(); B.MakeWire(ref W);`. Add, Remove and the Update methods change only the TShape and take
+      the shape by `in`. `TopoDS_Builder` is a public class with an internal constructor and internal members, so that
+      its public static `MakeCompound(params TopoDS_Shape[])` and `MakeCompound(IEnumerable<TopoDS_Shape>)` are
+      reachable; `BRep_Builder` is an internal sealed class. MakeCompound throws `Standard_NullObject` for a null
+      shape, and freezes the compound (with any unfrozen child an internal caller passes).
+308. **FreezeGraph** is iterative (100,000 nested compounds are tested) and keeps a set of the TShapes on its stack,
+      so a cycle made with `Free(true)` can't loop. `FreezeRepresentations()` is `internal virtual` (the walk is
+      internal to ModelingData); BRep_TVertex, BRep_TEdge and BRep_TFace freeze their representations, surface and
+      triangulations.
+309. **The Active bit of a frozen triangulation is left unchanged.** OCCT's BRep_TFace marks its active
+      triangulation with `Poly_MeshPurpose_Active` and clears the bit of the one it replaces, so changing the active
+      triangulation of one face writes into a triangulation another face may share (copies share meshes,
+      `BRepTools_CopyModification(copyMesh = false)`). The port sets or clears the bit only on an unfrozen
+      triangulation, before freezing it on attachment; a frozen one keeps its purpose. Nothing in OCCT 8 reads the
+      bit except `BRep_TFace::Triangulation(purpose)` asked for Active itself, and it isn't written to files.
+310. **Representation and TShape lists are internal, with read-only twins.** `BRep_TEdge.Curves()`,
+      `BRep_TVertex.Points()`, `BRep_TFace.Triangulations()` and `BRep_Tool.Triangulations()` return the shapes' own
+      `NCollection_List`, a mutable class, so they are internal (ported code reads them as OCCT does); `ChangeCurves()`
+      and `ChangePoints()` also check that the TShape isn't frozen. Callers get new read-only lists:
+      `CurveRepresentations()`, `PointRepresentations()` and `TriangulationList()` (`IBentoList`). Ported reads of
+      `ChangeCurves()` that only read (`BRep_Tool::Continuity`, `MaxContinuity`) use `Curves()`.
+311. **Representations.** Their queries are public; their setters (`Location(L)`, `SetRange`, `First(F)`,
+      `PCurve(C)`, `Curve3D(C)`, `SetUVPoints`, `Continuity(C)`, the polygon setters, `Parameter(P)`, ...) are internal
+      (`internal virtual` where OCCT's are virtual) and start with `CheckMutable()`; `Update()` is internal.
+      Constructors and setters freeze the curves, surfaces, triangulations and polygons they take (design 4.1).
+      `Copy()` returns an unfrozen representation sharing the frozen geometry. BRep_CurveOnSurface takes a non-null
+      pcurve (OCCT dereferences it).
+312. **Writes in queries and cache completions on frozen shapes** (design 4.4), each marked `// OCCT.NET: frozen`:
+      - `BRepTools.Update(Face)` returns at once on a frozen face;
+      - `BRep_Tool.Range(E, S, L, ...)` sets the edge's Modified flag (OCCT does, in a query: occt-issues.md) only if
+        the edge isn't frozen;
+      - `TopoDS_Builder.Add` clears the component's Free flag only if it isn't frozen;
+      - Add and Remove check the parent's child list with `CheckMutable()` after OCCT's own Free check, so a frozen
+        parent that is free throws `Standard_ImmutableObject`, one that isn't throws OCCT's `TopoDS_FrozenShape`.
+313. **Outputs.** BRep_Tool's and TopExp's outputs are `out` where OCCT always assigns them;
+      `CurveOnSurface(E, C, S, L, f, l, Index)` takes `ref` (OCCT leaves them unchanged when Index < 1) and
+      `TopExp.CommonVertex` takes `ref` (unchanged when there is none). OCCT's `bool* theIsStored = nullptr` is an
+      overload with `out bool`. `BRep_Tool.Parameter(V, E, out double)` sets 0 when it returns false (OCCT leaves the
+      value unchanged).
+314. **BRepTools.** A `partial` static class: unit 3C adds Read, Write and Dump. The queries are public: UVBounds,
+      AddUVBounds (a `ref Bnd_Box2d`), OuterWire, Compare, Map3DEdges, IsReallyClosed, DetectClosedness,
+      OriEdgeInFace, Triangulation, CheckLocations. The statics that change their shape are internal until unit 3B
+      gives them functional twins (design 4.6): Update, UpdateFaceUVPoints, Clean, CleanGeometry,
+      RemoveUnusedPCurves, LoadTriangulation, LoadAllTriangulations, UnloadTriangulation, UnloadAllTriangulations,
+      ActivateTriangulation, RemoveInternals (by `in`: only TShapes change) and EvalAndUpdateTol; so is
+      `BRep_Tool.SetUVPoints`. They throw on frozen shapes, as BRep_Builder does. OCCT's `OSD_FileSystem` arguments
+      are left out (decision 69). RemoveUnusedPCurves' map of surface handles is an `NCollection_Map<object>` by
+      reference, with a sentinel for the null handle (as decision 227). An oracle test runs Update, Triangulation,
+      Clean, CleanGeometry and RemoveInternals on unfrozen twin shapes against native OCCT.
+315. **Stubs until phase 2's last units merge.** `BRep_Tool.CurveOnPlane` does OCCT's checks and returns null where
+      OCCT does, then throws `Standard_NotImplemented` where it would project (`// TODO(6A)`: GeomProjLib,
+      ProjLib_ProjectedCurve), so `CurveOnSurface` throws for an edge without a pcurve on a plane;
+      `BRepTools.EvalAndUpdateTol` throws (`// TODO(5A)`: GeomLib_CheckCurveOnSurface). Two BRep_Tool GTests that
+      project are skipped until then.
+316. **Poly's mutators throw once frozen** (design 4.1, the follow-up of decision 63). `CheckMutable()` starts:
+      Poly_Triangulation's `Deflection(d)`, `Parameters(p)`, `Clear`, `SetNode`, `SetUVNode`, `SetTriangle`,
+      `SetNormal`, `SetNormals`, `SetMeshPurpose`, `SetDoublePrecision`, `ResizeNodes`, `ResizeTriangles`,
+      `AddUVNodes`, `RemoveUVNodes`, `AddNormals`, `RemoveNormals`, `ComputeNormals`, `ChangeTriangles`,
+      `ChangeTriangle`, `LoadDeferredData`, `UnloadDeferredData`; Poly_Polygon3D's `Deflection(d)`, `ChangeNodes`,
+      `ChangeParameters`; Poly_Polygon2D's `Deflection(d)`, `ChangeNodes`; Poly_PolygonOnTriangulation's
+      `Deflection(d)`, `ChangeNodeArray`, `SetNode`, `SetParameter`, `ChangeParameterArray`, `SetParameters`,
+      `ChangeNodes`, `ChangeParameters`. They stay public (decision 63). The cached range (`SetCachedMinMax`,
+      `UpdateCachedMinMax`) is a cache of the frozen nodes, published under its lock (decision 69), so it stays
+      writable. Known gap: the getters that hand out internal arrays (`Nodes()`, `Parameters()`, `InternalNodes()`,
+      `InternalTriangles()`, the deprecated `Triangles()`, decision 62's spans) can't check; ported code must not
+      write through them, as OCCT's `const` promises.
+317. **Analyzer rule OCCTNET0002** (`ShapeMapComparerAnalyzer`, an error) reports a creation of `NCollection_Map`,
+      `NCollection_IndexedMap`, `NCollection_DataMap`, `NCollection_IndexedDataMap`, `HashSet` or `Dictionary` (or a
+      class derived from one) keyed by TopoDS_Shape or a subtype, unless an `IEqualityComparer` argument is passed
+      explicitly and isn't the literal `null`. The NCollection maps' copy constructors are allowed (they keep the
+      source's comparer); `HashSet`'s and `Dictionary`'s aren't (they take the default). Collection expressions of
+      those types are reported (they can't take a comparer). LINQ's `ToHashSet`/`ToDictionary` aren't checked. Its
+      tests are in OcctNet.Foundation.Tests/Analyzers with the OCCTNET0001 tests.
+318. **Left out or deferred.** TopoDS_AlertWithShape and TopoDS_AlertAttribute wait for Message's alerts and reports,
+      which aren't ported. `DumpJson`, the `std::hash` specialisations and the range-for support of TopoDS_Iterator and
+      TopExp_Explorer are left out (rules, section 6). TopoDS_Iterator and TopExp_Explorer are sealed classes, where
+      OCCT's are used by value; the explorer reuses the iterators it pops. `TopTools::Dump` comes with
+      TopTools_ShapeSet (3C); `TopTools::Dummy` is ported. TopTools_FormatVersion's anonymous enum of bounds is the
+      static class `TopTools_FormatVersionBounds`. TopoDS_HShape is a working object (public setter); its
+      `ChangeShape()` is internal.
+319. **BRepAdaptor_Surface.ShallowCopy** gives the copy its own shallow copy of the transformed adaptor, as
+      GeomAdaptor_TransformedSurface's does; that field became `private protected`.
+320. **Tests.**
+      - Ported GTests: TopoDS_TShape (8), TopoDS_Edge (1), TopoDS_Builder (19), TopoDS_Iterator (17), TopExp (9),
+        BRep_Tool (13, of which 2 skipped until 6A). Their makers (BRepBuilderAPI_MakeVertex, MakeEdge,
+        BRepPrimAPI_MakeBox: units 3K and 3M) are replaced by `TestShapes`, built with BRep_Builder with the same
+        topology and frozen as the makers' results will be. TopoDS_Edge's BUC60828 sets a flag on an unfrozen edge,
+        as ported code continuing on a maker's result will. BRepTools' two GTests read and write files with
+        BRepGProp (units 3C, 3H) and wait.
+      - Unit tests of every freezing rule of design 4.1 to 4.5 (FreezingTests), of the shape structs' value
+        semantics (TopoDS_ShapeTests), and of BRep_Tool, BRep_Builder, BRepTools and BRepAdaptor_Surface beyond the
+        GTests.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/TopoDS`): `TwinShapes` builds shapes with native and ported
+        BRep_Builder call for call from the same raw numbers: boxes, cylinder faces with seams and located curves and
+        surfaces, faces with holes on random planes, compounds sharing a box and a face at several locations and
+        orientations, placed and reversed at random. On 60 scenes: exploration (every type, with and without a type
+        to avoid, depths), flags, IsPartner, IsSame, IsEqual and `==` between every two sub-shapes (and the hash's
+        agreement with IsSame), TopTools_ShapeMapHasher maps against TopTools_IndexedMapOfShape, MapShapes with the
+        four cumulation modes, MapShapesAndAncestors and UniqueAncestors, wire and edge vertices, CommonVertex,
+        IsClosed, Map3DEdges, MaxTolerance, vertex points and tolerances, edge ranges, curves, locations and placed
+        values, Parameter(V, E) and (V, E, F), pcurves and their values, UVPoints, IsClosed(E, F), IsReallyClosed,
+        OriEdgeInFace, continuity, Range(E, F), UVBounds of faces, wires and edges, OuterWire, DetectClosedness,
+        Parameters(V, F), placed surfaces and BRepAdaptor_Surface: 754,725 values, all bit-identical. The in-place
+        statics on unfrozen twins: 50,140 values, all bit-identical.
+## Phase 3: unit 3E, 2D curve intersection
+
+IntCurve (with its .gxx files as generics), Geom2dInt, and Geom2dAPI's ProjectPointOnCurve, ExtremaCurveCurve and
+InterCurveCurve, in OcctNet.ModelingAlgorithms.
+
+321. **IntCurve's conic/curve and curve/curve generics are generic classes** (decision 202's approach):
+      `IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, TheMyImpParTool>`,
+      `IntCurve_UserIntConicCurveGen<...>` (same parameters) and
+      `IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool>`, all `: IntRes2d_Intersection`.
+      - `TheMyImpParTool` is a type parameter because OCCT writes that function by hand per instantiation
+        (Geom2dInt, HLRBRep); it is constrained as decision 284's `IIntImpParGen_MyImpParTool` over
+        `IntCurve_IConicTool`.
+      - The bodies name the generic classes they use directly: `IntImpParGen_Intersector<IntCurve_IConicTool, ...>`
+        for OCCT's IntCurve_TheIntersector, `IntCurve_IntConicCurveGen<...>` for the `intconicurv` fields and
+        `IntCurve_IntPolyPolyGen<...>` (decision 326) for `intcurvcurv`. OCCT's by-value fields are readonly
+        objects allocated with the algorithm.
+      - OCCT's instantiations are sealed subclasses forwarding OCCT's constructors: Geom2dInt_GInter,
+        Geom2dInt_IntConicCurveOfGInter, Geom2dInt_TheIntConicCurveOfGInter and (decision 284)
+        Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter and IntCurve_IntImpConicParConic. Their curve parameters
+        are plain `Adaptor2d_Curve2d` references; the inherited generic methods take `in TheCurve`.
+      - The long, regular bodies of IntCurve_UserIntConicCurveGen.gxx and IntCurve_IntCurveCurveGen.gxx (the type
+        switches) were converted by a scratch script (`::` to `.`, `this->`, `const T&` to `in T`, `out` on
+        GetInterval, `new()` locals) and checked by hand; C# needs a `break` after the last `default:` block where
+        C++ falls off the end of the switch.
+      Rejected: one class per instantiation (HLRBRep instantiates the same files over its own curves).
+322. **`IIntCurve_CurveTool<TheCurve>`** (new, IntCurve) is OCCT's TheCurveTool macro: the static abstract members
+      the IntCurve generics call (GetType, Line ... Hyperbola, D0, D1, First/LastParameter, NbSamples(C),
+      NbIntervals, Intervals, GetInterval with `out` bounds), extending `IIntImpParGen_ParTool<TheCurve>` (Value, D2,
+      EpsX, NbSamples(C, U0, U1)). Geom2dInt_Geom2dCurveTool implements it as a stateless `readonly struct` (also
+      D3, DN, EpsX(C, Eps) and Degree, as plain statics); so do IntCurve_PConicTool, IntCurve_ProjectOnPConicTool and
+      Geom2dInt_TheProjPCurOfGInter for their interfaces (as AppDef_MyLineTool, decision 202). OCCT's
+      `IS_C2_COMPOSITE` is 0: intervals of C1 continuity.
+323. **Geom2dInt's Extrema instantiations reuse Extrema's.** Geom2dInt_TheLocateExtPCOfTheProjPCurOfGInter and
+      Geom2dInt_PCLocFOfTheLocateExtPCOfTheProjPCurOfGInter are Extrema_GenLocateExtPC and Extrema_GFuncExtPC over
+      Geom2dInt_Geom2dCurveTool, whose members they call (D0, D1, D2, DN, GetType, First/LastParameter) forward to
+      the adaptor exactly as Extrema_Curve2dTool's do: they are Extrema_LocEPCOfLocateExtPC2d and
+      Extrema_PCFOfEPCOfExtPC2d (decision 219), which Geom2dInt_TheProjPCurOfGInter uses; their headers are in its
+      `Port of:` lines. Extrema_GCurveLocator (left by decision 222) is ported for this instantiation as the static
+      class Geom2dInt_TheCurveLocatorOfTheProjPCurOfGInter (`Locate` with an `out Extrema_POnCurv2d`); HLRBRep will
+      need its own.
+324. **IntCurve's conic tools.**
+      - IntCurve_IConicTool and IntCurve_PConic are structs, copied as OCCT copies them, without equality (working
+        tools, as decision 54's result structs). IConicTool has an explicit parameterless constructor, to which the
+        others chain, so its transformation is the identity for a line as in C++ (`default` is all zeros). PConic's
+        `SetEpsX`/`SetAccuracy` are internal, with `WithEpsX`/`WithAccuracy`. OCCT's parameter macros (Elips_a,
+        Line_a, Circle_r, Parab_2p, ...) are written as the fields `prm1`/`prm2`/`prm3` they expand to.
+      - The MyImpParTool classes keep the implicit tool by value as OCCT does; OCCT's `void*` to the parametric
+        curve is a copy of the PConic (a struct the intersection never changes) or the adaptor reference.
+      - Where OCCT's `default:` branches print an error and leave `out` arguments unwritten, the port writes zeros
+        (decision 32). IntCurve_PConicTool::D2 on a line never writes the normal (OCCT clears the tangent instead);
+        the port writes (0, 0), which is what OCCT's callers hold in their default-constructed vectors.
+325. **IntCurve_IntConicConic is a sealed partial class in two files**, IntCurve_IntConicConic.cs (.hxx, .lxx,
+      .cxx) and IntCurve_IntConicConic_1.cs (_1.cxx: line/line, line/circle, circle/circle, line/ellipse), with
+      OCCT's 15 constructors and Perform overloads, conics and domains `in`; only OCCT's argument orders exist (no
+      circle/line: callers swap and use `SetReversedParameters`, as in C++). The file-level helpers are private
+      statics; the unused globals `Affichage`/`AffichageGraph` are left out. The _Tool header is the internal static
+      class `IntCurve_IntConicConic_Tool` (`using static`) with `PIpPI`, `Determine_Transition_LC`,
+      `NormalizeOnCircleDomain` and the nested structs `Interval` and `PeriodicInterval` (C++ copies them by value).
+      Their default constructors give a null interval, so arrays of them are filled with `new()` explicitly.
+      `PeriodicInterval.FirstIntersection`/`SecondIntersection` take the other interval by `ref`: OCCT shifts it by
+      periods in place and later calls see the shift. Arguments OCCT may leave unwritten are `ref` (decision 57):
+      DomainIntersection's positions, LineLineGeometricIntersection's U1/U2/SinDemiAngle, computeIntPoint's point;
+      the tangents given to Determine_Transition_LC are `ref` because it normalises Tan1. `std::nextafter(2π, 0)` is
+      `Math.BitDecrement`.
+326. **IntCurve's parametric/parametric generics are generic classes**: `IntCurve_Polygon2dGen<TheCurve,
+      TheCurveTool> : Intf_Polygon2d` (filling `myBox`; `Closed(bool)` overloads the base's `Closed()`),
+      `IntCurve_DistBetweenPCurvesGen<TheCurve, TheCurveTool> : math_FunctionSetWithDerivatives`,
+      `IntCurve_ExactIntersectionPoint<TheCurve, TheCurveTool>` and `IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool,
+      TheProjPCur>`, with the Geom2dInt sealed subclasses Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter,
+      Geom2dInt_TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter,
+      Geom2dInt_ExactIntersectionPointOfTheIntPCurvePCurveOfGInter and Geom2dInt_TheIntPCurvePCurveOfGInter. OCCT's
+      `void*` curve pointers are curve fields (the caller's adaptors, as OCCT keeps them).
+      `ExactIntersectionPoint.Perform` takes the segment indices and parameters by `ref` (it moves them along the
+      polygons); `Roots` returns by `out`. The `NCollection_Handle` polygons are plain references and the `new int[]`
+      filter arrays of the self-intersection .NET arrays. OCCT's file-static `GetIntersection` and `HeadOrEndPoint`
+      are private statics, and its four copies of the PosSegment block one helper, `AddPosSegment`. The polygon's
+      `Dump` (debug output) and the stdout message of `ApproxParamOnCurve` are left out. The never-read `done` flag
+      of ExactIntersectionPoint is kept, with CS0414 suppressed on that field only (as decision 221).
+327. **Geom2dAPI's three algorithms** are classes with OCCT's API (decision 117).
+      - Geom2dAPI_InterCurveCurve keeps copies of the curves, as OCCT does, for `Segment`, which returns the two
+        trimmed curves through `out`. OCCT's assignment of a new Geom2dInt_GInter to its field is a new object;
+        `Intersector()` returns that object (OCCT's `const&`). Null curves raise Standard_NullObject as in OCCT.
+      - Geom2dAPI_ProjectPointOnCurve and Geom2dAPI_ExtremaCurveCurve keep the Extrema_ExtPC2d/ExtCC2d they build
+        (OCCT copies it into its field; decision 224) and the Geom2dAdaptor_Curve fields it refers to; `Extrema()`
+        returns it. ExtremaCurveCurve is computed by its constructor (readonly fields).
+      - OCCT's implicit conversion operators (`operator int()`, `operator double()`, `operator gp_Pnt2d()`) are
+        explicit C# operators: they can throw (StdFail_NotDone), which an implicit conversion shouldn't.
+      - `Parameter(Index, U)`, `Points`, `Parameters`, `NearestPoints` and `LowerDistanceParameters` return through
+        `out`.
+328. **Tests.**
+      - Unit (`tests/OcctNet.ModelingAlgorithms.Tests`, 92 new, 159 in all): OCCT's GTests of
+        Geom2dAPI_InterCurveCurve (TKGeomAlgo's three and TKG2d's OCC24889; IntCurve has none); known answers for
+        every conic pair of IntCurve_IntConicConic with bounded, unbounded, arc and closed domains, tangency, misses,
+        coincident lines and circles and reversed parameters, IntImpConicParConic, IConicTool's distance and gradient
+        (finite differences) and the PConic tools (43); the polygon intersection on polylines, Bezier and B-spline
+        curves and trimmed circles: crossings, end contacts, tangency, overlaps (segments), self-intersection of a
+        loop (exact t = 1/2 ∓ √60/20), the polygon, DistBetweenPCurves (finite differences) and
+        ExactIntersectionPoint (27); Geom2dAPI: line/circle, tangency, circle/circle (secant, identical: a segment),
+        ellipse/segment, polyline and cubic crossings, a self-crossing polyline, overlaps, misses, projections and
+        extrema (22). Tangent circles touch along a short arc inside the tolerance, so OCCT reports a tiny segment
+        whose ends are crossings; at circle parameter 0 the closed domain cuts it in two. The tests pin this.
+      - Oracle (`tests/OcctNet.Oracle.Tests/Geom2dAPI/Geom2dAPIOracleTests.cs`): native Geom2dAPI_InterCurveCurve
+        and Geom2dAPI_ProjectPointOnCurve against the port's on random lines, segments, circles, arcs, ellipses,
+        elliptic arcs and B-splines (rational, periodic, C0 breaks; whole or trimmed), built from the same raw numbers.
+        Second curves are independent, through a point of the first, tangent to it there (lines and circles), or the
+        first one again (whole or trimmed: overlaps); tolerances 1e-4 to 1e-9. The bindings expose only NbPoints,
+        Point and NbSegments of InterCurveCurve, so parameters are compared through the points.
+        - Two curves, 1,500 pairs (4,732 points, 424 segments, 562 kinds of pairs): 13,945 of 13,964 values
+          bit-identical; the 19 others (up to 5.1e-15) are all line/circle points, which go through `atan2`, `cos`
+          and `sin` (MSVC's and .NET's maths libraries).
+        - Self-intersections, 400 curves (518 points, 137 segments): 2,236 of 2,236 bit-identical.
+        - Geom2dAPI_ProjectPointOnCurve (the port's class, reused through Init), 1,800 projections with 2,853
+          solutions: 21,176 of 21,176 values bit-identical.
+        Geom2dAPI_ExtremaCurveCurve is not bound natively (unit tests only; its Extrema_ExtCC2d has decision 223's
+        coverage). Native Geom2d binds no Bezier, parabola, hyperbola or offset curve: those paths are unit-tested.
+329. **For later units.**
+      - 3G (BRepClass): BRepClass_Intersector derives from Geom2dInt_IntConicCurveOfGInter in OCCT and calls its
+        Perform with a gp_Lin2d and an adaptor of the edge's pcurve; it must also implement
+        `ITopClass_Intersector<BRepClass_Edge>` (decision 288). The intersections keep references to the adaptors
+        only during Perform; results are IntRes2d values.
+      - 3J (BRepCheck): BRepCheck_Wire's self-intersection check uses Geom2dInt_GInter on Geom2dAdaptor_Curves of
+        the pcurves with explicit domains, and reads IntRes2d points and segments (values);
+        `Geom2dInt_GInter.ComputeDomain` is public.
+      - HLRBRep (later): instantiate the IntCurve generics over HLRBRep_CurveTool with a struct implementing
+        `IIntCurve_CurveTool`, its own MyImpParTool class and a curve locator (decision 323).
 
 ## Phase 2: unit 6A, projection (29 October 2026)
 
@@ -2360,3 +2741,1675 @@ PrjResolve, ProjLib::MakePCurveOfType) and GeomProjLib. With unit 2F, all of Pro
       BRep_Tool's own code. BRepAlgo_NormalProjection, GeomPlate and Draft read ProjLib_CompProjectedCurve's frozen
       `GetResult2dC`/`GetResult3dC`. BRepProj_Projection makes no ProjLib call of its own (it is built on
       BRepAlgoAPI_Section and BRepFill), so its oracle belongs with the Boolean units.
+## Phase 3: unit 3F, curve-surface intersection
+
+IntCurveSurface (HInter, OCCT 8's templates IntCurveSurface_Inter.pxx, InterUtils.pxx, PolygonUtils.pxx,
+PolyhedronUtils.pxx and QuadricCurveExactInterUtils.pxx, and the HInter instantiation classes),
+Intf_InterferencePolygonPolyhedron.gxx, IntImp_IntCS.gxx, IntImp_ZerCSParFunc.gxx, IntImp_ComputeTangence, IntSurf_Quadric
+and IntSurf_QuadricTool, and GeomAPI (the package, ProjectPointOnCurve, ProjectPointOnSurf, ExtremaCurveCurve,
+ExtremaCurveSurface, ExtremaSurfaceSurface, Interpolate, PointsToBSpline, IntCS), in OcctNet.ModelingAlgorithms.
+
+337. **The curve/surface intersection is generic over static-abstract interfaces** (decisions 202 and 284), because
+      OCCT instantiates its templates more than once: IntImp_IntCS for IntPatch_CurvIntSurf (over a 2D curve) and
+      HLRBRep_TheExactInterCSurf (over gp_Lin), the whole of IntCurveSurface_Inter.pxx for HLRBRep_InterCSurf, the
+      polyhedron helpers for IntPatch_Polyhedron, Intf_InterferencePolygonPolyhedron.gxx for HLRBRep.
+      - `IntImp_ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>`,
+        `IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>` and
+        `Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron, ToolPolyh>` are generic classes;
+        OCCT's instantiations (IntCurveSurface_TheCSFunctionOfHInter, TheExactHInter, TheInterferenceOfHInter) are
+        sealed subclasses with OCCT's constructors forwarded.
+      - OCCT 8's IntCurveSurface_Inter.pxx is a namespace of template functions that IntCurveSurface_HInter calls with
+        lambdas calling back its own methods (`[this]() { this->ResetFields(); }`, `this->PerformConicSurf`,
+        `this->InternalPerform`, `this->Append`). It is the generic class `IntCurveSurface_Inter<TheCurve,
+        TheCurveTool, TheSurface, TheSurfaceTool, ThePolygon, ThePolyhedron, TheInterference, TheCSFunction,
+        TheExactInter, TheQuadCurvExactInter> : IntCurveSurface_Intersection`, whose methods are HInter's (the public
+        `Perform` overloads, the protected `Perform` on bounds, `InternalPerform`, `PerformConicSurf`, `AppendIntAna`,
+        ...), each with the body of the InterImpl function it calls, the lambdas being direct calls (the InterImpl
+        name is in each summary). IntCurveSurface_HInter is a sealed subclass with no code. Rejected: delegates for the
+        lambdas (OCCT passes a generic lambda for the five conics, which would need five delegates, and every lambda
+        calls back the same object).
+      - The template parameters OCCT constructs (polygon, polyhedron, interference, function, exact intersections, the
+        quadric function) implement interfaces with a static abstract `Create` mirroring OCCT's constructors
+        (`IIntCurveSurface_ThePolygon<TSelf, TheCurve>`, `ThePolyhedron`, `TheInterference`, `TheCSFunction`,
+        `TheExactInter`, `TheQuadCurvExactInter`, `TheQuadCurvFunc`), implemented explicitly. What the helpers only
+        read is in non-generic interfaces (`IIntCurveSurface_Polygon`: InfParameter, SupParameter,
+        ApproxParamOnCurve; `IIntCurveSurface_Polyhedron`: Bounding, Triangle, Point, Parameters), so that the
+        InterUtils GTest's test polyhedron and polygon (and IntPatch_Polyhedron later) implement only those.
+      - The tool interfaces build on each other: `IIntImp_CurveTool<C>` (First/LastParameter, Resolution: all that
+        IntImp_IntCS calls, so that IntPatch's 2D curve tool can implement it), `IIntImp_ZerCSParCurveTool<C>` (+ Value,
+        D1), `IIntCurveSurface_CurveTool<C>` (+ GetType, the conics, intervals, period, D0, NbSamples, SamplePars), and
+        likewise `IIntImp_PSurfaceTool<S>`, `IIntImp_ZerCSParPSurfaceTool<S>` and `IIntCurveSurface_SurfaceTool<S>`;
+        `IIntImp_CSFunction<S, C>` is what IntImp_IntCS reads from its function (Point, Root, AuxillarSurface,
+        AuxillarCurve). Curves and surfaces are passed `in` (HLRBRep's curve is a gp_Lin).
+      - The .pxx namespaces of helpers are internal static classes (`IntCurveSurface_InterUtils`, `PolygonUtils`,
+        `PolyhedronUtils`, `QuadricCurveExactInterUtils`), their templates generic methods with the same constraints.
+        InterUtils' `SortedStartPoints` is a sealed class (it holds three arrays) and `UVBounds` a readonly struct.
+338. **The static tool classes are readonly structs** with static members, so that they can be type arguments:
+      IntCurveSurface_TheHCurveTool, IntCurveSurface_ThePolygonToolOfHInter and IntCurveSurface_ThePolyhedronToolOfHInter
+      (calls such as `IntCurveSurface_TheHCurveTool.Value(C, U)` read as in C++). OCCT passes Adaptor3d_HSurfaceTool, a
+      static class of OcctNet.ModelingData that can't implement this assembly's interfaces, so the new
+      `IntCurveSurface_TheHSurfaceTool` (named after TheHCurveTool) forwards each member to it; IntPatch and the other
+      instantiations over Adaptor3d_HSurfaceTool should use it. The deprecated `SamplePars` overload with an output
+      handle and the tools' `Dump` (to std::cout) are left out.
+339. **IntSurf_Quadric is a value type** (OCCT copies it: IntPatch's lines and functions keep copies). The `SetValue`
+      overloads are internal; the constructors are their twins (each SetValue rebuilds the quadric). `new()` is OCCT's
+      empty quadric (GeomAbs_OtherSurface), `default` is zeros. `ValAndGrad`, `D1` and `Parameters` take `ref`: on an
+      empty quadric OCCT leaves the arguments unchanged (decision 57); `IntSurf_QuadricTool` (a static class) passes
+      them on. The torus block that OCCT repeats in Distance, Gradient, ValAndGrad and Normale is the private
+      `TorusPoint` (decision 265's approach). Implicit gp_Dir to gp_Vec conversions are written out.
+340. **Results and working objects.**
+      - IntCurveSurface_IntersectionPoint and IntersectionSegment are structs (decision 117) with internal `SetValues`
+        (the constructors are the twins) and `Values` with `out`; `new()` and `default` agree (OCCT's default is zero
+        parameters and a tangent transition). IntCurveSurface_Intersection is an abstract class with OCCT's protected
+        fields and methods; `Dump` is ToString.
+      - The polygon and the polyhedron are sealed working classes with OCCT's public mutators (decision 21). The
+        polyhedron's `void*` arrays are .NET arrays of the same size, indexed from 1; `Destroy` (public, as in OCCT,
+        whose destructor calls it) drops them. `ComponentsBounding()` returns the polyhedron's own array.
+      - IntImp_IntCS keeps the function it is given, where OCCT copies it into the object: the C++ callers build the
+        function, pass it and never use it again, and the math_FunctionSetRoot is built on the object's function (in
+        OCCT, the copy), so the sharing is invisible. `Function()` returns it.
+      - Bnd_BoundSortBox is passed as a reference (a class). OCCT's `maliste = PolyhGrid.Compare(box)` copies the
+        sorter's list; the port keeps the reference, which the loop reads before the next Compare.
+      - Code that OCCT writes twice verbatim is a private helper: the body of both Intf_InterferencePolygonPolyhedron
+        `Intersect` methods after their plane equation (`IntersectWithPlane`), and the body of InterImpl's
+        InternalPerform and InternalPerformBSB after the interference is built (`InternalPerformInterference`). The
+        `Intersect` variant OCCT compiles out (`#if 0`) is not ported; HInter's private DoSurface and DoNewBounds, never
+        called, are not on the class (their InterUtils bodies are ported).
+      - The free function `IntImp_ComputeTangence` is `IntImp_ComputeTangence.ComputeTangence` (C# can't name a member
+        as its class), next to `ChoixRef`; its arrays are spans.
+341. **GeomAPI's algorithm classes are working objects with OCCT's public API** (decisions 21, 117, 220). Results are
+      returned by value and multi-value outputs are `out`; `TotalNearestPoints` and `TotalLowerDistanceParameters`
+      take `ref`, since they return false without writing (decision 57). OCCT's implicit conversions are explicit
+      operators (decision 28); ExtremaCurveCurve's `operator int` reads `myExtCC.NbExt()` as OCCT does, so it throws
+      when the computation failed, where `NbExtrema()` returns 0. `Extrema()` returns the held algorithm.
+      - **ProjectPointOnSurf keeps one default Extrema_ExtPS and its own GeomAdaptor_Surface** for its lifetime
+        (decisions 251, 260, 261): each `Init` loads the adaptor, calls `SetAlgo`, then `Initialize`; a flag set with
+        `SetExtremaFlag` survives `Init`. ProjectPointOnCurve likewise keeps its Extrema_ExtPC and adaptor.
+      - **ExtremaSurfaceSurface keeps the constructed Extrema_ExtSS** (decision 224's approach for OCCT's by-value
+        copy); ExtremaCurveSurface builds its adaptors in `Init`, as OCCT's locals (OCCT hands Extrema_ExtCS a pointer
+        to a local adaptor that dangles after Init: harmless in C#, noted in the class's remarks).
+      - **Interpolate and PointsToBSpline freeze the curve they hand out** (decision 243): `Curve()` and the explicit
+        conversion return the stored, frozen curve. As in OCCT, Interpolate keeps the caller's points array and Load's
+        flags array, and `Perform` sets the computed end-tangent flags in the caller's array. Its static helpers read
+        the points through `MemoryMarshal.Cast<gp_Pnt, double>` spans for PLib.EvalLagrange. OCCT declares
+        `ClearTangents` but never defines it: left out. PointsToBSpline's duplicated continuity switch is one private
+        helper; OCCT's implicit `TheComputer.Perform(Points)` is `new AppDef_MultiLine(Points)` (decision 201).
+      - `GeomAPI` is a `public static partial class` (decision 50). `To3d` is ported; `To2d` needs
+        ProjLib_ProjectedCurve and throws Standard_NotImplemented (`TODO(6A)`).
+      - GeomAPI_IntCS keeps the curve and an IntCurveSurface_HInter; `Segment` builds a new Geom_TrimmedCurve (HInter
+        makes no segments, so it is never reached).
+      - Not ported: GeomAPI_PointsToBSplineSurface (needs GeomFill_AppSurf) and GeomAPI_IntSS (needs GeomInt).
+342. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 62 new, 129 in all). OCCT's GTests IntSurf_Quadric_Test (1),
+      IntCurveSurface_IntersectionPoint (3), IntCurveSurface_InterUtils (1, with a test polyhedron and polygon over the
+      non-generic interfaces), IntCurveSurface_ThePolygonOfHInter_Test (1), IntCurveSurface_ThePolyhedronOfHInter (6),
+      GeomAPI_ProjectPointOnSurf, GeomAPI_PointsToBSpline, and TKG3d's GeomAPI_ExtremaCurveCurve and GeomAPI_Interpolate.
+      The suites whose C++ names are also OCCT class names get a `Test` suffix, as Intf_ToolTest. IntSurf_LineOn2S_Test
+      waits for IntSurf_LineOn2S. Known answers: IntSurf_Quadric on the five quadrics (zero distance on the surface,
+      gradient against finite differences, Parameters inverting Value, DN against D1, normals), IntImp_ComputeTangence,
+      and GeomAPI_IntCS / IntCurveSurface_HInter on line/plane (with the transition), a line parallel to and in a plane
+      (IsParallel), line/sphere (two points, In then Out), a line tangent to a sphere (Tangent), line/torus (four
+      points), circle/cylinder, a B-spline curve and a plane (the curve/quadric path), a B-spline curve and a B-spline
+      surface (the exact paraboloid z = x² + y²: polyhedron and Newton), a line through its apex, a line and an
+      infinite extrusion (estimated bounds), no intersection, not done; and the other GeomAPI classes, pinning two
+      OCCT bugs (occt-issues.md).
+343. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/GeomAPI`).
+      - GeomAPI_IntCS on random curves of every kind (line, conics, Bezier, B-spline, periodic B-spline, offset,
+        trimmed) against random surfaces of every kind (elementary, revolution, extrusion, Bezier, B-spline, offset,
+        trimmed), the curve moved to meet the surface (a quarter of the time slightly off it), 660 pairs: every path of
+        IntCurveSurface runs (IntAna, IntAna_IntLinTorus, the curve/quadric roots, the polygon/polyhedron interference
+        with Bnd_BoundSortBox, IntImp_IntCS, the bounds of infinite swept and offset surfaces). 1,355 points, all 10,110
+        values bit-identical.
+      - Lines tangent to every kind of surface (198 cases). A tangency is ill-conditioned: moving the line by one ulp
+        changes how many points native OCCT itself returns (the cluster of Newton solutions around a double root, and
+        far points at the 1e50 clamp on infinite swept and offset surfaces), so a last-bit difference anywhere shows.
+        The test checks that both sides find the tangency or neither (except on tori, where IntAna_IntLinTorus decides
+        a quartic's double root by a sign that is zero to the rounding error), and compares every value where both
+        return the same number of points (171 cases) within 1e-5: 7,865 of 8,334 values bit-identical, the others
+        within 1.7e-6.
+      - GeomAPI_ProjectPointOnCurve (Init then Perform: 21,895 values), ProjectPointOnSurf (35,552), Interpolate (600
+        cases, 75,144 values) and PointsToBSpline (its three methods, 30,394 values): all bit-identical. The 3B and 4A
+        tests that mirrored GeomAPI's call path now run the real classes, still bit-identical (Extrema_ExtPC through
+        ProjectPointOnCurve, 19,741 values; Extrema_ExtPS through ProjectPointOnSurf, 34,830 values).
+      - Not compared natively: HInter's Perform overloads with a given polygon or polyhedron (not bound; 3G's
+        BRepIntCurveSurface_Inter reaches them), IsParallel (GeomAPI_IntCS doesn't expose it), ExtremaCurveCurve,
+        ExtremaCurveSurface and ExtremaSurfaceSurface (not bound; their extrema classes have oracle tests).
+344. **For later units.**
+      - 3G (IntCurvesFace, BRepIntCurveSurface, BRepClass3d): IntCurvesFace_Intersector builds and keeps an
+        `IntCurveSurface_ThePolyhedronOfHInter` (`(surface, nbsu, nbsv, u1, v1, u2, v2)`, or with parameter arrays) and
+        a `Bnd_BoundSortBox`, and calls the HInter overloads `Perform(curve, polygon, surface, polyhedron[, bsb])` with
+        an `IntCurveSurface_ThePolygonOfHInter`; it uses `IntCurveSurface_TheHCurveTool` and
+        `GeomAPI_ProjectPointOnCurve` (`Init(curve, Umin, Usup)`, `Perform(point)`, `NbPoints`,
+        `LowerDistanceParameter`). Curves and surfaces are Adaptor3d_Curve/Adaptor3d_Surface (BRepAdaptor_Surface
+        derives from GeomAdaptor_TransformedSurface). HInter reports points only (no segments), and IsParallel only in
+        the analytic cases.
+      - IntPatch: IntPatch_CurvIntSurf is `IntImp_IntCS<IntPatch_CSFunction, Adaptor3d_Surface,
+        IntCurveSurface_TheHSurfaceTool, Adaptor2d_Curve2d, IntPatch_HCurve2dTool>`, with IntPatch_HCurve2dTool
+        implementing `IIntImp_CurveTool<Adaptor2d_Curve2d>` and IntPatch_CSFunction `IIntImp_CSFunction`;
+        IntPatch_Polyhedron uses `IntCurveSurface_PolyhedronUtils` and implements `IIntCurveSurface_Polyhedron` for
+        ComputeMaxDeflection. IntSurf_Quadric's internal `SetValue` serves IntPatch's quadric fields.
+      - HLRBRep: HLRBRep_InterCSurf is a sealed subclass of `IntCurveSurface_Inter` over gp_Lin and its own tools.
+
+## Phase 3: unit 3B, modification and adaptors
+
+BRepTools_History, Modification, Modifier, CopyModification, TrsfModification, GTrsfModification,
+NurbsConvertModification, ReShape, Quilt, Substitution, PurgeLocations and WireExplorer; `BRepTools.CopyForWrite` and
+the functional twins of BRepTools' in-place statics (design 4.6); BRepAdaptor_Curve, Curve2d and CompCurve;
+BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers from 3201 are renumbered on merge.
+
+345. **BRepTools_History is a working object** (decision 21) with OCCT's public setters (AddModified, AddGenerated,
+      Remove, ReplaceModified, ReplaceGenerated, Clear, Merge).
+      - `Generated` and `Modified` return a new read-only `IBentoList<TopoDS_Shape>` (OCCT returns a reference to its
+        own list, which a caller could change); the empty one for an unsupported type. Ported code iterates them with
+        `foreach`.
+      - OCCT's template constructor and `Merge(arguments, algo)` take a `BRepTools_History.IAlgorithm` (IsDeleted,
+        Modified, Generated as `IEnumerable<TopoDS_Shape>`), for unit 3K's BRepBuilderAPI_MakeShape to implement.
+      - The `Standard_ASSERT_*` checks keep their release behaviour: ASSERT_RETURN returns on an unsupported type,
+        ASSERT_VOID and ASSERT_INVOKE_ report nothing. As in OCCT, a shape whose only generated shape becomes modified
+        keeps an empty list, and HasGenerated stays true.
+      - Merge walks the maps as OCCT does. The lists it builds follow hash-map order on both sides (addresses in OCCT),
+        so they compare as sets. The unbinding of empty lists collects the keys first.
+346. **Modifications.** `BRepTools_Modification` is a public abstract class (callers may write modifications, as
+      OCCT's Draft and offset algorithms do), its subclasses public.
+      - Outputs are `out`: the modifier reads them only when the method returns true. NewParameter's `P` and `Tol` are
+        `ref`, since OCCT's implementations leave them unchanged for a null vertex and TrsfModification's NewCurve2d
+        relies on that.
+      - OCCT's `gp_Trsf& Trsf()`, `bool& IsCopyMesh()` and `gp_GTrsf& GTrsf()` are public `ref` returns (working
+        objects).
+      - One consequence of `out`: OCCT's modifier keeps one pcurve handle across the edges of a face, so a NewCurve2d
+        that returns true without assigning it (TrsfModification's `GeomLib::SameRange` on a zero-length range) reuses
+        the previous edge's pcurve. The port's is null (occt-issues.md).
+347. **BRepTools_Modifier** is a sealed public working object.
+      - `ModifiedShape` is a publication point: it freezes the shape it returns (design 4.2). Ported code that goes on
+        building on the result (BRepBuilderAPI_ModifyShape, unit 3K) reads `InternalModifiedShape`.
+      - OCCT's mutable-input mode updates the input's vertices in place, which throws on the frozen shapes callers
+        hold. So the `BRepTools_Modifier(bool)` constructor and `SetMutableInput` are internal; `IsMutableInput` stays
+        public.
+      - A sub-shape the modification leaves alone is the input's own, and OCCT copies its flags onto themselves
+        (`SetShapeFlags(S, S)`). The port skips that on a frozen one (`// OCCT.NET: frozen`: the values can't change).
+      - `TopoDS_Shape& result = myMap(S)` is a `ref` into the map, valid because the map gains no keys while
+        rebuilding. The edge and face information maps are keyed by TopoDS_Shape, with TopTools_ShapeMapHasher.
+348. **BRepTools_NurbsConvertModification waits for 6A where it projects.**
+      - NewCurve2d recomputes pcurves with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface,
+        which unit 6A ports. Those three places throw `Standard_NotImplemented`, with a `TODO(6A)` describing OCCT's
+        code. So converting a shape with faces throws until 6A merges; a lone edge converts. *Resolved by unit 3X
+        (decision 373).*
+      - The maps of converted geometry compare handles by reference (as decision 227).
+      - `GetUpdatedEdges` returns the modifier's unfrozen edges, which BRepBuilderAPI_NurbsConvert goes on updating,
+        so it is internal and returns the list itself.
+      - A local `S` that C++ shadows is renamed `aS`.
+349. **`BRepTools.CopyForWrite(in S, out BRepTools_History, bool theCopyMesh = true)`** (internal) is the structural
+      copy of design 4.6: `BRepTools_Modifier` with `BRepTools_CopyModification(false, theCopyMesh)`. It makes new
+      TShapes and representations that share the frozen curves, surfaces and meshes, and leaves them unfrozen.
+      - Its history records each vertex, edge, face and solid as modified into its copy (BRepBuilderAPI_Copy's
+        `Modified`), ready for `Merge` with the next algorithm's.
+      - **Departure from the design**, which said `copyMesh: false` (BRepBuilderAPI_Copy's default): the copy keeps the
+        meshes, with each face's whole list of triangulations and its active one (the modification carries only the
+        active one). So the operation that follows sees what the in-place one would have; a mesher, for one, then
+        reuses a good triangulation as it would in place. phase3-design.md 4.6 is updated.
+      - As with BRepBuilderAPI_Copy, Poly_Polygon2D representations aren't carried, and the copy's vertices get their
+        points on curves again from the modifier.
+350. **The functional twins of BRepTools' in-place statics** are public. Each copies with CopyForWrite, runs the
+      internal static on the copy, freezes it and returns it (null in, null out):
+      - `Updated(S)` (Update), `FaceUVPointsUpdated(F)` (UpdateFaceUVPoints), `Cleaned(S, force)` (Clean),
+        `GeometryCleaned(S)` (CleanGeometry), `UnusedPCurvesRemoved(S)` (RemoveUnusedPCurves) and
+        `InternalsRemoved(S, force)` (RemoveInternals), each also with an `out BRepTools_History` (the copy's; OCCT
+        keeps none);
+      - `TriangulationLoaded(S, out bool, index, setActive)`, `AllTriangulationsLoaded(S, out bool)`,
+        `TriangulationUnloaded(S, out bool, index)`, `AllTriangulationsUnloaded(S, out bool)` and
+        `TriangulationActivated(S, index, out bool, strictly)`, the `out bool` being the static's result;
+      - `TolEvaluatedAndUpdated(E, C3d, C2d, S, f, l, out double)` (EvalAndUpdateTol).
+
+      They are in `BRepTools.Twins.cs`, a part of the partial class that ports no OCCT file. A twin's result has the
+      values of the static run on an unfrozen copy (unit tests, `ShapeSnapshot.AssertSameValues`).
+351. **`BRepTools.EvalAndUpdateTol`** is ported over GeomLib_CheckCurveOnSurface (unit 5A). The oracle test of
+      GeomLib_CheckCurveOnSurface now also calls it and its twin.
+352. **BRepTools_PurgeLocations** is a sealed public working object. `GetResult` and `ModifiedShape` freeze what they
+      return; inside, it uses the modifier's and ReShape's internal forms.
+      - TopTools_LocationSet comes with unit 3C, so its Add, Location and Index are private methods over a
+        `NCollection_IndexedMap<TopLoc_Location>` (`TODO(3C)`). *Resolved after 3C merged:* it now holds a
+        `TopTools_LocationSet`, whose Add, Location and Index are the same code.
+      - The replacements are recorded in the map's order, which isn't OCCT's (decision 18). They replace distinct
+        shapes, so the result doesn't depend on it.
+353. **BRepAdaptor_Curve** derives from GeomAdaptor_TransformedCurve (decision 268), whose curve on surface is already
+      an `Adaptor3d_CurveOnSurface` (decision 215's `TODO(2B)` is resolved).
+      - Constructors and `Initialize` take the edge and face by `in`; `Edge()` returns the edge by value; `Reset` is
+        public (decision 214).
+      - An edge without geometry throws `Standard_NullObject`, as OCCT dereferences.
+      - `ShallowCopy` gives the copy shallow copies of the inner adaptors.
+      - `Trim` builds the trimmed copy directly: its own GeomAdaptor_Curve loaded on [First, Last] (or the trimmed curve
+        on surface), with the same transformation and edge. OCCT loads the range into itself, copy-constructs and
+        restores, sharing the cache. No two adaptors share a cache (decision 214), and the values are OCCT's.
+354. **BRepAdaptor_Curve2d** derives from Geom2dAdaptor_Curve. Its `ShallowCopy` goes through Geom2dAdaptor_Curve's,
+      whose body moved into a `private protected ShallowCopyTo` (behaviour unchanged), so evaluation data is copied
+      without its cache (OCCT: "cache will be rebuilt on demand"). As in OCCT, `Initialize` loads nothing when the edge
+      has no pcurve on the face.
+355. **BRepAdaptor_CompCurve** is an Adaptor3d_Curve whose Eval methods are `sealed override`.
+      - OCCT's `NCollection_HArray1<BRepAdaptor_Curve>` of values is an array of adaptor objects, default-constructed in
+        Initialize; trimmed copies are stored where OCCT copy-assigns.
+      - `Edge(U, E, UonE)` is `Edge(double, out TopoDS_Edge, out double)`.
+      - The knot array is shared by ShallowCopy, as in OCCT.
+      - Calls on an empty adaptor throw a null reference exception where OCCT dereferences a null handle.
+356. **BRepTools_WireExplorer** is a sealed working class with a public API; its maps use TopTools_ShapeMapHasher.
+      - Each vertex gets its own new list (OCCT binds copies of one empty list).
+      - OCCT's carry-over of `V1` is kept: an open wire whose free vertices are all REVERSED starts from the last edge's
+        first vertex.
+      - The start edge of an infinite wire comes from a hash set, whose order isn't OCCT's (decision 18). That matters
+        only with several infinite edges.
+      - `SelectDouble`, `SelectDegenerated` and `GetNextParamOnPC` are private statics.
+357. **BRepLProp.**
+      - `BRepLProp_CLProps` and `BRepLProp_SLProps` subclass LProp_CLProps3d and LProp_SLProps3d (decision 229; OCCT's
+        aliases of `GeomLProp_CLPropsBase<..., BRepAdaptor_Curve>` and `GeomLProp_SLPropsBase<BRepAdaptor_Surface>`).
+      - OCCT holds the adaptor by value, so the constructors and `SetCurve(BRepAdaptor_Curve)` and
+        `SetSurface(BRepAdaptor_Surface)` keep a ShallowCopy, unaffected by later changes to the caller's adaptor.
+      - BRepLProp_SurfaceTool is a static class with `out` results. BRepLProp is a static class with OCCT's two
+        `Continuity` overloads, throwing `Standard_Failure("Courbes non jointives")` as OCCT does.
+      - The adaptors and the explorer only read shapes: nothing changes for frozen inputs.
+358. **BRepTools_ReShape's public results are frozen** (design 4.2).
+      - `Apply`, `Value`, `ValueLeaf` and `Status` can return shapes rebuilt here, so they freeze what they return, and
+        `History()` freezes the shapes it lists.
+      - Ported code (ShapeBuild_ReShape and ShapeFix, phase 7) uses the internal forms `InternalApply`,
+        `InternalValue` and `InternalStatus` (`internal virtual`, for ShapeBuild_ReShape's overrides),
+        `InternalValueLeaf` and `InternalHistory`. The public methods are non-virtual wrappers.
+      - Clear, Remove, Replace, IsRecorded and IsNewShape are public. OCCT's Merge template is
+        `Merge(IEnumerable<TopoDS_Shape>, product)`; `Status`'s new shape is `out`; OCCT's `bool&
+        ModeConsiderLocation()` is a public virtual getter and setter (OCCT 8 has no ModeConsiderOrientation).
+        `applyImpl`, `replace`, `TReplacementKind`, `myNewShapes` and `myStatus` stay protected.
+      - The DFS in-flight set and ValueLeaf's visited set hold TShapes by reference, as OCCT's handle maps do.
+        History()'s maps have no hasher in OCCT (IsEqual), so the port passes `EqualityComparer<TopoDS_Shape>.Default`.
+      - OCCT's unused private `isOrdinaryMerged` isn't ported.
+359. **ReShape, Quilt and Substitution on frozen inputs.**
+      - ReShape's Apply writes only into TShapes it creates (copied parents, CopyRanges onto the copied edge, Closed on
+        rebuilt wires and shells). CopyRanges reads the source edge through `Curves()`, where OCCT calls
+        `ChangeCurves()` to read (`// OCCT.NET: frozen`). `CopyVertex` is internal: it returns an unfrozen copy, and
+        on a recorded vertex it updates the recorded replacement in place (throwing TopoDS_LockedShape on a frozen one,
+        as OCCT does on a locked one).
+      - **BRepTools_Quilt** is a sealed public working object. `Shells()` and `Copy(S)` freeze what they return;
+        `InternalShells()` and `InternalCopy()` don't, and Bind uses `InternalCopy`. Quilt's `Add` gives the edge an
+        old edge is bound to a pcurve on the new face, in place, as OCCT does, so binding to a frozen edge throws
+        TopoDS_LockedShape when the face is added: ported callers (LocOpe, BRepOffset) must bind to edges they built,
+        or copy for write first. Calling Copy or Shells before the last Add freezes copied edges that a later Add would
+        update. Free edges and vertices go into the result compound in hash-map order (decision 18).
+      - **BRepTools_Substitution** is a sealed public working object. `Substitute` stores a copy of the list (OCCT's
+        map binds by value); `Copy(S)` returns an `IBentoList` of frozen shapes and `InternalCopy(S)` the map's own
+        unfrozen list; Build writes only into its own empty copies.
+360. **Tests.**
+      - Ported GTests: BRepTools_ReShape (15) and BRepAdaptor_CompCurve (3). The makers they use (BRepBuilderAPI,
+        GC_MakeArcOfCircle) are replaced by `TestShapes`, frozen as the makers' results will be.
+      - Unit tests (47 more): History; the modifier with each modification on frozen inputs; CopyForWrite and its
+        history merged with ReShape's; each twin against its static on an unfrozen copy; PurgeLocations; ReShape,
+        Quilt and Substitution on frozen inputs; WireExplorer, the BRepAdaptor curves and BRepLProp. Inputs are checked
+        unchanged with `ShapeSnapshot`, which records a whole shape graph (TShapes by identity, flags, children,
+        representations, geometry by identity).
+      - Oracle tests, all bit-identical:
+        - BRepTools_Modifier with BRepTools_CopyModification against BRepBuilderAPI_Copy (637,287 values);
+        - with BRepTools_TrsfModification against BRepBuilderAPI_Transform with scalings, point and plane mirrors and
+          rigid motions (588,203 values; faces on planes skipped until 6A, since OCCT computes their pcurves with
+          CurveOnPlane; included by unit 3X, decision 374);
+        - with BRepTools_GTrsfModification against BRepBuilderAPI_GTransform on B-spline faces (124,928 values);
+        - CopyForWrite against BRepBuilderAPI_Copy(false, true), with its history (635,519 values);
+        - History.Merge on random histories (36,350 values);
+        - EvalAndUpdateTol and its twin (3,000 values);
+        - ReShape: Replace, Remove, Apply, Value, ValueLeaf, Status, History (8,271,836 values);
+        - WireExplorer, BRepAdaptor_Curve, Curve2d, CompCurve, BRepLProp::Continuity and BRepLProp_SLProps (2,233,754
+          values).
+
+        That is 12,530,877 values. The modifier's results are compared like the topology oracle's shapes (flags,
+        exploration, identity, every vertex, edge and face), with their triangulations and each input sub-shape's
+        ModifiedShape by its place in the result. BRepLProp_CLProps, PurgeLocations, Quilt, Substitution and ReShape's
+        ModeConsiderLocation have no native binding and are covered by the unit tests.
+
+## Phase 3: unit 3H, global properties
+
+BRepGProp (all of it: the package statics, Cinert, Domain, EdgeTool, Face, Gauss, MeshCinert, MeshProps, Sinert,
+TFunction, UFunction, Vinert, VinertGK), BRepCheck.cxx's statics, BRepCheck_Status, BRepCheck_Result and
+BRepCheck_Shell, BRepLib_ValidateEdge and BRepLib_CheckCurveOnSurface, in OcctNet.ModelingAlgorithms (decision 280).
+Numbers from 3801 are renumbered on merge.
+
+361. **BRepAdaptor_Curve waits for unit 3B; its base class stands in.** `BRepLib_CheckCurveOnSurface.BRepAdaptorCurve(E)`
+      (internal, `// TODO(3B)`) builds a `GeomAdaptor_TransformedCurve` (BRepAdaptor_Curve's base, already ported) as
+      `BRepAdaptor_Curve::Initialize(E)` does: the 3D curve and its range, else the first curve on surface, and the
+      location as the transformation. BRepGProp_Cinert and BRepGProp_EdgeTool take a `GeomAdaptor_TransformedCurve`,
+      so a BRepAdaptor_Curve will be accepted unchanged; 3B replaces the helper's calls (BRepGProp.LinearProperties,
+      BRepLib_CheckCurveOnSurface.Init) and may narrow the signatures. *Resolved by unit 3X (decision 372).*
+362. **BRepGProp's statics reset the caller's GProp_GProps in place.** OCCT assigns `Props = GProp_GProps(P)`; the
+      port calls the new internal `GProp_GProps.Assign` (C++ copy assignment), so the caller's object, of any derived
+      type, is the one filled. Each non-Eps form also has a functional overload returning a new system, for Bento:
+      `LinearProperties(S, SkipShared, UseTriangulation)`, `SurfaceProperties(S, SkipShared, UseTriangulation)`,
+      `VolumeProperties(S, OnlyClosed, SkipShared, UseTriangulation)`. The Eps and GK forms return an error and have
+      no twin.
+363. **The BRepGProp classes are working objects** (decision 21). The GProp_GProps subclasses keep OCCT's public
+      SetLocation and Perform and fill the protected fields by `ref`. BRepGProp_Face, Domain and Gauss are sealed
+      classes; OCCT's by-value copies of the face into BRepGProp_TFunction and BRepGProp_UFunction are an internal copy
+      constructor that shallow-copies the adaptors; the functions copy their coefficients (OCCT keeps a pointer).
+      Signatures: Bounds, Normal and D12d have `out` results; the knot arrays are filled `NCollection_Array1`s;
+      PreparePolygon, GetUKnots and GetTKnots return the array (null for no polygon); their deprecated out-parameter
+      overloads are left out. `BRepGProp_MeshProps.CalculateProps` takes `Span<double>` and `ReadOnlySpan<double>`.
+      The anonymous enums are nested (`BRepGProp_Gauss.BRepGProp_GaussType`, `BRepGProp_MeshProps.BRepGProp_MeshObjType`).
+364. **BRepGProp_Gauss.** The `add` and `mult` function pointers are private methods of the same names reading a flag
+      that `checkBounds` sets for infinite bounds. `Inertia` is a private struct; its arrays are
+      `NCollection_Array1<Inertia>` used through `ref`. The coefficient arrays are `ReadOnlySpan<double>` (empty for
+      OCCT's null pointer). The outputs of Compute are `ref` (OCCT returns without writing them when an edge has no
+      pcurve). `Standard_ASSERT_RAISE` always checks and throws `Standard_ProgramError`. `IS_MIN_DIM` is defined, so the
+      `#ifndef IS_MIN_DIM` code is left out.
+365. **The volume's solid cache** keys TShapes by reference (`ReferenceEqualityComparer`), as OCCT hashes the handle;
+      its free-face compound is built with the internal BRep_Builder and never published. BRepGProp only reads its
+      input; every test runs on frozen shapes. `BRepGProp_VinertGK.GetAbsolutError`, declared and never defined in
+      OCCT (occt-issues.md), returns the absolute error that Perform returns.
+366. **BRepCheck_Result is an abstract working object.** Its status map is an `NCollection_DataMap<TopoDS_Shape,
+      NCollection_List<BRepCheck_Status>>` with `TopTools_ShapeMapHasher.Instance` (OCCT's NCollection_Shared handle is
+      the list itself); `std::mutex` is a `Lock`, entered only when IsParallel, as in OCCT; `Status()` and
+      `StatusOnShape()` return the result's own lists; the context iterator walks a snapshot taken by
+      `InitContextIterator`, in insertion order (OCCT's is hash order, decision 18); on an empty map the port checks
+      before reading the first key, which OCCT reads anyway. `InContext` takes `in TopoDS_Shape`.
+367. **BRepCheck_Shell.** `Closed`, `Orientation`, `NbConnectedSet` and the rest as OCCT, over its own shells built with
+      the internal BRep_Builder. The public `NbConnectedSet` freezes the shells it returns (published, design 4.2),
+      which also freezes unfrozen faces of the checked shell; `Closed` uses a private non-freezing variant. The sets come
+      from a hash map of multiconnected edges, so their order may differ from OCCT's.
+368. **BRepCheck's statics.** `Print` writes to a TextWriter; `PrecCurve` and `PrecSurface` as OCCT. `SelfIntersection`
+      needs BRepCheck_Wire and waits for unit 3J (`// TODO(3J)`).
+369. **BRepLib_ValidateEdge and BRepLib_CheckCurveOnSurface** are public working objects with OCCT's API over
+      GeomLib_CheckCurveOnSurface (decision 293); they keep the caller's adaptors; `UpdateTolerance` takes `ref double`.
+370. **A Foundation divergence found on the way:** the port's `NCollection_DataMap.Bound` keeps an existing value,
+      where OCCT's Bound replaces it (that is OCCT's `TryBound`). Nothing in this unit calls Bound on a bound key; left
+      for Foundation to fix, with a check of its callers. *Fixed by unit 3X (decision 375): Bound replaces, and
+      TryBind and TryBound are added; no ported caller's behaviour changes.*
+371. **Tests.**
+      - Ported GTests: BRepGProp_Test (9 of 10; OCC49_CutShapeHasNoSymmetryAxis waits for BRepAlgoAPI_Cut). Their makers
+        are replaced by BRep_Builder shapes (TestShapes, BRepGPropTestShapes), frozen; the sphere is one natural face
+        (MakeSphere's has a seam and degenerated edges), the cylinder a lateral face and two discs.
+      - Known-answer tests (22): unit cube and boxes (volume, area, edge length, centre, inertia), located, reversed
+        and shared solids (rigid, reversed, scaled, twice in place, with a free face), cylinders, spheres, hemisphere
+        and sphere patches, a holed face, the adaptive and Gauss-Kronrod forms (by point and by plane), OnlyClosed,
+        meshes on box faces (rigid and scaled locations), faces that are only a mesh and polygon-only edges,
+        MeshCinert and MeshProps, BRepGProp_Face and Domain, and the pinned OCCT issue of Vinert by plane.
+      - BRepCheck and BRepLib: 23 unit tests (Shell statuses on closed, open, badly oriented, repeated and disconnected
+        shells, Add and Print, PrecCurve and PrecSurface, ValidateEdge and CheckCurveOnSurface on exact, offset,
+        located and seam pcurves).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepGProp`): 48 random scenes built identically on both sides
+        (boxes, closed cylinders, holed faces, compounds sharing solids at rigid, reversed and scaled locations, natural
+        spheres, tori and sphere patches, B-spline faces and edges, boxes carrying triangulations, mesh-only
+        tetrahedra; placed and reversed at random), 1,296 calls of every BRepGProp form with SkipShared,
+        UseTriangulation, OnlyClosed, Eps and the GK flags varied: 17,376 values (mass, centre, inertia, errors), all
+        bit-identical. BRepGProp_Face method by method on 294 faces and 1,068 edges: 57,102 values, all bit-identical.
+        Gauss-Kronrod is left out on faces with holes, where native OCCT takes minutes even at 1e-3.
+        BRepCheck_Shell (240 shells) and BRepLib_ValidateEdge (300 faces) through the bound BRepCheck_Analyzer: 540
+        verdicts, all equal. Native BRepCheck_Shell, ValidateEdge and CheckCurveOnSurface aren't bound.
+      - Not covered natively: polygon-only edges (Poly_Polygon3D isn't bound), BRepGProp_Vinert, Sinert, VinertGK and
+        the functions directly (not bound; reached through the statics).
+
+## Phase 3: unit 3X, cross-unit integration
+
+The placeholders that units 3B and 3H left for each other and for unit 6A, replaced by OCCT's code now that all of them
+are merged, and a Foundation divergence fixed. Numbers from 3901 are renumbered on merge.
+
+372. **BRepAdaptor_Curve replaces 3H's stand-in** (decision 361). `BRepGProp.LinearProperties` declares one
+      `BRepAdaptor_Curve` and calls `Initialize(aE)` for each edge, and `BRepLib_CheckCurveOnSurface.Init` makes a
+      `new BRepAdaptor_Curve(theEdge)`, as OCCT does; the internal helper `BRepLib_CheckCurveOnSurface.BRepAdaptorCurve`
+      is deleted. `BRepGProp_Cinert` (constructor and Perform) and every `BRepGProp_EdgeTool` method take a
+      `BRepAdaptor_Curve`, as OCCT's do; the remarks about the stand-in are gone from the generated documentation. The
+      values are unchanged: the helper built the same base-class adaptor as `BRepAdaptor_Curve::Initialize` (the
+      BRepGProp oracle tests stay bit-identical).
+373. **BRepTools_NurbsConvertModification projects its pcurves** (decision 348). NewCurve2d's three
+      `Standard_NotImplemented` placeholders are OCCT's code: on a plane, `ProjLib_ComputeApprox` of the new 3D curve
+      (its B-spline, or its Bezier converted); elsewhere `ProjLib_ComputeApproxOnPolarSurface` from the old pcurve on
+      the surface widened by a tenth within its periods, translated back by a period when its start lands more than
+      half a period from the old pcurve's, or the old pcurve converted when the projection fails; on a seam, the
+      two-pcurve form, whose second curve is kept for the edge's second pass. The seam branch builds the adaptors and
+      the widened bounds that the placeholder left out.
+      - The projection is discarded at once, so the curve is read with `InternalBSpline()`, `InternalBezier()` and
+        `InternalCurve2d()` (decision 330): unfrozen, like the other branches' conversions, and frozen by BRep_Builder
+        when the modifier stores it.
+      - OCCT's `GeomAdaptor_Surface GAS(...); GAHS = new GeomAdaptor_Surface(GAS)` is a single construction (decision 331). OCCT declares `newTol`, `GAHS` and `ProjOnCurve` again in nested scopes, which C# forbids, so the plane
+        branch's last update and the polar projection are in their own blocks. The unused locals `myT` and
+        `TheTypeC2dBis` of the seam branch are left out.
+      - `BRep_Tool.CurveOnPlane`'s `Standard_NotImplemented` documentation, stale since 6A merged, is removed.
+374. **Oracle coverage.**
+      - BRepBuilderAPI_NurbsConvert isn't bound, but BRepBuilderAPI_GTransform runs it before its own modifier. The new
+        `NURBS_conversion_answers_as_BRepBuilderAPI_GTransform` mirrors both steps on the port's side
+        (BRepBuilderAPI_NurbsConvert::Perform, with CorrectVertexTol, then the modifier with
+        BRepTools_GTrsfModification) on the global properties oracle's scenes (boxes, closed cylinders with their seam
+        and discs, holed faces, compounds at rigid, reversed and scaled locations, natural spheres, tori and patches,
+        B-spline faces, meshed boxes), with an identity or a random affine transformation: 48 scenes, 337 faces, 1,229
+        edges, 530,149 values, all bit-identical. CorrectVertexTol never had to replace a vertex in these scenes.
+      - The TrsfModification comparison now includes the faces on planes (their pcurves come from
+        `BRep_Tool::CurveOnPlane` on both sides): 637,103 values (588,203 before), all bit-identical. The face filter
+        that `CompareGeometry` took for it is removed.
+375. **NCollection_DataMap.Bound replaces an existing value** (decision 370). OCCT 8's `Bound` (`emplaceImpl`
+      with `IsTry` false) destroys and reconstructs the value of a bound key and returns a pointer to it; `TryBound`
+      keeps it.
+      The port's `Bound` now replaces and returns a `ref`; `TryBind` (bool) and `TryBound` (ref) are added with OCCT's
+      keep-the-value meaning. `Bind` already replaced, and the other maps already matched OCCT (`NCollection_Map.Add`
+      and `NCollection_IndexedMap.Add` keep the existing key, `NCollection_IndexedDataMap.Add` ignores the item of a
+      bound key, ProjLib's IntDataMap.Bind replaces); the port has no NCollection_DoubleMap.
+      - **The audit.** OCCT calls `Bound` in two ported files. `BRepCheck_Shell` binds a new status list in `Minimum`
+        (only while `myMin` is false, that is right after Init has cleared the map, so the key isn't bound) and in
+        `InContext` (after an `IsBound` return): no change. `BRepTools_History` (AddGenerated, AddModified,
+        ReplaceGenerated, ReplaceModified, Merge) was ported with `Find` and `Bind` rather than `Bound`, with OCCT's
+        replacing meaning. No other ported code
+        calls Bound, TryBind or TryBound, so **no caller's behaviour changes**.
+376. **Tests.**
+      - Foundation: OCCT's NCollection_DataMap GTests Rebind, TryBind_NewKey, TryBind_ExistingKey, TryBound_NewKey and
+        TryBound_ExistingKey, and three of the port's own for Bound (new key, existing key, a replaced list).
+      - ModelingData: the NURBS conversion of a frozen box (pcurves projected on the planes, the old parametrization
+        kept) and of a frozen cylinder face (circles projected on the polar surface, the seam with both pcurves a
+        period apart): every face on a B-spline surface, every curve and pcurve a B-spline, the pcurves on the surface
+        within the edge's tolerance of the 3D curve, the input unchanged and the result frozen. These replace the test
+        that expected `Standard_NotImplemented`.
+      - Oracle: decision 374.
+
+## Phase 3: unit 3C, BRep I/O
+
+TopTools_ShapeSet and TopTools_LocationSet; BRepTools_ShapeSet; BRepTools' Read, Write and Dump (BRepTools.IO.cs, a
+partial of BRepTools) and TopTools.Dump (TopTools.Dump.cs); all of BinTools (BinTools.cxx's statics, FormatVersion,
+ObjectType, IStream, OStream, LocationSet, CurveSet, Curve2dSet, SurfaceSet, ShapeSetBase, ShapeSet, ShapeReader,
+ShapeWriter); Storage_StreamFormatError; the untrusted-input checks of [phase3-design.md](phase3-design.md),
+section 7, in these readers and in GeomTools'. Numbers from 3301 are renumbered on merge.
+
+377. **Text streams as GeomTools' (decision 225).** `Standard_OStream&`/`Standard_IStream&` are `TextWriter`/
+      `TextReader` with `Standard_Stream`'s state, one reader passed through the locations, the GeomTools sets, the
+      polygons, the triangulations and the shapes. Three C idioms of the readers got helpers in `Standard_Stream`:
+      `IS >> buffer` into OCCT's `char buffer[255]` is `ReadWord(IS, char[])` (the word and a null at the start of
+      the buffer, the rest left as it was, so OCCT's reads of `buffer[0..6]` after a short or failed word see what
+      C++ sees); `IS.getline(buf, n, '\n')` is `GetLine` (C++'s rules: the delimiter extracted and not stored,
+      `n - 1` characters then a non-delimiter sets fail, nothing extracted sets fail, a null always stored); `atoi`
+      is `Atoi` (checked against ucrtbase.dll, clamped on overflow as Microsoft's runtime does), with `Strlen` and
+      `CString`. TopTools_ShapeSet and TopTools_LocationSet set the precision to 15 and restore it, as OCCT does
+      (not on a user break, as OCCT). `OS.imbue(std::locale::classic())` is nothing: the port always writes and reads
+      the C locale.
+378. **Line ends and files.** Everything writes `'\n'`. Native OCCT 8 opens the file of `BRepTools::Write` in binary
+      mode, so its files are LF on Windows too, and the port's file overloads write the same bytes:
+      `DBRep_DrawableShape\n` then the stream text (the oracle compares files byte for byte). The file overloads use
+      a `StreamWriter` (UTF-8 without a byte-order mark; the text is ASCII) and a Latin-1 `StreamReader`; a file
+      that can't be opened gives `false`, as OCCT's null stream does (OCCT's `OSD_FileSystem` arguments are left out,
+      decision 69). Reading treats CR as white space; the version line has its CR removed as OCCT does.
+379. **Public API.** TopTools_ShapeSet, TopTools_LocationSet and BRepTools_ShapeSet are public working-object
+      classes with OCCT's public methods (as the GeomTools sets, decision 227). The hooks that create or change the
+      unfrozen shapes being read are `internal virtual`: `ReadGeometry(T, IS, ref S)`, `AddShapes(ref S1, in S2)`,
+      `Check(T, ref S)`; the others (`AddGeometry`, `WriteGeometry`, `ReadGeometry(IS)`, `DumpGeometry`, `Write`,
+      `Read`, `Dump`, `Clear`) are `public virtual`. `BRep_Builder` being internal, `BRepTools.Read` has public
+      overloads without OCCT's builder argument and internal ones with it, and the builder constructor of
+      BRepTools_ShapeSet is internal. OCCT's `Read(TopoDS_Shape&, IS)` is `Read(out TopoDS_Shape, TextReader)`;
+      `DumpExtent(TCollection_AsciiString&)` is `DumpExtent(ref string)`; `FormatNb()`/`SetFormatNb(int)` keep
+      OCCT's `int`; `THE_ASCII_VERSIONS` (a mutable array) is internal. Added: `TopTools_LocationSet.NbLocations()`,
+      and the constants `TopTools_ShapeSet.MaxShapeNesting`, `TopTools_LocationSet.MaxLocationItems` and
+      `GeomTools.MaxGeometryNesting` (decision 383).
+380. **Reading freezes; writing doesn't write** (design 4.2, decision 3A's FreezeGraph). `TopTools_ShapeSet.Read`
+      freezes every shape it created in a `finally`, so a set that stopped on an error hands out only frozen shapes
+      too; `Read(out S, IS)` returns frozen shapes; the GeomTools sets freeze their geometry (decision 227) and
+      `BRep_Builder` freezes the triangulations and polygons it attaches; ones a file lists but no shape uses stay in
+      the set, unfrozen, and are never handed out. As in OCCT, adding each sub-shape to its parent clears its Free
+      flag (the children aren't frozen yet), so a file read and written again has OCCT's bytes; open question 1
+      (Free on frozen shapes) doesn't arise for files read. Writing only reads the shapes.
+381. **The Locked bit isn't in any file.** Design 4.3 said the text and binary writers write the raw Locked bit;
+      they write the seven flags Free to Convex only (as do BinTools' writers). Only `TopTools_ShapeSet::Dump`
+      prints Locked, and the port prints the stored bit (`LockedFlag()`), so a frozen shape that wasn't locked
+      dumps 0, as native OCCT dumps it. phase3-design.md is corrected.
+382. **Dump.** OCCT prints each TShape's address; the port prints `RuntimeHelpers.GetHashCode` in the same sixteen
+      upper-case hexadecimal digits. Everything else is OCCT's text, null shapes included ("Null shape", then
+      "Shape : 0, EXTERNAL", as OCCT goes on).
+383. **Untrusted input in the text readers** (design 7), each marked `// OCCT.NET: untrusted input`, throwing
+      `Storage_StreamFormatError` (new in Foundation, `Storage`, a `Standard_Failure` as OCCT's):
+      - *Counts* (locations, curves, 2D curves, surfaces, poles and knots of Bezier and B-spline curves and surfaces,
+        3D polygons and their nodes, polygons on triangulations and their nodes, triangulations, their nodes and
+        triangles, shapes) are checked before OCCT allocates or loops: not negative where OCCT would allocate, and at
+        most what the input could hold at a minimum number of characters per item. The input's length is
+        `Standard_Stream.InputLength`: the length given to `SetInputLength`, the length of a `StreamReader`'s seekable
+        stream (a character takes at least a byte), or `UnknownInputLength` (2^28) for other readers. Negative loop
+        counts that OCCT treats as zero still are.
+      - *Failed streams*: where OCCT loops for ever or for as long as a count says on a stream that has failed (the
+        location chain `while (l1 != 0)`, a vertex's and an edge's representation lists, a shape's sub-shape list, and
+        the polygon and triangulation loops, which allocate again on each pass with the count of the last), the
+        reader throws once the stream has failed. Valid files never fail there, so they read exactly as in OCCT.
+      - *Words* longer than OCCT's `char[255]` (254 characters and the null) are an error; GeomTools' section headers
+        now read the same way (they read unbounded words before).
+      - *References* to shapes not read yet, locations not in the set and (for a face of a triangulation only)
+        triangulations not in the set are errors where OCCT reads outside its maps.
+      - *Nesting*: shapes deeper than `TopTools_ShapeSet.MaxShapeNesting` (1,000; a vertex is 1), computed per shape
+        as it is read; trimmed, offset and swept geometry deeper than `GeomTools.MaxGeometryNesting` (64; a thread-static
+        counter in `ReadCurve`, `ReadCurve2d` and `ReadSurface`); complex locations of more than
+        `TopTools_LocationSet.MaxLocationItems` (1,000) items, counting a power of a location of several items as
+        that many (TopLoc_Location's `Powered` and `Multiplied` recurse once per item); an elementary location to
+        any power is one item. GeomTools' `catch (Standard_Failure)` blocks let `Storage_StreamFormatError` through,
+        so an unsafe file stops the read instead of becoming a null entry.
+      - *Stray .NET exceptions* that stand for OCCT's undefined behaviour (null, index, cast, argument, arithmetic,
+        invalid operation, key not found) are rethrown as `Storage_StreamFormatError` by `TopTools_ShapeSet.Read` and
+        `BRepTools.Read`; OCCT's own exceptions (`TopoDS_UnCompatibleShapes` for a sub-shape of the wrong type,
+        `gp_Trsf::SetValues`' `Standard_ConstructionError`, which OCCT's release build compiles out) pass through as
+        the `Standard_Failure`s they are.
+      - *Writing*: `TopTools_ShapeSet.Add` recurses once per level; it calls
+        `RuntimeHelpers.EnsureSufficientExecutionStack()`, so a shape built nested too deeply for the stack throws
+        `InsufficientExecutionStackException` instead of ending the process (100,000 nested compounds are tested).
+      - Not checked, in either format: the node indices of triangles and of polygons on triangulations. A bad index
+        reads, and a consumer gets an `IndexOutOfRangeException` from the mesh later, not memory corruption.
+      The caps are the same values in BinTools (decision 386), declared per package.
+384. **Null handles in BRepTools_ShapeSet's maps.** The maps of polygons and triangulations compare by reference
+      (OCCT's handle maps). A polygon on a surface without its polygon goes in as GeomTools' null key (2D polygons are
+      never written); an edge's polygon on a triangulation with a null polygon or triangulation throws
+      `Standard_NullObject` when added, where OCCT adds the null key and crashes writing it (occt-issues.md).
+385. **BinTools (written in a forked worktree, reviewed and merged).**
+      - Streams are `System.IO.Stream`, little-endian through `BinaryPrimitives` (OCCT's `DO_INVERSE` swaps on
+        big-endian hosts only, so files are little-endian); the text parts (the header, `IS >> int`, `getline`)
+        follow C++ extraction; the character after a formatted integer is pushed back (a seek on a seekable stream,
+        a per-stream byte in a `ConditionalWeakTable` otherwise).
+      - `BinTools_OStream`'s `operator<<` overloads are C# shift operators; `BinTools_IStream`'s `>>` are `Read*`
+        methods; its `operator bool` is always true, since the port throws instead of failing.
+      - Reading past the end throws `Storage_StreamFormatError` everywhere (OCCT throws
+        `Storage_StreamTypeMismatchError` from typed reads, carries on from byte reads, and reads `GetBool` at the end
+        as true). OCCT's `catch` blocks keep wrapping into `Standard_Failure` with OCCT's "EXCEPTION in ..." message
+        but let `Storage_StreamFormatError` through.
+      - The sets hash handles by reference; the 2D curve and surface sets hold the null handle once through a
+        sentinel (decision 227); writing it throws where OCCT dereferences it.
+      - Readers freeze: the sets' geometry when stored, `ShapeSet.Read`'s shapes in a `finally`,
+        `ShapeReader.Read`'s result. The writers write OCCT's seven flags.
+      - `BinTools_ShapeSet` reads and writes versions 1 to 4 (`BinTools::Read`/`Write` always use it; version 4
+        adds triangulation normals). Its vertex reader of versions 1, 2 and 4 steps back with `tellg`/`seekg`, so
+        `BinTools.Read` copies a stream that can't seek into memory first; called directly on such a stream the set
+        throws `Standard_ProgramError`. `ShapeReader` (OCCT's position-referencing format, used by OCAF) requires a
+        seekable stream. Writers don't seek.
+      - Internal: `ShapeSet.ReadShape`, `ReadFlagsAndSubs` and `AddShapes` (they create unfrozen shapes),
+        `THE_ASCII_VERSIONS`, the stream helpers; `ShapeWriter.WriteShape` is private (private virtual in OCCT).
+386. **Untrusted input in BinTools**, marked as in 3307: every typed read and `get()` throws at the end of the
+      stream; counts are checked against `Stream.Length - Position` at a minimum byte size per item (a stream that
+      can't seek: `BinTools.NonSeekableLimit`, 256 MiB, only reached when the sets are used directly); a missing or
+      overflowing formatted integer throws; words of 255 characters or more are errors (an overlong header line
+      fails as C++'s getline does: "not this version", nothing read); shape, location, curve, 2D curve, surface,
+      polygon and triangulation indices are checked, orientation bytes must be 0 to 3; nesting:
+      `BinTools.MaxGeometryNesting` 64, `MaxShapeNesting` 1,000 (per shape in ShapeSet; one depth for shapes,
+      locations and reference chains in ShapeReader), `MaxLocationItems` 1,000 as in 3307; ShapeReader's references
+      must point after the start of the stream, `GoTo` can't pass the end, and a shape or location that refers to
+      itself while being read is rejected; the recursive readers also check the stack
+      (`TryEnsureSufficientExecutionStack`), the writers call `EnsureSufficientExecutionStack`, and the geometry parts
+      of `WriteShape`/`ReadShape` are separate methods to keep the recursive frames small.
+387. **For Bento: bytes in and out.** Write with `BRepTools.Write(shape, writer)` (or the versioned overload) into a
+      `StringWriter`, or a `StreamWriter` over a `MemoryStream` (ASCII or UTF-8 without a byte-order mark): the
+      bytes are native OCCT's `BRepTools::Write` to a stream. Read from a `StreamReader` over a `MemoryStream` (the
+      length is then known, so counts are bounded by it), or from a `StringReader` after
+      `Standard_Stream.SetInputLength(reader, text.Length)`; an unannounced reader is assumed to hold up to 2^28
+      characters. The binary format (`BinTools.Write`/`Read` on a `Stream`) is smaller and exact (no 15- or
+      17-digit rounding) but has no native oracle (open question 4). Every shape read is frozen; every failure is a
+      `Standard_Failure`, and input that can't be read safely a `Storage_StreamFormatError`.
+388. **Tests.**
+      - Unit (OcctNet.ModelingData.Tests/BRepTools, Foundation.Tests/Standard): the exact text of a vertex, an edge
+        and a set of elementary and complex locations (from OCCT's source); round trips of eleven shapes covering
+        every representation (BinTestShapes) in the three versions with and without triangles and normals, byte for
+        byte (version 1 from the second write: reading it computes UV points and sets Checked); structure, freezing
+        of shapes, representations, geometry and meshes; the Free flags of read sub-shapes; version 2's UV points and
+        version 1's computed ones; triangulation and normal flags; files (Draw's header, CRLF input, missing files and
+        directories); text that isn't a set; the set API, DumpExtent and both Dumps; precision restored; the 37
+        data/occ files through the binary format and back, word for word (reals within four units of the last place);
+        `Standard_Stream`'s atoi (against ucrtbase), C buffers, getline and count checks.
+      - Untrusted text input: targeted cases for every check of 3307 (counts in every section, words, geometry,
+        shape and location nesting, lists that end with the input, missing references, the stack); every truncation
+        of 13 written shapes plus 100 random truncations of each of the 32 smaller data/occ files (31,136 reads), and
+        27,920 random mutations (characters, deletions, inserted numbers, repeated and removed runs) of the same
+        samples, each on a 1 MB stack under a time limit: every read ends in a frozen shape or a `Standard_Failure`.
+      - BinTools (43 tests): format bytes by hand from OCCT's source, round trips through ShapeSet (versions 1 to 4)
+        and ShapeReader/ShapeWriter, 990 random curves and surfaces, untrusted cases, every truncation of seven
+        samples (more than 10,000 reads) and 21,000 random mutations.
+      - Oracle (OcctNet.Oracle.Tests/BRepTools), in all eight combinations of version, triangles and normals: 96
+        random native shapes (boxes, cylinders, spheres, cones, tori, wedges, prisms, revolutions, fuses, cuts,
+        commons, fillets, lofts; placed and meshed at random), F1/F2: 768 files, 9.2 MB, all byte-identical (F1 = F2
+        in 70); 60 twin scenes built call for call on both sides (a third with triangulations): the port writes
+        exactly native OCCT's file, 480 files, 1.7 MB; the port's own files (of 48 shapes it read and 24 it built)
+        read by native OCCT and by the port write the same bytes: 576 files, 5.4 MB (the second write equals the
+        first in 256). Corpus: the 37 `.brep` files of data/occ, 37 byte-identical to native F2 (22.3 MB; F1 = F2 in
+        28), and its 5 `.rle` files; OCCT's test dataset: 2,327 of its 2,369 `.brep`/`.rle` files byte-identical
+        (99.0 MB; F1 = F2 in 2,133); the other 42 are Draw geometry files (`DrawTrSurf_...`) and raw geometry, which
+        native OCCT doesn't read as shapes and neither does the port.
+## Phase 3: unit 3G, classification and boxes
+
+BRepClass, BRepTopAdaptor, IntCurvesFace, BRepClass3d, BRepIntCurveSurface and BRepBndLib (both its files), in
+OcctNet.ModelingAlgorithms (decision 280). Numbers from 3701 are renumbered on merge.
+
+389. **The classes are public working objects with OCCT's API** (decision 21): the classifiers, explorers,
+      intersectors, the topological tool and its vertex, `BRepIntCurveSurface_Inter`; their `Perform`, `Load`,
+      `Init`, `Reset`, `Compare` and setters are public. **`BRepClass_Edge` is a struct**, copied as OCCT copies it
+      (the classifiers keep the closest edge by value): its setters (`SetNextEdge`, `SetMaxTolerance`, `SetUseBndBox`)
+      and OCCT's non-const `Edge()`/`Face()` (`ChangeEdge`/`ChangeFace`, `ref` returns) are internal, with
+      `WithNextEdge`, `WithMaxTolerance` and `WithUseBndBox` twins; `new()` is OCCT's default (an infinite maximum
+      tolerance), `default` has a zero one. It is a working value without equality, as decision 324's tools.
+      `BRepClass3d` is a static class, `BRepBndLib` a static partial class over its two files.
+390. **TopClass's explorer interface takes the edge by `ref`** (changes decision 285): OCCT's face classifier
+      default-constructs one edge for the whole classification and passes it to every `CurrentEdge`, and
+      `BRepClass_FaceExplorer::CurrentEdge` doesn't write the next edge when `SetNextEdge` finds none, so the
+      previous edge's next edge carries over (occt-issues.md). `ITopClass_FaceExplorer.CurrentEdge(ref TheEdge,
+      out TopAbs_Orientation)`, and `TopClass_FaceClassifier.Perform` constrains `TheEdge : new()` to make that edge
+      (`new BRepClass_Edge()`). The TopClass test explorer is updated.
+391. **BRepClass_Intersector derives from Geom2dInt_IntConicCurveOfGInter**, which is no longer sealed, and
+      implements `ITopClass_Intersector<BRepClass_Edge>` (decisions 288, 329); it fills the base's results through
+      the protected `done`, `Append` and `SetValues`. CheckSkip's `theInter = Geom2dInt_GInter(...)` assigns a new
+      intersector to a `ref` parameter. `LocalGeometry` has `out` directions: where OCCT leaves the tangent as the
+      caller had it (no tangent, chord too short), the port gives the callers' default (1, 0). The 2D classifiers
+      `BRepClass_FClass2dOfFClassifier` and `BRepClass_FacePassiveClassifier` implement `ITopClass_FClass2d`, the
+      interface's `Intersector()` explicitly; their public `Intersector()` returns the `BRepClass_Intersector`.
+      `BRepClass_FClassifier`'s fields are protected, as OCCT's.
+392. **BRepTopAdaptor_FClass2d** is a sealed class built once per face; OCCT's `Copy` and assignment (which throw)
+      are left out and `Destroy` is internal. `Perform` and `TestOnRestriction`, which OCCT writes out twice and
+      which differ in three places (the polygon test, what an undecided polygon gives, the tolerance for a bad
+      wire), share one private body. `std::nextafter` is `Math.BitIncrement`/`BitDecrement`; CSLib_Class2d's
+      `Result` is compared as OCCT's int. OCCT's never-read U1, V1, U2, V2 are kept with CS0414 suppressed (as
+      decision 221).
+393. **BRepTopAdaptor_TopolTool** keeps its 2D classifier as a nullable field (OCCT's `void*`), built at the first
+      `Classify` or `IsThePointOn` with that call's tolerance; its curves are a typed list of `BRepAdaptor_Curve2d`;
+      `Edge()` returns the edge boxed (OCCT's `void*` to it). Where OCCT down-casts a handle and dereferences it
+      (`BRepTopAdaptor_HVertex.Parameter`, `Resolution`, `IsSame`, `Orientation(Adaptor2d_Curve2d)`), the port casts
+      and throws InvalidCastException; where OCCT checks (`Initialize`, `Tol3d`, `Pnt`), it throws OCCT's
+      exception. `BRepTopAdaptor_Tool` returns its tool and surface whether loaded or not, as OCCT.
+394. **Adaptor copies.** IntCurvesFace_Intersector and BRepClass3d_Intersector3d initialise a local
+      `BRepAdaptor_Surface` (or `GeomAdaptor_Curve`) and keep a handle to a copy of it; the port keeps the adaptor
+      itself, which nothing else holds. BRepIntCurveSurface_Inter keeps a `ShallowCopy` of the caller's curve
+      adaptor (OCCT's copy), so the caller may reuse its adaptor.
+395. **IntCurvesFace.** The intersector's polyhedron and sorted boxes (OCCT's `unique_ptr`s) are nullable fields; it
+      derives from Standard_Transient as OCCT's. The polygon/polyhedron overloads of `IntCurveSurface_HInter.Perform`
+      (with the Bnd_BoundSortBox, OCCT's OPTIMISATION 1) are reached for every surface but the plane, cylinder, cone,
+      sphere and torus; the oracle reaches them through BRepClass3d on surfaces of extrusion and revolution and
+      B-spline faces. `IntCurvesFace_ShapeIntersector` keeps a sequence of intersectors; `PerformNearest`'s
+      `std::swap`s are tuple swaps; OCCT's Load and PerformNearest issues are kept (occt-issues.md).
+396. **BRepClass3d_SolidExplorer.** OCCT's map of `void*` intersectors is an `NCollection_DataMap<TopoDS_Shape,
+      IntCurvesFace_Intersector?>` with TopTools_ShapeMapHasher; `Bind` replaces as OCCT's does, so a face met twice
+      (in two shells) keeps the last intersector. Arguments OCCT may leave unwritten are `ref` (decision 57): the
+      point, parameters and derivatives of `FindAPointInTheFace` and `PointInTheFace`, and the line and parameter of
+      `Segment` and `OtherSegment`, whose caller keeps them across its loop. OCCT's `++IndexPoint` passed to an
+      `int&` is an increment then `ref IndexPoint`. `GetTree` and `GetMapEV` return the explorer's own structures
+      (working objects); `Destroy` clears the map. The tree is filled through NCollection_UBTreeFiller, whose
+      mt19937 shuffle is OCCT's, so the selectors visit the boxes in OCCT's order.
+397. **The tree selectors** (`BRepClass3d_BndBoxTreeSelectorPoint`, `...Line`) are public sealed classes deriving
+      from `NCollection_UBTree<int, Bnd_Box>.Selector` over the explorer's map; the line selector's `EdgeParam` and
+      `VertParam` are readonly record structs; `GetEdgeParam` and `GetVertParam` return through `out`.
+398. **BRepClass3d_SClassifier** keeps OCCT's private int state (1 failed, 2 ON, 3 IN, 4 OUT; `Rejected()` means
+      failed, as in OCCT); `ForceIn`/`ForceOut` are protected. `PerformInfinitePoint` collects the faces in a `List`
+      (OCCT's NCollection_LinearVector) and draws parameters from a `math_BullardGenerator` with its default seed, so
+      its probing points are OCCT's. The SolidClassifier's statistics (LBRCOMPT) and MARCHEPASSIUNESEULEFACE code are
+      compiled out in OCCT and left out. BRepClass3d_Intersector3d's transition before a point is found is
+      IntCurveSurface_Tangent (OCCT's is uninitialised).
+399. **BRepClass3d.OuterShell** classifies each shell in a solid it builds itself (`EmptyCopy` of the input solid, then
+      `Add` of the frozen shell): unfrozen, internal to the call, never published. It returns the input's own shell.
+400. **BRepBndLib** passes boxes by `ref` (decision 263) and adds functional forms returning a new box, for Bento:
+      `Box(S, useTriangulation)`, `BoxClose(S)`, `BoxOptimal(S, useTriangulation, useShapeTolerance)` and
+      `OBB(S, ...)`. AddOBB's inertia path calls BRepGProp's in-place statics on a new `GProp_GProps` per sub-shape,
+      as OCCT, and measures a `Moved` copy of the shape value. OCCT's pointer to `HVectorialPart` read as a flat
+      array is `gp_Mat.Value(i, j)` by columns; `GetVertex` into an array position is `AsSpan(index)`. Meshes are only
+      read (design 5): the same shape value always gives the same box.
+401. **Frozen inputs.** None of these algorithms writes into the topology or geometry it is given; every test runs on
+      frozen shapes. The only topology built is OuterShell's temporary solid (3711).
+402. **Tests.**
+      - Ported GTest: BRepClass3d_SolidClassifier (5). MakeBox and MakeSphere (unit 3M) are replaced by
+        `TestShapes.Box` and `BRepGPropTestShapes.SphereSolid` (one natural face where MakeSphere has a seam and
+        degenerated edges), frozen.
+      - Known-answer tests (83): the face classifier on a square with a hole (2D and 3D points, IN, OUT, ON on edges
+        and vertices, tolerances, reversed and located faces, bounding boxes, the closest edge and its position, the
+        explorer's segments, wires and edges, the intersector, the passive classifier, BRepClass_Edge's twins);
+        BRepTopAdaptor_FClass2d (holed square, periodic cylinder face brought into its period, test on the
+        restriction, natural faces), the topological tool and its vertices; IntCurvesFace on box faces (transitions,
+        reversed faces, segments, a line in the face's plane: IsParallel), on a surface of extrusion through its
+        polyhedron, with circles, and the shape intersector (sorted points, PerformNearest, the Load issue pinned);
+        the solid classifier on boxes (faces, edges, vertices, tolerance, reversed, located, rotated), a cylinder of
+        faces, a sphere, a solid with a void and its outer shell, compounds, a solid without faces, the infinite point,
+        the explorer and the passive classifier; BRepIntCurveSurface_Inter on rays through boxes, edges, a located box,
+        a holed face, segments and circles; BRepBndLib's boxes of boxes, cylinders, located and rotated shapes, meshes,
+        mesh-only faces, polygon-only edges, vertices and arcs, and oriented boxes by points and by inertia.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepClass3d`, `BRepIntCurveSurface`, `BRepBndLib`), on random scenes
+        built identically on both sides (`ClassificationScenes`: boxes, closed cylinders whose lateral face is a
+        cylinder, a surface of linear extrusion or of revolution, holed faces, natural spheres, tori and sphere
+        patches, natural B-spline faces with a B-spline edge, compounds of placed solids, meshed boxes and mesh-only
+        tetrahedra; placed rigidly or scaled, reversed), all values bit-identical:
+        - BRepClass3d_SolidClassifier: 7,350 points (in and around the shape, on faces with offsets from 1e-9 to 0.3,
+          on edges, at vertices; tolerances 1e-7 and 1e-3) on one classifier per scene, the constructor with a
+          point, and the infinite point: 29,940 values (state, Rejected, IsOnAFace, face);
+        - BRepIntCurveSurface_Inter: 1,512 lines, segments, circles and B-splines (Init with a line; Load then
+          Init with bounded and unbounded GeomAdaptor_Curves), 3,285 points: 34,362 values;
+        - BRepBndLib: Add (both flags), AddClose, AddOptimal (four flag pairs) and AddOBB (eight flag triples), into
+          void and non-void boxes, and the functional forms, 1,800 calls: 31,212 values.
+        BRepClass_FaceClassifier, BRepTopAdaptor_FClass2d and IntCurvesFace aren't bound natively: they are reached
+        through those three, and unit-tested.
+403. **For later units.**
+      - 3I (BRepLib): `BRepLib::OrientClosedSolid` uses `BRepClass3d_SolidClassifier.PerformInfinitePoint` on the
+        solid it orients (its copy for write, design 4.6); BRepLib_FindSurface and the makers call `BRepBndLib.Add`
+        with `ref Bnd_Box`.
+      - 3J (BRepCheck): BRepCheck_Face's orientation check builds a `BRepTopAdaptor_FClass2d(face, tol)` and calls
+        `PerformInfinitePoint()`; BRepCheck_Solid uses `BRepClass3d_SolidClassifier` (Load, PerformInfinitePoint,
+        Perform). All only read.
+      - 3K (BRepExtrema, BRepBuilderAPI): BRepExtrema calls `BRepClass_FaceClassifier.Perform(face, gp_Pnt, tol)`
+        (the 3D overload projects with Extrema_ExtPS on the face's UV box), `BRepClass3d_SolidClassifier` and
+        `BRepBndLib.Add`/`AddOptimal`; its ExtPF and friends use `BRepTopAdaptor_FClass2d`. Geom2dHatch, when ported,
+        implements `ITopClass_FaceExplorer.CurrentEdge` by `ref` (3702).
+
+## Phase 3: unit 3L1, Draw-lite shapes
+
+Draw's variables and shape commands in Draw-lite (tests/OcctNet.DrawLite): Draw_VariableCommands' bsave, brestore,
+isdraw, isprot, dtyp, dval, dname, dump, copy, renamevar, dset, protect, unprotect, autodisplay and the numeric
+functions; DBRep's isos, hlr, vori, vconn, triangles, polygons, discretisation, compound, add, explode, nexplode, exwire,
+emptycopy, orientation, treverse, complement, invert, nbshapes, numshapes, countshapes, setflags, purgemmgt, writebrep,
+readbrep, binsave, binrestore; BRepTest's reset, tmove, ttranslate, trotate, tmirror, tscale (and the b and f forms),
+tcopy, maxtolerance, purgeloc, checkloc, lprops, sprops, vprops, vpropsgk; SWDRAW's tolerance. `restore`, `save`,
+`datadir` and `whatis` are DrawResources procedures that now run. Numbers from 3501 are renumbered on merge.
+
+404. **A drawable lives on its Tcl variable.** Draw keeps drawables in a map and binds each to the Tcl variable of its
+      name through a trace, which drops it when the variable is written or unset (Draw_VariableCommands.cxx: Draw::Set,
+      Draw::Get, tracevar). Draw-lite's `TclVar` holds the drawable itself (`Drawable`, and `ElementDrawables` for
+      array elements), so Draw::Set and Draw::Get resolve names in the current frame exactly as Tcl_SetVar and
+      Tcl_VarTraceInfo do: a procedure's explode results are local, `upvar` and `global` share them (the
+      DrawResources' `restore` procedure binds its `upvar`ed `n`), and a frame's drawables go with it.
+      - As in Draw, the variable's value is the name Draw::Set was given (after `restore f.brep a`, `$a` is `n`), and
+        `dname` prints that name.
+      - Writing a variable drops its drawable; writing a protected one fails with Tcl's trace message
+        ("can't set "pi": variable is protected"); unsetting a protected one leaves it, as Draw's trace sets it again.
+      - Draw::VariableCommands' protected numbers `pi`, `pinf` and `minf` exist; its viewer objects `axes`, `axes2d`
+        and `grid` don't (no viewer).
+      - Public API: `DrawInterpreter.SetDrawable`/`GetDrawable` (Draw::Set/Get), `SetShape`/`GetShape` (DBRep::Set/Get,
+        with the typed form and its message), `SetNumber`/`TryGetNumber`, `Atof`/`Atoi`/`ParseReal`. `DrawDrawable` has
+        OCCT's textual methods (Whatis, Dump, Save, Copy) and the type name Draw writes; its kinds are `DrawShape`,
+        `DrawNumber` and `DrawGeometry` (DrawTrSurf's curves, 2D curves, surfaces with their B-spline and Bezier type
+        names, points, polygons and triangulations).
+405. **Commands are written as OCCT writes them.** `DrawCxx.Add` registers `int f(DrawInterpreter, DrawResult di,
+      args)`: `di` is the Tcl result Draw_Interpretor builds (`<<` of an int is `%d`, of a real `%.17g`; AppendElement
+      quotes and separates as Tcl_AppendElement); a non-zero return is a Tcl error whose message is the result so far;
+      a `Standard_Failure` becomes "An exception was caught Type: message" (Standard_Failure::Print; without a message,
+      the type alone), as CommandCmd reports it. `std::cout`, `Message::SendFail` and `SendWarning` write lines to the
+      interpreter's output. Streams' formats are C++'s: precision 6 and `setw` (`Standard_Stream.FormatReal`), and
+      `std::scientific` (`DrawFormat.Scientific`, at least two exponent digits). Draw-lite now references
+      OcctNet.ModelingData and OcctNet.ModelingAlgorithms.
+406. **Draw::Atof is ported**: `+ - * /`, parentheses, numbers, Draw numbers by name, and calls `f(a,b)` of commands
+      (their result read as a real), with Draw's messages; `ParseReal` reports text left over. Every numeric argument
+      of the ported commands goes through it, as in Draw (`trotate s 0 0 0 0 0 1 pi/2*180/pi` works).
+407. **Shapes are frozen when bound** (decision 272): `SetShape` freezes the graph. Commands that change a shape in
+      place in OCCT bind a new shape instead:
+      - `add what where`: OCCT's TopoDS_Builder::Add changes the TShape of `where`. The port first refuses a `where`
+        that isn't free (TopoDS_FrozenShape, as OCCT), then builds a new TShape (`EmptyCopied`, the flags of `where`,
+        its children, then `what`) at the location and orientation of `where`, and binds it.
+      - `setflags`: OCCT sets the flags on the shape and on every vertex, edge and face it reaches. The port sets them
+        on a structural copy (`BRepTools.CopyForWrite`: new TShapes, shared geometry) and binds the copy.
+      - The consequence: another variable that holds the old shape, or a sub-shape of it, still sees the old TShape,
+        where in OCCT it would see the change. `emptycopy`, `invert`, `orientation`, `treverse`, `complement`,
+        `compound` and the transformations already make new shapes in OCCT and are ported as they are (with the
+        `Closed` copy of `invert`).
+408. **BRepBuilderAPI_Transform and BRepBuilderAPI_Copy are mirrored** (unit 3K ports them): the t-commands run
+      `BRepBuilderAPI_Transform::Perform` as written, the modifier with BRepTools_TrsfModification for `-copy`, a
+      negative or a scaling transformation (with `-copymesh`), else `Moved`; `tcopy` runs `BRepBuilderAPI_Copy::Perform`
+      (the modifier with BRepTools_CopyModification; a null shape throws Standard_NullObject as DoModif does). The b
+      forms, `reset` and `tmove` use `Located` or `Moved` with the scale checked, the f forms without, and catch
+      Standard_DomainError with Draw's warning. When 3K lands, the commands call the makers.
+409. **`tolerance` ports ShapeAnalysis_ShapeTolerance privately** (TKShHealing is phase 7): InitTolerance,
+      AddTolerance, GlobalTolerance and InTolerance as OCCT (its vertex test included, occt-issues.md). The command
+      should call the package once it is ported.
+410. **Files.** Draw's file commands read the overlay first, then the disk, and write to the overlay only
+      (decision 38), a character per byte (`TclFileSystem.TryReadBytes`, `WriteBytes`), so `binsave` and a later
+      `binrestore` in the same script work, and `read [open ...]` sees the text.
+      - `brestore` reads the type word and calls the factory of that name (Draw_Drawable3D::Restore):
+        `DBRep_DrawableShape` (a BRepTools_ShapeSet, then the shape), `Draw_Number`, and DrawTrSurf's types over
+        GeomTools' `ReadCurve`, `ReadCurve2d`, `ReadSurface` and Poly's readers; otherwise it reads a shape from the
+        start, as Draw does (.rle files). A DrawTrSurf file whose geometry fails to read is "cannot restore" (Draw
+        binds a drawable with a null geometry).
+      - `bsave` writes Draw's layout: the type name, the drawable's Save, then a newline and `0` and an empty line, at
+        precision 15. A shape's Save is BRepTools::Write's text; a number's is `%.15e` in 30 columns, a point's
+        `%.15e`. Polygons and triangulations are written by Poly::Write at precision 15 but not in std::scientific, so
+        their files read back the same values but aren't DRAWEXE's bytes.
+      - `writebrep` and `binsave` write BRepTools' or BinTools' bytes (with Draw's header line for text); `readbrep`
+        probes the first 255 bytes as OCCT does (a shorter file fails).
+      - The port's TopTools_ShapeSet writes its console messages ("File was not written with this version of the
+        topology") to the process console, not to the interpreter's output.
+411. **Display settings without a viewer.** `isos`, `discretisation` and `hlr` keep the values of DBRep_Params and
+      print them as Draw does; per-shape settings aren't kept (`isos name` prints the default count). `triangles`,
+      `polygons`, `vconn` and `purgemmgt` do nothing; `vori` prints Draw's colour legend. The props commands don't
+      display the axes of inertia.
+412. **The corpus run.** `DrawCorpus.RunAndCheck` runs a case as `_run_test` does (an error ends it with "Tcl
+      Exception: ..."), with DRAWEXE's environment (CASROOT, CSF_OCCTResourcePath, CSF_OCCTDataPath, CSF_TestDataPath
+      to OCCT's data and the test dataset, an empty writable image directory in the overlay) and a time limit, then
+      judges its log with OCCT's own `_check_log` (parse.rules, TODO and REQUIRED, "TEST COMPLETED").
+413. **Tests.**
+      - Draw-lite (22 tests, DrawShapeCommandsTests): each command's text against Draw's source on data/occ files and
+        test-data DrawTrSurf files, errors and messages, frames and traces, Atof, the overlay round trips in every
+        format, OCCT's check procedures (checknbshapes, checkprops, checkmaxtol) on the commands, and the OCCT issues
+        of this unit.
+      - Oracle (DrawLiteShapesOracleTests): on all 42 data/occ files (37 .brep, 5 .rle) restore, nbshapes and
+        nbshapes -t (against TopTools_ShapeSet::Add's TShapes and TopExp::MapShapes natively), explode of every type,
+        lprops, sprops and vprops with checkprops' epsilon and without, in `-full` mode, and tolerance; checknbshapes,
+        checkprops and checkmaxtol pass with the native values: 630 command checks, 4,620 values, all bit-identical.
+        ttranslate, trotate, tscale, tmirror (with and without -copy) and tcopy (with and without geometry) on 10 of
+        them against BRepBuilderAPI_Transform and BRepBuilderAPI_Copy: 100 shapes, 4,800 values, all bit-identical.
+      - Corpus: runnable cases 15 before, 23 after (4 and 8 OK; the rest stop on commands that their sourced scripts
+        use, or on data files the dataset lacks). checkshape (3L2) is the gate: 349 cases miss only it.
+## Phase 3: unit 3I, BRepLib
+
+BRepLib (BRepLib.cxx's statics, BRepLib_1.cxx), its makers (Command, MakeShape, MakeVertex, MakeEdge, MakeEdge2d,
+MakeWire, MakePolygon, MakeFace, MakeShell, MakeSolid and the error enums), FindSurface, FuseEdges, PointCloudShape and
+ToolTriangulatedShape, in OcctNet.ModelingAlgorithms (decision 280); the functional twins of the in-place statics
+(design 4.6); `BRepTools.ExactCopyForWrite` and `BRepTools.KeepUnchanged` in OcctNet.ModelingData. ValidateEdge and
+CheckCurveOnSurface came with unit 3H. The makers, the two halves of BRepLib.cxx and FuseEdges were written in forked
+worktrees, reviewed and merged. Numbers from 3401 are renumbered on merge.
+
+414. **The makers are public working objects** (decision 21) with OCCT's constructors, `Init`, `Add`, `Close` and
+      `Error`. `BRepLib_Command` is abstract: `IsDone`/`Check` public, `Done`/`NotDone` protected.
+      - Every public result freezes the whole result graph first (design 4.2): `Shape`, `Vertex`, `Edge`, `Wire`,
+        `Face`, `Shell`, `Solid`, `Vertex1`/`Vertex2`, `FirstVertex`/`LastVertex`, MakeWire's `Edge`/`Vertex`. A
+        sub-shape accessor freezes the whole result with it.
+      - Each has an internal twin that doesn't freeze, for ported code that goes on building: `InternalShape`,
+        `InternalVertex`, `InternalEdge`, `InternalVertex1`/`2`, `InternalWire`, `InternalFace`, `InternalShell`,
+        `InternalSolid`, `InternalFirstVertex`/`InternalLastVertex`. OCCT's conversion operators are explicit
+        operators calling the freezing form (as decision 185).
+      - `DescendantFaces`, `NewFaces` and `FacesFromEdges` return frozen `IBentoList` copies; internal virtual twins
+        (`InternalDescendantFaces`, ...) return the maker's own lists for overriders. As in OCCT, `MakeFace.Face()`
+        and `MakeShell.Shell()` don't check `IsDone`.
+      - Where OCCT remakes the result inside `myShape` (`B.MakeEdge(TopoDS::Edge(myShape))` and the like), the port
+        makes it in a new variable and assigns it, so an `Init` after a public read doesn't throw
+        `TopoDS_LockedShape`. An `Add` or `Close` after a public read (MakeWire, MakePolygon, MakeSolid, MakeFace)
+        goes on with a new TShape holding the same children, location, orientation and flags (`UnfreezeResult`): the
+        shape already handed out never changes.
+415. **`BRepLib.Precision()` and `Plane()` stay process-wide statics, as in OCCT, with internal setters**: callers
+      always get the defaults (`Precision::Confusion()` and the XOY plane, frozen). In OCCT only Draw's `precision`
+      command sets them; a thread-static was rejected because a `Parallel.For` worker wouldn't see the setting.
+416. **`BRepTools.ExactCopyForWrite` and `BRepTools.KeepUnchanged`** (internal, ModelingData): the two halves of a
+      copy for write for in-place operations that must give OCCT's in-place results.
+      - `CopyForWrite` (decision 349) is BRepTools_Modifier with BRepTools_CopyModification, as BRepBuilderAPI_Copy.
+        It isn't an exact copy: the modifier gives every pcurve the 3D range (the own range of a pcurve on an edge
+        that isn't SameRange is lost), stores computed pcurves on planes, gives the vertices their points on curves
+        again and drops polygons on surfaces. An in-place static run on it can give another result than on the
+        original, and every sub-shape of it differs from its original.
+      - `ExactCopyForWrite` copies each TShape once with its flags (Locked cleared; Free cleared on children, as
+        `TopoDS_Builder::Add` does), its children at the same places and its BRep data in new representations sharing
+        the frozen geometry and meshes: nothing is recomputed. Its history is CopyForWrite's (each vertex, edge, face
+        and solid, as placed in the shape, modified into its copy).
+      - `KeepUnchanged(original, copy)`, after the in-place operation on the copy, gives back the original's own
+        TShape for every sub-shape whose flags (but the cache bits Free, Modified, Checked, Locked), children (kept or
+        replaced in turn) and BRep data (bit for bit, geometry by identity) didn't change; the changed ones are the
+        copy's TShapes, holding the kept children in place of their copies. An operation that changes nothing gives
+        back the original itself; one that changes a vertex replaces that vertex and the edges, wires, faces and
+        parents above it only. Its history records the original's sub-shapes that the result replaces. A flag
+        tolerates UpdateTolerances' rounding guard (3404).
+      - The 3B twins (`BRepTools.Updated` and the others) keep CopyForWrite; moving them over is left for later.
+417. **Makers writing into frozen inputs** (design 4.6). Every `B.Update*`, flag setter and `Add` of the makers into a
+      shape the caller passes was audited.
+      - **`MakeFace(W, OnlyPlane)`** runs UpdateTolerances and SameParameter (forced) on the face holding the
+        caller's wire, which writes into its edges and vertices. If anything in the wire is frozen, the maker works
+        on `ExactCopyForWrite` of the wire (after removing degenerated edges when OnlyPlane) and then keeps what the
+        statics left unchanged (`KeepUnchanged`). UpdateTolerances adds `2 * Epsilon(tol)` to every vertex tolerance
+        it computes, so OCCT's MakeFace raises the vertices of the caller's wire by two units in the last place; here
+        the port ignores a raise of no more than that guard. Otherwise no frozen vertex could be kept, and faces built
+        on wires sharing edges (the six faces of a box) wouldn't share them: the first version, copying without
+        keeping, gave a box of 62 TShapes where native OCCT has 34. So a face from a polygon holds the caller's own
+        wire, its vertices' tolerances two ulps below native OCCT's (the BRep text, at 15 digits, is the same). Real
+        changes (a vertex off its edges) replace only the sub-shapes concerned; the internal `InternalHistory()`
+        records them, for 3K's `Modified`.
+      - **MakeWire's vertex merging.** OCCT moves and enlarges an existing wire vertex (`B.UpdateVertex(VW, PC,
+        maxtol)`, MakeWire.cxx:351; MakeWire_1's `aBB.UpdateVertex(aNewV, ...)`) and transfers parameters with
+        `B.Transfert` onto vertices that may be the caller's. Writes that change nothing are skipped (the same point
+        to the bit, no tolerance increase; `// OCCT.NET: frozen`); a `Transfert` onto a frozen vertex already as
+        tolerant sets only the edge's ranges, as `UpdateVertex` would. When a real change to a frozen vertex is
+        needed, a pre-scan (`needsWritableVertices`, with the same arithmetic) finds it first; the maker then replaces
+        the wire built so far by its `ExactCopyForWrite` and remaps its state (the vertex map in its order, VF, VL,
+        FirstVertex, myVertex, myEdge; in the list form, the coincidence groups), merging the copies' histories
+        (`InternalHistory()`, null when nothing was copied). Coincident vertices with equal tolerances, the common
+        case, copy nothing.
+      - `MakeFace(F)` copies with `EmptyCopied` as OCCT does; `MakeShell` and `MakeSolid` write only into their own
+        shapes.
+418. **Visibility of BRepLib's statics.**
+      - Internal, with shapes by `in`: `SameRange`, `BuildCurve3d`, both `BuildCurves3d`, `UpdateEdgeTol`,
+        `UpdateEdgeTolerance`, `SameParameter` (of an edge; of a shape with a tolerance and `forced`),
+        `UpdateTolerances(S, verify)`, `UpdateInnerTolerances`, the three `EncodeRegularity` (OCCT's `TopoDS_Edge&` is
+        `in`), `EnsureNormalConsistency`, `UpdateDeflection`, `BuildPCurveForEdgeOnPlane(E, F)` and
+        `BuildPCurveForEdgesOnPlane` (OCCT's template over containers is `IEnumerable<TopoDS_Shape>`). They throw
+        `TopoDS_LockedShape` or `Standard_ImmutableObject` on a frozen shape.
+      - `SameParameter(E, tol, ref theNewTol, IsUseOldEdge)` is internal: it returns an unfrozen edge; `theNewTol` is
+        `ref` (unchanged when nothing is computed). `OrientClosedSolid(ref TopoDS_Solid)` is internal: it only
+        reverses the caller's value, so it works on frozen solids.
+      - Public: `Precision()`, `Plane()`, `CheckSameRange`, `ContinuityOfFaces`, `SortFaces`/`ReverseSortFaces` (OCCT's
+        form filling a caller's list, and functional forms returning `IBentoList<TopoDS_Shape>`), `FindValidRange`
+        (`ref` bounds: OCCT may return false without writing them, or after writing the first), `BoundingVertex`
+        (`ref` outputs, unchanged for fewer than two vertices), the query `BuildPCurveForEdgeOnPlane(E, F, out C2D, out
+        bToUpdate)`, and `ExtendFace(..., out TopoDS_Face)`, which freezes the new face (ported code calls the internal
+        `InternalExtendFace`, which reads `BRepLib_MakeFace.InternalShape()`).
+419. **OCCT's non-destructive forms are public**: `SameParameter(S, BRepTools_ReShape, tol, forced)` and
+      `UpdateTolerances(S, BRepTools_ReShape, verify)` write only into empty copies recorded in the reshaper, as OCCT
+      documents; the reshaper's `Apply` and `Value` freeze at publication. Reads of the caller's edges go through
+      `Curves()` where OCCT calls `ChangeCurves()` (GetCurve3d, CheckSameRange, UpdateEdgeTol; `// OCCT.NET: frozen`),
+      and the reshaper is read through `InternalValue`. Unit tests check frozen inputs unchanged; the oracle compares
+      the input and `Apply` with native OCCT's. Their results can differ from the in-place statics' (a forced
+      SameParameter empty-copies every flagged edge, and the tolerance updates read the reshaper's values).
+420. **The functional twins** (design 4.6), in `BRepLib.Twins.cs`, a part of the partial class that ports no OCCT
+      file: `SameParametered(S, tol, forced)` (SameParameter), `TolerancesUpdated(S, verify)` (UpdateTolerances),
+      `InnerTolerancesUpdated(S)`, `Curves3dBuilt(S, tol, out bool, continuity, degree, segments)` and
+      `Curves3dBuilt(S, out bool)` (BuildCurves3d; the bool is its result), `RegularityEncoded(S, angle)` and
+      `RegularityEncoded(S, edges, angle)` (EncodeRegularity), `DeflectionUpdated(S)` (UpdateDeflection) and
+      `NormalConsistencyEnsured(S, out bool, angle, force)` (EnsureNormalConsistency), each also with an `out
+      BRepTools_History`; and `ClosedSolidOriented(solid, out bool)` (OrientClosedSolid), which only reverses the
+      value and copies nothing.
+      - Each runs the in-place static on `ExactCopyForWrite` of its input, gives back the input's unchanged
+        sub-shapes with `KeepUnchanged` (exactly: no tolerance slack) and freezes the result; null in, null out. So a
+        twin's result is what OCCT's in-place static makes of the shape (oracle: 1,500 results byte-identical to the
+        native in-place statics' on twin scenes), and it shares with the input everything the static didn't touch
+        (1,257 of the 2,955 input edges there). The history records the input's sub-shapes the result replaces.
+      - This departs from 3B's twins, which copy with CopyForWrite and share nothing (decision 416: CopyForWrite
+        changes what SameParameter sees).
+      - No twins yet for `SameRange`, `BuildCurve3d` of one edge, `UpdateEdgeTol`, `UpdateEdgeTolerance` and
+        `BuildPCurveForEdgeOnPlane(E, F)`: left until a caller needs them.
+421. **OCCT's internals in BRepLib.cxx.** `GetCurve3d` returns the edge's own representation list where OCCT copies
+      it (the representations are shared either way). `UpdShTol` walks the tolerance map in the port's hash order
+      (decision 18); each shape is updated independently. `InternalUpdateTolerances`' map of handles is a
+      `HashSet<TopoDS_TShape>` by reference. `UpdateVTol` is private, and skips a frozen vertex that is already at least
+      as tolerant (`UpdateVertex(V, tol)` only raises; `// OCCT.NET: frozen`), which FuseEdges reaches (3412).
+      `Approx_CurvilinearParameter.InternalCurve2d1()` is added (internal, doesn't freeze): SameParameter re-knots
+      the reparametrised curve before the edge takes it. Approx_SameParameter's result is read through
+      `InternalCurve2d()`.
+422. **Writing into attached triangulations** (`// OCCT.NET: frozen`). EnsureNormalConsistency and UpdateDeflection
+      write normals and deflections into the faces' triangulations, which are frozen once attached (design 4.1). The
+      port writes into one copy per triangulation (faces sharing a triangulation share its copy, as they would see
+      OCCT's change), reads back through the copy, and at the end gives each face whose active triangulation was
+      copied the copy in its place (`BRep_Builder.UpdateFace(F, copy, false)`, keeping the face's list, with the copy
+      active) and replaces the edges' polygons on the old triangulation by ones on the copy, sharing the frozen
+      polygons. Polygons are looked up on the attached triangulation, as OCCT does. On a copy for write the bytes
+      written are OCCT's (oracle). `BRepLib_ToolTriangulatedShape.ComputeNormals` writes into the triangulation it is
+      given, as OCCT does, so it throws on a frozen one; `NormalsComputed(face, tris)` returns the triangulation if it
+      has normals, else an unfrozen copy with them.
+423. **EncodeRegularity lets a frozen edge's exception through.** OCCT catches every Standard_Failure around
+      ContinuityOfFaces and `B.Continuity`, and again around the whole shape, so a locked edge would be skipped
+      silently. The edge-level catch has the filter `when (!E.TShape().IsFrozen())` and the shape-level catch lets
+      TopoDS_LockedShape through: a write into a frozen input can't pass silently.
+424. **BRepLib_PointCloudShape** is a public abstract working object with OCCT's protected fields and hooks
+      (`faceArea`, `computeDensity`, `addDensityPoints`, `addTriangulationPoints`, virtual `clear`, abstract
+      `addPoint(in gp_Pnt, in gp_Vec, in gp_Pnt2d, in TopoDS_Shape)`); its constructors are protected. It only reads
+      the shape: missing triangulation normals are computed on a copy (`NormalsComputed`), where OCCT writes them into
+      the face's triangulation. Random points use `std_mt19937(0)` per face, and `std::uniform_real_distribution
+      <double>` is two 32-bit draws, `(x0 + x1·2³²)/2⁶⁴`, then `a + u·(b − a)` (MSVC's and libstdc++'s
+      implementation; no native binding confirms it). An infinite `double` converted to `int` gives INT_MIN, as x86's
+      conversion does (.NET saturates). UpdateDeflection's `std::hash<Link>` with its order-free equality is a private
+      `readonly struct Link : IEquatable<Link>` in an `NCollection_Map<Link>`; only membership matters.
+425. **BRepLib_FuseEdges** is a sealed public working object.
+      - Public: the constructor (OCCT ignores `PerformNow`, and so does the port), `AvoidEdges` (keeps a copy of the
+        caller's map), `SetConcatBSpl`, `NbVertices`, `Perform`; `Edges()` returns `IReadOnlyDictionary<int,
+        IBentoList<TopoDS_Shape>>` of the input's own edges, `ResultEdges()` and `Faces()` dictionaries of frozen
+        shapes (Faces keyed with TopTools_ShapeMapHasher); `Shape()` freezes the result. OCCT's forms filling a
+        caller's map are internal overloads; with `InternalShape()` they don't freeze.
+      - The substitution's results are read with `BRepTools_Substitution.InternalCopy`, the new edges with
+        `BRepLib_MakeEdge.InternalEdge()`, the concatenations with `InternalBSplineCurve()` (the 2D result's knots are
+        reset before BRep_Builder freezes it). `NextConnexEdge`'s output is `ref` (written only when the vertex has two
+        edges); `UpdatePCurve`'s new edge is `in`.
+      - **Frozen inputs.** It writes only into the edges it builds and the substitution's copies, with two
+        exceptions. OCCT's `MakeClosedCurve` calls `SetPeriodic`, `SetOrigin`, `Segment` and the smoothing on a
+        B-spline that can be the old edge's own curve (or its trimmed curve's basis), changing the caller's geometry;
+        the port copies the curve when it is frozen (`// OCCT.NET: frozen`). And the final `BRepLib::SameParameter` of
+        a fused edge with rebuilt pcurves raises the tolerance of its end vertices, which are the input's: a raise
+        that changes nothing is skipped (3408); a real one throws `TopoDS_LockedShape`. That is a known limit:
+        FuseEdges would need a copy for write of its input with its maps remapped.
+426. **Smaller choices in the makers.** The edge makers' projection helpers return `out` (0 on failure);
+      `BRepLib_MakeFace.IsDegenerated` (public static) takes `out theActTol`; `FindSurface.Surface()` freezes the
+      surface it returns, and FindSurface only reads its shape; its `Is2DClosed` catches `NullReferenceException` as
+      well as `Standard_Failure`, standing for OCCT's `OCC_CATCH_SIGNALS` around a null pcurve. MakeWire's
+      `CollectCoincidentVertices` maps follow OCCT's `std::hash`/`operator==` (IsEqual:
+      `EqualityComparer<TopoDS_Vertex>.Default`); the other maps use TopTools_ShapeMapHasher. The face order of
+      `MakeSolid(CompSolid)`'s shell and the vertex group MakeWire's list `Add` starts from follow the port's map order
+      (decision 18).
+427. **Tests.**
+      - Ported GTest: BRepLib_MakeWire (1). Unit tests (131 more): the makers (60: vertices; edges from points,
+        vertices, lines, circles, ellipses, hyperbolas, parabolas, B-splines and curves on surfaces, with ranges and
+        each error; MakeEdge2d; wires connected, disconnected, non-manifold, with near vertices merged, list Add, on
+        frozen inputs; polygons; faces from gp and Geom surfaces with bounds, natural restrictions and degenerated
+        edges, from planar wires with holes, CheckInside, the frozen wire kept, two faces sharing an edge, partial
+        replacement; shells; solids; FindSurface), the statics (19), regularity, sorting, ranges, planar pcurves,
+        ExtendFace and BoundingVertex (17), meshes and PointCloudShape (10), the twins (10), FuseEdges (12), and
+        ExactCopyForWrite and KeepUnchanged (3, in ModelingData). Inputs are frozen where callers would pass them and
+        checked unchanged with `ShapeSnapshot`.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepLib`) against native OCCT on the same inputs, compared through
+        BRep text. A frozen input reused keeps Free = 1 where native OCCT clears it (design 4.4), so files that differ
+        are compared again with the Free column masked.
+        - BRepBuilderAPI_MakeVertex and MakeEdge against the makers: 585 files, 535 byte-identical and 50 with the
+          Free column masked (65 failed constructions with equal errors); MakeWire and MakePolygon: 400, 240 + 160;
+          MakeFace on plane, cylinder, cone, sphere, torus and Bezier surfaces: 490, all byte-identical (10 equal
+          errors); faces from planar wires: 300, all equal with the Free column masked; MakeShell on B-spline surfaces:
+          120, all byte-identical; MakeSolid of boxes of six `MakeFace(W)` faces: 60, all equal with the Free column
+          masked (the faces share their edges, 3404).
+        - BRepLib_FindSurface: 300 shapes, 171 surfaces found (28 existing), 1,200 values equal, the 171 surfaces
+          byte-identical.
+        - The statics on 300 twin scenes (faces on planes, cylinders and B-spline surfaces with bent pcurves,
+          pcurve-only edges, mismatched tolerances), 11 operations each (SameParameter of an edge and of a shape,
+          forced or not, UpdateTolerances, UpdateInnerTolerances, BuildCurves3d, BuildCurve3d, CheckSameRange and
+          SameRange, both ReShape forms, the new-edge SameParameter, UpdateEdgeTolerance): 4,044 files byte-identical,
+          2,100 returned values equal, 23 throws on both sides. OrientClosedSolid on 60 boxes: all equal.
+        - The twins on frozen copies of the same scenes against the native in-place statics: 1,500 results
+          byte-identical, the port's inputs unchanged.
+        - On random native shapes (primitives, sweeps, Booleans, fillets, lofts, placed and meshed) read on both
+          sides: EncodeRegularity (288 files, 4.8 MB), ExtendFace and BuildPCurveForEdgeOnPlane (602 files, 3.5 MB),
+          UpdateDeflection and EnsureNormalConsistency (288 files, 8.7 MB), all byte-identical; ContinuityOfFaces 6,204
+          values, SortFaces, ReverseSortFaces, FindValidRange and BoundingVertex 10,799 values, all equal; ExtendFace on
+          115 loft faces byte-identical (native OCCT changed its input in 8 of 20 lofts, occt-issues.md).
+        FuseEdges, PointCloudShape and ToolTriangulatedShape have no native binding and are unit-tested.
+428. **For later units.**
+      - 3K (BRepBuilderAPI over these makers): wrap the internal accessors and freeze once, at BRepBuilderAPI's own
+        `Shape()`. `Modified` of MakeFace-from-wire and of MakeWire should merge the maker's `InternalHistory()` when
+        it isn't null. BRepBuilderAPI's error enums have BRepLib's order. The BRepBuilderAPI GTests MakeEdge, MakeFace
+        and MakeWire are 3K's. Oracle inputs: draw placements and directions with the read-back check of
+        `BRepLibMakersOracleTests` (`Ax2`, `Ax3`, `Dir`), since native gp_Ax2 can round its X direction differently by
+        an ulp. BRepExtrema builds its result shapes with `BRepLib_MakeEdge`/`MakeVertex`: it should read them through
+        the internal accessors if it goes on building.
+      - 3M (primitives): build on `InternalEdge`, `InternalFace` and the like (unfrozen);
+        `BRepLib_MakeFace.IsDegenerated` is public static.
+      - Later in-place algorithms (ShapeFix, offsets, sweeps): `ExactCopyForWrite`, then the operation, then
+        `KeepUnchanged` is the pattern that keeps OCCT's results and the input's identity.
+## Phase 3: unit 3J, BRepCheck
+
+BRepCheck_Analyzer, BRepCheck_Vertex, Edge, Wire, Face and Solid, and `BRepCheck.SelfIntersection` (left by 3H,
+decision 368), in OcctNet.ModelingAlgorithms (decision 280). BRepCheck_Wire was ported in a forked worktree and
+reviewed and merged, as were the oracle tests. Numbers from 3451 are renumbered on merge.
+
+429. **The checks are public working objects with OCCT's API** (decision 21). `BRepCheck_Analyzer` is a public
+      class; Vertex, Edge, Wire, Face and Solid are public classes deriving from BRepCheck_Result (decision 366), with
+      OCCT's public methods (`GeometricControls`, `SetExactMethod`, `SetStatus`, `Tolerance`,
+      `CheckPolygonOnTriangulation`, `IntersectWires`, `ClassifyWires`, `OrientationOfWires`, `SetUnorientable`,
+      `IsUnorientable`, `Closed`, `Closed2d`, `Orientation`, `SelfIntersect`). The status lists they return are their
+      own (366). `Analyzer.Result(sub)` returns `BRepCheck_Result?`: null for compounds and compsolids, as OCCT's null
+      handle; a shape that isn't a sub-shape throws `Standard_NoSuchObject`.
+430. **The analyzer's map compares shapes with IsEqual, as OCCT's** (`NCollection_IndexedDataMap<TopoDS_Shape, ...>`
+      declared without a hasher, whose default compares with `operator==`). A sub-shape met in two orientations (a
+      seam edge, a vertex that ends one edge and starts the next) has one result per orientation; the face task skips
+      shapes already seen with IsSame, so only the first orientation met gets the face as a context, and `ValidSub`
+      stops at the other (occt-issues.md). `Result(sub)` and `IsValid(sub)` look up by IsEqual: callers pass the
+      sub-shape as explored from the checked shape (TopExp_Explorer and TopoDS_Iterator compose orientations as the
+      analyzer's `Put` does). The oracle found this: an IsSame map (as BRepCheck_Result's own, 366) disagreed with
+      native OCCT on a fused sphere. The other maps follow their OCCT declarations: BRepCheck_Face's
+      DataMapOfShapeBox2d and BRepCheck_Wire's EMap compare with IsEqual (`EqualityComparer<TopoDS_Shape>.Default`),
+      the rest use TopTools_ShapeMapHasher.
+431. **Parallel mode.** `Perform` cuts the map into OCCT's chunks (ten tasks per logical processor, at least ten
+      shapes each; `Environment.ProcessorCount` is OSD_ThreadPool's default thread count) and runs them with
+      `Parallel.For`, or in a loop when the flag is off (OSD_Parallel's `isSequential`); an AggregateException is
+      unwrapped to its first inner exception. Chunks past the last shape are empty arrays, as OCCT's
+      default-constructed ones (a null array was a port bug the oracle found on three data/occ files). Locks are taken
+      only when the result is parallel (366); `BRepCheck_Result.myMutex` is `protected internal` because OCCT makes the
+      analyzer's functor a friend. **BRepCheck_Edge evaluates a shallow copy of its reference adaptor per
+      `InContext` call in parallel mode**: OCCT shares one adaptor, whose evaluation cache isn't thread-safe, between
+      the threads that check the edge in its faces (occt-issues.md); a copy evaluates the same curve, so the statuses
+      don't change. The port's parallel run gives the serial run's statuses list for list, on every sub-shape and in
+      every context, in all the unit and oracle tests. Two things may differ between runs: the order of the contexts
+      (the context iterator follows insertion order, decision 366), and, when several checks fail with exceptions,
+      the order in which CheckFail is appended to a shared list.
+432. **Exceptions.** OCCT catches `Standard_Failure` around each check, with OCC_CATCH_SIGNALS turning access
+      violations into failures, and records `BRepCheck_CheckFail`. The analyzer catches `Standard_Failure` and the
+      .NET exceptions that stand for those signals: NullReferenceException, InvalidCastException,
+      IndexOutOfRangeException and DivideByZeroException. Where OCCT down-casts a handle and dereferences the null
+      result, the port throws `Standard_NullObject` (BRepCheck_Edge's projection on a plane when the reference curve is
+      a curve on a surface: CheckFail, pinned by a test). Exceptions from the checks run by the constructors (each
+      result's `Minimum`, called by `Put`) leave the analyzer's constructor, as in OCCT.
+433. **The checked shape is only read.** The topology the checks build is their own, unfrozen and never handed out:
+      BRepCheck_Face's `ClassifyWires` classifies each wire in an `EmptyCopied` face (sharing the frozen surface)
+      built with the internal BRep_Builder; BRepCheck_Solid's `Minimum` puts each closed shell in a solid of its own
+      with TopoDS_Builder, to classify it (BRepCheck_Shell already did, 367). Every test runs on frozen shapes (a write
+      would throw `Standard_ImmutableObject`, a Standard_Failure, and show as CheckFail; the tests check there is
+      none), and a test compares the BRep text before and after.
+434. **Smaller choices.**
+      - `BRepCheck_Wire.SelfIntersect(F, ref E1, ref E2, Update)` and `BRepCheck.SelfIntersection(W, F, ref E1,
+        ref E2)` take the edges by `ref`: OCCT leaves them unwritten when nothing intersects, and E2 when an edge
+        intersects itself (decision 57).
+      - BRepCheck_Face's map of wires gives each wire its own empty list (OCCT binds a copy of one list).
+        `OrientationOfWires` reads the keys in the map's order; `ClassifyWires` has made sure at most one wire
+        contains others, so the order doesn't matter. Where OCCT reads the key of an exhausted iterator ("No control
+        on More()"), the port throws `Standard_NoSuchObject`.
+      - BRepCheck_Solid's `BRepCheck_ToolSolid` is a private nested class holding the classifier itself (OCCT's
+        BRepCheck_HSC is a handle around it), in a `List` (OCCT's NCollection_DynamicArray of values filled with
+        fresh copies).
+      - `CheckPolygonOnTriangulation` reads the edge's `Curves()` (OCCT takes `ChangeCurves()` and only reads it).
+      - BRepCheck_Edge's reference adaptor is an `Adaptor3d_Curve` (a GeomAdaptor_Curve or an
+        Adaptor3d_CurveOnSurface, as OCCT's handle); `Tolerance` keeps its representations in an array of adaptors.
+      - BRepCheck_Wire's `IsDistanceIn2DTolerance` drops OCCT's debug-only `PrintWarnings`; its array of domains is
+        filled with `new()`; `SetStatus` takes no lock, as OCCT's (nothing parallel calls it).
+435. **Tests.**
+      - Ported GTests: BRepCheck_Face (4). BRepBuilderAPI's makers (unit 3K) are replaced by BRep_Builder shapes with
+        the same topology (segments sharing vertices, circles on one vertex, an infinite line without vertices, a
+        plane face without pcurves), frozen before they are checked.
+      - Known-answer tests (31, on frozen shapes; each analysis runs serial and parallel and is compared status by
+        status): BRepCheck_Wire (15: valid, holed and seam wires, empty, disconnected, open, redundant, badly oriented,
+        figure-8 with the intersecting edges, no pcurve, not closed in 2D, not in the shape, concurrent InContext);
+        the analyzer (16: boxes, located, reversed and in compounds; holed, seam and void shapes; null shapes and
+        unknown sub-shapes; vertices off their edges; bad ranges, degenerated, SameRange and SameParameter flags, no
+        3D curve (CheckFail on a plane, as OCCT); pcurves off their curves, with the exact method and without
+        geometric controls; missing pcurves on a cylinder; free and multiconnected edges; open, self-intersecting,
+        crossing, separate, outside, repeated and badly oriented wires; a face without surface; reversed, missing and
+        repeated faces; solids with two shells, shared faces, stray and internal vertices, internal shells and a void
+        outside; the shape unchanged).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepCheck/BRepCheckAnalyzerOracleTests.cs`). Native OCCT binds only
+        `BRepCheck_Analyzer` and `IsValid`, so the comparison is per sub-shape: native writes each shape as BRep text,
+        both sides read it, and native `IsValid(sub)` is compared with the port's for every sub-shape (TopExp
+        MapShapes order) with geometric controls on and off; native parallel equals native serial, and the port's
+        parallel run equals its serial run status for status (native parallel runs that differ from native serial are
+        reported, not failed: OCCT's parallel mode isn't deterministic, occt-issues.md). All agree:
+        - 120 random native shapes (boxes, cylinders, spheres, cones, tori, wedges, prisms, revolutions, fuses, cuts,
+          commons, fillets, lofts; placed and meshed at random): 8,060 of 8,060 verdicts;
+        - nine edge and vertex breaks applied natively on private copies of 36 shapes (vertex moved, 3D curve
+          shifted, pcurve shifted, pcurve removed, SameParameter or SameRange cleared, Degenerated set, range
+          reversed, and a valid control with a larger tolerance): 21,448 of 21,448;
+        - 21 kinds of face and solid scenes, 16 each, placed or reversed (valid squares and holes, open wires, holes
+          oriented as the outer wire, figure-8s, crossing wires, two outer wires, holes outside, nested holes; valid
+          solids and voids, reversed, missing and repeated faces, reversed shells, two disjoint shells, nested shells,
+          stray, internal vertices and edges, only internal shells): 21,184 of 21,184;
+        - the 37 `.brep` files of data/occ (36 valid natively): 47,438 of 47,438;
+        - OCCT's test dataset: 2,320 of its 2,369 files (2,137 valid natively, 323 invalid analyses), 297,988 of
+          297,988 verdicts in 85 s; left out: 42 files that aren't shapes, 5 over 2 MB and 2 assemblies of more than
+          200,000 sub-shape occurrences (one of 3.2 million that native OCCT doesn't finish in 30 s).
+        Statuses themselves (which status, in which context) aren't bound natively: they are covered by the
+        known-answer tests and the parallel-serial comparison.
+436. **For later units.**
+      - 3L2 (`checkshape`): the Draw command needs `BRepCheck_Analyzer(S, !top, parallel, exact)`, `IsValid()`,
+        `Result(sub)` for the sub-shapes met with TopExp_Explorer and TopoDS_Iterator from the checked shape (present
+        in the map with that orientation, 3452), each result's `Status()` and context iterator (`InitContextIterator`,
+        `MoreShapeInContext`, `ContextualShape`, `StatusOnShape`, `NextShapeInContext`), and `BRepCheck.Print(status,
+        TextWriter)`, which writes OCCT's names. Its own map (`theMap`) uses TopTools_ShapeMapHasher. The contextual
+        dump takes the one context IsSame the parent (a result has at most one per IsSame shape), so the order of the
+        contexts doesn't change the output, and `-parallel` prints what serial does. `-short` prints only "This shape
+        has faulty shapes". An exception out of the analyzer's constructor is printed as "checkshape exception : " and
+        its message, which is the port's text, not OCCT's `what()`. `computetolerance` uses `BRepCheck_Edge.Tolerance`.
+      - 3K and later: the GTests of BRepBuilderAPI and the algorithms that check their results with
+        BRepCheck_Analyzer can be ported as their makers come.
+
+## Phase 3: unit 3L2a, Draw-lite checks
+
+The checking commands of Draw in Draw-lite (tests/OcctNet.DrawLite), the first half of 3L2: BRepTest_CheckCommands'
+checkshape, checksection and computetolerance; BRepTest_BasicCommands' bounding, isbbinterf, gbounding and getcoords;
+BOPTest_LowCommands' bclassify and b2dclassify; GeomliteTest's point; Draw_BasicCommands' dchrono, chrono and dlog
+(no-ops until now). Each family is a new file, registered in DrawBuiltins. Numbers from 3551 are renumbered on merge.
+
+437. **The command log.** Draw_Interpretor's CommandCmd, when logging is on (`dlog on` in OCCT's `_run_test`), writes
+      each C++ command's words (each followed by a space) and, after the command, its result when it isn't empty (an
+      error's message included); `dlog` and `decho` are left out. Draw-lite now does the same in `DrawCxx.Add` when
+      `DrawInterpreter.DoLog` is set, and `DrawCorpus.RunAndCheck` sets it, so a corpus log has what DRAWEXE's has:
+      checkshape's verdict and faulty shapes reach the log, where parse.rules and the cases' REQUIRED and TODO lines
+      judge them (before, a command's result never reached the log). `dlog on|off|reset|get|add|status` work: the
+      log is the interpreter's output, and `get` returns it since the last `reset` when the output is a StringWriter.
+      Draw-lite has one stream, so `dlog off` stops the words and results but not what commands print themselves.
+438. **checkshape is ported as written**: the contextual dump (`Print`, `PrintSub`), the structural dump
+      (`GetProblemShapes`, `GetProblemSub`, the table of counts, the compounds `prefix_v` ... `prefix_o`), `-top`,
+      `-short`, `-parallel` and `-exact` over `new BRepCheck_Analyzer(S, !top, parallel, exact)`. Draw's file statics
+      (`theMap` with TopTools_ShapeMapHasher, `nbfaulty`, `lfaulty`, `checkfaultyname` "faulty_") are the state of one
+      dump; `lfaulty` keeps names and shapes (FindNamed compares with IsSame). The faulty shapes are bound with
+      `SetShape` in the current frame, as DBRep::Set. `Result(sub)` is looked up with the sub-shape as TopExp_Explorer
+      or TopoDS_Iterator gives it from the checked shape (decision 430); the dump takes the one context IsSame the
+      parent, so `-parallel` prints the serial text. What OCC_CATCH_SIGNALS and `catch (Standard_Failure)` catch is
+      caught (Standard_Failure and the .NET stand-ins for signals, as in the analyzer, decision 432) and printed as
+      "checkshape exception : " with the failure's message, which is the port's text, not OCCT's `what()` (the .NET
+      type's name for a stand-in). The corpus confirms the dump: heal/checkshape/bug32448_1 requires "Faulty shapes
+      in variables faulty_1 to faulty_88" from `checkshape -exact -parallel` on the dataset's bug27814.brep, and gets
+      it.
+439. **checksection** names the vertices met an odd number of times `alone_1`, ... in the order they were first
+      met. OCCT's map iterates in the order of the TShapes' addresses, which no run reproduces (occt-issues.md); the
+      count and the set are OCCT's. `-r` with no value compares with 0 (OCCT reads a null pointer).
+440. **computetolerance** prints `BRepCheck_Edge.Tolerance()` at precision 6 for each distinct edge, with OCCT's
+      text. Where OCCT prints the TShape's address (`(void*)`, 16 upper-case hex digits with MSVC), the port prints
+      the TShape's `RuntimeHelpers.GetHashCode` in the same form: the same for one TShape during a run, not an address.
+441. **bounding** parses as OCCT (options case-insensitive, `-save` and six names, the box given by six reals read
+      as `TCollection_AsciiString::IsRealValue` reads them: a prefix that strtod converts), prints with Draw's
+      `%.17g`, and binds `-save`'s Draw numbers. Its errors go to Message::SendFail (the output). Two options need code
+      that isn't ported and fail with "bounding ... is not ported yet": `-shape` makes the box with
+      BRepPrimAPI_MakeBox (unit 3M; a void box binds a null shape, as OCCT, without it) and `-dumpJson` needs Bnd_Box's
+      and Bnd_OBB's DumpJson. Draw_Box (the drawn box) is left out. The port's Bnd_Box mutators are internal, so the
+      command uses the functional forms (`Bnd_Box.Void().Added(p)`). `isbbinterf`, `gbounding` (BndLib over a
+      DrawTrSurf curve, 2D curve or surface) and `getcoords` come with it.
+442. **Classification.** `bclassify` (BRepClass3d_SolidClassifier, tolerance 1e-7 by default) and `b2dclassify`
+      (BRepClass_FaceClassifier with the box and gap options) print OCCT's states; a point name that isn't a point of
+      the right dimension leaves Draw's default point ((8, 9, 10), (8, 9)), as DrawTrSurf::GetPoint does.
+      GeomliteTest's `point name x y [z]` binds a DrawTrSurf point. Not here: `b2dclassifx` (IntTools_FClass2d, TKBO),
+      `bhaspc` (BOPTools_AlgoTools2D) and `checkdiff`, whose BRepAlgo::IsValid (TKBool) calls BRepTools::Update and
+      BRepLib::SameParameter on the result's edges in place: it needs BRepAlgo and a copy for write (decision 417).
+443. **dchrono and chrono** bind a Draw_Chronometer (`DrawChronometer`, type "chronometer") whose OSD_Timer is a
+      Stopwatch and the process's CPU times (OSD_Chronometer's default, not the thread's), and print OSD_Timer::Show at
+      precision 12 ("Elapsed time: h Hours m Minutes s Seconds", then the CPU user and system times), so the corpus's
+      timing regexps match. `-thread` and `-process` stop and reset the timer as OCCT does but keep measuring the
+      process.
+444. **Tests.**
+      - Draw-lite (DrawCheckCommandsTests, 12 tests): checkshape's three styles on data/occ's solid.brep and Top.brep
+        (the one invalid file: a self-intersecting wire), the faulty shapes bound, -parallel, -short, -top, usage and
+        errors; checksection with and without -r on a face and an edge; computetolerance's format; bounding's
+        outputs, -save, the explicit box, OBB, its error messages and the options not ported; void boxes;
+        isbbinterf, gbounding, getcoords; bclassify, b2dclassify and point with their errors; dchrono's text and the
+        harness's regexp on it; the command log (`dlog`).
+      - Oracle (`DrawLiteChecksOracleTests`): both sides read the same file (native OCCT's F1 copy of it).
+        - data/occ's 42 files: checkshape with and without -top, -parallel, -short and the structural dump against
+          BRepCheck_Analyzer::IsValid (336 verdicts); bounding with nine option sets against BRepBndLib's Add,
+          AddOptimal and AddOBB (378 boxes, 3,780 values, all bit-identical); bclassify on up to four solids of each
+          file at 40 points each (in the box enlarged by a tenth and at its corners; tolerances 1e-7, 1e-3 and 0.1)
+          against BRepClass3d_SolidClassifier (2,240 points). No disagreement.
+        - the test dataset: 2,320 of its 2,369 files (the others aren't shapes, are over 2 MB or have more than
+          200,000 sub-shape occurrences): 2,320 checkshape verdicts, 6,960 boxes (plain, -optimal, -obb; 62,517 values,
+          all bit-identical; 4 -optimal boxes throw Geom_UndefinedValue on both sides, which bounding reports as Draw
+          does), 5,000 bclassify points. No disagreement; 189 s.
+        - Reading the original file natively and its F1 copy in the port gave 13 OBB values on Top.brep
+          (`-obb -noTriangulation`) that differed in the last bits: the two native shapes aren't bit-identical, so the
+          comparison reads the same file on both sides.
+      - Corpus (`DrawCorpusTests.Runnable_cases_run_and_OCCTs_log_check_judges_them`, which now reports before and
+        after 3L2a): runnable cases 23 before, 380 after. Before: 8 OK, 11 FAILED, 4 SKIPPED. After: 13 OK, 1 BAD
+        (lowalgos/classifier/bug538, OCCT's own TODO), 1 IMPROVEMENT (boolean/gdml_private/B5: its data file is
+        missing, and its TODO expects the exception that follows), 350 SKIPPED (data files the public dataset lacks:
+        322 boolean/gdml_private, 18 heal/checkshape, 1 heal/reshape, 4 lowalgos/classifier, 5 v3d/bugs), 15 FAILED, all on
+        commands Draw-lite lacks inside sourced or conditional code (`box`, `vertex`, `line`, `polyline`, `circle`,
+        `psphere`, `pcylinder`, `vglinfo`) or on `getsourcefile`; none on a port bug. The new OK cases:
+        heal/checkshape/bug27814_1 (serial and -parallel give the same text), bug32448_1 (the 88 faulty shapes),
+        lowalgos/classifier/buc60609 and bug23849_2 (b2dclassify), demo/draw/binpersist_2 (bounding, checkshape).
+445. **For later units.**
+      - 3L2 (rest): `distmini` (BRepExtrema, unit 3K) and the primitives (unit 3M) go in new files registered in
+        DrawBuiltins, and in `DrawCorpusTests`' lists of a unit's commands. With BRepPrimAPI_MakeBox, `bounding -shape`
+        makes its box (ConvertBndToShape in BRepTestBoundingCommands). checkshape, bounding and the classifiers are
+        ready for the primitives' cases.
+      - The command log is on in corpus runs: a new command's result is logged, so its text must be Draw's.
+
+## Phase 3: unit 3K, distances and makers
+
+BRepExtrema (all of it: DistShapeShape, DistanceSS, SolutionElem, SupportType, UnCompatibleShape, ExtPC, ExtPF, ExtCC,
+ExtCF, ExtFF, Poly, ElementFilter, TriangleSet, OverlapTool, SelfIntersection, ShapeProximity, ProximityValueTool,
+ProximityDistTool) and BRepBuilderAPI without the sewing classes and MakeShapeOnMesh (Command, MakeShape, MakeVertex,
+MakeEdge, MakeEdge2d, MakePolygon, MakeWire, MakeFace, MakeShell, MakeSolid, ModifyShape, Transform, GTransform, Copy,
+NurbsConvert, Collect, FindPlane, the enums and BRepBuilderAPI.cxx's statics), in OcctNet.ModelingAlgorithms (decision 280). BRepExtrema was written in a forked worktree, reviewed and merged. Numbers from 3101 are renumbered on merge.
+
+446. **BRepExtrema's classes are public working objects** (decision 21) with OCCT's API: DistShapeShape, DistanceSS,
+      the Ext tools (ExtPC, ExtPF, ExtCC, ExtCF, ExtFF), TriangleSet, OverlapTool, SelfIntersection, ShapeProximity,
+      ProximityValueTool, ProximityDistTool, ElementFilter and BRepExtrema_VertexInspector; BRepExtrema_Poly is a
+      static class. OCCT uses the Ext tools by value, but they hold Extrema state and adaptors, so they are sealed
+      classes. `BRepExtrema_SolutionElem` has no mutators and is a readonly struct with field equality (`default` is
+      OCCT's empty constructor); `BRepExtrema_SupportType` is an enum; `BRepExtrema_UnCompatibleShape` derives from
+      Standard_DomainError. OCCT's adaptor handles copied from locals (`new BRepAdaptor_Curve(Curv)`) are the locals
+      themselves (decision 394).
+447. **The thread count is the machine's.** OCCT splits DistShapeShape's work into tasks by
+      `OSD_ThreadPool::DefaultPool()->NbThreads()` (one per logical processor) in single-threaded mode too, and the
+      split decides which pairs of sub-shapes each task measures (each task stops early on its own best distance) and
+      the order of the solutions. The port takes `Environment.ProcessorCount`, as GeomLib_CheckCurveOnSurface does, so
+      on the same machine it measures and orders as native OCCT (oracle: every value bit-identical, solutions in
+      order). `OSD_Parallel::For(..., !myIsMultiThread)` is `Parallel.For` or a plain loop; the functors are private
+      sealed classes with an `Invoke(int)`; SolidTreatment's atomics are volatile fields copied back after the loop, its
+      mutex a `Lock`. In multi-threaded mode the inner solutions depend on which task finds a point inside first (and
+      how many tasks do before the others see the flag), on both sides; the oracle checks those as valid rather than
+      equal. `std::stable_sort` is LINQ's stable `OrderBy`.
+448. **Supports and frozen inputs.** DistShapeShape and DistanceSS only read their shapes (and the Proximity tools
+      only their meshes). The supports handed out are the inputs' own sub-shapes (TopExp maps with
+      TopTools_ShapeMapHasher), except where DistanceSS trims an infinite edge or face facing a finite shape: the
+      trimmed copy (`BRepBuilderAPI_MakeEdge(Geom_TrimmedCurve)`, `BRepBuilderAPI_MakeFace(RectangularTrimmedSurface,
+      tol)` in OCCT) is a public support, so it is built with the maker's freezing form. The fork wrote
+      them with the BRepLib makers BRepBuilderAPI wraps; since the merge they are `BRepBuilderAPI_MakeEdge(...).Edge()`
+      and `BRepBuilderAPI_MakeFace(...).Face()`, and the local vertices of the C0 paths, never handed out,
+      `BRepBuilderAPI_MakeVertex(...).InternalVertex()`.
+449. **DistanceSS** is a public sealed class computing in its constructor. `Seq1Value()`/`Seq2Value()` return
+      `IBentoList` copies; DistShapeShape reads the sequences through internal `InternalSeq1Value()`/`InternalSeq2Value()`
+      and copies them as OCCT does. The default deflection is the literal 1e-7 (`Precision::Confusion()` isn't a C#
+      constant). OCCT's static helpers (TRI_SOLUTION, MIN_SOLUTION, TRIM_INFINIT_EDGE/FACE, PERFORM_C0, isOnBoundary)
+      are private statics; their `bool&`/`TopoDS_Edge&` outputs are `ref` (read or left as the caller set them) and
+      TRIM_INFINIT_FACE's flag is `out`. `double arrU[8]` is a stack span (zeroed, see occt-issues).
+450. **Signatures.** Outputs written unconditionally are `out` (ParOnEdgeS1/2, ParOnFaceS1/2, SolutionElem's
+      EdgeParameter/FaceParameter, the Ext tools' Parameter and TrimmedSquareDistances, TriangleSet.GetVertices and
+      GetVtxIndices, the proximity points and statuses); `BRepExtrema_Poly.Distance(S1, S2, ref P1, ref P2, out dist)`
+      leaves the points unchanged when it fails, as OCCT; `BRepExtrema_ProximityValueTool.Perform(ref theTolerance)`
+      writes it only when done. `Dump(TextWriter)` writes OCCT's text with reals at the stream's default precision
+      (`Standard_Stream.FormatReal(x, 6)`). DistShapeShape's obsolete flag and algorithm are kept unread with CS0414
+      suppressed (as decision 392).
+451. **The mesh tools over the ported BVH.** `BRepExtrema_TriangleSet` derives from
+      `BVH_PrimitiveSet<double, NCollection_Vec3<double>>` (OCCT's BVH_PrimitiveSet3d) with OCCT's linear builder; OCCT's
+      BVH typedefs are written out (`BVH_Vec3d` is a file-level alias). `GetVertices()` returns the set's own vector, a
+      working object's array as OCCT's const reference. Its triangle map is an `NCollection_DataMap<int, int>` (no
+      `ReSize`). `Init` builds the BVH (OCCT's `Standard_ASSERT_RETURN(!BVH().IsNull())`). `BRepExtrema_OverlapTool`
+      derives from `BVH_PairTraverse<double, Vec3d, double>` (OCCT's set-less form) and traverses the sets' trees;
+      its `RejectNode` writes a metric of 0 where OCCT leaves it unwritten. `BRepExtrema_ProximityDistTool` derives from
+      `BVH_Distance<double, Vec3d, Vec3d, BRepExtrema_TriangleSet>`; its `ComputeDistance` hides BVH_Distance's
+      (`protected new`), as OCCT's does; `PrjState` is a readonly struct. `BRepExtrema_ElementFilter` is a class with a
+      virtual `PreCheckElements`, which SelfIntersection overrides publicly (OCCT's override is protected; C# can't
+      narrow it). `BRepExtrema_VertexInspector` is a sealed class implementing `INCollection_CellFilter_Inspector<int,
+      gp_XYZ>` (the filter's `Inspect` takes it by `ref`). Standard_ASSERT_RAISE throws Standard_ProgramError, as
+      OCCT's release build does. The prism's fixed arrays are small heap arrays (a struct with arrays), C arrays of
+      vectors are stack spans or collection expressions, `DBL_EPSILON` a constant.
+452. **Tests.**
+      - Ported GTest: BRepExtrema_DistShapeShape (3), with BRepBuilderAPI's makers; the edges whose 3D curve OCCT
+        removes are made with `InternalEdge()` and frozen after.
+      - Unit tests (32 with the GTest): vertex/vertex, vertex/edge (foot inside and beyond the end), vertex/face,
+        skew and parallel edges, two equidistant edges, edge/face above and through, parallel faces, inner solutions
+        in a box, two boxes single- and multi-threaded with inputs unchanged (ShapeSnapshot), located shapes,
+        deflection, an infinite line (trimmed, frozen support), errors and Dump, each Ext tool, DistanceSS's box
+        rejection; TriangleSet indices with an edge polygon, ShapeProximity overlap (tolerance and exact), proximity
+        values of edges and faces with refinement, SelfIntersection exact and with tolerance, BRepExtrema_Poly,
+        orientations; and four pinned OCCT issues.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepExtrema`): BRepExtrema_DistShapeShape on 800 pairs of the
+        ClassificationScenes (shapes, vertices, edges, faces against each other, points in and around solids,
+        infinite lines and planes): 641 computations, 667 solutions (84 inner), 14,821 values all bit-identical, 52
+        trimmed supports byte-identical as BRep text, 43 multi-threaded inner solutions checked as valid; and on 160
+        pairs of random native shapes (primitives, sweeps, Booleans, fillets, lofts) read by both sides from native
+        OCCT's file, placed apart or overlapping: 3,907 values, all bit-identical. Each run draws the deflection, the
+        threading mode and the obsolete flag and algorithm. The proximity, overlap and self-intersection tools have no
+        native binding and are unit-tested.
+453. **For later units.**
+      - 3L2 (`distmini name S1 S2 [deflection] [-parallel]`, BRepTest_ExtremaCommands.cxx): LoadS1, LoadS2,
+        SetDeflection (default Precision::Confusion()), SetMultiThread, Perform with a Draw progress indicator; if
+        done, prints `"distmini" command returns:` then binds the number `name_val` (Value) and, per solution, a
+        vertex at PointOnShape1 (`BRepLib_MakeVertex`) when Value <= 1e-9, else the edge `BRepLib_MakeEdge(P1, P2)`,
+        named `name` for the first and `name<i>` after, printing each name, then `Output is complete.`; otherwise
+        `problem: no distance is found`. The Dump is only in OCCT_DEBUG builds. The solutions' order is OCCT's when the
+        processor count matches native DRAWEXE's (3102), so the names bind the same edges. The same file has
+        `proximity` (BRepExtrema_ShapeProximity, `-tol`/`-value`/`-profile`) and `selfintersection` (OCCT's
+        BRepExtrema_SelfIntersection), both ported here.
+454. **BRepBuilderAPI_MakeShape publishes; OCCT's virtuals are internal** (design 4.2, as decision 358's ReShape).
+      - `Shape()`, `Generated(S)` and `Modified(S)` are public and non-virtual: `Shape()` freezes the result graph, the
+        lists are new `IBentoList`s of frozen shapes. OCCT's virtuals are `internal virtual InternalShape()`,
+        `InternalGenerated(S)` and `InternalModified(S)` (the latter two return the algorithm's own `myGenerated`, as
+        OCCT's references), which derived algorithms of later phases override and ported code reads (BRepBuilderAPI_Collect
+        does). `IsDeleted` stays public virtual, `Build(Message_ProgressRange = default)` public virtual,
+        `BRepBuilderAPI_Command.IsDone()` public virtual (the makers override it with BRepLib's); `Check`, `Done` and
+        `NotDone` as BRepLib_Command (decision 414). Both classes are abstract with protected constructors.
+      - The class implements `BRepTools_History.IAlgorithm` (decision 345) explicitly, through the public, freezing
+        forms, so `new BRepTools_History(arguments, maker)` lists only frozen shapes.
+      - OCCT's conversion operators are explicit operators calling the freezing accessors (decision 185).
+455. **The makers wrap BRepLib's and freeze once** (3I's note, decision 428). Each `BRepBuilderAPI_Make*` holds its
+      `BRepLib_Make*` and, after every constructor, `Init`, `Add` and `Close`, takes BRepLib's result unfrozen
+      (`InternalShape()`; a private `TakeResult` is OCCT's repeated `if (my.IsDone()) { Done(); myShape = my.Shape(); }`).
+      The result is frozen by `Shape()` and the typed accessors (`Vertex`, `Edge`, `Vertex1`/`2`, `Wire`, `Face`,
+      `Shell`, `Solid`, `FirstVertex`/`LastVertex`, MakeWire's `Edge`/`Vertex`), which call BRepLib's freezing forms;
+      each has an internal twin (`InternalEdge`, `InternalFace`, ...) for ported code (BRepExtrema's local vertices, 3M).
+      An `Add` or `Close` after a public read goes through BRepLib's `UnfreezeResult` (decision 414), so the shape
+      handed out never changes. MakePolygon's `Add(gp_Pnt)` tests OCCT's `LastVertex()` with `InternalLastVertex()`, so
+      adding points doesn't freeze the polygon being built. Default constructors take no result, as OCCT's `= default`.
+      The error enums have OCCT's (and BRepLib's) order; `Error()` maps them with OCCT's switches.
+456. **`Modified` of MakeWire and MakeFace answers the copies of frozen inputs** (port addition, 3I's note). OCCT's
+      makers don't override Modified (empty): they update the caller's vertices and edges in place. The port's
+      BRepLib makers update copies of them when they are frozen (decision 417) and record the replacements in
+      `InternalHistory()`; BRepBuilderAPI_MakeWire and MakeFace override `InternalModified` to answer that history's
+      `Modified(S)` (empty when nothing was copied, as in OCCT). `IsDeleted` stays false: a copy isn't a deletion.
+457. **The modifications** (ModifyShape, Transform, GTransform, Copy, NurbsConvert) are public working objects.
+      - The modifier is a protected `BRepTools_Modifier` (a class; OCCT holds it by value). Results are read with its
+        `InternalModifiedShape` (decision 347) and published by `Shape()` and `ModifiedShape(S)`, which freezes the image
+        it returns (OCCT's virtual is `internal virtual InternalModifiedShape`). The protected `DoModif` overloads,
+        `myInitialShape` and `myModification` are OCCT's. A null shape throws `Standard_NullObject` from DoModif, as
+        OCCT does.
+      - **Transform**: `Perform` takes the location path (`Moved`, sharing the input's frozen TShapes) or the modifier;
+        OCCT's uninitialised `myUseModif` (before the first Perform) is false.
+      - **NurbsConvert**: `CorrectVertexTol` raises the tolerance of the vertices the modifier made (unfrozen until
+        `Shape()`), and replaces the input's own frozen vertices by new ones through a `BRepTools_ReShape` read with
+        `InternalApply`/`InternalValue`; the input is never written. `GetUpdatedEdges` is the modification's internal
+        list (decision 348). This replaces the mirror in the 3B and 3X oracle tests.
+      - **GTransform**: the NURBS conversion's result is an intermediate, read with `InternalShape()`; its history goes
+        into a `BRepBuilderAPI_Collect` through the internal lists. OCCT's `Modified` copies each image list into a
+        local it never reads and returns the list the last base `Modified` call filled: the image of the last converted
+        shape. Kept (with a comment): for a NurbsConvert, which maps each shape to one image, that is the right answer.
+458. **A BRepBuilderAPI_Copy (and any ModifyShape) reused on a shape it modified before returns its first result** (OCCT,
+      occt-issues.md). `Perform` clears the done flag "to force the copy", but `BRepTools_Modifier::Init` doesn't clear
+      its map and `Rebuild` returns the images it already has: only the vertices are made again, so `ModifiedShape` of
+      a vertex then names a vertex that isn't in the result. The port does the same (oracle: bit-identical, including
+      those vertex images, which are in neither result); Draw's `tcopy` and t-commands reuse one framework, as Draw does.
+      The first result has been published (frozen) by then, and the modifier sets the continuity of each rebuilt edge
+      between two faces again: `BRepTools_Modifier.Perform` now skips that write on a frozen edge that already has the
+      continuity (`// OCCT.NET: frozen`; it threw `TopoDS_LockedShape` on a G1 edge before).
+459. **BRepBuilderAPI_Collect** is a sealed public working object. `Modification()` and `Generated()` return its own
+      maps (OCCT's const references). Its static helpers are private statics; OCCT's never-used `myInitialShape` and
+      `myDeleted` are left out. It iterates its maps in the port's hash order (decision 18): `BuildBack` binds each image
+      to its origin, so only an image listed under two origins depends on it.
+460. **BRepBuilderAPI_FindPlane** is a sealed public class; `Plane()` returns the plane frozen (null when none is found),
+      as `BRepLib_FindSurface.Surface()` (decision 426). OCCT's `DynamicType() == STANDARD_TYPE(...)` tests are exact
+      type tests (`GetType() == typeof(...)`). It only reads its shape.
+461. **The package statics** `BRepBuilderAPI.Plane()` and `Precision()` are BRepLib's (decision 415): public getters,
+      internal setters.
+462. **Not ported in 3K**: BRepBuilderAPI_Sewing, BRepBuilderAPI_FastSewing and their helpers
+      (BRepBuilderAPI_VertexInspector, BRepBuilderAPI_BndBoxTreeSelector, BRepBuilderAPI_CellFilter), and
+      BRepBuilderAPI_MakeShapeOnMesh. BRepBuilderAPI_Collect is ported (GTransform needs it).
+463. **Tests (BRepBuilderAPI).**
+      - Ported GTests (21): BRepBuilderAPI_Copy (5), MakeEdge (6), MakeFace (4), MakeWire (1), Transform (5).
+        BRepPrimAPI_MakeBox (3M) is `TestShapes.Box`, frozen; the BRepCheck_Analyzer checks (3J, ported in parallel)
+        are `TODO(3J)`.
+      - Unit tests (17): freezing and the internal accessors, errors of every maker, Init and Add after a public read,
+        polygons, Modified of MakeWire and MakeFace with frozen inputs (and the history through IAlgorithm), shells and
+        solids, Transform as a location and as a modifier, scaling, Copy (with OCCT's reuse issue pinned),
+        NurbsConvert of a cylinder face, GTransform of a circle, Collect, FindPlane.
+      - The GTests that waited for the makers now use them: TopoDS_Builder, TopoDS_Iterator, TopoDS_TShape/Edge,
+        BRep_Tool, BRepTools_ReShape and BRepAdaptor_CompCurve (with GC_MakeArcOfCircle), in OcctNet.ModelingData.Tests,
+        which now references OcctNet.ModelingAlgorithms; BRepGProp (MakeEdge) and BRepExtrema in
+        OcctNet.ModelingAlgorithms.Tests. Shapes the tests change with BRep_Builder are read through the makers'
+        internal accessors. The boxes, cylinders and spheres wait for 3M.
+      - Draw-lite: the t-commands run `BRepBuilderAPI_Transform` and `tcopy` one `BRepBuilderAPI_Copy` for all its pairs,
+        as Draw does (decision 408's mirror is gone).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepBuilderAPI`), against native OCCT:
+        - the makers on 3I's random inputs (`BRepBuilderAPIMakersOracleTests`, BRepLibMakersOracleTests with the port's
+          BRepBuilderAPI makers), through BRep text: vertices and edges 585 files (535 byte-identical, 50 equal with the
+          Free column masked), wires and polygons 400 (240 + 160), faces on surfaces 490 (all byte-identical), faces from
+          planar wires 300 (all masked), shells 120 (byte-identical), solids of six-face boxes 60 (all masked): 1,955
+          files, 1,385 byte-identical and 570 equal with the Free column masked (open question 1); 75 failed
+          constructions with equal errors;
+        - Transform (one framework, two shapes each, random scalings, mirrors and rigid motions, with and without copies
+          of geometry and meshes; 12 of 96 results moved), Copy (one framework: a shape, the same again, another),
+          GTransform (identity or affine, on the global properties scenes and B-spline faces) on twin scenes, and the
+          three on 60 random native shapes read from native OCCT's files (Copy twice through one framework): results
+          before and after publication, every sub-shape's ModifiedShape and Modified, 4,814,513 values, all
+          bit-identical. One meshed loft's GTransform has faces without surfaces on both sides (occt-issues.md), whose
+          geometry isn't compared.
+        - 3B's NURBS conversion test runs the real BRepBuilderAPI_NurbsConvert (530,149 values bit-identical); Draw-lite's
+          transformation commands against native BRepBuilderAPI_Transform and Copy stay bit-identical (4,800 values).
+464. **For later units.**
+      - 3M (BRepPrimAPI, BRepSweep): derive the API classes from `BRepBuilderAPI_MakeShape` and override
+        `InternalShape`/`Build`, `InternalGenerated`, `InternalModified` and `IsDeleted` (OCCT's virtuals); build on
+        `InternalShape()`, `InternalFace()` and the like. A maker's public `Shape()` freezes once, at the end.
+      - Every later `BRepBuilderAPI_MakeShape` subclass (Booleans, offsets, fillets) follows 3109: public results freeze;
+        ported code reads the internal forms.
+      - 3L2: `distmini` (3108). `checksection` needs only TopExp and a shape map. `bounding` (BRepTest_BasicCommands.cxx,
+        BoundBox) is BRepBndLib's Add, AddOptimal and AddOBB (3G), but its `-shape` output is a BRepPrimAPI_MakeBox
+        (3M). `bclassify` (BOPTest_LowCommands.cxx) is BRepClass3d_SolidClassifier (3G). Draw's `gtransform` and
+        `nurbsconvert` (BRepTest_BasicCommands.cxx) can now run BRepBuilderAPI_GTransform and NurbsConvert. The GTests'
+        `TODO(3J)` checks can be restored once BRepCheck_Analyzer merges.
+
+## Phase 3: unit 3M, primitives
+
+TKPrim in OcctNet.ModelingAlgorithms (decision 280; phase3-plan.md's 3M row asks for no other assembly): BRepPrim
+(Builder, Direction, GWedge, Wedge, OneAxis, Revolution, Cylinder, Cone, Sphere, Torus, FaceBuilder), BRepPrimAPI
+(MakeBox, MakeWedge, MakeOneAxis, MakeCylinder, MakeCone, MakeSphere, MakeTorus, MakeRevolution, MakeHalfSpace,
+MakeSweep, MakePrism, MakeRevol), BRepSweep (Builder, Tool, Iterator, NumLinearRegularSweep, Trsf, Translation,
+Rotation, Prism, Revol), Sweep (NumShape, NumShapeTool, NumShapeIterator) and BRepPreviewAPI_MakeBox; and Draw-lite's
+primitive and sweep commands. BRepSweep with MakeSweep, MakePrism and MakeRevol, the GTest swaps and Draw-lite were
+written in forked worktrees, reviewed and merged. Numbers from 3201 are renumbered on merge.
+
+465. **BRepPrim, BRepSweep and Sweep are internal; the makers are public.** OCCT's BRepPrim and BRepSweep algorithms
+      hand out the shapes they are still building (BRepPrim_GWedge::Face, BRepPrim_OneAxis::LateralFace, BRepSweep's
+      Shape(S)) and, without copy, write into the generating shape, so callers go through BRepPrimAPI and
+      BRepPreviewAPI. The makers' accessors of their algorithm (`Wedge()`, `Cylinder()`, `Cone()`, `Sphere()`,
+      `Torus()`, `Revolution()`, `Prism()`, `Revol()`, and OCCT's `void* OneAxis()`, here an `internal abstract
+      BRepPrim_OneAxis OneAxis()`) are internal; BRepPrim_Direction is an internal enum. BRepPrim_Builder is a class
+      over a BRep_Builder (OCCT holds both by value); its `TopoDS_Shape&` arguments that it only writes through are `in`
+      (the TShape is shared) and its Make methods take `ref`. OCCT's arrays of shapes are filled with `new()` shapes
+      (`BRepPrim_GWedge.NewArray`). Sweep_NumShape is a struct (`new Sweep_NumShape()` is OCCT's TopAbs_SHAPE dummy);
+      the iterator and tool are classes. BRepSweep_Builder makes typed shapes in a local and assigns them to OCCT's
+      `TopoDS_Shape&` argument. BRepSweep_Rotation.SplitShell reads `BRepTools_Quilt.InternalShells()`.
+466. **Publication** (design 4.2, decisions 454 and 464). The makers derive from BRepBuilderAPI_MakeShape and override
+      `Build` (public), and `InternalGenerated` and `IsDeleted` where OCCT overrides Generated and IsDeleted.
+      - `Shape()`, `Shell()`, `Solid()`, `Face()` (the one-axis lateral face), the box's six faces, `FirstShape()`,
+        `LastShape()`, `FirstShape(S)`, `LastShape(S)`, MakeHalfSpace's `Solid()` and MakeRevol's `Degenerated()` freeze
+        what they return; each has an internal twin (`InternalShell`, `InternalSolid`, `InternalFace`,
+        `InternalFirstShape`, ..., `InternalDegenerated`) for ported code. OCCT's conversion operators are explicit
+        operators calling the freezing forms.
+      - Where OCCT remakes the solid in `myShape` (`B.MakeSolid(TopoDS::Solid(myShape))`), the port makes it in a new
+        variable (decision 414). So, as in OCCT, each `Solid()` (and each `Build()` of the one-axis makers and
+        MakeWedge) makes a new solid TShape around the same shell; a published shell is added frozen. MakeBox's
+        `Shell()` stores the shell as the result, as OCCT: `Shape()` after `Shell()` is the shell.
+      - BRepPrimAPI_MakeOneAxis's constructor is `private protected` (its `OneAxis()` is internal, so it can't be
+        derived outside the assembly anyway); so is BRepPrimAPI_MakeSweep's, over internal abstract
+        `InternalFirstShape`/`InternalLastShape` (OCCT's pure virtuals).
+      - BRepPreviewAPI_MakeBox builds its vertex, edge and face with the BRepBuilderAPI makers' internal accessors and
+        publishes the result through `Shape()`.
+467. **A box's face is handed out once every face is built** (`// OCCT.NET`). OCCT's `BottomFace()` and the other
+      five return the wedge's face as built so far: its edges get their pcurves on the neighbouring faces later, in
+      place, when the shell (or another face) is built. A published face is frozen, so the port builds the whole shell
+      first (for a degenerated, flat box, which has no shell, all six faces) and then freezes the face. The face handed
+      out is the one OCCT's face becomes once the box is built; asked for before anything else, its BRep text has the
+      pcurves of every face and Free = 0 (it is in the shell), where native OCCT's has only its own pcurves and Free = 1
+      at that moment (the oracle compares native faces
+      after they are all built, in the port's order). The one-axis makers need nothing: OCCT's `Face()` builds the
+      whole primitive first.
+468. **Frozen generating shapes are copied for write** (design 4.6, decisions 416/417). OCCT's sweeps without copy
+      share the profile's sub-shapes and write into them: pcurves on the new faces, vertex parameters, continuities,
+      `BRepLib::BuildCurves3d` in MakePrism's and MakeRevol's `check`, and MakeRevol's UpdateInnerTolerances.
+      - When the profile's graph holds a frozen TShape, MakePrism and MakeRevol sweep `BRepTools.ExactCopyForWrite`
+        of it (a new overload also returns the original-to-copy map). After Build,
+        `BRepTools.KeepUnchangedIn(original, copy, copies, ref result, out history)` (internal, OcctNet.ModelingData)
+        gives back each copy left unchanged as the original, also inside the unfrozen result graph, and returns the map
+        from each copied TShape to the TShape that now stands for it.
+      - `Generated`, `IsDeleted`, `FirstShape(S)` and `LastShape(S)` map the caller's sub-shape to its copy before
+        asking BRepSweep, and the results back.
+      - So the result has native OCCT's structure (BRep text equal to native's with the Free column masked, open
+        question 1) and shares with the profile everything the sweep didn't change: a polygon face's prism shares all
+        the face's edges and vertices (planar walls store no pcurves); curved walls get changed copies of the edges.
+        The caller's profile is never written. An unfrozen profile from ported code is swept in place, as in OCCT.
+      - With Copy = true, BRepSweep copies the profile, as OCCT, and the result shares nothing with it.
+469. **BRepSweep_NumLinearRegularSweep.Shape writes Closed only when it changes** (`// OCCT.NET: frozen`). OCCT sets the
+      flag on the result's wires and shells on every call, FirstShape and LastShape after publication included, which
+      threw Standard_ImmutableObject on a published result.
+470. **MakeRevol's degenerated edges.** OCCT iterates an NCollection_DataMap of faces in the hash order of TShape
+      addresses, which decides which face keeps the original degenerated edge and which get copies; the port iterates
+      in binding order (decision 18). The oracle saw no difference. When KeepUnchangedIn gives back an original
+      profile edge that is itself degenerated, `Degenerated()` still names the copy (the histories are mapped back).
+471. **MakeHalfSpace shares the caller's face or shell**: the face goes into a new shell, the shell (reversed toward
+      the matter if needed) into a new solid; nothing of the caller's is written, so it needs no copy. The caller's face or shell
+      keeps the Free flag it was frozen with (design 4.4): 1 for a face made alone, where native OCCT clears it. Its extrema use BRepExtrema_DistShapeShape on a local vertex
+      read with `BRepBuilderAPI_MakeVertex.InternalVertex()`.
+472. **Smaller choices.** BRepPrimAPI_MakeRevolution passes GeomProjLib's projection of the meridian on, null when it
+      fails, as OCCT does (BRepPrim_Revolution then dereferences it). BRepPrim_Cone's infinite-cone constructor on axes
+      leaves OCCT's uninitialised radius at 0. BRepPrim_GWedge copies the vertices shared by a degenerated top in pairs,
+      a partner not built yet as a null vertex marked built, as OCCT.
+473. **Draw-lite.** BRepTest_PrimitiveCommands' `box` (plain, origin and size, `-min`, `-max`, `-size`, `-dir`,
+      `-xdir`, `-preview`), `wedge` (4, 7, 13 and 16 numbers), `pcylinder`, `pcone`, `psphere`, `ptorus`, and
+      BRepTest_TopologyCommands' `halfspace`, in BRepTestPrimitiveCommands.cs; BRepTest_SweepCommands' `prism` (copy,
+      infinite, semi-infinite) and `revol` (copy, "Revol not done") in BRepTestSweepCommands.cs; both registered in
+      DrawBuiltins. Each binds the maker's freezing accessor; a wrong word count returns 1 with no message, as Draw.
+      `[plane(ax2)]` is a bound DrawTrSurf plane. Draw records prism and revol history for `savehistory`, which
+      Draw-lite lacks. `pipe` and the other sweep commands (`evolved`, `pruled`, `gener`, `thrusections`, the `*sweep`
+      commands, `geompipe`, `middlepath`) wait for TKOffset. `bounding -shape` is OCCT's ConvertBndToShape:
+      BRepPrimAPI_MakeBox on the (oriented) box's axes, moved to its corner; a void box binds a null shape. Tests that
+      needed an unknown command now use `bcut`.
+474. **Tests.**
+      - Ported GTests: TKPrim's seven (BRepPrimAPI_MakeBox 6, MakeCone 6, MakeCylinder 5, MakePrism 1, MakeSphere 5,
+        MakeTorus 15, MakeWedge 5), the torus's known limitations (equal heights give an invalid shape) included. The
+        phase 3 GTests that used stand-ins now run on the real makers as OCCT's do: BRepBuilderAPI Copy (5) and
+        Transform (5), BRepClass3d_SolidClassifier (5), BRepGProp (6), BRep_Tool, TopExp, TopoDS_Iterator (3); newly
+        ported: BRepTools_Test (2 parallel reads), Bnd_BoundSortBox's BUC60729 and Bnd_OBB's OCC30704 (in
+        ModelingAlgorithms.Tests, since Foundation.Tests has no topology). BRepGProp's OCC49_CutShapeHasNoSymmetryAxis
+        waits for BRepAlgoAPI_Cut.
+      - Unit tests: primitives (33: box forms with negative sizes, Init, faces complete and shared, Solid and Shell
+        results, flat boxes; wedges as prismatoids with box, segment and point tops; cylinders, cones (apexes, errors),
+        sphere zones and wedges, tori whole, partial and as ring segments, revolutions of a line and an arc;
+        half-spaces on a face and on a shell, the caller's face unchanged; the preview box) and sweeps (17: prisms of
+        every shape type, finite and infinite, canonized or not; revolutions whole, partial, negative, touching or
+        crossing the axis; histories; frozen profiles unchanged and shared); Draw-lite (7).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepPrimAPI`) against native OCCT through BRep text:
+        - the primitive makers (`BRepPrimAPIPrimitivesOracleTests`) on 700 random cases over every constructor (boxes
+          with negative and flat sizes, wedges with ordinary, negative and degenerated tops, partial cylinders and
+          cones, apexes and invalid cones, sphere zones and wedges with negative angles, tori with crossing, inverted
+          and equal heights, half-spaces on faces and shells of boxes, cylinders and spheres) on placements native
+          gp_Ax2 holds to the bit: 3,007 files (shapes, shells, solids, faces), 2,823 byte-identical and 184 equal with
+          the Free column masked, 54 throws on both sides. The 184 are the box's BottomFace and TopFace asked for before
+          anything else (3203): the port's face is already in the shell (Free = 0), native OCCT's not yet. The
+          half-spaces' input faces and shells come from solids, so they are byte-identical;
+        - MakePrism: 474 files, 352 byte-identical and 122 equal with the Free column masked, 22,409 history values
+          (IsDeleted, Generated, FirstShape(S), LastShape(S) of every profile sub-shape, as indices and orientations in
+          the result) equal; MakeRevol: 443 files, 412 byte-identical and 31 masked, 26 invalid on both sides, 21,141
+          history values equal (profiles: vertices, lines, arcs, open and closed polygons, polygon faces, faces with
+          holes, disks, cylinder patches, shells, compounds, triangles with an edge on the axis; Copy and Canonize
+          drawn);
+        - Draw-lite (`DrawLitePrimitivesOracleTests`): the commands on random numbers against the native makers, 1,063
+          shapes, all byte-identical.
+      - Corpus (`DrawCorpusTests`, `Unit3MCommands`, before and after): runnable 380 → 395, OK 13 → 28, BAD 1 → 1
+        (lowalgos/classifier/bug538, OCCT's own TODO), FAILED 15 → 15, IMPROVEMENT 1 → 1, SKIPPED 350 → 350. The 15
+        FAILED cases stop on commands Draw-lite lacks inside sourced or conditional code (`bcut` 3, `vertex` 2,
+        `circle` 2, `polyline` 2, `vglinfo` 2, `line`, `blend`, `NewDocument`, `getsourcefile`); none on a port bug.
+        Most of the 2,868 `box` and 1,031 `pcylinder` cases need another command too: `bcut` (329 cases miss only it),
+        `thrusections` 248, `blend` 234, `bfuse` 185, `bcommon` 182, `bsection` 150.
+475. **For later units.**
+      - Booleans, fillets, offsets (phases 5 to 7): the GTests of TKBO, TKBool, TKFillet, TKOffset, TKShHealing and
+        TKMesh build their inputs with BRepPrimAPI and can be ported as they are; `bcut`, `bfuse`, `bcommon` and
+        `blend` are the corpus's next gates.
+      - Sweeps of frozen inputs (pipes, evolved, lofts): `ExactCopyForWrite` with the copy map, the operation, then
+        `KeepUnchangedIn`, with the histories mapped through the copy, as MakePrism and MakeRevol do.
+      - A maker that hands out pieces of a result it is still completing (as BRepPrim_GWedge's faces) builds the whole
+        before freezing a piece (3203).
+## Phase 3: unit 3L2b, Draw-lite construction and distances
+
+The rest of 3L2 that needs only what is ported (up to TKTopAlgo), in Draw-lite (tests/OcctNet.DrawLite), each family in
+a new file registered in DrawBuiltins: GeomliteTest's curves and surfaces (line, circle, ellipse, parabola, hyperbola,
+beziercurve, bsplinecurve, pbsplinecurve and their 2D forms, reverse, segment, setorigin, cvalue, 2dcvalue, coord,
+length, plane, cone, cylinder, sphere, torus, beziersurf, the bsplinesurf family, extsurf, revsurf, offset, trim,
+trimu, trimv, ureverse, vreverse, uiso, viso, svalue, sderivative, parameters, bounds); GeometryTest's gcarc and
+extrema; DrawTrSurf's translate, rotate, pmirror, lmirror, smirror, pscale and their 2D forms;
+BRepTest_ExtremaCommands (dist, distmini, proximity, selfintersect); BRepTest_CurveCommands (vertex, edge, mkedge,
+wire, polyline, polyvertex, mkcurve, mkoricurve, mkpoint, mk2dcurve, uisoedge, visoedge, profile);
+BRepTest_SurfaceCommands (mkface, mkshell, mksurface, mkplane, pcurve, encoderegularity, getedgeregularity,
+projponf); BRepTest_BasicCommands (nurbsconvert, deform, scalexyz, sameparameter, fsameparameter, updatetolerance,
+solidorientation, mkedgecurve, findplane, compare, issubshape, wexplo); `Draw_Files` for `getsourcefile`. The
+GeomliteTest commands were written in a forked worktree, reviewed and merged. Numbers from 3601 are renumbered on merge.
+
+476. **Geometry is frozen when bound** (as shapes, decision 407). `DrawTrSurf` (DrawTrSurf.cs) is DrawTrSurf's Set and
+      Get over `DrawGeometry`: `Set` freezes the curve or surface and binds it (a null one unbinds the name, as OCCT's
+      null drawable); the typed `Get*` answer by the geometry's type, as OCCT's down-casts of the drawable do. OCCT's
+      commands that change bound geometry in place (reverse, ureverse, vreverse, segment, setorigin, and DrawTrSurf's
+      transformations) bind the changed copy from the public API (`Reversed`, `UReversed`/`VReversed`, `Segmented`,
+      `WithOrigin`, `Transformed`) under the same name. As with decision 407, a shape built from the earlier geometry
+      keeps it, where in OCCT it would see the change.
+477. **GeomliteTest's and GeometryTest's commands are written as OCCT writes them**: the same argument counts (a
+      wrong count returns 1, a Tcl error with an empty message), curve names compared with `strcmp` and surface names
+      with `strcasecmp`, and constructor failures reported as CommandCmd reports them ("An exception was caught
+      Standard_ConstructionError: ..."). Where OCCT reads Tcl's null `argv[argc]` (extsurf with 5 words, revsurf with 8,
+      trim of a surface with 8, gcarc cir with 5) the port reads an empty word (0 for Draw::Atof, no point). `gp_Ax2(P,
+      N)` and `gp_Ax3`'s default frame make an X direction of (1, 0, -0); `dump` prints the `-0` as Draw does. OCCT's
+      quirks are kept and logged (occt-issues.md): setorigin of a 3D curve sets the origin and returns 1, 2dbeziercurve
+      divides by `n - 2`, gcarc returns 1 when it has made its curve (scripts call it in `catch`), pmirror and pscale
+      leave the point's coordinates in the list of names they print.
+478. **distmini and the extrema commands.** distmini is BRepTest_ExtremaCommands' code: LoadS1, LoadS2, SetDeflection
+      (default `Precision::Confusion()`), SetMultiThread, Perform; `name_val` is bound by `SetNumber` (Draw::Set of a
+      real), each solution as a `BRepLib_MakeVertex` (value at most 1e-9) or a `BRepLib_MakeEdge(P1, P2)` named `name`,
+      `name2`, ... The solutions come in OCCT's order on a machine with the native processor count (decision 447).
+      The Draw_ProgressIndicator is left out. `dist` (BRepExtrema_Poly), `proximity` and `selfintersect` need meshes
+      (incmesh, phase 4); they list the overlapping sub-shapes in ascending index order where OCCT iterates its
+      NCollection_DataMap in bucket order (decision 18); the names, made of the indices, are OCCT's. `-profile` times
+      with a Stopwatch.
+479. **The topology constructions use the makers' freezing forms**, as Draw binds their results; where OCCT writes into
+      a result before binding it, the makers' internal forms (decision 455): `uisoedge`/`visoedge` set the edge's
+      location and pcurve, `profile` builds the 3D curves of a profile on a non-planar face (BRepLib::BuildCurves3d)
+      in place. `vertex name P` with a name that isn't a point dereferences a null handle in OCCT; the port throws
+      Standard_NullObject, as do mksurface and pcurve where OCCT dereferences a null surface or pcurve. Message::SendFail
+      and std::cout write to the interpreter's output (decision 405).
+480. **In-place modifications run on a copy of the graph** (`DrawShapeCopy`). sameparameter, fsameparameter and
+      updatetolerance without a result name, encoderegularity and mkedgecurve change their shape in place in OCCT. The
+      port copies the shape TShape by TShape (once each, with the flags, every curve representation including polygons,
+      the triangulations, the vertex's point representations shared, and the children at their locations and
+      orientations), runs OCCT's in-place algorithm on the copy (BRepLib's internal forms, `IsMutableInput`) and binds
+      it to the name. The copy has the input's graph, so the result writes the same BRep text as OCCT's in-place
+      result. A first version used `BRepTools.CopyForWrite` (BRepTools_Modifier): its copy has other locations
+      (data/occ's MODERN_MVCooker_1.brep: 11 locations where the input has 16), so its text differed. With a result
+      name the commands use the reshaper forms, as OCCT. `solidorientation` binds the reoriented value, as OCCT.
+481. **Not here**: `precision` (sets BRepBuilderAPI's precision, a process-wide static that Draw-lite's parallel corpus
+      runs share); `range`, `etrim`, `transfert` and `addpcurve` (they change a bound edge in place; no runnable case
+      uses them); `quilt`, `sewing`, `fastsewing`, `continuity`, `mkoffset`, `bsplineprof`, `2dprofile`, `edgeintersector`
+      (unported packages); `halfspace`, `box` and the primitives (unit 3M); `triarea` and `incmesh` (phase 4); `fixshape`
+      (phase 7); DrawTrSurf's display commands (no viewer).
+482. **getsourcefile** is StandardCommands.tcl's procedure over the array `Draw_Files`, which Draw_Interpretor::Add fills
+      with each C++ command's `__FILE__` cut to its last four directories. `DrawSourceFiles` fills it for `pload` and
+      the commands of this unit; the commands of earlier units aren't listed yet. demo/draw/getsource passes.
+483. **lappend extends the lists it made** (TclList.Append). Draw-lite's variables hold strings, and lappend formatted the
+      whole list again on each call, so a list built element by element cost a quadratic time: OCCT's `_check_log` builds
+      the HTML log a line at a time, and lowalgos/extcs/circ_sph_inter (6,250 extrema, a log of some 20,000 lines) spent
+      19 minutes there. A list string written by `Make` or `Append` is now remembered with its elements (a growing list
+      that the strings appended to it share, the newest extending it in place); lappend on it formats only the new
+      elements and concatenates (one copy of the string). Values that aren't canonical take the former path, as Tcl
+      regenerates the string. The three extcs cases take 7 to 30 s; the corpus run went from 41 minutes to 4.
+      `pu`, `pd`, `pl` and `pr` (Draw's viewer panning, used in geometry/bsplinecurve's loops) are ignored as the other
+      viewer commands.
+484. **Tests.**
+      - Draw-lite: DrawGeometryCommandsTests (9) and DrawConstructionCommandsTests (13): each command's result, text
+        and errors, gcarc, length, extrema, the transformations, getsourcefile, lappend's canonical lists.
+      - Oracle (OcctNet.Oracle.Tests/DrawLite), against native OCCT with random arguments written with "R":
+        DrawLiteGeometryOracleTests: the curves and surfaces made as the C++ makes them, parameters, bounds and D0 to
+        D2, cvalue, 2dcvalue, svalue, sderivative and bounds: 131,947 values, all bit-identical (2D hyperbolas,
+        parabolas, Bezier curves, 2D offsets and GeomLib_Tool have no native binding). DrawLiteConstructionOracleTests:
+        distmini on data/occ's 15 files under 60 KB against points around them (three deflections, serial and
+        parallel), the next file and its first face: 1,052 values bit-identical, 182 solution shapes byte-identical as
+        BRep text; vertex, edge, polyline, wire, mkedge, mkface, mkshell and mkplane on 60 random cases: 480 shapes
+        (300 byte-identical, 180 equal with the Free column masked: frozen inputs, design 4.4); profile on 200 random
+        programs: 156 shapes byte-identical, 44 failing on both sides; scalexyz, deform, sameparameter, fsameparameter,
+        updatetolerance (with and without a result), encoderegularity and solidorientation on the 15 files: 185 shapes
+        byte-identical, and 3 in-place updatetolerance results equal but for vertex tolerances that OCCT writes in
+        address order (occt-issues.md).
+      - Corpus (`DrawCorpusTests`, before and after 3L2b, `Unit3L2bCommands`): runnable cases 380 before, 714 after.
+        Before: 13 OK, 1 BAD, 1 IMPROVEMENT, 350 SKIPPED, 15 FAILED. After: 327 OK, 7 BAD (OCCT's own TODOs:
+        heal/same_parameter/A9, lowalgos/classifier/bug538, mkface/after_extsurf_and_offset/C6 to C9, mkface/mkplane/A1),
+        1 IMPROVEMENT (boolean/gdml_private/B5, as before), 364 SKIPPED (data files the public dataset lacks), 15 FAILED:
+        13 demo/samples and v3d cases on commands of later units or of the viewer (box, prism, psphere, pcylinder, bcut,
+        bcommon, fixshape, vglinfo), and lowalgos/extss/bug29712_44, an OCCT test bug (it measures `extrema s1 s1` and
+        `extrema s2 s2`, each plane with itself, and expects the distance 10 between the two planes; DRAWEXE prints 0
+        as well). No failure on a port bug. demo/draw/getsource passes.
+485. **For later units.**
+      - 3M: the corpus's samples wait for the primitives (bottle, raytrace and snowflake for `prism`; anc101, cad and
+        penrose for `box`; logo2019 for `psphere`; xde for `pcylinder`).
+      - Phase 4: `incmesh` and `triarea` (157 cases miss only triarea, 21 only incmesh) unlock `dist`, `proximity` and
+        `selfintersect`.
+      - The cases that miss one command: thrusections (358), bcut (305), blend (187), bfuse (178), bcommon (169),
+        bsection (158), triarea (157), fixshape (81), prj (76), DT_ClosedSplit (59), DT_ToBspl (58), pipe (55).
+      - Draw_Files lists only `pload` and this unit's commands; a later unit can fill it for every command.

@@ -14,7 +14,7 @@ namespace Occt;
 /// <remarks>
 /// OCCT's class of static functions is an empty struct implementing the static members of
 /// <see cref="IApprox_LineTool{MultiLine}"/>, so that it can be the <c>LineTool</c> type argument of the generic
-/// algorithms (decisions 142 and 1602).
+/// algorithms (decisions 142 and 202).
 /// </remarks>
 public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
 {

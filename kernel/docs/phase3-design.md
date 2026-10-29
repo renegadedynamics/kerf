@@ -66,7 +66,7 @@ finds the edge's existing `BRep_GCurve` and calls `SetRange`, or replaces its pc
     its wire.
 - **Locked.** `BRep_Builder` throws `TopoDS_LockedShape` from all its update methods (32 checks) when the target is
   locked. `BOPAlgo_PaveFiller` switches itself to non-destructive mode when any argument is locked
-  (`BOPAlgo_PaveFiller_10.cxx:56`). `BRepTools::UpdateFaceUVPoints` skips locked edges. Only reading a file sets
+  (`BOPAlgo_PaveFiller_10.cxx:56`). `BRepTools::UpdateFaceUVPoints` stops at the first locked edge. Only reading a file sets
   Locked; BRepOffset clears it.
 - **Modified and Checked** are cache-validity bits:
   - `Add` and `Remove` set Modified, and setting Modified clears Checked.
@@ -161,8 +161,9 @@ BRepCheck_Shell, BRepClass3d, BRepGProp.
 
 - **Accessors are public:** `TShape()`, `Location()`, `Orientation()`, `ShapeType()`, `IsNull()`, `NbChildren()`,
   the flag getters (`Free()`, `Closed()`, ...), `IsPartner`, `IsSame` and `IsEqual`.
-- **OCCT's non-mutating forms are public:** `Located`, `Oriented`, `Moved`, `Reversed`, `Complemented`, `Composed`
-  and `EmptyCopied`.
+- **OCCT's non-mutating forms are public:** `Located`, `Oriented`, `Moved`, `Reversed`, `Complemented` and
+  `Composed`. `EmptyCopied` is internal (changed in unit 3A, decision 306): it creates an unfrozen TShape, which
+  nothing a caller holds may be (4.2), and only a builder can fill it.
 - **The mutators are `internal`**, under the rules for value types: `Location(loc)`, `Orientation(o)`, `Move`,
   `Reverse`, `Complement`, `Compose`, `Nullify`, `EmptyCopy`, `TShape(t)` and the flag setters.
   - The OCCTNET0001 analyzer already catches a mutator called on a readonly copy.
@@ -257,7 +258,12 @@ Geom (decisions 127, 132, 245).
 
 **Poly.** Poly_Triangulation and the polygon classes get `CheckMutable()` in their mutators now. That is the
 follow-up decision 63 promised. Their mutators stay public, because a mesher or an importer fills them as builders
-(decision 63), but they throw once the object is attached.
+(decision 63), but they throw once the object is attached. The cached range of a triangulation stays writable: it
+is a cache of the frozen nodes (decision 316).
+
+**The Active bit.** OCCT's `BRep_TFace` marks its active triangulation in the triangulation's purpose
+(`Poly_MeshPurpose_Active`) and clears the bit of the one it replaces. A frozen triangulation may be shared by another
+face, so the port leaves its purpose as it is (decision 309).
 
 ### 4.2 TShapes and representations freeze on publication
 
@@ -319,17 +325,19 @@ override.
 - `BRep_Builder`'s 32 checks throw `TopoDS_LockedShape` on a frozen target, with OCCT's message.
 - `BOPAlgo_PaveFiller` goes non-destructive when an argument is frozen, so Booleans on frozen inputs work on copies
   without new code.
-- `BRepTools::UpdateFaceUVPoints` skips frozen edges.
+- `BRepTools::UpdateFaceUVPoints` stops at the first frozen edge (OCCT's `return`, occt-issues.md).
 
 Three things need care:
 
-- **Writers.** `TopTools_ShapeSet`, `BinTools_ShapeSet` and `BinTools_ShapeWriter` write the raw bit (internal
-  `LockedFlag()`), not `Locked()`, so files are OCCT's bytes. That changes three ported lines, each marked with a
-  comment.
+- **Writers.** No file format stores the Locked bit: the text and binary writers write the seven flags Free to
+  Convex. Only `TopTools_ShapeSet::Dump` prints it, and the port prints the raw bit (internal `LockedFlag()`), not
+  `Locked()` (unit 3C, decision 381).
 - **Unlocking.** `Locked(false)` on a frozen shape throws (BRepOffset will need a copy there).
 - **Paths that bypass `BRep_Builder`** still throw `Standard_ImmutableObject` through `CheckMutable()`. These are
   `ChangeCurves()`, `ChangePoints()`, `TE->Tolerance(...)`, `UpdateTolerance`, the flag setters, the
   `TopoDS_Builder` child list, and the representations' setters (`SetRange`, `PCurve(...)`, `Location(...)`, ...).
+- **The lists themselves** (`BRep_TEdge::Curves()`, `BRep_TVertex::Points()`, `BRep_TFace::Triangulations()`) are
+  mutable `NCollection_List`s, so their accessors are internal; callers get read-only copies (decision 310).
 
 ### 4.4 The flags
 
@@ -349,11 +357,14 @@ frozen target:
 |---|---|
 | The target is frozen | Throws `TopoDS_LockedShape` (4.3), or `Standard_ImmutableObject` on paths OCCT doesn't guard. Never a silent copy. |
 | A frozen child is added to an unfrozen parent | Allowed. That is how new shapes share their inputs' sub-shapes. |
+| A Make method is given a variable holding a frozen shape | `MakeEdge` and `MakeFace` throw `TopoDS_LockedShape`, as OCCT does for a locked one; ported code makes into a new variable. |
 | Geometry or a mesh is attached | The object is frozen (4.1). |
 
 Callers outside OCCT.NET build shapes through public algorithms. Phase 3 has the `BRepLib_Make*` classes and
 `BRepBuilderAPI`'s makers (unit 3K). For compounds there is an addition, `TopoDS_Builder.MakeCompound(params
-TopoDS_Shape[])` and an `IEnumerable` overload, returning a frozen compound. build123d.NET uses `BRep_Builder`
+TopoDS_Shape[])` and an `IEnumerable` overload, returning a frozen compound. (`TopoDS_Builder` is therefore a public
+class whose constructor and members are internal; `BRep_Builder` is an internal class. The Make methods take the
+shape by `ref`, decision 307.) build123d.NET uses `BRep_Builder`
 directly today, and moves to these when it switches over (phase 9).
 
 Rejected: **copying silently in `BRep_Builder` when the target is frozen** (copy-on-write at TShape level). A
@@ -366,9 +377,14 @@ wrong.
 When ported code (phases 4 to 7) must change a frozen input, it works on a **structural copy**:
 
 - **What is copied:** new TShapes, and new representation objects pointing at the same frozen Geom and Poly objects.
-- **How:** `BRepTools_Modifier` with `BRepTools_CopyModification(copyGeom: false, copyMesh: false)`, as
+- **How:** `BRepTools_Modifier` with `BRepTools_CopyModification(copyGeom: false, copyMesh: true)`, as
   `BRepBuilderAPI_Copy` does. It is wrapped in an internal helper `BRepTools.CopyForWrite(in TopoDS_Shape, out
-  BRepTools_History)` in unit 3B.
+  BRepTools_History, bool theCopyMesh = true)` in unit 3B.
+  - The copy keeps the meshes, so that it has what the in-place operation would have seen (changed in unit 3B,
+    decision 349): the shared, frozen triangulations, with each face's whole list and its active one (the
+    modification carries the active one only), and the polygons.
+  - Polygons on surfaces (Poly_Polygon2D) aren't carried, as in BRepBuilderAPI_Copy. The copy's vertices get their
+    points on curves again from the modifier.
 - **What happens next:** the algorithm runs OCCT's code unchanged on the copy. Its history is the copy's history
   composed with its own (`BRepTools_History.Merge`), so `Modified`, `Generated` and `IsDeleted` answer for the
   caller's original sub-shapes. build123d.NET does this for the tapered extrusion.
@@ -383,6 +399,12 @@ and its history where OCCT keeps one. Every such twin goes in decisions.md, as e
   `EncodeRegularity`, `OrientClosedSolid` and `UpdateDeflection`.
 - The twins copy up front. An optimistic form (run in place, and on the first frozen write start again on a copy)
   could avoid the copy when nothing changes. It is left until profiling asks for it.
+- **Unit 3I's twins and makers copy exactly and keep what is unchanged** (decisions 416, 420). CopyForWrite's
+  modifier isn't an exact copy (it re-ranges pcurves and stores planar ones), so an in-place static can give another
+  result on it. `BRepTools.ExactCopyForWrite` copies the TShapes and representations as they are, and
+  `BRepTools.KeepUnchanged` then gives back the input's own sub-shapes wherever the operation changed nothing: a twin
+  returns OCCT's in-place result, sharing everything it didn't touch with its input, and `BRepLib_MakeFace` on a
+  frozen wire keeps the wire's edges, so faces built on shared edges share them.
 
 **Families 2 to 5** are later phases' decisions, made on the same pattern:
 
@@ -453,11 +475,11 @@ TShapes created.
 - Shapes, locations and geometry are numbered by insertion-ordered indexed maps, so the output order is OCCT's.
 - Format versions 1 to 3, with or without triangles and normals, as `TopTools_FormatVersion`.
 - **Line endings.** The stream overloads write `'\n'`, as decision 226 does. The file-path overloads also write
-  `'\n'`: native OCCT's CRLF on Windows comes from `std::ofstream`'s text mode and isn't part of the format.
-  "Byte-identical" means identical to native `BRepTools::Write` to a stream. Reading accepts CR.
-- **Corpus files.** The `.brep` files in OCCT's corpus come from older releases. They round-trip in the sense of
-  decision 233's F1/F2 scheme: native OCCT 8 reads the file and writes F1; the port reads F1 and must write F1's
-  bytes.
+  `'\n'`, as native OCCT 8 does (it opens the file in binary mode; older releases wrote CRLF on Windows through
+  `std::ofstream`'s text mode). Reading accepts CR.
+- **Corpus files.** The `.brep` files in OCCT's corpus come from older releases, and reading normalises directions
+  again. They round-trip in the sense of decision 233's F1/F2 scheme: native OCCT 8 reads the file and writes F1,
+  reads F1 and writes F2; the port reads F1 and must write F2's bytes (unit 3C: every readable file does).
 
 **Binary.**
 

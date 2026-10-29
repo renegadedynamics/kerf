@@ -11,7 +11,7 @@ namespace Occt;
 /// passing point.
 /// </summary>
 /// <remarks>
-/// A class, as its base (decisions 141 and 1601): a C++ copy shares the point, tangent and curvature arrays, and so
+/// A class, as its base (decisions 141 and 201): a C++ copy shares the point, tangent and curvature arrays, and so
 /// does a C# reference. The setters stay public: callers build MultiLines from these.
 /// </remarks>
 public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint

@@ -29,7 +29,7 @@ namespace Occt;
 /// <para>
 /// <see cref="Value"/> returns a copy of the result that shares its poles, as OCCT's by-value return does;
 /// <see cref="Parameters"/> and <see cref="Knots"/> return the object's own arrays (shared: don't modify), as OCCT
-/// returns its handles (decision 1610). <c>Dump</c> is left out (rules, section 6).
+/// returns its handles (decision 207). <c>Dump</c> is left out (rules, section 6).
 /// </para>
 /// </remarks>
 public class AppDef_Variational

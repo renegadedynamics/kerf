@@ -153,3 +153,157 @@ Phase 2 (part): projection.
 - Tests: the ProjLib_ComputeApproxOnPolarSurface GTest; unit tests of every class; oracle tests of
   ProjLib_ProjectedCurve, ProjLib_ProjectOnPlane and GeomProjLib::ProjectOnPlane through GeomAPI::To2d and
   BRep_Tool::CurveOnSurface against native OCCT, all bit-identical.
+Phase 3 (part): curve-surface intersection.
+
+- `OcctNet.ModelingAlgorithms`: IntCurveSurface_HInter (curve/surface intersection: analytic for conics on
+  quadrics, by the quadric's equation for other curves on quadrics, by polygon/polyhedron interference refined by
+  Newton otherwise), generic over its curve, surface and tools as OCCT's templates are;
+  Intf_InterferencePolygonPolyhedron, IntImp_IntCS, IntImp_ZerCSParFunc, IntImp_ComputeTangence; IntSurf_Quadric and
+  IntSurf_QuadricTool; GeomAPI: To3d, ProjectPointOnCurve, ProjectPointOnSurf, ExtremaCurveCurve, ExtremaCurveSurface,
+  ExtremaSurfaceSurface, Interpolate, PointsToBSpline and IntCS.
+- Tests: the IntCurveSurface, IntSurf_Quadric and GeomAPI GTests; unit tests on known intersections; oracle tests of
+  GeomAPI_IntCS on every kind of curve and surface, and of the GeomAPI projections, Interpolate and PointsToBSpline.
+Phase 3 (part): global properties.
+
+- `OcctNet.ModelingAlgorithms`: BRepGProp (length, area, volume, centre of mass and inertia of shapes: the exact,
+  adaptive, Gauss-Kronrod and mesh-based forms, with functional overloads returning a new `GProp_GProps`, and the
+  integration classes); BRepCheck's statics, `BRepCheck_Status`, `BRepCheck_Result` and `BRepCheck_Shell`;
+  `BRepLib_ValidateEdge` and `BRepLib_CheckCurveOnSurface`.
+- Tests: the BRepGProp GTests (with BRep_Builder shapes until the primitives are ported); known-answer tests; oracle
+  tests of every BRepGProp form and of BRepGProp_Face against native OCCT, all bit-identical, and of BRepCheck_Shell
+  and BRepLib_ValidateEdge through BRepCheck_Analyzer.
+Phase 3 (part): cross-unit integration.
+
+- `OcctNet.ModelingData`: `BRepTools_NurbsConvertModification` projects pcurves again (ProjLib_ComputeApprox on
+  planes, ProjLib_ComputeApproxOnPolarSurface elsewhere and on seams), so shapes with faces convert to NURBS.
+- `OcctNet.ModelingAlgorithms`: BRepGProp and `BRepLib_CheckCurveOnSurface` use `BRepAdaptor_Curve`;
+  `BRepGProp_Cinert` and `BRepGProp_EdgeTool` take a `BRepAdaptor_Curve`, as in OCCT.
+- `OcctNet.Foundation`: `NCollection_DataMap.Bound` replaces the value of a bound key, as OCCT's does; `TryBind` and
+  `TryBound` keep it.
+- Tests: NCollection_DataMap GTests; NURBS conversion unit tests; oracle tests of the NURBS conversion through
+  BRepBuilderAPI_GTransform, and of BRepBuilderAPI_Transform now with faces on planes, all bit-identical.
+Phase 3 (part): BRep input and output.
+
+- `OcctNet.ModelingData`: OCCT's text format of shapes (`TopTools_ShapeSet`, `TopTools_LocationSet`,
+  `BRepTools_ShapeSet`, `BRepTools.Read`, `Write` and `Dump`, `TopTools.Dump`), versions 1 to 3, with or without
+  triangulations and normals, and the binary format (`BinTools`: `BinTools.Read`/`Write`, the shape, location,
+  curve and surface sets, `BinTools_ShapeReader`/`ShapeWriter`, `BinTools_IStream`/`OStream`). Shapes read are frozen.
+  Untrusted input is read safely: counts are checked against the input's length, nesting is capped, and malformed
+  input throws `Storage_StreamFormatError` instead of hanging, overflowing the stack or allocating without bound.
+- `OcctNet.Foundation`: `Storage_StreamFormatError`; `Standard_Stream`'s C buffers, getline and atoi, and its input
+  length (`SetInputLength`, `InputLength`) and count checks.
+- Tests: unit and fuzz tests of both formats; oracle tests against native `BRepTools::Write` and `Read`: random
+  native shapes, shapes built identically on both sides, the port's files read natively, the 37 `.brep` files of
+  OCCT's data and 2,327 files of its test dataset, all byte-identical.
+Phase 3 (part): classification and boxes.
+
+- `OcctNet.ModelingAlgorithms`: BRepClass (`BRepClass_FaceClassifier`: points in, out and on faces, in 2D or
+  projected from 3D, with its explorer, intersector and edge), BRepTopAdaptor (`BRepTopAdaptor_FClass2d`, the fast
+  polygon classifier of a face, and the topological tool), IntCurvesFace (line and curve against a face or a shape),
+  BRepClass3d (`BRepClass3d_SolidClassifier`: points in, out and on solids, the infinite point, the outer shell),
+  BRepIntCurveSurface (`BRepIntCurveSurface_Inter`: ray/shape intersection) and BRepBndLib (`Add`, `AddClose`,
+  `AddOptimal`, `AddOBB`, with functional forms `Box`, `BoxClose`, `BoxOptimal` and `OBB` returning a new box).
+  They only read their inputs.
+- Tests: the BRepClass3d_SolidClassifier GTests (with BRep_Builder shapes until the primitives are ported);
+  known-answer tests of every package; oracle tests of BRepClass3d_SolidClassifier, BRepIntCurveSurface_Inter and
+  every BRepBndLib form against native OCCT on random boxes, cylinders (also as surfaces of extrusion and
+  revolution), holed faces, natural and B-spline faces, compounds and meshed shapes, all bit-identical.
+Phase 3 (part): Draw-lite shape commands.
+
+- Draw-lite (tests, not packaged): Draw variables held by Tcl variables (`DrawInterpreter.SetDrawable`, `GetShape`,
+  Draw::Atof), and Draw's shape commands with Draw's output: `brestore`/`restore`, `bsave`, `readbrep`, `writebrep`,
+  `binsave`, `binrestore` (shapes, numbers, DrawTrSurf geometry files), `isdraw`, `dtyp`, `dname`, `whatis`, `copy`,
+  `renamevar`, `dump`, `dset`, `dval`, `nbshapes`, `numshapes`, `explode`, `nexplode`, `exwire`, `compound`, `add`,
+  `emptycopy`, `orientation`, `treverse`, `complement`, `invert`, `tolerance`, `maxtolerance`, `lprops`, `sprops`,
+  `vprops`, `vpropsgk`, `purgeloc`, `checkloc`, `setflags`, `ttranslate`, `trotate`, `tmove`, `reset`, `tscale`,
+  `tmirror`, `tcopy`, and the display settings without a viewer. OCCT's `checknbshapes`, `checkprops` and
+  `checkmaxtol` run on them. `DrawCorpus.RunAndCheck` runs a corpus case and judges its log with OCCT's `_check_log`.
+- Tests: every command's text against Draw's source; oracle tests of the commands on OCCT's 42 data/occ files and of
+  the transformation and copy commands against BRepBuilderAPI_Transform and BRepBuilderAPI_Copy, all bit-identical.
+Phase 3 (part): BRepLib.
+
+- `OcctNet.ModelingAlgorithms`: the BRepLib makers (`BRepLib_MakeVertex`, `MakeEdge`, `MakeEdge2d`, `MakeWire`,
+  `MakePolygon`, `MakeFace`, `MakeShell`, `MakeSolid`), whose results are frozen; `BRepLib_FindSurface`;
+  `BRepLib_FuseEdges`; `BRepLib_PointCloudShape` and `BRepLib_ToolTriangulatedShape`; BRepLib's queries
+  (`CheckSameRange`, `ContinuityOfFaces`, `SortFaces`, `FindValidRange`, `BoundingVertex`, `ExtendFace`, ...), OCCT's
+  non-destructive `SameParameter` and `UpdateTolerances` with a `BRepTools_ReShape`, and functional twins of the
+  in-place statics (`SameParametered`, `TolerancesUpdated`, `InnerTolerancesUpdated`, `Curves3dBuilt`,
+  `RegularityEncoded`, `DeflectionUpdated`, `NormalConsistencyEnsured`, `ClosedSolidOriented`) that return a new frozen
+  shape sharing every sub-shape they leave unchanged. A face made from a frozen wire keeps the wire's edges, so faces
+  built on shared edges share them.
+- `OcctNet.ModelingData`: an exact copy for write and its counterpart that gives back the original's unchanged
+  sub-shapes (internal).
+- Tests: the BRepLib_MakeWire GTest; known-answer tests of every class; oracle tests of the makers against
+  native BRepBuilderAPI makers, of FindSurface, of the statics and their twins against native in-place statics, and
+  of regularity, face extension and mesh statics on random native shapes, byte-identical (apart from the Free flag of
+  reused frozen inputs).
+
+Phase 3 (part): shape checking.
+
+- `OcctNet.ModelingAlgorithms`: BRepCheck (`BRepCheck_Analyzer`: validity of a shape and each of its sub-shapes, on
+  its own and in context, with OCCT's statuses; topology-only, exact and parallel modes; the vertex, edge, wire,
+  face and solid checks; `BRepCheck.SelfIntersection`). The parallel mode gives the serial mode's statuses. Checking
+  only reads the shape.
+- Tests: the BRepCheck_Face GTests (with BRep_Builder shapes until the makers are ported); known-answer tests on
+  valid and deliberately broken shapes in both modes; oracle tests of the analyzer's verdict on every sub-shape
+  against native OCCT on random native shapes, natively broken edges, vertices, wires, faces, shells and solids, the
+  37 `.brep` files of OCCT's data and 2,320 files of its test dataset: all 396,118 verdicts agree.
+
+Phase 3 (part): Draw-lite checking commands.
+
+- Draw-lite (tests, not packaged): `checkshape` (contextual and structural dumps, `-top`, `-short`, `-parallel`,
+  `-exact`, the faulty shapes bound as Draw binds them), `checksection`, `computetolerance`, `bounding` (every option
+  but `-shape`, which needs the primitives, and `-dumpJson`), `isbbinterf`, `gbounding`, `getcoords`, `bclassify`,
+  `b2dclassify`, `point`, `dchrono`/`chrono` and `dlog`. Corpus runs log each command's words and result as DRAWEXE
+  does, so OCCT's log rules judge checkshape's verdicts.
+- Tests: every command's text against Draw's source; oracle tests of checkshape's verdicts, bounding's boxes
+  (bit-identical) and bclassify's states against native OCCT on OCCT's data files and test dataset. The corpus has
+  380 runnable cases (23 before), most of them waiting for data files that aren't public.
+Phase 3 (part): distances and makers.
+
+- `OcctNet.ModelingAlgorithms`: BRepExtrema (`BRepExtrema_DistShapeShape` with its supports, parameters and inner
+  solutions, single- or multi-threaded; `BRepExtrema_DistanceSS`, the Ext tools, `BRepExtrema_Poly`; the mesh tools
+  `BRepExtrema_ShapeProximity`, `ProximityValueTool`, `ProximityDistTool`, `OverlapTool`, `SelfIntersection`,
+  `TriangleSet`); BRepBuilderAPI's makers (`BRepBuilderAPI_MakeVertex`, `MakeEdge`, `MakeEdge2d`, `MakePolygon`,
+  `MakeWire`, `MakeFace`, `MakeShell`, `MakeSolid`), the public way to build shapes, whose results are frozen, with
+  `Modified` answering the copies a maker made of frozen inputs; the modifications `BRepBuilderAPI_Transform`,
+  `GTransform`, `Copy` and `NurbsConvert`; `BRepBuilderAPI_Collect` and `BRepBuilderAPI_FindPlane`. Every
+  `BRepBuilderAPI_MakeShape` is a `BRepTools_History.IAlgorithm`. Inputs are never changed.
+- `OcctNet.ModelingData`: `BRepTools_Modifier` reused on a shape it modified before no longer throws on the
+  published result's edges.
+- Tests: the BRepExtrema_DistShapeShape and BRepBuilderAPI (Copy, MakeEdge, MakeFace, MakeWire, Transform) GTests, and
+  the TopoDS, BRep_Tool, BRepTools_ReShape, BRepAdaptor_CompCurve and BRepGProp GTests on the real makers; Draw-lite's
+  t-commands and `tcopy` run the real makers; known-answer tests; oracle tests of BRepExtrema_DistShapeShape on twin
+  scenes and native shapes (bit-identical), of the makers through BRep text (byte-identical apart from the Free flag of
+  reused frozen inputs) and of Transform, Copy and GTransform on twin scenes and native shapes (bit-identical).
+
+Phase 3 (part): primitives and sweeps.
+
+- `OcctNet.ModelingAlgorithms`: TKPrim. The makers `BRepPrimAPI_MakeBox`, `MakeWedge`, `MakeCylinder`, `MakeCone`,
+  `MakeSphere`, `MakeTorus`, `MakeRevolution` (whole and partial, with their faces, shells and solids),
+  `MakeHalfSpace`, `MakePrism` (finite, semi-infinite and infinite) and `MakeRevol`, with `Generated`, `IsDeleted`,
+  `FirstShape` and `LastShape`; `BRepPreviewAPI_MakeBox`. Results are frozen; BRepPrim, BRepSweep and Sweep are
+  internal. Sweeping a frozen profile works on a copy and shares what the sweep didn't change with the profile, which
+  is never changed; histories answer for the caller's sub-shapes.
+- `OcctNet.ModelingData`: `BRepTools.KeepUnchangedIn` (internal), for operations that build on a copy for write.
+- Draw-lite (tests, not packaged): `box` (every form, `-preview`), `wedge`, `pcylinder`, `pcone`, `psphere`, `ptorus`,
+  `halfspace`, `prism`, `revol`, and `bounding -shape`.
+- Tests: TKPrim's GTests; the phase 3 GTests that used stand-ins now use the real makers, and BRepTools_Test and the
+  shape cases of the Bnd_BoundSortBox and Bnd_OBB GTests are ported; known-answer tests; oracle tests of every maker,
+  their histories and the Draw commands against native OCCT through BRep text (byte-identical apart from the Free flag
+  of frozen inputs). The corpus has 395 runnable cases (28 OK).
+Phase 3 (part): Draw-lite construction, distance and modification commands.
+
+- Draw-lite (tests, not packaged): GeomliteTest's curves and surfaces (line, circle, ellipse, parabola, hyperbola,
+  Bezier and B-spline curves and surfaces in 3D and 2D, extsurf, revsurf, offset, trim, isos, reverse, segment,
+  setorigin, cvalue, svalue, bounds, parameters, length), GeometryTest's `gcarc` and `extrema`, DrawTrSurf's
+  transformations, `distmini`, `dist`, `proximity`, `selfintersect`, the topology constructions (`vertex`, `edge`,
+  `mkedge`, `wire`, `polyline`, `polyvertex`, `mkcurve`, `mkpoint`, `mk2dcurve`, `uisoedge`, `visoedge`, `profile`,
+  `mkface`, `mkshell`, `mksurface`, `mkplane`, `pcurve`) and modifications (`nurbsconvert`, `deform`, `scalexyz`,
+  `sameparameter`, `updatetolerance`, `encoderegularity`, `solidorientation`, `mkedgecurve`, `findplane`, `compare`,
+  `issubshape`, `wexplo`, `getedgeregularity`, `projponf`), and `getsourcefile`'s `Draw_Files`. Geometry is frozen when
+  bound; in-place commands work on a copy of the shape's graph and bind it.
+- Tests: unit tests of every command; oracle tests against native OCCT of the geometry (131,947 values), distmini
+  (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
+  for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
+  (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.
