@@ -14,7 +14,7 @@ B3D_API void* b3d_gp_Sphere_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Sphere>)
   {
-    try { return new gp_Sphere(*static_cast<const gp_Sphere*>(p)); }
+    B3D_TRY { return new gp_Sphere(*static_cast<const gp_Sphere*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_gp_Sphere_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Sphere_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Sphere();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_gp_Sphere_new(b3d_error** err)
 B3D_API void* b3d_gp_Sphere_new__gp_Ax3__double(const gp_Ax3* theA3, double theRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Sphere(*theA3, theRadius);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_gp_Sphere_new__gp_Ax3__double(const gp_Ax3* theA3, double theR
 B3D_API void b3d_gp_Sphere_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->SetLocation(*theLoc);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_gp_Sphere_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc,
 B3D_API void b3d_gp_Sphere_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->SetPosition(*theA3);
     return;
@@ -71,7 +71,7 @@ B3D_API void b3d_gp_Sphere_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, 
 B3D_API void b3d_gp_Sphere_SetRadius__double(void* self, double theR, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->SetRadius(theR);
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_gp_Sphere_SetRadius__double(void* self, double theR, b3d_error*
 B3D_API double b3d_gp_Sphere_Area(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Area();
     return r;
@@ -94,7 +94,7 @@ B3D_API double b3d_gp_Sphere_Area(void* self, b3d_error** err)
 B3D_API void b3d_gp_Sphere_Coefficients__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double(void* self, double* theA1, double* theA2, double* theA3, double* theB1, double* theB2, double* theB3, double* theC1, double* theC2, double* theC3, double* theD, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Coefficients(*theA1, *theA2, *theA3, *theB1, *theB2, *theB3, *theC1, *theC2, *theC3, *theD);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_gp_Sphere_Coefficients__ref_double__ref_double__ref_double__ref
 B3D_API void b3d_gp_Sphere_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->UReverse();
     return;
@@ -116,7 +116,7 @@ B3D_API void b3d_gp_Sphere_UReverse(void* self, b3d_error** err)
 B3D_API void b3d_gp_Sphere_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->VReverse();
     return;
@@ -127,7 +127,7 @@ B3D_API void b3d_gp_Sphere_VReverse(void* self, b3d_error** err)
 B3D_API uint8_t b3d_gp_Sphere_Direct(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Direct();
     return r ? 1 : 0;
@@ -139,7 +139,7 @@ B3D_API uint8_t b3d_gp_Sphere_Direct(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Sphere_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Location();
     return new gp_Pnt(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_gp_Sphere_Location(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Sphere_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Position();
     return new gp_Ax3(r);
@@ -163,7 +163,7 @@ B3D_API void* b3d_gp_Sphere_Position(void* self, b3d_error** err)
 B3D_API double b3d_gp_Sphere_Radius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Radius();
     return r;
@@ -175,7 +175,7 @@ B3D_API double b3d_gp_Sphere_Radius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Sphere_Volume(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Volume();
     return r;
@@ -187,7 +187,7 @@ B3D_API double b3d_gp_Sphere_Volume(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Sphere_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->XAxis();
     return new gp_Ax1(r);
@@ -199,7 +199,7 @@ B3D_API void* b3d_gp_Sphere_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Sphere_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->YAxis();
     return new gp_Ax1(r);
@@ -211,7 +211,7 @@ B3D_API void* b3d_gp_Sphere_YAxis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Sphere_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Mirror(*theP);
     return;
@@ -222,7 +222,7 @@ B3D_API void b3d_gp_Sphere_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_er
 B3D_API void* b3d_gp_Sphere_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Mirrored(*theP);
     return new gp_Sphere(r);
@@ -234,7 +234,7 @@ B3D_API void* b3d_gp_Sphere_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d
 B3D_API void b3d_gp_Sphere_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Mirror(*theA1);
     return;
@@ -245,7 +245,7 @@ B3D_API void b3d_gp_Sphere_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_e
 B3D_API void* b3d_gp_Sphere_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Mirrored(*theA1);
     return new gp_Sphere(r);
@@ -257,7 +257,7 @@ B3D_API void* b3d_gp_Sphere_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3
 B3D_API void b3d_gp_Sphere_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Mirror(*theA2);
     return;
@@ -268,7 +268,7 @@ B3D_API void b3d_gp_Sphere_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_e
 B3D_API void* b3d_gp_Sphere_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Mirrored(*theA2);
     return new gp_Sphere(r);
@@ -280,7 +280,7 @@ B3D_API void* b3d_gp_Sphere_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3
 B3D_API void b3d_gp_Sphere_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Rotate(*theA1, theAng);
     return;
@@ -291,7 +291,7 @@ B3D_API void b3d_gp_Sphere_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA
 B3D_API void* b3d_gp_Sphere_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Rotated(*theA1, theAng);
     return new gp_Sphere(r);
@@ -303,7 +303,7 @@ B3D_API void* b3d_gp_Sphere_Rotated__gp_Ax1__double(void* self, const gp_Ax1* th
 B3D_API void b3d_gp_Sphere_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Scale(*theP, theS);
     return;
@@ -314,7 +314,7 @@ B3D_API void b3d_gp_Sphere_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP,
 B3D_API void* b3d_gp_Sphere_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Scaled(*theP, theS);
     return new gp_Sphere(r);
@@ -326,7 +326,7 @@ B3D_API void* b3d_gp_Sphere_Scaled__gp_Pnt__double(void* self, const gp_Pnt* the
 B3D_API void b3d_gp_Sphere_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Transform(*theT);
     return;
@@ -337,7 +337,7 @@ B3D_API void b3d_gp_Sphere_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b
 B3D_API void* b3d_gp_Sphere_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Transformed(*theT);
     return new gp_Sphere(r);
@@ -349,7 +349,7 @@ B3D_API void* b3d_gp_Sphere_Transformed__gp_Trsf(void* self, const gp_Trsf* theT
 B3D_API void b3d_gp_Sphere_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Translate(*theV);
     return;
@@ -360,7 +360,7 @@ B3D_API void b3d_gp_Sphere_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d
 B3D_API void* b3d_gp_Sphere_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Translated(*theV);
     return new gp_Sphere(r);
@@ -372,7 +372,7 @@ B3D_API void* b3d_gp_Sphere_Translated__gp_Vec(void* self, const gp_Vec* theV, b
 B3D_API void b3d_gp_Sphere_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Sphere*>(self)->Translate(*theP1, *theP2);
     return;
@@ -383,7 +383,7 @@ B3D_API void b3d_gp_Sphere_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* t
 B3D_API void* b3d_gp_Sphere_Translated__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Sphere*>(self)->Translated(*theP1, *theP2);
     return new gp_Sphere(r);

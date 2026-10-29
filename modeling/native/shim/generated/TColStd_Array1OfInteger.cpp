@@ -7,7 +7,7 @@ B3D_API void b3d_TColStd_Array1OfInteger_delete(void* p) { delete static_cast<NC
 B3D_API void* b3d_TColStd_Array1OfInteger_copy(const void* p, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array1<int>(*static_cast<const NCollection_Array1<int>*>(p)); }
+  B3D_TRY { return new NCollection_Array1<int>(*static_cast<const NCollection_Array1<int>*>(p)); }
   B3D_CATCH(err)
   return {};
 }
@@ -15,7 +15,7 @@ B3D_API void* b3d_TColStd_Array1OfInteger_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TColStd_Array1OfInteger_new0(int lower, int upper, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array1<int>(lower, upper); }
+  B3D_TRY { return new NCollection_Array1<int>(lower, upper); }
   B3D_CATCH(err)
   return {};
 }
@@ -23,7 +23,7 @@ B3D_API void* b3d_TColStd_Array1OfInteger_new0(int lower, int upper, b3d_error**
 B3D_API int32_t b3d_TColStd_Array1OfInteger_Lower(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Lower(); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Lower(); }
   B3D_CATCH(err)
   return {};
 }
@@ -31,7 +31,7 @@ B3D_API int32_t b3d_TColStd_Array1OfInteger_Lower(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array1OfInteger_Upper(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Upper(); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Upper(); }
   B3D_CATCH(err)
   return {};
 }
@@ -39,7 +39,7 @@ B3D_API int32_t b3d_TColStd_Array1OfInteger_Upper(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array1OfInteger_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -47,7 +47,7 @@ B3D_API int32_t b3d_TColStd_Array1OfInteger_Length(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array1OfInteger_Value(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Value(index); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Value(index); }
   B3D_CATCH(err)
   return {};
 }
@@ -55,14 +55,14 @@ B3D_API int32_t b3d_TColStd_Array1OfInteger_Value(void* self, int32_t index, b3d
 B3D_API void b3d_TColStd_Array1OfInteger_SetValue(void* self, int32_t index, int32_t item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); s.SetValue(index, item); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); s.SetValue(index, item); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TColStd_Array1OfInteger_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -70,6 +70,6 @@ B3D_API int32_t b3d_TColStd_Array1OfInteger_Count(void* self, b3d_error** err)
 B3D_API void b3d_TColStd_Array1OfInteger_Fill(void* self, int32_t* out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = x; } }
+  B3D_TRY { NCollection_Array1<int>& s = *static_cast<NCollection_Array1<int>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = x; } }
   B3D_CATCH(err)
 }

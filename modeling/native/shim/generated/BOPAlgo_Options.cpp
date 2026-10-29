@@ -8,7 +8,7 @@ B3D_API void* b3d_BOPAlgo_Options_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BOPAlgo_Options>)
   {
-    try { return new BOPAlgo_Options(*static_cast<const BOPAlgo_Options*>(p)); }
+    B3D_TRY { return new BOPAlgo_Options(*static_cast<const BOPAlgo_Options*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -19,7 +19,7 @@ B3D_API void* b3d_BOPAlgo_Options_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BOPAlgo_Options_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BOPAlgo_Options();
     return r;
@@ -31,7 +31,7 @@ B3D_API void* b3d_BOPAlgo_Options_new(b3d_error** err)
 B3D_API void b3d_BOPAlgo_Options_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Options*>(self)->Clear();
     return;
@@ -42,7 +42,7 @@ B3D_API void b3d_BOPAlgo_Options_Clear(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BOPAlgo_Options_HasErrors(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Options*>(self)->HasErrors();
     return r ? 1 : 0;
@@ -54,7 +54,7 @@ B3D_API uint8_t b3d_BOPAlgo_Options_HasErrors(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BOPAlgo_Options_HasWarnings(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Options*>(self)->HasWarnings();
     return r ? 1 : 0;
@@ -66,7 +66,7 @@ B3D_API uint8_t b3d_BOPAlgo_Options_HasWarnings(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Options_ClearWarnings(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Options*>(self)->ClearWarnings();
     return;
@@ -77,7 +77,7 @@ B3D_API void b3d_BOPAlgo_Options_ClearWarnings(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BOPAlgo_Options_GetParallelMode(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BOPAlgo_Options::GetParallelMode();
     return r ? 1 : 0;
@@ -89,7 +89,7 @@ B3D_API uint8_t b3d_BOPAlgo_Options_GetParallelMode(b3d_error** err)
 B3D_API void b3d_BOPAlgo_Options_SetParallelMode__bool(uint8_t theNewMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BOPAlgo_Options::SetParallelMode(theNewMode != 0);
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_BOPAlgo_Options_SetParallelMode__bool(uint8_t theNewMode, b3d_e
 B3D_API void b3d_BOPAlgo_Options_SetRunParallel__bool(void* self, uint8_t theFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Options*>(self)->SetRunParallel(theFlag != 0);
     return;
@@ -111,7 +111,7 @@ B3D_API void b3d_BOPAlgo_Options_SetRunParallel__bool(void* self, uint8_t theFla
 B3D_API uint8_t b3d_BOPAlgo_Options_RunParallel(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Options*>(self)->RunParallel();
     return r ? 1 : 0;
@@ -123,7 +123,7 @@ B3D_API uint8_t b3d_BOPAlgo_Options_RunParallel(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Options_SetFuzzyValue__double(void* self, double theFuzz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Options*>(self)->SetFuzzyValue(theFuzz);
     return;
@@ -134,7 +134,7 @@ B3D_API void b3d_BOPAlgo_Options_SetFuzzyValue__double(void* self, double theFuz
 B3D_API double b3d_BOPAlgo_Options_FuzzyValue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Options*>(self)->FuzzyValue();
     return r;
@@ -146,7 +146,7 @@ B3D_API double b3d_BOPAlgo_Options_FuzzyValue(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Options_SetUseOBB__bool(void* self, uint8_t theUseOBB, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Options*>(self)->SetUseOBB(theUseOBB != 0);
     return;
@@ -157,7 +157,7 @@ B3D_API void b3d_BOPAlgo_Options_SetUseOBB__bool(void* self, uint8_t theUseOBB, 
 B3D_API uint8_t b3d_BOPAlgo_Options_UseOBB(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Options*>(self)->UseOBB();
     return r ? 1 : 0;

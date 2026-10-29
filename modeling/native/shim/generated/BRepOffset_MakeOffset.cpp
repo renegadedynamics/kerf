@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffset_MakeOffset>)
   {
-    try { return new BRepOffset_MakeOffset(*static_cast<const BRepOffset_MakeOffset*>(p)); }
+    B3D_TRY { return new BRepOffset_MakeOffset(*static_cast<const BRepOffset_MakeOffset*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepOffset_MakeOffset_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new(b3d_error** err)
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double(const TopoDS_Shape* S, double Offset, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double(const 
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode));
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode__bool(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0);
     return r;
@@ -84,7 +84,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join));
     return r;
@@ -96,7 +96,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType__bool(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, uint8_t Thickening, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join), Thickening != 0);
     return r;
@@ -108,7 +108,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType__bool__bool(const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, uint8_t Thickening, uint8_t RemoveIntEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffset_MakeOffset(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join), Thickening != 0, RemoveIntEdges != 0);
     return r;
@@ -120,7 +120,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_new__TopoDS_Shape__double__double__BRepO
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double(void* self, const TopoDS_Shape* S, double Offset, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol);
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double(
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode));
     return;
@@ -142,7 +142,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode__bool(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0);
     return;
@@ -153,7 +153,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0);
     return;
@@ -164,7 +164,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join));
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType__bool(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, uint8_t Thickening, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join), Thickening != 0);
     return;
@@ -186,7 +186,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType__bool__bool(void* self, const TopoDS_Shape* S, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, uint8_t Thickening, uint8_t RemoveIntEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Initialize(*S, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join), Thickening != 0, RemoveIntEdges != 0);
     return;
@@ -197,7 +197,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Initialize__TopoDS_Shape__double__double_
 B3D_API void b3d_BRepOffset_MakeOffset_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->Clear();
     return;
@@ -208,7 +208,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_Clear(void* self, b3d_error** err)
 B3D_API void b3d_BRepOffset_MakeOffset_AllowLinearization__bool(void* self, uint8_t theIsAllowed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->AllowLinearization(theIsAllowed != 0);
     return;
@@ -219,7 +219,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_AllowLinearization__bool(void* self, uint
 B3D_API void b3d_BRepOffset_MakeOffset_AddFace__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->AddFace(*F);
     return;
@@ -230,7 +230,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_AddFace__TopoDS_Face(void* self, const To
 B3D_API void b3d_BRepOffset_MakeOffset_SetOffsetOnFace__TopoDS_Face__double(void* self, const TopoDS_Face* F, double Off, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->SetOffsetOnFace(*F, Off);
     return;
@@ -241,7 +241,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_SetOffsetOnFace__TopoDS_Face__double(void
 B3D_API void b3d_BRepOffset_MakeOffset_MakeOffsetShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->MakeOffsetShape();
     return;
@@ -252,7 +252,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_MakeOffsetShape(void* self, b3d_error** e
 B3D_API void b3d_BRepOffset_MakeOffset_MakeThickSolid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffset_MakeOffset*>(self)->MakeThickSolid();
     return;
@@ -263,7 +263,7 @@ B3D_API void b3d_BRepOffset_MakeOffset_MakeThickSolid(void* self, b3d_error** er
 B3D_API uint8_t b3d_BRepOffset_MakeOffset_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->IsDone();
     return r ? 1 : 0;
@@ -275,7 +275,7 @@ B3D_API uint8_t b3d_BRepOffset_MakeOffset_IsDone(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffset_MakeOffset_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -287,7 +287,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_Shape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffset_MakeOffset_InitShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->InitShape();
     return new TopoDS_Shape(r);
@@ -299,7 +299,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_InitShape(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepOffset_MakeOffset_Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->Error();
     return static_cast<int32_t>(r);
@@ -311,7 +311,7 @@ B3D_API int32_t b3d_BRepOffset_MakeOffset_Error(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepOffset_MakeOffset_GetJoinType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->GetJoinType();
     return static_cast<int32_t>(r);
@@ -323,7 +323,7 @@ B3D_API int32_t b3d_BRepOffset_MakeOffset_GetJoinType(void* self, b3d_error** er
 B3D_API void* b3d_BRepOffset_MakeOffset_ClosingFaces(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->ClosingFaces();
     return new NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>(r);
@@ -335,7 +335,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_ClosingFaces(void* self, b3d_error** err
 B3D_API void* b3d_BRepOffset_MakeOffset_GetBadShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->GetBadShape();
     return new TopoDS_Shape(r);
@@ -347,7 +347,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_GetBadShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffset_MakeOffset_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->Generated(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -359,7 +359,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_Generated__TopoDS_Shape(void* self, cons
 B3D_API void* b3d_BRepOffset_MakeOffset_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->Modified(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -371,7 +371,7 @@ B3D_API void* b3d_BRepOffset_MakeOffset_Modified__TopoDS_Shape(void* self, const
 B3D_API uint8_t b3d_BRepOffset_MakeOffset_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffset_MakeOffset*>(self)->IsDeleted(*S);
     return r ? 1 : 0;

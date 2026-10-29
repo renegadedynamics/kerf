@@ -8,7 +8,7 @@ B3D_API void* b3d_Precision_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Precision>)
   {
-    try { return new Precision(*static_cast<const Precision*>(p)); }
+    B3D_TRY { return new Precision(*static_cast<const Precision*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_Precision_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<Precision>)
   {
-    try { return new Precision(); }
+    B3D_TRY { return new Precision(); }
     B3D_CATCH(err)
   }
   else
@@ -32,7 +32,7 @@ B3D_API void* b3d_Precision_new(b3d_error** err)
 B3D_API double b3d_Precision_Angular(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Angular();
     return r;
@@ -44,7 +44,7 @@ B3D_API double b3d_Precision_Angular(b3d_error** err)
 B3D_API double b3d_Precision_Confusion(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Confusion();
     return r;
@@ -56,7 +56,7 @@ B3D_API double b3d_Precision_Confusion(b3d_error** err)
 B3D_API double b3d_Precision_SquareConfusion(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::SquareConfusion();
     return r;
@@ -68,7 +68,7 @@ B3D_API double b3d_Precision_SquareConfusion(b3d_error** err)
 B3D_API double b3d_Precision_Computational(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Computational();
     return r;
@@ -80,7 +80,7 @@ B3D_API double b3d_Precision_Computational(b3d_error** err)
 B3D_API double b3d_Precision_SquareComputational(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::SquareComputational();
     return r;
@@ -92,7 +92,7 @@ B3D_API double b3d_Precision_SquareComputational(b3d_error** err)
 B3D_API double b3d_Precision_Intersection(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Intersection();
     return r;
@@ -104,7 +104,7 @@ B3D_API double b3d_Precision_Intersection(b3d_error** err)
 B3D_API double b3d_Precision_Approximation(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Approximation();
     return r;
@@ -116,7 +116,7 @@ B3D_API double b3d_Precision_Approximation(b3d_error** err)
 B3D_API double b3d_Precision_Parametric__double__double(double P, double T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Parametric(P, T);
     return r;
@@ -128,7 +128,7 @@ B3D_API double b3d_Precision_Parametric__double__double(double P, double T, b3d_
 B3D_API double b3d_Precision_PConfusion__double(double T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PConfusion(T);
     return r;
@@ -140,7 +140,7 @@ B3D_API double b3d_Precision_PConfusion__double(double T, b3d_error** err)
 B3D_API double b3d_Precision_SquarePConfusion(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::SquarePConfusion();
     return r;
@@ -152,7 +152,7 @@ B3D_API double b3d_Precision_SquarePConfusion(b3d_error** err)
 B3D_API double b3d_Precision_PIntersection__double(double T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PIntersection(T);
     return r;
@@ -164,7 +164,7 @@ B3D_API double b3d_Precision_PIntersection__double(double T, b3d_error** err)
 B3D_API double b3d_Precision_PApproximation__double(double T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PApproximation(T);
     return r;
@@ -176,7 +176,7 @@ B3D_API double b3d_Precision_PApproximation__double(double T, b3d_error** err)
 B3D_API double b3d_Precision_Parametric__double(double P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Parametric(P);
     return r;
@@ -188,7 +188,7 @@ B3D_API double b3d_Precision_Parametric__double(double P, b3d_error** err)
 B3D_API double b3d_Precision_PConfusion(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PConfusion();
     return r;
@@ -200,7 +200,7 @@ B3D_API double b3d_Precision_PConfusion(b3d_error** err)
 B3D_API double b3d_Precision_PIntersection(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PIntersection();
     return r;
@@ -212,7 +212,7 @@ B3D_API double b3d_Precision_PIntersection(b3d_error** err)
 B3D_API double b3d_Precision_PApproximation(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::PApproximation();
     return r;
@@ -224,7 +224,7 @@ B3D_API double b3d_Precision_PApproximation(b3d_error** err)
 B3D_API uint8_t b3d_Precision_IsInfinite__double(double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::IsInfinite(R);
     return r ? 1 : 0;
@@ -236,7 +236,7 @@ B3D_API uint8_t b3d_Precision_IsInfinite__double(double R, b3d_error** err)
 B3D_API uint8_t b3d_Precision_IsPositiveInfinite__double(double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::IsPositiveInfinite(R);
     return r ? 1 : 0;
@@ -248,7 +248,7 @@ B3D_API uint8_t b3d_Precision_IsPositiveInfinite__double(double R, b3d_error** e
 B3D_API uint8_t b3d_Precision_IsNegativeInfinite__double(double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::IsNegativeInfinite(R);
     return r ? 1 : 0;
@@ -260,7 +260,7 @@ B3D_API uint8_t b3d_Precision_IsNegativeInfinite__double(double R, b3d_error** e
 B3D_API double b3d_Precision_Infinite(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Precision::Infinite();
     return r;

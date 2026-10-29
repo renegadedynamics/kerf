@@ -11,7 +11,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<IntAna2d_AnaIntersection>)
   {
-    try { return new IntAna2d_AnaIntersection(*static_cast<const IntAna2d_AnaIntersection*>(p)); }
+    B3D_TRY { return new IntAna2d_AnaIntersection(*static_cast<const IntAna2d_AnaIntersection*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_IntAna2d_AnaIntersection_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_AnaIntersection();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_new(b3d_error** err)
 B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Lin2d__gp_Lin2d(const gp_Lin2d* L1, const gp_Lin2d* L2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_AnaIntersection(*L1, *L2);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Lin2d__gp_Lin2d(const gp_Lin2
 B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Circ2d__gp_Circ2d(const gp_Circ2d* C1, const gp_Circ2d* C2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_AnaIntersection(*C1, *C2);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Circ2d__gp_Circ2d(const gp_Ci
 B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Lin2d__gp_Circ2d(const gp_Lin2d* L, const gp_Circ2d* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_AnaIntersection(*L, *C);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_IntAna2d_AnaIntersection_new__gp_Lin2d__gp_Circ2d(const gp_Lin
 B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Lin2d__gp_Lin2d(void* self, const gp_Lin2d* L1, const gp_Lin2d* L2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntAna2d_AnaIntersection*>(self)->Perform(*L1, *L2);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Lin2d__gp_Lin2d(void* self
 B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Circ2d__gp_Circ2d(void* self, const gp_Circ2d* C1, const gp_Circ2d* C2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntAna2d_AnaIntersection*>(self)->Perform(*C1, *C2);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Circ2d__gp_Circ2d(void* se
 B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Lin2d__gp_Circ2d(void* self, const gp_Lin2d* L, const gp_Circ2d* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntAna2d_AnaIntersection*>(self)->Perform(*L, *C);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_IntAna2d_AnaIntersection_Perform__gp_Lin2d__gp_Circ2d(void* sel
 B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->IsDone();
     return r ? 1 : 0;
@@ -115,7 +115,7 @@ B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IsDone(void* self, b3d_error** err)
 B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IsEmpty(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->IsEmpty();
     return r ? 1 : 0;
@@ -127,7 +127,7 @@ B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IsEmpty(void* self, b3d_error** err
 B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IdenticalElements(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->IdenticalElements();
     return r ? 1 : 0;
@@ -139,7 +139,7 @@ B3D_API uint8_t b3d_IntAna2d_AnaIntersection_IdenticalElements(void* self, b3d_e
 B3D_API uint8_t b3d_IntAna2d_AnaIntersection_ParallelElements(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->ParallelElements();
     return r ? 1 : 0;
@@ -151,7 +151,7 @@ B3D_API uint8_t b3d_IntAna2d_AnaIntersection_ParallelElements(void* self, b3d_er
 B3D_API int32_t b3d_IntAna2d_AnaIntersection_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->NbPoints();
     return r;
@@ -163,7 +163,7 @@ B3D_API int32_t b3d_IntAna2d_AnaIntersection_NbPoints(void* self, b3d_error** er
 B3D_API void* b3d_IntAna2d_AnaIntersection_Point__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_AnaIntersection*>(self)->Point(N);
     return new IntAna2d_IntPoint(r);

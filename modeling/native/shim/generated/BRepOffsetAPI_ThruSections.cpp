@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_copy(const void* p, b3d_error** err
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_ThruSections>)
   {
-    try { return new BRepOffsetAPI_ThruSections(*static_cast<const BRepOffsetAPI_ThruSections*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_ThruSections(*static_cast<const BRepOffsetAPI_ThruSections*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_as_BRepBuilderAPI_Command(void* p) 
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_ThruSections();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_new(b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool(uint8_t isSolid, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_ThruSections(isSolid != 0);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool(uint8_t isSolid, b3d_erro
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool__bool(uint8_t isSolid, uint8_t ruled, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_ThruSections(isSolid != 0, ruled != 0);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool__bool(uint8_t isSolid, ui
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool__bool__double(uint8_t isSolid, uint8_t ruled, double pres3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_ThruSections(isSolid != 0, ruled != 0, pres3d);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_new__bool__bool__double(uint8_t isS
 B3D_API void b3d_BRepOffsetAPI_ThruSections_Init(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->Init();
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_Init(void* self, b3d_error** err)
 B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool(void* self, uint8_t isSolid, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->Init(isSolid != 0);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool(void* self, uint8_t isSol
 B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool__bool(void* self, uint8_t isSolid, uint8_t ruled, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->Init(isSolid != 0, ruled != 0);
     return;
@@ -106,7 +106,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool__bool(void* self, uint8_t
 B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool__bool__double(void* self, uint8_t isSolid, uint8_t ruled, double pres3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->Init(isSolid != 0, ruled != 0, pres3d);
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_Init__bool__bool__double(void* self,
 B3D_API void b3d_BRepOffsetAPI_ThruSections_AddWire__TopoDS_Wire(void* self, const TopoDS_Wire* wire, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->AddWire(*wire);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_AddWire__TopoDS_Wire(void* self, con
 B3D_API void b3d_BRepOffsetAPI_ThruSections_AddVertex__TopoDS_Vertex(void* self, const TopoDS_Vertex* aVertex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->AddVertex(*aVertex);
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_AddVertex__TopoDS_Vertex(void* self,
 B3D_API void b3d_BRepOffsetAPI_ThruSections_CheckCompatibility(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->CheckCompatibility();
     return;
@@ -150,7 +150,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_CheckCompatibility(void* self, b3d_e
 B3D_API void b3d_BRepOffsetAPI_ThruSections_CheckCompatibility__bool(void* self, uint8_t check, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->CheckCompatibility(check != 0);
     return;
@@ -161,7 +161,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_CheckCompatibility__bool(void* self,
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetSmoothing__bool(void* self, uint8_t UseSmoothing, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetSmoothing(UseSmoothing != 0);
     return;
@@ -172,7 +172,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetSmoothing__bool(void* self, uint8
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetParType__Approx_ParametrizationType(void* self, int32_t ParType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetParType(static_cast<Approx_ParametrizationType>(ParType));
     return;
@@ -183,7 +183,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetParType__Approx_ParametrizationTy
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetContinuity__GeomAbs_Shape(void* self, int32_t C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetContinuity(static_cast<GeomAbs_Shape>(C));
     return;
@@ -194,7 +194,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetContinuity__GeomAbs_Shape(void* s
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetCriteriumWeight__double__double__double(void* self, double W1, double W2, double W3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetCriteriumWeight(W1, W2, W3);
     return;
@@ -205,7 +205,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetCriteriumWeight__double__double__
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetMaxDegree__int(void* self, int32_t MaxDeg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetMaxDegree(MaxDeg);
     return;
@@ -216,7 +216,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetMaxDegree__int(void* self, int32_
 B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_ParType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->ParType();
     return static_cast<int32_t>(r);
@@ -228,7 +228,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_ParType(void* self, b3d_error** e
 B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -240,7 +240,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_Continuity(void* self, b3d_error*
 B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_MaxDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->MaxDegree();
     return r;
@@ -252,7 +252,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_MaxDegree(void* self, b3d_error**
 B3D_API uint8_t b3d_BRepOffsetAPI_ThruSections_UseSmoothing(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->UseSmoothing();
     return r ? 1 : 0;
@@ -264,7 +264,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_ThruSections_UseSmoothing(void* self, b3d_erro
 B3D_API void b3d_BRepOffsetAPI_ThruSections_CriteriumWeight__ref_double__ref_double__ref_double(void* self, double* W1, double* W2, double* W3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->CriteriumWeight(*W1, *W2, *W3);
     return;
@@ -275,7 +275,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_CriteriumWeight__ref_double__ref_dou
 B3D_API void b3d_BRepOffsetAPI_ThruSections_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->Build();
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->FirstShape();
     return new TopoDS_Shape(r);
@@ -298,7 +298,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_FirstShape(void* self, b3d_error** 
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->LastShape();
     return new TopoDS_Shape(r);
@@ -310,7 +310,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_LastShape(void* self, b3d_error** e
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_GeneratedFace__TopoDS_Shape(void* self, const TopoDS_Shape* Edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->GeneratedFace(*Edge);
     return new TopoDS_Shape(r);
@@ -322,7 +322,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_GeneratedFace__TopoDS_Shape(void* s
 B3D_API void b3d_BRepOffsetAPI_ThruSections_SetMutableInput__bool(void* self, uint8_t theIsMutableInput, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_ThruSections*>(self)->SetMutableInput(theIsMutableInput != 0);
     return;
@@ -333,7 +333,7 @@ B3D_API void b3d_BRepOffsetAPI_ThruSections_SetMutableInput__bool(void* self, ui
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -345,7 +345,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_Generated__TopoDS_Shape(void* self,
 B3D_API void* b3d_BRepOffsetAPI_ThruSections_Wires(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->Wires();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -357,7 +357,7 @@ B3D_API void* b3d_BRepOffsetAPI_ThruSections_Wires(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepOffsetAPI_ThruSections_IsMutableInput(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->IsMutableInput();
     return r ? 1 : 0;
@@ -369,7 +369,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_ThruSections_IsMutableInput(void* self, b3d_er
 B3D_API int32_t b3d_BRepOffsetAPI_ThruSections_GetStatus(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_ThruSections*>(self)->GetStatus();
     return static_cast<int32_t>(r);

@@ -9,7 +9,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepCheck_Analyzer>)
   {
-    try { return new BRepCheck_Analyzer(*static_cast<const BRepCheck_Analyzer*>(p)); }
+    B3D_TRY { return new BRepCheck_Analyzer(*static_cast<const BRepCheck_Analyzer*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepCheck_Analyzer(*S);
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape(const TopoDS_Shape* S, b3
 B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool(const TopoDS_Shape* S, uint8_t GeomControls, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepCheck_Analyzer(*S, GeomControls != 0);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool(const TopoDS_Shape*
 B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool__bool(const TopoDS_Shape* S, uint8_t GeomControls, uint8_t theIsParallel, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepCheck_Analyzer(*S, GeomControls != 0, theIsParallel != 0);
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool__bool(const TopoDS_
 B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool__bool__bool(const TopoDS_Shape* S, uint8_t GeomControls, uint8_t theIsParallel, uint8_t theIsExact, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepCheck_Analyzer(*S, GeomControls != 0, theIsParallel != 0, theIsExact != 0);
     return r;
@@ -68,7 +68,7 @@ B3D_API void* b3d_BRepCheck_Analyzer_new__TopoDS_Shape__bool__bool__bool(const T
 B3D_API void b3d_BRepCheck_Analyzer_Init__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepCheck_Analyzer*>(self)->Init(*S);
     return;
@@ -79,7 +79,7 @@ B3D_API void b3d_BRepCheck_Analyzer_Init__TopoDS_Shape(void* self, const TopoDS_
 B3D_API void b3d_BRepCheck_Analyzer_Init__TopoDS_Shape__bool(void* self, const TopoDS_Shape* S, uint8_t GeomControls, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepCheck_Analyzer*>(self)->Init(*S, GeomControls != 0);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_BRepCheck_Analyzer_Init__TopoDS_Shape__bool(void* self, const T
 B3D_API void b3d_BRepCheck_Analyzer_SetExactMethod__bool(void* self, uint8_t theIsExact, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepCheck_Analyzer*>(self)->SetExactMethod(theIsExact != 0);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_BRepCheck_Analyzer_SetExactMethod__bool(void* self, uint8_t the
 B3D_API uint8_t b3d_BRepCheck_Analyzer_IsExactMethod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepCheck_Analyzer*>(self)->IsExactMethod();
     return r ? 1 : 0;
@@ -113,7 +113,7 @@ B3D_API uint8_t b3d_BRepCheck_Analyzer_IsExactMethod(void* self, b3d_error** err
 B3D_API void b3d_BRepCheck_Analyzer_SetParallel__bool(void* self, uint8_t theIsParallel, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepCheck_Analyzer*>(self)->SetParallel(theIsParallel != 0);
     return;
@@ -124,7 +124,7 @@ B3D_API void b3d_BRepCheck_Analyzer_SetParallel__bool(void* self, uint8_t theIsP
 B3D_API uint8_t b3d_BRepCheck_Analyzer_IsParallel(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepCheck_Analyzer*>(self)->IsParallel();
     return r ? 1 : 0;
@@ -136,7 +136,7 @@ B3D_API uint8_t b3d_BRepCheck_Analyzer_IsParallel(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepCheck_Analyzer_IsValid__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepCheck_Analyzer*>(self)->IsValid(*S);
     return r ? 1 : 0;
@@ -148,7 +148,7 @@ B3D_API uint8_t b3d_BRepCheck_Analyzer_IsValid__TopoDS_Shape(void* self, const T
 B3D_API uint8_t b3d_BRepCheck_Analyzer_IsValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepCheck_Analyzer*>(self)->IsValid();
     return r ? 1 : 0;

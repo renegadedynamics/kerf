@@ -16,7 +16,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_downcast(void* t) { return b3d_retain(dy
 B3D_API void* b3d_ShapeAnalysis_Surface_new__Geom_Surface(Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_Surface(occ::handle<Geom_Surface>(S));
     return b3d_retain(r);
@@ -28,7 +28,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_new__Geom_Surface(Geom_Surface* S, b3d_e
 B3D_API void b3d_ShapeAnalysis_Surface_Init__Geom_Surface(void* self, Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Surface*>(self)->Init(occ::handle<Geom_Surface>(S));
     return;
@@ -39,7 +39,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_Init__Geom_Surface(void* self, Geom_Surfa
 B3D_API void b3d_ShapeAnalysis_Surface_Init__ShapeAnalysis_Surface(void* self, ShapeAnalysis_Surface* other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Surface*>(self)->Init(occ::handle<ShapeAnalysis_Surface>(other));
     return;
@@ -50,7 +50,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_Init__ShapeAnalysis_Surface(void* self, S
 B3D_API void b3d_ShapeAnalysis_Surface_SetDomain__double__double__double__double(void* self, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Surface*>(self)->SetDomain(U1, U2, V1, V2);
     return;
@@ -61,7 +61,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_SetDomain__double__double__double__double
 B3D_API void* b3d_ShapeAnalysis_Surface_Surface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Surface();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -73,7 +73,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_Surface(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_Adaptor3d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Adaptor3d();
     return b3d_retain(occ::handle<GeomAdaptor_Surface>(r).get());
@@ -85,7 +85,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_Adaptor3d(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_TrueAdaptor3d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->TrueAdaptor3d();
     return b3d_retain(occ::handle<GeomAdaptor_Surface>(r).get());
@@ -97,7 +97,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_TrueAdaptor3d(void* self, b3d_error** er
 B3D_API double b3d_ShapeAnalysis_Surface_Gap(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Gap();
     return r;
@@ -109,7 +109,7 @@ B3D_API double b3d_ShapeAnalysis_Surface_Gap(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_Value__double__double(void* self, double u, double v, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Value(u, v);
     return new gp_Pnt(r);
@@ -121,7 +121,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_Value__double__double(void* self, double
 B3D_API void* b3d_ShapeAnalysis_Surface_Value__gp_Pnt2d(void* self, const gp_Pnt2d* p2d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Value(*p2d);
     return new gp_Pnt(r);
@@ -133,7 +133,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_Value__gp_Pnt2d(void* self, const gp_Pnt
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_HasSingularities__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->HasSingularities(preci);
     return r ? 1 : 0;
@@ -145,7 +145,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_HasSingularities__double(void* self, d
 B3D_API int32_t b3d_ShapeAnalysis_Surface_NbSingularities__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->NbSingularities(preci);
     return r;
@@ -157,7 +157,7 @@ B3D_API int32_t b3d_ShapeAnalysis_Surface_NbSingularities__double(void* self, do
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_Singularity__int__ref_double__mut_gp_Pnt__mut_gp_Pnt2d__mut_gp_Pnt2d__ref_double__ref_double__ref_bool(void* self, int32_t num, double* preci, gp_Pnt* P3d, gp_Pnt2d* firstP2d, gp_Pnt2d* lastP2d, double* firstpar, double* lastpar, uint8_t* uisodeg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     bool uisodeg_b = *uisodeg != 0;
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->Singularity(num, *preci, *P3d, *firstP2d, *lastP2d, *firstpar, *lastpar, uisodeg_b);
@@ -171,7 +171,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_Singularity__int__ref_double__mut_gp_P
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsDegenerated__gp_Pnt__double(void* self, const gp_Pnt* P3d, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsDegenerated(*P3d, preci);
     return r ? 1 : 0;
@@ -183,7 +183,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsDegenerated__gp_Pnt__double(void* se
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_DegeneratedValues__gp_Pnt__double__mut_gp_Pnt2d__mut_gp_Pnt2d__ref_double__ref_double(void* self, const gp_Pnt* P3d, double preci, gp_Pnt2d* firstP2d, gp_Pnt2d* lastP2d, double* firstpar, double* lastpar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->DegeneratedValues(*P3d, preci, *firstP2d, *lastP2d, *firstpar, *lastpar);
     return r ? 1 : 0;
@@ -195,7 +195,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_DegeneratedValues__gp_Pnt__double__mut
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_DegeneratedValues__gp_Pnt__double__mut_gp_Pnt2d__mut_gp_Pnt2d__ref_double__ref_double__bool(void* self, const gp_Pnt* P3d, double preci, gp_Pnt2d* firstP2d, gp_Pnt2d* lastP2d, double* firstpar, double* lastpar, uint8_t forward, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->DegeneratedValues(*P3d, preci, *firstP2d, *lastP2d, *firstpar, *lastpar, forward != 0);
     return r ? 1 : 0;
@@ -207,7 +207,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_DegeneratedValues__gp_Pnt__double__mut
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_ProjectDegenerated__gp_Pnt__double__gp_Pnt2d__mut_gp_Pnt2d(void* self, const gp_Pnt* P3d, double preci, const gp_Pnt2d* neighbour, gp_Pnt2d* result, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->ProjectDegenerated(*P3d, preci, *neighbour, *result);
     return r ? 1 : 0;
@@ -219,7 +219,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_ProjectDegenerated__gp_Pnt__double__gp
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsDegenerated__gp_Pnt2d__gp_Pnt2d__double__double(void* self, const gp_Pnt2d* p2d1, const gp_Pnt2d* p2d2, double tol, double ratio, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsDegenerated(*p2d1, *p2d2, tol, ratio);
     return r ? 1 : 0;
@@ -231,7 +231,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsDegenerated__gp_Pnt2d__gp_Pnt2d__dou
 B3D_API void b3d_ShapeAnalysis_Surface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* ufirst, double* ulast, double* vfirst, double* vlast, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Surface*>(self)->Bounds(*ufirst, *ulast, *vfirst, *vlast);
     return;
@@ -242,7 +242,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_Bounds__ref_double__ref_double__ref_doubl
 B3D_API void b3d_ShapeAnalysis_Surface_ComputeBoundIsos(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Surface*>(self)->ComputeBoundIsos();
     return;
@@ -253,7 +253,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_ComputeBoundIsos(void* self, b3d_error** 
 B3D_API void* b3d_ShapeAnalysis_Surface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -265,7 +265,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_UIso__double(void* self, double U, b3d_e
 B3D_API void* b3d_ShapeAnalysis_Surface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -277,7 +277,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_VIso__double(void* self, double V, b3d_e
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -289,7 +289,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsUClosed__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsUClosed(preci);
     return r ? 1 : 0;
@@ -301,7 +301,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsUClosed__double(void* self, double p
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -313,7 +313,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsVClosed__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->IsVClosed(preci);
     return r ? 1 : 0;
@@ -325,7 +325,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsVClosed__double(void* self, double p
 B3D_API void* b3d_ShapeAnalysis_Surface_ValueOfUV__gp_Pnt__double(void* self, const gp_Pnt* P3D, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->ValueOfUV(*P3D, preci);
     return new gp_Pnt2d(r);
@@ -337,7 +337,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_ValueOfUV__gp_Pnt__double(void* self, co
 B3D_API void* b3d_ShapeAnalysis_Surface_NextValueOfUV__gp_Pnt2d__gp_Pnt__double(void* self, const gp_Pnt2d* p2dPrev, const gp_Pnt* P3D, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->NextValueOfUV(*p2dPrev, *P3D, preci);
     return new gp_Pnt2d(r);
@@ -349,7 +349,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_NextValueOfUV__gp_Pnt2d__gp_Pnt__double(
 B3D_API void* b3d_ShapeAnalysis_Surface_NextValueOfUV__gp_Pnt2d__gp_Pnt__double__double(void* self, const gp_Pnt2d* p2dPrev, const gp_Pnt* P3D, double preci, double maxpreci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->NextValueOfUV(*p2dPrev, *P3D, preci, maxpreci);
     return new gp_Pnt2d(r);
@@ -361,7 +361,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_NextValueOfUV__gp_Pnt2d__gp_Pnt__double_
 B3D_API double b3d_ShapeAnalysis_Surface_UVFromIso__gp_Pnt__double__ref_double__ref_double(void* self, const gp_Pnt* P3D, double preci, double* U, double* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->UVFromIso(*P3D, preci, *U, *V);
     return r;
@@ -373,7 +373,7 @@ B3D_API double b3d_ShapeAnalysis_Surface_UVFromIso__gp_Pnt__double__ref_double__
 B3D_API double b3d_ShapeAnalysis_Surface_UCloseVal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->UCloseVal();
     return r;
@@ -385,7 +385,7 @@ B3D_API double b3d_ShapeAnalysis_Surface_UCloseVal(void* self, b3d_error** err)
 B3D_API double b3d_ShapeAnalysis_Surface_VCloseVal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->VCloseVal();
     return r;
@@ -397,7 +397,7 @@ B3D_API double b3d_ShapeAnalysis_Surface_VCloseVal(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxUF(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->GetBoxUF();
     return new Bnd_Box(r);
@@ -409,7 +409,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxUF(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxUL(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->GetBoxUL();
     return new Bnd_Box(r);
@@ -421,7 +421,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxUL(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxVF(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->GetBoxVF();
     return new Bnd_Box(r);
@@ -433,7 +433,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxVF(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxVL(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Surface*>(self)->GetBoxVL();
     return new Bnd_Box(r);
@@ -445,7 +445,7 @@ B3D_API void* b3d_ShapeAnalysis_Surface_GetBoxVL(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeAnalysis_Surface*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -457,7 +457,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsInstance__string(void* self, const c
 B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeAnalysis_Surface*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -469,7 +469,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Surface_IsKind__string(void* self, const char*
 B3D_API int32_t b3d_ShapeAnalysis_Surface_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeAnalysis_Surface*>(self))->GetRefCount();
     return r;
@@ -481,7 +481,7 @@ B3D_API int32_t b3d_ShapeAnalysis_Surface_GetRefCount(void* self, b3d_error** er
 B3D_API void b3d_ShapeAnalysis_Surface_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<ShapeAnalysis_Surface*>(self))->IncrementRefCounter();
     return;
@@ -492,7 +492,7 @@ B3D_API void b3d_ShapeAnalysis_Surface_IncrementRefCounter(void* self, b3d_error
 B3D_API int32_t b3d_ShapeAnalysis_Surface_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeAnalysis_Surface*>(self))->DecrementRefCounter();
     return r;

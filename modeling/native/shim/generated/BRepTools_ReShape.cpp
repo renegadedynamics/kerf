@@ -14,7 +14,7 @@ B3D_API void* b3d_BRepTools_ReShape_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_BRepTools_ReShape_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepTools_ReShape();
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepTools_ReShape_new(b3d_error** err)
 B3D_API void b3d_BRepTools_ReShape_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_ReShape*>(self)->Clear();
     return;
@@ -37,7 +37,7 @@ B3D_API void b3d_BRepTools_ReShape_Clear(void* self, b3d_error** err)
 B3D_API void b3d_BRepTools_ReShape_Remove__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_ReShape*>(self)->Remove(*shape);
     return;
@@ -48,7 +48,7 @@ B3D_API void b3d_BRepTools_ReShape_Remove__TopoDS_Shape(void* self, const TopoDS
 B3D_API void b3d_BRepTools_ReShape_Replace__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* shape, const TopoDS_Shape* newshape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_ReShape*>(self)->Replace(*shape, *newshape);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_BRepTools_ReShape_Replace__TopoDS_Shape__TopoDS_Shape(void* sel
 B3D_API uint8_t b3d_BRepTools_ReShape_IsRecorded__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->IsRecorded(*shape);
     return r ? 1 : 0;
@@ -71,7 +71,7 @@ B3D_API uint8_t b3d_BRepTools_ReShape_IsRecorded__TopoDS_Shape(void* self, const
 B3D_API void* b3d_BRepTools_ReShape_Value__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->Value(*shape);
     return new TopoDS_Shape(r);
@@ -83,7 +83,7 @@ B3D_API void* b3d_BRepTools_ReShape_Value__TopoDS_Shape(void* self, const TopoDS
 B3D_API void* b3d_BRepTools_ReShape_ValueLeaf__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->ValueLeaf(*theShape);
     return new TopoDS_Shape(r);
@@ -95,7 +95,7 @@ B3D_API void* b3d_BRepTools_ReShape_ValueLeaf__TopoDS_Shape(void* self, const To
 B3D_API int32_t b3d_BRepTools_ReShape_Status__TopoDS_Shape__mut_TopoDS_Shape(void* self, const TopoDS_Shape* shape, TopoDS_Shape* newsh, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->Status(*shape, *newsh);
     return r;
@@ -107,7 +107,7 @@ B3D_API int32_t b3d_BRepTools_ReShape_Status__TopoDS_Shape__mut_TopoDS_Shape(voi
 B3D_API int32_t b3d_BRepTools_ReShape_Status__TopoDS_Shape__mut_TopoDS_Shape__bool(void* self, const TopoDS_Shape* shape, TopoDS_Shape* newsh, uint8_t last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->Status(*shape, *newsh, last != 0);
     return r;
@@ -119,7 +119,7 @@ B3D_API int32_t b3d_BRepTools_ReShape_Status__TopoDS_Shape__mut_TopoDS_Shape__bo
 B3D_API void* b3d_BRepTools_ReShape_Apply__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->Apply(*theShape);
     return new TopoDS_Shape(r);
@@ -131,7 +131,7 @@ B3D_API void* b3d_BRepTools_ReShape_Apply__TopoDS_Shape(void* self, const TopoDS
 B3D_API void* b3d_BRepTools_ReShape_Apply__TopoDS_Shape__TopAbs_ShapeEnum(void* self, const TopoDS_Shape* theShape, int32_t theUntil, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->Apply(*theShape, static_cast<TopAbs_ShapeEnum>(theUntil));
     return new TopoDS_Shape(r);
@@ -143,7 +143,7 @@ B3D_API void* b3d_BRepTools_ReShape_Apply__TopoDS_Shape__TopAbs_ShapeEnum(void* 
 B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex(void* self, const TopoDS_Vertex* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->CopyVertex(*theV);
     return new TopoDS_Vertex(r);
@@ -155,7 +155,7 @@ B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex(void* self, const 
 B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex__double(void* self, const TopoDS_Vertex* theV, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->CopyVertex(*theV, theTol);
     return new TopoDS_Vertex(r);
@@ -167,7 +167,7 @@ B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex__double(void* self
 B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex__gp_Pnt__double(void* self, const TopoDS_Vertex* theV, const gp_Pnt* theNewPos, double aTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->CopyVertex(*theV, *theNewPos, aTol);
     return new TopoDS_Vertex(r);
@@ -179,7 +179,7 @@ B3D_API void* b3d_BRepTools_ReShape_CopyVertex__TopoDS_Vertex__gp_Pnt__double(vo
 B3D_API uint8_t b3d_BRepTools_ReShape_IsNewShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->IsNewShape(*theShape);
     return r ? 1 : 0;
@@ -191,7 +191,7 @@ B3D_API uint8_t b3d_BRepTools_ReShape_IsNewShape__TopoDS_Shape(void* self, const
 B3D_API void* b3d_BRepTools_ReShape_History(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_ReShape*>(self)->History();
     return b3d_retain(occ::handle<BRepTools_History>(r).get());
@@ -203,7 +203,7 @@ B3D_API void* b3d_BRepTools_ReShape_History(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepTools_ReShape_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_ReShape*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -215,7 +215,7 @@ B3D_API uint8_t b3d_BRepTools_ReShape_IsInstance__string(void* self, const char*
 B3D_API uint8_t b3d_BRepTools_ReShape_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_ReShape*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -227,7 +227,7 @@ B3D_API uint8_t b3d_BRepTools_ReShape_IsKind__string(void* self, const char* the
 B3D_API int32_t b3d_BRepTools_ReShape_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_ReShape*>(self))->GetRefCount();
     return r;
@@ -239,7 +239,7 @@ B3D_API int32_t b3d_BRepTools_ReShape_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_BRepTools_ReShape_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<BRepTools_ReShape*>(self))->IncrementRefCounter();
     return;
@@ -250,7 +250,7 @@ B3D_API void b3d_BRepTools_ReShape_IncrementRefCounter(void* self, b3d_error** e
 B3D_API int32_t b3d_BRepTools_ReShape_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_ReShape*>(self))->DecrementRefCounter();
     return r;

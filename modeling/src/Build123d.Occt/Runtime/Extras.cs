@@ -129,8 +129,64 @@ public static partial class Extras
         }
     }
 
+    /// <summary>
+    /// A rough estimate of the native memory a shape holds, in bytes: its sub-shapes, curves, surfaces and
+    /// triangulations, each counted once however often it's shared.
+    /// </summary>
+    public static long EstimateMemory(TopoDS_Shape shape)
+    {
+        ArgumentNullException.ThrowIfNull(shape);
+        var bytes = N.b3d_shape_memory(shape.PtrAs_TopoDS_Shape());
+        GC.KeepAlive(shape);
+        return bytes;
+    }
+
+    /// <summary>
+    /// Tells the GC about the native memory <paramref name="shape"/> holds (<see cref="EstimateMemory"/>), until this
+    /// wrapper is disposed or finalised. Once per wrapper; shapes under a few kilobytes aren't worth telling.
+    /// </summary>
+    public static void AddMemoryPressure(TopoDS_Shape shape)
+    {
+        ArgumentNullException.ThrowIfNull(shape);
+        if (shape.MemoryPressure != 0 || shape.IsDisposed)
+            return;
+        var bytes = EstimateMemory(shape);
+        if (bytes >= MinimumPressure)
+            shape.AddMemoryPressure(bytes);
+    }
+
+    /// <summary>The native memory a wrapper has told the GC about (see <see cref="AddMemoryPressure"/>).</summary>
+    public static long MemoryPressureOf(OcctObject wrapper) => wrapper.MemoryPressure;
+
+    private const long MinimumPressure = 4096;
+
+    /// <summary>
+    /// The names of the errors an algorithm reported ("BOPAlgo_AlertTooFewArguments, BOPAlgo_AlertSelfInterferingShape"),
+    /// or null if it reported none.
+    /// </summary>
+    public static string? AlgoErrors(BRepAlgoAPI_Algo algo)
+    {
+        ArgumentNullException.ThrowIfNull(algo);
+        var text = N.b3d_algo_errors(algo.PtrAs_BRepAlgoAPI_Algo());
+        GC.KeepAlive(algo);
+        if (text == IntPtr.Zero)
+            return null;
+        try
+        {
+            return Marshal.PtrToStringUTF8(text);
+        }
+        finally
+        {
+            N.b3d_free_bytes(text);
+        }
+    }
+
     internal static partial class N
     {
+        [LibraryImport("b3docct")]
+        internal static partial long b3d_shape_memory(IntPtr shape);
+        [LibraryImport("b3docct")]
+        internal static partial IntPtr b3d_algo_errors(IntPtr algo);
         [LibraryImport("b3docct")]
         internal static partial IntPtr b3d_mesh_extract(IntPtr root, IntPtr faces, int faceCount, IntPtr edges, int edgeCount,
                                                         double deflection, double angle, out IntPtr err);

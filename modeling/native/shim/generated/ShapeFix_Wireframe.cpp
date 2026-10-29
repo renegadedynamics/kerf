@@ -11,7 +11,7 @@ B3D_API void* b3d_ShapeFix_Wireframe_downcast(void* t) { return b3d_retain(dynam
 B3D_API void* b3d_ShapeFix_Wireframe_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Wireframe();
     return b3d_retain(r);
@@ -23,7 +23,7 @@ B3D_API void* b3d_ShapeFix_Wireframe_new(b3d_error** err)
 B3D_API void* b3d_ShapeFix_Wireframe_new__TopoDS_Shape(const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Wireframe(*shape);
     return b3d_retain(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_ShapeFix_Wireframe_new__TopoDS_Shape(const TopoDS_Shape* shape
 B3D_API void b3d_ShapeFix_Wireframe_ClearStatuses(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Wireframe*>(self)->ClearStatuses();
     return;
@@ -46,7 +46,7 @@ B3D_API void b3d_ShapeFix_Wireframe_ClearStatuses(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Wireframe_Load__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Wireframe*>(self)->Load(*shape);
     return;
@@ -57,7 +57,7 @@ B3D_API void b3d_ShapeFix_Wireframe_Load__TopoDS_Shape(void* self, const TopoDS_
 B3D_API uint8_t b3d_ShapeFix_Wireframe_FixWireGaps(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->FixWireGaps();
     return r ? 1 : 0;
@@ -69,7 +69,7 @@ B3D_API uint8_t b3d_ShapeFix_Wireframe_FixWireGaps(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeFix_Wireframe_FixSmallEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->FixSmallEdges();
     return r ? 1 : 0;
@@ -81,7 +81,7 @@ B3D_API uint8_t b3d_ShapeFix_Wireframe_FixSmallEdges(void* self, b3d_error** err
 B3D_API uint8_t b3d_ShapeFix_Wireframe_StatusWireGaps__ShapeExtend_Status(void* self, int32_t status, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->StatusWireGaps(static_cast<ShapeExtend_Status>(status));
     return r ? 1 : 0;
@@ -93,7 +93,7 @@ B3D_API uint8_t b3d_ShapeFix_Wireframe_StatusWireGaps__ShapeExtend_Status(void* 
 B3D_API uint8_t b3d_ShapeFix_Wireframe_StatusSmallEdges__ShapeExtend_Status(void* self, int32_t status, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->StatusSmallEdges(static_cast<ShapeExtend_Status>(status));
     return r ? 1 : 0;
@@ -105,7 +105,7 @@ B3D_API uint8_t b3d_ShapeFix_Wireframe_StatusSmallEdges__ShapeExtend_Status(void
 B3D_API void* b3d_ShapeFix_Wireframe_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -117,7 +117,7 @@ B3D_API void* b3d_ShapeFix_Wireframe_Shape(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Wireframe_SetLimitAngle__double(void* self, double theLimitAngle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Wireframe*>(self)->SetLimitAngle(theLimitAngle);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_ShapeFix_Wireframe_SetLimitAngle__double(void* self, double the
 B3D_API double b3d_ShapeFix_Wireframe_LimitAngle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Wireframe*>(self)->LimitAngle();
     return r;

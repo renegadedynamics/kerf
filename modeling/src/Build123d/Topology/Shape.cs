@@ -128,7 +128,7 @@ public abstract partial class Shape : IEquatable<Shape>
         copy._wrapped = TopoUtil.Downcast(wrapped);
         copy.History = null;
         copy._historyAt = null;
-        return copy;
+        return Result(copy);
     }
 
     /// <summary>A copy of this shape noting the record of how it was made.</summary>
@@ -137,7 +137,18 @@ public abstract partial class Shape : IEquatable<Shape>
         var copy = Clone();
         copy.History = history;
         copy._historyAt = copy._wrapped.Location();
-        return copy;
+        return Result(copy);
+    }
+
+    /// <summary>
+    /// A new result, whose native memory the GC is told about (once; see <see cref="Extras.AddMemoryPressure"/>), so
+    /// it collects before native memory balloons when results are dropped rather than disposed. Sub-shapes taken
+    /// out of a result aren't counted again.
+    /// </summary>
+    internal static T Result<T>(T shape) where T : Shape
+    {
+        Extras.AddMemoryPressure(shape._wrapped);
+        return shape;
     }
 
     /// <summary>A copy of this shape noting that it was taken out of <paramref name="source"/>.</summary>

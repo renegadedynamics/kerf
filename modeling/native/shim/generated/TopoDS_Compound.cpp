@@ -8,7 +8,7 @@ B3D_API void* b3d_TopoDS_Compound_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Compound>)
   {
-    try { return new TopoDS_Compound(*static_cast<const TopoDS_Compound*>(p)); }
+    B3D_TRY { return new TopoDS_Compound(*static_cast<const TopoDS_Compound*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopoDS_Compound_as_TopoDS_Shape(void* p) { return static_cast<
 B3D_API void* b3d_TopoDS_Compound_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Compound();
     return r;

@@ -17,7 +17,7 @@ B3D_API void* b3d_Poly_Triangulation_downcast(void* t) { return b3d_retain(dynam
 B3D_API void* b3d_Poly_Triangulation_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangulation();
     return b3d_retain(r);
@@ -29,7 +29,7 @@ B3D_API void* b3d_Poly_Triangulation_new(b3d_error** err)
 B3D_API void* b3d_Poly_Triangulation_new__int__int__bool(int32_t theNbNodes, int32_t theNbTriangles, uint8_t theHasUVNodes, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangulation(theNbNodes, theNbTriangles, theHasUVNodes != 0);
     return b3d_retain(r);
@@ -41,7 +41,7 @@ B3D_API void* b3d_Poly_Triangulation_new__int__int__bool(int32_t theNbNodes, int
 B3D_API void* b3d_Poly_Triangulation_new__int__int__bool__bool(int32_t theNbNodes, int32_t theNbTriangles, uint8_t theHasUVNodes, uint8_t theHasNormals, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangulation(theNbNodes, theNbTriangles, theHasUVNodes != 0, theHasNormals != 0);
     return b3d_retain(r);
@@ -53,7 +53,7 @@ B3D_API void* b3d_Poly_Triangulation_new__int__int__bool__bool(int32_t theNbNode
 B3D_API void* b3d_Poly_Triangulation_new__Poly_Triangulation(Poly_Triangulation* theTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangulation(occ::handle<Poly_Triangulation>(theTriangulation));
     return b3d_retain(r);
@@ -65,7 +65,7 @@ B3D_API void* b3d_Poly_Triangulation_new__Poly_Triangulation(Poly_Triangulation*
 B3D_API void* b3d_Poly_Triangulation_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->Copy();
     return b3d_retain(occ::handle<Poly_Triangulation>(r).get());
@@ -77,7 +77,7 @@ B3D_API void* b3d_Poly_Triangulation_Copy(void* self, b3d_error** err)
 B3D_API double b3d_Poly_Triangulation_Deflection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->Deflection();
     return r;
@@ -89,7 +89,7 @@ B3D_API double b3d_Poly_Triangulation_Deflection(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_Deflection__double(void* self, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->Deflection(theDeflection);
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_Poly_Triangulation_Deflection__double(void* self, double theDef
 B3D_API void b3d_Poly_Triangulation_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->Clear();
     return;
@@ -111,7 +111,7 @@ B3D_API void b3d_Poly_Triangulation_Clear(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Poly_Triangulation_HasGeometry(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->HasGeometry();
     return r ? 1 : 0;
@@ -123,7 +123,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_HasGeometry(void* self, b3d_error** err)
 B3D_API int32_t b3d_Poly_Triangulation_NbNodes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->NbNodes();
     return r;
@@ -135,7 +135,7 @@ B3D_API int32_t b3d_Poly_Triangulation_NbNodes(void* self, b3d_error** err)
 B3D_API int32_t b3d_Poly_Triangulation_NbTriangles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->NbTriangles();
     return r;
@@ -147,7 +147,7 @@ B3D_API int32_t b3d_Poly_Triangulation_NbTriangles(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Poly_Triangulation_HasUVNodes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->HasUVNodes();
     return r ? 1 : 0;
@@ -159,7 +159,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_HasUVNodes(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Poly_Triangulation_HasNormals(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->HasNormals();
     return r ? 1 : 0;
@@ -171,7 +171,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_HasNormals(void* self, b3d_error** err)
 B3D_API void* b3d_Poly_Triangulation_Node__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->Node(theIndex);
     return new gp_Pnt(r);
@@ -183,7 +183,7 @@ B3D_API void* b3d_Poly_Triangulation_Node__int(void* self, int32_t theIndex, b3d
 B3D_API void b3d_Poly_Triangulation_SetNode__int__gp_Pnt(void* self, int32_t theIndex, const gp_Pnt* thePnt, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetNode(theIndex, *thePnt);
     return;
@@ -194,7 +194,7 @@ B3D_API void b3d_Poly_Triangulation_SetNode__int__gp_Pnt(void* self, int32_t the
 B3D_API void* b3d_Poly_Triangulation_UVNode__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->UVNode(theIndex);
     return new gp_Pnt2d(r);
@@ -206,7 +206,7 @@ B3D_API void* b3d_Poly_Triangulation_UVNode__int(void* self, int32_t theIndex, b
 B3D_API void b3d_Poly_Triangulation_SetUVNode__int__gp_Pnt2d(void* self, int32_t theIndex, const gp_Pnt2d* thePnt, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetUVNode(theIndex, *thePnt);
     return;
@@ -217,7 +217,7 @@ B3D_API void b3d_Poly_Triangulation_SetUVNode__int__gp_Pnt2d(void* self, int32_t
 B3D_API void* b3d_Poly_Triangulation_Triangle__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->Triangle(theIndex);
     return new Poly_Triangle(r);
@@ -229,7 +229,7 @@ B3D_API void* b3d_Poly_Triangulation_Triangle__int(void* self, int32_t theIndex,
 B3D_API void b3d_Poly_Triangulation_SetTriangle__int__Poly_Triangle(void* self, int32_t theIndex, const Poly_Triangle* theTriangle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetTriangle(theIndex, *theTriangle);
     return;
@@ -240,7 +240,7 @@ B3D_API void b3d_Poly_Triangulation_SetTriangle__int__Poly_Triangle(void* self, 
 B3D_API void* b3d_Poly_Triangulation_Normal__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->Normal(theIndex);
     return new gp_Dir(r);
@@ -252,7 +252,7 @@ B3D_API void* b3d_Poly_Triangulation_Normal__int(void* self, int32_t theIndex, b
 B3D_API void b3d_Poly_Triangulation_SetNormal__int__gp_Dir(void* self, int32_t theIndex, const gp_Dir* theNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetNormal(theIndex, *theNormal);
     return;
@@ -263,7 +263,7 @@ B3D_API void b3d_Poly_Triangulation_SetNormal__int__gp_Dir(void* self, int32_t t
 B3D_API uint32_t b3d_Poly_Triangulation_MeshPurpose(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->MeshPurpose();
     return r;
@@ -275,7 +275,7 @@ B3D_API uint32_t b3d_Poly_Triangulation_MeshPurpose(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_SetMeshPurpose__uint(void* self, uint32_t thePurpose, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetMeshPurpose(thePurpose);
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_Poly_Triangulation_SetMeshPurpose__uint(void* self, uint32_t th
 B3D_API void* b3d_Poly_Triangulation_CachedMinMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->CachedMinMax();
     return new Bnd_Box(r);
@@ -298,7 +298,7 @@ B3D_API void* b3d_Poly_Triangulation_CachedMinMax(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_SetCachedMinMax__Bnd_Box(void* self, const Bnd_Box* theBox, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetCachedMinMax(*theBox);
     return;
@@ -309,7 +309,7 @@ B3D_API void b3d_Poly_Triangulation_SetCachedMinMax__Bnd_Box(void* self, const B
 B3D_API uint8_t b3d_Poly_Triangulation_HasCachedMinMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->HasCachedMinMax();
     return r ? 1 : 0;
@@ -321,7 +321,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_HasCachedMinMax(void* self, b3d_error** e
 B3D_API void b3d_Poly_Triangulation_UpdateCachedMinMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->UpdateCachedMinMax();
     return;
@@ -332,7 +332,7 @@ B3D_API void b3d_Poly_Triangulation_UpdateCachedMinMax(void* self, b3d_error** e
 B3D_API uint8_t b3d_Poly_Triangulation_MinMax__mut_Bnd_Box__gp_Trsf(void* self, Bnd_Box* theBox, const gp_Trsf* theTrsf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->MinMax(*theBox, *theTrsf);
     return r ? 1 : 0;
@@ -344,7 +344,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_MinMax__mut_Bnd_Box__gp_Trsf(void* self, 
 B3D_API uint8_t b3d_Poly_Triangulation_MinMax__mut_Bnd_Box__gp_Trsf__bool(void* self, Bnd_Box* theBox, const gp_Trsf* theTrsf, uint8_t theIsAccurate, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->MinMax(*theBox, *theTrsf, theIsAccurate != 0);
     return r ? 1 : 0;
@@ -356,7 +356,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_MinMax__mut_Bnd_Box__gp_Trsf__bool(void* 
 B3D_API uint8_t b3d_Poly_Triangulation_IsDoublePrecision(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->IsDoublePrecision();
     return r ? 1 : 0;
@@ -368,7 +368,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_IsDoublePrecision(void* self, b3d_error**
 B3D_API void b3d_Poly_Triangulation_SetDoublePrecision__bool(void* self, uint8_t theIsDouble, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->SetDoublePrecision(theIsDouble != 0);
     return;
@@ -379,7 +379,7 @@ B3D_API void b3d_Poly_Triangulation_SetDoublePrecision__bool(void* self, uint8_t
 B3D_API void b3d_Poly_Triangulation_ResizeNodes__int__bool(void* self, int32_t theNbNodes, uint8_t theToCopyOld, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->ResizeNodes(theNbNodes, theToCopyOld != 0);
     return;
@@ -390,7 +390,7 @@ B3D_API void b3d_Poly_Triangulation_ResizeNodes__int__bool(void* self, int32_t t
 B3D_API void b3d_Poly_Triangulation_ResizeTriangles__int__bool(void* self, int32_t theNbTriangles, uint8_t theToCopyOld, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->ResizeTriangles(theNbTriangles, theToCopyOld != 0);
     return;
@@ -401,7 +401,7 @@ B3D_API void b3d_Poly_Triangulation_ResizeTriangles__int__bool(void* self, int32
 B3D_API void b3d_Poly_Triangulation_AddUVNodes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->AddUVNodes();
     return;
@@ -412,7 +412,7 @@ B3D_API void b3d_Poly_Triangulation_AddUVNodes(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_RemoveUVNodes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->RemoveUVNodes();
     return;
@@ -423,7 +423,7 @@ B3D_API void b3d_Poly_Triangulation_RemoveUVNodes(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_AddNormals(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->AddNormals();
     return;
@@ -434,7 +434,7 @@ B3D_API void b3d_Poly_Triangulation_AddNormals(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_RemoveNormals(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->RemoveNormals();
     return;
@@ -445,7 +445,7 @@ B3D_API void b3d_Poly_Triangulation_RemoveNormals(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_ComputeNormals(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangulation*>(self)->ComputeNormals();
     return;
@@ -456,7 +456,7 @@ B3D_API void b3d_Poly_Triangulation_ComputeNormals(void* self, b3d_error** err)
 B3D_API void* b3d_Poly_Triangulation_MapNodeArray(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->MapNodeArray();
     return b3d_retain(occ::handle<NCollection_HArray1<gp_Pnt>>(r).get());
@@ -468,7 +468,7 @@ B3D_API void* b3d_Poly_Triangulation_MapNodeArray(void* self, b3d_error** err)
 B3D_API int32_t b3d_Poly_Triangulation_NbDeferredNodes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->NbDeferredNodes();
     return r;
@@ -480,7 +480,7 @@ B3D_API int32_t b3d_Poly_Triangulation_NbDeferredNodes(void* self, b3d_error** e
 B3D_API int32_t b3d_Poly_Triangulation_NbDeferredTriangles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->NbDeferredTriangles();
     return r;
@@ -492,7 +492,7 @@ B3D_API int32_t b3d_Poly_Triangulation_NbDeferredTriangles(void* self, b3d_error
 B3D_API uint8_t b3d_Poly_Triangulation_HasDeferredData(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->HasDeferredData();
     return r ? 1 : 0;
@@ -504,7 +504,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_HasDeferredData(void* self, b3d_error** e
 B3D_API uint8_t b3d_Poly_Triangulation_LoadDeferredData(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->LoadDeferredData();
     return r ? 1 : 0;
@@ -516,7 +516,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_LoadDeferredData(void* self, b3d_error** 
 B3D_API void* b3d_Poly_Triangulation_DetachedLoadDeferredData(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->DetachedLoadDeferredData();
     return b3d_retain(occ::handle<Poly_Triangulation>(r).get());
@@ -528,7 +528,7 @@ B3D_API void* b3d_Poly_Triangulation_DetachedLoadDeferredData(void* self, b3d_er
 B3D_API uint8_t b3d_Poly_Triangulation_UnloadDeferredData(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangulation*>(self)->UnloadDeferredData();
     return r ? 1 : 0;
@@ -540,7 +540,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_UnloadDeferredData(void* self, b3d_error*
 B3D_API uint8_t b3d_Poly_Triangulation_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Poly_Triangulation*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -552,7 +552,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_IsInstance__string(void* self, const char
 B3D_API uint8_t b3d_Poly_Triangulation_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Poly_Triangulation*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -564,7 +564,7 @@ B3D_API uint8_t b3d_Poly_Triangulation_IsKind__string(void* self, const char* th
 B3D_API int32_t b3d_Poly_Triangulation_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Poly_Triangulation*>(self))->GetRefCount();
     return r;
@@ -576,7 +576,7 @@ B3D_API int32_t b3d_Poly_Triangulation_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_Poly_Triangulation_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<Poly_Triangulation*>(self))->IncrementRefCounter();
     return;
@@ -587,7 +587,7 @@ B3D_API void b3d_Poly_Triangulation_IncrementRefCounter(void* self, b3d_error** 
 B3D_API int32_t b3d_Poly_Triangulation_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Poly_Triangulation*>(self))->DecrementRefCounter();
     return r;

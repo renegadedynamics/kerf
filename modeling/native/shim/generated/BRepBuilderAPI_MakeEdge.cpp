@@ -19,7 +19,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeEdge>)
   {
-    try { return new BRepBuilderAPI_MakeEdge(*static_cast<const BRepBuilderAPI_MakeEdge*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeEdge(*static_cast<const BRepBuilderAPI_MakeEdge*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -32,7 +32,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_as_BRepBuilderAPI_Command(void* p) { r
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge();
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__TopoDS_Vertex__TopoDS_Vertex(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*V1, *V2);
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__TopoDS_Vertex__TopoDS_Vertex(cons
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*P1, *P2);
     return r;
@@ -68,7 +68,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, 
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin(const gp_Lin* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L);
     return r;
@@ -80,7 +80,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin(const gp_Lin* L, b3d_error
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__double__double(const gp_Lin* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, p1, p2);
     return r;
@@ -92,7 +92,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__double__double(const gp_L
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__gp_Pnt__gp_Pnt(const gp_Lin* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *P1, *P2);
     return r;
@@ -104,7 +104,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__gp_Pnt__gp_Pnt(const gp_L
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__TopoDS_Vertex__TopoDS_Vertex(const gp_Lin* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *V1, *V2);
     return r;
@@ -116,7 +116,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Lin__TopoDS_Vertex__TopoDS_Ver
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ(const gp_Circ* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L);
     return r;
@@ -128,7 +128,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ(const gp_Circ* L, b3d_err
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__double__double(const gp_Circ* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, p1, p2);
     return r;
@@ -140,7 +140,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__double__double(const gp_
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__gp_Pnt__gp_Pnt(const gp_Circ* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *P1, *P2);
     return r;
@@ -152,7 +152,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__gp_Pnt__gp_Pnt(const gp_
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__TopoDS_Vertex__TopoDS_Vertex(const gp_Circ* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *V1, *V2);
     return r;
@@ -164,7 +164,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Circ__TopoDS_Vertex__TopoDS_Ve
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips(const gp_Elips* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L);
     return r;
@@ -176,7 +176,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips(const gp_Elips* L, b3d_e
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__double__double(const gp_Elips* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, p1, p2);
     return r;
@@ -188,7 +188,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__double__double(const gp
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__gp_Pnt__gp_Pnt(const gp_Elips* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *P1, *P2);
     return r;
@@ -200,7 +200,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__gp_Pnt__gp_Pnt(const gp
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__TopoDS_Vertex__TopoDS_Vertex(const gp_Elips* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *V1, *V2);
     return r;
@@ -212,7 +212,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Elips__TopoDS_Vertex__TopoDS_V
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr(const gp_Hypr* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L);
     return r;
@@ -224,7 +224,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr(const gp_Hypr* L, b3d_err
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__double__double(const gp_Hypr* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, p1, p2);
     return r;
@@ -236,7 +236,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__double__double(const gp_
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__gp_Pnt__gp_Pnt(const gp_Hypr* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *P1, *P2);
     return r;
@@ -248,7 +248,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__gp_Pnt__gp_Pnt(const gp_
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__TopoDS_Vertex__TopoDS_Vertex(const gp_Hypr* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *V1, *V2);
     return r;
@@ -260,7 +260,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Hypr__TopoDS_Vertex__TopoDS_Ve
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab(const gp_Parab* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L);
     return r;
@@ -272,7 +272,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab(const gp_Parab* L, b3d_e
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__double__double(const gp_Parab* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, p1, p2);
     return r;
@@ -284,7 +284,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__double__double(const gp
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__gp_Pnt__gp_Pnt(const gp_Parab* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *P1, *P2);
     return r;
@@ -296,7 +296,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__gp_Pnt__gp_Pnt(const gp
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__TopoDS_Vertex__TopoDS_Vertex(const gp_Parab* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(*L, *V1, *V2);
     return r;
@@ -308,7 +308,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__gp_Parab__TopoDS_Vertex__TopoDS_V
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve(Geom_Curve* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L));
     return r;
@@ -320,7 +320,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve(Geom_Curve* L, b3d_err
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__double__double(Geom_Curve* L, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L), p1, p2);
     return r;
@@ -332,7 +332,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__double__double(Geom_C
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__gp_Pnt__gp_Pnt(Geom_Curve* L, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L), *P1, *P2);
     return r;
@@ -344,7 +344,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__gp_Pnt__gp_Pnt(Geom_C
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__TopoDS_Vertex__TopoDS_Vertex(Geom_Curve* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L), *V1, *V2);
     return r;
@@ -356,7 +356,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__TopoDS_Vertex__TopoDS
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__gp_Pnt__gp_Pnt__double__double(Geom_Curve* L, const gp_Pnt* P1, const gp_Pnt* P2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L), *P1, *P2, p1, p2);
     return r;
@@ -368,7 +368,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__gp_Pnt__gp_Pnt__doubl
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__TopoDS_Vertex__TopoDS_Vertex__double__double(Geom_Curve* L, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom_Curve>(L), *V1, *V2, p1, p2);
     return r;
@@ -380,7 +380,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom_Curve__TopoDS_Vertex__TopoDS
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface(Geom2d_Curve* L, Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S));
     return r;
@@ -392,7 +392,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface(Geom2d
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__double__double(Geom2d_Curve* L, Geom_Surface* S, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S), p1, p2);
     return r;
@@ -404,7 +404,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__doubl
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__gp_Pnt__gp_Pnt(Geom2d_Curve* L, Geom_Surface* S, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S), *P1, *P2);
     return r;
@@ -416,7 +416,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__gp_Pn
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__TopoDS_Vertex__TopoDS_Vertex(Geom2d_Curve* L, Geom_Surface* S, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S), *V1, *V2);
     return r;
@@ -428,7 +428,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__TopoD
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__gp_Pnt__gp_Pnt__double__double(Geom2d_Curve* L, Geom_Surface* S, const gp_Pnt* P1, const gp_Pnt* P2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S), *P1, *P2, p1, p2);
     return r;
@@ -440,7 +440,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__gp_Pn
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__TopoDS_Vertex__TopoDS_Vertex__double__double(Geom2d_Curve* L, Geom_Surface* S, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeEdge(occ::handle<Geom2d_Curve>(L), occ::handle<Geom_Surface>(S), *V1, *V2, p1, p2);
     return r;
@@ -452,7 +452,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_new__Geom2d_Curve__Geom_Surface__TopoD
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve(void* self, Geom_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C));
     return;
@@ -463,7 +463,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve(void* self, Geom_Curve
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__double__double(void* self, Geom_Curve* C, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C), p1, p2);
     return;
@@ -474,7 +474,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__double__double(void* 
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__gp_Pnt__gp_Pnt(void* self, Geom_Curve* C, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C), *P1, *P2);
     return;
@@ -485,7 +485,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__gp_Pnt__gp_Pnt(void* 
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__TopoDS_Vertex__TopoDS_Vertex(void* self, Geom_Curve* C, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C), *V1, *V2);
     return;
@@ -496,7 +496,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__TopoDS_Vertex__TopoDS
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__gp_Pnt__gp_Pnt__double__double(void* self, Geom_Curve* C, const gp_Pnt* P1, const gp_Pnt* P2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C), *P1, *P2, p1, p2);
     return;
@@ -507,7 +507,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__gp_Pnt__gp_Pnt__doubl
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__TopoDS_Vertex__TopoDS_Vertex__double__double(void* self, Geom_Curve* C, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom_Curve>(C), *V1, *V2, p1, p2);
     return;
@@ -518,7 +518,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom_Curve__TopoDS_Vertex__TopoDS
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface(void* self, Geom2d_Curve* C, Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S));
     return;
@@ -529,7 +529,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface(void* 
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__double__double(void* self, Geom2d_Curve* C, Geom_Surface* S, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), p1, p2);
     return;
@@ -540,7 +540,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__doubl
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__gp_Pnt__gp_Pnt(void* self, Geom2d_Curve* C, Geom_Surface* S, const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *P1, *P2);
     return;
@@ -551,7 +551,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__gp_Pn
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__TopoDS_Vertex__TopoDS_Vertex(void* self, Geom2d_Curve* C, Geom_Surface* S, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *V1, *V2);
     return;
@@ -562,7 +562,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__TopoD
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__gp_Pnt__gp_Pnt__double__double(void* self, Geom2d_Curve* C, Geom_Surface* S, const gp_Pnt* P1, const gp_Pnt* P2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *P1, *P2, p1, p2);
     return;
@@ -573,7 +573,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__gp_Pn
 B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__TopoDS_Vertex__TopoDS_Vertex__double__double(void* self, Geom2d_Curve* C, Geom_Surface* S, const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, double p1, double p2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeEdge*>(self)->Init(occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *V1, *V2, p1, p2);
     return;
@@ -584,7 +584,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeEdge_Init__Geom2d_Curve__Geom_Surface__TopoD
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeEdge_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeEdge*>(self)->IsDone();
     return r ? 1 : 0;
@@ -596,7 +596,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakeEdge_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepBuilderAPI_MakeEdge_Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeEdge*>(self)->Error();
     return static_cast<int32_t>(r);
@@ -608,7 +608,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_MakeEdge_Error(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_Edge(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeEdge*>(self)->Edge();
     return new TopoDS_Edge(r);
@@ -620,7 +620,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_Edge(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_Vertex1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeEdge*>(self)->Vertex1();
     return new TopoDS_Vertex(r);
@@ -632,7 +632,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeEdge_Vertex1(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeEdge_Vertex2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeEdge*>(self)->Vertex2();
     return new TopoDS_Vertex(r);

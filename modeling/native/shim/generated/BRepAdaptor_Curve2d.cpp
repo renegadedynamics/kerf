@@ -14,7 +14,7 @@ B3D_API void* b3d_BRepAdaptor_Curve2d_downcast(void* t) { return b3d_retain(dyna
 B3D_API void* b3d_BRepAdaptor_Curve2d_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_Curve2d();
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepAdaptor_Curve2d_new(b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Curve2d_new__TopoDS_Edge__TopoDS_Face(const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_Curve2d(*E, *F);
     return b3d_retain(r);
@@ -38,7 +38,7 @@ B3D_API void* b3d_BRepAdaptor_Curve2d_new__TopoDS_Edge__TopoDS_Face(const TopoDS
 B3D_API void* b3d_BRepAdaptor_Curve2d_ShallowCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Curve2d*>(self)->ShallowCopy();
     return b3d_retain(occ::handle<Adaptor2d_Curve2d>(r).get());
@@ -50,7 +50,7 @@ B3D_API void* b3d_BRepAdaptor_Curve2d_ShallowCopy(void* self, b3d_error** err)
 B3D_API void b3d_BRepAdaptor_Curve2d_Initialize__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_Curve2d*>(self)->Initialize(*E, *F);
     return;
@@ -61,7 +61,7 @@ B3D_API void b3d_BRepAdaptor_Curve2d_Initialize__TopoDS_Edge__TopoDS_Face(void* 
 B3D_API void* b3d_BRepAdaptor_Curve2d_Edge(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Curve2d*>(self)->Edge();
     return new TopoDS_Edge(r);
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepAdaptor_Curve2d_Edge(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Curve2d_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Curve2d*>(self)->Face();
     return new TopoDS_Face(r);

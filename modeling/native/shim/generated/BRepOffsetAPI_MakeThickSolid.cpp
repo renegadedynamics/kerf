@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeThickSolid_copy(const void* p, b3d_error** e
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_MakeThickSolid>)
   {
-    try { return new BRepOffsetAPI_MakeThickSolid(*static_cast<const BRepOffsetAPI_MakeThickSolid*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_MakeThickSolid(*static_cast<const BRepOffsetAPI_MakeThickSolid*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeThickSolid_as_BRepBuilderAPI_Command(void* p
 B3D_API void* b3d_BRepOffsetAPI_MakeThickSolid_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeThickSolid();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeThickSolid_new(b3d_error** err)
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidBySimple__TopoDS_Shape__double(void* self, const TopoDS_Shape* theS, double theOffsetValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidBySimple(*theS, theOffsetValue);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidBySimple__TopoDS_Sha
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double__BRepOffset_Mode(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, int32_t Mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol, static_cast<BRepOffset_Mode>(Mode));
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double__BRepOffset_Mode__bool(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, int32_t Mode, uint8_t Intersection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double__BRepOffset_Mode__bool__bool(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0);
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join));
     return;
@@ -102,7 +102,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape__TopTools_ListOfShape__double__double__BRepOffset_Mode__bool__bool__GeomAbs_JoinType__bool(void* self, const TopoDS_Shape* S, const NCollection_List<TopoDS_Shape>* ClosingFaces, double Offset, double Tol, int32_t Mode, uint8_t Intersection, uint8_t SelfInter, int32_t Join, uint8_t RemoveIntEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->MakeThickSolidByJoin(*S, *ClosingFaces, Offset, Tol, static_cast<BRepOffset_Mode>(Mode), Intersection != 0, SelfInter != 0, static_cast<GeomAbs_JoinType>(Join), RemoveIntEdges != 0);
     return;
@@ -113,7 +113,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_MakeThickSolidByJoin__TopoDS_Shape
 B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->Build();
     return;
@@ -124,7 +124,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeThickSolid_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_MakeThickSolid_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeThickSolid*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);

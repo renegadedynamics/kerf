@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_downcast(void* t) { return b3d_retain
 B3D_API void* b3d_BRepMesh_IncrementalMesh_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepMesh_IncrementalMesh();
     return b3d_retain(r);
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_new(b3d_error** err)
 B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double(const TopoDS_Shape* theShape, double theLinDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepMesh_IncrementalMesh(*theShape, theLinDeflection);
     return b3d_retain(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double(const TopoD
 B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool(const TopoDS_Shape* theShape, double theLinDeflection, uint8_t isRelative, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepMesh_IncrementalMesh(*theShape, theLinDeflection, isRelative != 0);
     return b3d_retain(r);
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool(const
 B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool__double(const TopoDS_Shape* theShape, double theLinDeflection, uint8_t isRelative, double theAngDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepMesh_IncrementalMesh(*theShape, theLinDeflection, isRelative != 0, theAngDeflection);
     return b3d_retain(r);
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool__doub
 B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool__double__bool(const TopoDS_Shape* theShape, double theLinDeflection, uint8_t isRelative, double theAngDeflection, uint8_t isInParallel, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepMesh_IncrementalMesh(*theShape, theLinDeflection, isRelative != 0, theAngDeflection, isInParallel != 0);
     return b3d_retain(r);
@@ -71,7 +71,7 @@ B3D_API void* b3d_BRepMesh_IncrementalMesh_new__TopoDS_Shape__double__bool__doub
 B3D_API void b3d_BRepMesh_IncrementalMesh_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepMesh_IncrementalMesh*>(self)->Perform();
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_BRepMesh_IncrementalMesh_Perform(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepMesh_IncrementalMesh_IsModified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepMesh_IncrementalMesh*>(self)->IsModified();
     return r ? 1 : 0;
@@ -94,7 +94,7 @@ B3D_API uint8_t b3d_BRepMesh_IncrementalMesh_IsModified(void* self, b3d_error** 
 B3D_API int32_t b3d_BRepMesh_IncrementalMesh_GetStatusFlags(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepMesh_IncrementalMesh*>(self)->GetStatusFlags();
     return r;
@@ -106,7 +106,7 @@ B3D_API int32_t b3d_BRepMesh_IncrementalMesh_GetStatusFlags(void* self, b3d_erro
 B3D_API uint8_t b3d_BRepMesh_IncrementalMesh_IsParallelDefault(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepMesh_IncrementalMesh::IsParallelDefault();
     return r ? 1 : 0;
@@ -118,7 +118,7 @@ B3D_API uint8_t b3d_BRepMesh_IncrementalMesh_IsParallelDefault(b3d_error** err)
 B3D_API void b3d_BRepMesh_IncrementalMesh_SetParallelDefault__bool(uint8_t isInParallel, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepMesh_IncrementalMesh::SetParallelDefault(isInParallel != 0);
     return;

@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepLProp_SLProps_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepLProp_SLProps>)
   {
-    try { return new BRepLProp_SLProps(*static_cast<const BRepLProp_SLProps*>(p)); }
+    B3D_TRY { return new BRepLProp_SLProps(*static_cast<const BRepLProp_SLProps*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepLProp_SLProps_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_new__tref_BRepAdaptor_Surface__double__double__int__double(BRepAdaptor_Surface* S, double U, double V, int32_t N, double Resolution, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLProp_SLProps(*S, U, V, N, Resolution);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepLProp_SLProps_new__tref_BRepAdaptor_Surface__double__doubl
 B3D_API void* b3d_BRepLProp_SLProps_new__tref_BRepAdaptor_Surface__int__double(BRepAdaptor_Surface* S, int32_t N, double Resolution, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLProp_SLProps(*S, N, Resolution);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepLProp_SLProps_new__tref_BRepAdaptor_Surface__int__double(B
 B3D_API void* b3d_BRepLProp_SLProps_new__int__double(int32_t N, double Resolution, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLProp_SLProps(N, Resolution);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepLProp_SLProps_new__int__double(int32_t N, double Resolutio
 B3D_API void b3d_BRepLProp_SLProps_SetSurface__tref_BRepAdaptor_Surface(void* self, BRepAdaptor_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLProp_SLProps*>(self)->SetSurface(*S);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_BRepLProp_SLProps_SetSurface__tref_BRepAdaptor_Surface(void* se
 B3D_API void b3d_BRepLProp_SLProps_SetParameters__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLProp_SLProps*>(self)->SetParameters(U, V);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_BRepLProp_SLProps_SetParameters__double__double(void* self, dou
 B3D_API void* b3d_BRepLProp_SLProps_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->Value();
     return new gp_Pnt(r);
@@ -93,7 +93,7 @@ B3D_API void* b3d_BRepLProp_SLProps_Value(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_D1U(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->D1U();
     return new gp_Vec(r);
@@ -105,7 +105,7 @@ B3D_API void* b3d_BRepLProp_SLProps_D1U(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_D1V(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->D1V();
     return new gp_Vec(r);
@@ -117,7 +117,7 @@ B3D_API void* b3d_BRepLProp_SLProps_D1V(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_D2U(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->D2U();
     return new gp_Vec(r);
@@ -129,7 +129,7 @@ B3D_API void* b3d_BRepLProp_SLProps_D2U(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_D2V(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->D2V();
     return new gp_Vec(r);
@@ -141,7 +141,7 @@ B3D_API void* b3d_BRepLProp_SLProps_D2V(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLProp_SLProps_DUV(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->DUV();
     return new gp_Vec(r);
@@ -153,7 +153,7 @@ B3D_API void* b3d_BRepLProp_SLProps_DUV(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepLProp_SLProps_IsTangentUDefined(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->IsTangentUDefined();
     return r ? 1 : 0;
@@ -165,7 +165,7 @@ B3D_API uint8_t b3d_BRepLProp_SLProps_IsTangentUDefined(void* self, b3d_error** 
 B3D_API void b3d_BRepLProp_SLProps_TangentU__mut_gp_Dir(void* self, gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLProp_SLProps*>(self)->TangentU(*D);
     return;
@@ -176,7 +176,7 @@ B3D_API void b3d_BRepLProp_SLProps_TangentU__mut_gp_Dir(void* self, gp_Dir* D, b
 B3D_API uint8_t b3d_BRepLProp_SLProps_IsTangentVDefined(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->IsTangentVDefined();
     return r ? 1 : 0;
@@ -188,7 +188,7 @@ B3D_API uint8_t b3d_BRepLProp_SLProps_IsTangentVDefined(void* self, b3d_error** 
 B3D_API void b3d_BRepLProp_SLProps_TangentV__mut_gp_Dir(void* self, gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLProp_SLProps*>(self)->TangentV(*D);
     return;
@@ -199,7 +199,7 @@ B3D_API void b3d_BRepLProp_SLProps_TangentV__mut_gp_Dir(void* self, gp_Dir* D, b
 B3D_API uint8_t b3d_BRepLProp_SLProps_IsNormalDefined(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->IsNormalDefined();
     return r ? 1 : 0;
@@ -211,7 +211,7 @@ B3D_API uint8_t b3d_BRepLProp_SLProps_IsNormalDefined(void* self, b3d_error** er
 B3D_API void* b3d_BRepLProp_SLProps_Normal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->Normal();
     return new gp_Dir(r);
@@ -223,7 +223,7 @@ B3D_API void* b3d_BRepLProp_SLProps_Normal(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepLProp_SLProps_IsCurvatureDefined(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->IsCurvatureDefined();
     return r ? 1 : 0;
@@ -235,7 +235,7 @@ B3D_API uint8_t b3d_BRepLProp_SLProps_IsCurvatureDefined(void* self, b3d_error**
 B3D_API uint8_t b3d_BRepLProp_SLProps_IsUmbilic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->IsUmbilic();
     return r ? 1 : 0;
@@ -247,7 +247,7 @@ B3D_API uint8_t b3d_BRepLProp_SLProps_IsUmbilic(void* self, b3d_error** err)
 B3D_API double b3d_BRepLProp_SLProps_MaxCurvature(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->MaxCurvature();
     return r;
@@ -259,7 +259,7 @@ B3D_API double b3d_BRepLProp_SLProps_MaxCurvature(void* self, b3d_error** err)
 B3D_API double b3d_BRepLProp_SLProps_MinCurvature(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->MinCurvature();
     return r;
@@ -271,7 +271,7 @@ B3D_API double b3d_BRepLProp_SLProps_MinCurvature(void* self, b3d_error** err)
 B3D_API void b3d_BRepLProp_SLProps_CurvatureDirections__mut_gp_Dir__mut_gp_Dir(void* self, gp_Dir* MaxD, gp_Dir* MinD, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLProp_SLProps*>(self)->CurvatureDirections(*MaxD, *MinD);
     return;
@@ -282,7 +282,7 @@ B3D_API void b3d_BRepLProp_SLProps_CurvatureDirections__mut_gp_Dir__mut_gp_Dir(v
 B3D_API double b3d_BRepLProp_SLProps_MeanCurvature(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->MeanCurvature();
     return r;
@@ -294,7 +294,7 @@ B3D_API double b3d_BRepLProp_SLProps_MeanCurvature(void* self, b3d_error** err)
 B3D_API double b3d_BRepLProp_SLProps_GaussianCurvature(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLProp_SLProps*>(self)->GaussianCurvature();
     return r;

@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepGProp_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepGProp>)
   {
-    try { return new BRepGProp(*static_cast<const BRepGProp*>(p)); }
+    B3D_TRY { return new BRepGProp(*static_cast<const BRepGProp*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepGProp_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRepGProp>)
   {
-    try { return new BRepGProp(); }
+    B3D_TRY { return new BRepGProp(); }
     B3D_CATCH(err)
   }
   else
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepGProp_new(b3d_error** err)
 B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps(const TopoDS_Shape* S, GProp_GProps* LProps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::LinearProperties(*S, *LProps);
     return;
@@ -46,7 +46,7 @@ B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps(cons
 B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps__bool(const TopoDS_Shape* S, GProp_GProps* LProps, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::LinearProperties(*S, *LProps, SkipShared != 0);
     return;
@@ -57,7 +57,7 @@ B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps__boo
 B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps__bool__bool(const TopoDS_Shape* S, GProp_GProps* LProps, uint8_t SkipShared, uint8_t UseTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::LinearProperties(*S, *LProps, SkipShared != 0, UseTriangulation != 0);
     return;
@@ -68,7 +68,7 @@ B3D_API void b3d_BRepGProp_LinearProperties__TopoDS_Shape__mut_GProp_GProps__boo
 B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps(const TopoDS_Shape* S, GProp_GProps* SProps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::SurfaceProperties(*S, *SProps);
     return;
@@ -79,7 +79,7 @@ B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps(con
 B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__bool(const TopoDS_Shape* S, GProp_GProps* SProps, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::SurfaceProperties(*S, *SProps, SkipShared != 0);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__bo
 B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__bool__bool(const TopoDS_Shape* S, GProp_GProps* SProps, uint8_t SkipShared, uint8_t UseTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::SurfaceProperties(*S, *SProps, SkipShared != 0, UseTriangulation != 0);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__bo
 B3D_API double b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__double(const TopoDS_Shape* S, GProp_GProps* SProps, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::SurfaceProperties(*S, *SProps, Eps);
     return r;
@@ -113,7 +113,7 @@ B3D_API double b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__
 B3D_API double b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__double__bool(const TopoDS_Shape* S, GProp_GProps* SProps, double Eps, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::SurfaceProperties(*S, *SProps, Eps, SkipShared != 0);
     return r;
@@ -125,7 +125,7 @@ B3D_API double b3d_BRepGProp_SurfaceProperties__TopoDS_Shape__mut_GProp_GProps__
 B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps(const TopoDS_Shape* S, GProp_GProps* VProps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::VolumeProperties(*S, *VProps);
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps(cons
 B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__bool(const TopoDS_Shape* S, GProp_GProps* VProps, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::VolumeProperties(*S, *VProps, OnlyClosed != 0);
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__boo
 B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, uint8_t OnlyClosed, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::VolumeProperties(*S, *VProps, OnlyClosed != 0, SkipShared != 0);
     return;
@@ -158,7 +158,7 @@ B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__boo
 B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, uint8_t OnlyClosed, uint8_t SkipShared, uint8_t UseTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepGProp::VolumeProperties(*S, *VProps, OnlyClosed != 0, SkipShared != 0, UseTriangulation != 0);
     return;
@@ -169,7 +169,7 @@ B3D_API void b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__boo
 B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__double(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumeProperties(*S, *VProps, Eps);
     return r;
@@ -181,7 +181,7 @@ B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__d
 B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__double__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumeProperties(*S, *VProps, Eps, OnlyClosed != 0);
     return r;
@@ -193,7 +193,7 @@ B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__d
 B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__double__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumeProperties(*S, *VProps, Eps, OnlyClosed != 0, SkipShared != 0);
     return r;
@@ -205,7 +205,7 @@ B3D_API double b3d_BRepGProp_VolumeProperties__TopoDS_Shape__mut_GProp_GProps__d
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps(const TopoDS_Shape* S, GProp_GProps* VProps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps);
     return r;
@@ -217,7 +217,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps(
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps);
     return r;
@@ -229,7 +229,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps, OnlyClosed != 0);
     return r;
@@ -241,7 +241,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps, OnlyClosed != 0, IsUseSpan != 0);
     return r;
@@ -253,7 +253,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0);
     return r;
@@ -265,7 +265,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, uint8_t IFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0, IFlag != 0);
     return r;
@@ -277,7 +277,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__double__bool__bool__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, uint8_t IFlag, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0, IFlag != 0, SkipShared != 0);
     return r;
@@ -289,7 +289,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln);
     return r;
@@ -301,7 +301,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps);
     return r;
@@ -313,7 +313,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps, OnlyClosed != 0);
     return r;
@@ -325,7 +325,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps, OnlyClosed != 0, IsUseSpan != 0);
     return r;
@@ -337,7 +337,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0);
     return r;
@@ -349,7 +349,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, uint8_t IFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0, IFlag != 0);
     return r;
@@ -361,7 +361,7 @@ B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps_
 B3D_API double b3d_BRepGProp_VolumePropertiesGK__TopoDS_Shape__mut_GProp_GProps__gp_Pln__double__bool__bool__bool__bool__bool(const TopoDS_Shape* S, GProp_GProps* VProps, const gp_Pln* thePln, double Eps, uint8_t OnlyClosed, uint8_t IsUseSpan, uint8_t CGFlag, uint8_t IFlag, uint8_t SkipShared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepGProp::VolumePropertiesGK(*S, *VProps, *thePln, Eps, OnlyClosed != 0, IsUseSpan != 0, CGFlag != 0, IFlag != 0, SkipShared != 0);
     return r;

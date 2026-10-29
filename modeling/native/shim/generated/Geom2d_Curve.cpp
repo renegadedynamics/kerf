@@ -13,7 +13,7 @@ B3D_API void* b3d_Geom2d_Curve_downcast(void* t) { return b3d_retain(dynamic_cas
 B3D_API void b3d_Geom2d_Curve_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Curve*>(self)->Reverse();
     return;
@@ -24,7 +24,7 @@ B3D_API void b3d_Geom2d_Curve_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Curve_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->ReversedParameter(U);
     return r;
@@ -36,7 +36,7 @@ B3D_API double b3d_Geom2d_Curve_ReversedParameter__double(void* self, double U, 
 B3D_API double b3d_Geom2d_Curve_TransformedParameter__double__gp_Trsf2d(void* self, double U, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->TransformedParameter(U, *T);
     return r;
@@ -48,7 +48,7 @@ B3D_API double b3d_Geom2d_Curve_TransformedParameter__double__gp_Trsf2d(void* se
 B3D_API double b3d_Geom2d_Curve_ParametricTransformation__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->ParametricTransformation(*T);
     return r;
@@ -60,7 +60,7 @@ B3D_API double b3d_Geom2d_Curve_ParametricTransformation__gp_Trsf2d(void* self, 
 B3D_API void* b3d_Geom2d_Curve_Reversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->Reversed();
     return b3d_retain(occ::handle<Geom2d_Curve>(r).get());
@@ -72,7 +72,7 @@ B3D_API void* b3d_Geom2d_Curve_Reversed(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Curve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->FirstParameter();
     return r;
@@ -84,7 +84,7 @@ B3D_API double b3d_Geom2d_Curve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Curve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->LastParameter();
     return r;
@@ -96,7 +96,7 @@ B3D_API double b3d_Geom2d_Curve_LastParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Curve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -108,7 +108,7 @@ B3D_API uint8_t b3d_Geom2d_Curve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Curve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -120,7 +120,7 @@ B3D_API uint8_t b3d_Geom2d_Curve_IsPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Curve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->Period();
     return r;
@@ -132,7 +132,7 @@ B3D_API double b3d_Geom2d_Curve_Period(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom2d_Curve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -144,7 +144,7 @@ B3D_API int32_t b3d_Geom2d_Curve_Continuity(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Curve_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -156,7 +156,7 @@ B3D_API uint8_t b3d_Geom2d_Curve_IsCN__int(void* self, int32_t N, b3d_error** er
 B3D_API void* b3d_Geom2d_Curve_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->EvalD0(U);
     return new gp_Pnt2d(r);
@@ -168,7 +168,7 @@ B3D_API void* b3d_Geom2d_Curve_EvalD0__double(void* self, double U, b3d_error** 
 B3D_API void* b3d_Geom2d_Curve_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->EvalDN(U, N);
     return new gp_Vec2d(r);
@@ -180,7 +180,7 @@ B3D_API void* b3d_Geom2d_Curve_EvalDN__double__int(void* self, double U, int32_t
 B3D_API void b3d_Geom2d_Curve_D0__double__mut_gp_Pnt2d(void* self, double U, gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Curve*>(self)->D0(U, *P);
     return;
@@ -191,7 +191,7 @@ B3D_API void b3d_Geom2d_Curve_D0__double__mut_gp_Pnt2d(void* self, double U, gp_
 B3D_API void b3d_Geom2d_Curve_D1__double__mut_gp_Pnt2d__mut_gp_Vec2d(void* self, double U, gp_Pnt2d* P, gp_Vec2d* V1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Curve*>(self)->D1(U, *P, *V1);
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_Geom2d_Curve_D1__double__mut_gp_Pnt2d__mut_gp_Vec2d(void* self,
 B3D_API void b3d_Geom2d_Curve_D2__double__mut_gp_Pnt2d__mut_gp_Vec2d__mut_gp_Vec2d(void* self, double U, gp_Pnt2d* P, gp_Vec2d* V1, gp_Vec2d* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Curve*>(self)->D2(U, *P, *V1, *V2);
     return;
@@ -213,7 +213,7 @@ B3D_API void b3d_Geom2d_Curve_D2__double__mut_gp_Pnt2d__mut_gp_Vec2d__mut_gp_Vec
 B3D_API void b3d_Geom2d_Curve_D3__double__mut_gp_Pnt2d__mut_gp_Vec2d__mut_gp_Vec2d__mut_gp_Vec2d(void* self, double U, gp_Pnt2d* P, gp_Vec2d* V1, gp_Vec2d* V2, gp_Vec2d* V3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Curve*>(self)->D3(U, *P, *V1, *V2, *V3);
     return;
@@ -224,7 +224,7 @@ B3D_API void b3d_Geom2d_Curve_D3__double__mut_gp_Pnt2d__mut_gp_Vec2d__mut_gp_Vec
 B3D_API void* b3d_Geom2d_Curve_DN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->DN(U, N);
     return new gp_Vec2d(r);
@@ -236,7 +236,7 @@ B3D_API void* b3d_Geom2d_Curve_DN__double__int(void* self, double U, int32_t N, 
 B3D_API void* b3d_Geom2d_Curve_Value__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Curve*>(self)->Value(U);
     return new gp_Pnt2d(r);

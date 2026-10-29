@@ -12,7 +12,7 @@ B3D_API void* b3d_GProp_GProps_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GProp_GProps>)
   {
-    try { return new GProp_GProps(*static_cast<const GProp_GProps*>(p)); }
+    B3D_TRY { return new GProp_GProps(*static_cast<const GProp_GProps*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_GProp_GProps_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GProp_GProps_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GProp_GProps();
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_GProp_GProps_new(b3d_error** err)
 B3D_API void* b3d_GProp_GProps_new__gp_Pnt(const gp_Pnt* SystemLocation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GProp_GProps(*SystemLocation);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_GProp_GProps_new__gp_Pnt(const gp_Pnt* SystemLocation, b3d_err
 B3D_API void b3d_GProp_GProps_Add__GProp_GProps(void* self, const GProp_GProps* Item, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GProp_GProps*>(self)->Add(*Item);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_GProp_GProps_Add__GProp_GProps(void* self, const GProp_GProps* 
 B3D_API void b3d_GProp_GProps_Add__GProp_GProps__double(void* self, const GProp_GProps* Item, double Density, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GProp_GProps*>(self)->Add(*Item, Density);
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_GProp_GProps_Add__GProp_GProps__double(void* self, const GProp_
 B3D_API double b3d_GProp_GProps_Mass(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->Mass();
     return r;
@@ -81,7 +81,7 @@ B3D_API double b3d_GProp_GProps_Mass(void* self, b3d_error** err)
 B3D_API void* b3d_GProp_GProps_CentreOfMass(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->CentreOfMass();
     return new gp_Pnt(r);
@@ -93,7 +93,7 @@ B3D_API void* b3d_GProp_GProps_CentreOfMass(void* self, b3d_error** err)
 B3D_API void* b3d_GProp_GProps_MatrixOfInertia(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->MatrixOfInertia();
     return new gp_Mat(r);
@@ -105,7 +105,7 @@ B3D_API void* b3d_GProp_GProps_MatrixOfInertia(void* self, b3d_error** err)
 B3D_API void b3d_GProp_GProps_StaticMoments__ref_double__ref_double__ref_double(void* self, double* Ix, double* Iy, double* Iz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GProp_GProps*>(self)->StaticMoments(*Ix, *Iy, *Iz);
     return;
@@ -116,7 +116,7 @@ B3D_API void b3d_GProp_GProps_StaticMoments__ref_double__ref_double__ref_double(
 B3D_API double b3d_GProp_GProps_MomentOfInertia__gp_Ax1(void* self, const gp_Ax1* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->MomentOfInertia(*A);
     return r;
@@ -128,7 +128,7 @@ B3D_API double b3d_GProp_GProps_MomentOfInertia__gp_Ax1(void* self, const gp_Ax1
 B3D_API void* b3d_GProp_GProps_PrincipalProperties(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->PrincipalProperties();
     return new GProp_PrincipalProps(r);
@@ -140,7 +140,7 @@ B3D_API void* b3d_GProp_GProps_PrincipalProperties(void* self, b3d_error** err)
 B3D_API double b3d_GProp_GProps_RadiusOfGyration__gp_Ax1(void* self, const gp_Ax1* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_GProps*>(self)->RadiusOfGyration(*A);
     return r;

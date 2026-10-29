@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepAlgoAPI_Splitter_as_BRepBuilderAPI_Command(void* p) { retu
 B3D_API void* b3d_BRepAlgoAPI_Splitter_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Splitter();
     return r;
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepAlgoAPI_Splitter_new(b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_Splitter_SetTools__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* theLS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Splitter*>(self)->SetTools(*theLS);
     return;
@@ -36,7 +36,7 @@ B3D_API void b3d_BRepAlgoAPI_Splitter_SetTools__TopTools_ListOfShape(void* self,
 B3D_API void* b3d_BRepAlgoAPI_Splitter_Tools(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_Splitter*>(self)->Tools();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepAlgoAPI_Splitter_Tools(void* self, b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_Splitter_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Splitter*>(self)->Build();
     return;

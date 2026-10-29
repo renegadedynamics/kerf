@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeWedge>)
   {
-    try { return new BRepPrimAPI_MakeWedge(*static_cast<const BRepPrimAPI_MakeWedge*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeWedge(*static_cast<const BRepPrimAPI_MakeWedge*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_as_BRepBuilderAPI_Command(void* p) { ret
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__double__double__double__double(double dx, double dy, double dz, double ltx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeWedge(dx, dy, dz, ltx);
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__double__double__double__double(doub
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__gp_Ax2__double__double__double__double(const gp_Ax2* Axes, double dx, double dy, double dz, double ltx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeWedge(*Axes, dx, dy, dz, ltx);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__gp_Ax2__double__double__double__dou
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__double__double__double__double__double__double__double(double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeWedge(dx, dy, dz, xmin, zmin, xmax, zmax);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__double__double__double__double__dou
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__gp_Ax2__double__double__double__double__double__double__double(const gp_Ax2* Axes, double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeWedge(*Axes, dx, dy, dz, xmin, zmin, xmax, zmax);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_new__gp_Ax2__double__double__double__dou
 B3D_API void b3d_BRepPrimAPI_MakeWedge_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeWedge*>(self)->Build();
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_BRepPrimAPI_MakeWedge_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_Shell(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeWedge*>(self)->Shell();
     return new TopoDS_Shell(r);
@@ -95,7 +95,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeWedge_Shell(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeWedge_Solid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeWedge*>(self)->Solid();
     return new TopoDS_Solid(r);

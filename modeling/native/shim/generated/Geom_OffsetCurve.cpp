@@ -17,7 +17,7 @@ B3D_API void* b3d_Geom_OffsetCurve_downcast(void* t) { return b3d_retain(dynamic
 B3D_API void* b3d_Geom_OffsetCurve_new__Geom_Curve__double__gp_Dir(Geom_Curve* C, double Offset, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_OffsetCurve(occ::handle<Geom_Curve>(C), Offset, *V);
     return b3d_retain(r);
@@ -29,7 +29,7 @@ B3D_API void* b3d_Geom_OffsetCurve_new__Geom_Curve__double__gp_Dir(Geom_Curve* C
 B3D_API void* b3d_Geom_OffsetCurve_new__Geom_Curve__double__gp_Dir__bool(Geom_Curve* C, double Offset, const gp_Dir* V, uint8_t isNotCheckC0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_OffsetCurve(occ::handle<Geom_Curve>(C), Offset, *V, isNotCheckC0 != 0);
     return b3d_retain(r);
@@ -41,7 +41,7 @@ B3D_API void* b3d_Geom_OffsetCurve_new__Geom_Curve__double__gp_Dir__bool(Geom_Cu
 B3D_API uint8_t b3d_Geom_OffsetCurve_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -53,7 +53,7 @@ B3D_API uint8_t b3d_Geom_OffsetCurve_HasEvalRepresentation(void* self, b3d_error
 B3D_API void b3d_Geom_OffsetCurve_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->ClearEvalRepresentation();
     return;
@@ -64,7 +64,7 @@ B3D_API void b3d_Geom_OffsetCurve_ClearEvalRepresentation(void* self, b3d_error*
 B3D_API void b3d_Geom_OffsetCurve_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->Reverse();
     return;
@@ -75,7 +75,7 @@ B3D_API void b3d_Geom_OffsetCurve_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_OffsetCurve_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->ReversedParameter(U);
     return r;
@@ -87,7 +87,7 @@ B3D_API double b3d_Geom_OffsetCurve_ReversedParameter__double(void* self, double
 B3D_API void b3d_Geom_OffsetCurve_SetBasisCurve__Geom_Curve(void* self, Geom_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->SetBasisCurve(occ::handle<Geom_Curve>(C));
     return;
@@ -98,7 +98,7 @@ B3D_API void b3d_Geom_OffsetCurve_SetBasisCurve__Geom_Curve(void* self, Geom_Cur
 B3D_API void b3d_Geom_OffsetCurve_SetBasisCurve__Geom_Curve__bool(void* self, Geom_Curve* C, uint8_t isNotCheckC0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->SetBasisCurve(occ::handle<Geom_Curve>(C), isNotCheckC0 != 0);
     return;
@@ -109,7 +109,7 @@ B3D_API void b3d_Geom_OffsetCurve_SetBasisCurve__Geom_Curve__bool(void* self, Ge
 B3D_API void b3d_Geom_OffsetCurve_SetDirection__gp_Dir(void* self, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->SetDirection(*V);
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_Geom_OffsetCurve_SetDirection__gp_Dir(void* self, const gp_Dir*
 B3D_API void b3d_Geom_OffsetCurve_SetOffsetValue__double(void* self, double D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->SetOffsetValue(D);
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_Geom_OffsetCurve_SetOffsetValue__double(void* self, double D, b
 B3D_API void* b3d_Geom_OffsetCurve_BasisCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->BasisCurve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -143,7 +143,7 @@ B3D_API void* b3d_Geom_OffsetCurve_BasisCurve(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_OffsetCurve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -155,7 +155,7 @@ B3D_API int32_t b3d_Geom_OffsetCurve_Continuity(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_OffsetCurve_Direction(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->Direction();
     return new gp_Dir(r);
@@ -167,7 +167,7 @@ B3D_API void* b3d_Geom_OffsetCurve_Direction(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_OffsetCurve_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->EvalD0(U);
     return new gp_Pnt(r);
@@ -179,7 +179,7 @@ B3D_API void* b3d_Geom_OffsetCurve_EvalD0__double(void* self, double U, b3d_erro
 B3D_API void* b3d_Geom_OffsetCurve_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->EvalDN(U, N);
     return new gp_Vec(r);
@@ -191,7 +191,7 @@ B3D_API void* b3d_Geom_OffsetCurve_EvalDN__double__int(void* self, double U, int
 B3D_API double b3d_Geom_OffsetCurve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->FirstParameter();
     return r;
@@ -203,7 +203,7 @@ B3D_API double b3d_Geom_OffsetCurve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom_OffsetCurve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->LastParameter();
     return r;
@@ -215,7 +215,7 @@ B3D_API double b3d_Geom_OffsetCurve_LastParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom_OffsetCurve_Offset(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->Offset();
     return r;
@@ -227,7 +227,7 @@ B3D_API double b3d_Geom_OffsetCurve_Offset(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_OffsetCurve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -239,7 +239,7 @@ B3D_API uint8_t b3d_Geom_OffsetCurve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_OffsetCurve_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -251,7 +251,7 @@ B3D_API uint8_t b3d_Geom_OffsetCurve_IsCN__int(void* self, int32_t N, b3d_error*
 B3D_API uint8_t b3d_Geom_OffsetCurve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -263,7 +263,7 @@ B3D_API uint8_t b3d_Geom_OffsetCurve_IsPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Geom_OffsetCurve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->Period();
     return r;
@@ -275,7 +275,7 @@ B3D_API double b3d_Geom_OffsetCurve_Period(void* self, b3d_error** err)
 B3D_API void b3d_Geom_OffsetCurve_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_OffsetCurve*>(self)->Transform(*T);
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_Geom_OffsetCurve_Transform__gp_Trsf(void* self, const gp_Trsf* 
 B3D_API double b3d_Geom_OffsetCurve_TransformedParameter__double__gp_Trsf(void* self, double U, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->TransformedParameter(U, *T);
     return r;
@@ -298,7 +298,7 @@ B3D_API double b3d_Geom_OffsetCurve_TransformedParameter__double__gp_Trsf(void* 
 B3D_API double b3d_Geom_OffsetCurve_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->ParametricTransformation(*T);
     return r;
@@ -310,7 +310,7 @@ B3D_API double b3d_Geom_OffsetCurve_ParametricTransformation__gp_Trsf(void* self
 B3D_API void* b3d_Geom_OffsetCurve_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());
@@ -322,7 +322,7 @@ B3D_API void* b3d_Geom_OffsetCurve_Copy(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_OffsetCurve_GetBasisCurveContinuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_OffsetCurve*>(self)->GetBasisCurveContinuity();
     return static_cast<int32_t>(r);

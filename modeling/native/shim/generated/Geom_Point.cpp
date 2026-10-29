@@ -11,7 +11,7 @@ B3D_API void* b3d_Geom_Point_downcast(void* t) { return b3d_retain(dynamic_cast<
 B3D_API void b3d_Geom_Point_Coord__ref_double__ref_double__ref_double(void* self, double* X, double* Y, double* Z, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Point*>(self)->Coord(*X, *Y, *Z);
     return;
@@ -22,7 +22,7 @@ B3D_API void b3d_Geom_Point_Coord__ref_double__ref_double__ref_double(void* self
 B3D_API void* b3d_Geom_Point_Pnt(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->Pnt();
     return new gp_Pnt(r);
@@ -34,7 +34,7 @@ B3D_API void* b3d_Geom_Point_Pnt(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Point_X(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->X();
     return r;
@@ -46,7 +46,7 @@ B3D_API double b3d_Geom_Point_X(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Point_Y(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->Y();
     return r;
@@ -58,7 +58,7 @@ B3D_API double b3d_Geom_Point_Y(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Point_Z(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->Z();
     return r;
@@ -70,7 +70,7 @@ B3D_API double b3d_Geom_Point_Z(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Point_Distance__Geom_Point(void* self, Geom_Point* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->Distance(occ::handle<Geom_Point>(Other));
     return r;
@@ -82,7 +82,7 @@ B3D_API double b3d_Geom_Point_Distance__Geom_Point(void* self, Geom_Point* Other
 B3D_API double b3d_Geom_Point_SquareDistance__Geom_Point(void* self, Geom_Point* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Point*>(self)->SquareDistance(occ::handle<Geom_Point>(Other));
     return r;

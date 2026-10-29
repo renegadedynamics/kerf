@@ -17,7 +17,7 @@ B3D_API void* b3d_TopExp_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopExp>)
   {
-    try { return new TopExp(*static_cast<const TopExp*>(p)); }
+    B3D_TRY { return new TopExp(*static_cast<const TopExp*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -30,7 +30,7 @@ B3D_API void* b3d_TopExp_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<TopExp>)
   {
-    try { return new TopExp(); }
+    B3D_TRY { return new TopExp(); }
     B3D_CATCH(err)
   }
   else
@@ -41,7 +41,7 @@ B3D_API void* b3d_TopExp_new(b3d_error** err)
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__TopAbs_ShapeEnum__mut_TopTools_IndexedMapOfShape(const TopoDS_Shape* S, int32_t T, NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, static_cast<TopAbs_ShapeEnum>(T), *M);
     return;
@@ -52,7 +52,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__TopAbs_ShapeEnum__mut_TopTools_
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape(const TopoDS_Shape* S, NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M);
     return;
@@ -63,7 +63,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape(
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape__bool(const TopoDS_Shape* S, NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>* M, uint8_t cumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M, cumOri != 0);
     return;
@@ -74,7 +74,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape_
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape__bool__bool(const TopoDS_Shape* S, NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>* M, uint8_t cumOri, uint8_t cumLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M, cumOri != 0, cumLoc != 0);
     return;
@@ -85,7 +85,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_IndexedMapOfShape_
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape(const TopoDS_Shape* S, NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M);
     return;
@@ -96,7 +96,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape(const T
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape__bool(const TopoDS_Shape* S, NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>* M, uint8_t cumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M, cumOri != 0);
     return;
@@ -107,7 +107,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape__bool(c
 B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape__bool__bool(const TopoDS_Shape* S, NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>* M, uint8_t cumOri, uint8_t cumLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapes(*S, *M, cumOri != 0, cumLoc != 0);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_TopExp_MapShapes__TopoDS_Shape__mut_TopTools_MapOfShape__bool__
 B3D_API void b3d_TopExp_MapShapesAndAncestors__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_ShapeEnum__mut_TopTools_IndexedDataMapOfShapeListOfShape(const TopoDS_Shape* S, int32_t TS, int32_t TA, NCollection_IndexedDataMap<TopoDS_Shape,NCollection_List<TopoDS_Shape>,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapesAndAncestors(*S, static_cast<TopAbs_ShapeEnum>(TS), static_cast<TopAbs_ShapeEnum>(TA), *M);
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_TopExp_MapShapesAndAncestors__TopoDS_Shape__TopAbs_ShapeEnum__T
 B3D_API void b3d_TopExp_MapShapesAndUniqueAncestors__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_ShapeEnum__mut_TopTools_IndexedDataMapOfShapeListOfShape(const TopoDS_Shape* S, int32_t TS, int32_t TA, NCollection_IndexedDataMap<TopoDS_Shape,NCollection_List<TopoDS_Shape>,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapesAndUniqueAncestors(*S, static_cast<TopAbs_ShapeEnum>(TS), static_cast<TopAbs_ShapeEnum>(TA), *M);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_TopExp_MapShapesAndUniqueAncestors__TopoDS_Shape__TopAbs_ShapeE
 B3D_API void b3d_TopExp_MapShapesAndUniqueAncestors__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_ShapeEnum__mut_TopTools_IndexedDataMapOfShapeListOfShape__bool(const TopoDS_Shape* S, int32_t TS, int32_t TA, NCollection_IndexedDataMap<TopoDS_Shape,NCollection_List<TopoDS_Shape>,TopTools_ShapeMapHasher>* M, uint8_t useOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::MapShapesAndUniqueAncestors(*S, static_cast<TopAbs_ShapeEnum>(TS), static_cast<TopAbs_ShapeEnum>(TA), *M, useOrientation != 0);
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_TopExp_MapShapesAndUniqueAncestors__TopoDS_Shape__TopAbs_ShapeE
 B3D_API void* b3d_TopExp_FirstVertex__TopoDS_Edge(const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopExp::FirstVertex(*E);
     return new TopoDS_Vertex(r);
@@ -163,7 +163,7 @@ B3D_API void* b3d_TopExp_FirstVertex__TopoDS_Edge(const TopoDS_Edge* E, b3d_erro
 B3D_API void* b3d_TopExp_FirstVertex__TopoDS_Edge__bool(const TopoDS_Edge* E, uint8_t CumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopExp::FirstVertex(*E, CumOri != 0);
     return new TopoDS_Vertex(r);
@@ -175,7 +175,7 @@ B3D_API void* b3d_TopExp_FirstVertex__TopoDS_Edge__bool(const TopoDS_Edge* E, ui
 B3D_API void* b3d_TopExp_LastVertex__TopoDS_Edge(const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopExp::LastVertex(*E);
     return new TopoDS_Vertex(r);
@@ -187,7 +187,7 @@ B3D_API void* b3d_TopExp_LastVertex__TopoDS_Edge(const TopoDS_Edge* E, b3d_error
 B3D_API void* b3d_TopExp_LastVertex__TopoDS_Edge__bool(const TopoDS_Edge* E, uint8_t CumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopExp::LastVertex(*E, CumOri != 0);
     return new TopoDS_Vertex(r);
@@ -199,7 +199,7 @@ B3D_API void* b3d_TopExp_LastVertex__TopoDS_Edge__bool(const TopoDS_Edge* E, uin
 B3D_API void b3d_TopExp_Vertices__TopoDS_Edge__mut_TopoDS_Vertex__mut_TopoDS_Vertex(const TopoDS_Edge* E, TopoDS_Vertex* Vfirst, TopoDS_Vertex* Vlast, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::Vertices(*E, *Vfirst, *Vlast);
     return;
@@ -210,7 +210,7 @@ B3D_API void b3d_TopExp_Vertices__TopoDS_Edge__mut_TopoDS_Vertex__mut_TopoDS_Ver
 B3D_API void b3d_TopExp_Vertices__TopoDS_Edge__mut_TopoDS_Vertex__mut_TopoDS_Vertex__bool(const TopoDS_Edge* E, TopoDS_Vertex* Vfirst, TopoDS_Vertex* Vlast, uint8_t CumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::Vertices(*E, *Vfirst, *Vlast, CumOri != 0);
     return;
@@ -221,7 +221,7 @@ B3D_API void b3d_TopExp_Vertices__TopoDS_Edge__mut_TopoDS_Vertex__mut_TopoDS_Ver
 B3D_API void b3d_TopExp_Vertices__TopoDS_Wire__mut_TopoDS_Vertex__mut_TopoDS_Vertex(const TopoDS_Wire* W, TopoDS_Vertex* Vfirst, TopoDS_Vertex* Vlast, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     TopExp::Vertices(*W, *Vfirst, *Vlast);
     return;
@@ -232,7 +232,7 @@ B3D_API void b3d_TopExp_Vertices__TopoDS_Wire__mut_TopoDS_Vertex__mut_TopoDS_Ver
 B3D_API uint8_t b3d_TopExp_CommonVertex__TopoDS_Edge__TopoDS_Edge__mut_TopoDS_Vertex(const TopoDS_Edge* E1, const TopoDS_Edge* E2, TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopExp::CommonVertex(*E1, *E2, *V);
     return r ? 1 : 0;

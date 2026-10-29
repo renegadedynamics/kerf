@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_Transform>)
   {
-    try { return new BRepBuilderAPI_Transform(*static_cast<const BRepBuilderAPI_Transform*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_Transform(*static_cast<const BRepBuilderAPI_Transform*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepBuilderAPI_Transform_new__gp_Trsf(const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Transform(*T);
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_new__gp_Trsf(const gp_Trsf* T, b3d_er
 B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf(const TopoDS_Shape* theShape, const gp_Trsf* theTrsf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Transform(*theShape, *theTrsf);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf(const Topo
 B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf__bool(const TopoDS_Shape* theShape, const gp_Trsf* theTrsf, uint8_t theCopyGeom, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Transform(*theShape, *theTrsf, theCopyGeom != 0);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf__bool(cons
 B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf__bool__bool(const TopoDS_Shape* theShape, const gp_Trsf* theTrsf, uint8_t theCopyGeom, uint8_t theCopyMesh, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Transform(*theShape, *theTrsf, theCopyGeom != 0, theCopyMesh != 0);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_new__TopoDS_Shape__gp_Trsf__bool__boo
 B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Transform*>(self)->Perform(*theShape);
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape(void* self, cons
 B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape__bool(void* self, const TopoDS_Shape* theShape, uint8_t theCopyGeom, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Transform*>(self)->Perform(*theShape, theCopyGeom != 0);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape__bool(void* self
 B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape__bool__bool(void* self, const TopoDS_Shape* theShape, uint8_t theCopyGeom, uint8_t theCopyMesh, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Transform*>(self)->Perform(*theShape, theCopyGeom != 0, theCopyMesh != 0);
     return;
@@ -106,7 +106,7 @@ B3D_API void b3d_BRepBuilderAPI_Transform_Perform__TopoDS_Shape__bool__bool(void
 B3D_API void* b3d_BRepBuilderAPI_Transform_ModifiedShape__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Transform*>(self)->ModifiedShape(*S);
     return new TopoDS_Shape(r);
@@ -118,7 +118,7 @@ B3D_API void* b3d_BRepBuilderAPI_Transform_ModifiedShape__TopoDS_Shape(void* sel
 B3D_API void* b3d_BRepBuilderAPI_Transform_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Transform*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);

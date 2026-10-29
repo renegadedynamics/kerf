@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_downcast(void* t) { return b3d_
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__double__double__double(Geom_Surface* S, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_RectangularTrimmedSurface(occ::handle<Geom_Surface>(S), U1, U2, V1, V2);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__doub
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__double__double__double__bool(Geom_Surface* S, double U1, double U2, double V1, double V2, uint8_t USense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_RectangularTrimmedSurface(occ::handle<Geom_Surface>(S), U1, U2, V1, V2, USense != 0);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__doub
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__double__double__double__bool__bool(Geom_Surface* S, double U1, double U2, double V1, double V2, uint8_t USense, uint8_t VSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_RectangularTrimmedSurface(occ::handle<Geom_Surface>(S), U1, U2, V1, V2, USense != 0, VSense != 0);
     return b3d_retain(r);
@@ -55,7 +55,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__doub
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__double__bool(Geom_Surface* S, double Param1, double Param2, uint8_t UTrim, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_RectangularTrimmedSurface(occ::handle<Geom_Surface>(S), Param1, Param2, UTrim != 0);
     return b3d_retain(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__doub
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__double__bool__bool(Geom_Surface* S, double Param1, double Param2, uint8_t UTrim, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_RectangularTrimmedSurface(occ::handle<Geom_Surface>(S), Param1, Param2, UTrim != 0, Sense != 0);
     return b3d_retain(r);
@@ -79,7 +79,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_new__Geom_Surface__double__doub
 B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double__double(void* self, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->SetTrim(U1, U2, V1, V2);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double_
 B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double__double__bool(void* self, double U1, double U2, double V1, double V2, uint8_t USense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->SetTrim(U1, U2, V1, V2, USense != 0);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double_
 B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double__double__bool__bool(void* self, double U1, double U2, double V1, double V2, uint8_t USense, uint8_t VSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->SetTrim(U1, U2, V1, V2, USense != 0, VSense != 0);
     return;
@@ -112,7 +112,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__double_
 B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__bool(void* self, double Param1, double Param2, uint8_t UTrim, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->SetTrim(Param1, Param2, UTrim != 0);
     return;
@@ -123,7 +123,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__bool(vo
 B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__bool__bool(void* self, double Param1, double Param2, uint8_t UTrim, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->SetTrim(Param1, Param2, UTrim != 0, Sense != 0);
     return;
@@ -134,7 +134,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_SetTrim__double__double__bool__b
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_BasisSurface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->BasisSurface();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -146,7 +146,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_BasisSurface(void* self, b3d_er
 B3D_API void b3d_Geom_RectangularTrimmedSurface_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->UReverse();
     return;
@@ -157,7 +157,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_UReverse(void* self, b3d_error**
 B3D_API double b3d_Geom_RectangularTrimmedSurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->UReversedParameter(U);
     return r;
@@ -169,7 +169,7 @@ B3D_API double b3d_Geom_RectangularTrimmedSurface_UReversedParameter__double(voi
 B3D_API void b3d_Geom_RectangularTrimmedSurface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->VReverse();
     return;
@@ -180,7 +180,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_VReverse(void* self, b3d_error**
 B3D_API double b3d_Geom_RectangularTrimmedSurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->VReversedParameter(V);
     return r;
@@ -192,7 +192,7 @@ B3D_API double b3d_Geom_RectangularTrimmedSurface_VReversedParameter__double(voi
 B3D_API void b3d_Geom_RectangularTrimmedSurface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -203,7 +203,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_Bounds__ref_double__ref_double__
 B3D_API int32_t b3d_Geom_RectangularTrimmedSurface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -215,7 +215,7 @@ B3D_API int32_t b3d_Geom_RectangularTrimmedSurface_Continuity(void* self, b3d_er
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -227,7 +227,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsUClosed(void* self, b3d_err
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -239,7 +239,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsVClosed(void* self, b3d_err
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -251,7 +251,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsCNu__int(void* self, int32_
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -263,7 +263,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsCNv__int(void* self, int32_
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -275,7 +275,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsUPeriodic(void* self, b3d_e
 B3D_API double b3d_Geom_RectangularTrimmedSurface_UPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->UPeriod();
     return r;
@@ -287,7 +287,7 @@ B3D_API double b3d_Geom_RectangularTrimmedSurface_UPeriod(void* self, b3d_error*
 B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -299,7 +299,7 @@ B3D_API uint8_t b3d_Geom_RectangularTrimmedSurface_IsVPeriodic(void* self, b3d_e
 B3D_API double b3d_Geom_RectangularTrimmedSurface_VPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->VPeriod();
     return r;
@@ -311,7 +311,7 @@ B3D_API double b3d_Geom_RectangularTrimmedSurface_VPeriod(void* self, b3d_error*
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -323,7 +323,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_UIso__double(void* self, double
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -335,7 +335,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_VIso__double(void* self, double
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -347,7 +347,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_EvalD0__double__double(void* se
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -359,7 +359,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_EvalDN__double__double__int__in
 B3D_API void b3d_Geom_RectangularTrimmedSurface_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->Transform(*T);
     return;
@@ -370,7 +370,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_Transform__gp_Trsf(void* self, c
 B3D_API void b3d_Geom_RectangularTrimmedSurface_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_RectangularTrimmedSurface*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -381,7 +381,7 @@ B3D_API void b3d_Geom_RectangularTrimmedSurface_TransformParameters__ref_double_
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -393,7 +393,7 @@ B3D_API void* b3d_Geom_RectangularTrimmedSurface_ParametricTransformation__gp_Tr
 B3D_API void* b3d_Geom_RectangularTrimmedSurface_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_RectangularTrimmedSurface*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

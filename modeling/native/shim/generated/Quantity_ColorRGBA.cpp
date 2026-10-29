@@ -9,7 +9,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Quantity_ColorRGBA>)
   {
-    try { return new Quantity_ColorRGBA(*static_cast<const Quantity_ColorRGBA*>(p)); }
+    B3D_TRY { return new Quantity_ColorRGBA(*static_cast<const Quantity_ColorRGBA*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Quantity_ColorRGBA_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_ColorRGBA();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_new(b3d_error** err)
 B3D_API void* b3d_Quantity_ColorRGBA_new__Quantity_Color(const Quantity_Color* theRgb, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_ColorRGBA(*theRgb);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_new__Quantity_Color(const Quantity_Color* t
 B3D_API void* b3d_Quantity_ColorRGBA_new__Quantity_Color__float(const Quantity_Color* theRgb, float theAlpha, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_ColorRGBA(*theRgb, theAlpha);
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_new__Quantity_Color__float(const Quantity_C
 B3D_API void* b3d_Quantity_ColorRGBA_new__float__float__float__float(float theRed, float theGreen, float theBlue, float theAlpha, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_ColorRGBA(theRed, theGreen, theBlue, theAlpha);
     return r;
@@ -68,7 +68,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_new__float__float__float__float(float theRe
 B3D_API void b3d_Quantity_ColorRGBA_SetValues__float__float__float__float(void* self, float theRed, float theGreen, float theBlue, float theAlpha, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_ColorRGBA*>(self)->SetValues(theRed, theGreen, theBlue, theAlpha);
     return;
@@ -79,7 +79,7 @@ B3D_API void b3d_Quantity_ColorRGBA_SetValues__float__float__float__float(void* 
 B3D_API void* b3d_Quantity_ColorRGBA_GetRGB(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_ColorRGBA*>(self)->GetRGB();
     return new Quantity_Color(r);
@@ -91,7 +91,7 @@ B3D_API void* b3d_Quantity_ColorRGBA_GetRGB(void* self, b3d_error** err)
 B3D_API void b3d_Quantity_ColorRGBA_SetRGB__Quantity_Color(void* self, const Quantity_Color* theRgb, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_ColorRGBA*>(self)->SetRGB(*theRgb);
     return;
@@ -102,7 +102,7 @@ B3D_API void b3d_Quantity_ColorRGBA_SetRGB__Quantity_Color(void* self, const Qua
 B3D_API float b3d_Quantity_ColorRGBA_Alpha(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_ColorRGBA*>(self)->Alpha();
     return r;
@@ -114,7 +114,7 @@ B3D_API float b3d_Quantity_ColorRGBA_Alpha(void* self, b3d_error** err)
 B3D_API void b3d_Quantity_ColorRGBA_SetAlpha__float(void* self, float theAlpha, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_ColorRGBA*>(self)->SetAlpha(theAlpha);
     return;
@@ -125,7 +125,7 @@ B3D_API void b3d_Quantity_ColorRGBA_SetAlpha__float(void* self, float theAlpha, 
 B3D_API uint8_t b3d_Quantity_ColorRGBA_IsDifferent__Quantity_ColorRGBA(void* self, const Quantity_ColorRGBA* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_ColorRGBA*>(self)->IsDifferent(*theOther);
     return r ? 1 : 0;
@@ -137,7 +137,7 @@ B3D_API uint8_t b3d_Quantity_ColorRGBA_IsDifferent__Quantity_ColorRGBA(void* sel
 B3D_API uint8_t b3d_Quantity_ColorRGBA_IsEqual__Quantity_ColorRGBA(void* self, const Quantity_ColorRGBA* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_ColorRGBA*>(self)->IsEqual(*theOther);
     return r ? 1 : 0;
@@ -149,7 +149,7 @@ B3D_API uint8_t b3d_Quantity_ColorRGBA_IsEqual__Quantity_ColorRGBA(void* self, c
 B3D_API uint8_t b3d_Quantity_ColorRGBA_ColorFromName__string__mut_Quantity_ColorRGBA(const char* theColorNameString, Quantity_ColorRGBA* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_ColorRGBA::ColorFromName(theColorNameString, *theColor);
     return r ? 1 : 0;
@@ -161,7 +161,7 @@ B3D_API uint8_t b3d_Quantity_ColorRGBA_ColorFromName__string__mut_Quantity_Color
 B3D_API uint8_t b3d_Quantity_ColorRGBA_ColorFromHex__string__mut_Quantity_ColorRGBA(const char* theHexColorString, Quantity_ColorRGBA* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_ColorRGBA::ColorFromHex(theHexColorString, *theColor);
     return r ? 1 : 0;
@@ -173,7 +173,7 @@ B3D_API uint8_t b3d_Quantity_ColorRGBA_ColorFromHex__string__mut_Quantity_ColorR
 B3D_API uint8_t b3d_Quantity_ColorRGBA_ColorFromHex__string__mut_Quantity_ColorRGBA__bool(const char* theHexColorString, Quantity_ColorRGBA* theColor, uint8_t theAlphaComponentIsOff, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_ColorRGBA::ColorFromHex(theHexColorString, *theColor, theAlphaComponentIsOff != 0);
     return r ? 1 : 0;

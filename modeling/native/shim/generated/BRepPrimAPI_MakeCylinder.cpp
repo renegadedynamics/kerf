@@ -9,7 +9,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCylinder_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeCylinder>)
   {
-    try { return new BRepPrimAPI_MakeCylinder(*static_cast<const BRepPrimAPI_MakeCylinder*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeCylinder(*static_cast<const BRepPrimAPI_MakeCylinder*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCylinder_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__double__double(double R, double H, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCylinder(R, H);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__double__double(double R, double 
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__double__double__double(double R, double H, double Angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCylinder(R, H, Angle);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__double__double__double(double R,
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__gp_Ax2__double__double(const gp_Ax2* Axes, double R, double H, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCylinder(*Axes, R, H);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__gp_Ax2__double__double(const gp_
 B3D_API void* b3d_BRepPrimAPI_MakeCylinder_new__gp_Ax2__double__double__double(const gp_Ax2* Axes, double R, double H, double Angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCylinder(*Axes, R, H, Angle);
     return r;

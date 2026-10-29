@@ -13,7 +13,7 @@ B3D_API void* b3d_gp_Elips_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Elips>)
   {
-    try { return new gp_Elips(*static_cast<const gp_Elips*>(p)); }
+    B3D_TRY { return new gp_Elips(*static_cast<const gp_Elips*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_gp_Elips_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Elips_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Elips();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_gp_Elips_new(b3d_error** err)
 B3D_API void* b3d_gp_Elips_new__gp_Ax2__double__double(const gp_Ax2* theA2, double theMajorRadius, double theMinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Elips(*theA2, theMajorRadius, theMinorRadius);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_gp_Elips_new__gp_Ax2__double__double(const gp_Ax2* theA2, doub
 B3D_API void b3d_gp_Elips_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->SetAxis(*theA1);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_gp_Elips_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_e
 B3D_API void b3d_gp_Elips_SetLocation__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->SetLocation(*theP);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_gp_Elips_SetLocation__gp_Pnt(void* self, const gp_Pnt* theP, b3
 B3D_API void b3d_gp_Elips_SetMajorRadius__double(void* self, double theMajorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->SetMajorRadius(theMajorRadius);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_gp_Elips_SetMajorRadius__double(void* self, double theMajorRadi
 B3D_API void b3d_gp_Elips_SetMinorRadius__double(void* self, double theMinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->SetMinorRadius(theMinorRadius);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_gp_Elips_SetMinorRadius__double(void* self, double theMinorRadi
 B3D_API void b3d_gp_Elips_SetPosition__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->SetPosition(*theA2);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_gp_Elips_SetPosition__gp_Ax2(void* self, const gp_Ax2* theA2, b
 B3D_API double b3d_gp_Elips_Area(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Area();
     return r;
@@ -115,7 +115,7 @@ B3D_API double b3d_gp_Elips_Area(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Axis();
     return new gp_Ax1(r);
@@ -127,7 +127,7 @@ B3D_API void* b3d_gp_Elips_Axis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Directrix1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Directrix1();
     return new gp_Ax1(r);
@@ -139,7 +139,7 @@ B3D_API void* b3d_gp_Elips_Directrix1(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Directrix2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Directrix2();
     return new gp_Ax1(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_gp_Elips_Directrix2(void* self, b3d_error** err)
 B3D_API double b3d_gp_Elips_Eccentricity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Eccentricity();
     return r;
@@ -163,7 +163,7 @@ B3D_API double b3d_gp_Elips_Eccentricity(void* self, b3d_error** err)
 B3D_API double b3d_gp_Elips_Focal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Focal();
     return r;
@@ -175,7 +175,7 @@ B3D_API double b3d_gp_Elips_Focal(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Focus1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Focus1();
     return new gp_Pnt(r);
@@ -187,7 +187,7 @@ B3D_API void* b3d_gp_Elips_Focus1(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Focus2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Focus2();
     return new gp_Pnt(r);
@@ -199,7 +199,7 @@ B3D_API void* b3d_gp_Elips_Focus2(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Location();
     return new gp_Pnt(r);
@@ -211,7 +211,7 @@ B3D_API void* b3d_gp_Elips_Location(void* self, b3d_error** err)
 B3D_API double b3d_gp_Elips_MajorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->MajorRadius();
     return r;
@@ -223,7 +223,7 @@ B3D_API double b3d_gp_Elips_MajorRadius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Elips_MinorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->MinorRadius();
     return r;
@@ -235,7 +235,7 @@ B3D_API double b3d_gp_Elips_MinorRadius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Elips_Parameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Parameter();
     return r;
@@ -247,7 +247,7 @@ B3D_API double b3d_gp_Elips_Parameter(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Position();
     return new gp_Ax2(r);
@@ -259,7 +259,7 @@ B3D_API void* b3d_gp_Elips_Position(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->XAxis();
     return new gp_Ax1(r);
@@ -271,7 +271,7 @@ B3D_API void* b3d_gp_Elips_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Elips_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->YAxis();
     return new gp_Ax1(r);
@@ -283,7 +283,7 @@ B3D_API void* b3d_gp_Elips_YAxis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Elips_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Mirror(*theP);
     return;
@@ -294,7 +294,7 @@ B3D_API void b3d_gp_Elips_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_err
 B3D_API void* b3d_gp_Elips_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Mirrored(*theP);
     return new gp_Elips(r);
@@ -306,7 +306,7 @@ B3D_API void* b3d_gp_Elips_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_
 B3D_API void b3d_gp_Elips_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Mirror(*theA1);
     return;
@@ -317,7 +317,7 @@ B3D_API void b3d_gp_Elips_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_er
 B3D_API void* b3d_gp_Elips_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Mirrored(*theA1);
     return new gp_Elips(r);
@@ -329,7 +329,7 @@ B3D_API void* b3d_gp_Elips_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d
 B3D_API void b3d_gp_Elips_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Mirror(*theA2);
     return;
@@ -340,7 +340,7 @@ B3D_API void b3d_gp_Elips_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_er
 B3D_API void* b3d_gp_Elips_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Mirrored(*theA2);
     return new gp_Elips(r);
@@ -352,7 +352,7 @@ B3D_API void* b3d_gp_Elips_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d
 B3D_API void b3d_gp_Elips_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Rotate(*theA1, theAng);
     return;
@@ -363,7 +363,7 @@ B3D_API void b3d_gp_Elips_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1
 B3D_API void* b3d_gp_Elips_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Rotated(*theA1, theAng);
     return new gp_Elips(r);
@@ -375,7 +375,7 @@ B3D_API void* b3d_gp_Elips_Rotated__gp_Ax1__double(void* self, const gp_Ax1* the
 B3D_API void b3d_gp_Elips_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Scale(*theP, theS);
     return;
@@ -386,7 +386,7 @@ B3D_API void b3d_gp_Elips_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, 
 B3D_API void* b3d_gp_Elips_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Scaled(*theP, theS);
     return new gp_Elips(r);
@@ -398,7 +398,7 @@ B3D_API void* b3d_gp_Elips_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP
 B3D_API void b3d_gp_Elips_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Transform(*theT);
     return;
@@ -409,7 +409,7 @@ B3D_API void b3d_gp_Elips_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3
 B3D_API void* b3d_gp_Elips_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Transformed(*theT);
     return new gp_Elips(r);
@@ -421,7 +421,7 @@ B3D_API void* b3d_gp_Elips_Transformed__gp_Trsf(void* self, const gp_Trsf* theT,
 B3D_API void b3d_gp_Elips_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Translate(*theV);
     return;
@@ -432,7 +432,7 @@ B3D_API void b3d_gp_Elips_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_
 B3D_API void* b3d_gp_Elips_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Translated(*theV);
     return new gp_Elips(r);
@@ -444,7 +444,7 @@ B3D_API void* b3d_gp_Elips_Translated__gp_Vec(void* self, const gp_Vec* theV, b3
 B3D_API void b3d_gp_Elips_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Elips*>(self)->Translate(*theP1, *theP2);
     return;
@@ -455,7 +455,7 @@ B3D_API void b3d_gp_Elips_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* th
 B3D_API void* b3d_gp_Elips_Translated__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Elips*>(self)->Translated(*theP1, *theP2);
     return new gp_Elips(r);

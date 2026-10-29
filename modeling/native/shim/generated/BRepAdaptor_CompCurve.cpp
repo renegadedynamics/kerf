@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_downcast(void* t) { return b3d_retain(dy
 B3D_API void* b3d_BRepAdaptor_CompCurve_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_CompCurve();
     return b3d_retain(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_new(b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire(const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_CompCurve(*W);
     return b3d_retain(r);
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire(const TopoDS_Wire* W, b
 B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire__bool(const TopoDS_Wire* W, uint8_t KnotByCurvilinearAbcissa, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_CompCurve(*W, KnotByCurvilinearAbcissa != 0);
     return b3d_retain(r);
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire__bool(const TopoDS_Wire
 B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire__bool__double__double__double(const TopoDS_Wire* W, uint8_t KnotByCurvilinearAbcissa, double First, double Last, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_CompCurve(*W, KnotByCurvilinearAbcissa != 0, First, Last, Tol);
     return b3d_retain(r);
@@ -71,7 +71,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_new__TopoDS_Wire__bool__double__double__
 B3D_API void* b3d_BRepAdaptor_CompCurve_ShallowCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->ShallowCopy();
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -83,7 +83,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_ShallowCopy(void* self, b3d_error** err)
 B3D_API void b3d_BRepAdaptor_CompCurve_Initialize__TopoDS_Wire__bool(void* self, const TopoDS_Wire* W, uint8_t KnotByCurvilinearAbcissa, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_CompCurve*>(self)->Initialize(*W, KnotByCurvilinearAbcissa != 0);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_BRepAdaptor_CompCurve_Initialize__TopoDS_Wire__bool(void* self,
 B3D_API void b3d_BRepAdaptor_CompCurve_Initialize__TopoDS_Wire__bool__double__double__double(void* self, const TopoDS_Wire* W, uint8_t KnotByCurvilinearAbcissa, double First, double Last, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_CompCurve*>(self)->Initialize(*W, KnotByCurvilinearAbcissa != 0, First, Last, Tol);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_BRepAdaptor_CompCurve_Initialize__TopoDS_Wire__bool__double__do
 B3D_API void* b3d_BRepAdaptor_CompCurve_Wire(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Wire();
     return new TopoDS_Wire(r);
@@ -117,7 +117,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Wire(void* self, b3d_error** err)
 B3D_API void b3d_BRepAdaptor_CompCurve_Edge__double__mut_TopoDS_Edge__ref_double(void* self, double U, TopoDS_Edge* E, double* UonE, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_CompCurve*>(self)->Edge(U, *E, *UonE);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_BRepAdaptor_CompCurve_Edge__double__mut_TopoDS_Edge__ref_double
 B3D_API double b3d_BRepAdaptor_CompCurve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->FirstParameter();
     return r;
@@ -140,7 +140,7 @@ B3D_API double b3d_BRepAdaptor_CompCurve_FirstParameter(void* self, b3d_error** 
 B3D_API double b3d_BRepAdaptor_CompCurve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->LastParameter();
     return r;
@@ -152,7 +152,7 @@ B3D_API double b3d_BRepAdaptor_CompCurve_LastParameter(void* self, b3d_error** e
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -164,7 +164,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_Continuity(void* self, b3d_error** err
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -176,7 +176,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbIntervals__GeomAbs_Shape(void* self,
 B3D_API void b3d_BRepAdaptor_CompCurve_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_CompCurve*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -187,7 +187,7 @@ B3D_API void b3d_BRepAdaptor_CompCurve_Intervals__mut_TColStd_Array1OfReal__Geom
 B3D_API void* b3d_BRepAdaptor_CompCurve_Trim__double__double__double(void* self, double First, double Last, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Trim(First, Last, Tol);
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -199,7 +199,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Trim__double__double__double(void* self,
 B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -211,7 +211,7 @@ B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -223,7 +223,7 @@ B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsPeriodic(void* self, b3d_error** err
 B3D_API double b3d_BRepAdaptor_CompCurve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Period();
     return r;
@@ -235,7 +235,7 @@ B3D_API double b3d_BRepAdaptor_CompCurve_Period(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_EvalD0__double(void* self, double theU, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->EvalD0(theU);
     return new gp_Pnt(r);
@@ -247,7 +247,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_EvalD0__double(void* self, double theU, 
 B3D_API void* b3d_BRepAdaptor_CompCurve_EvalDN__double__int(void* self, double theU, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->EvalDN(theU, theN);
     return new gp_Vec(r);
@@ -259,7 +259,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_EvalDN__double__int(void* self, double t
 B3D_API double b3d_BRepAdaptor_CompCurve_Resolution__double(void* self, double R3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Resolution(R3d);
     return r;
@@ -271,7 +271,7 @@ B3D_API double b3d_BRepAdaptor_CompCurve_Resolution__double(void* self, double R
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_GetType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->GetType();
     return static_cast<int32_t>(r);
@@ -283,7 +283,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_GetType(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Line(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Line();
     return new gp_Lin(r);
@@ -295,7 +295,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Line(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Circle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Circle();
     return new gp_Circ(r);
@@ -307,7 +307,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Circle(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Ellipse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Ellipse();
     return new gp_Elips(r);
@@ -319,7 +319,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Ellipse(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Hyperbola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Hyperbola();
     return new gp_Hypr(r);
@@ -331,7 +331,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Hyperbola(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Parabola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Parabola();
     return new gp_Parab(r);
@@ -343,7 +343,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Parabola(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_Degree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Degree();
     return r;
@@ -355,7 +355,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_Degree(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->IsRational();
     return r ? 1 : 0;
@@ -367,7 +367,7 @@ B3D_API uint8_t b3d_BRepAdaptor_CompCurve_IsRational(void* self, b3d_error** err
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->NbPoles();
     return r;
@@ -379,7 +379,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->NbKnots();
     return r;
@@ -391,7 +391,7 @@ B3D_API int32_t b3d_BRepAdaptor_CompCurve_NbKnots(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_Bezier(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->Bezier();
     return b3d_retain(occ::handle<Geom_BezierCurve>(r).get());
@@ -403,7 +403,7 @@ B3D_API void* b3d_BRepAdaptor_CompCurve_Bezier(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_CompCurve_BSpline(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_CompCurve*>(self)->BSpline();
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());

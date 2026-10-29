@@ -28,7 +28,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_downcast(void* t) { return b3d_retain(dyna
 B3D_API void* b3d_BRepAdaptor_Surface_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_Surface();
     return b3d_retain(r);
@@ -40,7 +40,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_new(b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_new__TopoDS_Face(const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_Surface(*F);
     return b3d_retain(r);
@@ -52,7 +52,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_new__TopoDS_Face(const TopoDS_Face* F, b3d
 B3D_API void* b3d_BRepAdaptor_Surface_new__TopoDS_Face__bool(const TopoDS_Face* F, uint8_t R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAdaptor_Surface(*F, R != 0);
     return b3d_retain(r);
@@ -64,7 +64,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_new__TopoDS_Face__bool(const TopoDS_Face* 
 B3D_API void* b3d_BRepAdaptor_Surface_ShallowCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Surface*>(self)->ShallowCopy();
     return b3d_retain(occ::handle<Adaptor3d_Surface>(r).get());
@@ -76,7 +76,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_ShallowCopy(void* self, b3d_error** err)
 B3D_API void b3d_BRepAdaptor_Surface_Initialize__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_Surface*>(self)->Initialize(*F);
     return;
@@ -87,7 +87,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Initialize__TopoDS_Face(void* self, const T
 B3D_API void b3d_BRepAdaptor_Surface_Initialize__TopoDS_Face__bool(void* self, const TopoDS_Face* F, uint8_t Restriction, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAdaptor_Surface*>(self)->Initialize(*F, Restriction != 0);
     return;
@@ -98,7 +98,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Initialize__TopoDS_Face__bool(void* self, c
 B3D_API void* b3d_BRepAdaptor_Surface_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Surface*>(self)->Face();
     return new TopoDS_Face(r);
@@ -110,7 +110,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Face(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_Tolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAdaptor_Surface*>(self)->Tolerance();
     return r;
@@ -122,7 +122,7 @@ B3D_API double b3d_BRepAdaptor_Surface_Tolerance(void* self, b3d_error** err)
 B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__gp_Trsf(void* self, Geom_Surface* theSurface, const gp_Trsf* theTrsf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Load(occ::handle<Geom_Surface>(theSurface), *theTrsf);
     return;
@@ -133,7 +133,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__gp_Trsf(void* self, Geo
 B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double__double__gp_Trsf(void* self, Geom_Surface* theSurface, double theUFirst, double theULast, double theVFirst, double theVLast, const gp_Trsf* theTrsf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Load(occ::handle<Geom_Surface>(theSurface), theUFirst, theULast, theVFirst, theVLast, *theTrsf);
     return;
@@ -144,7 +144,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double_
 B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double__double__gp_Trsf__double(void* self, Geom_Surface* theSurface, double theUFirst, double theULast, double theVFirst, double theVLast, const gp_Trsf* theTrsf, double theTolU, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Load(occ::handle<Geom_Surface>(theSurface), theUFirst, theULast, theVFirst, theVLast, *theTrsf, theTolU);
     return;
@@ -155,7 +155,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double_
 B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double__double__gp_Trsf__double__double(void* self, Geom_Surface* theSurface, double theUFirst, double theULast, double theVFirst, double theVLast, const gp_Trsf* theTrsf, double theTolU, double theTolV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Load(occ::handle<Geom_Surface>(theSurface), theUFirst, theULast, theVFirst, theVLast, *theTrsf, theTolU, theTolV);
     return;
@@ -166,7 +166,7 @@ B3D_API void b3d_BRepAdaptor_Surface_Load__Geom_Surface__double__double__double_
 B3D_API void b3d_BRepAdaptor_Surface_SetTrsf__gp_Trsf(void* self, const gp_Trsf* theTrsf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->SetTrsf(*theTrsf);
     return;
@@ -177,7 +177,7 @@ B3D_API void b3d_BRepAdaptor_Surface_SetTrsf__gp_Trsf(void* self, const gp_Trsf*
 B3D_API uint8_t b3d_BRepAdaptor_Surface_HasTrsf(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->HasTrsf();
     return r ? 1 : 0;
@@ -189,7 +189,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_HasTrsf(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Trsf(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Trsf();
     return new gp_Trsf(r);
@@ -201,7 +201,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Trsf(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_GeomSurfaceOriginal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->GeomSurfaceOriginal();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -213,7 +213,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_GeomSurfaceOriginal(void* self, b3d_error*
 B3D_API void* b3d_BRepAdaptor_Surface_GeomSurfaceTransformed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->GeomSurfaceTransformed();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -225,7 +225,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_GeomSurfaceTransformed(void* self, b3d_err
 B3D_API double b3d_BRepAdaptor_Surface_FirstUParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->FirstUParameter();
     return r;
@@ -237,7 +237,7 @@ B3D_API double b3d_BRepAdaptor_Surface_FirstUParameter(void* self, b3d_error** e
 B3D_API double b3d_BRepAdaptor_Surface_LastUParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->LastUParameter();
     return r;
@@ -249,7 +249,7 @@ B3D_API double b3d_BRepAdaptor_Surface_LastUParameter(void* self, b3d_error** er
 B3D_API double b3d_BRepAdaptor_Surface_FirstVParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->FirstVParameter();
     return r;
@@ -261,7 +261,7 @@ B3D_API double b3d_BRepAdaptor_Surface_FirstVParameter(void* self, b3d_error** e
 B3D_API double b3d_BRepAdaptor_Surface_LastVParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->LastVParameter();
     return r;
@@ -273,7 +273,7 @@ B3D_API double b3d_BRepAdaptor_Surface_LastVParameter(void* self, b3d_error** er
 B3D_API int32_t b3d_BRepAdaptor_Surface_UContinuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UContinuity();
     return static_cast<int32_t>(r);
@@ -285,7 +285,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_UContinuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_VContinuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VContinuity();
     return static_cast<int32_t>(r);
@@ -297,7 +297,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_VContinuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbUIntervals__GeomAbs_Shape(void* self, int32_t theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbUIntervals(static_cast<GeomAbs_Shape>(theS));
     return r;
@@ -309,7 +309,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbUIntervals__GeomAbs_Shape(void* self, 
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbVIntervals__GeomAbs_Shape(void* self, int32_t theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbVIntervals(static_cast<GeomAbs_Shape>(theS));
     return r;
@@ -321,7 +321,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbVIntervals__GeomAbs_Shape(void* self, 
 B3D_API void b3d_BRepAdaptor_Surface_UIntervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* theT, int32_t theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UIntervals(*theT, static_cast<GeomAbs_Shape>(theS));
     return;
@@ -332,7 +332,7 @@ B3D_API void b3d_BRepAdaptor_Surface_UIntervals__mut_TColStd_Array1OfReal__GeomA
 B3D_API void b3d_BRepAdaptor_Surface_VIntervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* theT, int32_t theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VIntervals(*theT, static_cast<GeomAbs_Shape>(theS));
     return;
@@ -343,7 +343,7 @@ B3D_API void b3d_BRepAdaptor_Surface_VIntervals__mut_TColStd_Array1OfReal__GeomA
 B3D_API void* b3d_BRepAdaptor_Surface_UTrim__double__double__double(void* self, double theFirst, double theLast, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UTrim(theFirst, theLast, theTol);
     return b3d_retain(occ::handle<Adaptor3d_Surface>(r).get());
@@ -355,7 +355,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_UTrim__double__double__double(void* self, 
 B3D_API void* b3d_BRepAdaptor_Surface_VTrim__double__double__double(void* self, double theFirst, double theLast, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VTrim(theFirst, theLast, theTol);
     return b3d_retain(occ::handle<Adaptor3d_Surface>(r).get());
@@ -367,7 +367,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_VTrim__double__double__double(void* self, 
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsUClosed();
     return r ? 1 : 0;
@@ -379,7 +379,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsVClosed();
     return r ? 1 : 0;
@@ -391,7 +391,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsUPeriodic();
     return r ? 1 : 0;
@@ -403,7 +403,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsUPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_UPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UPeriod();
     return r;
@@ -415,7 +415,7 @@ B3D_API double b3d_BRepAdaptor_Surface_UPeriod(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsVPeriodic();
     return r ? 1 : 0;
@@ -427,7 +427,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_VPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VPeriod();
     return r;
@@ -439,7 +439,7 @@ B3D_API double b3d_BRepAdaptor_Surface_VPeriod(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_ToleranceU(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->ToleranceU();
     return r;
@@ -451,7 +451,7 @@ B3D_API double b3d_BRepAdaptor_Surface_ToleranceU(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_ToleranceV(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->ToleranceV();
     return r;
@@ -463,7 +463,7 @@ B3D_API double b3d_BRepAdaptor_Surface_ToleranceV(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_EvalD0__double__double(void* self, double theU, double theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->EvalD0(theU, theV);
     return new gp_Pnt(r);
@@ -475,7 +475,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_EvalD0__double__double(void* self, double 
 B3D_API void* b3d_BRepAdaptor_Surface_EvalDN__double__double__int__int(void* self, double theU, double theV, int32_t theNu, int32_t theNv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->EvalDN(theU, theV, theNu, theNv);
     return new gp_Vec(r);
@@ -487,7 +487,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_EvalDN__double__double__int__int(void* sel
 B3D_API double b3d_BRepAdaptor_Surface_UResolution__double(void* self, double theR3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UResolution(theR3d);
     return r;
@@ -499,7 +499,7 @@ B3D_API double b3d_BRepAdaptor_Surface_UResolution__double(void* self, double th
 B3D_API double b3d_BRepAdaptor_Surface_VResolution__double(void* self, double theR3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VResolution(theR3d);
     return r;
@@ -511,7 +511,7 @@ B3D_API double b3d_BRepAdaptor_Surface_VResolution__double(void* self, double th
 B3D_API int32_t b3d_BRepAdaptor_Surface_GetType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->GetType();
     return static_cast<int32_t>(r);
@@ -523,7 +523,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_GetType(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Plane(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Plane();
     return new gp_Pln(r);
@@ -535,7 +535,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Plane(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Cylinder(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Cylinder();
     return new gp_Cylinder(r);
@@ -547,7 +547,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Cylinder(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Cone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Cone();
     return new gp_Cone(r);
@@ -559,7 +559,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Cone(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Sphere(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Sphere();
     return new gp_Sphere(r);
@@ -571,7 +571,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Sphere(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Torus(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Torus();
     return new gp_Torus(r);
@@ -583,7 +583,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Torus(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_UDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->UDegree();
     return r;
@@ -595,7 +595,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_UDegree(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbUPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbUPoles();
     return r;
@@ -607,7 +607,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbUPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_VDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->VDegree();
     return r;
@@ -619,7 +619,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_VDegree(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbVPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbVPoles();
     return r;
@@ -631,7 +631,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbVPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbUKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbUKnots();
     return r;
@@ -643,7 +643,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbUKnots(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepAdaptor_Surface_NbVKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->NbVKnots();
     return r;
@@ -655,7 +655,7 @@ B3D_API int32_t b3d_BRepAdaptor_Surface_NbVKnots(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsURational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsURational();
     return r ? 1 : 0;
@@ -667,7 +667,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsURational(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->IsVRational();
     return r ? 1 : 0;
@@ -679,7 +679,7 @@ B3D_API uint8_t b3d_BRepAdaptor_Surface_IsVRational(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_Bezier(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Bezier();
     return b3d_retain(occ::handle<Geom_BezierSurface>(r).get());
@@ -691,7 +691,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Bezier(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_BSpline(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->BSpline();
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -703,7 +703,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_BSpline(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_AxeOfRevolution(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->AxeOfRevolution();
     return new gp_Ax1(r);
@@ -715,7 +715,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_AxeOfRevolution(void* self, b3d_error** er
 B3D_API void* b3d_BRepAdaptor_Surface_Direction(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->Direction();
     return new gp_Dir(r);
@@ -727,7 +727,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_Direction(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_BasisCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->BasisCurve();
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -739,7 +739,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_BasisCurve(void* self, b3d_error** err)
 B3D_API void* b3d_BRepAdaptor_Surface_BasisSurface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->BasisSurface();
     return b3d_retain(occ::handle<Adaptor3d_Surface>(r).get());
@@ -751,7 +751,7 @@ B3D_API void* b3d_BRepAdaptor_Surface_BasisSurface(void* self, b3d_error** err)
 B3D_API double b3d_BRepAdaptor_Surface_OffsetValue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_TransformedSurface*>(static_cast<BRepAdaptor_Surface*>(self))->OffsetValue();
     return r;

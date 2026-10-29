@@ -10,7 +10,7 @@ B3D_API void* b3d_gp_Quaternion_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Quaternion>)
   {
-    try { return new gp_Quaternion(*static_cast<const gp_Quaternion*>(p)); }
+    B3D_TRY { return new gp_Quaternion(*static_cast<const gp_Quaternion*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_gp_Quaternion_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_gp_Quaternion_new(b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_new__double__double__double__double(double theX, double theY, double theZ, double theW, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion(theX, theY, theZ, theW);
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_gp_Quaternion_new__double__double__double__double(double theX,
 B3D_API void* b3d_gp_Quaternion_new__gp_Vec__gp_Vec(const gp_Vec* theVecFrom, const gp_Vec* theVecTo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion(*theVecFrom, *theVecTo);
     return r;
@@ -57,7 +57,7 @@ B3D_API void* b3d_gp_Quaternion_new__gp_Vec__gp_Vec(const gp_Vec* theVecFrom, co
 B3D_API void* b3d_gp_Quaternion_new__gp_Vec__gp_Vec__gp_Vec(const gp_Vec* theVecFrom, const gp_Vec* theVecTo, const gp_Vec* theHelpCrossVec, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion(*theVecFrom, *theVecTo, *theHelpCrossVec);
     return r;
@@ -69,7 +69,7 @@ B3D_API void* b3d_gp_Quaternion_new__gp_Vec__gp_Vec__gp_Vec(const gp_Vec* theVec
 B3D_API void* b3d_gp_Quaternion_new__gp_Vec__double(const gp_Vec* theAxis, double theAngle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion(*theAxis, theAngle);
     return r;
@@ -81,7 +81,7 @@ B3D_API void* b3d_gp_Quaternion_new__gp_Vec__double(const gp_Vec* theAxis, doubl
 B3D_API void* b3d_gp_Quaternion_new__gp_Mat(const gp_Mat* theMat, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Quaternion(*theMat);
     return r;
@@ -93,7 +93,7 @@ B3D_API void* b3d_gp_Quaternion_new__gp_Mat(const gp_Mat* theMat, b3d_error** er
 B3D_API uint8_t b3d_gp_Quaternion_IsEqual__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->IsEqual(*theOther);
     return r ? 1 : 0;
@@ -105,7 +105,7 @@ B3D_API uint8_t b3d_gp_Quaternion_IsEqual__gp_Quaternion(void* self, const gp_Qu
 B3D_API void b3d_gp_Quaternion_SetRotation__gp_Vec__gp_Vec(void* self, const gp_Vec* theVecFrom, const gp_Vec* theVecTo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetRotation(*theVecFrom, *theVecTo);
     return;
@@ -116,7 +116,7 @@ B3D_API void b3d_gp_Quaternion_SetRotation__gp_Vec__gp_Vec(void* self, const gp_
 B3D_API void b3d_gp_Quaternion_SetRotation__gp_Vec__gp_Vec__gp_Vec(void* self, const gp_Vec* theVecFrom, const gp_Vec* theVecTo, const gp_Vec* theHelpCrossVec, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetRotation(*theVecFrom, *theVecTo, *theHelpCrossVec);
     return;
@@ -127,7 +127,7 @@ B3D_API void b3d_gp_Quaternion_SetRotation__gp_Vec__gp_Vec__gp_Vec(void* self, c
 B3D_API void b3d_gp_Quaternion_SetVectorAndAngle__gp_Vec__double(void* self, const gp_Vec* theAxis, double theAngle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetVectorAndAngle(*theAxis, theAngle);
     return;
@@ -138,7 +138,7 @@ B3D_API void b3d_gp_Quaternion_SetVectorAndAngle__gp_Vec__double(void* self, con
 B3D_API void b3d_gp_Quaternion_GetVectorAndAngle__mut_gp_Vec__ref_double(void* self, gp_Vec* theAxis, double* theAngle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->GetVectorAndAngle(*theAxis, *theAngle);
     return;
@@ -149,7 +149,7 @@ B3D_API void b3d_gp_Quaternion_GetVectorAndAngle__mut_gp_Vec__ref_double(void* s
 B3D_API void b3d_gp_Quaternion_SetMatrix__gp_Mat(void* self, const gp_Mat* theMat, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetMatrix(*theMat);
     return;
@@ -160,7 +160,7 @@ B3D_API void b3d_gp_Quaternion_SetMatrix__gp_Mat(void* self, const gp_Mat* theMa
 B3D_API void* b3d_gp_Quaternion_GetMatrix(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->GetMatrix();
     return new gp_Mat(r);
@@ -172,7 +172,7 @@ B3D_API void* b3d_gp_Quaternion_GetMatrix(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_SetEulerAngles__gp_EulerSequence__double__double__double(void* self, int32_t theOrder, double theAlpha, double theBeta, double theGamma, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetEulerAngles(static_cast<gp_EulerSequence>(theOrder), theAlpha, theBeta, theGamma);
     return;
@@ -183,7 +183,7 @@ B3D_API void b3d_gp_Quaternion_SetEulerAngles__gp_EulerSequence__double__double_
 B3D_API void b3d_gp_Quaternion_GetEulerAngles__gp_EulerSequence__ref_double__ref_double__ref_double(void* self, int32_t theOrder, double* theAlpha, double* theBeta, double* theGamma, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->GetEulerAngles(static_cast<gp_EulerSequence>(theOrder), *theAlpha, *theBeta, *theGamma);
     return;
@@ -194,7 +194,7 @@ B3D_API void b3d_gp_Quaternion_GetEulerAngles__gp_EulerSequence__ref_double__ref
 B3D_API void b3d_gp_Quaternion_Set__double__double__double__double(void* self, double theX, double theY, double theZ, double theW, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Set(theX, theY, theZ, theW);
     return;
@@ -205,7 +205,7 @@ B3D_API void b3d_gp_Quaternion_Set__double__double__double__double(void* self, d
 B3D_API void b3d_gp_Quaternion_Set__gp_Quaternion(void* self, const gp_Quaternion* theQuaternion, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Set(*theQuaternion);
     return;
@@ -216,7 +216,7 @@ B3D_API void b3d_gp_Quaternion_Set__gp_Quaternion(void* self, const gp_Quaternio
 B3D_API double b3d_gp_Quaternion_X(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->X();
     return r;
@@ -228,7 +228,7 @@ B3D_API double b3d_gp_Quaternion_X(void* self, b3d_error** err)
 B3D_API double b3d_gp_Quaternion_Y(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Y();
     return r;
@@ -240,7 +240,7 @@ B3D_API double b3d_gp_Quaternion_Y(void* self, b3d_error** err)
 B3D_API double b3d_gp_Quaternion_Z(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Z();
     return r;
@@ -252,7 +252,7 @@ B3D_API double b3d_gp_Quaternion_Z(void* self, b3d_error** err)
 B3D_API double b3d_gp_Quaternion_W(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->W();
     return r;
@@ -264,7 +264,7 @@ B3D_API double b3d_gp_Quaternion_W(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_SetIdent(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->SetIdent();
     return;
@@ -275,7 +275,7 @@ B3D_API void b3d_gp_Quaternion_SetIdent(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Reverse();
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_gp_Quaternion_Reverse(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Reversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Reversed();
     return new gp_Quaternion(r);
@@ -298,7 +298,7 @@ B3D_API void* b3d_gp_Quaternion_Reversed(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_Invert(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Invert();
     return;
@@ -309,7 +309,7 @@ B3D_API void b3d_gp_Quaternion_Invert(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Inverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Inverted();
     return new gp_Quaternion(r);
@@ -321,7 +321,7 @@ B3D_API void* b3d_gp_Quaternion_Inverted(void* self, b3d_error** err)
 B3D_API double b3d_gp_Quaternion_SquareNorm(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->SquareNorm();
     return r;
@@ -333,7 +333,7 @@ B3D_API double b3d_gp_Quaternion_SquareNorm(void* self, b3d_error** err)
 B3D_API double b3d_gp_Quaternion_Norm(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Norm();
     return r;
@@ -345,7 +345,7 @@ B3D_API double b3d_gp_Quaternion_Norm(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_Scale__double(void* self, double theScale, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Scale(theScale);
     return;
@@ -356,7 +356,7 @@ B3D_API void b3d_gp_Quaternion_Scale__double(void* self, double theScale, b3d_er
 B3D_API void* b3d_gp_Quaternion_Scaled__double(void* self, double theScale, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Scaled(theScale);
     return new gp_Quaternion(r);
@@ -368,7 +368,7 @@ B3D_API void* b3d_gp_Quaternion_Scaled__double(void* self, double theScale, b3d_
 B3D_API void b3d_gp_Quaternion_StabilizeLength(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->StabilizeLength();
     return;
@@ -379,7 +379,7 @@ B3D_API void b3d_gp_Quaternion_StabilizeLength(void* self, b3d_error** err)
 B3D_API void b3d_gp_Quaternion_Normalize(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Normalize();
     return;
@@ -390,7 +390,7 @@ B3D_API void b3d_gp_Quaternion_Normalize(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Normalized(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Normalized();
     return new gp_Quaternion(r);
@@ -402,7 +402,7 @@ B3D_API void* b3d_gp_Quaternion_Normalized(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Negated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Negated();
     return new gp_Quaternion(r);
@@ -414,7 +414,7 @@ B3D_API void* b3d_gp_Quaternion_Negated(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Added__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Added(*theOther);
     return new gp_Quaternion(r);
@@ -426,7 +426,7 @@ B3D_API void* b3d_gp_Quaternion_Added__gp_Quaternion(void* self, const gp_Quater
 B3D_API void* b3d_gp_Quaternion_Subtracted__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Subtracted(*theOther);
     return new gp_Quaternion(r);
@@ -438,7 +438,7 @@ B3D_API void* b3d_gp_Quaternion_Subtracted__gp_Quaternion(void* self, const gp_Q
 B3D_API void* b3d_gp_Quaternion_Multiplied__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Multiplied(*theOther);
     return new gp_Quaternion(r);
@@ -450,7 +450,7 @@ B3D_API void* b3d_gp_Quaternion_Multiplied__gp_Quaternion(void* self, const gp_Q
 B3D_API void b3d_gp_Quaternion_Add__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Add(*theOther);
     return;
@@ -461,7 +461,7 @@ B3D_API void b3d_gp_Quaternion_Add__gp_Quaternion(void* self, const gp_Quaternio
 B3D_API void b3d_gp_Quaternion_Subtract__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Subtract(*theOther);
     return;
@@ -472,7 +472,7 @@ B3D_API void b3d_gp_Quaternion_Subtract__gp_Quaternion(void* self, const gp_Quat
 B3D_API void b3d_gp_Quaternion_Multiply__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Quaternion*>(self)->Multiply(*theOther);
     return;
@@ -483,7 +483,7 @@ B3D_API void b3d_gp_Quaternion_Multiply__gp_Quaternion(void* self, const gp_Quat
 B3D_API double b3d_gp_Quaternion_Dot__gp_Quaternion(void* self, const gp_Quaternion* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Dot(*theOther);
     return r;
@@ -495,7 +495,7 @@ B3D_API double b3d_gp_Quaternion_Dot__gp_Quaternion(void* self, const gp_Quatern
 B3D_API double b3d_gp_Quaternion_GetRotationAngle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->GetRotationAngle();
     return r;
@@ -507,7 +507,7 @@ B3D_API double b3d_gp_Quaternion_GetRotationAngle(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Quaternion_Multiply__gp_Vec(void* self, const gp_Vec* theVec, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Quaternion*>(self)->Multiply(*theVec);
     return new gp_Vec(r);

@@ -12,7 +12,7 @@ B3D_API void* b3d_GeomConvert_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomConvert>)
   {
-    try { return new GeomConvert(*static_cast<const GeomConvert*>(p)); }
+    B3D_TRY { return new GeomConvert(*static_cast<const GeomConvert*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_GeomConvert_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<GeomConvert>)
   {
-    try { return new GeomConvert(); }
+    B3D_TRY { return new GeomConvert(); }
     B3D_CATCH(err)
   }
   else
@@ -36,7 +36,7 @@ B3D_API void* b3d_GeomConvert_new(b3d_error** err)
 B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__int__int(Geom_BSplineCurve* C, int32_t FromK1, int32_t ToK2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineCurve(occ::handle<Geom_BSplineCurve>(C), FromK1, ToK2);
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -48,7 +48,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__int__int(Geo
 B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__int__int__bool(Geom_BSplineCurve* C, int32_t FromK1, int32_t ToK2, uint8_t SameOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineCurve(occ::handle<Geom_BSplineCurve>(C), FromK1, ToK2, SameOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -60,7 +60,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__int__int__bo
 B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__double__double__double(Geom_BSplineCurve* C, double FromU1, double ToU2, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineCurve(occ::handle<Geom_BSplineCurve>(C), FromU1, ToU2, ParametricTolerance);
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -72,7 +72,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__double__doub
 B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__double__double__double__bool(Geom_BSplineCurve* C, double FromU1, double ToU2, double ParametricTolerance, uint8_t SameOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineCurve(occ::handle<Geom_BSplineCurve>(C), FromU1, ToU2, ParametricTolerance, SameOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -84,7 +84,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineCurve__Geom_BSplineCurve__double__doub
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int__int__int(Geom_BSplineSurface* S, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromUK1, ToUK2, FromVK1, ToVK2);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -96,7 +96,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int__int__int__bool(Geom_BSplineSurface* S, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, uint8_t SameUOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromUK1, ToUK2, FromVK1, ToVK2, SameUOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -108,7 +108,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int__int__int__bool__bool(Geom_BSplineSurface* S, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, uint8_t SameUOrientation, uint8_t SameVOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromUK1, ToUK2, FromVK1, ToVK2, SameUOrientation != 0, SameVOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -120,7 +120,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int__bool(Geom_BSplineSurface* S, int32_t FromK1, int32_t ToK2, uint8_t USplit, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromK1, ToK2, USplit != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -132,7 +132,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int__bool__bool(Geom_BSplineSurface* S, int32_t FromK1, int32_t ToK2, uint8_t USplit, uint8_t SameOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromK1, ToK2, USplit != 0, SameOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -144,7 +144,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__int__int
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__double__double__double__double(Geom_BSplineSurface* S, double FromU1, double ToU2, double FromV1, double ToV2, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromU1, ToU2, FromV1, ToV2, ParametricTolerance);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -156,7 +156,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__double__double__double__double__bool(Geom_BSplineSurface* S, double FromU1, double ToU2, double FromV1, double ToV2, double ParametricTolerance, uint8_t SameUOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromU1, ToU2, FromV1, ToV2, ParametricTolerance, SameUOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -168,7 +168,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__double__double__double__double__bool__bool(Geom_BSplineSurface* S, double FromU1, double ToU2, double FromV1, double ToV2, double ParametricTolerance, uint8_t SameUOrientation, uint8_t SameVOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromU1, ToU2, FromV1, ToV2, ParametricTolerance, SameUOrientation != 0, SameVOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -180,7 +180,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__double__bool__double(Geom_BSplineSurface* S, double FromParam1, double ToParam2, uint8_t USplit, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromParam1, ToParam2, USplit != 0, ParametricTolerance);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -192,7 +192,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__
 B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__double__bool__double__bool(Geom_BSplineSurface* S, double FromParam1, double ToParam2, uint8_t USplit, double ParametricTolerance, uint8_t SameOrientation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SplitBSplineSurface(occ::handle<Geom_BSplineSurface>(S), FromParam1, ToParam2, USplit != 0, ParametricTolerance, SameOrientation != 0);
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -204,7 +204,7 @@ B3D_API void* b3d_GeomConvert_SplitBSplineSurface__Geom_BSplineSurface__double__
 B3D_API void* b3d_GeomConvert_CurveToBSplineCurve__Geom_Curve(Geom_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::CurveToBSplineCurve(occ::handle<Geom_Curve>(C));
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -216,7 +216,7 @@ B3D_API void* b3d_GeomConvert_CurveToBSplineCurve__Geom_Curve(Geom_Curve* C, b3d
 B3D_API void* b3d_GeomConvert_CurveToBSplineCurve__Geom_Curve__Convert_ParameterisationType(Geom_Curve* C, int32_t Parameterisation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::CurveToBSplineCurve(occ::handle<Geom_Curve>(C), static_cast<Convert_ParameterisationType>(Parameterisation));
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -228,7 +228,7 @@ B3D_API void* b3d_GeomConvert_CurveToBSplineCurve__Geom_Curve__Convert_Parameter
 B3D_API void* b3d_GeomConvert_SurfaceToBSplineSurface__Geom_Surface(Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomConvert::SurfaceToBSplineSurface(occ::handle<Geom_Surface>(S));
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());

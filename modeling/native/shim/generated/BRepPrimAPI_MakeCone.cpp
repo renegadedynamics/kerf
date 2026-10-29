@@ -9,7 +9,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCone_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeCone>)
   {
-    try { return new BRepPrimAPI_MakeCone(*static_cast<const BRepPrimAPI_MakeCone*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeCone(*static_cast<const BRepPrimAPI_MakeCone*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCone_as_BRepBuilderAPI_Command(void* p) { retu
 B3D_API void* b3d_BRepPrimAPI_MakeCone_new__double__double__double(double R1, double R2, double H, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCone(R1, R2, H);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCone_new__double__double__double(double R1, do
 B3D_API void* b3d_BRepPrimAPI_MakeCone_new__double__double__double__double(double R1, double R2, double H, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCone(R1, R2, H, angle);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCone_new__double__double__double__double(doubl
 B3D_API void* b3d_BRepPrimAPI_MakeCone_new__gp_Ax2__double__double__double(const gp_Ax2* Axes, double R1, double R2, double H, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCone(*Axes, R1, R2, H);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeCone_new__gp_Ax2__double__double__double(const
 B3D_API void* b3d_BRepPrimAPI_MakeCone_new__gp_Ax2__double__double__double__double(const gp_Ax2* Axes, double R1, double R2, double H, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeCone(*Axes, R1, R2, H, angle);
     return r;

@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_as_BRepBuilderAPI_Command(void* p) { r
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_BuilderAlgo();
     return r;
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_new(b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetArguments__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* theLS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SetArguments(*theLS);
     return;
@@ -36,7 +36,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetArguments__TopTools_ListOfShape(void
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Arguments(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->Arguments();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Arguments(void* self, b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetNonDestructive__bool(void* self, uint8_t theFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SetNonDestructive(theFlag != 0);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetNonDestructive__bool(void* self, uin
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_NonDestructive(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->NonDestructive();
     return r ? 1 : 0;
@@ -71,7 +71,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_NonDestructive(void* self, b3d_error
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetGlue__BOPAlgo_GlueEnum(void* self, int32_t theGlue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SetGlue(static_cast<BOPAlgo_GlueEnum>(theGlue));
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetGlue__BOPAlgo_GlueEnum(void* self, i
 B3D_API int32_t b3d_BRepAlgoAPI_BuilderAlgo_Glue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->Glue();
     return static_cast<int32_t>(r);
@@ -94,7 +94,7 @@ B3D_API int32_t b3d_BRepAlgoAPI_BuilderAlgo_Glue(void* self, b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetCheckInverted__bool(void* self, uint8_t theCheck, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SetCheckInverted(theCheck != 0);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetCheckInverted__bool(void* self, uint
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_CheckInverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->CheckInverted();
     return r ? 1 : 0;
@@ -117,7 +117,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_CheckInverted(void* self, b3d_error*
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->Build();
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_Build(void* self, b3d_error** err)
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SimplifyResult();
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult(void* self, b3d_error** 
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool(void* self, uint8_t theUnifyEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SimplifyResult(theUnifyEdges != 0);
     return;
@@ -150,7 +150,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool(void* self, uint8_
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool__bool(void* self, uint8_t theUnifyEdges, uint8_t theUnifyFaces, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SimplifyResult(theUnifyEdges != 0, theUnifyFaces != 0);
     return;
@@ -161,7 +161,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool__bool(void* self, 
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool__bool__double(void* self, uint8_t theUnifyEdges, uint8_t theUnifyFaces, double theAngularTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SimplifyResult(theUnifyEdges != 0, theUnifyFaces != 0, theAngularTol);
     return;
@@ -172,7 +172,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SimplifyResult__bool__bool__double(void
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->Modified(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -184,7 +184,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Modified__TopoDS_Shape(void* self, con
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->Generated(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -196,7 +196,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_Generated__TopoDS_Shape(void* self, co
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* aS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->IsDeleted(*aS);
     return r ? 1 : 0;
@@ -208,7 +208,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_IsDeleted__TopoDS_Shape(void* self, 
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasModified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->HasModified();
     return r ? 1 : 0;
@@ -220,7 +220,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasModified(void* self, b3d_error** 
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasGenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->HasGenerated();
     return r ? 1 : 0;
@@ -232,7 +232,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasGenerated(void* self, b3d_error**
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasDeleted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->HasDeleted();
     return r ? 1 : 0;
@@ -244,7 +244,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasDeleted(void* self, b3d_error** e
 B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetToFillHistory__bool(void* self, uint8_t theHistFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SetToFillHistory(theHistFlag != 0);
     return;
@@ -255,7 +255,7 @@ B3D_API void b3d_BRepAlgoAPI_BuilderAlgo_SetToFillHistory__bool(void* self, uint
 B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasHistory(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->HasHistory();
     return r ? 1 : 0;
@@ -267,7 +267,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_BuilderAlgo_HasHistory(void* self, b3d_error** e
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_SectionEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->SectionEdges();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -279,7 +279,7 @@ B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_SectionEdges(void* self, b3d_error** e
 B3D_API void* b3d_BRepAlgoAPI_BuilderAlgo_History(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BuilderAlgo*>(self)->History();
     return b3d_retain(occ::handle<BRepTools_History>(r).get());

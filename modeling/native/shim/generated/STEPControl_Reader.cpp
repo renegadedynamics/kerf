@@ -10,7 +10,7 @@ B3D_API void* b3d_STEPControl_Reader_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<STEPControl_Reader>)
   {
-    try { return new STEPControl_Reader(*static_cast<const STEPControl_Reader*>(p)); }
+    B3D_TRY { return new STEPControl_Reader(*static_cast<const STEPControl_Reader*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_STEPControl_Reader_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_STEPControl_Reader_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new STEPControl_Reader();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_STEPControl_Reader_new(b3d_error** err)
 B3D_API int32_t b3d_STEPControl_Reader_ReadFile__string(void* self, const char* filename, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Reader*>(self)->ReadFile(filename);
     return static_cast<int32_t>(r);
@@ -45,7 +45,7 @@ B3D_API int32_t b3d_STEPControl_Reader_ReadFile__string(void* self, const char* 
 B3D_API uint8_t b3d_STEPControl_Reader_TransferRoot(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Reader*>(self)->TransferRoot();
     return r ? 1 : 0;
@@ -57,7 +57,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_TransferRoot(void* self, b3d_error** err)
 B3D_API uint8_t b3d_STEPControl_Reader_TransferRoot__int(void* self, int32_t num, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Reader*>(self)->TransferRoot(num);
     return r ? 1 : 0;
@@ -69,7 +69,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_TransferRoot__int(void* self, int32_t num
 B3D_API int32_t b3d_STEPControl_Reader_NbRootsForTransfer(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Reader*>(self)->NbRootsForTransfer();
     return r;
@@ -81,7 +81,7 @@ B3D_API int32_t b3d_STEPControl_Reader_NbRootsForTransfer(void* self, b3d_error*
 B3D_API void b3d_STEPControl_Reader_SetSystemLengthUnit__double(void* self, double theLengthUnit, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Reader*>(self)->SetSystemLengthUnit(theLengthUnit);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_STEPControl_Reader_SetSystemLengthUnit__double(void* self, doub
 B3D_API double b3d_STEPControl_Reader_SystemLengthUnit(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Reader*>(self)->SystemLengthUnit();
     return r;
@@ -104,7 +104,7 @@ B3D_API double b3d_STEPControl_Reader_SystemLengthUnit(void* self, b3d_error** e
 B3D_API uint8_t b3d_STEPControl_Reader_SetNorm__string(void* self, const char* norm, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->SetNorm(norm);
     return r ? 1 : 0;
@@ -116,7 +116,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_SetNorm__string(void* self, const char* n
 B3D_API uint8_t b3d_STEPControl_Reader_TransferOneRoot(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->TransferOneRoot();
     return r ? 1 : 0;
@@ -128,7 +128,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_TransferOneRoot(void* self, b3d_error** e
 B3D_API uint8_t b3d_STEPControl_Reader_TransferOneRoot__int(void* self, int32_t num, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->TransferOneRoot(num);
     return r ? 1 : 0;
@@ -140,7 +140,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_TransferOneRoot__int(void* self, int32_t 
 B3D_API uint8_t b3d_STEPControl_Reader_TransferOne__int(void* self, int32_t num, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->TransferOne(num);
     return r ? 1 : 0;
@@ -152,7 +152,7 @@ B3D_API uint8_t b3d_STEPControl_Reader_TransferOne__int(void* self, int32_t num,
 B3D_API int32_t b3d_STEPControl_Reader_TransferRoots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->TransferRoots();
     return r;
@@ -164,7 +164,7 @@ B3D_API int32_t b3d_STEPControl_Reader_TransferRoots(void* self, b3d_error** err
 B3D_API void b3d_STEPControl_Reader_ClearShapes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->ClearShapes();
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_STEPControl_Reader_ClearShapes(void* self, b3d_error** err)
 B3D_API int32_t b3d_STEPControl_Reader_NbShapes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->NbShapes();
     return r;
@@ -187,7 +187,7 @@ B3D_API int32_t b3d_STEPControl_Reader_NbShapes(void* self, b3d_error** err)
 B3D_API void* b3d_STEPControl_Reader_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->Shape();
     return new TopoDS_Shape(r);
@@ -199,7 +199,7 @@ B3D_API void* b3d_STEPControl_Reader_Shape(void* self, b3d_error** err)
 B3D_API void* b3d_STEPControl_Reader_Shape__int(void* self, int32_t num, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->Shape(num);
     return new TopoDS_Shape(r);
@@ -211,7 +211,7 @@ B3D_API void* b3d_STEPControl_Reader_Shape__int(void* self, int32_t num, b3d_err
 B3D_API void* b3d_STEPControl_Reader_OneShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->OneShape();
     return new TopoDS_Shape(r);
@@ -223,7 +223,7 @@ B3D_API void* b3d_STEPControl_Reader_OneShape(void* self, b3d_error** err)
 B3D_API void b3d_STEPControl_Reader_PrintCheckLoad__bool__IFSelect_PrintCount(void* self, uint8_t failsonly, int32_t mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->PrintCheckLoad(failsonly != 0, static_cast<IFSelect_PrintCount>(mode));
     return;
@@ -234,7 +234,7 @@ B3D_API void b3d_STEPControl_Reader_PrintCheckLoad__bool__IFSelect_PrintCount(vo
 B3D_API void b3d_STEPControl_Reader_PrintCheckTransfer__bool__IFSelect_PrintCount(void* self, uint8_t failsonly, int32_t mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->PrintCheckTransfer(failsonly != 0, static_cast<IFSelect_PrintCount>(mode));
     return;
@@ -245,7 +245,7 @@ B3D_API void b3d_STEPControl_Reader_PrintCheckTransfer__bool__IFSelect_PrintCoun
 B3D_API void b3d_STEPControl_Reader_PrintStatsTransfer__int(void* self, int32_t what, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->PrintStatsTransfer(what);
     return;
@@ -256,7 +256,7 @@ B3D_API void b3d_STEPControl_Reader_PrintStatsTransfer__int(void* self, int32_t 
 B3D_API void b3d_STEPControl_Reader_PrintStatsTransfer__int__int(void* self, int32_t what, int32_t mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<XSControl_Reader*>(static_cast<STEPControl_Reader*>(self))->PrintStatsTransfer(what, mode);
     return;

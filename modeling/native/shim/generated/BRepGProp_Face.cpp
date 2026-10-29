@@ -16,7 +16,7 @@ B3D_API void* b3d_BRepGProp_Face_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepGProp_Face>)
   {
-    try { return new BRepGProp_Face(*static_cast<const BRepGProp_Face*>(p)); }
+    B3D_TRY { return new BRepGProp_Face(*static_cast<const BRepGProp_Face*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepGProp_Face_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepGProp_Face_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepGProp_Face();
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepGProp_Face_new(b3d_error** err)
 B3D_API void* b3d_BRepGProp_Face_new__bool(uint8_t IsUseSpan, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepGProp_Face(IsUseSpan != 0);
     return r;
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepGProp_Face_new__bool(uint8_t IsUseSpan, b3d_error** err)
 B3D_API void* b3d_BRepGProp_Face_new__TopoDS_Face(const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepGProp_Face(*F);
     return r;
@@ -63,7 +63,7 @@ B3D_API void* b3d_BRepGProp_Face_new__TopoDS_Face(const TopoDS_Face* F, b3d_erro
 B3D_API void* b3d_BRepGProp_Face_new__TopoDS_Face__bool(const TopoDS_Face* F, uint8_t IsUseSpan, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepGProp_Face(*F, IsUseSpan != 0);
     return r;
@@ -75,7 +75,7 @@ B3D_API void* b3d_BRepGProp_Face_new__TopoDS_Face__bool(const TopoDS_Face* F, ui
 B3D_API void b3d_BRepGProp_Face_Load__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->Load(*F);
     return;
@@ -86,7 +86,7 @@ B3D_API void b3d_BRepGProp_Face_Load__TopoDS_Face(void* self, const TopoDS_Face*
 B3D_API int32_t b3d_BRepGProp_Face_VIntegrationOrder(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->VIntegrationOrder();
     return r;
@@ -98,7 +98,7 @@ B3D_API int32_t b3d_BRepGProp_Face_VIntegrationOrder(void* self, b3d_error** err
 B3D_API uint8_t b3d_BRepGProp_Face_NaturalRestriction(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->NaturalRestriction();
     return r ? 1 : 0;
@@ -110,7 +110,7 @@ B3D_API uint8_t b3d_BRepGProp_Face_NaturalRestriction(void* self, b3d_error** er
 B3D_API void* b3d_BRepGProp_Face_GetFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->GetFace();
     return new TopoDS_Face(r);
@@ -122,7 +122,7 @@ B3D_API void* b3d_BRepGProp_Face_GetFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepGProp_Face_Value2d__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->Value2d(U);
     return new gp_Pnt2d(r);
@@ -134,7 +134,7 @@ B3D_API void* b3d_BRepGProp_Face_Value2d__double(void* self, double U, b3d_error
 B3D_API int32_t b3d_BRepGProp_Face_SIntOrder__double(void* self, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->SIntOrder(Eps);
     return r;
@@ -146,7 +146,7 @@ B3D_API int32_t b3d_BRepGProp_Face_SIntOrder__double(void* self, double Eps, b3d
 B3D_API int32_t b3d_BRepGProp_Face_SVIntSubs(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->SVIntSubs();
     return r;
@@ -158,7 +158,7 @@ B3D_API int32_t b3d_BRepGProp_Face_SVIntSubs(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepGProp_Face_SUIntSubs(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->SUIntSubs();
     return r;
@@ -170,7 +170,7 @@ B3D_API int32_t b3d_BRepGProp_Face_SUIntSubs(void* self, b3d_error** err)
 B3D_API void b3d_BRepGProp_Face_UKnots__mut_TColStd_Array1OfReal(void* self, NCollection_Array1<double>* Knots, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->UKnots(*Knots);
     return;
@@ -181,7 +181,7 @@ B3D_API void b3d_BRepGProp_Face_UKnots__mut_TColStd_Array1OfReal(void* self, NCo
 B3D_API void b3d_BRepGProp_Face_VKnots__mut_TColStd_Array1OfReal(void* self, NCollection_Array1<double>* Knots, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->VKnots(*Knots);
     return;
@@ -192,7 +192,7 @@ B3D_API void b3d_BRepGProp_Face_VKnots__mut_TColStd_Array1OfReal(void* self, NCo
 B3D_API int32_t b3d_BRepGProp_Face_LIntOrder__double(void* self, double Eps, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->LIntOrder(Eps);
     return r;
@@ -204,7 +204,7 @@ B3D_API int32_t b3d_BRepGProp_Face_LIntOrder__double(void* self, double Eps, b3d
 B3D_API int32_t b3d_BRepGProp_Face_LIntSubs(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->LIntSubs();
     return r;
@@ -216,7 +216,7 @@ B3D_API int32_t b3d_BRepGProp_Face_LIntSubs(void* self, b3d_error** err)
 B3D_API void b3d_BRepGProp_Face_LKnots__mut_TColStd_Array1OfReal(void* self, NCollection_Array1<double>* Knots, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->LKnots(*Knots);
     return;
@@ -227,7 +227,7 @@ B3D_API void b3d_BRepGProp_Face_LKnots__mut_TColStd_Array1OfReal(void* self, NCo
 B3D_API int32_t b3d_BRepGProp_Face_UIntegrationOrder(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->UIntegrationOrder();
     return r;
@@ -239,7 +239,7 @@ B3D_API int32_t b3d_BRepGProp_Face_UIntegrationOrder(void* self, b3d_error** err
 B3D_API void b3d_BRepGProp_Face_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -250,7 +250,7 @@ B3D_API void b3d_BRepGProp_Face_Bounds__ref_double__ref_double__ref_double__ref_
 B3D_API void b3d_BRepGProp_Face_Normal__double__double__mut_gp_Pnt__mut_gp_Vec(void* self, double U, double V, gp_Pnt* P, gp_Vec* VNor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->Normal(U, V, *P, *VNor);
     return;
@@ -261,7 +261,7 @@ B3D_API void b3d_BRepGProp_Face_Normal__double__double__mut_gp_Pnt__mut_gp_Vec(v
 B3D_API uint8_t b3d_BRepGProp_Face_Load__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->Load(*E);
     return r ? 1 : 0;
@@ -273,7 +273,7 @@ B3D_API uint8_t b3d_BRepGProp_Face_Load__TopoDS_Edge(void* self, const TopoDS_Ed
 B3D_API double b3d_BRepGProp_Face_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->FirstParameter();
     return r;
@@ -285,7 +285,7 @@ B3D_API double b3d_BRepGProp_Face_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_BRepGProp_Face_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->LastParameter();
     return r;
@@ -297,7 +297,7 @@ B3D_API double b3d_BRepGProp_Face_LastParameter(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepGProp_Face_IntegrationOrder(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->IntegrationOrder();
     return r;
@@ -309,7 +309,7 @@ B3D_API int32_t b3d_BRepGProp_Face_IntegrationOrder(void* self, b3d_error** err)
 B3D_API void b3d_BRepGProp_Face_D12d__double__mut_gp_Pnt2d__mut_gp_Vec2d(void* self, double U, gp_Pnt2d* P, gp_Vec2d* V1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->D12d(U, *P, *V1);
     return;
@@ -320,7 +320,7 @@ B3D_API void b3d_BRepGProp_Face_D12d__double__mut_gp_Pnt2d__mut_gp_Vec2d(void* s
 B3D_API void b3d_BRepGProp_Face_Load__bool__GeomAbs_IsoType(void* self, uint8_t IsFirstParam, int32_t theIsoType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepGProp_Face*>(self)->Load(IsFirstParam != 0, static_cast<GeomAbs_IsoType>(theIsoType));
     return;
@@ -331,7 +331,7 @@ B3D_API void b3d_BRepGProp_Face_Load__bool__GeomAbs_IsoType(void* self, uint8_t 
 B3D_API void* b3d_BRepGProp_Face_GetUKnots__double__double(void* self, double theUMin, double theUMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->GetUKnots(theUMin, theUMax);
     return b3d_retain(occ::handle<NCollection_HArray1<double>>(r).get());
@@ -343,7 +343,7 @@ B3D_API void* b3d_BRepGProp_Face_GetUKnots__double__double(void* self, double th
 B3D_API void* b3d_BRepGProp_Face_GetTKnots__double__double(void* self, double theTMin, double theTMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepGProp_Face*>(self)->GetTKnots(theTMin, theTMax);
     return b3d_retain(occ::handle<NCollection_HArray1<double>>(r).get());

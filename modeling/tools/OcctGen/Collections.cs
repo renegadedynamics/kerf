@@ -253,7 +253,7 @@ static class CollectionEmitter
         sb.AppendLine($"B3D_API {ret} {name}({(ps.Length > 0 ? ps + ", " : "")}b3d_error** err)");
         sb.AppendLine("{");
         sb.AppendLine("  *err = nullptr;");
-        sb.AppendLine($"  try {{ {body} }}");
+        sb.AppendLine($"  B3D_TRY {{ {body} }}");
         sb.AppendLine("  B3D_CATCH(err)");
         if (ret != "void")
             sb.AppendLine("  return {};");

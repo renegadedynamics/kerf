@@ -9,7 +9,7 @@ B3D_API void* b3d_Extrema_POnCurv_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Extrema_POnCurv>)
   {
-    try { return new Extrema_POnCurv(*static_cast<const Extrema_POnCurv*>(p)); }
+    B3D_TRY { return new Extrema_POnCurv(*static_cast<const Extrema_POnCurv*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_Extrema_POnCurv_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Extrema_POnCurv_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_POnCurv();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_Extrema_POnCurv_new(b3d_error** err)
 B3D_API void* b3d_Extrema_POnCurv_new__double__gp_Pnt(double theU, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_POnCurv(theU, *theP);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_Extrema_POnCurv_new__double__gp_Pnt(double theU, const gp_Pnt*
 B3D_API void b3d_Extrema_POnCurv_SetValues__double__gp_Pnt(void* self, double theU, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Extrema_POnCurv*>(self)->SetValues(theU, *theP);
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_Extrema_POnCurv_SetValues__double__gp_Pnt(void* self, double th
 B3D_API void* b3d_Extrema_POnCurv_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_POnCurv*>(self)->Value();
     return new gp_Pnt(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_Extrema_POnCurv_Value(void* self, b3d_error** err)
 B3D_API double b3d_Extrema_POnCurv_Parameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_POnCurv*>(self)->Parameter();
     return r;

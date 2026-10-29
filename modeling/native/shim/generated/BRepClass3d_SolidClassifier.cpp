@@ -11,7 +11,7 @@ B3D_API void b3d_BRepClass3d_SolidClassifier_delete(void* p) { delete static_cas
 B3D_API void* b3d_BRepClass3d_SolidClassifier_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepClass3d_SolidClassifier();
     return r;
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepClass3d_SolidClassifier_new(b3d_error** err)
 B3D_API void* b3d_BRepClass3d_SolidClassifier_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepClass3d_SolidClassifier(*S);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepClass3d_SolidClassifier_new__TopoDS_Shape(const TopoDS_Sha
 B3D_API void* b3d_BRepClass3d_SolidClassifier_new__TopoDS_Shape__gp_Pnt__double(const TopoDS_Shape* S, const gp_Pnt* P, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepClass3d_SolidClassifier(*S, *P, Tol);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepClass3d_SolidClassifier_new__TopoDS_Shape__gp_Pnt__double(
 B3D_API void b3d_BRepClass3d_SolidClassifier_Load__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepClass3d_SolidClassifier*>(self)->Load(*S);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_BRepClass3d_SolidClassifier_Load__TopoDS_Shape(void* self, cons
 B3D_API void b3d_BRepClass3d_SolidClassifier_Perform__gp_Pnt__double(void* self, const gp_Pnt* P, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepClass3d_SolidClassifier*>(self)->Perform(*P, Tol);
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_BRepClass3d_SolidClassifier_Perform__gp_Pnt__double(void* self,
 B3D_API void b3d_BRepClass3d_SolidClassifier_PerformInfinitePoint__double(void* self, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepClass3d_SolidClassifier*>(self)->PerformInfinitePoint(Tol);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_BRepClass3d_SolidClassifier_PerformInfinitePoint__double(void* 
 B3D_API void b3d_BRepClass3d_SolidClassifier_Destroy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepClass3d_SolidClassifier*>(self)->Destroy();
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_BRepClass3d_SolidClassifier_Destroy(void* self, b3d_error** err
 B3D_API uint8_t b3d_BRepClass3d_SolidClassifier_Rejected(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepClass3d_SClassifier*>(static_cast<BRepClass3d_SolidClassifier*>(self))->Rejected();
     return r ? 1 : 0;
@@ -103,7 +103,7 @@ B3D_API uint8_t b3d_BRepClass3d_SolidClassifier_Rejected(void* self, b3d_error**
 B3D_API int32_t b3d_BRepClass3d_SolidClassifier_State(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepClass3d_SClassifier*>(static_cast<BRepClass3d_SolidClassifier*>(self))->State();
     return static_cast<int32_t>(r);
@@ -115,7 +115,7 @@ B3D_API int32_t b3d_BRepClass3d_SolidClassifier_State(void* self, b3d_error** er
 B3D_API uint8_t b3d_BRepClass3d_SolidClassifier_IsOnAFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepClass3d_SClassifier*>(static_cast<BRepClass3d_SolidClassifier*>(self))->IsOnAFace();
     return r ? 1 : 0;
@@ -127,7 +127,7 @@ B3D_API uint8_t b3d_BRepClass3d_SolidClassifier_IsOnAFace(void* self, b3d_error*
 B3D_API void* b3d_BRepClass3d_SolidClassifier_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepClass3d_SClassifier*>(static_cast<BRepClass3d_SolidClassifier*>(self))->Face();
     return new TopoDS_Face(r);

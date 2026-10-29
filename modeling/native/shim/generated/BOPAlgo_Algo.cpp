@@ -7,7 +7,7 @@ B3D_API void* b3d_BOPAlgo_Algo_as_BOPAlgo_Options(void* p) { return static_cast<
 B3D_API void b3d_BOPAlgo_Algo_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Algo*>(self)->Perform();
     return;

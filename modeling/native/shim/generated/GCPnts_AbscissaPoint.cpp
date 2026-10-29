@@ -10,7 +10,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GCPnts_AbscissaPoint>)
   {
-    try { return new GCPnts_AbscissaPoint(*static_cast<const GCPnts_AbscissaPoint*>(p)); }
+    B3D_TRY { return new GCPnts_AbscissaPoint(*static_cast<const GCPnts_AbscissaPoint*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GCPnts_AbscissaPoint_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new(b3d_error** err)
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double(Adaptor3d_Curve* theC, double theAbscissa, double theU0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0);
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__double__tref_Adaptor3d_Curve__double__double(double theTol, Adaptor3d_Curve* theC, double theAbscissa, double theU0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(theTol, *theC, theAbscissa, theU0);
     return r;
@@ -57,7 +57,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__double__tref_Adaptor3d_Curve__double
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__double__tref_Adaptor2d_Curve2d__double__double(double theTol, Adaptor2d_Curve2d* theC, double theAbscissa, double theU0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(theTol, *theC, theAbscissa, theU0);
     return r;
@@ -69,7 +69,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__double__tref_Adaptor2d_Curve2d__doub
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__double(Adaptor2d_Curve2d* theC, double theAbscissa, double theU0, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0);
     return r;
@@ -81,7 +81,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__doub
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double__double(Adaptor3d_Curve* theC, double theAbscissa, double theU0, double theUi, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0, theUi);
     return r;
@@ -93,7 +93,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__double__double(Adaptor2d_Curve2d* theC, double theAbscissa, double theU0, double theUi, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0, theUi);
     return r;
@@ -105,7 +105,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__doub
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double__double__double(Adaptor3d_Curve* theC, double theAbscissa, double theU0, double theUi, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0, theUi, theTol);
     return r;
@@ -117,7 +117,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor3d_Curve__double__double
 B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__double__double__double(Adaptor2d_Curve2d* theC, double theAbscissa, double theU0, double theUi, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_AbscissaPoint(*theC, theAbscissa, theU0, theUi, theTol);
     return r;
@@ -129,7 +129,7 @@ B3D_API void* b3d_GCPnts_AbscissaPoint_new__tref_Adaptor2d_Curve2d__double__doub
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve(Adaptor3d_Curve* theC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC);
     return r;
@@ -141,7 +141,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve(Adaptor3d_C
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d(Adaptor2d_Curve2d* theC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC);
     return r;
@@ -153,7 +153,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d(Adaptor2d
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double(Adaptor3d_Curve* theC, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theTol);
     return r;
@@ -165,7 +165,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double(Ada
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double(Adaptor2d_Curve2d* theC, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theTol);
     return r;
@@ -177,7 +177,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double(A
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double__double(Adaptor3d_Curve* theC, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theU1, theU2);
     return r;
@@ -189,7 +189,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double__do
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double__double(Adaptor2d_Curve2d* theC, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theU1, theU2);
     return r;
@@ -201,7 +201,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double__
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double__double__double(Adaptor3d_Curve* theC, double theU1, double theU2, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theU1, theU2, theTol);
     return r;
@@ -213,7 +213,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor3d_Curve__double__do
 B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double__double__double(Adaptor2d_Curve2d* theC, double theU1, double theU2, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GCPnts_AbscissaPoint::Length(*theC, theU1, theU2, theTol);
     return r;
@@ -225,7 +225,7 @@ B3D_API double b3d_GCPnts_AbscissaPoint_Length__tref_Adaptor2d_Curve2d__double__
 B3D_API uint8_t b3d_GCPnts_AbscissaPoint_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_AbscissaPoint*>(self)->IsDone();
     return r ? 1 : 0;
@@ -237,7 +237,7 @@ B3D_API uint8_t b3d_GCPnts_AbscissaPoint_IsDone(void* self, b3d_error** err)
 B3D_API double b3d_GCPnts_AbscissaPoint_Parameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_AbscissaPoint*>(self)->Parameter();
     return r;

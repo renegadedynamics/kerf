@@ -13,7 +13,7 @@
 B3D_API double b3d_gp_Resolution(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::Resolution();
     return r;
@@ -25,7 +25,7 @@ B3D_API double b3d_gp_Resolution(b3d_error** err)
 B3D_API void* b3d_gp_Origin(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::Origin();
     return new gp_Pnt(r);
@@ -37,7 +37,7 @@ B3D_API void* b3d_gp_Origin(b3d_error** err)
 B3D_API void* b3d_gp_DX(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::DX();
     return new gp_Dir(r);
@@ -49,7 +49,7 @@ B3D_API void* b3d_gp_DX(b3d_error** err)
 B3D_API void* b3d_gp_DY(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::DY();
     return new gp_Dir(r);
@@ -61,7 +61,7 @@ B3D_API void* b3d_gp_DY(b3d_error** err)
 B3D_API void* b3d_gp_DZ(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::DZ();
     return new gp_Dir(r);
@@ -73,7 +73,7 @@ B3D_API void* b3d_gp_DZ(b3d_error** err)
 B3D_API void* b3d_gp_OX(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::OX();
     return new gp_Ax1(r);
@@ -85,7 +85,7 @@ B3D_API void* b3d_gp_OX(b3d_error** err)
 B3D_API void* b3d_gp_OY(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::OY();
     return new gp_Ax1(r);
@@ -97,7 +97,7 @@ B3D_API void* b3d_gp_OY(b3d_error** err)
 B3D_API void* b3d_gp_OZ(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::OZ();
     return new gp_Ax1(r);
@@ -109,7 +109,7 @@ B3D_API void* b3d_gp_OZ(b3d_error** err)
 B3D_API void* b3d_gp_XOY(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::XOY();
     return new gp_Ax2(r);
@@ -121,7 +121,7 @@ B3D_API void* b3d_gp_XOY(b3d_error** err)
 B3D_API void* b3d_gp_ZOX(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::ZOX();
     return new gp_Ax2(r);
@@ -133,7 +133,7 @@ B3D_API void* b3d_gp_ZOX(b3d_error** err)
 B3D_API void* b3d_gp_YOZ(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::YOZ();
     return new gp_Ax2(r);
@@ -145,7 +145,7 @@ B3D_API void* b3d_gp_YOZ(b3d_error** err)
 B3D_API void* b3d_gp_Origin2d(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::Origin2d();
     return new gp_Pnt2d(r);
@@ -157,7 +157,7 @@ B3D_API void* b3d_gp_Origin2d(b3d_error** err)
 B3D_API void* b3d_gp_DX2d(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::DX2d();
     return new gp_Dir2d(r);
@@ -169,7 +169,7 @@ B3D_API void* b3d_gp_DX2d(b3d_error** err)
 B3D_API void* b3d_gp_DY2d(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::DY2d();
     return new gp_Dir2d(r);
@@ -181,7 +181,7 @@ B3D_API void* b3d_gp_DY2d(b3d_error** err)
 B3D_API void* b3d_gp_OX2d(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::OX2d();
     return new gp_Ax2d(r);
@@ -193,7 +193,7 @@ B3D_API void* b3d_gp_OX2d(b3d_error** err)
 B3D_API void* b3d_gp_OY2d(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = gp::OY2d();
     return new gp_Ax2d(r);

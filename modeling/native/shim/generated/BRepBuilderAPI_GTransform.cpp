@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_GTransform>)
   {
-    try { return new BRepBuilderAPI_GTransform(*static_cast<const BRepBuilderAPI_GTransform*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_GTransform(*static_cast<const BRepBuilderAPI_GTransform*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_as_BRepBuilderAPI_Command(void* p) {
 B3D_API void* b3d_BRepBuilderAPI_GTransform_new__gp_GTrsf(const gp_GTrsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_GTransform(*T);
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_new__gp_GTrsf(const gp_GTrsf* T, b3d
 B3D_API void* b3d_BRepBuilderAPI_GTransform_new__TopoDS_Shape__gp_GTrsf(const TopoDS_Shape* S, const gp_GTrsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_GTransform(*S, *T);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_new__TopoDS_Shape__gp_GTrsf(const To
 B3D_API void* b3d_BRepBuilderAPI_GTransform_new__TopoDS_Shape__gp_GTrsf__bool(const TopoDS_Shape* S, const gp_GTrsf* T, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_GTransform(*S, *T, Copy != 0);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_new__TopoDS_Shape__gp_GTrsf__bool(co
 B3D_API void b3d_BRepBuilderAPI_GTransform_Perform__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_GTransform*>(self)->Perform(*S);
     return;
@@ -72,7 +72,7 @@ B3D_API void b3d_BRepBuilderAPI_GTransform_Perform__TopoDS_Shape(void* self, con
 B3D_API void b3d_BRepBuilderAPI_GTransform_Perform__TopoDS_Shape__bool(void* self, const TopoDS_Shape* S, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_GTransform*>(self)->Perform(*S, Copy != 0);
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_BRepBuilderAPI_GTransform_Perform__TopoDS_Shape__bool(void* sel
 B3D_API void* b3d_BRepBuilderAPI_GTransform_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_GTransform*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -95,7 +95,7 @@ B3D_API void* b3d_BRepBuilderAPI_GTransform_Modified__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepBuilderAPI_GTransform_ModifiedShape__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_GTransform*>(self)->ModifiedShape(*S);
     return new TopoDS_Shape(r);

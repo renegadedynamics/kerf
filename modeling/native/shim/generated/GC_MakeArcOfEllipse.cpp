@@ -11,7 +11,7 @@ B3D_API void* b3d_GC_MakeArcOfEllipse_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GC_MakeArcOfEllipse>)
   {
-    try { return new GC_MakeArcOfEllipse(*static_cast<const GC_MakeArcOfEllipse*>(p)); }
+    B3D_TRY { return new GC_MakeArcOfEllipse(*static_cast<const GC_MakeArcOfEllipse*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_GC_MakeArcOfEllipse_as_GC_Root(void* p) { return static_cast<G
 B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__double__double__bool(const gp_Elips* theElips, double theAlpha1, double theAlpha2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfEllipse(*theElips, theAlpha1, theAlpha2, theSense != 0);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__double__double__bool(const 
 B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__gp_Pnt__double__bool(const gp_Elips* theElips, const gp_Pnt* theP, double theAlpha, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfEllipse(*theElips, *theP, theAlpha, theSense != 0);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__gp_Pnt__double__bool(const 
 B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__gp_Pnt__gp_Pnt__bool(const gp_Elips* theElips, const gp_Pnt* theP1, const gp_Pnt* theP2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfEllipse(*theElips, *theP1, *theP2, theSense != 0);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_GC_MakeArcOfEllipse_new__gp_Elips__gp_Pnt__gp_Pnt__bool(const 
 B3D_API void* b3d_GC_MakeArcOfEllipse_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GC_MakeArcOfEllipse*>(self)->Value();
     return b3d_retain(occ::handle<Geom_TrimmedCurve>(r).get());

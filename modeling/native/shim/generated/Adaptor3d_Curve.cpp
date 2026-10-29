@@ -23,7 +23,7 @@ B3D_API void* b3d_Adaptor3d_Curve_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<Adaptor3d_Curve>)
   {
-    try { return b3d_retain(new Adaptor3d_Curve()); }
+    B3D_TRY { return b3d_retain(new Adaptor3d_Curve()); }
     B3D_CATCH(err)
   }
   else
@@ -34,7 +34,7 @@ B3D_API void* b3d_Adaptor3d_Curve_new(b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_ShallowCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->ShallowCopy();
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -46,7 +46,7 @@ B3D_API void* b3d_Adaptor3d_Curve_ShallowCopy(void* self, b3d_error** err)
 B3D_API double b3d_Adaptor3d_Curve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->FirstParameter();
     return r;
@@ -58,7 +58,7 @@ B3D_API double b3d_Adaptor3d_Curve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Adaptor3d_Curve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->LastParameter();
     return r;
@@ -70,7 +70,7 @@ B3D_API double b3d_Adaptor3d_Curve_LastParameter(void* self, b3d_error** err)
 B3D_API int32_t b3d_Adaptor3d_Curve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -82,7 +82,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_Continuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_Adaptor3d_Curve_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -94,7 +94,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_NbIntervals__GeomAbs_Shape(void* self, int32
 B3D_API void b3d_Adaptor3d_Curve_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Adaptor3d_Curve*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_Adaptor3d_Curve_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Sh
 B3D_API void* b3d_Adaptor3d_Curve_Trim__double__double__double(void* self, double First, double Last, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Trim(First, Last, Tol);
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -117,7 +117,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Trim__double__double__double(void* self, doubl
 B3D_API uint8_t b3d_Adaptor3d_Curve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -129,7 +129,7 @@ B3D_API uint8_t b3d_Adaptor3d_Curve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Adaptor3d_Curve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -141,7 +141,7 @@ B3D_API uint8_t b3d_Adaptor3d_Curve_IsPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Adaptor3d_Curve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Period();
     return r;
@@ -153,7 +153,7 @@ B3D_API double b3d_Adaptor3d_Curve_Period(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Value__double(void* self, double theU, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Value(theU);
     return new gp_Pnt(r);
@@ -165,7 +165,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Value__double(void* self, double theU, b3d_err
 B3D_API void b3d_Adaptor3d_Curve_D0__double__mut_gp_Pnt(void* self, double theU, gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Adaptor3d_Curve*>(self)->D0(theU, *theP);
     return;
@@ -176,7 +176,7 @@ B3D_API void b3d_Adaptor3d_Curve_D0__double__mut_gp_Pnt(void* self, double theU,
 B3D_API void b3d_Adaptor3d_Curve_D1__double__mut_gp_Pnt__mut_gp_Vec(void* self, double theU, gp_Pnt* theP, gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Adaptor3d_Curve*>(self)->D1(theU, *theP, *theV);
     return;
@@ -187,7 +187,7 @@ B3D_API void b3d_Adaptor3d_Curve_D1__double__mut_gp_Pnt__mut_gp_Vec(void* self, 
 B3D_API void b3d_Adaptor3d_Curve_D2__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec(void* self, double theU, gp_Pnt* theP, gp_Vec* theV1, gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Adaptor3d_Curve*>(self)->D2(theU, *theP, *theV1, *theV2);
     return;
@@ -198,7 +198,7 @@ B3D_API void b3d_Adaptor3d_Curve_D2__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec(
 B3D_API void b3d_Adaptor3d_Curve_D3__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double theU, gp_Pnt* theP, gp_Vec* theV1, gp_Vec* theV2, gp_Vec* theV3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Adaptor3d_Curve*>(self)->D3(theU, *theP, *theV1, *theV2, *theV3);
     return;
@@ -209,7 +209,7 @@ B3D_API void b3d_Adaptor3d_Curve_D3__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec_
 B3D_API void* b3d_Adaptor3d_Curve_DN__double__int(void* self, double theU, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->DN(theU, theN);
     return new gp_Vec(r);
@@ -221,7 +221,7 @@ B3D_API void* b3d_Adaptor3d_Curve_DN__double__int(void* self, double theU, int32
 B3D_API double b3d_Adaptor3d_Curve_Resolution__double(void* self, double R3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Resolution(R3d);
     return r;
@@ -233,7 +233,7 @@ B3D_API double b3d_Adaptor3d_Curve_Resolution__double(void* self, double R3d, b3
 B3D_API int32_t b3d_Adaptor3d_Curve_GetType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->GetType();
     return static_cast<int32_t>(r);
@@ -245,7 +245,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_GetType(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Line(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Line();
     return new gp_Lin(r);
@@ -257,7 +257,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Line(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Circle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Circle();
     return new gp_Circ(r);
@@ -269,7 +269,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Circle(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Ellipse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Ellipse();
     return new gp_Elips(r);
@@ -281,7 +281,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Ellipse(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Hyperbola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Hyperbola();
     return new gp_Hypr(r);
@@ -293,7 +293,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Hyperbola(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Parabola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Parabola();
     return new gp_Parab(r);
@@ -305,7 +305,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Parabola(void* self, b3d_error** err)
 B3D_API int32_t b3d_Adaptor3d_Curve_Degree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Degree();
     return r;
@@ -317,7 +317,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_Degree(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Adaptor3d_Curve_IsRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->IsRational();
     return r ? 1 : 0;
@@ -329,7 +329,7 @@ B3D_API uint8_t b3d_Adaptor3d_Curve_IsRational(void* self, b3d_error** err)
 B3D_API int32_t b3d_Adaptor3d_Curve_NbPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->NbPoles();
     return r;
@@ -341,7 +341,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_NbPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_Adaptor3d_Curve_NbKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->NbKnots();
     return r;
@@ -353,7 +353,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_NbKnots(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_Bezier(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->Bezier();
     return b3d_retain(occ::handle<Geom_BezierCurve>(r).get());
@@ -365,7 +365,7 @@ B3D_API void* b3d_Adaptor3d_Curve_Bezier(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_BSpline(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->BSpline();
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -377,7 +377,7 @@ B3D_API void* b3d_Adaptor3d_Curve_BSpline(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_OffsetCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->OffsetCurve();
     return b3d_retain(occ::handle<Geom_OffsetCurve>(r).get());
@@ -389,7 +389,7 @@ B3D_API void* b3d_Adaptor3d_Curve_OffsetCurve(void* self, b3d_error** err)
 B3D_API void* b3d_Adaptor3d_Curve_EvalD0__double(void* self, double theU, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->EvalD0(theU);
     return new gp_Pnt(r);
@@ -401,7 +401,7 @@ B3D_API void* b3d_Adaptor3d_Curve_EvalD0__double(void* self, double theU, b3d_er
 B3D_API void* b3d_Adaptor3d_Curve_EvalDN__double__int(void* self, double theU, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Adaptor3d_Curve*>(self)->EvalDN(theU, theN);
     return new gp_Vec(r);
@@ -413,7 +413,7 @@ B3D_API void* b3d_Adaptor3d_Curve_EvalDN__double__int(void* self, double theU, i
 B3D_API uint8_t b3d_Adaptor3d_Curve_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Adaptor3d_Curve*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -425,7 +425,7 @@ B3D_API uint8_t b3d_Adaptor3d_Curve_IsInstance__string(void* self, const char* t
 B3D_API uint8_t b3d_Adaptor3d_Curve_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Adaptor3d_Curve*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -437,7 +437,7 @@ B3D_API uint8_t b3d_Adaptor3d_Curve_IsKind__string(void* self, const char* theTy
 B3D_API int32_t b3d_Adaptor3d_Curve_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Adaptor3d_Curve*>(self))->GetRefCount();
     return r;
@@ -449,7 +449,7 @@ B3D_API int32_t b3d_Adaptor3d_Curve_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_Adaptor3d_Curve_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<Adaptor3d_Curve*>(self))->IncrementRefCounter();
     return;
@@ -460,7 +460,7 @@ B3D_API void b3d_Adaptor3d_Curve_IncrementRefCounter(void* self, b3d_error** err
 B3D_API int32_t b3d_Adaptor3d_Curve_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Adaptor3d_Curve*>(self))->DecrementRefCounter();
     return r;

@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepAlgoAPI_Fuse_as_BRepBuilderAPI_Command(void* p) { return s
 B3D_API void* b3d_BRepAlgoAPI_Fuse_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Fuse();
     return r;
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepAlgoAPI_Fuse_new(b3d_error** err)
 B3D_API void* b3d_BRepAlgoAPI_Fuse_new__TopoDS_Shape__TopoDS_Shape(const TopoDS_Shape* S1, const TopoDS_Shape* S2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Fuse(*S1, *S2);
     return r;

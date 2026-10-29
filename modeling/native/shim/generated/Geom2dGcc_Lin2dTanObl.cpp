@@ -11,7 +11,7 @@ B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Geom2dGcc_Lin2dTanObl>)
   {
-    try { return new Geom2dGcc_Lin2dTanObl(*static_cast<const Geom2dGcc_Lin2dTanObl*>(p)); }
+    B3D_TRY { return new Geom2dGcc_Lin2dTanObl(*static_cast<const Geom2dGcc_Lin2dTanObl*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_new__Geom2dGcc_QualifiedCurve__gp_Lin2d__double__double(const Geom2dGcc_QualifiedCurve* Qualified1, const gp_Lin2d* TheLin, double TolAng, double Angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_Lin2dTanObl(*Qualified1, *TheLin, TolAng, Angle);
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_new__Geom2dGcc_QualifiedCurve__gp_Lin2d_
 B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_new__Geom2dGcc_QualifiedCurve__gp_Lin2d__double__double__double(const Geom2dGcc_QualifiedCurve* Qualified1, const gp_Lin2d* TheLin, double TolAng, double Param1, double Angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_Lin2dTanObl(*Qualified1, *TheLin, TolAng, Param1, Angle);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_new__Geom2dGcc_QualifiedCurve__gp_Lin2d_
 B3D_API uint8_t b3d_Geom2dGcc_Lin2dTanObl_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Lin2dTanObl*>(self)->IsDone();
     return r ? 1 : 0;
@@ -58,7 +58,7 @@ B3D_API uint8_t b3d_Geom2dGcc_Lin2dTanObl_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom2dGcc_Lin2dTanObl_NbSolutions(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Lin2dTanObl*>(self)->NbSolutions();
     return r;
@@ -70,7 +70,7 @@ B3D_API int32_t b3d_Geom2dGcc_Lin2dTanObl_NbSolutions(void* self, b3d_error** er
 B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_ThisSolution__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Lin2dTanObl*>(self)->ThisSolution(Index);
     return new gp_Lin2d(r);
@@ -82,7 +82,7 @@ B3D_API void* b3d_Geom2dGcc_Lin2dTanObl_ThisSolution__int(void* self, int32_t In
 B3D_API void b3d_Geom2dGcc_Lin2dTanObl_Tangency1__int__ref_double__ref_double__mut_gp_Pnt2d(void* self, int32_t Index, double* ParSol, double* ParArg, gp_Pnt2d* PntSol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dGcc_Lin2dTanObl*>(self)->Tangency1(Index, *ParSol, *ParArg, *PntSol);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_Geom2dGcc_Lin2dTanObl_Tangency1__int__ref_double__ref_double__m
 B3D_API void b3d_Geom2dGcc_Lin2dTanObl_Intersection2__int__ref_double__ref_double__mut_gp_Pnt2d(void* self, int32_t Index, double* ParSol, double* ParArg, gp_Pnt2d* PntSol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dGcc_Lin2dTanObl*>(self)->Intersection2(Index, *ParSol, *ParArg, *PntSol);
     return;

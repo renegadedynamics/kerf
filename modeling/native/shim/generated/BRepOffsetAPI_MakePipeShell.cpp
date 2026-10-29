@@ -14,7 +14,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_copy(const void* p, b3d_error** er
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_MakePipeShell>)
   {
-    try { return new BRepOffsetAPI_MakePipeShell(*static_cast<const BRepOffsetAPI_MakePipeShell*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_MakePipeShell(*static_cast<const BRepOffsetAPI_MakePipeShell*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -28,7 +28,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_as_BRepBuilderAPI_Command(void* p)
 B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_new__TopoDS_Wire(const TopoDS_Wire* Spine, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakePipeShell(*Spine);
     return r;
@@ -40,7 +40,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_new__TopoDS_Wire(const TopoDS_Wire
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode();
     return;
@@ -51,7 +51,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode(void* self, b3d_error** err
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__bool(void* self, uint8_t IsFrenet, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(IsFrenet != 0);
     return;
@@ -62,7 +62,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__bool(void* self, uint8_t I
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetDiscreteMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetDiscreteMode();
     return;
@@ -73,7 +73,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetDiscreteMode(void* self, b3d_err
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__gp_Ax2(void* self, const gp_Ax2* Axe, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(*Axe);
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__gp_Ax2(void* self, const g
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__gp_Dir(void* self, const gp_Dir* BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(*BiNormal);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__gp_Dir(void* self, const g
 B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Shape(void* self, const TopoDS_Shape* SpineSupport, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(*SpineSupport);
     return r ? 1 : 0;
@@ -107,7 +107,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Shape(void* self
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Wire__bool(void* self, const TopoDS_Wire* AuxiliarySpine, uint8_t CurvilinearEquivalence, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(*AuxiliarySpine, CurvilinearEquivalence != 0);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Wire__bool(void* se
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Wire__bool__BRepFill_TypeOfContact(void* self, const TopoDS_Wire* AuxiliarySpine, uint8_t CurvilinearEquivalence, int32_t KeepContact, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMode(*AuxiliarySpine, CurvilinearEquivalence != 0, static_cast<BRepFill_TypeOfContact>(KeepContact));
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMode__TopoDS_Wire__bool__BRepFil
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape(void* self, const TopoDS_Shape* Profile, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape(void* self, const
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__bool(void* self, const TopoDS_Shape* Profile, uint8_t WithContact, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile, WithContact != 0);
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__bool(void* self,
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__bool__bool(void* self, const TopoDS_Shape* Profile, uint8_t WithContact, uint8_t WithCorrection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile, WithContact != 0, WithCorrection != 0);
     return;
@@ -162,7 +162,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__bool__bool(void*
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex(void* self, const TopoDS_Shape* Profile, const TopoDS_Vertex* Location, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile, *Location);
     return;
@@ -173,7 +173,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex(vo
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex__bool(void* self, const TopoDS_Shape* Profile, const TopoDS_Vertex* Location, uint8_t WithContact, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile, *Location, WithContact != 0);
     return;
@@ -184,7 +184,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex__b
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex__bool__bool(void* self, const TopoDS_Shape* Profile, const TopoDS_Vertex* Location, uint8_t WithContact, uint8_t WithCorrection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Add(*Profile, *Location, WithContact != 0, WithCorrection != 0);
     return;
@@ -195,7 +195,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Add__TopoDS_Shape__TopoDS_Vertex__b
 B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_IsReady(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->IsReady();
     return r ? 1 : 0;
@@ -207,7 +207,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_IsReady(void* self, b3d_error** 
 B3D_API int32_t b3d_BRepOffsetAPI_MakePipeShell_GetStatus(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->GetStatus();
     return static_cast<int32_t>(r);
@@ -219,7 +219,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakePipeShell_GetStatus(void* self, b3d_error*
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTolerance();
     return;
@@ -230,7 +230,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance(void* self, b3d_error*
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double(void* self, double Tol3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTolerance(Tol3d);
     return;
@@ -241,7 +241,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double(void* self, do
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double__double(void* self, double Tol3d, double BoundTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTolerance(Tol3d, BoundTol);
     return;
@@ -252,7 +252,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double__double(void* 
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double__double__double(void* self, double Tol3d, double BoundTol, double TolAngular, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTolerance(Tol3d, BoundTol, TolAngular);
     return;
@@ -263,7 +263,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTolerance__double__double__doubl
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMaxDegree__int(void* self, int32_t NewMaxDegree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMaxDegree(NewMaxDegree);
     return;
@@ -274,7 +274,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMaxDegree__int(void* self, int32
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMaxSegments__int(void* self, int32_t NewMaxSegments, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetMaxSegments(NewMaxSegments);
     return;
@@ -285,7 +285,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetMaxSegments__int(void* self, int
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetForceApproxC1__bool(void* self, uint8_t ForceApproxC1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetForceApproxC1(ForceApproxC1 != 0);
     return;
@@ -296,7 +296,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetForceApproxC1__bool(void* self, 
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTransitionMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTransitionMode();
     return;
@@ -307,7 +307,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTransitionMode(void* self, b3d_e
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTransitionMode__BRepBuilderAPI_TransitionMode(void* self, int32_t Mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetTransitionMode(static_cast<BRepBuilderAPI_TransitionMode>(Mode));
     return;
@@ -318,7 +318,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetTransitionMode__BRepBuilderAPI_T
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Simulate__int__mut_TopTools_ListOfShape(void* self, int32_t NumberOfSection, NCollection_List<TopoDS_Shape>* Result, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Simulate(NumberOfSection, *Result);
     return;
@@ -329,7 +329,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Simulate__int__mut_TopTools_ListOfS
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Build();
     return;
@@ -340,7 +340,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Build(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_MakeSolid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->MakeSolid();
     return r ? 1 : 0;
@@ -352,7 +352,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_MakeSolid(void* self, b3d_error*
 B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->FirstShape();
     return new TopoDS_Shape(r);
@@ -364,7 +364,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_FirstShape(void* self, b3d_error**
 B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->LastShape();
     return new TopoDS_Shape(r);
@@ -376,7 +376,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_LastShape(void* self, b3d_error** 
 B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -388,7 +388,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_Generated__TopoDS_Shape(void* self
 B3D_API double b3d_BRepOffsetAPI_MakePipeShell_ErrorOnSurface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->ErrorOnSurface();
     return r;
@@ -400,7 +400,7 @@ B3D_API double b3d_BRepOffsetAPI_MakePipeShell_ErrorOnSurface(void* self, b3d_er
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetIsBuildHistory__bool(void* self, uint8_t theIsBuildHistory, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->SetIsBuildHistory(theIsBuildHistory != 0);
     return;
@@ -411,7 +411,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_SetIsBuildHistory__bool(void* self,
 B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_IsBuildHistory(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->IsBuildHistory();
     return r ? 1 : 0;
@@ -423,7 +423,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_MakePipeShell_IsBuildHistory(void* self, b3d_e
 B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Profiles__mut_TopTools_ListOfShape(void* self, NCollection_List<TopoDS_Shape>* theProfiles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Profiles(*theProfiles);
     return;
@@ -434,7 +434,7 @@ B3D_API void b3d_BRepOffsetAPI_MakePipeShell_Profiles__mut_TopTools_ListOfShape(
 B3D_API void* b3d_BRepOffsetAPI_MakePipeShell_Spine(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakePipeShell*>(self)->Spine();
     return new TopoDS_Wire(r);

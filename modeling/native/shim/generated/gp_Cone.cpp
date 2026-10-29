@@ -14,7 +14,7 @@ B3D_API void* b3d_gp_Cone_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Cone>)
   {
-    try { return new gp_Cone(*static_cast<const gp_Cone*>(p)); }
+    B3D_TRY { return new gp_Cone(*static_cast<const gp_Cone*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_gp_Cone_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Cone_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Cone();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_gp_Cone_new(b3d_error** err)
 B3D_API void* b3d_gp_Cone_new__gp_Ax3__double__double(const gp_Ax3* theA3, double theAng, double theRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Cone(*theA3, theAng, theRadius);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_gp_Cone_new__gp_Ax3__double__double(const gp_Ax3* theA3, doubl
 B3D_API void b3d_gp_Cone_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->SetAxis(*theA1);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_gp_Cone_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_er
 B3D_API void b3d_gp_Cone_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->SetLocation(*theLoc);
     return;
@@ -71,7 +71,7 @@ B3D_API void b3d_gp_Cone_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, b
 B3D_API void b3d_gp_Cone_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->SetPosition(*theA3);
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_gp_Cone_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, b3
 B3D_API void b3d_gp_Cone_SetRadius__double(void* self, double theR, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->SetRadius(theR);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_gp_Cone_SetRadius__double(void* self, double theR, b3d_error** 
 B3D_API void b3d_gp_Cone_SetSemiAngle__double(void* self, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->SetSemiAngle(theAng);
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_gp_Cone_SetSemiAngle__double(void* self, double theAng, b3d_err
 B3D_API void* b3d_gp_Cone_Apex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Apex();
     return new gp_Pnt(r);
@@ -116,7 +116,7 @@ B3D_API void* b3d_gp_Cone_Apex(void* self, b3d_error** err)
 B3D_API void b3d_gp_Cone_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->UReverse();
     return;
@@ -127,7 +127,7 @@ B3D_API void b3d_gp_Cone_UReverse(void* self, b3d_error** err)
 B3D_API void b3d_gp_Cone_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->VReverse();
     return;
@@ -138,7 +138,7 @@ B3D_API void b3d_gp_Cone_VReverse(void* self, b3d_error** err)
 B3D_API uint8_t b3d_gp_Cone_Direct(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Direct();
     return r ? 1 : 0;
@@ -150,7 +150,7 @@ B3D_API uint8_t b3d_gp_Cone_Direct(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Cone_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Axis();
     return new gp_Ax1(r);
@@ -162,7 +162,7 @@ B3D_API void* b3d_gp_Cone_Axis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Cone_Coefficients__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double(void* self, double* theA1, double* theA2, double* theA3, double* theB1, double* theB2, double* theB3, double* theC1, double* theC2, double* theC3, double* theD, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Coefficients(*theA1, *theA2, *theA3, *theB1, *theB2, *theB3, *theC1, *theC2, *theC3, *theD);
     return;
@@ -173,7 +173,7 @@ B3D_API void b3d_gp_Cone_Coefficients__ref_double__ref_double__ref_double__ref_d
 B3D_API void* b3d_gp_Cone_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Location();
     return new gp_Pnt(r);
@@ -185,7 +185,7 @@ B3D_API void* b3d_gp_Cone_Location(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Cone_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Position();
     return new gp_Ax3(r);
@@ -197,7 +197,7 @@ B3D_API void* b3d_gp_Cone_Position(void* self, b3d_error** err)
 B3D_API double b3d_gp_Cone_RefRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->RefRadius();
     return r;
@@ -209,7 +209,7 @@ B3D_API double b3d_gp_Cone_RefRadius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Cone_SemiAngle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->SemiAngle();
     return r;
@@ -221,7 +221,7 @@ B3D_API double b3d_gp_Cone_SemiAngle(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Cone_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->XAxis();
     return new gp_Ax1(r);
@@ -233,7 +233,7 @@ B3D_API void* b3d_gp_Cone_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Cone_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->YAxis();
     return new gp_Ax1(r);
@@ -245,7 +245,7 @@ B3D_API void* b3d_gp_Cone_YAxis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Cone_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Mirror(*theP);
     return;
@@ -256,7 +256,7 @@ B3D_API void b3d_gp_Cone_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_erro
 B3D_API void* b3d_gp_Cone_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Mirrored(*theP);
     return new gp_Cone(r);
@@ -268,7 +268,7 @@ B3D_API void* b3d_gp_Cone_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_e
 B3D_API void b3d_gp_Cone_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Mirror(*theA1);
     return;
@@ -279,7 +279,7 @@ B3D_API void b3d_gp_Cone_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_err
 B3D_API void* b3d_gp_Cone_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Mirrored(*theA1);
     return new gp_Cone(r);
@@ -291,7 +291,7 @@ B3D_API void* b3d_gp_Cone_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_
 B3D_API void b3d_gp_Cone_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Mirror(*theA2);
     return;
@@ -302,7 +302,7 @@ B3D_API void b3d_gp_Cone_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_err
 B3D_API void* b3d_gp_Cone_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Mirrored(*theA2);
     return new gp_Cone(r);
@@ -314,7 +314,7 @@ B3D_API void* b3d_gp_Cone_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_
 B3D_API void b3d_gp_Cone_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Rotate(*theA1, theAng);
     return;
@@ -325,7 +325,7 @@ B3D_API void b3d_gp_Cone_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1,
 B3D_API void* b3d_gp_Cone_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Rotated(*theA1, theAng);
     return new gp_Cone(r);
@@ -337,7 +337,7 @@ B3D_API void* b3d_gp_Cone_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA
 B3D_API void b3d_gp_Cone_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Scale(*theP, theS);
     return;
@@ -348,7 +348,7 @@ B3D_API void b3d_gp_Cone_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, d
 B3D_API void* b3d_gp_Cone_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Scaled(*theP, theS);
     return new gp_Cone(r);
@@ -360,7 +360,7 @@ B3D_API void* b3d_gp_Cone_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP,
 B3D_API void b3d_gp_Cone_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Transform(*theT);
     return;
@@ -371,7 +371,7 @@ B3D_API void b3d_gp_Cone_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d
 B3D_API void* b3d_gp_Cone_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Transformed(*theT);
     return new gp_Cone(r);
@@ -383,7 +383,7 @@ B3D_API void* b3d_gp_Cone_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, 
 B3D_API void b3d_gp_Cone_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Translate(*theV);
     return;
@@ -394,7 +394,7 @@ B3D_API void b3d_gp_Cone_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_e
 B3D_API void* b3d_gp_Cone_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Translated(*theV);
     return new gp_Cone(r);
@@ -406,7 +406,7 @@ B3D_API void* b3d_gp_Cone_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d
 B3D_API void b3d_gp_Cone_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Cone*>(self)->Translate(*theP1, *theP2);
     return;
@@ -417,7 +417,7 @@ B3D_API void b3d_gp_Cone_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* the
 B3D_API void* b3d_gp_Cone_Translated__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Cone*>(self)->Translated(*theP1, *theP2);
     return new gp_Cone(r);

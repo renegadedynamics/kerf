@@ -9,7 +9,7 @@ B3D_API void* b3d_TColStd_HArray1OfBoolean_downcast(void* t) { return b3d_retain
 B3D_API void* b3d_TColStd_HArray1OfBoolean_new0(int lower, int upper, b3d_error** err)
 {
   *err = nullptr;
-  try { return b3d_retain(new NCollection_HArray1<bool>(lower, upper)); }
+  B3D_TRY { return b3d_retain(new NCollection_HArray1<bool>(lower, upper)); }
   B3D_CATCH(err)
   return {};
 }
@@ -17,7 +17,7 @@ B3D_API void* b3d_TColStd_HArray1OfBoolean_new0(int lower, int upper, b3d_error*
 B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Lower(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Lower(); }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Lower(); }
   B3D_CATCH(err)
   return {};
 }
@@ -25,7 +25,7 @@ B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Lower(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Upper(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Upper(); }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Upper(); }
   B3D_CATCH(err)
   return {};
 }
@@ -33,7 +33,7 @@ B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Upper(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -41,7 +41,7 @@ B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Length(void* self, b3d_error** err)
 B3D_API uint8_t b3d_TColStd_HArray1OfBoolean_Value(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return (s.Value(index)) ? 1 : 0; }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return (s.Value(index)) ? 1 : 0; }
   B3D_CATCH(err)
   return {};
 }
@@ -49,14 +49,14 @@ B3D_API uint8_t b3d_TColStd_HArray1OfBoolean_Value(void* self, int32_t index, b3
 B3D_API void b3d_TColStd_HArray1OfBoolean_SetValue(void* self, int32_t index, uint8_t item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); s.SetValue(index, (item != 0)); }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); s.SetValue(index, (item != 0)); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -64,6 +64,6 @@ B3D_API int32_t b3d_TColStd_HArray1OfBoolean_Count(void* self, b3d_error** err)
 B3D_API void b3d_TColStd_HArray1OfBoolean_Fill(void* self, uint8_t* out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = (x) ? 1 : 0; } }
+  B3D_TRY { NCollection_Array1<bool>& s = *static_cast<NCollection_HArray1<bool>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = (x) ? 1 : 0; } }
   B3D_CATCH(err)
 }

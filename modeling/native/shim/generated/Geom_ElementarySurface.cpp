@@ -14,7 +14,7 @@ B3D_API void* b3d_Geom_ElementarySurface_downcast(void* t) { return b3d_retain(d
 B3D_API void b3d_Geom_ElementarySurface_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ElementarySurface*>(self)->SetAxis(*theA1);
     return;
@@ -25,7 +25,7 @@ B3D_API void b3d_Geom_ElementarySurface_SetAxis__gp_Ax1(void* self, const gp_Ax1
 B3D_API void b3d_Geom_ElementarySurface_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ElementarySurface*>(self)->SetLocation(*theLoc);
     return;
@@ -36,7 +36,7 @@ B3D_API void b3d_Geom_ElementarySurface_SetLocation__gp_Pnt(void* self, const gp
 B3D_API void b3d_Geom_ElementarySurface_SetPosition__gp_Ax3(void* self, const gp_Ax3* theAx3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ElementarySurface*>(self)->SetPosition(*theAx3);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_Geom_ElementarySurface_SetPosition__gp_Ax3(void* self, const gp
 B3D_API void* b3d_Geom_ElementarySurface_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->Axis();
     return new gp_Ax1(r);
@@ -59,7 +59,7 @@ B3D_API void* b3d_Geom_ElementarySurface_Axis(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_ElementarySurface_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->Location();
     return new gp_Pnt(r);
@@ -71,7 +71,7 @@ B3D_API void* b3d_Geom_ElementarySurface_Location(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_ElementarySurface_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->Position();
     return new gp_Ax3(r);
@@ -83,7 +83,7 @@ B3D_API void* b3d_Geom_ElementarySurface_Position(void* self, b3d_error** err)
 B3D_API void b3d_Geom_ElementarySurface_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ElementarySurface*>(self)->UReverse();
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_Geom_ElementarySurface_UReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_ElementarySurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->UReversedParameter(U);
     return r;
@@ -106,7 +106,7 @@ B3D_API double b3d_Geom_ElementarySurface_UReversedParameter__double(void* self,
 B3D_API void b3d_Geom_ElementarySurface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ElementarySurface*>(self)->VReverse();
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_Geom_ElementarySurface_VReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_ElementarySurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->VReversedParameter(V);
     return r;
@@ -129,7 +129,7 @@ B3D_API double b3d_Geom_ElementarySurface_VReversedParameter__double(void* self,
 B3D_API int32_t b3d_Geom_ElementarySurface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -141,7 +141,7 @@ B3D_API int32_t b3d_Geom_ElementarySurface_Continuity(void* self, b3d_error** er
 B3D_API uint8_t b3d_Geom_ElementarySurface_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -153,7 +153,7 @@ B3D_API uint8_t b3d_Geom_ElementarySurface_IsCNu__int(void* self, int32_t N, b3d
 B3D_API uint8_t b3d_Geom_ElementarySurface_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ElementarySurface*>(self)->IsCNv(N);
     return r ? 1 : 0;

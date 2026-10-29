@@ -11,7 +11,7 @@ B3D_API void* b3d_GC_MakeArcOfParabola_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GC_MakeArcOfParabola>)
   {
-    try { return new GC_MakeArcOfParabola(*static_cast<const GC_MakeArcOfParabola*>(p)); }
+    B3D_TRY { return new GC_MakeArcOfParabola(*static_cast<const GC_MakeArcOfParabola*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_GC_MakeArcOfParabola_as_GC_Root(void* p) { return static_cast<
 B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__double__double__bool(const gp_Parab* theParab, double theAlpha1, double theAlpha2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfParabola(*theParab, theAlpha1, theAlpha2, theSense != 0);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__double__double__bool(const
 B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__gp_Pnt__double__bool(const gp_Parab* theParab, const gp_Pnt* theP, double theAlpha, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfParabola(*theParab, *theP, theAlpha, theSense != 0);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__gp_Pnt__double__bool(const
 B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__gp_Pnt__gp_Pnt__bool(const gp_Parab* theParab, const gp_Pnt* theP1, const gp_Pnt* theP2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfParabola(*theParab, *theP1, *theP2, theSense != 0);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_GC_MakeArcOfParabola_new__gp_Parab__gp_Pnt__gp_Pnt__bool(const
 B3D_API void* b3d_GC_MakeArcOfParabola_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GC_MakeArcOfParabola*>(self)->Value();
     return b3d_retain(occ::handle<Geom_TrimmedCurve>(r).get());

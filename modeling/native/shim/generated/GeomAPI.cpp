@@ -11,7 +11,7 @@ B3D_API void* b3d_GeomAPI_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomAPI>)
   {
-    try { return new GeomAPI(*static_cast<const GeomAPI*>(p)); }
+    B3D_TRY { return new GeomAPI(*static_cast<const GeomAPI*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_GeomAPI_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<GeomAPI>)
   {
-    try { return new GeomAPI(); }
+    B3D_TRY { return new GeomAPI(); }
     B3D_CATCH(err)
   }
   else
@@ -35,7 +35,7 @@ B3D_API void* b3d_GeomAPI_new(b3d_error** err)
 B3D_API void* b3d_GeomAPI_To2d__Geom_Curve__gp_Pln(Geom_Curve* C, const gp_Pln* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomAPI::To2d(occ::handle<Geom_Curve>(C), *P);
     return b3d_retain(occ::handle<Geom2d_Curve>(r).get());
@@ -47,7 +47,7 @@ B3D_API void* b3d_GeomAPI_To2d__Geom_Curve__gp_Pln(Geom_Curve* C, const gp_Pln* 
 B3D_API void* b3d_GeomAPI_To3d__Geom2d_Curve__gp_Pln(Geom2d_Curve* C, const gp_Pln* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = GeomAPI::To3d(occ::handle<Geom2d_Curve>(C), *P);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());

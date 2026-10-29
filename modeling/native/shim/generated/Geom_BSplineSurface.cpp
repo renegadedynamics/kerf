@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom_BSplineSurface_downcast(void* t) { return b3d_retain(dyna
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfR
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int__bool(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, uint8_t UPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree, UPeriodic != 0);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfR
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int__bool__bool(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, uint8_t UPeriodic, uint8_t VPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree, UPeriodic != 0, VPeriodic != 0);
     return b3d_retain(r);
@@ -55,7 +55,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array1OfR
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfReal__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array2<double>* Weights, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *Weights, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree);
     return b3d_retain(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfR
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfReal__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int__bool(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array2<double>* Weights, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, uint8_t UPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *Weights, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree, UPeriodic != 0);
     return b3d_retain(r);
@@ -79,7 +79,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfR
 B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfReal__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__TColStd_Array1OfInteger__int__int__bool__bool(const NCollection_Array2<gp_Pnt>* Poles, const NCollection_Array2<double>* Weights, const NCollection_Array1<double>* UKnots, const NCollection_Array1<double>* VKnots, const NCollection_Array1<int>* UMults, const NCollection_Array1<int>* VMults, int32_t UDegree, int32_t VDegree, uint8_t UPeriodic, uint8_t VPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineSurface(*Poles, *Weights, *UKnots, *VKnots, *UMults, *VMults, UDegree, VDegree, UPeriodic != 0, VPeriodic != 0);
     return b3d_retain(r);
@@ -91,7 +91,7 @@ B3D_API void* b3d_Geom_BSplineSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfR
 B3D_API uint8_t b3d_Geom_BSplineSurface_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -103,7 +103,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_HasEvalRepresentation(void* self, b3d_er
 B3D_API void b3d_Geom_BSplineSurface_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->ClearEvalRepresentation();
     return;
@@ -114,7 +114,7 @@ B3D_API void b3d_Geom_BSplineSurface_ClearEvalRepresentation(void* self, b3d_err
 B3D_API void b3d_Geom_BSplineSurface_ExchangeUV(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->ExchangeUV();
     return;
@@ -125,7 +125,7 @@ B3D_API void b3d_Geom_BSplineSurface_ExchangeUV(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_SetUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUPeriodic();
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUPeriodic(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_SetVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVPeriodic();
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVPeriodic(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_PeriodicNormalization__ref_double__ref_double(void* self, double* U, double* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->PeriodicNormalization(*U, *V);
     return;
@@ -158,7 +158,7 @@ B3D_API void b3d_Geom_BSplineSurface_PeriodicNormalization__ref_double__ref_doub
 B3D_API void b3d_Geom_BSplineSurface_SetUOrigin__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUOrigin(Index);
     return;
@@ -169,7 +169,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUOrigin__int(void* self, int32_t Index, 
 B3D_API void b3d_Geom_BSplineSurface_SetVOrigin__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVOrigin(Index);
     return;
@@ -180,7 +180,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVOrigin__int(void* self, int32_t Index, 
 B3D_API void b3d_Geom_BSplineSurface_SetUNotPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUNotPeriodic();
     return;
@@ -191,7 +191,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUNotPeriodic(void* self, b3d_error** err
 B3D_API void b3d_Geom_BSplineSurface_SetVNotPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVNotPeriodic();
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVNotPeriodic(void* self, b3d_error** err
 B3D_API void b3d_Geom_BSplineSurface_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->UReverse();
     return;
@@ -213,7 +213,7 @@ B3D_API void b3d_Geom_BSplineSurface_UReverse(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->VReverse();
     return;
@@ -224,7 +224,7 @@ B3D_API void b3d_Geom_BSplineSurface_VReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineSurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UReversedParameter(U);
     return r;
@@ -236,7 +236,7 @@ B3D_API double b3d_Geom_BSplineSurface_UReversedParameter__double(void* self, do
 B3D_API double b3d_Geom_BSplineSurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VReversedParameter(V);
     return r;
@@ -248,7 +248,7 @@ B3D_API double b3d_Geom_BSplineSurface_VReversedParameter__double(void* self, do
 B3D_API void b3d_Geom_BSplineSurface_IncreaseDegree__int__int(void* self, int32_t UDegree, int32_t VDegree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncreaseDegree(UDegree, VDegree);
     return;
@@ -259,7 +259,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncreaseDegree__int__int(void* self, int32_
 B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertUKnots(*Knots, *Mults);
     return;
@@ -270,7 +270,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd
 B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertUKnots(*Knots, *Mults, ParametricTolerance);
     return;
@@ -281,7 +281,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd
 B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double__bool(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertUKnots(*Knots, *Mults, ParametricTolerance, Add != 0);
     return;
@@ -292,7 +292,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertUKnots__TColStd_Array1OfReal__TColStd
 B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertVKnots(*Knots, *Mults);
     return;
@@ -303,7 +303,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd
 B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertVKnots(*Knots, *Mults, ParametricTolerance);
     return;
@@ -314,7 +314,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd
 B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double__bool(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertVKnots(*Knots, *Mults, ParametricTolerance, Add != 0);
     return;
@@ -325,7 +325,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertVKnots__TColStd_Array1OfReal__TColStd
 B3D_API uint8_t b3d_Geom_BSplineSurface_RemoveUKnot__int__int__double(void* self, int32_t Index, int32_t M, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->RemoveUKnot(Index, M, Tolerance);
     return r ? 1 : 0;
@@ -337,7 +337,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_RemoveUKnot__int__int__double(void* self
 B3D_API uint8_t b3d_Geom_BSplineSurface_RemoveVKnot__int__int__double(void* self, int32_t Index, int32_t M, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->RemoveVKnot(Index, M, Tolerance);
     return r ? 1 : 0;
@@ -349,7 +349,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_RemoveVKnot__int__int__double(void* self
 B3D_API void b3d_Geom_BSplineSurface_IncreaseUMultiplicity__int__int(void* self, int32_t UIndex, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncreaseUMultiplicity(UIndex, M);
     return;
@@ -360,7 +360,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncreaseUMultiplicity__int__int(void* self,
 B3D_API void b3d_Geom_BSplineSurface_IncreaseUMultiplicity__int__int__int(void* self, int32_t FromI1, int32_t ToI2, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncreaseUMultiplicity(FromI1, ToI2, M);
     return;
@@ -371,7 +371,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncreaseUMultiplicity__int__int__int(void* 
 B3D_API void b3d_Geom_BSplineSurface_IncrementUMultiplicity__int__int__int(void* self, int32_t FromI1, int32_t ToI2, int32_t Step, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncrementUMultiplicity(FromI1, ToI2, Step);
     return;
@@ -382,7 +382,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncrementUMultiplicity__int__int__int(void*
 B3D_API void b3d_Geom_BSplineSurface_IncreaseVMultiplicity__int__int(void* self, int32_t VIndex, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncreaseVMultiplicity(VIndex, M);
     return;
@@ -393,7 +393,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncreaseVMultiplicity__int__int(void* self,
 B3D_API void b3d_Geom_BSplineSurface_IncreaseVMultiplicity__int__int__int(void* self, int32_t FromI1, int32_t ToI2, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncreaseVMultiplicity(FromI1, ToI2, M);
     return;
@@ -404,7 +404,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncreaseVMultiplicity__int__int__int(void* 
 B3D_API void b3d_Geom_BSplineSurface_IncrementVMultiplicity__int__int__int(void* self, int32_t FromI1, int32_t ToI2, int32_t Step, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->IncrementVMultiplicity(FromI1, ToI2, Step);
     return;
@@ -415,7 +415,7 @@ B3D_API void b3d_Geom_BSplineSurface_IncrementVMultiplicity__int__int__int(void*
 B3D_API void b3d_Geom_BSplineSurface_InsertUKnot__double__int__double(void* self, double U, int32_t M, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertUKnot(U, M, ParametricTolerance);
     return;
@@ -426,7 +426,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertUKnot__double__int__double(void* self
 B3D_API void b3d_Geom_BSplineSurface_InsertUKnot__double__int__double__bool(void* self, double U, int32_t M, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertUKnot(U, M, ParametricTolerance, Add != 0);
     return;
@@ -437,7 +437,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertUKnot__double__int__double__bool(void
 B3D_API void b3d_Geom_BSplineSurface_InsertVKnot__double__int__double(void* self, double V, int32_t M, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertVKnot(V, M, ParametricTolerance);
     return;
@@ -448,7 +448,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertVKnot__double__int__double(void* self
 B3D_API void b3d_Geom_BSplineSurface_InsertVKnot__double__int__double__bool(void* self, double V, int32_t M, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->InsertVKnot(V, M, ParametricTolerance, Add != 0);
     return;
@@ -459,7 +459,7 @@ B3D_API void b3d_Geom_BSplineSurface_InsertVKnot__double__int__double__bool(void
 B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double(void* self, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Segment(U1, U2, V1, V2);
     return;
@@ -470,7 +470,7 @@ B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double(voi
 B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double__double(void* self, double U1, double U2, double V1, double V2, double theUTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Segment(U1, U2, V1, V2, theUTolerance);
     return;
@@ -481,7 +481,7 @@ B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double__do
 B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double__double__double(void* self, double U1, double U2, double V1, double V2, double theUTolerance, double theVTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Segment(U1, U2, V1, V2, theUTolerance, theVTolerance);
     return;
@@ -492,7 +492,7 @@ B3D_API void b3d_Geom_BSplineSurface_Segment__double__double__double__double__do
 B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__double(void* self, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->CheckAndSegment(U1, U2, V1, V2);
     return;
@@ -503,7 +503,7 @@ B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__do
 B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__double__double(void* self, double U1, double U2, double V1, double V2, double theUTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->CheckAndSegment(U1, U2, V1, V2, theUTolerance);
     return;
@@ -514,7 +514,7 @@ B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__do
 B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__double__double__double(void* self, double U1, double U2, double V1, double V2, double theUTolerance, double theVTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->CheckAndSegment(U1, U2, V1, V2, theUTolerance, theVTolerance);
     return;
@@ -525,7 +525,7 @@ B3D_API void b3d_Geom_BSplineSurface_CheckAndSegment__double__double__double__do
 B3D_API void b3d_Geom_BSplineSurface_SetUKnot__int__double(void* self, int32_t UIndex, double K, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUKnot(UIndex, K);
     return;
@@ -536,7 +536,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUKnot__int__double(void* self, int32_t U
 B3D_API void b3d_Geom_BSplineSurface_SetUKnots__TColStd_Array1OfReal(void* self, const NCollection_Array1<double>* UK, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUKnots(*UK);
     return;
@@ -547,7 +547,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUKnots__TColStd_Array1OfReal(void* self,
 B3D_API void b3d_Geom_BSplineSurface_SetUKnot__int__double__int(void* self, int32_t UIndex, double K, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetUKnot(UIndex, K, M);
     return;
@@ -558,7 +558,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetUKnot__int__double__int(void* self, int3
 B3D_API void b3d_Geom_BSplineSurface_SetVKnot__int__double(void* self, int32_t VIndex, double K, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVKnot(VIndex, K);
     return;
@@ -569,7 +569,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVKnot__int__double(void* self, int32_t V
 B3D_API void b3d_Geom_BSplineSurface_SetVKnots__TColStd_Array1OfReal(void* self, const NCollection_Array1<double>* VK, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVKnots(*VK);
     return;
@@ -580,7 +580,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVKnots__TColStd_Array1OfReal(void* self,
 B3D_API void b3d_Geom_BSplineSurface_SetVKnot__int__double__int(void* self, int32_t VIndex, double K, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetVKnot(VIndex, K, M);
     return;
@@ -591,7 +591,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetVKnot__int__double__int(void* self, int3
 B3D_API void b3d_Geom_BSplineSurface_LocateU__double__double__ref_int__ref_int(void* self, double U, double ParametricTolerance, int32_t* I1, int32_t* I2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocateU(U, ParametricTolerance, *I1, *I2);
     return;
@@ -602,7 +602,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocateU__double__double__ref_int__ref_int(v
 B3D_API void b3d_Geom_BSplineSurface_LocateU__double__double__ref_int__ref_int__bool(void* self, double U, double ParametricTolerance, int32_t* I1, int32_t* I2, uint8_t WithKnotRepetition, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocateU(U, ParametricTolerance, *I1, *I2, WithKnotRepetition != 0);
     return;
@@ -613,7 +613,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocateU__double__double__ref_int__ref_int__
 B3D_API void b3d_Geom_BSplineSurface_LocateV__double__double__ref_int__ref_int(void* self, double V, double ParametricTolerance, int32_t* I1, int32_t* I2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocateV(V, ParametricTolerance, *I1, *I2);
     return;
@@ -624,7 +624,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocateV__double__double__ref_int__ref_int(v
 B3D_API void b3d_Geom_BSplineSurface_LocateV__double__double__ref_int__ref_int__bool(void* self, double V, double ParametricTolerance, int32_t* I1, int32_t* I2, uint8_t WithKnotRepetition, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocateV(V, ParametricTolerance, *I1, *I2, WithKnotRepetition != 0);
     return;
@@ -635,7 +635,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocateV__double__double__ref_int__ref_int__
 B3D_API void b3d_Geom_BSplineSurface_SetPole__int__int__gp_Pnt(void* self, int32_t UIndex, int32_t VIndex, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPole(UIndex, VIndex, *P);
     return;
@@ -646,7 +646,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPole__int__int__gp_Pnt(void* self, int32
 B3D_API void b3d_Geom_BSplineSurface_SetPole__int__int__gp_Pnt__double(void* self, int32_t UIndex, int32_t VIndex, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPole(UIndex, VIndex, *P, Weight);
     return;
@@ -657,7 +657,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPole__int__int__gp_Pnt__double(void* sel
 B3D_API void b3d_Geom_BSplineSurface_SetPoleCol__int__TColgp_Array1OfPnt(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPoleCol(VIndex, *CPoles);
     return;
@@ -668,7 +668,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPoleCol__int__TColgp_Array1OfPnt(void* s
 B3D_API void b3d_Geom_BSplineSurface_SetPoleCol__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPoleCol(VIndex, *CPoles, *CPoleWeights);
     return;
@@ -679,7 +679,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPoleCol__int__TColgp_Array1OfPnt__TColSt
 B3D_API void b3d_Geom_BSplineSurface_SetPoleRow__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPoleRow(UIndex, *CPoles, *CPoleWeights);
     return;
@@ -690,7 +690,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPoleRow__int__TColgp_Array1OfPnt__TColSt
 B3D_API void b3d_Geom_BSplineSurface_SetPoleRow__int__TColgp_Array1OfPnt(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetPoleRow(UIndex, *CPoles);
     return;
@@ -701,7 +701,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetPoleRow__int__TColgp_Array1OfPnt(void* s
 B3D_API void b3d_Geom_BSplineSurface_SetWeight__int__int__double(void* self, int32_t UIndex, int32_t VIndex, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetWeight(UIndex, VIndex, Weight);
     return;
@@ -712,7 +712,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetWeight__int__int__double(void* self, int
 B3D_API void b3d_Geom_BSplineSurface_SetWeightCol__int__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetWeightCol(VIndex, *CPoleWeights);
     return;
@@ -723,7 +723,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetWeightCol__int__TColStd_Array1OfReal(voi
 B3D_API void b3d_Geom_BSplineSurface_SetWeightRow__int__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->SetWeightRow(UIndex, *CPoleWeights);
     return;
@@ -734,7 +734,7 @@ B3D_API void b3d_Geom_BSplineSurface_SetWeightRow__int__TColStd_Array1OfReal(voi
 B3D_API void b3d_Geom_BSplineSurface_MovePoint__double__double__gp_Pnt__int__int__int__int__ref_int__ref_int__ref_int__ref_int(void* self, double U, double V, const gp_Pnt* P, int32_t UIndex1, int32_t UIndex2, int32_t VIndex1, int32_t VIndex2, int32_t* UFirstIndex, int32_t* ULastIndex, int32_t* VFirstIndex, int32_t* VLastIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->MovePoint(U, V, *P, UIndex1, UIndex2, VIndex1, VIndex2, *UFirstIndex, *ULastIndex, *VFirstIndex, *VLastIndex);
     return;
@@ -745,7 +745,7 @@ B3D_API void b3d_Geom_BSplineSurface_MovePoint__double__double__gp_Pnt__int__int
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -757,7 +757,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -769,7 +769,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -781,7 +781,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsCNu__int(void* self, int32_t N, b3d_er
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -793,7 +793,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsCNv__int(void* self, int32_t N, b3d_er
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -805,7 +805,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsUPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsURational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsURational();
     return r ? 1 : 0;
@@ -817,7 +817,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsURational(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -829,7 +829,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsVPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineSurface_IsVRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->IsVRational();
     return r ? 1 : 0;
@@ -841,7 +841,7 @@ B3D_API uint8_t b3d_Geom_BSplineSurface_IsVRational(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -852,7 +852,7 @@ B3D_API void b3d_Geom_BSplineSurface_Bounds__ref_double__ref_double__ref_double_
 B3D_API int32_t b3d_Geom_BSplineSurface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -864,7 +864,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_Continuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_FirstUKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->FirstUKnotIndex();
     return r;
@@ -876,7 +876,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_FirstUKnotIndex(void* self, b3d_error** 
 B3D_API int32_t b3d_Geom_BSplineSurface_FirstVKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->FirstVKnotIndex();
     return r;
@@ -888,7 +888,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_FirstVKnotIndex(void* self, b3d_error** 
 B3D_API int32_t b3d_Geom_BSplineSurface_LastUKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->LastUKnotIndex();
     return r;
@@ -900,7 +900,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_LastUKnotIndex(void* self, b3d_error** e
 B3D_API int32_t b3d_Geom_BSplineSurface_LastVKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->LastVKnotIndex();
     return r;
@@ -912,7 +912,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_LastVKnotIndex(void* self, b3d_error** e
 B3D_API int32_t b3d_Geom_BSplineSurface_NbUKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->NbUKnots();
     return r;
@@ -924,7 +924,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_NbUKnots(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_NbUPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->NbUPoles();
     return r;
@@ -936,7 +936,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_NbUPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_NbVKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->NbVKnots();
     return r;
@@ -948,7 +948,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_NbVKnots(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_NbVPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->NbVPoles();
     return r;
@@ -960,7 +960,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_NbVPoles(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineSurface_Pole__int__int(void* self, int32_t UIndex, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->Pole(UIndex, VIndex);
     return new gp_Pnt(r);
@@ -972,7 +972,7 @@ B3D_API void* b3d_Geom_BSplineSurface_Pole__int__int(void* self, int32_t UIndex,
 B3D_API void* b3d_Geom_BSplineSurface_Poles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->Poles();
     return new NCollection_Array2<gp_Pnt>(r);
@@ -984,7 +984,7 @@ B3D_API void* b3d_Geom_BSplineSurface_Poles(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_UDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UDegree();
     return r;
@@ -996,7 +996,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_UDegree(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineSurface_UKnot__int(void* self, int32_t UIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UKnot(UIndex);
     return r;
@@ -1008,7 +1008,7 @@ B3D_API double b3d_Geom_BSplineSurface_UKnot__int(void* self, int32_t UIndex, b3
 B3D_API int32_t b3d_Geom_BSplineSurface_UKnotDistribution(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UKnotDistribution();
     return static_cast<int32_t>(r);
@@ -1020,7 +1020,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_UKnotDistribution(void* self, b3d_error*
 B3D_API void* b3d_Geom_BSplineSurface_UKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UKnots();
     return new NCollection_Array1<double>(r);
@@ -1032,7 +1032,7 @@ B3D_API void* b3d_Geom_BSplineSurface_UKnots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineSurface_UKnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UKnotSequence();
     return new NCollection_Array1<double>(r);
@@ -1044,7 +1044,7 @@ B3D_API void* b3d_Geom_BSplineSurface_UKnotSequence(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_UMultiplicity__int(void* self, int32_t UIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UMultiplicity(UIndex);
     return r;
@@ -1056,7 +1056,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_UMultiplicity__int(void* self, int32_t U
 B3D_API void* b3d_Geom_BSplineSurface_UMultiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UMultiplicities();
     return new NCollection_Array1<int>(r);
@@ -1068,7 +1068,7 @@ B3D_API void* b3d_Geom_BSplineSurface_UMultiplicities(void* self, b3d_error** er
 B3D_API int32_t b3d_Geom_BSplineSurface_VDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VDegree();
     return r;
@@ -1080,7 +1080,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_VDegree(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineSurface_VKnot__int(void* self, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VKnot(VIndex);
     return r;
@@ -1092,7 +1092,7 @@ B3D_API double b3d_Geom_BSplineSurface_VKnot__int(void* self, int32_t VIndex, b3
 B3D_API int32_t b3d_Geom_BSplineSurface_VKnotDistribution(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VKnotDistribution();
     return static_cast<int32_t>(r);
@@ -1104,7 +1104,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_VKnotDistribution(void* self, b3d_error*
 B3D_API void* b3d_Geom_BSplineSurface_VKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VKnots();
     return new NCollection_Array1<double>(r);
@@ -1116,7 +1116,7 @@ B3D_API void* b3d_Geom_BSplineSurface_VKnots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineSurface_VKnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VKnotSequence();
     return new NCollection_Array1<double>(r);
@@ -1128,7 +1128,7 @@ B3D_API void* b3d_Geom_BSplineSurface_VKnotSequence(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineSurface_VMultiplicity__int(void* self, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VMultiplicity(VIndex);
     return r;
@@ -1140,7 +1140,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_VMultiplicity__int(void* self, int32_t V
 B3D_API void* b3d_Geom_BSplineSurface_VMultiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VMultiplicities();
     return new NCollection_Array1<int>(r);
@@ -1152,7 +1152,7 @@ B3D_API void* b3d_Geom_BSplineSurface_VMultiplicities(void* self, b3d_error** er
 B3D_API double b3d_Geom_BSplineSurface_Weight__int__int(void* self, int32_t UIndex, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->Weight(UIndex, VIndex);
     return r;
@@ -1164,7 +1164,7 @@ B3D_API double b3d_Geom_BSplineSurface_Weight__int__int(void* self, int32_t UInd
 B3D_API void* b3d_Geom_BSplineSurface_WeightsArray(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->WeightsArray();
     return new NCollection_Array2<double>(r);
@@ -1176,7 +1176,7 @@ B3D_API void* b3d_Geom_BSplineSurface_WeightsArray(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineSurface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -1188,7 +1188,7 @@ B3D_API void* b3d_Geom_BSplineSurface_EvalD0__double__double(void* self, double 
 B3D_API void* b3d_Geom_BSplineSurface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -1200,7 +1200,7 @@ B3D_API void* b3d_Geom_BSplineSurface_EvalDN__double__double__int__int(void* sel
 B3D_API void b3d_Geom_BSplineSurface_LocalD0__double__double__int__int__int__int__mut_gp_Pnt(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocalD0(U, V, FromUK1, ToUK2, FromVK1, ToVK2, *P);
     return;
@@ -1211,7 +1211,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocalD0__double__double__int__int__int__int
 B3D_API void b3d_Geom_BSplineSurface_LocalD1__double__double__int__int__int__int__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocalD1(U, V, FromUK1, ToUK2, FromVK1, ToVK2, *P, *D1U, *D1V);
     return;
@@ -1222,7 +1222,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocalD1__double__double__int__int__int__int
 B3D_API void b3d_Geom_BSplineSurface_LocalD2__double__double__int__int__int__int__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, gp_Vec* D2U, gp_Vec* D2V, gp_Vec* D2UV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocalD2(U, V, FromUK1, ToUK2, FromVK1, ToVK2, *P, *D1U, *D1V, *D2U, *D2V, *D2UV);
     return;
@@ -1233,7 +1233,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocalD2__double__double__int__int__int__int
 B3D_API void b3d_Geom_BSplineSurface_LocalD3__double__double__int__int__int__int__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, gp_Vec* D2U, gp_Vec* D2V, gp_Vec* D2UV, gp_Vec* D3U, gp_Vec* D3V, gp_Vec* D3UUV, gp_Vec* D3UVV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->LocalD3(U, V, FromUK1, ToUK2, FromVK1, ToVK2, *P, *D1U, *D1V, *D2U, *D2V, *D2UV, *D3U, *D3V, *D3UUV, *D3UVV);
     return;
@@ -1244,7 +1244,7 @@ B3D_API void b3d_Geom_BSplineSurface_LocalD3__double__double__int__int__int__int
 B3D_API void* b3d_Geom_BSplineSurface_LocalDN__double__double__int__int__int__int__int__int(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->LocalDN(U, V, FromUK1, ToUK2, FromVK1, ToVK2, Nu, Nv);
     return new gp_Vec(r);
@@ -1256,7 +1256,7 @@ B3D_API void* b3d_Geom_BSplineSurface_LocalDN__double__double__int__int__int__in
 B3D_API void* b3d_Geom_BSplineSurface_LocalValue__double__double__int__int__int__int(void* self, double U, double V, int32_t FromUK1, int32_t ToUK2, int32_t FromVK1, int32_t ToVK2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->LocalValue(U, V, FromUK1, ToUK2, FromVK1, ToVK2);
     return new gp_Pnt(r);
@@ -1268,7 +1268,7 @@ B3D_API void* b3d_Geom_BSplineSurface_LocalValue__double__double__int__int__int_
 B3D_API void* b3d_Geom_BSplineSurface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -1280,7 +1280,7 @@ B3D_API void* b3d_Geom_BSplineSurface_UIso__double(void* self, double U, b3d_err
 B3D_API void* b3d_Geom_BSplineSurface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -1292,7 +1292,7 @@ B3D_API void* b3d_Geom_BSplineSurface_VIso__double(void* self, double V, b3d_err
 B3D_API void* b3d_Geom_BSplineSurface_UIso__double__bool(void* self, double U, uint8_t CheckRational, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->UIso(U, CheckRational != 0);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -1304,7 +1304,7 @@ B3D_API void* b3d_Geom_BSplineSurface_UIso__double__bool(void* self, double U, u
 B3D_API void* b3d_Geom_BSplineSurface_VIso__double__bool(void* self, double V, uint8_t CheckRational, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->VIso(V, CheckRational != 0);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -1316,7 +1316,7 @@ B3D_API void* b3d_Geom_BSplineSurface_VIso__double__bool(void* self, double V, u
 B3D_API void b3d_Geom_BSplineSurface_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Transform(*T);
     return;
@@ -1327,7 +1327,7 @@ B3D_API void b3d_Geom_BSplineSurface_Transform__gp_Trsf(void* self, const gp_Trs
 B3D_API int32_t b3d_Geom_BSplineSurface_MaxDegree(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Geom_BSplineSurface::MaxDegree();
     return r;
@@ -1339,7 +1339,7 @@ B3D_API int32_t b3d_Geom_BSplineSurface_MaxDegree(b3d_error** err)
 B3D_API void b3d_Geom_BSplineSurface_Resolution__double__ref_double__ref_double(void* self, double Tolerance3D, double* UTolerance, double* VTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineSurface*>(self)->Resolution(Tolerance3D, *UTolerance, *VTolerance);
     return;
@@ -1350,7 +1350,7 @@ B3D_API void b3d_Geom_BSplineSurface_Resolution__double__ref_double__ref_double(
 B3D_API void* b3d_Geom_BSplineSurface_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineSurface*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

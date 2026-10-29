@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepMesh_DiscretRoot_downcast(void* t) { return b3d_retain(dyn
 B3D_API void b3d_BRepMesh_DiscretRoot_SetShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepMesh_DiscretRoot*>(self)->SetShape(*theShape);
     return;
@@ -22,7 +22,7 @@ B3D_API void b3d_BRepMesh_DiscretRoot_SetShape__TopoDS_Shape(void* self, const T
 B3D_API void* b3d_BRepMesh_DiscretRoot_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepMesh_DiscretRoot*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -34,7 +34,7 @@ B3D_API void* b3d_BRepMesh_DiscretRoot_Shape(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepMesh_DiscretRoot*>(self)->IsDone();
     return r ? 1 : 0;
@@ -46,7 +46,7 @@ B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsDone(void* self, b3d_error** err)
 B3D_API void b3d_BRepMesh_DiscretRoot_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepMesh_DiscretRoot*>(self)->Perform();
     return;
@@ -57,7 +57,7 @@ B3D_API void b3d_BRepMesh_DiscretRoot_Perform(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepMesh_DiscretRoot*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -69,7 +69,7 @@ B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsInstance__string(void* self, const ch
 B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepMesh_DiscretRoot*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -81,7 +81,7 @@ B3D_API uint8_t b3d_BRepMesh_DiscretRoot_IsKind__string(void* self, const char* 
 B3D_API int32_t b3d_BRepMesh_DiscretRoot_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepMesh_DiscretRoot*>(self))->GetRefCount();
     return r;
@@ -93,7 +93,7 @@ B3D_API int32_t b3d_BRepMesh_DiscretRoot_GetRefCount(void* self, b3d_error** err
 B3D_API void b3d_BRepMesh_DiscretRoot_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<BRepMesh_DiscretRoot*>(self))->IncrementRefCounter();
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_BRepMesh_DiscretRoot_IncrementRefCounter(void* self, b3d_error*
 B3D_API int32_t b3d_BRepMesh_DiscretRoot_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepMesh_DiscretRoot*>(self))->DecrementRefCounter();
     return r;

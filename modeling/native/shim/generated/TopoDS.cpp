@@ -15,7 +15,7 @@
 B3D_API void* b3d_TopoDS_Vertex__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Vertex(*theShape);
     return new TopoDS_Vertex(r);
@@ -27,7 +27,7 @@ B3D_API void* b3d_TopoDS_Vertex__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_
 B3D_API void* b3d_TopoDS_Edge__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Edge(*theShape);
     return new TopoDS_Edge(r);
@@ -39,7 +39,7 @@ B3D_API void* b3d_TopoDS_Edge__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_er
 B3D_API void* b3d_TopoDS_Wire__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Wire(*theShape);
     return new TopoDS_Wire(r);
@@ -51,7 +51,7 @@ B3D_API void* b3d_TopoDS_Wire__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_er
 B3D_API void* b3d_TopoDS_Face__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Face(*theShape);
     return new TopoDS_Face(r);
@@ -63,7 +63,7 @@ B3D_API void* b3d_TopoDS_Face__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_er
 B3D_API void* b3d_TopoDS_Shell__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Shell(*theShape);
     return new TopoDS_Shell(r);
@@ -75,7 +75,7 @@ B3D_API void* b3d_TopoDS_Shell__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_e
 B3D_API void* b3d_TopoDS_Solid__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Solid(*theShape);
     return new TopoDS_Solid(r);
@@ -87,7 +87,7 @@ B3D_API void* b3d_TopoDS_Solid__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_e
 B3D_API void* b3d_TopoDS_CompSolid__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::CompSolid(*theShape);
     return new TopoDS_CompSolid(r);
@@ -99,7 +99,7 @@ B3D_API void* b3d_TopoDS_CompSolid__TopoDS_Shape(const TopoDS_Shape* theShape, b
 B3D_API void* b3d_TopoDS_Compound__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopoDS::Compound(*theShape);
     return new TopoDS_Compound(r);

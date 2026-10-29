@@ -8,7 +8,7 @@ B3D_API void b3d_TopExp_Explorer_delete(void* p) { delete static_cast<TopExp_Exp
 B3D_API void* b3d_TopExp_Explorer_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopExp_Explorer();
     return r;
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopExp_Explorer_new(b3d_error** err)
 B3D_API void* b3d_TopExp_Explorer_new__TopoDS_Shape__TopAbs_ShapeEnum(const TopoDS_Shape* S, int32_t ToFind, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopExp_Explorer(*S, static_cast<TopAbs_ShapeEnum>(ToFind));
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_TopExp_Explorer_new__TopoDS_Shape__TopAbs_ShapeEnum(const Topo
 B3D_API void* b3d_TopExp_Explorer_new__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_ShapeEnum(const TopoDS_Shape* S, int32_t ToFind, int32_t ToAvoid, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopExp_Explorer(*S, static_cast<TopAbs_ShapeEnum>(ToFind), static_cast<TopAbs_ShapeEnum>(ToAvoid));
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_TopExp_Explorer_new__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_Sh
 B3D_API void b3d_TopExp_Explorer_Init__TopoDS_Shape__TopAbs_ShapeEnum(void* self, const TopoDS_Shape* S, int32_t ToFind, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopExp_Explorer*>(self)->Init(*S, static_cast<TopAbs_ShapeEnum>(ToFind));
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_TopExp_Explorer_Init__TopoDS_Shape__TopAbs_ShapeEnum(void* self
 B3D_API void b3d_TopExp_Explorer_Init__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_ShapeEnum(void* self, const TopoDS_Shape* S, int32_t ToFind, int32_t ToAvoid, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopExp_Explorer*>(self)->Init(*S, static_cast<TopAbs_ShapeEnum>(ToFind), static_cast<TopAbs_ShapeEnum>(ToAvoid));
     return;
@@ -66,7 +66,7 @@ B3D_API void b3d_TopExp_Explorer_Init__TopoDS_Shape__TopAbs_ShapeEnum__TopAbs_Sh
 B3D_API uint8_t b3d_TopExp_Explorer_More(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopExp_Explorer*>(self)->More();
     return r ? 1 : 0;
@@ -78,7 +78,7 @@ B3D_API uint8_t b3d_TopExp_Explorer_More(void* self, b3d_error** err)
 B3D_API void b3d_TopExp_Explorer_Next(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopExp_Explorer*>(self)->Next();
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_TopExp_Explorer_Next(void* self, b3d_error** err)
 B3D_API void* b3d_TopExp_Explorer_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopExp_Explorer*>(self)->Value();
     return new TopoDS_Shape(r);
@@ -101,7 +101,7 @@ B3D_API void* b3d_TopExp_Explorer_Value(void* self, b3d_error** err)
 B3D_API void* b3d_TopExp_Explorer_Current(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopExp_Explorer*>(self)->Current();
     return new TopoDS_Shape(r);
@@ -113,7 +113,7 @@ B3D_API void* b3d_TopExp_Explorer_Current(void* self, b3d_error** err)
 B3D_API void b3d_TopExp_Explorer_ReInit(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopExp_Explorer*>(self)->ReInit();
     return;
@@ -124,7 +124,7 @@ B3D_API void b3d_TopExp_Explorer_ReInit(void* self, b3d_error** err)
 B3D_API void* b3d_TopExp_Explorer_ExploredShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopExp_Explorer*>(self)->ExploredShape();
     return new TopoDS_Shape(r);
@@ -136,7 +136,7 @@ B3D_API void* b3d_TopExp_Explorer_ExploredShape(void* self, b3d_error** err)
 B3D_API int32_t b3d_TopExp_Explorer_Depth(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopExp_Explorer*>(self)->Depth();
     return r;
@@ -148,7 +148,7 @@ B3D_API int32_t b3d_TopExp_Explorer_Depth(void* self, b3d_error** err)
 B3D_API void b3d_TopExp_Explorer_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopExp_Explorer*>(self)->Clear();
     return;

@@ -10,7 +10,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Geom2dAPI_InterCurveCurve>)
   {
-    try { return new Geom2dAPI_InterCurveCurve(*static_cast<const Geom2dAPI_InterCurveCurve*>(p)); }
+    B3D_TRY { return new Geom2dAPI_InterCurveCurve(*static_cast<const Geom2dAPI_InterCurveCurve*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dAPI_InterCurveCurve();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new(b3d_error** err)
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__Geom2d_Curve(Geom2d_Curve* C1, Geom2d_Curve* C2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dAPI_InterCurveCurve(occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2));
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__Geom2d_Curve(Geom
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__Geom2d_Curve__double(Geom2d_Curve* C1, Geom2d_Curve* C2, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dAPI_InterCurveCurve(occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2), Tol);
     return r;
@@ -57,7 +57,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__Geom2d_Curve__dou
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve(Geom2d_Curve* C1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dAPI_InterCurveCurve(occ::handle<Geom2d_Curve>(C1));
     return r;
@@ -69,7 +69,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve(Geom2d_Curve* C1, 
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__double(Geom2d_Curve* C1, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dAPI_InterCurveCurve(occ::handle<Geom2d_Curve>(C1), Tol);
     return r;
@@ -81,7 +81,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_new__Geom2d_Curve__double(Geom2d_Cur
 B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__Geom2d_Curve(void* self, Geom2d_Curve* C1, Geom2d_Curve* C2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dAPI_InterCurveCurve*>(self)->Init(occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2));
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__Geom2d_Curve(void
 B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__Geom2d_Curve__double(void* self, Geom2d_Curve* C1, Geom2d_Curve* C2, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dAPI_InterCurveCurve*>(self)->Init(occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2), Tol);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__Geom2d_Curve__dou
 B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve(void* self, Geom2d_Curve* C1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dAPI_InterCurveCurve*>(self)->Init(occ::handle<Geom2d_Curve>(C1));
     return;
@@ -114,7 +114,7 @@ B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve(void* self, Geom2d
 B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__double(void* self, Geom2d_Curve* C1, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dAPI_InterCurveCurve*>(self)->Init(occ::handle<Geom2d_Curve>(C1), Tol);
     return;
@@ -125,7 +125,7 @@ B3D_API void b3d_Geom2dAPI_InterCurveCurve_Init__Geom2d_Curve__double(void* self
 B3D_API int32_t b3d_Geom2dAPI_InterCurveCurve_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dAPI_InterCurveCurve*>(self)->NbPoints();
     return r;
@@ -137,7 +137,7 @@ B3D_API int32_t b3d_Geom2dAPI_InterCurveCurve_NbPoints(void* self, b3d_error** e
 B3D_API void* b3d_Geom2dAPI_InterCurveCurve_Point__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dAPI_InterCurveCurve*>(self)->Point(Index);
     return new gp_Pnt2d(r);
@@ -149,7 +149,7 @@ B3D_API void* b3d_Geom2dAPI_InterCurveCurve_Point__int(void* self, int32_t Index
 B3D_API int32_t b3d_Geom2dAPI_InterCurveCurve_NbSegments(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dAPI_InterCurveCurve*>(self)->NbSegments();
     return r;

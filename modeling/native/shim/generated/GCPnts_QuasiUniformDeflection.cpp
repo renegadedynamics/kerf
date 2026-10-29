@@ -11,7 +11,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_copy(const void* p, b3d_error** 
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GCPnts_QuasiUniformDeflection>)
   {
-    try { return new GCPnts_QuasiUniformDeflection(*static_cast<const GCPnts_QuasiUniformDeflection*>(p)); }
+    B3D_TRY { return new GCPnts_QuasiUniformDeflection(*static_cast<const GCPnts_QuasiUniformDeflection*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_copy(const void* p, b3d_error** 
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new(b3d_error** err)
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__double(Adaptor3d_Curve* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__doubl
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__double__GeomAbs_Shape(Adaptor3d_Curve* theC, double theDeflection, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, static_cast<GeomAbs_Shape>(theContinuity));
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__doubl
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__double(Adaptor2d_Curve2d* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__dou
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__double__GeomAbs_Shape(Adaptor2d_Curve2d* theC, double theDeflection, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, static_cast<GeomAbs_Shape>(theContinuity));
     return r;
@@ -82,7 +82,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__dou
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__double__double__double(Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, theU1, theU2);
     return r;
@@ -94,7 +94,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__doubl
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__double__double__double__GeomAbs_Shape(Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, theU1, theU2, static_cast<GeomAbs_Shape>(theContinuity));
     return r;
@@ -106,7 +106,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor3d_Curve__doubl
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__double__double__double(Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, theU1, theU2);
     return r;
@@ -118,7 +118,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__dou
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__double__double__double__GeomAbs_Shape(Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_QuasiUniformDeflection(*theC, theDeflection, theU1, theU2, static_cast<GeomAbs_Shape>(theContinuity));
     return r;
@@ -130,7 +130,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_new__tref_Adaptor2d_Curve2d__dou
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve__double(void* self, Adaptor3d_Curve* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection);
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve_
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve__double__GeomAbs_Shape(void* self, Adaptor3d_Curve* theC, double theDeflection, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, static_cast<GeomAbs_Shape>(theContinuity));
     return;
@@ -152,7 +152,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve_
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double(void* self, Adaptor2d_Curve2d* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection);
     return;
@@ -163,7 +163,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__GeomAbs_Shape(void* self, Adaptor2d_Curve2d* theC, double theDeflection, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, static_cast<GeomAbs_Shape>(theContinuity));
     return;
@@ -174,7 +174,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve__double__double__double(void* self, Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2);
     return;
@@ -185,7 +185,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve_
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve__double__double__double__GeomAbs_Shape(void* self, Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2, static_cast<GeomAbs_Shape>(theContinuity));
     return;
@@ -196,7 +196,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor3d_Curve_
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__double__double(void* self, Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2);
     return;
@@ -207,7 +207,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2
 B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__double__double__GeomAbs_Shape(void* self, Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, int32_t theContinuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_QuasiUniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2, static_cast<GeomAbs_Shape>(theContinuity));
     return;
@@ -218,7 +218,7 @@ B3D_API void b3d_GCPnts_QuasiUniformDeflection_Initialize__tref_Adaptor2d_Curve2
 B3D_API uint8_t b3d_GCPnts_QuasiUniformDeflection_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_QuasiUniformDeflection*>(self)->IsDone();
     return r ? 1 : 0;
@@ -230,7 +230,7 @@ B3D_API uint8_t b3d_GCPnts_QuasiUniformDeflection_IsDone(void* self, b3d_error**
 B3D_API int32_t b3d_GCPnts_QuasiUniformDeflection_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_QuasiUniformDeflection*>(self)->NbPoints();
     return r;
@@ -242,7 +242,7 @@ B3D_API int32_t b3d_GCPnts_QuasiUniformDeflection_NbPoints(void* self, b3d_error
 B3D_API double b3d_GCPnts_QuasiUniformDeflection_Parameter__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_QuasiUniformDeflection*>(self)->Parameter(Index);
     return r;
@@ -254,7 +254,7 @@ B3D_API double b3d_GCPnts_QuasiUniformDeflection_Parameter__int(void* self, int3
 B3D_API void* b3d_GCPnts_QuasiUniformDeflection_Value__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_QuasiUniformDeflection*>(self)->Value(Index);
     return new gp_Pnt(r);
@@ -266,7 +266,7 @@ B3D_API void* b3d_GCPnts_QuasiUniformDeflection_Value__int(void* self, int32_t I
 B3D_API double b3d_GCPnts_QuasiUniformDeflection_Deflection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_QuasiUniformDeflection*>(self)->Deflection();
     return r;

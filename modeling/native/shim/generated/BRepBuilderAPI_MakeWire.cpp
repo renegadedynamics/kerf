@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeWire>)
   {
-    try { return new BRepBuilderAPI_MakeWire(*static_cast<const BRepBuilderAPI_MakeWire*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeWire(*static_cast<const BRepBuilderAPI_MakeWire*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_as_BRepBuilderAPI_Command(void* p) { r
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire();
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge(const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*E);
     return r;
@@ -50,7 +50,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge(const TopoDS_Edge* E,
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* E1, const TopoDS_Edge* E2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*E1, *E2);
     return r;
@@ -62,7 +62,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge(const To
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* E1, const TopoDS_Edge* E2, const TopoDS_Edge* E3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*E1, *E2, *E3);
     return r;
@@ -74,7 +74,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge__TopoDS_
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* E1, const TopoDS_Edge* E2, const TopoDS_Edge* E3, const TopoDS_Edge* E4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*E1, *E2, *E3, *E4);
     return r;
@@ -86,7 +86,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Edge__TopoDS_Edge__TopoDS_
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Wire(const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*W);
     return r;
@@ -98,7 +98,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Wire(const TopoDS_Wire* W,
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Wire__TopoDS_Edge(const TopoDS_Wire* W, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeWire(*W, *E);
     return r;
@@ -110,7 +110,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_new__TopoDS_Wire__TopoDS_Edge(const To
 B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeWire*>(self)->Add(*E);
     return;
@@ -121,7 +121,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopoDS_Edge(void* self, const Topo
 B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopoDS_Wire(void* self, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeWire*>(self)->Add(*W);
     return;
@@ -132,7 +132,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopoDS_Wire(void* self, const Topo
 B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeWire*>(self)->Add(*L);
     return;
@@ -143,7 +143,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeWire_Add__TopTools_ListOfShape(void* self, c
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeWire_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeWire*>(self)->IsDone();
     return r ? 1 : 0;
@@ -155,7 +155,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakeWire_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepBuilderAPI_MakeWire_Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeWire*>(self)->Error();
     return static_cast<int32_t>(r);
@@ -167,7 +167,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_MakeWire_Error(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_Wire(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeWire*>(self)->Wire();
     return new TopoDS_Wire(r);
@@ -179,7 +179,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_Wire(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_Edge(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeWire*>(self)->Edge();
     return new TopoDS_Edge(r);
@@ -191,7 +191,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeWire_Edge(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeWire_Vertex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeWire*>(self)->Vertex();
     return new TopoDS_Vertex(r);

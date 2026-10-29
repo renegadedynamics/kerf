@@ -157,7 +157,7 @@ B3D_API void* b3d_mesh_extract(const void*        root,
                                b3d_error**        err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto* mesh = new Mesh();
     try

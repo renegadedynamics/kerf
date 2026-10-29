@@ -14,7 +14,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_downcast(void* t) { return b3d_re
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeUpgrade_UnifySameDomain();
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new(b3d_error** err)
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape(const TopoDS_Shape* aShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeUpgrade_UnifySameDomain(*aShape);
     return b3d_retain(r);
@@ -38,7 +38,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape(const TopoDS_Sh
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool(const TopoDS_Shape* aShape, uint8_t UnifyEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeUpgrade_UnifySameDomain(*aShape, UnifyEdges != 0);
     return b3d_retain(r);
@@ -50,7 +50,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool(const Top
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool__bool(const TopoDS_Shape* aShape, uint8_t UnifyEdges, uint8_t UnifyFaces, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeUpgrade_UnifySameDomain(*aShape, UnifyEdges != 0, UnifyFaces != 0);
     return b3d_retain(r);
@@ -62,7 +62,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool__bool(con
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool__bool__bool(const TopoDS_Shape* aShape, uint8_t UnifyEdges, uint8_t UnifyFaces, uint8_t ConcatBSplines, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeUpgrade_UnifySameDomain(*aShape, UnifyEdges != 0, UnifyFaces != 0, ConcatBSplines != 0);
     return b3d_retain(r);
@@ -74,7 +74,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_new__TopoDS_Shape__bool__bool__bo
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape(void* self, const TopoDS_Shape* aShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Initialize(*aShape);
     return;
@@ -85,7 +85,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape(void* sel
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool(void* self, const TopoDS_Shape* aShape, uint8_t UnifyEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Initialize(*aShape, UnifyEdges != 0);
     return;
@@ -96,7 +96,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool(voi
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool__bool(void* self, const TopoDS_Shape* aShape, uint8_t UnifyEdges, uint8_t UnifyFaces, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Initialize(*aShape, UnifyEdges != 0, UnifyFaces != 0);
     return;
@@ -107,7 +107,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool__bo
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool__bool__bool(void* self, const TopoDS_Shape* aShape, uint8_t UnifyEdges, uint8_t UnifyFaces, uint8_t ConcatBSplines, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Initialize(*aShape, UnifyEdges != 0, UnifyFaces != 0, ConcatBSplines != 0);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Initialize__TopoDS_Shape__bool__bo
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_AllowInternalEdges__bool(void* self, uint8_t theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->AllowInternalEdges(theValue != 0);
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_AllowInternalEdges__bool(void* sel
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_KeepShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->KeepShape(*theShape);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_KeepShape__TopoDS_Shape(void* self
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_KeepShapes__TopTools_MapOfShape(void* self, const NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>* theShapes, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->KeepShapes(*theShapes);
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_KeepShapes__TopTools_MapOfShape(vo
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetSafeInputMode__bool(void* self, uint8_t theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->SetSafeInputMode(theValue != 0);
     return;
@@ -162,7 +162,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetSafeInputMode__bool(void* self,
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetLinearTolerance__double(void* self, double theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->SetLinearTolerance(theValue);
     return;
@@ -173,7 +173,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetLinearTolerance__double(void* s
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetAngularTolerance__double(void* self, double theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->SetAngularTolerance(theValue);
     return;
@@ -184,7 +184,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_SetAngularTolerance__double(void* 
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Build();
     return;
@@ -195,7 +195,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_Build(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeUpgrade_UnifySameDomain*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -207,7 +207,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_Shape(void* self, b3d_error** err
 B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_History(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeUpgrade_UnifySameDomain*>(self)->History();
     return b3d_retain(occ::handle<BRepTools_History>(r).get());
@@ -219,7 +219,7 @@ B3D_API void* b3d_ShapeUpgrade_UnifySameDomain_History(void* self, b3d_error** e
 B3D_API uint8_t b3d_ShapeUpgrade_UnifySameDomain_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeUpgrade_UnifySameDomain*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -231,7 +231,7 @@ B3D_API uint8_t b3d_ShapeUpgrade_UnifySameDomain_IsInstance__string(void* self, 
 B3D_API uint8_t b3d_ShapeUpgrade_UnifySameDomain_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeUpgrade_UnifySameDomain*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -243,7 +243,7 @@ B3D_API uint8_t b3d_ShapeUpgrade_UnifySameDomain_IsKind__string(void* self, cons
 B3D_API int32_t b3d_ShapeUpgrade_UnifySameDomain_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeUpgrade_UnifySameDomain*>(self))->GetRefCount();
     return r;
@@ -255,7 +255,7 @@ B3D_API int32_t b3d_ShapeUpgrade_UnifySameDomain_GetRefCount(void* self, b3d_err
 B3D_API void b3d_ShapeUpgrade_UnifySameDomain_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<ShapeUpgrade_UnifySameDomain*>(self))->IncrementRefCounter();
     return;
@@ -266,7 +266,7 @@ B3D_API void b3d_ShapeUpgrade_UnifySameDomain_IncrementRefCounter(void* self, b3
 B3D_API int32_t b3d_ShapeUpgrade_UnifySameDomain_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeUpgrade_UnifySameDomain*>(self))->DecrementRefCounter();
     return r;

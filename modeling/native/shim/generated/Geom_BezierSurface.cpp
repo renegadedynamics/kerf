@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom_BezierSurface_downcast(void* t) { return b3d_retain(dynam
 B3D_API void* b3d_Geom_BezierSurface_new__TColgp_Array2OfPnt(const NCollection_Array2<gp_Pnt>* SurfacePoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BezierSurface(*SurfacePoles);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom_BezierSurface_new__TColgp_Array2OfPnt(const NCollection_A
 B3D_API void* b3d_Geom_BezierSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfReal(const NCollection_Array2<gp_Pnt>* SurfacePoles, const NCollection_Array2<double>* PoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BezierSurface(*SurfacePoles, *PoleWeights);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom_BezierSurface_new__TColgp_Array2OfPnt__TColStd_Array2OfRe
 B3D_API uint8_t b3d_Geom_BezierSurface_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -55,7 +55,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_HasEvalRepresentation(void* self, b3d_err
 B3D_API void b3d_Geom_BezierSurface_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->ClearEvalRepresentation();
     return;
@@ -66,7 +66,7 @@ B3D_API void b3d_Geom_BezierSurface_ClearEvalRepresentation(void* self, b3d_erro
 B3D_API void b3d_Geom_BezierSurface_ExchangeUV(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->ExchangeUV();
     return;
@@ -77,7 +77,7 @@ B3D_API void b3d_Geom_BezierSurface_ExchangeUV(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BezierSurface_Increase__int__int(void* self, int32_t UDeg, int32_t VDeg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->Increase(UDeg, VDeg);
     return;
@@ -88,7 +88,7 @@ B3D_API void b3d_Geom_BezierSurface_Increase__int__int(void* self, int32_t UDeg,
 B3D_API void b3d_Geom_BezierSurface_InsertPoleColAfter__int__TColgp_Array1OfPnt(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleColAfter(VIndex, *CPoles);
     return;
@@ -99,7 +99,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleColAfter__int__TColgp_Array1OfPnt(
 B3D_API void b3d_Geom_BezierSurface_InsertPoleColAfter__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleColAfter(VIndex, *CPoles, *CPoleWeights);
     return;
@@ -110,7 +110,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleColAfter__int__TColgp_Array1OfPnt_
 B3D_API void b3d_Geom_BezierSurface_InsertPoleColBefore__int__TColgp_Array1OfPnt(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleColBefore(VIndex, *CPoles);
     return;
@@ -121,7 +121,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleColBefore__int__TColgp_Array1OfPnt
 B3D_API void b3d_Geom_BezierSurface_InsertPoleColBefore__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleColBefore(VIndex, *CPoles, *CPoleWeights);
     return;
@@ -132,7 +132,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleColBefore__int__TColgp_Array1OfPnt
 B3D_API void b3d_Geom_BezierSurface_InsertPoleRowAfter__int__TColgp_Array1OfPnt(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleRowAfter(UIndex, *CPoles);
     return;
@@ -143,7 +143,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleRowAfter__int__TColgp_Array1OfPnt(
 B3D_API void b3d_Geom_BezierSurface_InsertPoleRowAfter__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleRowAfter(UIndex, *CPoles, *CPoleWeights);
     return;
@@ -154,7 +154,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleRowAfter__int__TColgp_Array1OfPnt_
 B3D_API void b3d_Geom_BezierSurface_InsertPoleRowBefore__int__TColgp_Array1OfPnt(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleRowBefore(UIndex, *CPoles);
     return;
@@ -165,7 +165,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleRowBefore__int__TColgp_Array1OfPnt
 B3D_API void b3d_Geom_BezierSurface_InsertPoleRowBefore__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->InsertPoleRowBefore(UIndex, *CPoles, *CPoleWeights);
     return;
@@ -176,7 +176,7 @@ B3D_API void b3d_Geom_BezierSurface_InsertPoleRowBefore__int__TColgp_Array1OfPnt
 B3D_API void b3d_Geom_BezierSurface_RemovePoleCol__int(void* self, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->RemovePoleCol(VIndex);
     return;
@@ -187,7 +187,7 @@ B3D_API void b3d_Geom_BezierSurface_RemovePoleCol__int(void* self, int32_t VInde
 B3D_API void b3d_Geom_BezierSurface_RemovePoleRow__int(void* self, int32_t UIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->RemovePoleRow(UIndex);
     return;
@@ -198,7 +198,7 @@ B3D_API void b3d_Geom_BezierSurface_RemovePoleRow__int(void* self, int32_t UInde
 B3D_API void b3d_Geom_BezierSurface_Segment__double__double__double__double(void* self, double U1, double U2, double V1, double V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->Segment(U1, U2, V1, V2);
     return;
@@ -209,7 +209,7 @@ B3D_API void b3d_Geom_BezierSurface_Segment__double__double__double__double(void
 B3D_API void b3d_Geom_BezierSurface_SetPole__int__int__gp_Pnt(void* self, int32_t UIndex, int32_t VIndex, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPole(UIndex, VIndex, *P);
     return;
@@ -220,7 +220,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPole__int__int__gp_Pnt(void* self, int32_
 B3D_API void b3d_Geom_BezierSurface_SetPole__int__int__gp_Pnt__double(void* self, int32_t UIndex, int32_t VIndex, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPole(UIndex, VIndex, *P, Weight);
     return;
@@ -231,7 +231,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPole__int__int__gp_Pnt__double(void* self
 B3D_API void b3d_Geom_BezierSurface_SetPoleCol__int__TColgp_Array1OfPnt(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPoleCol(VIndex, *CPoles);
     return;
@@ -242,7 +242,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPoleCol__int__TColgp_Array1OfPnt(void* se
 B3D_API void b3d_Geom_BezierSurface_SetPoleCol__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPoleCol(VIndex, *CPoles, *CPoleWeights);
     return;
@@ -253,7 +253,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPoleCol__int__TColgp_Array1OfPnt__TColStd
 B3D_API void b3d_Geom_BezierSurface_SetPoleRow__int__TColgp_Array1OfPnt(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPoleRow(UIndex, *CPoles);
     return;
@@ -264,7 +264,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPoleRow__int__TColgp_Array1OfPnt(void* se
 B3D_API void b3d_Geom_BezierSurface_SetPoleRow__int__TColgp_Array1OfPnt__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<gp_Pnt>* CPoles, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetPoleRow(UIndex, *CPoles, *CPoleWeights);
     return;
@@ -275,7 +275,7 @@ B3D_API void b3d_Geom_BezierSurface_SetPoleRow__int__TColgp_Array1OfPnt__TColStd
 B3D_API void b3d_Geom_BezierSurface_SetWeight__int__int__double(void* self, int32_t UIndex, int32_t VIndex, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetWeight(UIndex, VIndex, Weight);
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_Geom_BezierSurface_SetWeight__int__int__double(void* self, int3
 B3D_API void b3d_Geom_BezierSurface_SetWeightCol__int__TColStd_Array1OfReal(void* self, int32_t VIndex, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetWeightCol(VIndex, *CPoleWeights);
     return;
@@ -297,7 +297,7 @@ B3D_API void b3d_Geom_BezierSurface_SetWeightCol__int__TColStd_Array1OfReal(void
 B3D_API void b3d_Geom_BezierSurface_SetWeightRow__int__TColStd_Array1OfReal(void* self, int32_t UIndex, const NCollection_Array1<double>* CPoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->SetWeightRow(UIndex, *CPoleWeights);
     return;
@@ -308,7 +308,7 @@ B3D_API void b3d_Geom_BezierSurface_SetWeightRow__int__TColStd_Array1OfReal(void
 B3D_API void b3d_Geom_BezierSurface_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->UReverse();
     return;
@@ -319,7 +319,7 @@ B3D_API void b3d_Geom_BezierSurface_UReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierSurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UReversedParameter(U);
     return r;
@@ -331,7 +331,7 @@ B3D_API double b3d_Geom_BezierSurface_UReversedParameter__double(void* self, dou
 B3D_API void b3d_Geom_BezierSurface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->VReverse();
     return;
@@ -342,7 +342,7 @@ B3D_API void b3d_Geom_BezierSurface_VReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierSurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VReversedParameter(V);
     return r;
@@ -354,7 +354,7 @@ B3D_API double b3d_Geom_BezierSurface_VReversedParameter__double(void* self, dou
 B3D_API void b3d_Geom_BezierSurface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -365,7 +365,7 @@ B3D_API void b3d_Geom_BezierSurface_Bounds__ref_double__ref_double__ref_double__
 B3D_API int32_t b3d_Geom_BezierSurface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -377,7 +377,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_Continuity(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -389,7 +389,7 @@ B3D_API void* b3d_Geom_BezierSurface_EvalD0__double__double(void* self, double U
 B3D_API void* b3d_Geom_BezierSurface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -401,7 +401,7 @@ B3D_API void* b3d_Geom_BezierSurface_EvalDN__double__double__int__int(void* self
 B3D_API int32_t b3d_Geom_BezierSurface_NbUPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->NbUPoles();
     return r;
@@ -413,7 +413,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_NbUPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BezierSurface_NbVPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->NbVPoles();
     return r;
@@ -425,7 +425,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_NbVPoles(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_Pole__int__int(void* self, int32_t UIndex, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->Pole(UIndex, VIndex);
     return new gp_Pnt(r);
@@ -437,7 +437,7 @@ B3D_API void* b3d_Geom_BezierSurface_Pole__int__int(void* self, int32_t UIndex, 
 B3D_API void* b3d_Geom_BezierSurface_Poles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->Poles();
     return new NCollection_Array2<gp_Pnt>(r);
@@ -449,7 +449,7 @@ B3D_API void* b3d_Geom_BezierSurface_Poles(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BezierSurface_UDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UDegree();
     return r;
@@ -461,7 +461,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_UDegree(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -473,7 +473,7 @@ B3D_API void* b3d_Geom_BezierSurface_UIso__double(void* self, double U, b3d_erro
 B3D_API int32_t b3d_Geom_BezierSurface_VDegree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VDegree();
     return r;
@@ -485,7 +485,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_VDegree(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -497,7 +497,7 @@ B3D_API void* b3d_Geom_BezierSurface_VIso__double(void* self, double V, b3d_erro
 B3D_API double b3d_Geom_BezierSurface_Weight__int__int(void* self, int32_t UIndex, int32_t VIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->Weight(UIndex, VIndex);
     return r;
@@ -509,7 +509,7 @@ B3D_API double b3d_Geom_BezierSurface_Weight__int__int(void* self, int32_t UInde
 B3D_API void* b3d_Geom_BezierSurface_WeightsArray(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->WeightsArray();
     return new NCollection_Array2<double>(r);
@@ -521,7 +521,7 @@ B3D_API void* b3d_Geom_BezierSurface_WeightsArray(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -533,7 +533,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -545,7 +545,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -557,7 +557,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsCNu__int(void* self, int32_t N, b3d_err
 B3D_API uint8_t b3d_Geom_BezierSurface_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -569,7 +569,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsCNv__int(void* self, int32_t N, b3d_err
 B3D_API uint8_t b3d_Geom_BezierSurface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -581,7 +581,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsUPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -593,7 +593,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsVPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsURational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsURational();
     return r ? 1 : 0;
@@ -605,7 +605,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsURational(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierSurface_IsVRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->IsVRational();
     return r ? 1 : 0;
@@ -617,7 +617,7 @@ B3D_API uint8_t b3d_Geom_BezierSurface_IsVRational(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BezierSurface_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->Transform(*T);
     return;
@@ -628,7 +628,7 @@ B3D_API void b3d_Geom_BezierSurface_Transform__gp_Trsf(void* self, const gp_Trsf
 B3D_API int32_t b3d_Geom_BezierSurface_MaxDegree(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Geom_BezierSurface::MaxDegree();
     return r;
@@ -640,7 +640,7 @@ B3D_API int32_t b3d_Geom_BezierSurface_MaxDegree(b3d_error** err)
 B3D_API void b3d_Geom_BezierSurface_Resolution__double__ref_double__ref_double(void* self, double Tolerance3D, double* UTolerance, double* VTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierSurface*>(self)->Resolution(Tolerance3D, *UTolerance, *VTolerance);
     return;
@@ -651,7 +651,7 @@ B3D_API void b3d_Geom_BezierSurface_Resolution__double__ref_double__ref_double(v
 B3D_API void* b3d_Geom_BezierSurface_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());
@@ -663,7 +663,7 @@ B3D_API void* b3d_Geom_BezierSurface_Copy(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_UKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UKnots();
     return new NCollection_Array1<double>(r);
@@ -675,7 +675,7 @@ B3D_API void* b3d_Geom_BezierSurface_UKnots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_VKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VKnots();
     return new NCollection_Array1<double>(r);
@@ -687,7 +687,7 @@ B3D_API void* b3d_Geom_BezierSurface_VKnots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_UMultiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UMultiplicities();
     return new NCollection_Array1<int>(r);
@@ -699,7 +699,7 @@ B3D_API void* b3d_Geom_BezierSurface_UMultiplicities(void* self, b3d_error** err
 B3D_API void* b3d_Geom_BezierSurface_VMultiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VMultiplicities();
     return new NCollection_Array1<int>(r);
@@ -711,7 +711,7 @@ B3D_API void* b3d_Geom_BezierSurface_VMultiplicities(void* self, b3d_error** err
 B3D_API void* b3d_Geom_BezierSurface_UKnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->UKnotSequence();
     return new NCollection_Array1<double>(r);
@@ -723,7 +723,7 @@ B3D_API void* b3d_Geom_BezierSurface_UKnotSequence(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierSurface_VKnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierSurface*>(self)->VKnotSequence();
     return new NCollection_Array1<double>(r);

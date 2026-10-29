@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeVertex_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeVertex>)
   {
-    try { return new BRepBuilderAPI_MakeVertex(*static_cast<const BRepBuilderAPI_MakeVertex*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeVertex(*static_cast<const BRepBuilderAPI_MakeVertex*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeVertex_as_BRepBuilderAPI_Command(void* p) {
 B3D_API void* b3d_BRepBuilderAPI_MakeVertex_new__gp_Pnt(const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeVertex(*P);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeVertex_new__gp_Pnt(const gp_Pnt* P, b3d_err
 B3D_API void* b3d_BRepBuilderAPI_MakeVertex_Vertex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeVertex*>(self)->Vertex();
     return new TopoDS_Vertex(r);

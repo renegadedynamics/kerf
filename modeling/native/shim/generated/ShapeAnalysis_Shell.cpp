@@ -10,7 +10,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<ShapeAnalysis_Shell>)
   {
-    try { return new ShapeAnalysis_Shell(*static_cast<const ShapeAnalysis_Shell*>(p)); }
+    B3D_TRY { return new ShapeAnalysis_Shell(*static_cast<const ShapeAnalysis_Shell*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Shell_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_Shell();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_new(b3d_error** err)
 B3D_API void b3d_ShapeAnalysis_Shell_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Shell*>(self)->Clear();
     return;
@@ -44,7 +44,7 @@ B3D_API void b3d_ShapeAnalysis_Shell_Clear(void* self, b3d_error** err)
 B3D_API void b3d_ShapeAnalysis_Shell_LoadShells__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeAnalysis_Shell*>(self)->LoadShells(*shape);
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_ShapeAnalysis_Shell_LoadShells__TopoDS_Shape(void* self, const 
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->CheckOrientedShells(*shape);
     return r ? 1 : 0;
@@ -67,7 +67,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape(void* 
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape__bool(void* self, const TopoDS_Shape* shape, uint8_t alsofree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->CheckOrientedShells(*shape, alsofree != 0);
     return r ? 1 : 0;
@@ -79,7 +79,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape__bool(
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape__bool__bool(void* self, const TopoDS_Shape* shape, uint8_t alsofree, uint8_t checkinternaledges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->CheckOrientedShells(*shape, alsofree != 0, checkinternaledges != 0);
     return r ? 1 : 0;
@@ -91,7 +91,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_CheckOrientedShells__TopoDS_Shape__bool_
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_IsLoaded__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->IsLoaded(*shape);
     return r ? 1 : 0;
@@ -103,7 +103,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_IsLoaded__TopoDS_Shape(void* self, const
 B3D_API int32_t b3d_ShapeAnalysis_Shell_NbLoaded(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->NbLoaded();
     return r;
@@ -115,7 +115,7 @@ B3D_API int32_t b3d_ShapeAnalysis_Shell_NbLoaded(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Shell_Loaded__int(void* self, int32_t num, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->Loaded(num);
     return new TopoDS_Shape(r);
@@ -127,7 +127,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_Loaded__int(void* self, int32_t num, b3d_e
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_HasBadEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->HasBadEdges();
     return r ? 1 : 0;
@@ -139,7 +139,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_HasBadEdges(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Shell_BadEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->BadEdges();
     return new TopoDS_Compound(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_BadEdges(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_HasFreeEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->HasFreeEdges();
     return r ? 1 : 0;
@@ -163,7 +163,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Shell_HasFreeEdges(void* self, b3d_error** err
 B3D_API void* b3d_ShapeAnalysis_Shell_FreeEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->FreeEdges();
     return new TopoDS_Compound(r);
@@ -175,7 +175,7 @@ B3D_API void* b3d_ShapeAnalysis_Shell_FreeEdges(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Shell_HasConnectedEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Shell*>(self)->HasConnectedEdges();
     return r ? 1 : 0;

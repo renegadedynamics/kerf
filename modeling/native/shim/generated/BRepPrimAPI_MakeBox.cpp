@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeBox>)
   {
-    try { return new BRepPrimAPI_MakeBox(*static_cast<const BRepPrimAPI_MakeBox*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeBox(*static_cast<const BRepPrimAPI_MakeBox*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_as_BRepBuilderAPI_Command(void* p) { retur
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeBox();
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_new(b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new__double__double__double(double dx, double dy, double dz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeBox(dx, dy, dz);
     return r;
@@ -50,7 +50,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_new__double__double__double(double dx, dou
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Pnt__double__double__double(const gp_Pnt* P, double dx, double dy, double dz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeBox(*P, dx, dy, dz);
     return r;
@@ -62,7 +62,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Pnt__double__double__double(const 
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeBox(*P1, *P2);
     return r;
@@ -74,7 +74,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, cons
 B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Ax2__double__double__double(const gp_Ax2* Axes, double dx, double dy, double dz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeBox(*Axes, dx, dy, dz);
     return r;
@@ -86,7 +86,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_new__gp_Ax2__double__double__double(const 
 B3D_API void b3d_BRepPrimAPI_MakeBox_Init__double__double__double(void* self, double theDX, double theDY, double theDZ, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeBox*>(self)->Init(theDX, theDY, theDZ);
     return;
@@ -97,7 +97,7 @@ B3D_API void b3d_BRepPrimAPI_MakeBox_Init__double__double__double(void* self, do
 B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Pnt__double__double__double(void* self, const gp_Pnt* thePnt, double theDX, double theDY, double theDZ, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeBox*>(self)->Init(*thePnt, theDX, theDY, theDZ);
     return;
@@ -108,7 +108,7 @@ B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Pnt__double__double__double(void* 
 B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* thePnt1, const gp_Pnt* thePnt2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeBox*>(self)->Init(*thePnt1, *thePnt2);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Pnt__gp_Pnt(void* self, const gp_P
 B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Ax2__double__double__double(void* self, const gp_Ax2* theAxes, double theDX, double theDY, double theDZ, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeBox*>(self)->Init(*theAxes, theDX, theDY, theDZ);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_BRepPrimAPI_MakeBox_Init__gp_Ax2__double__double__double(void* 
 B3D_API void b3d_BRepPrimAPI_MakeBox_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeBox*>(self)->Build();
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_BRepPrimAPI_MakeBox_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_Shell(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->Shell();
     return new TopoDS_Shell(r);
@@ -153,7 +153,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_Shell(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_Solid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->Solid();
     return new TopoDS_Solid(r);
@@ -165,7 +165,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_Solid(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_BottomFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->BottomFace();
     return new TopoDS_Face(r);
@@ -177,7 +177,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_BottomFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_BackFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->BackFace();
     return new TopoDS_Face(r);
@@ -189,7 +189,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_BackFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_FrontFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->FrontFace();
     return new TopoDS_Face(r);
@@ -201,7 +201,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_FrontFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_LeftFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->LeftFace();
     return new TopoDS_Face(r);
@@ -213,7 +213,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_LeftFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_RightFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->RightFace();
     return new TopoDS_Face(r);
@@ -225,7 +225,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeBox_RightFace(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeBox_TopFace(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeBox*>(self)->TopFace();
     return new TopoDS_Face(r);

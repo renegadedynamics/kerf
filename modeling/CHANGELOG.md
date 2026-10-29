@@ -28,3 +28,10 @@ The first packages, for Bento's 3D-models extension.
   the kernel in bulk. `MeshTolerances.For(shape)` gives tolerances in proportion to the shape.
   `TriangulateTree` gives the assembly tree, with labels, colours and locations, meshing each instanced
   geometry once.
+- Native faults on Windows come back as typed `OcctException`s on any thread (`IsFault`). OCCT failures
+  say what was being done (`OcctContext.Doing`, `OcctException.Operation`). Failed booleans name OCCT's
+  alerts.
+- New results tell the GC about their native memory (`GC.AddMemoryPressure`). Triangulation frees its
+  temporary native mesh at once.
+- Reading BRep data rejects truncated, garbled and overlong input instead of hanging or overrunning a
+  buffer.

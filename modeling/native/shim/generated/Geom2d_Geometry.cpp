@@ -14,7 +14,7 @@ B3D_API void* b3d_Geom2d_Geometry_downcast(void* t) { return b3d_retain(dynamic_
 B3D_API void b3d_Geom2d_Geometry_Mirror__gp_Pnt2d(void* self, const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Mirror(*P);
     return;
@@ -25,7 +25,7 @@ B3D_API void b3d_Geom2d_Geometry_Mirror__gp_Pnt2d(void* self, const gp_Pnt2d* P,
 B3D_API void b3d_Geom2d_Geometry_Mirror__gp_Ax2d(void* self, const gp_Ax2d* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Mirror(*A);
     return;
@@ -36,7 +36,7 @@ B3D_API void b3d_Geom2d_Geometry_Mirror__gp_Ax2d(void* self, const gp_Ax2d* A, b
 B3D_API void b3d_Geom2d_Geometry_Rotate__gp_Pnt2d__double(void* self, const gp_Pnt2d* P, double Ang, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Rotate(*P, Ang);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_Geom2d_Geometry_Rotate__gp_Pnt2d__double(void* self, const gp_P
 B3D_API void b3d_Geom2d_Geometry_Scale__gp_Pnt2d__double(void* self, const gp_Pnt2d* P, double S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Scale(*P, S);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_Geom2d_Geometry_Scale__gp_Pnt2d__double(void* self, const gp_Pn
 B3D_API void b3d_Geom2d_Geometry_Translate__gp_Vec2d(void* self, const gp_Vec2d* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Translate(*V);
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_Geom2d_Geometry_Translate__gp_Vec2d(void* self, const gp_Vec2d*
 B3D_API void b3d_Geom2d_Geometry_Translate__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* P1, const gp_Pnt2d* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Translate(*P1, *P2);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_Geom2d_Geometry_Translate__gp_Pnt2d__gp_Pnt2d(void* self, const
 B3D_API void b3d_Geom2d_Geometry_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Geometry*>(self)->Transform(*T);
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_Geom2d_Geometry_Transform__gp_Trsf2d(void* self, const gp_Trsf2
 B3D_API void* b3d_Geom2d_Geometry_Mirrored__gp_Pnt2d(void* self, const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Mirrored(*P);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -103,7 +103,7 @@ B3D_API void* b3d_Geom2d_Geometry_Mirrored__gp_Pnt2d(void* self, const gp_Pnt2d*
 B3D_API void* b3d_Geom2d_Geometry_Mirrored__gp_Ax2d(void* self, const gp_Ax2d* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Mirrored(*A);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -115,7 +115,7 @@ B3D_API void* b3d_Geom2d_Geometry_Mirrored__gp_Ax2d(void* self, const gp_Ax2d* A
 B3D_API void* b3d_Geom2d_Geometry_Rotated__gp_Pnt2d__double(void* self, const gp_Pnt2d* P, double Ang, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Rotated(*P, Ang);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -127,7 +127,7 @@ B3D_API void* b3d_Geom2d_Geometry_Rotated__gp_Pnt2d__double(void* self, const gp
 B3D_API void* b3d_Geom2d_Geometry_Scaled__gp_Pnt2d__double(void* self, const gp_Pnt2d* P, double S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Scaled(*P, S);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -139,7 +139,7 @@ B3D_API void* b3d_Geom2d_Geometry_Scaled__gp_Pnt2d__double(void* self, const gp_
 B3D_API void* b3d_Geom2d_Geometry_Transformed__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Transformed(*T);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -151,7 +151,7 @@ B3D_API void* b3d_Geom2d_Geometry_Transformed__gp_Trsf2d(void* self, const gp_Tr
 B3D_API void* b3d_Geom2d_Geometry_Translated__gp_Vec2d(void* self, const gp_Vec2d* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Translated(*V);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -163,7 +163,7 @@ B3D_API void* b3d_Geom2d_Geometry_Translated__gp_Vec2d(void* self, const gp_Vec2
 B3D_API void* b3d_Geom2d_Geometry_Translated__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* P1, const gp_Pnt2d* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Translated(*P1, *P2);
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -175,7 +175,7 @@ B3D_API void* b3d_Geom2d_Geometry_Translated__gp_Pnt2d__gp_Pnt2d(void* self, con
 B3D_API void* b3d_Geom2d_Geometry_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Geometry*>(self)->Copy();
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());
@@ -187,7 +187,7 @@ B3D_API void* b3d_Geom2d_Geometry_Copy(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Geometry_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Geom2d_Geometry*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -199,7 +199,7 @@ B3D_API uint8_t b3d_Geom2d_Geometry_IsInstance__string(void* self, const char* t
 B3D_API uint8_t b3d_Geom2d_Geometry_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Geom2d_Geometry*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -211,7 +211,7 @@ B3D_API uint8_t b3d_Geom2d_Geometry_IsKind__string(void* self, const char* theTy
 B3D_API int32_t b3d_Geom2d_Geometry_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Geom2d_Geometry*>(self))->GetRefCount();
     return r;
@@ -223,7 +223,7 @@ B3D_API int32_t b3d_Geom2d_Geometry_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_Geometry_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<Geom2d_Geometry*>(self))->IncrementRefCounter();
     return;
@@ -234,7 +234,7 @@ B3D_API void b3d_Geom2d_Geometry_IncrementRefCounter(void* self, b3d_error** err
 B3D_API int32_t b3d_Geom2d_Geometry_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<Geom2d_Geometry*>(self))->DecrementRefCounter();
     return r;

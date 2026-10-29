@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_DraftAngle>)
   {
-    try { return new BRepOffsetAPI_DraftAngle(*static_cast<const BRepOffsetAPI_DraftAngle*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_DraftAngle(*static_cast<const BRepOffsetAPI_DraftAngle*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_DraftAngle();
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_new(b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_DraftAngle(*S);
     return r;
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_new__TopoDS_Shape(const TopoDS_Shape*
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Clear();
     return;
@@ -62,7 +62,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Clear(void* self, b3d_error** err)
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Init__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Init(*S);
     return;
@@ -73,7 +73,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Init__TopoDS_Shape(void* self, const T
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Add__TopoDS_Face__gp_Dir__double__gp_Pln(void* self, const TopoDS_Face* F, const gp_Dir* Direction, double Angle, const gp_Pln* NeutralPlane, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Add(*F, *Direction, Angle, *NeutralPlane);
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Add__TopoDS_Face__gp_Dir__double__gp_P
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Add__TopoDS_Face__gp_Dir__double__gp_Pln__bool(void* self, const TopoDS_Face* F, const gp_Dir* Direction, double Angle, const gp_Pln* NeutralPlane, uint8_t Flag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Add(*F, *Direction, Angle, *NeutralPlane, Flag != 0);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Add__TopoDS_Face__gp_Dir__double__gp_P
 B3D_API uint8_t b3d_BRepOffsetAPI_DraftAngle_AddDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->AddDone();
     return r ? 1 : 0;
@@ -107,7 +107,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_DraftAngle_AddDone(void* self, b3d_error** err
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Remove__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Remove(*F);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Remove__TopoDS_Face(void* self, const 
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ProblematicShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->ProblematicShape();
     return new TopoDS_Shape(r);
@@ -130,7 +130,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ProblematicShape(void* self, b3d_erro
 B3D_API int32_t b3d_BRepOffsetAPI_DraftAngle_Status(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->Status();
     return static_cast<int32_t>(r);
@@ -142,7 +142,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_DraftAngle_Status(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ConnectedFaces__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->ConnectedFaces(*F);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -154,7 +154,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ConnectedFaces__TopoDS_Face(void* sel
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ModifiedFaces(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->ModifiedFaces();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -166,7 +166,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ModifiedFaces(void* self, b3d_error**
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->Build();
     return;
@@ -177,7 +177,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_Build(void* self, b3d_error** err)
 B3D_API void b3d_BRepOffsetAPI_DraftAngle_CorrectWires(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_DraftAngle*>(self)->CorrectWires();
     return;
@@ -188,7 +188,7 @@ B3D_API void b3d_BRepOffsetAPI_DraftAngle_CorrectWires(void* self, b3d_error** e
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -200,7 +200,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_Generated__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -212,7 +212,7 @@ B3D_API void* b3d_BRepOffsetAPI_DraftAngle_Modified__TopoDS_Shape(void* self, co
 B3D_API void* b3d_BRepOffsetAPI_DraftAngle_ModifiedShape__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_DraftAngle*>(self)->ModifiedShape(*S);
     return new TopoDS_Shape(r);

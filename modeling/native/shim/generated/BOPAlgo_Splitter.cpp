@@ -8,7 +8,7 @@ B3D_API void* b3d_BOPAlgo_Splitter_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BOPAlgo_Splitter>)
   {
-    try { return new BOPAlgo_Splitter(*static_cast<const BOPAlgo_Splitter*>(p)); }
+    B3D_TRY { return new BOPAlgo_Splitter(*static_cast<const BOPAlgo_Splitter*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BOPAlgo_Splitter_as_BOPAlgo_Options(void* p) { return static_c
 B3D_API void* b3d_BOPAlgo_Splitter_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BOPAlgo_Splitter();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BOPAlgo_Splitter_new(b3d_error** err)
 B3D_API void b3d_BOPAlgo_Splitter_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Splitter*>(self)->Perform();
     return;

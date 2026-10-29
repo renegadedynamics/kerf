@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_as_BRepBuilderAPI_Command(void* p
 B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_BooleanOperation();
     return r;
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_new(b3d_error** err)
 B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Shape1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BooleanOperation*>(self)->Shape1();
     return new TopoDS_Shape(r);
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Shape1(void* self, b3d_error** er
 B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Shape2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BooleanOperation*>(self)->Shape2();
     return new TopoDS_Shape(r);
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Shape2(void* self, b3d_error** er
 B3D_API void b3d_BRepAlgoAPI_BooleanOperation_SetTools__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* theLS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BooleanOperation*>(self)->SetTools(*theLS);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_BRepAlgoAPI_BooleanOperation_SetTools__TopTools_ListOfShape(voi
 B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Tools(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BooleanOperation*>(self)->Tools();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -72,7 +72,7 @@ B3D_API void* b3d_BRepAlgoAPI_BooleanOperation_Tools(void* self, b3d_error** err
 B3D_API void b3d_BRepAlgoAPI_BooleanOperation_SetOperation__BOPAlgo_Operation(void* self, int32_t theBOP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BooleanOperation*>(self)->SetOperation(static_cast<BOPAlgo_Operation>(theBOP));
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_BRepAlgoAPI_BooleanOperation_SetOperation__BOPAlgo_Operation(vo
 B3D_API int32_t b3d_BRepAlgoAPI_BooleanOperation_Operation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_BooleanOperation*>(self)->Operation();
     return static_cast<int32_t>(r);
@@ -95,7 +95,7 @@ B3D_API int32_t b3d_BRepAlgoAPI_BooleanOperation_Operation(void* self, b3d_error
 B3D_API void b3d_BRepAlgoAPI_BooleanOperation_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_BooleanOperation*>(self)->Build();
     return;

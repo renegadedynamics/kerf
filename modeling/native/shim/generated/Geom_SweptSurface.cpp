@@ -13,7 +13,7 @@ B3D_API void* b3d_Geom_SweptSurface_downcast(void* t) { return b3d_retain(dynami
 B3D_API int32_t b3d_Geom_SweptSurface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SweptSurface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -25,7 +25,7 @@ B3D_API int32_t b3d_Geom_SweptSurface_Continuity(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_SweptSurface_Direction(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SweptSurface*>(self)->Direction();
     return new gp_Dir(r);
@@ -37,7 +37,7 @@ B3D_API void* b3d_Geom_SweptSurface_Direction(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_SweptSurface_BasisCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SweptSurface*>(self)->BasisCurve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());

@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeSolid>)
   {
-    try { return new BRepBuilderAPI_MakeSolid(*static_cast<const BRepBuilderAPI_MakeSolid*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeSolid(*static_cast<const BRepBuilderAPI_MakeSolid*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_CompSolid(const TopoDS_CompSolid* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*S);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_CompSolid(const TopoDS_Co
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell(const TopoDS_Shell* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*S);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell(const TopoDS_Shell*
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell__TopoDS_Shell(const TopoDS_Shell* S1, const TopoDS_Shell* S2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*S1, *S2);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell__TopoDS_Shell(const
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell__TopoDS_Shell__TopoDS_Shell(const TopoDS_Shell* S1, const TopoDS_Shell* S2, const TopoDS_Shell* S3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*S1, *S2, *S3);
     return r;
@@ -85,7 +85,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Shell__TopoDS_Shell__Topo
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Solid(const TopoDS_Solid* So, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*So);
     return r;
@@ -97,7 +97,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Solid(const TopoDS_Solid*
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Solid__TopoDS_Shell(const TopoDS_Solid* So, const TopoDS_Shell* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeSolid(*So, *S);
     return r;
@@ -109,7 +109,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_new__TopoDS_Solid__TopoDS_Shell(const
 B3D_API void b3d_BRepBuilderAPI_MakeSolid_Add__TopoDS_Shell(void* self, const TopoDS_Shell* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeSolid*>(self)->Add(*S);
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeSolid_Add__TopoDS_Shell(void* self, const To
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeSolid_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeSolid*>(self)->IsDone();
     return r ? 1 : 0;
@@ -132,7 +132,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakeSolid_IsDone(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeSolid_Solid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeSolid*>(self)->Solid();
     return new TopoDS_Solid(r);
@@ -144,7 +144,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeSolid_Solid(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeSolid_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeSolid*>(self)->IsDeleted(*S);
     return r ? 1 : 0;

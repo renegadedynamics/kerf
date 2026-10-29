@@ -15,7 +15,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_downcast(void* t) { return b3d_retain(dy
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing();
     return b3d_retain(r);
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double(double tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing(tolerance);
     return b3d_retain(r);
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double(double tolerance, b3d_error*
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool(double tolerance, uint8_t option1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing(tolerance, option1 != 0);
     return b3d_retain(r);
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool(double tolerance, uint
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool(double tolerance, uint8_t option1, uint8_t option2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing(tolerance, option1 != 0, option2 != 0);
     return b3d_retain(r);
@@ -63,7 +63,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool(double tolerance
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool__bool(double tolerance, uint8_t option1, uint8_t option2, uint8_t option3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing(tolerance, option1 != 0, option2 != 0, option3 != 0);
     return b3d_retain(r);
@@ -75,7 +75,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool__bool(double tol
 B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool__bool__bool(double tolerance, uint8_t option1, uint8_t option2, uint8_t option3, uint8_t option4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_Sewing(tolerance, option1 != 0, option2 != 0, option3 != 0, option4 != 0);
     return b3d_retain(r);
@@ -87,7 +87,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_new__double__bool__bool__bool__bool(doub
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init();
     return;
@@ -98,7 +98,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init(void* self, b3d_error** err)
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double(void* self, double tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init(tolerance);
     return;
@@ -109,7 +109,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double(void* self, double tolerance
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool(void* self, double tolerance, uint8_t option1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init(tolerance, option1 != 0);
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool(void* self, double tol
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool(void* self, double tolerance, uint8_t option1, uint8_t option2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init(tolerance, option1 != 0, option2 != 0);
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool(void* self, doub
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool__bool(void* self, double tolerance, uint8_t option1, uint8_t option2, uint8_t option3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init(tolerance, option1 != 0, option2 != 0, option3 != 0);
     return;
@@ -142,7 +142,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool__bool(void* self
 B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool__bool__bool(void* self, double tolerance, uint8_t option1, uint8_t option2, uint8_t option3, uint8_t option4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Init(tolerance, option1 != 0, option2 != 0, option3 != 0, option4 != 0);
     return;
@@ -153,7 +153,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Init__double__bool__bool__bool__bool(void
 B3D_API void b3d_BRepBuilderAPI_Sewing_Load__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Load(*shape);
     return;
@@ -164,7 +164,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Load__TopoDS_Shape(void* self, const Topo
 B3D_API void b3d_BRepBuilderAPI_Sewing_Add__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Add(*shape);
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Add__TopoDS_Shape(void* self, const TopoD
 B3D_API void b3d_BRepBuilderAPI_Sewing_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->Perform();
     return;
@@ -186,7 +186,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_Perform(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_Sewing_SewedShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->SewedShape();
     return new TopoDS_Shape(r);
@@ -198,7 +198,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_SewedShape(void* self, b3d_error** err)
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetContext__BRepTools_ReShape(void* self, BRepTools_ReShape* theContext, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetContext(occ::handle<BRepTools_ReShape>(theContext));
     return;
@@ -209,7 +209,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetContext__BRepTools_ReShape(void* self,
 B3D_API void* b3d_BRepBuilderAPI_Sewing_GetContext(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->GetContext();
     return b3d_retain(occ::handle<BRepTools_ReShape>(r).get());
@@ -221,7 +221,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_GetContext(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbFreeEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NbFreeEdges();
     return r;
@@ -233,7 +233,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbFreeEdges(void* self, b3d_error** er
 B3D_API void* b3d_BRepBuilderAPI_Sewing_FreeEdge__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->FreeEdge(index);
     return new TopoDS_Edge(r);
@@ -245,7 +245,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_FreeEdge__int(void* self, int32_t index,
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbMultipleEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NbMultipleEdges();
     return r;
@@ -257,7 +257,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbMultipleEdges(void* self, b3d_error*
 B3D_API void* b3d_BRepBuilderAPI_Sewing_MultipleEdge__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->MultipleEdge(index);
     return new TopoDS_Edge(r);
@@ -269,7 +269,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_MultipleEdge__int(void* self, int32_t in
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbContigousEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NbContigousEdges();
     return r;
@@ -281,7 +281,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbContigousEdges(void* self, b3d_error
 B3D_API void* b3d_BRepBuilderAPI_Sewing_ContigousEdge__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->ContigousEdge(index);
     return new TopoDS_Edge(r);
@@ -293,7 +293,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_ContigousEdge__int(void* self, int32_t i
 B3D_API void* b3d_BRepBuilderAPI_Sewing_ContigousEdgeCouple__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->ContigousEdgeCouple(index);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -305,7 +305,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_ContigousEdgeCouple__int(void* self, int
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsSectionBound__TopoDS_Edge(void* self, const TopoDS_Edge* section, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->IsSectionBound(*section);
     return r ? 1 : 0;
@@ -317,7 +317,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsSectionBound__TopoDS_Edge(void* self
 B3D_API void* b3d_BRepBuilderAPI_Sewing_SectionToBoundary__TopoDS_Edge(void* self, const TopoDS_Edge* section, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->SectionToBoundary(*section);
     return new TopoDS_Edge(r);
@@ -329,7 +329,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_SectionToBoundary__TopoDS_Edge(void* sel
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbDegeneratedShapes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NbDegeneratedShapes();
     return r;
@@ -341,7 +341,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbDegeneratedShapes(void* self, b3d_er
 B3D_API void* b3d_BRepBuilderAPI_Sewing_DegeneratedShape__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->DegeneratedShape(index);
     return new TopoDS_Shape(r);
@@ -353,7 +353,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_DegeneratedShape__int(void* self, int32_
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsDegenerated__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->IsDegenerated(*shape);
     return r ? 1 : 0;
@@ -365,7 +365,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsDegenerated__TopoDS_Shape(void* self
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsModified__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->IsModified(*shape);
     return r ? 1 : 0;
@@ -377,7 +377,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsModified__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepBuilderAPI_Sewing_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->Modified(*shape);
     return new TopoDS_Shape(r);
@@ -389,7 +389,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_Modified__TopoDS_Shape(void* self, const
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsModifiedSubShape__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->IsModifiedSubShape(*shape);
     return r ? 1 : 0;
@@ -401,7 +401,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsModifiedSubShape__TopoDS_Shape(void*
 B3D_API void* b3d_BRepBuilderAPI_Sewing_ModifiedSubShape__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->ModifiedSubShape(*shape);
     return new TopoDS_Shape(r);
@@ -413,7 +413,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_ModifiedSubShape__TopoDS_Shape(void* sel
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbDeletedFaces(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NbDeletedFaces();
     return r;
@@ -425,7 +425,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_NbDeletedFaces(void* self, b3d_error**
 B3D_API void* b3d_BRepBuilderAPI_Sewing_DeletedFace__int(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->DeletedFace(index);
     return new TopoDS_Face(r);
@@ -437,7 +437,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_DeletedFace__int(void* self, int32_t ind
 B3D_API void* b3d_BRepBuilderAPI_Sewing_WhichFace__TopoDS_Edge(void* self, const TopoDS_Edge* theEdg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->WhichFace(*theEdg);
     return new TopoDS_Face(r);
@@ -449,7 +449,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_WhichFace__TopoDS_Edge(void* self, const
 B3D_API void* b3d_BRepBuilderAPI_Sewing_WhichFace__TopoDS_Edge__int(void* self, const TopoDS_Edge* theEdg, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->WhichFace(*theEdg, index);
     return new TopoDS_Face(r);
@@ -461,7 +461,7 @@ B3D_API void* b3d_BRepBuilderAPI_Sewing_WhichFace__TopoDS_Edge__int(void* self, 
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_SameParameterMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->SameParameterMode();
     return r ? 1 : 0;
@@ -473,7 +473,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_SameParameterMode(void* self, b3d_erro
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetSameParameterMode__bool(void* self, uint8_t SameParameterMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetSameParameterMode(SameParameterMode != 0);
     return;
@@ -484,7 +484,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetSameParameterMode__bool(void* self, ui
 B3D_API double b3d_BRepBuilderAPI_Sewing_Tolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->Tolerance();
     return r;
@@ -496,7 +496,7 @@ B3D_API double b3d_BRepBuilderAPI_Sewing_Tolerance(void* self, b3d_error** err)
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetTolerance__double(void* self, double theToler, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetTolerance(theToler);
     return;
@@ -507,7 +507,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetTolerance__double(void* self, double t
 B3D_API double b3d_BRepBuilderAPI_Sewing_MinTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->MinTolerance();
     return r;
@@ -519,7 +519,7 @@ B3D_API double b3d_BRepBuilderAPI_Sewing_MinTolerance(void* self, b3d_error** er
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetMinTolerance__double(void* self, double theMinToler, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetMinTolerance(theMinToler);
     return;
@@ -530,7 +530,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetMinTolerance__double(void* self, doubl
 B3D_API double b3d_BRepBuilderAPI_Sewing_MaxTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->MaxTolerance();
     return r;
@@ -542,7 +542,7 @@ B3D_API double b3d_BRepBuilderAPI_Sewing_MaxTolerance(void* self, b3d_error** er
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetMaxTolerance__double(void* self, double theMaxToler, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetMaxTolerance(theMaxToler);
     return;
@@ -553,7 +553,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetMaxTolerance__double(void* self, doubl
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_FaceMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->FaceMode();
     return r ? 1 : 0;
@@ -565,7 +565,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_FaceMode(void* self, b3d_error** err)
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetFaceMode__bool(void* self, uint8_t theFaceMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetFaceMode(theFaceMode != 0);
     return;
@@ -576,7 +576,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetFaceMode__bool(void* self, uint8_t the
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_FloatingEdgesMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->FloatingEdgesMode();
     return r ? 1 : 0;
@@ -588,7 +588,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_FloatingEdgesMode(void* self, b3d_erro
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetFloatingEdgesMode__bool(void* self, uint8_t theFloatingEdgesMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetFloatingEdgesMode(theFloatingEdgesMode != 0);
     return;
@@ -599,7 +599,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetFloatingEdgesMode__bool(void* self, ui
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_LocalTolerancesMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->LocalTolerancesMode();
     return r ? 1 : 0;
@@ -611,7 +611,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_LocalTolerancesMode(void* self, b3d_er
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetLocalTolerancesMode__bool(void* self, uint8_t theLocalTolerancesMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetLocalTolerancesMode(theLocalTolerancesMode != 0);
     return;
@@ -622,7 +622,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetLocalTolerancesMode__bool(void* self, 
 B3D_API void b3d_BRepBuilderAPI_Sewing_SetNonManifoldMode__bool(void* self, uint8_t theNonManifoldMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_Sewing*>(self)->SetNonManifoldMode(theNonManifoldMode != 0);
     return;
@@ -633,7 +633,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_SetNonManifoldMode__bool(void* self, uint
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_NonManifoldMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_Sewing*>(self)->NonManifoldMode();
     return r ? 1 : 0;
@@ -645,7 +645,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_NonManifoldMode(void* self, b3d_error*
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepBuilderAPI_Sewing*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -657,7 +657,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsInstance__string(void* self, const c
 B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepBuilderAPI_Sewing*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -669,7 +669,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_Sewing_IsKind__string(void* self, const char*
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepBuilderAPI_Sewing*>(self))->GetRefCount();
     return r;
@@ -681,7 +681,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_Sewing_GetRefCount(void* self, b3d_error** er
 B3D_API void b3d_BRepBuilderAPI_Sewing_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<BRepBuilderAPI_Sewing*>(self))->IncrementRefCounter();
     return;
@@ -692,7 +692,7 @@ B3D_API void b3d_BRepBuilderAPI_Sewing_IncrementRefCounter(void* self, b3d_error
 B3D_API int32_t b3d_BRepBuilderAPI_Sewing_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepBuilderAPI_Sewing*>(self))->DecrementRefCounter();
     return r;

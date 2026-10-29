@@ -285,3 +285,35 @@ It follows your sketch, with these differences:
   `ShapeMesh` object. It is in the part's own coordinates, and `MeshNode.Location` is relative to the
   parent. Instancing is detected by reference equality.
 
+### Errors and memory are in (4.4)
+
+- **Native faults** come back as `OcctException`. On Windows they are typed, for example
+  `OSD_Exception_ACCESS_VIOLATION: ACCESS VIOLATION at address … during 'READ' operation`, on whichever
+  thread they happen. `OcctException.IsFault` tells a fault from an ordinary OCCT failure.
+  - No floating-point traps are switched on, and .NET's own exceptions behave as before.
+  - On Linux and macOS a fault in OCCT still ends the process, because OCCT's signal handlers would
+    replace the runtime's.
+- **Context.** An `OcctException`'s message starts with what was being done, and `Operation` gives it
+  alone, for example "fuse of a Box with 2 Cylinders failed: StdFail_NotDone:
+  BOPAlgo_AlertSelfInterferingShape". You can add your own outer scope per cell, and the library's
+  scopes nest inside it:
+
+  ```csharp
+  using (OcctContext.Doing($"cell {address}")) { ... }   // "cell B3 / extrude failed: ..."
+  ```
+
+  Scopes are per thread; OCCT calls are synchronous.
+- **Memory pressure** is on new results, released when their native handle is finalised or disposed:
+  booleans, fillets, chamfers, extrude, revolve, loft, sweep, thicken and transformed copies. Sub-shapes
+  and relocated copies share their result's pressure rather than adding to it. Triangulation frees its
+  temporary native mesh straight away; the `ShapeMesh` itself is managed memory, which the GC already
+  sees.
+- **Malformed input.** Truncated, garbled or hostile BRep data gives an `OcctException`, usually a
+  `Storage_StreamFormatError`, rather than the hang or buffer overrun OCCT's reader would allow.
+  - 600 fuzzed inputs, each read, validated, measured, meshed and fused, gave no crash.
+  - Three of them ran for a very long time in meshing or fusing. Until cancellation (4.7) is in, a cell
+    with geometry read from an untrusted file may need a timeout.
+
+  Degenerate geometry, such as zero-size primitives, extrusion by nothing, a coincident loft or an
+  oversized fillet, throws `OcctException`, `ArgumentException` or `InvalidOperationException` with a
+  message.

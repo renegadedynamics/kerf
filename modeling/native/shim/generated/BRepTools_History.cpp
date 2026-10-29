@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepTools_History_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_BRepTools_History_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepTools_History();
     return b3d_retain(r);
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepTools_History_new(b3d_error** err)
 B3D_API uint8_t b3d_BRepTools_History_IsSupportedType__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools_History::IsSupportedType(*theShape);
     return r ? 1 : 0;
@@ -36,7 +36,7 @@ B3D_API uint8_t b3d_BRepTools_History_IsSupportedType__TopoDS_Shape(const TopoDS
 B3D_API void b3d_BRepTools_History_AddGenerated__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, const TopoDS_Shape* theGenerated, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->AddGenerated(*theInitial, *theGenerated);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_BRepTools_History_AddGenerated__TopoDS_Shape__TopoDS_Shape(void
 B3D_API void b3d_BRepTools_History_AddModified__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, const TopoDS_Shape* theModified, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->AddModified(*theInitial, *theModified);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_BRepTools_History_AddModified__TopoDS_Shape__TopoDS_Shape(void*
 B3D_API void b3d_BRepTools_History_Remove__TopoDS_Shape(void* self, const TopoDS_Shape* theRemoved, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->Remove(*theRemoved);
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_BRepTools_History_Remove__TopoDS_Shape(void* self, const TopoDS
 B3D_API void b3d_BRepTools_History_ReplaceGenerated__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, const TopoDS_Shape* theGenerated, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->ReplaceGenerated(*theInitial, *theGenerated);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_BRepTools_History_ReplaceGenerated__TopoDS_Shape__TopoDS_Shape(
 B3D_API void b3d_BRepTools_History_ReplaceModified__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, const TopoDS_Shape* theModified, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->ReplaceModified(*theInitial, *theModified);
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_BRepTools_History_ReplaceModified__TopoDS_Shape__TopoDS_Shape(v
 B3D_API void b3d_BRepTools_History_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->Clear();
     return;
@@ -102,7 +102,7 @@ B3D_API void b3d_BRepTools_History_Clear(void* self, b3d_error** err)
 B3D_API void* b3d_BRepTools_History_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->Generated(*theInitial);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -114,7 +114,7 @@ B3D_API void* b3d_BRepTools_History_Generated__TopoDS_Shape(void* self, const To
 B3D_API void* b3d_BRepTools_History_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->Modified(*theInitial);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -126,7 +126,7 @@ B3D_API void* b3d_BRepTools_History_Modified__TopoDS_Shape(void* self, const Top
 B3D_API uint8_t b3d_BRepTools_History_IsRemoved__TopoDS_Shape(void* self, const TopoDS_Shape* theInitial, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->IsRemoved(*theInitial);
     return r ? 1 : 0;
@@ -138,7 +138,7 @@ B3D_API uint8_t b3d_BRepTools_History_IsRemoved__TopoDS_Shape(void* self, const 
 B3D_API uint8_t b3d_BRepTools_History_HasGenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->HasGenerated();
     return r ? 1 : 0;
@@ -150,7 +150,7 @@ B3D_API uint8_t b3d_BRepTools_History_HasGenerated(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepTools_History_HasModified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->HasModified();
     return r ? 1 : 0;
@@ -162,7 +162,7 @@ B3D_API uint8_t b3d_BRepTools_History_HasModified(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepTools_History_HasRemoved(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_History*>(self)->HasRemoved();
     return r ? 1 : 0;
@@ -174,7 +174,7 @@ B3D_API uint8_t b3d_BRepTools_History_HasRemoved(void* self, b3d_error** err)
 B3D_API void b3d_BRepTools_History_Merge__BRepTools_History(void* self, BRepTools_History* theHistory23, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_History*>(self)->Merge(occ::handle<BRepTools_History>(theHistory23));
     return;
@@ -185,7 +185,7 @@ B3D_API void b3d_BRepTools_History_Merge__BRepTools_History(void* self, BRepTool
 B3D_API uint8_t b3d_BRepTools_History_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_History*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -197,7 +197,7 @@ B3D_API uint8_t b3d_BRepTools_History_IsInstance__string(void* self, const char*
 B3D_API uint8_t b3d_BRepTools_History_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_History*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -209,7 +209,7 @@ B3D_API uint8_t b3d_BRepTools_History_IsKind__string(void* self, const char* the
 B3D_API int32_t b3d_BRepTools_History_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_History*>(self))->GetRefCount();
     return r;
@@ -221,7 +221,7 @@ B3D_API int32_t b3d_BRepTools_History_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_BRepTools_History_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<BRepTools_History*>(self))->IncrementRefCounter();
     return;
@@ -232,7 +232,7 @@ B3D_API void b3d_BRepTools_History_IncrementRefCounter(void* self, b3d_error** e
 B3D_API int32_t b3d_BRepTools_History_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<BRepTools_History*>(self))->DecrementRefCounter();
     return r;

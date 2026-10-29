@@ -7,7 +7,7 @@ B3D_API void b3d_TColStd_Array2OfReal_delete(void* p) { delete static_cast<NColl
 B3D_API void* b3d_TColStd_Array2OfReal_copy(const void* p, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array2<double>(*static_cast<const NCollection_Array2<double>*>(p)); }
+  B3D_TRY { return new NCollection_Array2<double>(*static_cast<const NCollection_Array2<double>*>(p)); }
   B3D_CATCH(err)
   return {};
 }
@@ -15,7 +15,7 @@ B3D_API void* b3d_TColStd_Array2OfReal_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TColStd_Array2OfReal_new0(int rowLower, int rowUpper, int colLower, int colUpper, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array2<double>(rowLower, rowUpper, colLower, colUpper); }
+  B3D_TRY { return new NCollection_Array2<double>(rowLower, rowUpper, colLower, colUpper); }
   B3D_CATCH(err)
   return {};
 }
@@ -23,7 +23,7 @@ B3D_API void* b3d_TColStd_Array2OfReal_new0(int rowLower, int rowUpper, int colL
 B3D_API int32_t b3d_TColStd_Array2OfReal_LowerRow(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.LowerRow(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.LowerRow(); }
   B3D_CATCH(err)
   return {};
 }
@@ -31,7 +31,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_LowerRow(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array2OfReal_UpperRow(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.UpperRow(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.UpperRow(); }
   B3D_CATCH(err)
   return {};
 }
@@ -39,7 +39,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_UpperRow(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array2OfReal_LowerCol(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.LowerCol(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.LowerCol(); }
   B3D_CATCH(err)
   return {};
 }
@@ -47,7 +47,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_LowerCol(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array2OfReal_UpperCol(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.UpperCol(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.UpperCol(); }
   B3D_CATCH(err)
   return {};
 }
@@ -55,7 +55,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_UpperCol(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array2OfReal_ColLength(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.ColLength(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.ColLength(); }
   B3D_CATCH(err)
   return {};
 }
@@ -63,7 +63,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_ColLength(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColStd_Array2OfReal_RowLength(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.RowLength(); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.RowLength(); }
   B3D_CATCH(err)
   return {};
 }
@@ -71,7 +71,7 @@ B3D_API int32_t b3d_TColStd_Array2OfReal_RowLength(void* self, b3d_error** err)
 B3D_API double b3d_TColStd_Array2OfReal_Value(void* self, int32_t row, int32_t col, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.Value(row, col); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); return s.Value(row, col); }
   B3D_CATCH(err)
   return {};
 }
@@ -79,6 +79,6 @@ B3D_API double b3d_TColStd_Array2OfReal_Value(void* self, int32_t row, int32_t c
 B3D_API void b3d_TColStd_Array2OfReal_SetValue(void* self, int32_t row, int32_t col, double item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); s.SetValue(row, col, item); }
+  B3D_TRY { NCollection_Array2<double>& s = *static_cast<NCollection_Array2<double>*>(self); s.SetValue(row, col, item); }
   B3D_CATCH(err)
 }

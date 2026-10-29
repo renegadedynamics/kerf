@@ -9,7 +9,7 @@ B3D_API void* b3d_gp_Mat_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Mat>)
   {
-    try { return new gp_Mat(*static_cast<const gp_Mat*>(p)); }
+    B3D_TRY { return new gp_Mat(*static_cast<const gp_Mat*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_gp_Mat_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Mat_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Mat();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_gp_Mat_new(b3d_error** err)
 B3D_API void* b3d_gp_Mat_new__double__double__double__double__double__double__double__double__double(double theA11, double theA12, double theA13, double theA21, double theA22, double theA23, double theA31, double theA32, double theA33, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Mat(theA11, theA12, theA13, theA21, theA22, theA23, theA31, theA32, theA33);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_gp_Mat_new__double__double__double__double__double__double__do
 B3D_API void* b3d_gp_Mat_new__gp_XYZ__gp_XYZ__gp_XYZ(const gp_XYZ* theCol1, const gp_XYZ* theCol2, const gp_XYZ* theCol3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Mat(*theCol1, *theCol2, *theCol3);
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_gp_Mat_new__gp_XYZ__gp_XYZ__gp_XYZ(const gp_XYZ* theCol1, cons
 B3D_API void b3d_gp_Mat_SetCol__int__gp_XYZ(void* self, int32_t theCol, const gp_XYZ* theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetCol(theCol, *theValue);
     return;
@@ -67,7 +67,7 @@ B3D_API void b3d_gp_Mat_SetCol__int__gp_XYZ(void* self, int32_t theCol, const gp
 B3D_API void b3d_gp_Mat_SetCols__gp_XYZ__gp_XYZ__gp_XYZ(void* self, const gp_XYZ* theCol1, const gp_XYZ* theCol2, const gp_XYZ* theCol3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetCols(*theCol1, *theCol2, *theCol3);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_gp_Mat_SetCols__gp_XYZ__gp_XYZ__gp_XYZ(void* self, const gp_XYZ
 B3D_API void b3d_gp_Mat_SetCross__gp_XYZ(void* self, const gp_XYZ* theRef, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetCross(*theRef);
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_gp_Mat_SetCross__gp_XYZ(void* self, const gp_XYZ* theRef, b3d_e
 B3D_API void b3d_gp_Mat_SetDiagonal__double__double__double(void* self, double theX1, double theX2, double theX3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetDiagonal(theX1, theX2, theX3);
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_gp_Mat_SetDiagonal__double__double__double(void* self, double t
 B3D_API void b3d_gp_Mat_SetDot__gp_XYZ(void* self, const gp_XYZ* theRef, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetDot(*theRef);
     return;
@@ -111,7 +111,7 @@ B3D_API void b3d_gp_Mat_SetDot__gp_XYZ(void* self, const gp_XYZ* theRef, b3d_err
 B3D_API void b3d_gp_Mat_SetIdentity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetIdentity();
     return;
@@ -122,7 +122,7 @@ B3D_API void b3d_gp_Mat_SetIdentity(void* self, b3d_error** err)
 B3D_API void b3d_gp_Mat_SetRotation__gp_XYZ__double(void* self, const gp_XYZ* theAxis, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetRotation(*theAxis, theAng);
     return;
@@ -133,7 +133,7 @@ B3D_API void b3d_gp_Mat_SetRotation__gp_XYZ__double(void* self, const gp_XYZ* th
 B3D_API void b3d_gp_Mat_SetRow__int__gp_XYZ(void* self, int32_t theRow, const gp_XYZ* theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetRow(theRow, *theValue);
     return;
@@ -144,7 +144,7 @@ B3D_API void b3d_gp_Mat_SetRow__int__gp_XYZ(void* self, int32_t theRow, const gp
 B3D_API void b3d_gp_Mat_SetRows__gp_XYZ__gp_XYZ__gp_XYZ(void* self, const gp_XYZ* theRow1, const gp_XYZ* theRow2, const gp_XYZ* theRow3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetRows(*theRow1, *theRow2, *theRow3);
     return;
@@ -155,7 +155,7 @@ B3D_API void b3d_gp_Mat_SetRows__gp_XYZ__gp_XYZ__gp_XYZ(void* self, const gp_XYZ
 B3D_API void b3d_gp_Mat_SetScale__double(void* self, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetScale(theS);
     return;
@@ -166,7 +166,7 @@ B3D_API void b3d_gp_Mat_SetScale__double(void* self, double theS, b3d_error** er
 B3D_API void b3d_gp_Mat_SetValue__int__int__double(void* self, int32_t theRow, int32_t theCol, double theValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->SetValue(theRow, theCol, theValue);
     return;
@@ -177,7 +177,7 @@ B3D_API void b3d_gp_Mat_SetValue__int__int__double(void* self, int32_t theRow, i
 B3D_API void* b3d_gp_Mat_Column__int(void* self, int32_t theCol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Column(theCol);
     return new gp_XYZ(r);
@@ -189,7 +189,7 @@ B3D_API void* b3d_gp_Mat_Column__int(void* self, int32_t theCol, b3d_error** err
 B3D_API double b3d_gp_Mat_Determinant(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Determinant();
     return r;
@@ -201,7 +201,7 @@ B3D_API double b3d_gp_Mat_Determinant(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Diagonal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Diagonal();
     return new gp_XYZ(r);
@@ -213,7 +213,7 @@ B3D_API void* b3d_gp_Mat_Diagonal(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Row__int(void* self, int32_t theRow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Row(theRow);
     return new gp_XYZ(r);
@@ -225,7 +225,7 @@ B3D_API void* b3d_gp_Mat_Row__int(void* self, int32_t theRow, b3d_error** err)
 B3D_API double b3d_gp_Mat_Value__int__int(void* self, int32_t theRow, int32_t theCol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Value(theRow, theCol);
     return r;
@@ -237,7 +237,7 @@ B3D_API double b3d_gp_Mat_Value__int__int(void* self, int32_t theRow, int32_t th
 B3D_API uint8_t b3d_gp_Mat_IsSingular(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->IsSingular();
     return r ? 1 : 0;
@@ -249,7 +249,7 @@ B3D_API uint8_t b3d_gp_Mat_IsSingular(void* self, b3d_error** err)
 B3D_API void b3d_gp_Mat_Add__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Add(*theOther);
     return;
@@ -260,7 +260,7 @@ B3D_API void b3d_gp_Mat_Add__gp_Mat(void* self, const gp_Mat* theOther, b3d_erro
 B3D_API void* b3d_gp_Mat_Added__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Added(*theOther);
     return new gp_Mat(r);
@@ -272,7 +272,7 @@ B3D_API void* b3d_gp_Mat_Added__gp_Mat(void* self, const gp_Mat* theOther, b3d_e
 B3D_API void b3d_gp_Mat_Divide__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Divide(theScalar);
     return;
@@ -283,7 +283,7 @@ B3D_API void b3d_gp_Mat_Divide__double(void* self, double theScalar, b3d_error**
 B3D_API void* b3d_gp_Mat_Divided__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Divided(theScalar);
     return new gp_Mat(r);
@@ -295,7 +295,7 @@ B3D_API void* b3d_gp_Mat_Divided__double(void* self, double theScalar, b3d_error
 B3D_API void b3d_gp_Mat_Invert(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Invert();
     return;
@@ -306,7 +306,7 @@ B3D_API void b3d_gp_Mat_Invert(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Inverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Inverted();
     return new gp_Mat(r);
@@ -318,7 +318,7 @@ B3D_API void* b3d_gp_Mat_Inverted(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Multiplied__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Multiplied(*theOther);
     return new gp_Mat(r);
@@ -330,7 +330,7 @@ B3D_API void* b3d_gp_Mat_Multiplied__gp_Mat(void* self, const gp_Mat* theOther, 
 B3D_API void b3d_gp_Mat_Multiply__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Multiply(*theOther);
     return;
@@ -341,7 +341,7 @@ B3D_API void b3d_gp_Mat_Multiply__gp_Mat(void* self, const gp_Mat* theOther, b3d
 B3D_API void b3d_gp_Mat_PreMultiply__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->PreMultiply(*theOther);
     return;
@@ -352,7 +352,7 @@ B3D_API void b3d_gp_Mat_PreMultiply__gp_Mat(void* self, const gp_Mat* theOther, 
 B3D_API void* b3d_gp_Mat_Multiplied__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Multiplied(theScalar);
     return new gp_Mat(r);
@@ -364,7 +364,7 @@ B3D_API void* b3d_gp_Mat_Multiplied__double(void* self, double theScalar, b3d_er
 B3D_API void b3d_gp_Mat_Multiply__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Multiply(theScalar);
     return;
@@ -375,7 +375,7 @@ B3D_API void b3d_gp_Mat_Multiply__double(void* self, double theScalar, b3d_error
 B3D_API void b3d_gp_Mat_Power__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Power(N);
     return;
@@ -386,7 +386,7 @@ B3D_API void b3d_gp_Mat_Power__int(void* self, int32_t N, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Powered__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Powered(theN);
     return new gp_Mat(r);
@@ -398,7 +398,7 @@ B3D_API void* b3d_gp_Mat_Powered__int(void* self, int32_t theN, b3d_error** err)
 B3D_API void b3d_gp_Mat_Subtract__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Subtract(*theOther);
     return;
@@ -409,7 +409,7 @@ B3D_API void b3d_gp_Mat_Subtract__gp_Mat(void* self, const gp_Mat* theOther, b3d
 B3D_API void* b3d_gp_Mat_Subtracted__gp_Mat(void* self, const gp_Mat* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Subtracted(*theOther);
     return new gp_Mat(r);
@@ -421,7 +421,7 @@ B3D_API void* b3d_gp_Mat_Subtracted__gp_Mat(void* self, const gp_Mat* theOther, 
 B3D_API void b3d_gp_Mat_Transpose(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Mat*>(self)->Transpose();
     return;
@@ -432,7 +432,7 @@ B3D_API void b3d_gp_Mat_Transpose(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Mat_Transposed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Mat*>(self)->Transposed();
     return new gp_Mat(r);

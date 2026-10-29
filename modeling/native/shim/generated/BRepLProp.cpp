@@ -9,7 +9,7 @@ B3D_API void* b3d_BRepLProp_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepLProp>)
   {
-    try { return new BRepLProp(*static_cast<const BRepLProp*>(p)); }
+    B3D_TRY { return new BRepLProp(*static_cast<const BRepLProp*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_BRepLProp_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRepLProp>)
   {
-    try { return new BRepLProp(); }
+    B3D_TRY { return new BRepLProp(); }
     B3D_CATCH(err)
   }
   else
@@ -33,7 +33,7 @@ B3D_API void* b3d_BRepLProp_new(b3d_error** err)
 B3D_API int32_t b3d_BRepLProp_Continuity__tref_BRepAdaptor_Curve__tref_BRepAdaptor_Curve__double__double__double__double(BRepAdaptor_Curve* C1, BRepAdaptor_Curve* C2, double u1, double u2, double tl, double ta, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepLProp::Continuity(*C1, *C2, u1, u2, tl, ta);
     return static_cast<int32_t>(r);
@@ -45,7 +45,7 @@ B3D_API int32_t b3d_BRepLProp_Continuity__tref_BRepAdaptor_Curve__tref_BRepAdapt
 B3D_API int32_t b3d_BRepLProp_Continuity__tref_BRepAdaptor_Curve__tref_BRepAdaptor_Curve__double__double(BRepAdaptor_Curve* C1, BRepAdaptor_Curve* C2, double u1, double u2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepLProp::Continuity(*C1, *C2, u1, u2);
     return static_cast<int32_t>(r);

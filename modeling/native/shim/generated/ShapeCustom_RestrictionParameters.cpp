@@ -10,7 +10,7 @@ B3D_API void* b3d_ShapeCustom_RestrictionParameters_downcast(void* t) { return b
 B3D_API void* b3d_ShapeCustom_RestrictionParameters_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeCustom_RestrictionParameters();
     return b3d_retain(r);
@@ -22,7 +22,7 @@ B3D_API void* b3d_ShapeCustom_RestrictionParameters_new(b3d_error** err)
 B3D_API uint8_t b3d_ShapeCustom_RestrictionParameters_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeCustom_RestrictionParameters*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -34,7 +34,7 @@ B3D_API uint8_t b3d_ShapeCustom_RestrictionParameters_IsInstance__string(void* s
 B3D_API uint8_t b3d_ShapeCustom_RestrictionParameters_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeCustom_RestrictionParameters*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -46,7 +46,7 @@ B3D_API uint8_t b3d_ShapeCustom_RestrictionParameters_IsKind__string(void* self,
 B3D_API int32_t b3d_ShapeCustom_RestrictionParameters_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeCustom_RestrictionParameters*>(self))->GetRefCount();
     return r;
@@ -58,7 +58,7 @@ B3D_API int32_t b3d_ShapeCustom_RestrictionParameters_GetRefCount(void* self, b3
 B3D_API void b3d_ShapeCustom_RestrictionParameters_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<ShapeCustom_RestrictionParameters*>(self))->IncrementRefCounter();
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_ShapeCustom_RestrictionParameters_IncrementRefCounter(void* sel
 B3D_API int32_t b3d_ShapeCustom_RestrictionParameters_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeCustom_RestrictionParameters*>(self))->DecrementRefCounter();
     return r;

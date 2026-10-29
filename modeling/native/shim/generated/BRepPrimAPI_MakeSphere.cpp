@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeSphere>)
   {
-    try { return new BRepPrimAPI_MakeSphere(*static_cast<const BRepPrimAPI_MakeSphere*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeSphere(*static_cast<const BRepPrimAPI_MakeSphere*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_as_BRepBuilderAPI_Command(void* p) { re
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double(double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(R);
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double(double R, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double(double R, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(R, angle);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double(double R, double an
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double__double(double R, double angle1, double angle2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(R, angle1, angle2);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double__double(double R, d
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double__double__double(double R, double angle1, double angle2, double angle3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(R, angle1, angle2, angle3);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__double__double__double__double(dou
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double(const gp_Pnt* Center, double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Center, R);
     return r;
@@ -84,7 +84,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double(const gp_Pnt* Cente
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double(const gp_Pnt* Center, double R, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Center, R, angle);
     return r;
@@ -96,7 +96,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double(const gp_Pn
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double__double(const gp_Pnt* Center, double R, double angle1, double angle2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Center, R, angle1, angle2);
     return r;
@@ -108,7 +108,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double__double(con
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double__double__double(const gp_Pnt* Center, double R, double angle1, double angle2, double angle3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Center, R, angle1, angle2, angle3);
     return r;
@@ -120,7 +120,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Pnt__double__double__double__do
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double(const gp_Ax2* Axis, double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Axis, R);
     return r;
@@ -132,7 +132,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double(const gp_Ax2* Axis,
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double__double(const gp_Ax2* Axis, double R, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Axis, R, angle);
     return r;
@@ -144,7 +144,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double__double(const gp_Ax
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double__double__double(const gp_Ax2* Axis, double R, double angle1, double angle2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Axis, R, angle1, angle2);
     return r;
@@ -156,7 +156,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double__double__double(con
 B3D_API void* b3d_BRepPrimAPI_MakeSphere_new__gp_Ax2__double__double__double__double(const gp_Ax2* Axis, double R, double angle1, double angle2, double angle3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeSphere(*Axis, R, angle1, angle2, angle3);
     return r;

@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeShell>)
   {
-    try { return new BRepBuilderAPI_MakeShell(*static_cast<const BRepBuilderAPI_MakeShell*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeShell(*static_cast<const BRepBuilderAPI_MakeShell*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeShell();
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface(Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeShell(occ::handle<Geom_Surface>(S));
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface(Geom_Surface* S, b3
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__bool(Geom_Surface* S, uint8_t Segment, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeShell(occ::handle<Geom_Surface>(S), Segment != 0);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__bool(Geom_Surface*
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__double__double__double__double(Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeShell(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax);
     return r;
@@ -71,7 +71,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__double__double__do
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__double__double__double__double__bool(Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, uint8_t Segment, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeShell(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax, Segment != 0);
     return r;
@@ -83,7 +83,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShell_new__Geom_Surface__double__double__do
 B3D_API void b3d_BRepBuilderAPI_MakeShell_Init__Geom_Surface__double__double__double__double(void* self, Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeShell*>(self)->Init(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeShell_Init__Geom_Surface__double__double__do
 B3D_API void b3d_BRepBuilderAPI_MakeShell_Init__Geom_Surface__double__double__double__double__bool(void* self, Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, uint8_t Segment, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeShell*>(self)->Init(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax, Segment != 0);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeShell_Init__Geom_Surface__double__double__do
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeShell_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShell*>(self)->IsDone();
     return r ? 1 : 0;
@@ -117,7 +117,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakeShell_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepBuilderAPI_MakeShell_Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShell*>(self)->Error();
     return static_cast<int32_t>(r);
@@ -129,7 +129,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_MakeShell_Error(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeShell_Shell(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShell*>(self)->Shell();
     return new TopoDS_Shell(r);

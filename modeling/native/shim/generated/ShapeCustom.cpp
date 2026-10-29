@@ -10,7 +10,7 @@ B3D_API void* b3d_ShapeCustom_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<ShapeCustom>)
   {
-    try { return new ShapeCustom(*static_cast<const ShapeCustom*>(p)); }
+    B3D_TRY { return new ShapeCustom(*static_cast<const ShapeCustom*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_ShapeCustom_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<ShapeCustom>)
   {
-    try { return new ShapeCustom(); }
+    B3D_TRY { return new ShapeCustom(); }
     B3D_CATCH(err)
   }
   else
@@ -34,7 +34,7 @@ B3D_API void* b3d_ShapeCustom_new(b3d_error** err)
 B3D_API void* b3d_ShapeCustom_DirectFaces__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::DirectFaces(*S);
     return new TopoDS_Shape(r);
@@ -46,7 +46,7 @@ B3D_API void* b3d_ShapeCustom_DirectFaces__TopoDS_Shape(const TopoDS_Shape* S, b
 B3D_API void* b3d_ShapeCustom_ScaleShape__TopoDS_Shape__double(const TopoDS_Shape* S, double scale, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::ScaleShape(*S, scale);
     return new TopoDS_Shape(r);
@@ -58,7 +58,7 @@ B3D_API void* b3d_ShapeCustom_ScaleShape__TopoDS_Shape__double(const TopoDS_Shap
 B3D_API void* b3d_ShapeCustom_BSplineRestriction__TopoDS_Shape__double__double__int__int__GeomAbs_Shape__GeomAbs_Shape__bool__bool__ShapeCustom_RestrictionParameters(const TopoDS_Shape* S, double Tol3d, double Tol2d, int32_t MaxDegree, int32_t MaxNbSegment, int32_t Continuity3d, int32_t Continuity2d, uint8_t Degree, uint8_t Rational, ShapeCustom_RestrictionParameters* aParameters, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::BSplineRestriction(*S, Tol3d, Tol2d, MaxDegree, MaxNbSegment, static_cast<GeomAbs_Shape>(Continuity3d), static_cast<GeomAbs_Shape>(Continuity2d), Degree != 0, Rational != 0, occ::handle<ShapeCustom_RestrictionParameters>(aParameters));
     return new TopoDS_Shape(r);
@@ -70,7 +70,7 @@ B3D_API void* b3d_ShapeCustom_BSplineRestriction__TopoDS_Shape__double__double__
 B3D_API void* b3d_ShapeCustom_ConvertToRevolution__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::ConvertToRevolution(*S);
     return new TopoDS_Shape(r);
@@ -82,7 +82,7 @@ B3D_API void* b3d_ShapeCustom_ConvertToRevolution__TopoDS_Shape(const TopoDS_Sha
 B3D_API void* b3d_ShapeCustom_SweptToElementary__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::SweptToElementary(*S);
     return new TopoDS_Shape(r);
@@ -94,7 +94,7 @@ B3D_API void* b3d_ShapeCustom_SweptToElementary__TopoDS_Shape(const TopoDS_Shape
 B3D_API void* b3d_ShapeCustom_ConvertToBSpline__TopoDS_Shape__bool__bool__bool(const TopoDS_Shape* S, uint8_t extrMode, uint8_t revolMode, uint8_t offsetMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::ConvertToBSpline(*S, extrMode != 0, revolMode != 0, offsetMode != 0);
     return new TopoDS_Shape(r);
@@ -106,7 +106,7 @@ B3D_API void* b3d_ShapeCustom_ConvertToBSpline__TopoDS_Shape__bool__bool__bool(c
 B3D_API void* b3d_ShapeCustom_ConvertToBSpline__TopoDS_Shape__bool__bool__bool__bool(const TopoDS_Shape* S, uint8_t extrMode, uint8_t revolMode, uint8_t offsetMode, uint8_t planeMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeCustom::ConvertToBSpline(*S, extrMode != 0, revolMode != 0, offsetMode != 0, planeMode != 0);
     return new TopoDS_Shape(r);

@@ -13,7 +13,7 @@ B3D_API void* b3d_Bnd_Box_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Bnd_Box>)
   {
-    try { return new Bnd_Box(*static_cast<const Bnd_Box*>(p)); }
+    B3D_TRY { return new Bnd_Box(*static_cast<const Bnd_Box*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_Bnd_Box_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Bnd_Box_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Bnd_Box();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_Bnd_Box_new(b3d_error** err)
 B3D_API void* b3d_Bnd_Box_new__gp_Pnt__gp_Pnt(const gp_Pnt* theMin, const gp_Pnt* theMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Bnd_Box(*theMin, *theMax);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_Bnd_Box_new__gp_Pnt__gp_Pnt(const gp_Pnt* theMin, const gp_Pnt
 B3D_API void b3d_Bnd_Box_SetWhole(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->SetWhole();
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_Bnd_Box_SetWhole(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_SetVoid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->SetVoid();
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_Bnd_Box_SetVoid(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_Set__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Set(*P);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_Bnd_Box_Set__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** er
 B3D_API void b3d_Bnd_Box_Set__gp_Pnt__gp_Dir(void* self, const gp_Pnt* P, const gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Set(*P, *D);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_Bnd_Box_Set__gp_Pnt__gp_Dir(void* self, const gp_Pnt* P, const 
 B3D_API void b3d_Bnd_Box_Update__double__double__double__double__double__double(void* self, double aXmin, double aYmin, double aZmin, double aXmax, double aYmax, double aZmax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Update(aXmin, aYmin, aZmin, aXmax, aYmax, aZmax);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_Bnd_Box_Update__double__double__double__double__double__double(
 B3D_API void b3d_Bnd_Box_Update__double__double__double(void* self, double X, double Y, double Z, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Update(X, Y, Z);
     return;
@@ -114,7 +114,7 @@ B3D_API void b3d_Bnd_Box_Update__double__double__double(void* self, double X, do
 B3D_API double b3d_Bnd_Box_GetGap(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetGap();
     return r;
@@ -126,7 +126,7 @@ B3D_API double b3d_Bnd_Box_GetGap(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_SetGap__double(void* self, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->SetGap(Tol);
     return;
@@ -137,7 +137,7 @@ B3D_API void b3d_Bnd_Box_SetGap__double(void* self, double Tol, b3d_error** err)
 B3D_API void b3d_Bnd_Box_Enlarge__double(void* self, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Enlarge(Tol);
     return;
@@ -148,7 +148,7 @@ B3D_API void b3d_Bnd_Box_Enlarge__double(void* self, double Tol, b3d_error** err
 B3D_API void b3d_Bnd_Box_Get__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double(void* self, double* theXmin, double* theYmin, double* theZmin, double* theXmax, double* theYmax, double* theZmax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Get(*theXmin, *theYmin, *theZmin, *theXmax, *theYmax, *theZmax);
     return;
@@ -159,7 +159,7 @@ B3D_API void b3d_Bnd_Box_Get__ref_double__ref_double__ref_double__ref_double__re
 B3D_API double b3d_Bnd_Box_GetXMin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetXMin();
     return r;
@@ -171,7 +171,7 @@ B3D_API double b3d_Bnd_Box_GetXMin(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_Box_GetXMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetXMax();
     return r;
@@ -183,7 +183,7 @@ B3D_API double b3d_Bnd_Box_GetXMax(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_Box_GetYMin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetYMin();
     return r;
@@ -195,7 +195,7 @@ B3D_API double b3d_Bnd_Box_GetYMin(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_Box_GetYMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetYMax();
     return r;
@@ -207,7 +207,7 @@ B3D_API double b3d_Bnd_Box_GetYMax(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_Box_GetZMin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetZMin();
     return r;
@@ -219,7 +219,7 @@ B3D_API double b3d_Bnd_Box_GetZMin(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_Box_GetZMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->GetZMax();
     return r;
@@ -231,7 +231,7 @@ B3D_API double b3d_Bnd_Box_GetZMax(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_Box_CornerMin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->CornerMin();
     return new gp_Pnt(r);
@@ -243,7 +243,7 @@ B3D_API void* b3d_Bnd_Box_CornerMin(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_Box_CornerMax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->CornerMax();
     return new gp_Pnt(r);
@@ -255,7 +255,7 @@ B3D_API void* b3d_Bnd_Box_CornerMax(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenXmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenXmin();
     return;
@@ -266,7 +266,7 @@ B3D_API void b3d_Bnd_Box_OpenXmin(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenXmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenXmax();
     return;
@@ -277,7 +277,7 @@ B3D_API void b3d_Bnd_Box_OpenXmax(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenYmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenYmin();
     return;
@@ -288,7 +288,7 @@ B3D_API void b3d_Bnd_Box_OpenYmin(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenYmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenYmax();
     return;
@@ -299,7 +299,7 @@ B3D_API void b3d_Bnd_Box_OpenYmax(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenZmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenZmin();
     return;
@@ -310,7 +310,7 @@ B3D_API void b3d_Bnd_Box_OpenZmin(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_Box_OpenZmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->OpenZmax();
     return;
@@ -321,7 +321,7 @@ B3D_API void b3d_Bnd_Box_OpenZmax(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpen(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpen();
     return r ? 1 : 0;
@@ -333,7 +333,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpen(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenXmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenXmin();
     return r ? 1 : 0;
@@ -345,7 +345,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenXmin(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenXmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenXmax();
     return r ? 1 : 0;
@@ -357,7 +357,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenXmax(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenYmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenYmin();
     return r ? 1 : 0;
@@ -369,7 +369,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenYmin(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenYmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenYmax();
     return r ? 1 : 0;
@@ -381,7 +381,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenYmax(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenZmin(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenZmin();
     return r ? 1 : 0;
@@ -393,7 +393,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenZmin(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsOpenZmax(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOpenZmax();
     return r ? 1 : 0;
@@ -405,7 +405,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOpenZmax(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsWhole(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsWhole();
     return r ? 1 : 0;
@@ -417,7 +417,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsWhole(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsVoid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsVoid();
     return r ? 1 : 0;
@@ -429,7 +429,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsVoid(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_IsXThin__double(void* self, double tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsXThin(tol);
     return r ? 1 : 0;
@@ -441,7 +441,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsXThin__double(void* self, double tol, b3d_error** 
 B3D_API uint8_t b3d_Bnd_Box_IsYThin__double(void* self, double tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsYThin(tol);
     return r ? 1 : 0;
@@ -453,7 +453,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsYThin__double(void* self, double tol, b3d_error** 
 B3D_API uint8_t b3d_Bnd_Box_IsZThin__double(void* self, double tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsZThin(tol);
     return r ? 1 : 0;
@@ -465,7 +465,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsZThin__double(void* self, double tol, b3d_error** 
 B3D_API uint8_t b3d_Bnd_Box_IsThin__double(void* self, double tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsThin(tol);
     return r ? 1 : 0;
@@ -477,7 +477,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsThin__double(void* self, double tol, b3d_error** e
 B3D_API void* b3d_Bnd_Box_Transformed__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->Transformed(*T);
     return new Bnd_Box(r);
@@ -489,7 +489,7 @@ B3D_API void* b3d_Bnd_Box_Transformed__gp_Trsf(void* self, const gp_Trsf* T, b3d
 B3D_API void b3d_Bnd_Box_Add__Bnd_Box(void* self, const Bnd_Box* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Add(*Other);
     return;
@@ -500,7 +500,7 @@ B3D_API void b3d_Bnd_Box_Add__Bnd_Box(void* self, const Bnd_Box* Other, b3d_erro
 B3D_API void b3d_Bnd_Box_Add__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Add(*P);
     return;
@@ -511,7 +511,7 @@ B3D_API void b3d_Bnd_Box_Add__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** er
 B3D_API void b3d_Bnd_Box_Add__gp_Pnt__gp_Dir(void* self, const gp_Pnt* P, const gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Add(*P, *D);
     return;
@@ -522,7 +522,7 @@ B3D_API void b3d_Bnd_Box_Add__gp_Pnt__gp_Dir(void* self, const gp_Pnt* P, const 
 B3D_API void b3d_Bnd_Box_Add__gp_Dir(void* self, const gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_Box*>(self)->Add(*D);
     return;
@@ -533,7 +533,7 @@ B3D_API void b3d_Bnd_Box_Add__gp_Dir(void* self, const gp_Dir* D, b3d_error** er
 B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*P);
     return r ? 1 : 0;
@@ -545,7 +545,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pnt(void* self, const gp_Pnt* P, b3d_error
 B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Lin(void* self, const gp_Lin* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*L);
     return r ? 1 : 0;
@@ -557,7 +557,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Lin(void* self, const gp_Lin* L, b3d_error
 B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pln(void* self, const gp_Pln* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*P);
     return r ? 1 : 0;
@@ -569,7 +569,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pln(void* self, const gp_Pln* P, b3d_error
 B3D_API uint8_t b3d_Bnd_Box_IsOut__Bnd_Box(void* self, const Bnd_Box* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*Other);
     return r ? 1 : 0;
@@ -581,7 +581,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__Bnd_Box(void* self, const Bnd_Box* Other, b3d
 B3D_API uint8_t b3d_Bnd_Box_IsOut__Bnd_Box__gp_Trsf(void* self, const Bnd_Box* Other, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*Other, *T);
     return r ? 1 : 0;
@@ -593,7 +593,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__Bnd_Box__gp_Trsf(void* self, const Bnd_Box* O
 B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Trsf__Bnd_Box__gp_Trsf(void* self, const gp_Trsf* T1, const Bnd_Box* Other, const gp_Trsf* T2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*T1, *Other, *T2);
     return r ? 1 : 0;
@@ -605,7 +605,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Trsf__Bnd_Box__gp_Trsf(void* self, const g
 B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pnt__gp_Pnt__gp_Dir(void* self, const gp_Pnt* P1, const gp_Pnt* P2, const gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->IsOut(*P1, *P2, *D);
     return r ? 1 : 0;
@@ -617,7 +617,7 @@ B3D_API uint8_t b3d_Bnd_Box_IsOut__gp_Pnt__gp_Pnt__gp_Dir(void* self, const gp_P
 B3D_API uint8_t b3d_Bnd_Box_Contains__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->Contains(*theP);
     return r ? 1 : 0;
@@ -629,7 +629,7 @@ B3D_API uint8_t b3d_Bnd_Box_Contains__gp_Pnt(void* self, const gp_Pnt* theP, b3d
 B3D_API uint8_t b3d_Bnd_Box_Intersects__Bnd_Box(void* self, const Bnd_Box* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->Intersects(*theOther);
     return r ? 1 : 0;
@@ -641,7 +641,7 @@ B3D_API uint8_t b3d_Bnd_Box_Intersects__Bnd_Box(void* self, const Bnd_Box* theOt
 B3D_API double b3d_Bnd_Box_Distance__Bnd_Box(void* self, const Bnd_Box* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->Distance(*Other);
     return r;
@@ -653,7 +653,7 @@ B3D_API double b3d_Bnd_Box_Distance__Bnd_Box(void* self, const Bnd_Box* Other, b
 B3D_API double b3d_Bnd_Box_SquareExtent(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->SquareExtent();
     return r;
@@ -665,7 +665,7 @@ B3D_API double b3d_Bnd_Box_SquareExtent(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_Box_FinitePart(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->FinitePart();
     return new Bnd_Box(r);
@@ -677,7 +677,7 @@ B3D_API void* b3d_Bnd_Box_FinitePart(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_Box_HasFinitePart(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_Box*>(self)->HasFinitePart();
     return r ? 1 : 0;

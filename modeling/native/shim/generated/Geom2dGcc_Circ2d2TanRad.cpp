@@ -12,7 +12,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Geom2dGcc_Circ2d2TanRad>)
   {
-    try { return new Geom2dGcc_Circ2d2TanRad(*static_cast<const Geom2dGcc_Circ2d2TanRad*>(p)); }
+    B3D_TRY { return new Geom2dGcc_Circ2d2TanRad(*static_cast<const Geom2dGcc_Circ2d2TanRad*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2dGcc_QualifiedCurve__Geom2dGcc_QualifiedCurve__double__double(const Geom2dGcc_QualifiedCurve* Qualified1, const Geom2dGcc_QualifiedCurve* Qualified2, double Radius, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_Circ2d2TanRad(*Qualified1, *Qualified2, Radius, Tolerance);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2dGcc_QualifiedCurve__Geom2dG
 B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2dGcc_QualifiedCurve__Geom2d_Point__double__double(const Geom2dGcc_QualifiedCurve* Qualified1, Geom2d_Point* Point, double Radius, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_Circ2d2TanRad(*Qualified1, occ::handle<Geom2d_Point>(Point), Radius, Tolerance);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2dGcc_QualifiedCurve__Geom2d_
 B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2d_Point__Geom2d_Point__double__double(Geom2d_Point* Point1, Geom2d_Point* Point2, double Radius, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_Circ2d2TanRad(occ::handle<Geom2d_Point>(Point1), occ::handle<Geom2d_Point>(Point2), Radius, Tolerance);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_new__Geom2d_Point__Geom2d_Point__doubl
 B3D_API uint8_t b3d_Geom2dGcc_Circ2d2TanRad_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->IsDone();
     return r ? 1 : 0;
@@ -71,7 +71,7 @@ B3D_API uint8_t b3d_Geom2dGcc_Circ2d2TanRad_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom2dGcc_Circ2d2TanRad_NbSolutions(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->NbSolutions();
     return r;
@@ -83,7 +83,7 @@ B3D_API int32_t b3d_Geom2dGcc_Circ2d2TanRad_NbSolutions(void* self, b3d_error** 
 B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_ThisSolution__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->ThisSolution(Index);
     return new gp_Circ2d(r);
@@ -95,7 +95,7 @@ B3D_API void* b3d_Geom2dGcc_Circ2d2TanRad_ThisSolution__int(void* self, int32_t 
 B3D_API void b3d_Geom2dGcc_Circ2d2TanRad_Tangency1__int__ref_double__ref_double__mut_gp_Pnt2d(void* self, int32_t Index, double* ParSol, double* ParArg, gp_Pnt2d* PntSol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->Tangency1(Index, *ParSol, *ParArg, *PntSol);
     return;
@@ -106,7 +106,7 @@ B3D_API void b3d_Geom2dGcc_Circ2d2TanRad_Tangency1__int__ref_double__ref_double_
 B3D_API void b3d_Geom2dGcc_Circ2d2TanRad_Tangency2__int__ref_double__ref_double__mut_gp_Pnt2d(void* self, int32_t Index, double* ParSol, double* ParArg, gp_Pnt2d* PntSol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->Tangency2(Index, *ParSol, *ParArg, *PntSol);
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_Geom2dGcc_Circ2d2TanRad_Tangency2__int__ref_double__ref_double_
 B3D_API uint8_t b3d_Geom2dGcc_Circ2d2TanRad_IsTheSame1__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->IsTheSame1(Index);
     return r ? 1 : 0;
@@ -129,7 +129,7 @@ B3D_API uint8_t b3d_Geom2dGcc_Circ2d2TanRad_IsTheSame1__int(void* self, int32_t 
 B3D_API uint8_t b3d_Geom2dGcc_Circ2d2TanRad_IsTheSame2__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_Circ2d2TanRad*>(self)->IsTheSame2(Index);
     return r ? 1 : 0;

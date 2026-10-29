@@ -11,7 +11,7 @@ B3D_API void* b3d_Extrema_ExtPC_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Extrema_ExtPC>)
   {
-    try { return new Extrema_ExtPC(*static_cast<const Extrema_ExtPC*>(p)); }
+    B3D_TRY { return new Extrema_ExtPC(*static_cast<const Extrema_ExtPC*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_Extrema_ExtPC_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Extrema_ExtPC_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_ExtPC();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_Extrema_ExtPC_new(b3d_error** err)
 B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double__double(const gp_Pnt* theP, Adaptor3d_Curve* theC, double theUinf, double theUsup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_ExtPC(*theP, *theC, theUinf, theUsup);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double__doubl
 B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double__double__double(const gp_Pnt* theP, Adaptor3d_Curve* theC, double theUinf, double theUsup, double theTolF, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_ExtPC(*theP, *theC, theUinf, theUsup, theTolF);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double__doubl
 B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve(const gp_Pnt* theP, Adaptor3d_Curve* theC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_ExtPC(*theP, *theC);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve(const gp_Pnt* 
 B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double(const gp_Pnt* theP, Adaptor3d_Curve* theC, double theTolF, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Extrema_ExtPC(*theP, *theC, theTolF);
     return r;
@@ -82,7 +82,7 @@ B3D_API void* b3d_Extrema_ExtPC_new__gp_Pnt__tref_Adaptor3d_Curve__double(const 
 B3D_API void b3d_Extrema_ExtPC_Initialize__tref_Adaptor3d_Curve__double__double(void* self, Adaptor3d_Curve* theC, double theUinf, double theUsup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Extrema_ExtPC*>(self)->Initialize(*theC, theUinf, theUsup);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_Extrema_ExtPC_Initialize__tref_Adaptor3d_Curve__double__double(
 B3D_API void b3d_Extrema_ExtPC_Initialize__tref_Adaptor3d_Curve__double__double__double(void* self, Adaptor3d_Curve* theC, double theUinf, double theUsup, double theTolF, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Extrema_ExtPC*>(self)->Initialize(*theC, theUinf, theUsup, theTolF);
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_Extrema_ExtPC_Initialize__tref_Adaptor3d_Curve__double__double_
 B3D_API void b3d_Extrema_ExtPC_Perform__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Extrema_ExtPC*>(self)->Perform(*theP);
     return;
@@ -115,7 +115,7 @@ B3D_API void b3d_Extrema_ExtPC_Perform__gp_Pnt(void* self, const gp_Pnt* theP, b
 B3D_API uint8_t b3d_Extrema_ExtPC_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_ExtPC*>(self)->IsDone();
     return r ? 1 : 0;
@@ -127,7 +127,7 @@ B3D_API uint8_t b3d_Extrema_ExtPC_IsDone(void* self, b3d_error** err)
 B3D_API double b3d_Extrema_ExtPC_SquareDistance__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_ExtPC*>(self)->SquareDistance(theN);
     return r;
@@ -139,7 +139,7 @@ B3D_API double b3d_Extrema_ExtPC_SquareDistance__int(void* self, int32_t theN, b
 B3D_API int32_t b3d_Extrema_ExtPC_NbExt(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_ExtPC*>(self)->NbExt();
     return r;
@@ -151,7 +151,7 @@ B3D_API int32_t b3d_Extrema_ExtPC_NbExt(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Extrema_ExtPC_IsMin__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_ExtPC*>(self)->IsMin(theN);
     return r ? 1 : 0;
@@ -163,7 +163,7 @@ B3D_API uint8_t b3d_Extrema_ExtPC_IsMin__int(void* self, int32_t theN, b3d_error
 B3D_API void* b3d_Extrema_ExtPC_Point__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Extrema_ExtPC*>(self)->Point(theN);
     return new Extrema_POnCurv(r);
@@ -175,7 +175,7 @@ B3D_API void* b3d_Extrema_ExtPC_Point__int(void* self, int32_t theN, b3d_error**
 B3D_API void b3d_Extrema_ExtPC_TrimmedSquareDistances__ref_double__ref_double__mut_gp_Pnt__mut_gp_Pnt(void* self, double* theDist1, double* theDist2, gp_Pnt* theP1, gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Extrema_ExtPC*>(self)->TrimmedSquareDistances(*theDist1, *theDist2, *theP1, *theP2);
     return;

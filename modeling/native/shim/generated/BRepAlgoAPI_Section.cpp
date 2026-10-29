@@ -15,7 +15,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_as_BRepBuilderAPI_Command(void* p) { retur
 B3D_API void* b3d_BRepAlgoAPI_Section_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section();
     return r;
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new(b3d_error** err)
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__TopoDS_Shape(const TopoDS_Shape* S1, const TopoDS_Shape* S2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, *S2);
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__TopoDS_Shape(const Topo
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__TopoDS_Shape__bool(const TopoDS_Shape* S1, const TopoDS_Shape* S2, uint8_t PerformNow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, *S2, PerformNow != 0);
     return r;
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__TopoDS_Shape__bool(cons
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__gp_Pln(const TopoDS_Shape* S1, const gp_Pln* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, *Pl);
     return r;
@@ -63,7 +63,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__gp_Pln(const TopoDS_Sha
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__gp_Pln__bool(const TopoDS_Shape* S1, const gp_Pln* Pl, uint8_t PerformNow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, *Pl, PerformNow != 0);
     return r;
@@ -75,7 +75,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__gp_Pln__bool(const Topo
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__Geom_Surface(const TopoDS_Shape* S1, Geom_Surface* Sf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, occ::handle<Geom_Surface>(Sf));
     return r;
@@ -87,7 +87,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__Geom_Surface(const Topo
 B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__Geom_Surface__bool(const TopoDS_Shape* S1, Geom_Surface* Sf, uint8_t PerformNow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(*S1, occ::handle<Geom_Surface>(Sf), PerformNow != 0);
     return r;
@@ -99,7 +99,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__TopoDS_Shape__Geom_Surface__bool(cons
 B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__TopoDS_Shape(Geom_Surface* Sf, const TopoDS_Shape* S2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(occ::handle<Geom_Surface>(Sf), *S2);
     return r;
@@ -111,7 +111,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__TopoDS_Shape(Geom_Surfa
 B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__TopoDS_Shape__bool(Geom_Surface* Sf, const TopoDS_Shape* S2, uint8_t PerformNow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(occ::handle<Geom_Surface>(Sf), *S2, PerformNow != 0);
     return r;
@@ -123,7 +123,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__TopoDS_Shape__bool(Geom
 B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__Geom_Surface(Geom_Surface* Sf1, Geom_Surface* Sf2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(occ::handle<Geom_Surface>(Sf1), occ::handle<Geom_Surface>(Sf2));
     return r;
@@ -135,7 +135,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__Geom_Surface(Geom_Surfa
 B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__Geom_Surface__bool(Geom_Surface* Sf1, Geom_Surface* Sf2, uint8_t PerformNow, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepAlgoAPI_Section(occ::handle<Geom_Surface>(Sf1), occ::handle<Geom_Surface>(Sf2), PerformNow != 0);
     return r;
@@ -147,7 +147,7 @@ B3D_API void* b3d_BRepAlgoAPI_Section_new__Geom_Surface__Geom_Surface__bool(Geom
 B3D_API void b3d_BRepAlgoAPI_Section_Init1__TopoDS_Shape(void* self, const TopoDS_Shape* S1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init1(*S1);
     return;
@@ -158,7 +158,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init1__TopoDS_Shape(void* self, const TopoD
 B3D_API void b3d_BRepAlgoAPI_Section_Init1__gp_Pln(void* self, const gp_Pln* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init1(*Pl);
     return;
@@ -169,7 +169,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init1__gp_Pln(void* self, const gp_Pln* Pl,
 B3D_API void b3d_BRepAlgoAPI_Section_Init1__Geom_Surface(void* self, Geom_Surface* Sf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init1(occ::handle<Geom_Surface>(Sf));
     return;
@@ -180,7 +180,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init1__Geom_Surface(void* self, Geom_Surfac
 B3D_API void b3d_BRepAlgoAPI_Section_Init2__TopoDS_Shape(void* self, const TopoDS_Shape* S2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init2(*S2);
     return;
@@ -191,7 +191,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init2__TopoDS_Shape(void* self, const TopoD
 B3D_API void b3d_BRepAlgoAPI_Section_Init2__gp_Pln(void* self, const gp_Pln* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init2(*Pl);
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init2__gp_Pln(void* self, const gp_Pln* Pl,
 B3D_API void b3d_BRepAlgoAPI_Section_Init2__Geom_Surface(void* self, Geom_Surface* Sf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Init2(occ::handle<Geom_Surface>(Sf));
     return;
@@ -213,7 +213,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Init2__Geom_Surface(void* self, Geom_Surfac
 B3D_API void b3d_BRepAlgoAPI_Section_Approximation__bool(void* self, uint8_t B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Approximation(B != 0);
     return;
@@ -224,7 +224,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Approximation__bool(void* self, uint8_t B, 
 B3D_API void b3d_BRepAlgoAPI_Section_ComputePCurveOn1__bool(void* self, uint8_t B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->ComputePCurveOn1(B != 0);
     return;
@@ -235,7 +235,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_ComputePCurveOn1__bool(void* self, uint8_t 
 B3D_API void b3d_BRepAlgoAPI_Section_ComputePCurveOn2__bool(void* self, uint8_t B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->ComputePCurveOn2(B != 0);
     return;
@@ -246,7 +246,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_ComputePCurveOn2__bool(void* self, uint8_t 
 B3D_API void b3d_BRepAlgoAPI_Section_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepAlgoAPI_Section*>(self)->Build();
     return;
@@ -257,7 +257,7 @@ B3D_API void b3d_BRepAlgoAPI_Section_Build(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepAlgoAPI_Section_HasAncestorFaceOn1__TopoDS_Shape__mut_TopoDS_Shape(void* self, const TopoDS_Shape* E, TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_Section*>(self)->HasAncestorFaceOn1(*E, *F);
     return r ? 1 : 0;
@@ -269,7 +269,7 @@ B3D_API uint8_t b3d_BRepAlgoAPI_Section_HasAncestorFaceOn1__TopoDS_Shape__mut_To
 B3D_API uint8_t b3d_BRepAlgoAPI_Section_HasAncestorFaceOn2__TopoDS_Shape__mut_TopoDS_Shape(void* self, const TopoDS_Shape* E, TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepAlgoAPI_Section*>(self)->HasAncestorFaceOn2(*E, *F);
     return r ? 1 : 0;

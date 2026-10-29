@@ -11,7 +11,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_copy(const void* p, b3d_error** er
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomAPI_ProjectPointOnCurve>)
   {
-    try { return new GeomAPI_ProjectPointOnCurve(*static_cast<const GeomAPI_ProjectPointOnCurve*>(p)); }
+    B3D_TRY { return new GeomAPI_ProjectPointOnCurve(*static_cast<const GeomAPI_ProjectPointOnCurve*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_copy(const void* p, b3d_error** er
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnCurve();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new(b3d_error** err)
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new__gp_Pnt__Geom_Curve(const gp_Pnt* P, Geom_Curve* Curve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnCurve(*P, occ::handle<Geom_Curve>(Curve));
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new__gp_Pnt__Geom_Curve(const gp_P
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new__gp_Pnt__Geom_Curve__double__double(const gp_Pnt* P, Geom_Curve* Curve, double Umin, double Usup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnCurve(*P, occ::handle<Geom_Curve>(Curve), Umin, Usup);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_new__gp_Pnt__Geom_Curve__double__d
 B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__gp_Pnt__Geom_Curve(void* self, const gp_Pnt* P, Geom_Curve* Curve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Init(*P, occ::handle<Geom_Curve>(Curve));
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__gp_Pnt__Geom_Curve(void* self
 B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__gp_Pnt__Geom_Curve__double__double(void* self, const gp_Pnt* P, Geom_Curve* Curve, double Umin, double Usup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Init(*P, occ::handle<Geom_Curve>(Curve), Umin, Usup);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__gp_Pnt__Geom_Curve__double__d
 B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__Geom_Curve__double__double(void* self, Geom_Curve* Curve, double Umin, double Usup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Init(occ::handle<Geom_Curve>(Curve), Umin, Usup);
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Init__Geom_Curve__double__double(vo
 B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Perform__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Perform(*P);
     return;
@@ -102,7 +102,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Perform__gp_Pnt(void* self, const g
 B3D_API int32_t b3d_GeomAPI_ProjectPointOnCurve_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->NbPoints();
     return r;
@@ -114,7 +114,7 @@ B3D_API int32_t b3d_GeomAPI_ProjectPointOnCurve_NbPoints(void* self, b3d_error**
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_Point__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Point(Index);
     return new gp_Pnt(r);
@@ -126,7 +126,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_Point__int(void* self, int32_t Ind
 B3D_API double b3d_GeomAPI_ProjectPointOnCurve_Parameter__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Parameter(Index);
     return r;
@@ -138,7 +138,7 @@ B3D_API double b3d_GeomAPI_ProjectPointOnCurve_Parameter__int(void* self, int32_
 B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Parameter__int__ref_double(void* self, int32_t Index, double* U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Parameter(Index, *U);
     return;
@@ -149,7 +149,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnCurve_Parameter__int__ref_double(void* se
 B3D_API double b3d_GeomAPI_ProjectPointOnCurve_Distance__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Distance(Index);
     return r;
@@ -161,7 +161,7 @@ B3D_API double b3d_GeomAPI_ProjectPointOnCurve_Distance__int(void* self, int32_t
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_NearestPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->NearestPoint();
     return new gp_Pnt(r);
@@ -173,7 +173,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_NearestPoint(void* self, b3d_error
 B3D_API double b3d_GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->LowerDistanceParameter();
     return r;
@@ -185,7 +185,7 @@ B3D_API double b3d_GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(void* self
 B3D_API double b3d_GeomAPI_ProjectPointOnCurve_LowerDistance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->LowerDistance();
     return r;
@@ -197,7 +197,7 @@ B3D_API double b3d_GeomAPI_ProjectPointOnCurve_LowerDistance(void* self, b3d_err
 B3D_API void* b3d_GeomAPI_ProjectPointOnCurve_Extrema(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnCurve*>(self)->Extrema();
     return new Extrema_ExtPC(r);

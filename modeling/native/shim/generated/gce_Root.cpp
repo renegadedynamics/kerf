@@ -8,7 +8,7 @@ B3D_API void* b3d_gce_Root_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gce_Root>)
   {
-    try { return new gce_Root(*static_cast<const gce_Root*>(p)); }
+    B3D_TRY { return new gce_Root(*static_cast<const gce_Root*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_gce_Root_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<gce_Root>)
   {
-    try { return new gce_Root(); }
+    B3D_TRY { return new gce_Root(); }
     B3D_CATCH(err)
   }
   else
@@ -32,7 +32,7 @@ B3D_API void* b3d_gce_Root_new(b3d_error** err)
 B3D_API uint8_t b3d_gce_Root_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gce_Root*>(self)->IsDone();
     return r ? 1 : 0;
@@ -44,7 +44,7 @@ B3D_API uint8_t b3d_gce_Root_IsDone(void* self, b3d_error** err)
 B3D_API uint8_t b3d_gce_Root_IsError(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gce_Root*>(self)->IsError();
     return r ? 1 : 0;
@@ -56,7 +56,7 @@ B3D_API uint8_t b3d_gce_Root_IsError(void* self, b3d_error** err)
 B3D_API int32_t b3d_gce_Root_Status(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gce_Root*>(self)->Status();
     return static_cast<int32_t>(r);

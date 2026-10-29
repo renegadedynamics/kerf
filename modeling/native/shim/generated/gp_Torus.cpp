@@ -15,7 +15,7 @@ B3D_API void* b3d_gp_Torus_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Torus>)
   {
-    try { return new gp_Torus(*static_cast<const gp_Torus*>(p)); }
+    B3D_TRY { return new gp_Torus(*static_cast<const gp_Torus*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_gp_Torus_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Torus_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Torus();
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_gp_Torus_new(b3d_error** err)
 B3D_API void* b3d_gp_Torus_new__gp_Ax3__double__double(const gp_Ax3* theA3, double theMajorRadius, double theMinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Torus(*theA3, theMajorRadius, theMinorRadius);
     return r;
@@ -50,7 +50,7 @@ B3D_API void* b3d_gp_Torus_new__gp_Ax3__double__double(const gp_Ax3* theA3, doub
 B3D_API void b3d_gp_Torus_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->SetAxis(*theA1);
     return;
@@ -61,7 +61,7 @@ B3D_API void b3d_gp_Torus_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_e
 B3D_API void b3d_gp_Torus_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->SetLocation(*theLoc);
     return;
@@ -72,7 +72,7 @@ B3D_API void b3d_gp_Torus_SetLocation__gp_Pnt(void* self, const gp_Pnt* theLoc, 
 B3D_API void b3d_gp_Torus_SetMajorRadius__double(void* self, double theMajorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->SetMajorRadius(theMajorRadius);
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_gp_Torus_SetMajorRadius__double(void* self, double theMajorRadi
 B3D_API void b3d_gp_Torus_SetMinorRadius__double(void* self, double theMinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->SetMinorRadius(theMinorRadius);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_gp_Torus_SetMinorRadius__double(void* self, double theMinorRadi
 B3D_API void b3d_gp_Torus_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->SetPosition(*theA3);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_gp_Torus_SetPosition__gp_Ax3(void* self, const gp_Ax3* theA3, b
 B3D_API double b3d_gp_Torus_Area(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Area();
     return r;
@@ -117,7 +117,7 @@ B3D_API double b3d_gp_Torus_Area(void* self, b3d_error** err)
 B3D_API void b3d_gp_Torus_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->UReverse();
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_gp_Torus_UReverse(void* self, b3d_error** err)
 B3D_API void b3d_gp_Torus_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->VReverse();
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_gp_Torus_VReverse(void* self, b3d_error** err)
 B3D_API uint8_t b3d_gp_Torus_Direct(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Direct();
     return r ? 1 : 0;
@@ -151,7 +151,7 @@ B3D_API uint8_t b3d_gp_Torus_Direct(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Torus_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Axis();
     return new gp_Ax1(r);
@@ -163,7 +163,7 @@ B3D_API void* b3d_gp_Torus_Axis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Torus_Coefficients__mut_TColStd_Array1OfReal(void* self, NCollection_Array1<double>* theCoef, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Coefficients(*theCoef);
     return;
@@ -174,7 +174,7 @@ B3D_API void b3d_gp_Torus_Coefficients__mut_TColStd_Array1OfReal(void* self, NCo
 B3D_API void* b3d_gp_Torus_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Location();
     return new gp_Pnt(r);
@@ -186,7 +186,7 @@ B3D_API void* b3d_gp_Torus_Location(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Torus_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Position();
     return new gp_Ax3(r);
@@ -198,7 +198,7 @@ B3D_API void* b3d_gp_Torus_Position(void* self, b3d_error** err)
 B3D_API double b3d_gp_Torus_MajorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->MajorRadius();
     return r;
@@ -210,7 +210,7 @@ B3D_API double b3d_gp_Torus_MajorRadius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Torus_MinorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->MinorRadius();
     return r;
@@ -222,7 +222,7 @@ B3D_API double b3d_gp_Torus_MinorRadius(void* self, b3d_error** err)
 B3D_API double b3d_gp_Torus_Volume(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Volume();
     return r;
@@ -234,7 +234,7 @@ B3D_API double b3d_gp_Torus_Volume(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Torus_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->XAxis();
     return new gp_Ax1(r);
@@ -246,7 +246,7 @@ B3D_API void* b3d_gp_Torus_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Torus_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->YAxis();
     return new gp_Ax1(r);
@@ -258,7 +258,7 @@ B3D_API void* b3d_gp_Torus_YAxis(void* self, b3d_error** err)
 B3D_API void b3d_gp_Torus_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Mirror(*theP);
     return;
@@ -269,7 +269,7 @@ B3D_API void b3d_gp_Torus_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_err
 B3D_API void* b3d_gp_Torus_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Mirrored(*theP);
     return new gp_Torus(r);
@@ -281,7 +281,7 @@ B3D_API void* b3d_gp_Torus_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_
 B3D_API void b3d_gp_Torus_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Mirror(*theA1);
     return;
@@ -292,7 +292,7 @@ B3D_API void b3d_gp_Torus_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_er
 B3D_API void* b3d_gp_Torus_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Mirrored(*theA1);
     return new gp_Torus(r);
@@ -304,7 +304,7 @@ B3D_API void* b3d_gp_Torus_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d
 B3D_API void b3d_gp_Torus_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Mirror(*theA2);
     return;
@@ -315,7 +315,7 @@ B3D_API void b3d_gp_Torus_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_er
 B3D_API void* b3d_gp_Torus_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Mirrored(*theA2);
     return new gp_Torus(r);
@@ -327,7 +327,7 @@ B3D_API void* b3d_gp_Torus_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d
 B3D_API void b3d_gp_Torus_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Rotate(*theA1, theAng);
     return;
@@ -338,7 +338,7 @@ B3D_API void b3d_gp_Torus_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1
 B3D_API void* b3d_gp_Torus_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Rotated(*theA1, theAng);
     return new gp_Torus(r);
@@ -350,7 +350,7 @@ B3D_API void* b3d_gp_Torus_Rotated__gp_Ax1__double(void* self, const gp_Ax1* the
 B3D_API void b3d_gp_Torus_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Scale(*theP, theS);
     return;
@@ -361,7 +361,7 @@ B3D_API void b3d_gp_Torus_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, 
 B3D_API void* b3d_gp_Torus_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Scaled(*theP, theS);
     return new gp_Torus(r);
@@ -373,7 +373,7 @@ B3D_API void* b3d_gp_Torus_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP
 B3D_API void b3d_gp_Torus_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Transform(*theT);
     return;
@@ -384,7 +384,7 @@ B3D_API void b3d_gp_Torus_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3
 B3D_API void* b3d_gp_Torus_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Transformed(*theT);
     return new gp_Torus(r);
@@ -396,7 +396,7 @@ B3D_API void* b3d_gp_Torus_Transformed__gp_Trsf(void* self, const gp_Trsf* theT,
 B3D_API void b3d_gp_Torus_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Translate(*theV);
     return;
@@ -407,7 +407,7 @@ B3D_API void b3d_gp_Torus_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_
 B3D_API void* b3d_gp_Torus_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Translated(*theV);
     return new gp_Torus(r);
@@ -419,7 +419,7 @@ B3D_API void* b3d_gp_Torus_Translated__gp_Vec(void* self, const gp_Vec* theV, b3
 B3D_API void b3d_gp_Torus_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Torus*>(self)->Translate(*theP1, *theP2);
     return;
@@ -430,7 +430,7 @@ B3D_API void b3d_gp_Torus_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* th
 B3D_API void* b3d_gp_Torus_Translated__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Torus*>(self)->Translated(*theP1, *theP2);
     return new gp_Torus(r);

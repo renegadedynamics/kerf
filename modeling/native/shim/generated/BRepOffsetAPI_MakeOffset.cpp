@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_MakeOffset>)
   {
-    try { return new BRepOffsetAPI_MakeOffset(*static_cast<const BRepOffsetAPI_MakeOffset*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_MakeOffset(*static_cast<const BRepOffsetAPI_MakeOffset*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new(b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face(const TopoDS_Face* Spine, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face(const TopoDS_Face* S
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face__GeomAbs_JoinType(const TopoDS_Face* Spine, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine, static_cast<GeomAbs_JoinType>(Join));
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face__GeomAbs_JoinType(co
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face__GeomAbs_JoinType__bool(const TopoDS_Face* Spine, int32_t Join, uint8_t IsOpenResult, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine, static_cast<GeomAbs_JoinType>(Join), IsOpenResult != 0);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Face__GeomAbs_JoinType__b
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire(const TopoDS_Wire* Spine, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine);
     return r;
@@ -85,7 +85,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire(const TopoDS_Wire* S
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire__GeomAbs_JoinType(const TopoDS_Wire* Spine, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine, static_cast<GeomAbs_JoinType>(Join));
     return r;
@@ -97,7 +97,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire__GeomAbs_JoinType(co
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire__GeomAbs_JoinType__bool(const TopoDS_Wire* Spine, int32_t Join, uint8_t IsOpenResult, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeOffset(*Spine, static_cast<GeomAbs_JoinType>(Join), IsOpenResult != 0);
     return r;
@@ -109,7 +109,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_new__TopoDS_Wire__GeomAbs_JoinType__b
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face(void* self, const TopoDS_Face* Spine, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init(*Spine);
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face(void* self, const To
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face__GeomAbs_JoinType(void* self, const TopoDS_Face* Spine, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init(*Spine, static_cast<GeomAbs_JoinType>(Join));
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face__GeomAbs_JoinType(vo
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face__GeomAbs_JoinType__bool(void* self, const TopoDS_Face* Spine, int32_t Join, uint8_t IsOpenResult, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init(*Spine, static_cast<GeomAbs_JoinType>(Join), IsOpenResult != 0);
     return;
@@ -142,7 +142,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__TopoDS_Face__GeomAbs_JoinType__b
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init();
     return;
@@ -153,7 +153,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init(void* self, b3d_error** err)
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__GeomAbs_JoinType(void* self, int32_t Join, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init(static_cast<GeomAbs_JoinType>(Join));
     return;
@@ -164,7 +164,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__GeomAbs_JoinType(void* self, int
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__GeomAbs_JoinType__bool(void* self, int32_t Join, uint8_t IsOpenResult, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Init(static_cast<GeomAbs_JoinType>(Join), IsOpenResult != 0);
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Init__GeomAbs_JoinType__bool(void* sel
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_SetApprox__bool(void* self, uint8_t ToApprox, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->SetApprox(ToApprox != 0);
     return;
@@ -186,7 +186,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_SetApprox__bool(void* self, uint8_t To
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_AddWire__TopoDS_Wire(void* self, const TopoDS_Wire* Spine, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->AddWire(*Spine);
     return;
@@ -197,7 +197,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_AddWire__TopoDS_Wire(void* self, const
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Perform__double(void* self, double Offset, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Perform(Offset);
     return;
@@ -208,7 +208,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Perform__double(void* self, double Off
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Perform__double__double(void* self, double Offset, double Alt, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Perform(Offset, Alt);
     return;
@@ -219,7 +219,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Perform__double__double(void* self, do
 B3D_API void b3d_BRepOffsetAPI_MakeOffset_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeOffset*>(self)->Build();
     return;
@@ -230,7 +230,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeOffset_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeOffset*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -242,7 +242,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeOffset_Generated__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepOffsetAPI_MakeOffset_ConvertFace__TopoDS_Face__double(const TopoDS_Face* theFace, double theAngleTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepOffsetAPI_MakeOffset::ConvertFace(*theFace, theAngleTolerance);
     return new TopoDS_Face(r);

@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeHalfSpace>)
   {
-    try { return new BRepPrimAPI_MakeHalfSpace(*static_cast<const BRepPrimAPI_MakeHalfSpace*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeHalfSpace(*static_cast<const BRepPrimAPI_MakeHalfSpace*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_as_BRepBuilderAPI_Command(void* p) {
 B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_new__TopoDS_Face__gp_Pnt(const TopoDS_Face* Face, const gp_Pnt* RefPnt, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeHalfSpace(*Face, *RefPnt);
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_new__TopoDS_Face__gp_Pnt(const TopoD
 B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_new__TopoDS_Shell__gp_Pnt(const TopoDS_Shell* Shell, const gp_Pnt* RefPnt, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeHalfSpace(*Shell, *RefPnt);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_new__TopoDS_Shell__gp_Pnt(const Topo
 B3D_API void* b3d_BRepPrimAPI_MakeHalfSpace_Solid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeHalfSpace*>(self)->Solid();
     return new TopoDS_Solid(r);

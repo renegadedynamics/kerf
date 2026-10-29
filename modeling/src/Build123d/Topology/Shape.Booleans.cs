@@ -137,6 +137,18 @@ public abstract partial class Shape
     /// <inheritdoc cref="Fuse(IEnumerable{Shape}, bool, double?)"/>
     public Shape Fuse(params Shape[] toFuse) => Fuse((IEnumerable<Shape>)toFuse);
 
+    /// <summary>Shapes as an error message names them: "a Box", "2 Cylinders", "a Box and 2 Cylinders".</summary>
+    private static string Names(IEnumerable<Shape> shapes)
+    {
+        var groups = shapes.GroupBy(s => s.GetType().Name).Select(g => g.Count() == 1 ? $"a {g.Key}" : $"{g.Count()} {g.Key}s").ToList();
+        return groups.Count switch
+        {
+            0 => "nothing",
+            1 => groups[0],
+            _ => string.Join(", ", groups[..^1]) + " and " + groups[^1],
+        };
+    }
+
     /// <summary>A boolean operation, its result cast to the highest-ranked class among the inputs.</summary>
     private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
     {
@@ -187,7 +199,11 @@ public abstract partial class Shape
             operation.SetRunParallel(true);
             // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
             operation.SetNonDestructive(true);
-            operation.Build();
+            using (OcctContext.Doing($"{TopoUtil.BooleanName(operation)} of {Names(argList)} with {Names(toolList)}"))
+            {
+                operation.Build();
+                TopoUtil.ThrowIfFailed(operation);
+            }
             topoResult = TopoUtil.Downcast(operation.Shape());
             history = ShapeHistory.FromBoolean(operation, arg, tool);
         }

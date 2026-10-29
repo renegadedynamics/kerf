@@ -9,7 +9,7 @@ B3D_API void* b3d_STEPControl_Writer_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<STEPControl_Writer>)
   {
-    try { return new STEPControl_Writer(*static_cast<const STEPControl_Writer*>(p)); }
+    B3D_TRY { return new STEPControl_Writer(*static_cast<const STEPControl_Writer*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_STEPControl_Writer_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_STEPControl_Writer_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new STEPControl_Writer();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_STEPControl_Writer_new(b3d_error** err)
 B3D_API void b3d_STEPControl_Writer_SetTolerance__double(void* self, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Writer*>(self)->SetTolerance(Tol);
     return;
@@ -43,7 +43,7 @@ B3D_API void b3d_STEPControl_Writer_SetTolerance__double(void* self, double Tol,
 B3D_API void b3d_STEPControl_Writer_UnsetTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Writer*>(self)->UnsetTolerance();
     return;
@@ -54,7 +54,7 @@ B3D_API void b3d_STEPControl_Writer_UnsetTolerance(void* self, b3d_error** err)
 B3D_API int32_t b3d_STEPControl_Writer_Transfer__TopoDS_Shape__STEPControl_StepModelType(void* self, const TopoDS_Shape* sh, int32_t mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Writer*>(self)->Transfer(*sh, static_cast<STEPControl_StepModelType>(mode));
     return static_cast<int32_t>(r);
@@ -66,7 +66,7 @@ B3D_API int32_t b3d_STEPControl_Writer_Transfer__TopoDS_Shape__STEPControl_StepM
 B3D_API int32_t b3d_STEPControl_Writer_Transfer__TopoDS_Shape__STEPControl_StepModelType__bool(void* self, const TopoDS_Shape* sh, int32_t mode, uint8_t compgraph, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Writer*>(self)->Transfer(*sh, static_cast<STEPControl_StepModelType>(mode), compgraph != 0);
     return static_cast<int32_t>(r);
@@ -78,7 +78,7 @@ B3D_API int32_t b3d_STEPControl_Writer_Transfer__TopoDS_Shape__STEPControl_StepM
 B3D_API int32_t b3d_STEPControl_Writer_Write__string(void* self, const char* theFileName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<STEPControl_Writer*>(self)->Write(theFileName);
     return static_cast<int32_t>(r);
@@ -90,7 +90,7 @@ B3D_API int32_t b3d_STEPControl_Writer_Write__string(void* self, const char* the
 B3D_API void b3d_STEPControl_Writer_PrintStatsTransfer__int(void* self, int32_t what, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Writer*>(self)->PrintStatsTransfer(what);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_STEPControl_Writer_PrintStatsTransfer__int(void* self, int32_t 
 B3D_API void b3d_STEPControl_Writer_PrintStatsTransfer__int__int(void* self, int32_t what, int32_t mode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Writer*>(self)->PrintStatsTransfer(what, mode);
     return;
@@ -112,7 +112,7 @@ B3D_API void b3d_STEPControl_Writer_PrintStatsTransfer__int__int(void* self, int
 B3D_API void b3d_STEPControl_Writer_CleanDuplicateEntities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<STEPControl_Writer*>(self)->CleanDuplicateEntities();
     return;

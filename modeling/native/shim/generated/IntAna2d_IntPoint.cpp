@@ -9,7 +9,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<IntAna2d_IntPoint>)
   {
-    try { return new IntAna2d_IntPoint(*static_cast<const IntAna2d_IntPoint*>(p)); }
+    B3D_TRY { return new IntAna2d_IntPoint(*static_cast<const IntAna2d_IntPoint*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_IntAna2d_IntPoint_new__double__double__double__double(double X, double Y, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_IntPoint(X, Y, U1, U2);
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_new__double__double__double__double(double X
 B3D_API void* b3d_IntAna2d_IntPoint_new__double__double__double(double X, double Y, double U1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_IntPoint(X, Y, U1);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_new__double__double__double(double X, double
 B3D_API void* b3d_IntAna2d_IntPoint_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntAna2d_IntPoint();
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_new(b3d_error** err)
 B3D_API void b3d_IntAna2d_IntPoint_SetValue__double__double__double__double(void* self, double X, double Y, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntAna2d_IntPoint*>(self)->SetValue(X, Y, U1, U2);
     return;
@@ -67,7 +67,7 @@ B3D_API void b3d_IntAna2d_IntPoint_SetValue__double__double__double__double(void
 B3D_API void b3d_IntAna2d_IntPoint_SetValue__double__double__double(void* self, double X, double Y, double U1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntAna2d_IntPoint*>(self)->SetValue(X, Y, U1);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_IntAna2d_IntPoint_SetValue__double__double__double(void* self, 
 B3D_API void* b3d_IntAna2d_IntPoint_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_IntPoint*>(self)->Value();
     return new gp_Pnt2d(r);
@@ -90,7 +90,7 @@ B3D_API void* b3d_IntAna2d_IntPoint_Value(void* self, b3d_error** err)
 B3D_API uint8_t b3d_IntAna2d_IntPoint_SecondIsImplicit(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_IntPoint*>(self)->SecondIsImplicit();
     return r ? 1 : 0;
@@ -102,7 +102,7 @@ B3D_API uint8_t b3d_IntAna2d_IntPoint_SecondIsImplicit(void* self, b3d_error** e
 B3D_API double b3d_IntAna2d_IntPoint_ParamOnFirst(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_IntPoint*>(self)->ParamOnFirst();
     return r;
@@ -114,7 +114,7 @@ B3D_API double b3d_IntAna2d_IntPoint_ParamOnFirst(void* self, b3d_error** err)
 B3D_API double b3d_IntAna2d_IntPoint_ParamOnSecond(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntAna2d_IntPoint*>(self)->ParamOnSecond();
     return r;

@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepTools_WireExplorer>)
   {
-    try { return new BRepTools_WireExplorer(*static_cast<const BRepTools_WireExplorer*>(p)); }
+    B3D_TRY { return new BRepTools_WireExplorer(*static_cast<const BRepTools_WireExplorer*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepTools_WireExplorer_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepTools_WireExplorer();
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_new(b3d_error** err)
 B3D_API void* b3d_BRepTools_WireExplorer_new__TopoDS_Wire(const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepTools_WireExplorer(*W);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_new__TopoDS_Wire(const TopoDS_Wire* W, 
 B3D_API void* b3d_BRepTools_WireExplorer_new__TopoDS_Wire__TopoDS_Face(const TopoDS_Wire* W, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepTools_WireExplorer(*W, *F);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_new__TopoDS_Wire__TopoDS_Face(const Top
 B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire(void* self, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_WireExplorer*>(self)->Init(*W);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire(void* self, const Topo
 B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire__TopoDS_Face(void* self, const TopoDS_Wire* W, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_WireExplorer*>(self)->Init(*W, *F);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire__TopoDS_Face(void* sel
 B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire__TopoDS_Face__double__double__double__double(void* self, const TopoDS_Wire* W, const TopoDS_Face* F, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_WireExplorer*>(self)->Init(*W, *F, UMin, UMax, VMin, VMax);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_BRepTools_WireExplorer_Init__TopoDS_Wire__TopoDS_Face__double__
 B3D_API uint8_t b3d_BRepTools_WireExplorer_More(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_WireExplorer*>(self)->More();
     return r ? 1 : 0;
@@ -104,7 +104,7 @@ B3D_API uint8_t b3d_BRepTools_WireExplorer_More(void* self, b3d_error** err)
 B3D_API void b3d_BRepTools_WireExplorer_Next(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_WireExplorer*>(self)->Next();
     return;
@@ -115,7 +115,7 @@ B3D_API void b3d_BRepTools_WireExplorer_Next(void* self, b3d_error** err)
 B3D_API void* b3d_BRepTools_WireExplorer_Current(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_WireExplorer*>(self)->Current();
     return new TopoDS_Edge(r);
@@ -127,7 +127,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_Current(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepTools_WireExplorer_Orientation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_WireExplorer*>(self)->Orientation();
     return static_cast<int32_t>(r);
@@ -139,7 +139,7 @@ B3D_API int32_t b3d_BRepTools_WireExplorer_Orientation(void* self, b3d_error** e
 B3D_API void* b3d_BRepTools_WireExplorer_CurrentVertex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepTools_WireExplorer*>(self)->CurrentVertex();
     return new TopoDS_Vertex(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_BRepTools_WireExplorer_CurrentVertex(void* self, b3d_error** e
 B3D_API void b3d_BRepTools_WireExplorer_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepTools_WireExplorer*>(self)->Clear();
     return;

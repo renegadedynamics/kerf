@@ -11,7 +11,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_copy(const void* p, b3d_error**
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomAPI_PointsToBSplineSurface>)
   {
-    try { return new GeomAPI_PointsToBSplineSurface(*static_cast<const GeomAPI_PointsToBSplineSurface*>(p)); }
+    B3D_TRY { return new GeomAPI_PointsToBSplineSurface(*static_cast<const GeomAPI_PointsToBSplineSurface*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_copy(const void* p, b3d_error**
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new(b3d_error** err)
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt(const NCollection_Array2<gp_Pnt>* Points, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt(const N
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int(const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, DegMin);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int(co
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__int(const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, DegMin, DegMax);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__i
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__int__GeomAbs_Shape(const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return r;
@@ -82,7 +82,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__i
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__int__GeomAbs_Shape__double(const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return r;
@@ -94,7 +94,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__int__i
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx_ParametrizationType(const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, static_cast<Approx_ParametrizationType>(ParType));
     return r;
@@ -106,7 +106,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx_ParametrizationType__int(const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin);
     return r;
@@ -118,7 +118,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int(const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax);
     return r;
@@ -130,7 +130,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int__GeomAbs_Shape(const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return r;
@@ -142,7 +142,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int__GeomAbs_Shape__double(const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return r;
@@ -154,7 +154,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__Approx
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double__double__double(const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, Weight1, Weight2, Weight3);
     return r;
@@ -166,7 +166,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double__double__double__int(const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, Weight1, Weight2, Weight3, DegMax);
     return r;
@@ -178,7 +178,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double__double__double__int__GeomAbs_Shape(const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, Weight1, Weight2, Weight3, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return r;
@@ -190,7 +190,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double__double__double__int__GeomAbs_Shape__double(const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*Points, Weight1, Weight2, Weight3, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return r;
@@ -202,7 +202,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColgp_Array2OfPnt__double
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__double__double__double__double(const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*ZPoints, X0, dX, Y0, dY);
     return r;
@@ -214,7 +214,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__doub
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__double__double__double__double__int(const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*ZPoints, X0, dX, Y0, dY, DegMin);
     return r;
@@ -226,7 +226,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__doub
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__double__double__double__double__int__int(const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax);
     return r;
@@ -238,7 +238,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__doub
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__double__double__double__double__int__int__GeomAbs_Shape(const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return r;
@@ -250,7 +250,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__doub
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__double__double__double__double__int__int__GeomAbs_Shape__double(const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_PointsToBSplineSurface(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return r;
@@ -262,7 +262,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_new__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt(void* self, const NCollection_Array2<gp_Pnt>* Points, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points);
     return;
@@ -273,7 +273,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt(void* s
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, DegMin);
     return;
@@ -284,7 +284,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int(vo
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__int(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, DegMin, DegMax);
     return;
@@ -295,7 +295,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__i
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__int__GeomAbs_Shape(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return;
@@ -306,7 +306,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__i
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__int__GeomAbs_Shape__double(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return;
@@ -317,7 +317,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__int__i
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt(void* self, const NCollection_Array2<gp_Pnt>* Points, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Interpolate(*Points);
     return;
@@ -328,7 +328,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt(
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt__bool(void* self, const NCollection_Array2<gp_Pnt>* Points, uint8_t thePeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Interpolate(*Points, thePeriodic != 0);
     return;
@@ -339,7 +339,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt_
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt__Approx_ParametrizationType(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Interpolate(*Points, static_cast<Approx_ParametrizationType>(ParType));
     return;
@@ -350,7 +350,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt_
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt__Approx_ParametrizationType__bool(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, uint8_t thePeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Interpolate(*Points, static_cast<Approx_ParametrizationType>(ParType), thePeriodic != 0);
     return;
@@ -361,7 +361,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColgp_Array2OfPnt_
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__double__double__double__double(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*ZPoints, X0, dX, Y0, dY);
     return;
@@ -372,7 +372,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__double__double__double__double__int(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*ZPoints, X0, dX, Y0, dY, DegMin);
     return;
@@ -383,7 +383,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__double__double__double__double__int__int(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax);
     return;
@@ -394,7 +394,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__double__double__double__double__int__int__GeomAbs_Shape(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return;
@@ -405,7 +405,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__double__double__double__double__int__int__GeomAbs_Shape__double(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*ZPoints, X0, dX, Y0, dY, DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return;
@@ -416,7 +416,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColStd_Array2OfReal__doub
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColStd_Array2OfReal__double__double__double__double(void* self, const NCollection_Array2<double>* ZPoints, double X0, double dX, double Y0, double dY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Interpolate(*ZPoints, X0, dX, Y0, dY);
     return;
@@ -427,7 +427,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Interpolate__TColStd_Array2OfRea
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType));
     return;
@@ -438,7 +438,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType__int(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin);
     return;
@@ -449,7 +449,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax);
     return;
@@ -460,7 +460,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int__GeomAbs_Shape(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return;
@@ -471,7 +471,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int__GeomAbs_Shape__double(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return;
@@ -482,7 +482,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx_ParametrizationType__int__int__GeomAbs_Shape__double__bool(void* self, const NCollection_Array2<gp_Pnt>* Points, int32_t ParType, int32_t DegMin, int32_t DegMax, int32_t Continuity, double Tol3D, uint8_t thePeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, static_cast<Approx_ParametrizationType>(ParType), DegMin, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D, thePeriodic != 0);
     return;
@@ -493,7 +493,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__Approx
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double__double__double(void* self, const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, Weight1, Weight2, Weight3);
     return;
@@ -504,7 +504,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double__double__double__int(void* self, const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, Weight1, Weight2, Weight3, DegMax);
     return;
@@ -515,7 +515,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double__double__double__int__GeomAbs_Shape(void* self, const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, int32_t Continuity, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, Weight1, Weight2, Weight3, DegMax, static_cast<GeomAbs_Shape>(Continuity));
     return;
@@ -526,7 +526,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double
 B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double__double__double__int__GeomAbs_Shape__double(void* self, const NCollection_Array2<gp_Pnt>* Points, double Weight1, double Weight2, double Weight3, int32_t DegMax, int32_t Continuity, double Tol3D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Init(*Points, Weight1, Weight2, Weight3, DegMax, static_cast<GeomAbs_Shape>(Continuity), Tol3D);
     return;
@@ -537,7 +537,7 @@ B3D_API void b3d_GeomAPI_PointsToBSplineSurface_Init__TColgp_Array2OfPnt__double
 B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_Surface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_PointsToBSplineSurface*>(self)->Surface();
     return b3d_retain(occ::handle<Geom_BSplineSurface>(r).get());
@@ -549,7 +549,7 @@ B3D_API void* b3d_GeomAPI_PointsToBSplineSurface_Surface(void* self, b3d_error**
 B3D_API uint8_t b3d_GeomAPI_PointsToBSplineSurface_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_PointsToBSplineSurface*>(self)->IsDone();
     return r ? 1 : 0;

@@ -9,7 +9,7 @@ B3D_API void* b3d_GProp_PrincipalProps_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GProp_PrincipalProps>)
   {
-    try { return new GProp_PrincipalProps(*static_cast<const GProp_PrincipalProps*>(p)); }
+    B3D_TRY { return new GProp_PrincipalProps(*static_cast<const GProp_PrincipalProps*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_GProp_PrincipalProps_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GProp_PrincipalProps_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GProp_PrincipalProps();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_GProp_PrincipalProps_new(b3d_error** err)
 B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->HasSymmetryAxis();
     return r ? 1 : 0;
@@ -44,7 +44,7 @@ B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryAxis(void* self, b3d_error**
 B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryAxis__double(void* self, double aTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->HasSymmetryAxis(aTol);
     return r ? 1 : 0;
@@ -56,7 +56,7 @@ B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryAxis__double(void* self, dou
 B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->HasSymmetryPoint();
     return r ? 1 : 0;
@@ -68,7 +68,7 @@ B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryPoint(void* self, b3d_error*
 B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryPoint__double(void* self, double aTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->HasSymmetryPoint(aTol);
     return r ? 1 : 0;
@@ -80,7 +80,7 @@ B3D_API uint8_t b3d_GProp_PrincipalProps_HasSymmetryPoint__double(void* self, do
 B3D_API void b3d_GProp_PrincipalProps_Moments__ref_double__ref_double__ref_double(void* self, double* Ixx, double* Iyy, double* Izz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GProp_PrincipalProps*>(self)->Moments(*Ixx, *Iyy, *Izz);
     return;
@@ -91,7 +91,7 @@ B3D_API void b3d_GProp_PrincipalProps_Moments__ref_double__ref_double__ref_doubl
 B3D_API void* b3d_GProp_PrincipalProps_FirstAxisOfInertia(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->FirstAxisOfInertia();
     return new gp_Vec(r);
@@ -103,7 +103,7 @@ B3D_API void* b3d_GProp_PrincipalProps_FirstAxisOfInertia(void* self, b3d_error*
 B3D_API void* b3d_GProp_PrincipalProps_SecondAxisOfInertia(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->SecondAxisOfInertia();
     return new gp_Vec(r);
@@ -115,7 +115,7 @@ B3D_API void* b3d_GProp_PrincipalProps_SecondAxisOfInertia(void* self, b3d_error
 B3D_API void* b3d_GProp_PrincipalProps_ThirdAxisOfInertia(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GProp_PrincipalProps*>(self)->ThirdAxisOfInertia();
     return new gp_Vec(r);
@@ -127,7 +127,7 @@ B3D_API void* b3d_GProp_PrincipalProps_ThirdAxisOfInertia(void* self, b3d_error*
 B3D_API void b3d_GProp_PrincipalProps_RadiusOfGyration__ref_double__ref_double__ref_double(void* self, double* Rxx, double* Ryy, double* Rzz, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GProp_PrincipalProps*>(self)->RadiusOfGyration(*Rxx, *Ryy, *Rzz);
     return;
