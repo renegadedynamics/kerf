@@ -99,20 +99,29 @@ internal sealed class TestSurfaceAdaptor : Adaptor3d_Surface
     public override double LastVParameter() => myV2;
     public override GeomAbs_Shape UContinuity() => mySurf.Continuity();
     public override GeomAbs_Shape VContinuity() => mySurf.Continuity();
-    public override int NbUIntervals(GeomAbs_Shape S) => 1;
-    public override int NbVIntervals(GeomAbs_Shape S) => 1;
 
-    public override void UIntervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    /// <summary>Interior interval bounds in U (strictly between the first and last parameters), if any.</summary>
+    public double[] UBreaks { get; init; } = [];
+
+    /// <summary>Interior interval bounds in V (strictly between the first and last parameters), if any.</summary>
+    public double[] VBreaks { get; init; } = [];
+
+    public override int NbUIntervals(GeomAbs_Shape S) => UBreaks.Length + 1;
+    public override int NbVIntervals(GeomAbs_Shape S) => VBreaks.Length + 1;
+
+    private static void Fill(NCollection_Array1<double> T, double theFirst, double[] theBreaks, double theLast)
     {
-        T[T.Lower()] = myU1;
-        T[T.Lower() + 1] = myU2;
+        T[T.Lower()] = theFirst;
+        for (int i = 0; i < theBreaks.Length; i++)
+        {
+            T[T.Lower() + 1 + i] = theBreaks[i];
+        }
+        T[T.Lower() + 1 + theBreaks.Length] = theLast;
     }
 
-    public override void VIntervals(NCollection_Array1<double> T, GeomAbs_Shape S)
-    {
-        T[T.Lower()] = myV1;
-        T[T.Lower() + 1] = myV2;
-    }
+    public override void UIntervals(NCollection_Array1<double> T, GeomAbs_Shape S) => Fill(T, myU1, UBreaks, myU2);
+
+    public override void VIntervals(NCollection_Array1<double> T, GeomAbs_Shape S) => Fill(T, myV1, VBreaks, myV2);
 
     public override Adaptor3d_Surface UTrim(double First, double Last, double Tol) => new TestSurfaceAdaptor(mySurf, First, Last, myV1, myV2);
     public override Adaptor3d_Surface VTrim(double First, double Last, double Tol) => new TestSurfaceAdaptor(mySurf, myU1, myU2, First, Last);
