@@ -24,9 +24,13 @@ public class GeomAPITests
     }
 
     [Fact]
-    public void To2d_WaitsForProjLibProjectedCurve()
+    public void To2d_ProjectsALineOnThePlane()
     {
-        Assert.Throws<Standard_NotImplemented>(() => GeomAPI.To2d(Line(0, 0, 0, 1, 0, 0), new gp_Pln()));
+        // a line above the XOY plane projects to the 2D line along u through the origin
+        Geom2d_Curve? aC = GeomAPI.To2d(Line(0, 0, 3, 1, 0, 0), new gp_Pln());
+        Geom2d_Line aLine = Assert.IsType<Geom2d_Line>(aC);
+        Assert.True(aLine.Value(0.0).IsEqual(new gp_Pnt2d(0, 0), Tol));
+        Assert.True(aLine.Lin2d().Direction().IsEqual(new gp_Dir2d(1, 0), Tol));
     }
 
     [Fact]

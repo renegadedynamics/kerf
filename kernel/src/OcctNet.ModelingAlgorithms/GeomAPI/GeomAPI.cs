@@ -18,13 +18,19 @@ public static partial class GeomAPI
     /// </summary>
     public static Geom2d_Curve? To2d(Geom_Curve C, in gp_Pln P)
     {
-        // TODO(6A): ProjLib_ProjectedCurve is not ported yet. OCCT:
-        //   ProjLib_ProjectedCurve Proj(new GeomAdaptor_Surface(new Geom_Plane(P)), new GeomAdaptor_Curve(C));
-        //   if (Proj.GetType() != GeomAbs_OffsetCurve && Proj.GetType() != GeomAbs_OtherCurve)
-        //     result = Geom2dAdaptor::MakeCurve(Proj);
-        _ = C;
-        _ = P;
-        throw new Standard_NotImplemented("TODO(6A): GeomAPI::To2d needs ProjLib_ProjectedCurve");
+        Geom2d_Curve? result = null;
+        var HC = new GeomAdaptor_Curve(C);
+        var Plane = new Geom_Plane(P);
+        var HS = new GeomAdaptor_Surface(Plane);
+
+        var Proj = new ProjLib_ProjectedCurve(HS, HC);
+
+        if (Proj.GetType() != GeomAbs_CurveType.GeomAbs_OffsetCurve && Proj.GetType() != GeomAbs_CurveType.GeomAbs_OtherCurve)
+        {
+            result = Geom2dAdaptor.MakeCurve(Proj);
+        }
+
+        return result;
     }
 
     /// <summary>Builds the 3D curve of the 2D curve <paramref name="C"/> placed in the plane <paramref name="P"/>.</summary>
