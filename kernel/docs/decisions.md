@@ -1491,3 +1491,89 @@ GeomAdaptor_TransformedCurve, GeomAdaptor_TransformedSurface); Adaptor3d_HSurfac
       reversed: 1,082,775 values. All 5,221,375 values are bit-identical. GeomAdaptor_SurfaceOfRevolution,
       GeomAdaptor_SurfaceOfLinearExtrusion, the transformed adaptors, GeomAdaptor and Adaptor3d_HSurfaceTool have no
       native binding: the ported GTests and OCCT.NET's own unit tests cover them.
+
+## Phase 2: unit 3B, curve extrema
+
+Extrema's curve templates (Extrema_GGExtPC, GGenExtPC, GFuncExtPC, GLocateExtPC, GenLocateExtPC, GFuncExtCC,
+GGenExtCC, GenLocateExtCC) in their 3D and 2D instantiations, Extrema_CurveTool, Extrema_Curve2dTool,
+Extrema_ExtCC, Extrema_ExtCC2d, Extrema_LocateExtCC, Extrema_LocateExtCC2d and Extrema_GlobOptFuncCC.
+
+218. **The templates are ported once per instantiation, the 2D files generated from the 3D ones** (rules, section 9;
+      as GCPnts, decision 187). Every template is instantiated exactly twice, over (Adaptor3d_Curve,
+      Extrema_CurveTool, gp_Pnt, gp_Vec, Extrema_POnCurv, Extrema_ExtPElC) and their 2D counterparts: its parameters
+      are the 3D/2D axis and nothing else. The 2D files are the output of `tools/extrema-to2d.sed` on the 3D ones
+      (no hand edits; re-running it is the check that they are in step), and
+      `Extrema_CurvePortTests.TwoD_MatchesThreeD` checks that ExtPC, LocateExtPC, ExtCC (through ECC) and
+      LocateExtCC give bit-identical parameters, points and distances on planar 3D curves and the 2D curves built
+      from the same numbers. Rejected: one generic body over a static-abstract tool interface. gp_Pnt/gp_Pnt2d and
+      gp_Vec/gp_Vec2d share no interface, so the interface would also have to wrap the point and vector operations
+      (`TheVector(P, Q)`, `Dot`, `Magnitude`, `SquareDistance`, the scalar operators), and the elementary solvers
+      (ExtPElC/ExtPElC2d, ExtElC/ExtElC2d) have different overload sets: the port would no longer read as the C++
+      does, for no speed gain (the per-instantiation code calls the adaptors directly, as OCCT's inlined tools do).
+      Extrema_ExtCC/ExtCC2d and LocateExtCC/LocateExtCC2d are separate classes in OCCT and are ported by hand.
+219. **One class per distinct instantiation, under OCCT's first name.** OCCT gives some instantiations several
+      `using` names for the same type: Extrema_ExtPC is also Extrema_ELPCOfLocateExtPC, Extrema_EPCOfExtPC is also
+      Extrema_EPCOfELPCOfLocateExtPC, and Extrema_PCFOfEPCOfExtPC is also Extrema_PCFOfEPCOfELPCOfLocateExtPC and
+      Extrema_PCLocFOfLocEPCOfLocateExtPC (the same in 2D). C# can't export a type alias (decision 186), so the
+      other names don't exist; their headers are in the `Port of:` lines of the class they name, and the template
+      headers in those of both instantiations. The anonymous-namespace helpers of Extrema_GGenExtCC.hxx are the
+      internal static class `Extrema_GGenExtCC`: the comparator (and a `Comparison<gp_XY>` over it for
+      `Span.Sort`, which replaces `std::sort`; points that compare equal are identical, so the order can't depend
+      on the sort algorithm), `ChangeIntervals` (taking the handle by `ref`), the cell-filter inspector as a struct
+      implementing `INCollection_CellFilter_Inspector<gp_XY, gp_XY>`, and `ProjPOnC` as two overloads. The
+      file-static functions of Extrema_GlobOptFuncCC.cxx are the internal static class `Extrema_GlobOptFuncCC`;
+      Extrema_GlobOptFuncCCC0/C1/C2 keep OCCT's 3D and 2D constructors and type switch.
+220. **Algorithm classes with OCCT's API** (decision 117): public `Initialize`/`Perform`/`SetCurve`/`SetRange`/
+      `SetTolerance`, results by value (`const ThePOnC&` returns a copy), `out` for `Points`, `Point(P1, P2)` and
+      `TrimmedSquareDistances`. By-value members are allocated with the object (`= new()`). The curves (OCCT's
+      `TheCurve*`, `void*` in GFuncExtCC and GGenExtCC) are adaptor references kept as OCCT keeps the pointers:
+      the caller's adaptor must outlive the algorithm, as in OCCT. `CurvePtr` returns the adaptor and
+      `SearchOfTolerance` takes one, compared by reference as OCCT compares the pointers. Extrema_LocECC(2d) and
+      Extrema_LocateExtCC(2d) are computed by their constructors (readonly fields). Extrema_ExtCC2d's
+      `std::shared_ptr` locals are plain references; Extrema_ExtCC::PrepareParallelResult's two flags, `double` in
+      OCCT, are `bool`. The curve tools are public static classes; `DeflCurvIntervals` returns a
+      NCollection_HArray1.
+221. **Function results on failure.** Where Extrema_PCFOfEPCOfExtPC(2d)'s `Value`, `Values` and `Derivative` and
+      Extrema_GlobOptFuncCC's `Value` return false without writing their `out` results, the port writes 0
+      (decision 32). Their callers that ignore the status (math_FunctionRoots, Extrema_ECC's Lipschitz sampling)
+      reach this only where a derivative vanishes or the parameters leave the range; the oracle saw no difference.
+      Extrema_CCLocFOfLocECC's results are math_Vectors filled in place, so it leaves them unchanged as OCCT does.
+      `myInit` (GGenExtPC) and `myD1Init` (GFuncExtPC) are set and never read in OCCT; they are kept, with CS0414
+      suppressed on those fields only (as decision 120).
+222. **Left to other units.** Extrema_GCurveLocator (a template instantiated only by Geom2dInt and HLRBRep, outside
+      TKGeomBase), Extrema_GlobOptFuncCS, GlobOptFuncConicS and GlobOptFuncCQuadric (used by Extrema_ExtCS and
+      GenExtCS: units 4A/4B) and the enums Extrema_ExtFlag, ExtAlgo and ElementType (surface extrema). None of the
+      classes of this unit constructs a GeomAdaptor_Curve, so the code has no `TODO(2A)`; the tests use the
+      stand-in adaptors (decision 190) and mark it there.
+223. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/Extrema/ExtremaCurveOracleTests.cs`), on random lines, conics,
+      Bezier and B-spline curves (rational, periodic, with C0/C1 breaks) and ranges, with points on, near and far
+      from the curves:
+      - Extrema_ExtPC, bound natively, compared directly (whole range, sub-ranges with random function tolerances
+        through `Initialize`, an object reused for several points; every extremum's parameter, point, square
+        distance and IsMin, and the trimmed distances and points), also on offsets of smooth curves (the general
+        path): 44,029 of 45,057 values bit-identical. All the differences (up to 1.6e-12) are on the offset curves,
+        which the test stand-in evaluates through Geom_OffsetCurve where native GeomAdaptor_Curve has its own
+        evaluation (TODO(2A)); without them every value was bit-identical.
+      - Extrema_ExtPC through GeomAPI_ProjectPointOnCurve (its `Load` + `Initialize(myC, First, Last)` + `Perform`
+        path mirrored): 19,741 values, all bit-identical.
+      - Extrema_ExtPC2d through Geom2dAPI_ProjectPointOnCurve, on the real Geom2dAdaptor_Curve: 19,766 values, all
+        bit-identical.
+      - Extrema_ExtCC through BRepExtrema_DistShapeShape between two edges (GeomAPI_ExtremaCurveCurve isn't bound).
+        BRepExtrema_ExtCC sets the curves on the edge ranges and the tolerances max(Resolution(Confusion),
+        PConfusion), curve 2 first; the port is driven the same way. DistShapeShape's solutions inside both edges
+        are Extrema_ExtCC's extrema unchanged, and each must be one of the port's: 1,147 of 1,152 values
+        bit-identical over 128 solutions (200 edge pairs, two thirds of them moved to touch or nearly touch); the 5
+        others (2.2e-15) are one line/circle pair, solved by unit 1G's Extrema_ExtElC (trigonometric roots).
+        Solutions at vertices or from DistanceSS's PERFORM_C0 projections are skipped.
+      Not compared natively: Extrema_LocateExtPC(2d), LocateExtCC(2d), ExtCC2d and the ECC classes on their own
+      (no binding reaches them directly); the unit tests check them against known answers, dense sampling and the
+      3D/2D identity.
+224. **For later units.** 4A (surface extrema): Extrema_GenExtCS/ExtCS use Extrema_GlobOptFuncCS/ConicS/CQuadric
+      (not ported here) and Extrema_ExtPC/ExtCC; Extrema_ExtPExtS and ExtPRevS build GeomAdaptor_Curves and call
+      Extrema_ExtPC. 4B: Extrema_ExtCS calls Extrema_ExtCC and Extrema_ExtPC on adaptors it constructs. 5A/6A
+      (GeomLib, Approx_SameParameter, ProjLib_CompProjectedCurve/ProjectedCurve): they use Extrema_ExtPC,
+      LocateExtPC and their 2D twins on adaptors that must stay alive as long as the algorithm (decision 220).
+      Geom2dAPI_ProjectPointOnCurve (TKGeomAlgo) copies an Extrema_ExtPC2d by value (`myExtPC = theExtPC2d`); the
+      port has no copy constructor, so that port should keep the constructed object instead. Once unit 2A is
+      merged, the tests' `TestGeomAdaptor_Curve` should become GeomAdaptor_Curve, and the offset tolerance of the
+      ExtPC oracle test should go back to the default.
