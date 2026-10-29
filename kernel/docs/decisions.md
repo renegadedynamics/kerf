@@ -365,3 +365,60 @@ namespaces of function templates over duck-typed functors, returning result stru
 86. **A second assembly, OcctNet.ModelingData**, holds TKG2d, TKG3d, TKGeomBase and (phase 3) TKBRep, whose packages
     depend on each other in cycles and must therefore share an assembly. Test projects see every port assembly's
     internals (set once in src/Directory.Build.props).
+
+## Phase 2: the abstract geometry layer (29 October 2026)
+
+The bases of Geom, Geom2d and the adaptors, TopAbs, and the evaluation-representation helpers of GeomEval and
+Geom2dEval, ported first so that the concrete classes can be ported in parallel (docs/phase2-plan.md).
+
+501. **Abstract and virtual mutators are `protected internal`; the others are `internal`.** The abstract ones are
+     `Transform`, `Reverse`, `UReverse`, `VReverse`, `SetDirection`, `Cross` and `CrossCross`. Callers outside
+     OCCT.NET still can't change an object they are given, because `protected` access only works through their
+     own derived type. They can still derive their own curves and surfaces, as OCCT allows (an override is
+     `protected override` there, and `protected internal override` in an assembly that sees ModelingData's
+     internals). Every implementation starts with `CheckMutable()`, and so do the non-virtual mutators of the bases
+     (`Mirror`, `Rotate`, `Scale`, `Translate`, `SetAxis`, ...).
+     Rejected: `internal abstract`, which would forbid subclasses outside OCCT.NET altogether.
+502. **OCCT's return types are kept.** `Copy`, `Mirrored`, `Transformed`, `Reversed`, `Crossed`, ... return what
+     OCCT returns (`Geom_Geometry`, `Geom_Curve`, `Geom_Vector`), not covariant types, so ported code reads as the
+     C++ does (`(Geom_Line)L.Copy()` for `DownCast`). The `With` twins return the class that declares them
+     (`Geom_Conic.WithAxis` returns a `Geom_Conic`); the concrete classes add their own. Revisit if callers find
+     the casts heavy: covariant overrides of `Copy` would not break ported code.
+503. **Geom_Transformation and Geom2d_Transformation are freezable like geometry.** They get internal mutators with
+     `CheckMutable`, `With` twins, static factories (as gp_Trsf), and an added `PreMultiplied`. OCCT's in-place
+     compound operators (`*=` of Geom2d_Transformation, and `+=`, `-=`, `*=`, `/=` of Geom2d_VectorWithMagnitude)
+     are left out. The binary operators are kept.
+504. **Evaluation results.** `Geom_Curve.ResD1/ResD2/ResD3` and `Geom_Surface.ResD1/...` (and the Geom2d ones) are
+     nested structs with public fields, like decision 54's result structs. `D0` to `D3` take `out` parameters.
+     `Bounds` takes `out`, `TransformParameters` `ref`, `Geom_Transformation.Transforms` `ref`.
+505. **Adaptors' `GetType()` hides `object.GetType()`** (`public new virtual GeomAbs_CurveType GetType()`), so
+     OCCT's name stays. Code wanting the .NET type uses `DynamicType()`. A ported GTest named `GetType` is renamed
+     `GetType_` (xUnit rejects a test method hiding an `object` method).
+506. **Placeholders for concrete classes.** The bases need a few concrete classes as return types:
+     Geom_BezierCurve, Geom_BSplineCurve, Geom_OffsetCurve, Geom_BezierSurface, Geom_BSplineSurface,
+     Geom2d_BezierCurve and Geom2d_BSplineCurve. Each is an empty abstract class in the file its port will replace,
+     without a `Port of:` line, so port-status doesn't count it. Rejected: porting them here (14,000 lines, and
+     BSplSLib isn't merged) and `object` return types.
+507. **GeomEval_RepCurveDesc, GeomEval_RepSurfaceDesc and Geom2dEval_RepCurveDesc are in the abstract layer**,
+     with RepUtils. Geom and Geom2d call them, and they need only the bases, so the Geom ⇄ GeomEval cycle
+     disappears.
+     - The C++ namespaces are static classes with nested types.
+     - `std::size_t MaxDerivOrder` is an `int`, and `std::optional<Domain1d>` is `Domain1d?`.
+     - The map and domain structs have OCCT's default values through explicit parameterless constructors.
+     - RepUtils is internal; its `TryEval*` functions zero their `out` result when they return false.
+     - The descriptors are mutable classes with public fields, as in OCCT. A descriptor attached to a frozen curve
+       could therefore still be changed through a reference kept by whoever set it. The Geom porters keep
+       `SetEvalRepresentation` internal, clone descriptors in `Copy` (as OCCT does), and don't return stored
+       descriptors to callers.
+508. **Adaptors are working objects** (decision 21). Their setters (`Load`) are public, and the base adaptors are
+     concrete classes whose virtuals throw `Standard_NotImplemented`, as in OCCT. Adaptor3d_Curve/Surface's `D0`
+     to `DN` are non-virtual wrappers over `EvalD*`, as in OCCT 8. In Adaptor2d_Curve2d they stay virtual, and
+     `EvalD*` call them.
+509. **`Geom_UndefinedDerivative_Raise_if` and `Geom_UndefinedValue_Raise_if`** (and the Geom2d ones) are not
+     ported: OCCT defines them but never uses them. The exception classes are ported.
+510. **The phase 2 plan** (docs/phase2-plan.md) sets the order of everything else. There are 21 units of 8,000 to
+     15,000 lines in six waves, with the classes that close dependency cycles assigned explicitly: Geom_OffsetSurface
+     and Adaptor3d_HSurfaceTool go with GeomAdaptor; GeomConvert_SurfToAnaSurf and Approx's SameParameter,
+     CurveOnSurface and CurvlinFunc go with GeomLib; the elementary Extrema and ProjLib classes come early. The
+     generated tables of AppCont and AdvApp2Var (148,000 lines) are produced by a generator script, as the PLib
+     Jacobi tables were (decision 77).
