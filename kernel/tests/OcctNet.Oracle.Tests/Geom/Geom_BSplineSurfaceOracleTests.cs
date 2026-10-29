@@ -348,6 +348,36 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void Iso_curves()
+    {
+        var anOracle = new Oracle(output, 20261029 + 200);
+        for (int i = 0; i < Cases; i++)
+        {
+            (N.Geom_BSplineSurface aN, Geom_BSplineSurface aP) = RandomSurface(anOracle);
+            using (aN)
+            {
+                GeomIsoCurveCompare.SameIsos(anOracle, aN, aP, "B-spline surface");
+
+                // With and without CheckRational
+                aP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                double U = anOracle.Real(aU1, aU2), V = anOracle.Real(aV1, aV2);
+                foreach (bool aCheck in new[] { true, false })
+                {
+                    using (N.Geom_Curve aNIso = aN.UIso(U, aCheck)!)
+                    {
+                        GeomIsoCurveCompare.SameCurve(anOracle, aNIso, aP.UIso(U, aCheck), $"B-spline surface UIso({U}, {aCheck})");
+                    }
+                    using (N.Geom_Curve aNIso = aN.VIso(V, aCheck)!)
+                    {
+                        GeomIsoCurveCompare.SameCurve(anOracle, aNIso, aP.VIso(V, aCheck), $"B-spline surface VIso({V}, {aCheck})");
+                    }
+                }
+            }
+        }
+        anOracle.Report("Geom_BSplineSurface UIso and VIso");
+    }
+
+    [Fact]
     public void Edits()
     {
         var anOracle = new Oracle(output);

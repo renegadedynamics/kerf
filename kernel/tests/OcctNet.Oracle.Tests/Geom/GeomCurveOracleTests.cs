@@ -3,6 +3,7 @@
 
 using Xunit.Abstractions;
 using N = Build123d.Occt;
+using static OcctNet.Oracle.Tests.Geom.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -13,19 +14,14 @@ namespace OcctNet.Oracle.Tests;
 /// <remarks>
 /// The native curves are changed in place with OCCT's mutators; the port's through its public non-mutating
 /// twins (<c>KnotInserted</c>, <c>WithPole</c>, <c>Transformed</c>, ...), so the twins are checked too. Where
-/// native OCCT throws, the port must throw as well.
+/// native OCCT throws, the port must throw as well. Directions, axes and transformations are built on both sides
+/// from the same raw numbers (<see cref="Geom.GeomOracleInputs"/>, decision 1705): the last-bit differences first
+/// seen after rotations were differences of the inputs, so transformed curves are compared at the default
+/// tolerance like the rest, and so is the closure of infinite curves.
 /// </remarks>
 public class GeomCurveOracleTests(ITestOutputHelper output)
 {
     private const int Cases = 300;
-
-    /// <summary>
-    /// For evaluating transformed curves: native and port rotations differ in the last bits (sin and cos of MSVC
-    /// and .NET), and high-degree rational derivatives amplify that a lot (6.5e-9 seen on the second derivative of
-    /// a rational degree 11 Bezier whose transformed poles were within 6e-16). What Transform computes (the poles,
-    /// the axes) is compared at the default tolerance; evaluating the result is the same code as untransformed.
-    /// </summary>
-    private const double TransformedTolerance = 1e-6;
 
     // ---------------------------------------------------------------------------------------------
     // Conversions and comparisons
@@ -107,13 +103,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     {
         theO.Same(theN.FirstParameter(), theP.FirstParameter(), $"{theWhat} FirstParameter");
         theO.Same(theN.LastParameter(), theP.LastParameter(), $"{theWhat} LastParameter");
-        if (!Precision.IsInfinite(theP.FirstParameter()) && !Precision.IsInfinite(theP.LastParameter()))
-        {
-            // Not at +-Precision::Infinite(): an offset of a parabola is evaluated there at 1e100, where the
-            // last-bit difference between the port's axes and their native copies (Oracle.ToNative(gp_Ax2)
-            // recomputes the X direction) is multiplied by 1e200.
-            theO.Same(theN.IsClosed(), theP.IsClosed(), $"{theWhat} IsClosed");
-        }
+        theO.Same(theN.IsClosed(), theP.IsClosed(), $"{theWhat} IsClosed");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), $"{theWhat} IsPeriodic");
         Assert.Equal((int)theN.Continuity(), (int)theP.Continuity());
         for (int k = 0; k <= 5; k++)
@@ -166,9 +156,9 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             case 0:
             {
-                gp_Ax1 anAxis = theO.Ax1();
+                (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theO);
+                using var aNAxisOwner = aNAxis;
                 double anAngle = theO.Angle();
-                using var aNAxis = Oracle.ToNative(anAxis);
                 aNative.SetRotation(aNAxis, anAngle);
                 return (aNative, gp_Trsf.Rotation(anAxis, anAngle));
             }
@@ -189,18 +179,18 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             }
             case 3:
             {
-                gp_Ax2 anAx = theO.Ax2();
-                using var aNAx = Oracle.ToNative(anAx);
+                (N.gp_Ax2 aNAx, gp_Ax2 anAx) = Ax2sFromDirection(theO);
+                using var aNAxOwner = aNAx;
                 aNative.SetMirror(aNAx);
                 return (aNative, gp_Trsf.Mirror(anAx));
             }
             default:
             {
-                gp_Ax1 anAxis = theO.Ax1();
+                (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theO);
+                using var aNAxisOwner = aNAxis;
                 double anAngle = theO.Angle();
                 gp_Pnt aP = theO.Pnt();
                 double aS = theO.Real(0.2, 3);
-                using var aNAxis = Oracle.ToNative(anAxis);
                 using var aNP = Oracle.ToNative(aP);
                 using var aNS = new N.gp_Trsf();
                 aNative.SetRotation(aNAxis, anAngle);
@@ -281,7 +271,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 double aNU = theN.TransformedParameter(u, aNT);
                 double aU = theP.TransformedParameter(u, aT);
                 theO.Same(aNU, aU, $"{theWhat} TransformedParameter");
-                SameEval(theO, aNC, aC, aU, theMaxN, $"{theWhat} transformed", Math.Max(theTol, TransformedTolerance));
+                SameEval(theO, aNC, aC, aU, theMaxN, $"{theWhat} transformed", theTol);
             }
         }
     }
@@ -384,14 +374,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     /// <summary>A random conic or line; the second value is a sensible parameter range for unbounded curves.</summary>
     private static (N.Geom_Curve Native, Geom_Curve Port, double Range, string Kind) RandomElementary(Oracle theO, bool theNoLine = false)
     {
-        gp_Ax2 anAx2 = theO.Ax2();
-        using var aNAx2 = Oracle.ToNative(anAx2);
+        (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = Ax2sFromDirection(theO);
+        using var aNAx2Owner = aNAx2;
         switch (theO.Int(theNoLine ? 1 : 0, 4))
         {
             case 0:
             {
-                gp_Ax1 anAx1 = theO.Ax1();
-                using var aNAx1 = Oracle.ToNative(anAx1);
+                (N.gp_Ax1 aNAx1, gp_Ax1 anAx1) = Ax1s(theO);
+                using var aNAx1Owner = aNAx1;
                 return (new N.Geom_Line(aNAx1), new Geom_Line(anAx1), 100, "line");
             }
             case 1:
@@ -1148,14 +1138,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 }
                 using (aNTrim)
                 {
-                    gp_Dir aDir = anOracle.Dir();
+                    (N.gp_Dir aNDir, gp_Dir aDir) = Dirs(anOracle);
+                    using var aNDirOwner = aNDir;
                     double anOffset = anOracle.Real(0.1, 20) * (anOracle.Int(0, 1) == 0 ? 1 : -1);
-                    using var aNDir = Oracle.ToNative(aDir);
                     using var aNO = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir);
                     var aPO = new Geom_OffsetCurve(aPBasis, anOffset, aDir);
 
                     // nested: an offset of the offset folds into one offset of the basis
-                    using var aNDir2 = Oracle.ToNative(aDir);
+                    using var aNDir2 = new N.gp_Dir(aNDir);
                     double anOffset2 = anOracle.Real(-5, 5);
                     using var aNO2 = new N.Geom_OffsetCurve(aNO, anOffset2, aNDir2);
                     var aPO2 = new Geom_OffsetCurve(aPO, anOffset2, aDir);
@@ -1180,8 +1170,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
                     // the setters, through the twins
                     double anOffset3 = anOracle.Real(-10, 10);
-                    gp_Dir aDir3 = anOracle.Dir();
-                    using var aNDir3 = Oracle.ToNative(aDir3);
+                    (N.gp_Dir aNDir3, gp_Dir aDir3) = Dirs(anOracle);
+                    using var aNDir3Owner = aNDir3;
                     aNO.SetOffsetValue(anOffset3);
                     aNO.SetDirection(aNDir3);
                     Geom_OffsetCurve aPO3 = aPO.WithOffsetValue(anOffset3).WithDirection(aDir3);

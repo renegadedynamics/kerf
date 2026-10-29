@@ -11,7 +11,8 @@ namespace Occt;
 /// (a trimmed basis is replaced by its own basis).
 /// </summary>
 /// <remarks>
-/// <see cref="BasisSurface"/> returns the stored copy (shared, as in OCCT; callers can't change it).
+/// <see cref="BasisSurface"/> returns the stored copy frozen, as OCCT returns its handle; this surface's internal
+/// mutators then copy the basis surface again before changing it (decision 159).
 /// </remarks>
 public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
 {
@@ -51,7 +52,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         Geom_RectangularTrimmedSurface? T = S as Geom_RectangularTrimmedSurface;
         if (T is not null)
         {
-            basisSurf = (Geom_Surface)T.BasisSurface().Copy();
+            basisSurf = (Geom_Surface)T.basisSurf.Copy(); // OCCT.NET: the field, so that T's basis surface isn't frozen
         }
         else
         {
@@ -87,7 +88,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         Geom_RectangularTrimmedSurface? T = S as Geom_RectangularTrimmedSurface;
         if (T is not null)
         {
-            basisSurf = (Geom_Surface)T.BasisSurface().Copy();
+            basisSurf = (Geom_Surface)T.basisSurf.Copy(); // OCCT.NET: the field, so that T's basis surface isn't frozen
         }
         else
         {
@@ -319,13 +320,27 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         return aCopy;
     }
 
-    /// <summary>The basis surface (the trimmed surface's own copy; shared, not copied).</summary>
-    public Geom_Surface BasisSurface() => basisSurf;
+    /// <summary>The basis surface (the trimmed surface's own copy, frozen; shared, not copied).</summary>
+    public Geom_Surface BasisSurface()
+    {
+        basisSurf.Freeze();
+        return basisSurf;
+    }
+
+    // OCCT.NET: the basis surface may have been handed out (and frozen) by BasisSurface(); copy it before changing it.
+    private void ownBasisSurface()
+    {
+        if (basisSurf.IsFrozen())
+        {
+            basisSurf = (Geom_Surface)basisSurf.Copy();
+        }
+    }
 
     /// <summary>Reverses the U direction: the basis surface is reversed and the U trim values recomputed.</summary>
     protected internal sealed override void UReverse()
     {
         CheckMutable();
+        ownBasisSurface();
         double U1 = basisSurf.UReversedParameter(utrim2);
         double U2 = basisSurf.UReversedParameter(utrim1);
         basisSurf.UReverse();
@@ -339,6 +354,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     protected internal sealed override void VReverse()
     {
         CheckMutable();
+        ownBasisSurface();
         double V1 = basisSurf.VReversedParameter(vtrim2);
         double V2 = basisSurf.VReversedParameter(vtrim1);
         basisSurf.VReverse();
@@ -473,11 +489,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
 
         if (isvtrimmed)
         {
-            // TODO(1A): Geom_TrimmedCurve is ported by unit 1A.
-            //   occ::handle<Geom_TrimmedCurve> Ct;
-            //   Ct = new Geom_TrimmedCurve(C, vtrim1, vtrim2, true);
-            //   return Ct;
-            throw new Standard_NotImplemented("Geom_RectangularTrimmedSurface::UIso needs Geom_TrimmedCurve (unit 1A)");
+            Geom_TrimmedCurve Ct;
+            Ct = new Geom_TrimmedCurve(C, vtrim1, vtrim2, true);
+            return Ct;
         }
         else
         {
@@ -492,11 +506,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
 
         if (isutrimmed)
         {
-            // TODO(1A): Geom_TrimmedCurve is ported by unit 1A.
-            //   occ::handle<Geom_TrimmedCurve> Ct;
-            //   Ct = new Geom_TrimmedCurve(C, utrim1, utrim2, true);
-            //   return Ct;
-            throw new Standard_NotImplemented("Geom_RectangularTrimmedSurface::VIso needs Geom_TrimmedCurve (unit 1A)");
+            Geom_TrimmedCurve Ct;
+            Ct = new Geom_TrimmedCurve(C, utrim1, utrim2, true);
+            return Ct;
         }
         else
         {
@@ -526,6 +538,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     protected internal sealed override void Transform(in gp_Trsf T)
     {
         CheckMutable();
+        ownBasisSurface();
         basisSurf.Transform(T);
         basisSurf.TransformParameters(ref utrim1, ref vtrim1, T);
         basisSurf.TransformParameters(ref utrim2, ref vtrim2, T);

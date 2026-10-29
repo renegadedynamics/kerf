@@ -214,19 +214,15 @@ public class Geom_CylindricalSurface : Geom_ElementarySurface
     /// <summary>The U iso-parametric line (a Geom_Line).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        // TODO(1A): Geom_Line is ported by unit 1A.
-        //   occ::handle<Geom_Line> GL = new Geom_Line(ElSLib::CylinderUIso(pos, radius, U));
-        //   return GL;
-        throw new Standard_NotImplemented("Geom_CylindricalSurface::UIso needs Geom_Line (unit 1A)");
+        Geom_Line GL = new Geom_Line(ElSLib.CylinderUIso(pos, radius, U));
+        return GL;
     }
 
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        // TODO(1A): Geom_Circle is ported by unit 1A.
-        //   occ::handle<Geom_Circle> GC = new Geom_Circle(ElSLib::CylinderVIso(pos, radius, V));
-        //   return GC;
-        throw new Standard_NotImplemented("Geom_CylindricalSurface::VIso needs Geom_Circle (unit 1A)");
+        Geom_Circle GC = new Geom_Circle(ElSLib.CylinderVIso(pos, radius, V));
+        return GC;
     }
 
     protected internal sealed override void Transform(in gp_Trsf T)

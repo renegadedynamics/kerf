@@ -11,9 +11,9 @@ namespace OcctNet.Oracle.Tests.Geom;
 /// Geom_Plane, the cylindrical, conical, spherical and toroidal surfaces, Geom_SurfaceOfRevolution,
 /// Geom_SurfaceOfLinearExtrusion and Geom_RectangularTrimmedSurface against native OCCT: evaluation (D0 to D3 and
 /// DN), bounds, closure, periodicity, continuity, reversed parameters, U and V reversal, transformation (with
-/// TransformParameters and ParametricTransformation), the geometric queries of each class, and trimming. The
-/// swept surfaces revolve or extrude circles and non-periodic B-spline curves (PortCurves.cs mirrors OCCT's
-/// Geom_Circle and Geom_BSplineCurve until unit 1A's curves are merged).
+/// TransformParameters and ParametricTransformation), the geometric queries of each class, trimming, and the
+/// iso-curves (GeomIsoCurveCompare). The swept surfaces revolve or extrude circles and non-periodic B-spline
+/// curves.
 /// </summary>
 public class Geom_SurfacesOracleTests(ITestOutputHelper output)
 {
@@ -389,7 +389,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = Ax2s(theOracle);
             using var aNAx2Owner = aNAx2;
             double R = theOracle.Real(0.1, 10);
-            return (new N.Geom_Circle(aNAx2, R), new PortCircle(anAx2, R));
+            return (new N.Geom_Circle(aNAx2, R), new Geom_Circle(anAx2, R));
         }
 
         int aDeg = theOracle.Int(1, 5);
@@ -402,7 +402,8 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         }
         NCollection_Array1<double>? aWeights = theOracle.Int(0, 1) == 0 ? null : theOracle.Weights(aNbPoles, true);
         return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, false),
-                new PortBSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg));
+                aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg)
+                                 : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg));
     }
 
     private static void CompareCurveAt(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, double U, string theWhat)
@@ -449,23 +450,13 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         CompareCurveAt(theOracle, aNBasis, aBasis, U, theWhat + " basis D0");
     }
 
-    /// <summary>The iso-curves the port builds without unit 1A: revolution UIso, extrusion VIso.</summary>
+    /// <summary>
+    /// The iso-curves of a swept surface: revolution UIso (the rotated basis curve) and VIso (a circle),
+    /// extrusion UIso (a line) and VIso (the translated basis curve).
+    /// </summary>
     private static void CompareIso(Oracle theOracle, N.Geom_SweptSurface theN, Geom_SweptSurface theP, string theWhat)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        double U = Param(theOracle, aU1, aU2), V = Param(theOracle, aV1, aV2);
-        if (theP is Geom_SurfaceOfRevolution)
-        {
-            using N.Geom_Curve aNIso = theN.UIso(U)!;
-            Geom_Curve aIso = theP.UIso(U);
-            CompareCurveAt(theOracle, aNIso, aIso, V, theWhat + " UIso");
-        }
-        else
-        {
-            using N.Geom_Curve aNIso = theN.VIso(V)!;
-            Geom_Curve aIso = theP.VIso(V);
-            CompareCurveAt(theOracle, aNIso, aIso, U, theWhat + " VIso");
-        }
+        GeomIsoCurveCompare.SameIsos(theOracle, theN, theP, theWhat);
     }
 
     [Fact]
@@ -480,8 +471,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         {
             (N.Geom_SweptSurface aN, Geom_SweptSurface aP) = RandomSwept(anOracle, aRevolution, aCurveKind);
             string aWhat = aP.GetType().Name + (aCurveKind == 0 ? " of a circle" : " of a B-spline");
-            // The port's B-spline stand-in doesn't mirror Geom_BSplineCurve's continuity
-            bool aContinuity = aCurveKind == 0;
+            const bool aContinuity = true;
             using (aN)
             {
                 CompareProperties(anOracle, aN, aP, aWhat, aContinuity);
@@ -681,6 +671,62 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             }
         }
         anOracle.Report("Geom_RectangularTrimmedSurface of " + aNames[aKind]);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // Iso-curves
+
+    /// <summary>The iso-curves of a surface, of its U and V reversed copies, and of a transformed copy.</summary>
+    private static void CompareIsos(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, string theWhat)
+    {
+        GeomIsoCurveCompare.SameIsos(theOracle, theN, theP, theWhat);
+        using (var aNU = N.Geom_Surface.DownCast(theN.Copy())!)
+        {
+            aNU.UReverse();
+            GeomIsoCurveCompare.SameIsos(theOracle, aNU, theP.UReversed(), theWhat + " UReversed");
+        }
+        using (var aNV = N.Geom_Surface.DownCast(theN.Copy())!)
+        {
+            aNV.VReverse();
+            GeomIsoCurveCompare.SameIsos(theOracle, aNV, theP.VReversed(), theWhat + " VReversed");
+        }
+        (N.gp_Trsf aNT, gp_Trsf aT) = RandomTrsf(theOracle);
+        using (aNT)
+        using (var aNTr = N.Geom_Surface.DownCast(theN.Copy())!)
+        {
+            aNTr.Transform(aNT);
+            GeomIsoCurveCompare.SameIsos(theOracle, aNTr, (Geom_Surface)theP.Transformed(aT), theWhat + " transformed");
+        }
+    }
+
+    [Fact]
+    public void Iso_curves()
+    {
+        string[] aNames = ["planes", "cylinders", "cones", "spheres", "tori", "surfaces of revolution of circles",
+                           "extrusions of circles", "B-spline surfaces", "surfaces of revolution of B-spline curves",
+                           "extrusions of B-spline curves"];
+        for (int aKind = 0; aKind < aNames.Length; aKind++)
+        {
+        var anOracle = new Oracle(output, 20261029 + 100 + aKind);
+        for (int i = 0; i < Cases / 10; i++)
+        {
+            (N.Geom_Surface aNB, Geom_Surface aPB) = aKind < 8 ? RandomBasis(anOracle, aKind)
+                                                               : RandomSwept(anOracle, aKind == 8, 1);
+            using (aNB)
+            {
+                string aWhat = aPB.GetType().Name;
+                CompareIsos(anOracle, aNB, aPB, aWhat);
+
+                // Trimmed: the iso-curves of a trimmed direction are trimmed curves
+                (N.Geom_RectangularTrimmedSurface aN, Geom_RectangularTrimmedSurface aP) = RandomTrimmed(anOracle, aNB, aPB);
+                using (aN)
+                {
+                    CompareIsos(anOracle, aN, aP, "trimmed " + aWhat);
+                }
+            }
+        }
+        anOracle.Report("UIso and VIso of " + aNames[aKind] + " (and of trimmed ones)");
         }
     }
 }

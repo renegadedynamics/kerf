@@ -226,13 +226,33 @@ public class Geom_ElementarySurfacesTests
     }
 
     [Fact]
-    public void IsoCurves_NotImplementedUntil1A()
+    public void IsoCurves_Are_Lines_Circles_And_Half_Circles()
     {
-        // TODO(1A): UIso/VIso return Geom_Line, Geom_Circle and Geom_TrimmedCurve
-        foreach (Geom_ElementarySurface S in All())
+        Geom_ElementarySurface[] aSurfaces = All();
+        Assert.IsType<Geom_Line>(aSurfaces[0].UIso(0.5));
+        Assert.IsType<Geom_Circle>(aSurfaces[0].VIso(0.5));
+        Assert.IsType<Geom_Line>(aSurfaces[1].UIso(0.5));
+        Assert.IsType<Geom_Circle>(aSurfaces[1].VIso(0.5));
+        Geom_TrimmedCurve aHalf = Assert.IsType<Geom_TrimmedCurve>(aSurfaces[2].UIso(0.5));
+        Assert.IsType<Geom_Circle>(aHalf.BasisCurve());
+        // [-PI/2, PI/2], brought into the circle's first period by Geom_TrimmedCurve
+        Assert.Equal(1.5 * M_PI, aHalf.FirstParameter(), 1e-15);
+        Assert.Equal(2.5 * M_PI, aHalf.LastParameter(), 1e-15);
+        Assert.IsType<Geom_Circle>(aSurfaces[2].VIso(0.5));
+        Assert.IsType<Geom_Circle>(aSurfaces[3].UIso(0.5));
+        Assert.IsType<Geom_Circle>(aSurfaces[3].VIso(0.5));
+
+        // Each iso-curve has the surface's parametrization in the other direction
+        foreach (Geom_ElementarySurface S in aSurfaces)
         {
-            Assert.Throws<Standard_NotImplemented>(() => S.UIso(0.5));
-            Assert.Throws<Standard_NotImplemented>(() => S.VIso(0.5));
+            foreach (double P in new[] { -0.7, 0.5, 1.2 })
+            {
+                foreach (double T in new[] { -1.1, 0.25, 1.4 })
+                {
+                    Assert.True(S.UIso(P).Value(T).IsEqual(S.Value(P, T), 1e-12));
+                    Assert.True(S.VIso(P).Value(T).IsEqual(S.Value(T, P), 1e-12));
+                }
+            }
         }
     }
 }

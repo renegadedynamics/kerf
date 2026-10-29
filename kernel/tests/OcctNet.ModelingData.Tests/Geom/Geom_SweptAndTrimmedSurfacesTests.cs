@@ -4,12 +4,11 @@ namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
 /// OCCT.NET's own checks of Geom_SurfaceOfRevolution, Geom_SurfaceOfLinearExtrusion and
-/// Geom_RectangularTrimmedSurface (OCCT has no GTests for them beyond Geom_SurfaceEval_Test), on TestCircle and
-/// TestLine as basis curves.
+/// Geom_RectangularTrimmedSurface (OCCT has no GTests for them beyond Geom_SurfaceEval_Test).
 /// </summary>
 public class Geom_SweptAndTrimmedSurfacesTests
 {
-    private static TestCircle Circle() => new(new gp_Ax2(new gp_Pnt(3, 0, 0), new gp_Dir(0, 1, 0)), 1.0);
+    private static Geom_Circle Circle() => new(new gp_Ax2(new gp_Pnt(3, 0, 0), new gp_Dir(0, 1, 0)), 1.0);
 
     private static Geom_SurfaceOfRevolution Torus() => new(Circle(), new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)));
 
@@ -63,7 +62,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
     [Fact]
     public void Revolution_On_The_Axis_Has_No_U_Derivative()
     {
-        TestLine aLine = new(new gp_Pnt(0, 0, 0), new gp_Vec(1, 0, 1));
+        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1));
         Geom_SurfaceOfRevolution S = new(aLine, new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)));
         Assert.Equal(new gp_Vec(0, 0, 0), S.EvalD1(1.0, 0.0).D1U);
     }
@@ -74,7 +73,18 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Geom_SurfaceOfRevolution S = Torus();
         Geom_Curve aIso = S.UIso(0.8);
         Assert.True(aIso.Value(1.1).IsEqual(S.Value(0.8, 1.1), 1e-12));
-        Assert.Throws<Standard_NotImplemented>(() => S.VIso(0.5)); // TODO(1A): Geom_Circle
+        // The V iso-curve: the circle described by the basis curve's point, centred on the axis
+        Geom_Circle aVIso = Assert.IsType<Geom_Circle>(S.VIso(0.5));
+        Assert.True(aVIso.Location().IsEqual(new gp_Pnt(0, 0, Circle().Value(0.5).Z()), 1e-15));
+        Assert.True(aVIso.Axis().Direction().IsEqual(S.Axis().Direction(), 0.0));
+        foreach (double U in new[] { 0.0, 0.8, 4.0 })
+        {
+            Assert.True(aVIso.Value(U).IsEqual(S.Value(U, 0.5), 1e-12));
+        }
+        // A point on the axis: a circle of radius 0 at the point
+        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1));
+        Geom_SurfaceOfRevolution aCone = new(aLine, new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)));
+        Assert.Equal(0.0, ((Geom_Circle)aCone.VIso(0.0)).Radius());
 
         Geom_Surface aU = S.UReversed();
         Geom_Surface aV = S.VReversed();
@@ -98,7 +108,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
     [Fact]
     public void Extrusion_Of_A_Circle_Is_A_Cylinder()
     {
-        TestCircle C = new(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)), 2.0);
+        Geom_Circle C = new(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)), 2.0);
         Geom_SurfaceOfLinearExtrusion S = new(C, new gp_Dir(0, 0, 1));
         Geom_CylindricalSurface aCyl = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1))), 2.0);
         foreach ((double U, double V) in new[] { (0.3, 0.2), (2.0, -4.1), (5.5, 0.9) })
@@ -113,7 +123,9 @@ public class Geom_SweptAndTrimmedSurfacesTests
 
         Geom_Curve aVIso = S.VIso(4.0);
         Assert.True(aVIso.Value(1.0).IsEqual(S.Value(1.0, 4.0), 1e-12));
-        Assert.Throws<Standard_NotImplemented>(() => S.UIso(0.5)); // TODO(1A): Geom_Line
+        Geom_Line aUIso = Assert.IsType<Geom_Line>(S.UIso(0.5));
+        Assert.Equal(new gp_Dir(0, 0, 1), aUIso.Position().Direction());
+        Assert.True(aUIso.Value(-2.5).IsEqual(S.Value(0.5, -2.5), 1e-12));
 
         double U2 = 1.0, V2 = 3.0;
         gp_Trsf T = gp_Trsf.Scale(new gp_Pnt(), 3.0);
@@ -126,7 +138,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
     [Fact]
     public void Swept_Surfaces_Copy_Their_Basis_And_Freeze()
     {
-        TestCircle C = Circle();
+        Geom_Circle C = Circle();
         Geom_SurfaceOfLinearExtrusion E = new(C, new gp_Dir(0, 0, 1));
         Geom_SurfaceOfRevolution R = new(C, new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)));
         Assert.NotSame(C, E.BasisCurve());
@@ -145,9 +157,9 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.Equal(new gp_Pnt(1, 1, 1), R.WithLocation(new gp_Pnt(1, 1, 1)).Location());
         Assert.Equal(new gp_Dir(0, 1, 0), R.WithDirection(new gp_Dir(0, 1, 0)).Direction());
         Assert.Equal(new gp_Dir(1, 0, 0), R.WithAxis(new gp_Ax1(new gp_Pnt(), new gp_Dir(1, 0, 0))).Axis().Direction());
-        TestLine L = new(new gp_Pnt(), new gp_Vec(1, 0, 0));
-        Assert.IsType<TestLine>(E.WithBasisCurve(L).BasisCurve());
-        Assert.IsType<TestLine>(R.WithBasisCurve(L).BasisCurve());
+        Geom_Line L = new(new gp_Pnt(), new gp_Dir(1, 0, 0));
+        Assert.IsType<Geom_Line>(E.WithBasisCurve(L).BasisCurve());
+        Assert.IsType<Geom_Line>(R.WithBasisCurve(L).BasisCurve());
         Assert.Equal(new gp_Dir(0, 0, 1), E.Direction());
     }
 
@@ -235,13 +247,106 @@ public class Geom_SweptAndTrimmedSurfacesTests
     }
 
     [Fact]
-    public void Trimmed_IsoCurves_NotImplementedUntil1A()
+    public void Trimmed_IsoCurves_Are_Trimmed_In_A_Trimmed_Direction()
     {
-        // TODO(1A): the iso-curves of a trimmed direction are Geom_TrimmedCurve
         Geom_SurfaceOfRevolution S = Torus();
         Geom_RectangularTrimmedSurface T = new(S, 0.5, 2.0, true);
-        Assert.Throws<Standard_NotImplemented>(() => T.VIso(0.3));
+        Geom_TrimmedCurve aVIso = Assert.IsType<Geom_TrimmedCurve>(T.VIso(0.3));
+        Assert.IsType<Geom_Circle>(aVIso.BasisCurve());
+        Assert.Equal((0.5, 2.0), (aVIso.FirstParameter(), aVIso.LastParameter()));
+        Assert.True(aVIso.Value(1.2).IsEqual(S.Value(1.2, 0.3), 1e-12));
         Geom_Curve aIso = T.UIso(1.0); // V is not trimmed: the basis surface's iso-curve
+        Assert.IsType<Geom_Circle>(aIso);
         Assert.True(aIso.Value(0.4).IsEqual(S.Value(1.0, 0.4), 1e-12));
+
+        Geom_RectangularTrimmedSurface T2 = new(S, 0.5, 2.0, 1.0, 3.0);
+        Geom_TrimmedCurve aUIso = Assert.IsType<Geom_TrimmedCurve>(T2.UIso(1.0));
+        Assert.Equal((1.0, 3.0), (aUIso.FirstParameter(), aUIso.LastParameter()));
+        Assert.True(aUIso.Value(2.5).IsEqual(S.Value(1.0, 2.5), 1e-12));
+    }
+
+    //=============================================================================================
+    // The shared basis (decision 159): handed out frozen, copied by the owner's own mutators
+    //=============================================================================================
+
+    [Fact]
+    public void Trimmed_BasisSurface_Is_Frozen_And_Shared()
+    {
+        Geom_CylindricalSurface aCyl = new(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
+        Geom_RectangularTrimmedSurface T = new(aCyl, 0.5, 2.0, -1.0, 3.0);
+        Geom_Surface aBasis = T.BasisSurface();
+        Assert.True(aBasis.IsFrozen());
+        Assert.Same(aBasis, T.BasisSurface());
+        Assert.False(T.IsFrozen());
+        Assert.False(aCyl.IsFrozen());
+        Assert.Throws<Standard_ImmutableObject>(() => aBasis.UReverse());
+
+        // A trimmed surface of T copies T's basis without freezing it
+        Geom_RectangularTrimmedSurface aT2 = new(T, 0.6, 1.0, true);
+        Assert.False(new Geom_RectangularTrimmedSurface(aT2, 0.0, 1.0, false).IsFrozen());
+        Assert.NotSame(aBasis, aT2.BasisSurface());
+
+        // The owner's mutators copy the frozen basis; the handed-out one doesn't change
+        gp_Pnt aBefore = aBasis.Value(1.0, 1.0);
+        double aU = T.UReversedParameter(1.0), aV = T.VReversedParameter(1.0);
+        gp_Pnt aExpected = T.Value(1.0, 1.0);
+        T.UReverse();
+        Assert.NotSame(aBasis, T.BasisSurface());
+        Assert.True(T.Value(aU, 1.0).IsEqual(aExpected, 1e-12));
+        T.VReverse();
+        Assert.True(T.Value(aU, aV).IsEqual(aExpected, 1e-12));
+        gp_Trsf aMove = gp_Trsf.Translation(new gp_Vec(1, 2, 3));
+        Geom_Surface aBasis2 = T.BasisSurface();
+        T.Transform(aMove);
+        Assert.NotSame(aBasis2, T.BasisSurface());
+        Assert.True(T.Value(aU, aV).IsEqual(aExpected.Translated(new gp_Vec(1, 2, 3)), 1e-12));
+        Assert.Equal(aBefore, aBasis.Value(1.0, 1.0));
+    }
+
+    [Fact]
+    public void Swept_BasisCurve_Is_Frozen_And_Shared()
+    {
+        Geom_Circle C = Circle();
+        Geom_SurfaceOfRevolution R = new(C, new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)));
+        Geom_SurfaceOfLinearExtrusion E = new(C, new gp_Dir(0, 0, 1));
+        Geom_Curve aRBasis = R.BasisCurve();
+        Geom_Curve aEBasis = E.BasisCurve();
+        Assert.True(aRBasis.IsFrozen() && aEBasis.IsFrozen());
+        Assert.Same(aRBasis, R.BasisCurve());
+        Assert.Same(aEBasis, E.BasisCurve());
+        Assert.False(C.IsFrozen() || R.IsFrozen() || E.IsFrozen());
+        Assert.Throws<Standard_ImmutableObject>(() => aRBasis.Reverse());
+
+        gp_Pnt aRBefore = aRBasis.Value(1.0);
+        gp_Pnt aEBefore = aEBasis.Value(1.0);
+        gp_Pnt aRExpected = R.Value(0.7, 1.0);
+        gp_Pnt aEExpected = E.Value(1.0, 0.7);
+
+        // Revolution: VReverse and Transform change the basis curve
+        R.VReverse();
+        Assert.NotSame(aRBasis, R.BasisCurve());
+        Assert.True(R.Value(0.7, R.VReversedParameter(1.0)).IsEqual(aRExpected, 1e-12));
+        Geom_Curve aRBasis2 = R.BasisCurve();
+        gp_Trsf aMirror = new();
+        aMirror.SetMirror(new gp_Ax2(new gp_Pnt(0, 0, 1), new gp_Dir(1, 0, 0)));
+        R.Transform(aMirror);
+        Assert.NotSame(aRBasis2, R.BasisCurve());
+        Assert.Equal(aRBefore, aRBasis.Value(1.0));
+
+        // Extrusion: UReverse and Transform change the basis curve
+        E.UReverse();
+        Assert.NotSame(aEBasis, E.BasisCurve());
+        Assert.True(E.Value(E.UReversedParameter(1.0), 0.7).IsEqual(aEExpected, 1e-12));
+        Geom_Curve aEBasis2 = E.BasisCurve();
+        E.Transform(gp_Trsf.Scale(new gp_Pnt(), 2.0));
+        Assert.NotSame(aEBasis2, E.BasisCurve());
+        Assert.Equal(aEBefore, aEBasis.Value(1.0));
+
+        // The iso-curves copy the basis curve: they are not frozen, and don't share it
+        Geom_Curve aUIso = R.UIso(0.3);
+        Assert.False(aUIso.IsFrozen());
+        Assert.NotSame(R.BasisCurve(), aUIso);
+        Assert.False(E.VIso(0.3).IsFrozen());
+
     }
 }

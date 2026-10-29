@@ -4,9 +4,7 @@
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// Geom_BSplineSurface. Not ported: UIso, VIso and RationalSurface_UIso (the iso-curves are Geom_BSplineCurve,
-/// unit 1A: until then UIso/VIso throw Standard_NotImplemented, see IsoCurves_NotImplementedUntil1A) and
-/// OCC30990_CacheConsistencyAtKnots (GeomAdaptor_Surface, unit 2A). WeightsArray_* check copies, since the port
+/// Geom_BSplineSurface. Not ported: OCC30990_CacheConsistencyAtKnots (GeomAdaptor_Surface, unit 2A). WeightsArray_* check copies, since the port
 /// returns copies where OCCT returns references (IsDeletable and reference identity don't apply).
 /// </summary>
 public class Geom_BSplineSurfaceTests
@@ -272,6 +270,34 @@ public class Geom_BSplineSurfaceTests
         gp_Pnt aValBefore = myOriginalSurface.Value(0.5, 0.3);
         myOriginalSurface.VReverse();
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.5, 0.7), 1e-10));
+    }
+
+    [Fact]
+    public void UIso()
+    {
+        Geom_Curve anIso = myOriginalSurface.UIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double v = 0.0; v <= 1.0; v += 0.25)
+        {
+            gp_Pnt aSurfPnt = myOriginalSurface.Value(0.5, v);
+            gp_Pnt anIsoPnt = anIso.Value(v);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
+    public void VIso()
+    {
+        Geom_Curve anIso = myOriginalSurface.VIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double u = 0.0; u <= 1.0; u += 0.25)
+        {
+            gp_Pnt aSurfPnt = myOriginalSurface.Value(u, 0.5);
+            gp_Pnt anIsoPnt = anIso.Value(u);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
     }
 
     [Fact]
@@ -552,6 +578,45 @@ public class Geom_BSplineSurfaceTests
     }
 
     [Fact]
+    public void RationalSurface_UIso()
+    {
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
+        for (int i = 1; i <= 3; ++i)
+        {
+            for (int j = 1; j <= 3; ++j)
+            {
+                aPoles[i, j] = new gp_Pnt(i, j, (i + j) * 0.1);
+                aWeights[i, j] = 1.0 + 0.5 * ((i - 1) + (j - 1));
+            }
+        }
+
+        NCollection_Array1<double> anUKnots = new(1, 2), aVKnots = new(1, 2);
+        anUKnots[1] = 0.0;
+        anUKnots[2] = 1.0;
+        aVKnots[1] = 0.0;
+        aVKnots[2] = 1.0;
+
+        NCollection_Array1<int> anUMults = new(1, 2), aVMults = new(1, 2);
+        anUMults[1] = 3;
+        anUMults[2] = 3;
+        aVMults[1] = 3;
+        aVMults[2] = 3;
+
+        Geom_BSplineSurface aSurf = new(aPoles, aWeights, anUKnots, aVKnots, anUMults, aVMults, 2, 2);
+
+        Geom_Curve anIso = aSurf.UIso(0.5);
+        Assert.NotNull(anIso);
+
+        for (double v = 0.0; v <= 1.0; v += 0.25)
+        {
+            gp_Pnt aSurfPnt = aSurf.Value(0.5, v);
+            gp_Pnt anIsoPnt = anIso.Value(v);
+            Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
+        }
+    }
+
+    [Fact]
     public void CopyIndependence_Knots()
     {
         Geom_BSplineSurface aCopy = new(myOriginalSurface);
@@ -609,13 +674,28 @@ public class Geom_BSplineSurfaceTests
     //=============================================================================================
 
     [Fact]
-    public void IsoCurves_NotImplementedUntil1A()
+    public void IsoCurves_AreBSplineCurves_CheckRational()
     {
-        // TODO(1A): replace by OCCT's UIso, VIso and RationalSurface_UIso once Geom_BSplineCurve is ported.
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.UIso(0.5));
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.VIso(0.5));
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.UIso(0.5, true));
-        Assert.Throws<Standard_NotImplemented>(() => myOriginalSurface.VIso(0.5, false));
+        // The iso-curves are B-spline curves on the knots of the other direction
+        Geom_BSplineCurve aU = Assert.IsType<Geom_BSplineCurve>(myOriginalSurface.UIso(0.5));
+        Assert.Equal(2, aU.Degree());
+        Assert.Equal(3, aU.NbPoles());
+        Assert.False(aU.IsRational());
+        Assert.IsType<Geom_BSplineCurve>(myOriginalSurface.VIso(0.5, false));
+
+        // Weights varying along U only: the V iso-curves' weights vary, the U iso-curves' are all equal
+        NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
+        aWeights.Init(1.0);
+        aWeights[2, 1] = aWeights[2, 2] = aWeights[2, 3] = 2.0;
+        Geom_BSplineSurface aRational = new(myOriginalSurface.Poles(), aWeights, Knots(0, 1), Knots(0, 1), Mults(3, 3),
+                                            Mults(3, 3), 2, 2);
+        Assert.True(((Geom_BSplineCurve)aRational.VIso(0.5)).IsRational());
+        // Equal weights: CheckRational (the default) makes the curve non-rational; without it, rational
+        Assert.False(((Geom_BSplineCurve)aRational.UIso(0.5)).IsRational());
+        Assert.False(((Geom_BSplineCurve)aRational.UIso(0.5, true)).IsRational());
+        Assert.True(((Geom_BSplineCurve)aRational.UIso(0.5, false)).IsRational());
+        Assert.True(aRational.UIso(0.5, false).Value(0.3).IsEqual(aRational.Value(0.5, 0.3), 1e-14));
+        Assert.True(aRational.VIso(0.7, false).Value(0.2).IsEqual(aRational.Value(0.2, 0.7), 1e-14));
     }
 
     [Fact]

@@ -406,10 +406,9 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             default:
             {
                 theWhat = "Transform";
-                // No rotation here: MSVC's and .NET's sine and cosine differ in the last bit, and after several edits
-                // evaluation amplifies that beyond any meaningful tolerance (derivatives scale with 1 / span^n).
-                // Rotations are compared once, in Evaluation_and_queries.
-                var (aT, aNT) = Geom2dOracle.Trsf(theOracle, true);
+                // Rotations included: native and port sine and cosine agree on these inputs, and the edit chains
+                // compare bit-identical with them (decision 1705).
+                var (aT, aNT) = Geom2dOracle.Trsf(theOracle);
                 theNativeEdit = c => { using (aNT) { c.Transform(aNT); } return []; };
                 thePortEdit = c => { c.Transform(aT); return []; };
                 return true;

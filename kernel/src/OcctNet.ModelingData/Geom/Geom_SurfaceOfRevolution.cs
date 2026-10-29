@@ -156,6 +156,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
+        OwnBasisCurve();
         basisCurve!.Reverse();
     }
 
@@ -221,35 +222,33 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     /// <summary>The V iso-curve: the circle described by the point of parameter V of the basis curve.</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        // TODO(1A): Geom_Circle is ported by unit 1A. OCCT:
-        //   occ::handle<Geom_Circle> Circ;
-        //   Pnt                      Pc = basisCurve->Value(V);
-        //   gp_Lin                   L1(loc, direction);
-        //   double                   Rad = L1.Distance(Pc);
-        //   Ax2 Rep;
-        //   if (Rad > gp::Resolution())
-        //   {
-        //     XYZ P = Pc.XYZ();
-        //     XYZ C;
-        //     C.SetLinearForm((P - loc.XYZ()).Dot(direction.XYZ()), direction.XYZ(), loc.XYZ());
-        //     P = P - C;
-        //     if (P.Modulus() > gp::Resolution())
-        //     {
-        //       gp_Dir D = P.Normalized();
-        //       Rep      = gp_Ax2(C, direction, D);
-        //     }
-        //     else
-        //     {
-        //       Rep = gp_Ax2(C, direction);
-        //     }
-        //   }
-        //   else
-        //   {
-        //     Rep = gp_Ax2(Pc, direction);
-        //   }
-        //   Circ = new Geom_Circle(Rep, Rad);
-        //   return Circ;
-        throw new Standard_NotImplemented("Geom_SurfaceOfRevolution::VIso needs Geom_Circle (unit 1A)");
+        Geom_Circle Circ;
+        gp_Pnt Pc = basisCurve!.Value(V);
+        gp_Lin L1 = new gp_Lin(loc, direction);
+        double Rad = L1.Distance(Pc);
+        gp_Ax2 Rep;
+        if (Rad > gp.Resolution())
+        {
+            gp_XYZ P = Pc.XYZ();
+            gp_XYZ C = new gp_XYZ();
+            C.SetLinearForm((P - loc.XYZ()).Dot(direction.XYZ()), direction.XYZ(), loc.XYZ());
+            P = P - C;
+            if (P.Modulus() > gp.Resolution())
+            {
+                gp_Dir D = new gp_Dir(P.Normalized());
+                Rep = new gp_Ax2(new gp_Pnt(C), direction, D);
+            }
+            else
+            {
+                Rep = new gp_Ax2(new gp_Pnt(C), direction);
+            }
+        }
+        else
+        {
+            Rep = new gp_Ax2(Pc, direction);
+        }
+        Circ = new Geom_Circle(Rep, Rad);
+        return Circ;
     }
 
     public sealed override gp_Pnt EvalD0(double U, double V)
@@ -377,6 +376,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
         ClearEvalRepresentation();
         loc.Transform(T);
         direction.Transform(T);
+        OwnBasisCurve();
         basisCurve!.Transform(T);
         if (T.ScaleFactor() * T.HVectorialPart().Determinant() < 0.0)
         {

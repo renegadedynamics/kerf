@@ -234,6 +234,21 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom_BezierSurface");
     }
 
+    [Fact]
+    public void Iso_curves()
+    {
+        var anOracle = new Oracle(output, 20261029 + 300);
+        for (int i = 0; i < Cases; i++)
+        {
+            (N.Geom_BezierSurface aN, Geom_BezierSurface aP) = RandomSurface(anOracle);
+            using (aN)
+            {
+                GeomIsoCurveCompare.SameIsos(anOracle, aN, aP, "Bezier surface");
+            }
+        }
+        anOracle.Report("Geom_BezierSurface UIso and VIso");
+    }
+
     private static bool Edit(Oracle theOracle, N.Geom_BezierSurface theN, Geom_BezierSurface theP, int theEdit, out string theWhat)
     {
         int aNbU = theP.NbUPoles(), aNbV = theP.NbVPoles();

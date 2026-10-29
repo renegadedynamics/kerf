@@ -5,8 +5,7 @@ namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
 /// The EvalD* methods of the Geom surfaces. Not ported: OffsetSurface_EvalD0_ValidOnRegularSurface
-/// (Geom_OffsetSurface, unit 2A). ExtrusionSurface_EvalD0_ValidResults and RevolutionSurface_EvalD1_ValidResults
-/// use TestCircle and TestLine in place of Geom_Circle and Geom_Line (unit 1A).
+/// (Geom_OffsetSurface, unit 2A).
 /// </summary>
 public class Geom_SurfaceEvalTests
 {
@@ -159,9 +158,9 @@ public class Geom_SurfaceEvalTests
     [Fact]
     public void ExtrusionSurface_EvalD0_ValidResults()
     {
-        // Extrude a circle along Z axis (TODO(1A): Geom_Circle in place of TestCircle)
+        // Extrude a circle along Z axis
         gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 3.0);
-        TestCircle aBasis = new(aCirc);
+        Geom_Circle aBasis = new(aCirc);
 
         Geom_SurfaceOfLinearExtrusion aSurf = new(aBasis, new gp_Dir(0.0, 0.0, 1.0));
 
@@ -179,8 +178,8 @@ public class Geom_SurfaceEvalTests
     [Fact]
     public void RevolutionSurface_EvalD1_ValidResults()
     {
-        // Revolve a line around Z axis to create a cone-like surface (TODO(1A): Geom_Line in place of TestLine)
-        TestLine aGeneratrix = new(new gp_Pnt(1.0, 0.0, 0.0), new gp_Vec(new gp_Dir(0.0, 0.0, 1.0)));
+        // Revolve a line around Z axis to create a cone-like surface
+        Geom_Line aGeneratrix = new(new gp_Pnt(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
 
         gp_Ax1 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
         Geom_SurfaceOfRevolution aSurf = new(aGeneratrix, anAxis);

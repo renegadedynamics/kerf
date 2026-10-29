@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using N = Build123d.Occt;
+using OcctNet.Oracle.Tests.Geom;
 
 namespace OcctNet.Oracle.Tests.Geom2d;
 
@@ -20,10 +21,9 @@ internal sealed class BSplineSpec
 internal static class Geom2dOracle
 {
     /// <summary>
-    /// A random transformation, built by the same calls on both sides (1 to 3 elementary ones composed); without
-    /// rotations (no trigonometry, so bit-identical on both sides) if theNoRotation.
+    /// A random transformation, built by the same calls on both sides (1 to 3 elementary ones composed).
     /// </summary>
-    public static (gp_Trsf2d Port, N.gp_Trsf2d Native) Trsf(Oracle theOracle, bool theNoRotation = false)
+    public static (gp_Trsf2d Port, N.gp_Trsf2d Native) Trsf(Oracle theOracle)
     {
         gp_Trsf2d aPort = new gp_Trsf2d();
         N.gp_Trsf2d aNative = new N.gp_Trsf2d();
@@ -32,7 +32,7 @@ internal static class Geom2dOracle
         {
             gp_Trsf2d aT = new gp_Trsf2d();
             using N.gp_Trsf2d aNT = new N.gp_Trsf2d();
-            switch (theOracle.Int(theNoRotation ? 1 : 0, 4))
+            switch (theOracle.Int(0, 4))
             {
                 case 0:
                 {
@@ -62,8 +62,8 @@ internal static class Geom2dOracle
                 }
                 case 3:
                 {
-                    gp_Ax2d anA = theOracle.Ax2d();
-                    using var aNA = Oracle.ToNative(anA);
+                    (N.gp_Ax2d aNA, gp_Ax2d anA) = GeomOracleInputs.Ax2ds(theOracle);
+                    using var aNAOwner = aNA;
                     aT.SetMirror(anA);
                     aNT.SetMirror(aNA);
                     break;
