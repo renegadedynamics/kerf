@@ -140,7 +140,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>A random native shape: a primitive, a sweep, a Boolean result or a fillet, placed, meshed or not.</summary>
-    private static N.TopoDS_Shape NativeShape(Oracle theOracle, int theIndex, out string theWhat)
+    internal static N.TopoDS_Shape NativeShape(Oracle theOracle, int theIndex, out string theWhat)
     {
         N.TopoDS_Shape aShape;
         (N.gp_Ax2 anAx2, _) = GeomOracleInputs.Ax2s(theOracle);
