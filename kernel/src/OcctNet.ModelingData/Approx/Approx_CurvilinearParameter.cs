@@ -434,6 +434,9 @@ public sealed class Approx_CurvilinearParameter
         return myCurve2d1;
     }
 
+    /// <summary>The reparametrized 2D curve on the first surface, unfrozen, for ported code that changes it (BRepLib::SameParameter re-knots it).</summary>
+    internal Geom2d_BSplineCurve? InternalCurve2d1() => myCurve2d1;
+
     /// <summary>The maximum error on the first reparametrized 2D curve.</summary>
     public double MaxError2d1() => myMaxError2d1;
 
