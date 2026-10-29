@@ -1148,14 +1148,21 @@ public static partial class BRepLib
     private static void UpdateVTol(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2, double theTol)
     {
         var aB = new BRep_Builder();
-        if (!theV1.IsNull())
+        if (!theV1.IsNull() && !isUnchangedFrozen(theV1, theTol))
         {
             aB.UpdateVertex(theV1, theTol);
         }
-        if (!theV2.IsNull())
+        if (!theV2.IsNull() && !isUnchangedFrozen(theV2, theTol))
         {
             aB.UpdateVertex(theV2, theTol);
         }
+    }
+
+    // OCCT.NET: frozen. UpdateVertex(V, Tol) only raises the tolerance, so on a frozen vertex already at least as
+    // tolerant it would change nothing but the Modified cache bit: skipped, rather than throwing.
+    private static bool isUnchangedFrozen(in TopoDS_Vertex theV, double theTol)
+    {
+        return theV.TShape()!.IsFrozen() && theTol <= BRep_Tool.Tolerance(theV);
     }
 
     //=================================================================================================

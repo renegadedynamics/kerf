@@ -779,14 +779,14 @@ public class BRepLibMakersTests
         Assert.True(aF.TShape()!.IsFrozen());
         aSnap.AssertUnchanged(aW);
 
-        // the face holds a copy of the wire, recorded in the history
+        // the statics changed nothing but the vertices' rounding guard on the copy: the face holds the caller's wire
         BRepTools_History? aH = aMF.InternalHistory();
         Assert.NotNull(aH);
         TopoDS_Shape aFaceWire = new TopoDS_Iterator(aF).Value();
-        Assert.False(aFaceWire.IsSame(aW));
+        Assert.True(aFaceWire.IsSame(aW));
         for (var anExp = new TopExp_Explorer(aW, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            Assert.Single(aH!.Modified(anExp.Current()));
+            Assert.Empty(aH!.Modified(anExp.Current()));
         }
         Assert.Equal(4, Count(aF, TopAbs_EDGE));
         var aPlane = Assert.IsType<Geom_Plane>(BRep_Tool.Surface(aF));
@@ -796,6 +796,75 @@ public class BRepLibMakersTests
         {
             Assert.True(BRep_Tool.SameParameter(TopoDS.Edge(anExp.Current())));
         }
+    }
+
+    [Fact]
+    public void Faces_from_frozen_wires_sharing_edges_share_them()
+    {
+        // two squares side by side, sharing the edge x = 1
+        var aV = new TopoDS_Vertex[6];
+        gp_Pnt[] aP = [new(0, 0, 0), new(1, 0, 0), new(2, 0, 0), new(2, 1, 0), new(1, 1, 0), new(0, 1, 0)];
+        for (int i = 0; i < 6; i++)
+        {
+            aV[i] = TestShapes.Vertex(aP[i]);
+        }
+        TopoDS_Edge aShared = TestShapes.Edge(aV[1], aV[4]);
+        var aW1 = new BRepLib_MakeWire(TestShapes.Edge(aV[0], aV[1]), aShared, TestShapes.Edge(aV[4], aV[5]), TestShapes.Edge(aV[5], aV[0])).Wire();
+        var aW2 = new BRepLib_MakeWire(TestShapes.Edge(aV[1], aV[2]), TestShapes.Edge(aV[2], aV[3]), TestShapes.Edge(aV[3], aV[4]), aShared).Wire();
+        TopoDS_Face aF1 = new BRepLib_MakeFace(aW1, true).Face();
+        TopoDS_Face aF2 = new BRepLib_MakeFace(aW2, true).Face();
+
+        var aShell = TopoDS_Builder.MakeCompound(aF1, aF2);
+        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(aShell, TopAbs_EDGE, anEdges);
+        TopExp.MapShapes(aShell, TopAbs_VERTEX, aVertices);
+        Assert.Equal(7, anEdges.Extent());
+        Assert.Equal(6, aVertices.Extent());
+        Assert.True(anEdges.Contains(aShared));
+    }
+
+    [Fact]
+    public void Face_from_a_frozen_wire_keeps_the_edges_its_statics_leave_unchanged()
+    {
+        // a square whose last vertex is 1e-4 off its edges' ends: UpdateTolerances raises that vertex, and the two
+        // edges holding it are rebuilt around the new vertex; the other two edges and vertices stay the caller's
+        var aV = new TopoDS_Vertex[4];
+        gp_Pnt[] aP = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0)];
+        for (int i = 0; i < 4; i++)
+        {
+            aV[i] = TestShapes.Vertex(aP[i]);
+        }
+        var aB = new BRep_Builder();
+        TopoDS_Vertex aOff = new();
+        aB.MakeVertex(ref aOff, new gp_Pnt(0, 1.0001, 0), Precision.Confusion());
+        var anEdges = new[]
+        {
+            TestShapes.Edge(aV[0], aV[1]), TestShapes.Edge(aV[1], aV[2]),
+            TestShapes.Edge(new Geom_Line(aP[2], new gp_Dir(-1, 0, 0)), 0, 1, aV[2], aOff),
+            TestShapes.Edge(new Geom_Line(aP[3], new gp_Dir(0, -1, 0)), 0, 1, aOff, aV[0]),
+        };
+        var aWire = new BRepLib_MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
+                                         TestShapes.Frozen(anEdges[2]), TestShapes.Frozen(anEdges[3])).Wire();
+        ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
+        var aMF = new BRepLib_MakeFace(aWire, true);
+        Assert.True(aMF.IsDone());
+        TopoDS_Face aF = aMF.Face();
+        aSnap.AssertUnchanged(aWire);
+
+        BRepTools_History aH = aMF.InternalHistory()!;
+        var aFaceEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(aF, TopAbs_EDGE, aFaceEdges);
+        Assert.True(aFaceEdges.Contains(anEdges[0]));
+        Assert.True(aFaceEdges.Contains(anEdges[1]));
+        Assert.False(aFaceEdges.Contains(anEdges[2]));
+        Assert.False(aFaceEdges.Contains(anEdges[3]));
+        Assert.Empty(aH.Modified(anEdges[0]));
+        Assert.Single(aH.Modified(anEdges[2]));
+        TopoDS_Vertex aNewOff = TopoDS.Vertex(Assert.Single(aH.Modified(aOff)));
+        Assert.Equal(1e-4, BRep_Tool.Tolerance(aNewOff), 1e-9);
+        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aOff));
+        Assert.True(aF.TShape()!.IsFrozen());
     }
 
     [Fact]

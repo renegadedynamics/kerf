@@ -22,8 +22,9 @@ namespace Occt;
 /// <para><see cref="Face"/> freezes the face (design 4.2); ported code reads <see cref="InternalFace"/>. Adding a
 /// wire after a public read goes on with a new face holding the same wires. The face from a planar wire updates the
 /// tolerances of the wire's edges and vertices and makes its edges same-parameter, as OCCT does; when the wire holds
-/// frozen sub-shapes, it does so on a copy of the wire for write (design 4.6), whose history
-/// <see cref="InternalHistory"/> keeps.</para>
+/// frozen sub-shapes, it does so on a copy of the wire for write (design 4.6) and then takes back the caller's own
+/// edges and vertices wherever the copy is unchanged (<c>BRepTools.KeepUnchanged</c>), so faces built on wires
+/// sharing edges still share them; <see cref="InternalHistory"/> records the ones replaced.</para>
 /// </remarks>
 public class BRepLib_MakeFace : BRepLib_MakeShape
 {
@@ -184,11 +185,15 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // OCCT.NET: UpdateTolerances and SameParameter below write into the wire's edges and vertices, so a wire
-        // holding frozen sub-shapes is copied for write first (design 4.6).
+        // holding frozen sub-shapes is copied for write first (design 4.6), and the edges and vertices they leave
+        // unchanged are the caller's own again afterwards, so that faces built on wires sharing edges share them.
+        // UpdateTolerances raises every vertex by its rounding guard (2 * Epsilon(tol)); a raise of no more than that
+        // is ignored, else no frozen vertex could ever be kept.
+        TopoDS_Wire aWOriginal = new();
         if (hasFrozenSubShape(aW))
         {
-            aW = TopoDS.Wire(BRepTools.CopyForWrite(aW, out BRepTools_History aHistory));
-            myHistory = aHistory;
+            aWOriginal = aW;
+            aW = TopoDS.Wire(BRepTools.CopyForWrite(aW, out _));
         }
 
         Add(aW);
@@ -196,6 +201,18 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         BRepLib.UpdateTolerances(myShape);
         //
         BRepLib.SameParameter(myShape, tol, true);
+        //
+        if (!aWOriginal.IsNull())
+        {
+            aW = TopoDS.Wire(BRepTools.KeepUnchanged(aWOriginal, aW, out BRepTools_History aHistory, true));
+            myHistory = aHistory;
+            if (!ReferenceEquals(aW.TShape(), myShape.TShape()!.myShapes.First().TShape()))
+            {
+                // the face holds the copy: it gets the wire with the kept edges in its place
+                myShape.TShape()!.myShapes.Clear();
+                Add(aW);
+            }
+        }
         //
         if (BRep_Tool.IsClosed(aW))
         {
