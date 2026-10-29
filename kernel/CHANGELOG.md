@@ -104,3 +104,15 @@ Phase 2 (part): grid evaluation.
 - Tests: the GeomGridEval and Geom2dGridEval GTests (and GeomAdaptor_TransformedSurface's grid test); consistency
   tests of every evaluator against point evaluation on random geometry, bit-identical where OCCT's grid uses the
   same algorithm, and OCCT's grid errors pinned.
+
+Phase 2 (part): bounding boxes.
+
+- `OcctNet.ModelingData`: BndLib (boxes of gp lines, conics and elementary surfaces), BndLib_Add3dCurve,
+  BndLib_Add2dCurve and BndLib_AddSurface, and OCCT 8's GeomBndLib: one evaluator per curve and surface kind
+  (analytic boxes for conics and quadrics, pole hulls with sampled deflection for Bezier and B-spline geometry,
+  offsets, revolutions, extrusions, any other through its adaptor) with `Box` and `BoxOptimal` (PSO + Brent/Powell
+  refinement), and the dispatchers `GeomBndLib_Curve`, `GeomBndLib_Curve2d` and `GeomBndLib_Surface`.
+  Extrema_ExtCS (curve/surface extrema); its generic paths wait for unit 4A's Extrema_ExtPS and Extrema_GenExtCS.
+- Tests: the BndLib and GeomBndLib GTests; OCCT's box errors pinned; oracle tests of the boxes through native
+  BRepBndLib (Add, AddOptimal, AddOBB on edges and faces) and of Extrema_ExtCS's analytic cases through
+  BRepExtrema_DistShapeShape.
