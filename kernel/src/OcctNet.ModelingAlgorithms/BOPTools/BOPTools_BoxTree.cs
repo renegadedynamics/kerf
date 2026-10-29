@@ -37,7 +37,7 @@ public sealed class BOPTools_Box2dTree : BOPTools_BoxSet<double, NCollection_Vec
 }
 
 /// <summary>Selects the elements of a 3D box tree (OCCT's typedef <c>BOPTools_BoxSelector&lt;3&gt;</c>).</summary>
-public sealed class BOPTools_BoxTreeSelector : BOPTools_BoxSelector<NCollection_Vec3<double>>
+public class BOPTools_BoxTreeSelector : BOPTools_BoxSelector<NCollection_Vec3<double>>
 {
 }
 
