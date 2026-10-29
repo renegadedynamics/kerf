@@ -377,9 +377,14 @@ wrong.
 When ported code (phases 4 to 7) must change a frozen input, it works on a **structural copy**:
 
 - **What is copied:** new TShapes, and new representation objects pointing at the same frozen Geom and Poly objects.
-- **How:** `BRepTools_Modifier` with `BRepTools_CopyModification(copyGeom: false, copyMesh: false)`, as
+- **How:** `BRepTools_Modifier` with `BRepTools_CopyModification(copyGeom: false, copyMesh: true)`, as
   `BRepBuilderAPI_Copy` does. It is wrapped in an internal helper `BRepTools.CopyForWrite(in TopoDS_Shape, out
-  BRepTools_History)` in unit 3B.
+  BRepTools_History, bool theCopyMesh = true)` in unit 3B.
+  - The copy keeps the meshes, so that it has what the in-place operation would have seen (changed in unit 3B,
+    decision 349): the shared, frozen triangulations, with each face's whole list and its active one (the
+    modification carries the active one only), and the polygons.
+  - Polygons on surfaces (Poly_Polygon2D) aren't carried, as in BRepBuilderAPI_Copy. The copy's vertices get their
+    points on curves again from the modifier.
 - **What happens next:** the algorithm runs OCCT's code unchanged on the copy. Its history is the copy's history
   composed with its own (`BRepTools_History.Merge`), so `Modified`, `Generated` and `IsDeleted` answer for the
   caller's original sub-shapes. build123d.NET does this for the tapered extrusion.

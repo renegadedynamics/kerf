@@ -21,7 +21,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     private static readonly TopAbs_ShapeEnum[] theTypes =
         [TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX];
 
-    private sealed class Counts
+    internal sealed class Counts
     {
         public int Shapes;
         public int Pairs;
@@ -51,7 +51,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
     // Scenes
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> RandomScene(Oracle theOracle, int theScene)
+    internal static Twin<N.TopoDS_Shape, TopoDS_Shape> RandomScene(Oracle theOracle, int theScene)
     {
         var aTwins = new TwinShapes();
         switch (theScene % 4)
@@ -98,7 +98,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A rigid location (a rotation, a translation or both) built from the same raw numbers on both sides.</summary>
-    private static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
+    internal static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
     {
         var aNT = new N.gp_Trsf();
         var aT = new gp_Trsf();
@@ -237,7 +237,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
     // Comparisons
 
-    private static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape,
+    internal static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape,
                                                                     TopAbs_ShapeEnum theType,
                                                                     TopAbs_ShapeEnum theAvoid = TopAbs_SHAPE)
     {
@@ -255,7 +255,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         return aList;
     }
 
-    private static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
+    internal static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
     {
         foreach (TopAbs_ShapeEnum aType in theTypes)
         {
@@ -273,7 +273,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareTopology(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
+    internal static void CompareTopology(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
     {
         foreach (TopAbs_ShapeEnum aType in theTypes)
         {
@@ -416,7 +416,8 @@ public class TopologyOracleTests(ITestOutputHelper output)
         theOracle.Same(N.BRep_Tool.Tolerance(theN), BRep_Tool.Tolerance(theP), theWhat + " tolerance");
     }
 
-    private static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
+    internal static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts,
+                                         Func<TopoDS_Face, bool>? theFaceFilter = null)
     {
         foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE })
         {
@@ -458,7 +459,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
         {
             N.TopoDS_Face aNF = N.TopoDS.Face(aF.N);
             TopoDS_Face aPF = TopoDS.Face(aF.P);
-            CompareFace(theOracle, aNF, aPF, theCounts);
+            if (theFaceFilter is null || theFaceFilter(aPF))
+            {
+                CompareFace(theOracle, aNF, aPF, theCounts);
+            }
         }
     }
 

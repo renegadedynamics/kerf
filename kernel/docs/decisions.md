@@ -2888,3 +2888,170 @@ ExtremaCurveSurface, ExtremaSurfaceSurface, Interpolate, PointsToBSpline, IntCS)
         IntPatch_Polyhedron uses `IntCurveSurface_PolyhedronUtils` and implements `IIntCurveSurface_Polyhedron` for
         ComputeMaxDeflection. IntSurf_Quadric's internal `SetValue` serves IntPatch's quadric fields.
       - HLRBRep: HLRBRep_InterCSurf is a sealed subclass of `IntCurveSurface_Inter` over gp_Lin and its own tools.
+
+## Phase 3: unit 3B, modification and adaptors
+
+BRepTools_History, Modification, Modifier, CopyModification, TrsfModification, GTrsfModification,
+NurbsConvertModification, ReShape, Quilt, Substitution, PurgeLocations and WireExplorer; `BRepTools.CopyForWrite` and
+the functional twins of BRepTools' in-place statics (design 4.6); BRepAdaptor_Curve, Curve2d and CompCurve;
+BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers from 3201 are renumbered on merge.
+
+345. **BRepTools_History is a working object** (decision 21) with OCCT's public setters (AddModified, AddGenerated,
+      Remove, ReplaceModified, ReplaceGenerated, Clear, Merge).
+      - `Generated` and `Modified` return a new read-only `IBentoList<TopoDS_Shape>` (OCCT returns a reference to its
+        own list, which a caller could change); the empty one for an unsupported type. Ported code iterates them with
+        `foreach`.
+      - OCCT's template constructor and `Merge(arguments, algo)` take a `BRepTools_History.IAlgorithm` (IsDeleted,
+        Modified, Generated as `IEnumerable<TopoDS_Shape>`), for unit 3K's BRepBuilderAPI_MakeShape to implement.
+      - The `Standard_ASSERT_*` checks keep their release behaviour: ASSERT_RETURN returns on an unsupported type,
+        ASSERT_VOID and ASSERT_INVOKE_ report nothing. As in OCCT, a shape whose only generated shape becomes modified
+        keeps an empty list, and HasGenerated stays true.
+      - Merge walks the maps as OCCT does. The lists it builds follow hash-map order on both sides (addresses in OCCT),
+        so they compare as sets. The unbinding of empty lists collects the keys first.
+346. **Modifications.** `BRepTools_Modification` is a public abstract class (callers may write modifications, as
+      OCCT's Draft and offset algorithms do), its subclasses public.
+      - Outputs are `out`: the modifier reads them only when the method returns true. NewParameter's `P` and `Tol` are
+        `ref`, since OCCT's implementations leave them unchanged for a null vertex and TrsfModification's NewCurve2d
+        relies on that.
+      - OCCT's `gp_Trsf& Trsf()`, `bool& IsCopyMesh()` and `gp_GTrsf& GTrsf()` are public `ref` returns (working
+        objects).
+      - One consequence of `out`: OCCT's modifier keeps one pcurve handle across the edges of a face, so a NewCurve2d
+        that returns true without assigning it (TrsfModification's `GeomLib::SameRange` on a zero-length range) reuses
+        the previous edge's pcurve. The port's is null (occt-issues.md).
+347. **BRepTools_Modifier** is a sealed public working object.
+      - `ModifiedShape` is a publication point: it freezes the shape it returns (design 4.2). Ported code that goes on
+        building on the result (BRepBuilderAPI_ModifyShape, unit 3K) reads `InternalModifiedShape`.
+      - OCCT's mutable-input mode updates the input's vertices in place, which throws on the frozen shapes callers
+        hold. So the `BRepTools_Modifier(bool)` constructor and `SetMutableInput` are internal; `IsMutableInput` stays
+        public.
+      - A sub-shape the modification leaves alone is the input's own, and OCCT copies its flags onto themselves
+        (`SetShapeFlags(S, S)`). The port skips that on a frozen one (`// OCCT.NET: frozen`: the values can't change).
+      - `TopoDS_Shape& result = myMap(S)` is a `ref` into the map, valid because the map gains no keys while
+        rebuilding. The edge and face information maps are keyed by TopoDS_Shape, with TopTools_ShapeMapHasher.
+348. **BRepTools_NurbsConvertModification waits for 6A where it projects.**
+      - NewCurve2d recomputes pcurves with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface,
+        which unit 6A ports. Those three places throw `Standard_NotImplemented`, with a `TODO(6A)` describing OCCT's
+        code. So converting a shape with faces throws until 6A merges; a lone edge converts.
+      - The maps of converted geometry compare handles by reference (as decision 227).
+      - `GetUpdatedEdges` returns the modifier's unfrozen edges, which BRepBuilderAPI_NurbsConvert goes on updating,
+        so it is internal and returns the list itself.
+      - A local `S` that C++ shadows is renamed `aS`.
+349. **`BRepTools.CopyForWrite(in S, out BRepTools_History, bool theCopyMesh = true)`** (internal) is the structural
+      copy of design 4.6: `BRepTools_Modifier` with `BRepTools_CopyModification(false, theCopyMesh)`. It makes new
+      TShapes and representations that share the frozen curves, surfaces and meshes, and leaves them unfrozen.
+      - Its history records each vertex, edge, face and solid as modified into its copy (BRepBuilderAPI_Copy's
+        `Modified`), ready for `Merge` with the next algorithm's.
+      - **Departure from the design**, which said `copyMesh: false` (BRepBuilderAPI_Copy's default): the copy keeps the
+        meshes, with each face's whole list of triangulations and its active one (the modification carries only the
+        active one). So the operation that follows sees what the in-place one would have; a mesher, for one, then
+        reuses a good triangulation as it would in place. phase3-design.md 4.6 is updated.
+      - As with BRepBuilderAPI_Copy, Poly_Polygon2D representations aren't carried, and the copy's vertices get their
+        points on curves again from the modifier.
+350. **The functional twins of BRepTools' in-place statics** are public. Each copies with CopyForWrite, runs the
+      internal static on the copy, freezes it and returns it (null in, null out):
+      - `Updated(S)` (Update), `FaceUVPointsUpdated(F)` (UpdateFaceUVPoints), `Cleaned(S, force)` (Clean),
+        `GeometryCleaned(S)` (CleanGeometry), `UnusedPCurvesRemoved(S)` (RemoveUnusedPCurves) and
+        `InternalsRemoved(S, force)` (RemoveInternals), each also with an `out BRepTools_History` (the copy's; OCCT
+        keeps none);
+      - `TriangulationLoaded(S, out bool, index, setActive)`, `AllTriangulationsLoaded(S, out bool)`,
+        `TriangulationUnloaded(S, out bool, index)`, `AllTriangulationsUnloaded(S, out bool)` and
+        `TriangulationActivated(S, index, out bool, strictly)`, the `out bool` being the static's result;
+      - `TolEvaluatedAndUpdated(E, C3d, C2d, S, f, l, out double)` (EvalAndUpdateTol).
+
+      They are in `BRepTools.Twins.cs`, a part of the partial class that ports no OCCT file. A twin's result has the
+      values of the static run on an unfrozen copy (unit tests, `ShapeSnapshot.AssertSameValues`).
+351. **`BRepTools.EvalAndUpdateTol`** is ported over GeomLib_CheckCurveOnSurface (unit 5A). The oracle test of
+      GeomLib_CheckCurveOnSurface now also calls it and its twin.
+352. **BRepTools_PurgeLocations** is a sealed public working object. `GetResult` and `ModifiedShape` freeze what they
+      return; inside, it uses the modifier's and ReShape's internal forms.
+      - TopTools_LocationSet comes with unit 3C, so its Add, Location and Index are private methods over a
+        `NCollection_IndexedMap<TopLoc_Location>` (`TODO(3C)`).
+      - The replacements are recorded in the map's order, which isn't OCCT's (decision 18). They replace distinct
+        shapes, so the result doesn't depend on it.
+353. **BRepAdaptor_Curve** derives from GeomAdaptor_TransformedCurve (decision 268), whose curve on surface is already
+      an `Adaptor3d_CurveOnSurface` (decision 215's `TODO(2B)` is resolved).
+      - Constructors and `Initialize` take the edge and face by `in`; `Edge()` returns the edge by value; `Reset` is
+        public (decision 214).
+      - An edge without geometry throws `Standard_NullObject`, as OCCT dereferences.
+      - `ShallowCopy` gives the copy shallow copies of the inner adaptors.
+      - `Trim` builds the trimmed copy directly: its own GeomAdaptor_Curve loaded on [First, Last] (or the trimmed curve
+        on surface), with the same transformation and edge. OCCT loads the range into itself, copy-constructs and
+        restores, sharing the cache. No two adaptors share a cache (decision 214), and the values are OCCT's.
+354. **BRepAdaptor_Curve2d** derives from Geom2dAdaptor_Curve. Its `ShallowCopy` goes through Geom2dAdaptor_Curve's,
+      whose body moved into a `private protected ShallowCopyTo` (behaviour unchanged), so evaluation data is copied
+      without its cache (OCCT: "cache will be rebuilt on demand"). As in OCCT, `Initialize` loads nothing when the edge
+      has no pcurve on the face.
+355. **BRepAdaptor_CompCurve** is an Adaptor3d_Curve whose Eval methods are `sealed override`.
+      - OCCT's `NCollection_HArray1<BRepAdaptor_Curve>` of values is an array of adaptor objects, default-constructed in
+        Initialize; trimmed copies are stored where OCCT copy-assigns.
+      - `Edge(U, E, UonE)` is `Edge(double, out TopoDS_Edge, out double)`.
+      - The knot array is shared by ShallowCopy, as in OCCT.
+      - Calls on an empty adaptor throw a null reference exception where OCCT dereferences a null handle.
+356. **BRepTools_WireExplorer** is a sealed working class with a public API; its maps use TopTools_ShapeMapHasher.
+      - Each vertex gets its own new list (OCCT binds copies of one empty list).
+      - OCCT's carry-over of `V1` is kept: an open wire whose free vertices are all REVERSED starts from the last edge's
+        first vertex.
+      - The start edge of an infinite wire comes from a hash set, whose order isn't OCCT's (decision 18). That matters
+        only with several infinite edges.
+      - `SelectDouble`, `SelectDegenerated` and `GetNextParamOnPC` are private statics.
+357. **BRepLProp.**
+      - `BRepLProp_CLProps` and `BRepLProp_SLProps` subclass LProp_CLProps3d and LProp_SLProps3d (decision 229; OCCT's
+        aliases of `GeomLProp_CLPropsBase<..., BRepAdaptor_Curve>` and `GeomLProp_SLPropsBase<BRepAdaptor_Surface>`).
+      - OCCT holds the adaptor by value, so the constructors and `SetCurve(BRepAdaptor_Curve)` and
+        `SetSurface(BRepAdaptor_Surface)` keep a ShallowCopy, unaffected by later changes to the caller's adaptor.
+      - BRepLProp_SurfaceTool is a static class with `out` results. BRepLProp is a static class with OCCT's two
+        `Continuity` overloads, throwing `Standard_Failure("Courbes non jointives")` as OCCT does.
+      - The adaptors and the explorer only read shapes: nothing changes for frozen inputs.
+358. **BRepTools_ReShape's public results are frozen** (design 4.2).
+      - `Apply`, `Value`, `ValueLeaf` and `Status` can return shapes rebuilt here, so they freeze what they return, and
+        `History()` freezes the shapes it lists.
+      - Ported code (ShapeBuild_ReShape and ShapeFix, phase 7) uses the internal forms `InternalApply`,
+        `InternalValue` and `InternalStatus` (`internal virtual`, for ShapeBuild_ReShape's overrides),
+        `InternalValueLeaf` and `InternalHistory`. The public methods are non-virtual wrappers.
+      - Clear, Remove, Replace, IsRecorded and IsNewShape are public. OCCT's Merge template is
+        `Merge(IEnumerable<TopoDS_Shape>, product)`; `Status`'s new shape is `out`; OCCT's `bool&
+        ModeConsiderLocation()` is a public virtual getter and setter (OCCT 8 has no ModeConsiderOrientation).
+        `applyImpl`, `replace`, `TReplacementKind`, `myNewShapes` and `myStatus` stay protected.
+      - The DFS in-flight set and ValueLeaf's visited set hold TShapes by reference, as OCCT's handle maps do.
+        History()'s maps have no hasher in OCCT (IsEqual), so the port passes `EqualityComparer<TopoDS_Shape>.Default`.
+      - OCCT's unused private `isOrdinaryMerged` isn't ported.
+359. **ReShape, Quilt and Substitution on frozen inputs.**
+      - ReShape's Apply writes only into TShapes it creates (copied parents, CopyRanges onto the copied edge, Closed on
+        rebuilt wires and shells). CopyRanges reads the source edge through `Curves()`, where OCCT calls
+        `ChangeCurves()` to read (`// OCCT.NET: frozen`). `CopyVertex` is internal: it returns an unfrozen copy, and
+        on a recorded vertex it updates the recorded replacement in place (throwing TopoDS_LockedShape on a frozen one,
+        as OCCT does on a locked one).
+      - **BRepTools_Quilt** is a sealed public working object. `Shells()` and `Copy(S)` freeze what they return;
+        `InternalShells()` and `InternalCopy()` don't, and Bind uses `InternalCopy`. Quilt's `Add` gives the edge an
+        old edge is bound to a pcurve on the new face, in place, as OCCT does, so binding to a frozen edge throws
+        TopoDS_LockedShape when the face is added: ported callers (LocOpe, BRepOffset) must bind to edges they built,
+        or copy for write first. Calling Copy or Shells before the last Add freezes copied edges that a later Add would
+        update. Free edges and vertices go into the result compound in hash-map order (decision 18).
+      - **BRepTools_Substitution** is a sealed public working object. `Substitute` stores a copy of the list (OCCT's
+        map binds by value); `Copy(S)` returns an `IBentoList` of frozen shapes and `InternalCopy(S)` the map's own
+        unfrozen list; Build writes only into its own empty copies.
+360. **Tests.**
+      - Ported GTests: BRepTools_ReShape (15) and BRepAdaptor_CompCurve (3). The makers they use (BRepBuilderAPI,
+        GC_MakeArcOfCircle) are replaced by `TestShapes`, frozen as the makers' results will be.
+      - Unit tests (47 more): History; the modifier with each modification on frozen inputs; CopyForWrite and its
+        history merged with ReShape's; each twin against its static on an unfrozen copy; PurgeLocations; ReShape,
+        Quilt and Substitution on frozen inputs; WireExplorer, the BRepAdaptor curves and BRepLProp. Inputs are checked
+        unchanged with `ShapeSnapshot`, which records a whole shape graph (TShapes by identity, flags, children,
+        representations, geometry by identity).
+      - Oracle tests, all bit-identical:
+        - BRepTools_Modifier with BRepTools_CopyModification against BRepBuilderAPI_Copy (637,287 values);
+        - with BRepTools_TrsfModification against BRepBuilderAPI_Transform with scalings, point and plane mirrors and
+          rigid motions (588,203 values; faces on planes skipped until 6A, since OCCT computes their pcurves with
+          CurveOnPlane);
+        - with BRepTools_GTrsfModification against BRepBuilderAPI_GTransform on B-spline faces (124,928 values);
+        - CopyForWrite against BRepBuilderAPI_Copy(false, true), with its history (635,519 values);
+        - History.Merge on random histories (36,350 values);
+        - EvalAndUpdateTol and its twin (3,000 values);
+        - ReShape: Replace, Remove, Apply, Value, ValueLeaf, Status, History (8,271,836 values);
+        - WireExplorer, BRepAdaptor_Curve, Curve2d, CompCurve, BRepLProp::Continuity and BRepLProp_SLProps (2,233,754
+          values).
+
+        That is 12,530,877 values. The modifier's results are compared like the topology oracle's shapes (flags,
+        exploration, identity, every vertex, edge and face), with their triangulations and each input sub-shape's
+        ModifiedShape by its place in the result. BRepLProp_CLProps, PurgeLocations, Quilt, Substitution and ReShape's
+        ModeConsiderLocation have no native binding and are covered by the unit tests.

@@ -139,6 +139,121 @@ internal sealed class TwinShapes
         return new(aNF, aF);
     }
 
+    /// <summary>
+    /// A planar face bounded by the closed polygon of the given (u, v) corners, on a plane through
+    /// <paramref name="theOrigin"/> with the raw normal and X direction, whose edges have pcurves and no 3D curves (each
+    /// pcurve a line from one corner to the next, parametrised by length over [0, length]).
+    /// </summary>
+    public Twin<N.TopoDS_Face, TopoDS_Face> PCurveOnlyFace(in gp_Pnt theOrigin, in gp_XYZ theNormal, in gp_XYZ theXDir,
+                                                           params (double U, double V)[] theCorners)
+    {
+        using var aNO = Oracle.ToNative(theOrigin);
+        using var aNN = new N.gp_Dir(theNormal.X(), theNormal.Y(), theNormal.Z());
+        using var aNX = new N.gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z());
+        using var aNAx = new N.gp_Ax3(aNO, aNN, aNX);
+        var aNPlane = new N.Geom_Plane(aNAx);
+        var aPlane = new Geom_Plane(new gp_Ax3(theOrigin, new gp_Dir(theNormal.X(), theNormal.Y(), theNormal.Z()),
+                                               new gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z())));
+        gp_Pln aPln = aPlane.Pln();
+
+        var aNF = new N.TopoDS_Face();
+        myN.MakeFace(aNF, aNPlane, Tol);
+        TopoDS_Face aF = new();
+        myP.MakeFace(ref aF, aPlane, Tol);
+
+        int n = theCorners.Length;
+        var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[n];
+        for (int i = 0; i < n; i++)
+        {
+            aV[i] = Vertex(ElSLib.Value(theCorners[i].U, theCorners[i].V, aPln), 1e-6);
+        }
+
+        var aNW = new N.TopoDS_Wire();
+        myN.MakeWire(aNW);
+        TopoDS_Wire aW = new();
+        myP.MakeWire(ref aW);
+        for (int i = 0; i < n; i++)
+        {
+            (double u1, double v1) = theCorners[i];
+            (double u2, double v2) = theCorners[(i + 1) % n];
+            double aLength = Math.Sqrt((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1));
+            var aNE = new N.TopoDS_Edge();
+            myN.MakeEdge(aNE);
+            using (var aNP2 = new N.gp_Pnt2d(u1, v1))
+            using (var aND2 = new N.gp_Dir2d(u2 - u1, v2 - v1))
+            {
+                myN.UpdateEdge(aNE, new N.Geom2d_Line(aNP2, aND2), aNF, Tol);
+            }
+
+            myN.Range(aNE, 0.0, aLength);
+            myN.Add(aNE, aV[i].N.Oriented(N.TopAbs_Orientation.TopAbs_FORWARD));
+            myN.Add(aNE, aV[(i + 1) % n].N.Oriented(N.TopAbs_Orientation.TopAbs_REVERSED));
+            myN.Add(aNW, aNE);
+
+            TopoDS_Edge anE = new();
+            myP.MakeEdge(ref anE);
+            myP.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(u1, v1), new gp_Dir2d(u2 - u1, v2 - v1)), aF, Tol);
+            myP.Range(anE, 0.0, aLength);
+            myP.Add(anE, aV[i].P.Oriented(TopAbs_FORWARD));
+            myP.Add(anE, aV[(i + 1) % n].P.Oriented(TopAbs_REVERSED));
+            myP.Add(aW, anE);
+        }
+
+        aNW.Closed(true);
+        aW.Closed(true);
+        myN.Add(aNF, aNW);
+        myP.Add(aF, aW);
+        return new(aNF, aF);
+    }
+
+    /// <summary>
+    /// A face on the surface bounded by one closed wire of the given edges, in order, each reversed in the wire or not
+    /// and given its pcurve on the face.
+    /// </summary>
+    public Twin<N.TopoDS_Face, TopoDS_Face> FaceOn(N.Geom_Surface theNS, Geom_Surface theS,
+                                                   params (Twin<N.TopoDS_Edge, TopoDS_Edge> Edge, bool Reversed, N.Geom2d_Curve NC, Geom2d_Curve C)[] theEdges)
+    {
+        var aNF = new N.TopoDS_Face();
+        myN.MakeFace(aNF, theNS, Tol);
+        TopoDS_Face aF = new();
+        myP.MakeFace(ref aF, theS, Tol);
+        var aNW = new N.TopoDS_Wire();
+        myN.MakeWire(aNW);
+        TopoDS_Wire aW = new();
+        myP.MakeWire(ref aW);
+        foreach ((Twin<N.TopoDS_Edge, TopoDS_Edge> anEdge, bool isReversed, N.Geom2d_Curve aNC, Geom2d_Curve aC) in theEdges)
+        {
+            myN.UpdateEdge(anEdge.N, aNC, aNF, Tol);
+            myP.UpdateEdge(anEdge.P, aC, aF, Tol);
+            myN.Add(aNW, isReversed ? anEdge.N.Reversed() : anEdge.N);
+            myP.Add(aW, isReversed ? anEdge.P.Reversed() : anEdge.P);
+        }
+
+        aNW.Closed(true);
+        aW.Closed(true);
+        myN.Add(aNF, aNW);
+        myP.Add(aF, aW);
+        return new(aNF, aF);
+    }
+
+    /// <summary>A wire of the edges, in this order.</summary>
+    public Twin<N.TopoDS_Wire, TopoDS_Wire> Wire(bool theClosed, params Twin<N.TopoDS_Edge, TopoDS_Edge>[] theEdges)
+    {
+        var aNW = new N.TopoDS_Wire();
+        myN.MakeWire(aNW);
+        TopoDS_Wire aW = new();
+        myP.MakeWire(ref aW);
+        foreach (Twin<N.TopoDS_Edge, TopoDS_Edge> anE in theEdges)
+        {
+            myN.Add(aNW, anE.N);
+            myP.Add(aW, anE.P);
+        }
+
+        aNW.Closed(theClosed);
+        aW.Closed(theClosed);
+        return new(aNW, aW);
+    }
+
     /// <summary>A box [0, dx] x [0, dy] x [0, dz]: 8 vertices, 12 edges, 6 faces, a closed shell and a solid.</summary>
     public Twin<N.TopoDS_Solid, TopoDS_Solid> Box(double dx, double dy, double dz)
     {

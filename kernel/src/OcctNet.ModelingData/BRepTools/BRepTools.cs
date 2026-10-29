@@ -20,7 +20,8 @@ namespace Occt;
 /// The statics that change the shape they are given (Update, UpdateFaceUVPoints, Clean, CleanGeometry,
 /// RemoveUnusedPCurves, the triangulation loaders, RemoveInternals, EvalAndUpdateTol) are internal: they work on
 /// unfrozen shapes inside OCCT.NET, and throw on frozen ones as BRep_Builder does. Their public functional twins,
-/// which return a changed copy, come with BRepTools_Modifier (unit 3B; docs/phase3-design.md, section 4.6).
+/// which return a changed copy (<see cref="Cleaned(in TopoDS_Shape, bool)"/>, <see cref="Updated(in TopoDS_Shape)"/>,
+/// ...), are in BRepTools.Twins.cs (docs/phase3-design.md, section 4.6).
 /// </para>
 /// </remarks>
 public static partial class BRepTools
@@ -1120,7 +1121,6 @@ public static partial class BRepTools
     /// The deviation of the edge's pcurve on the surface from its 3D curve over [f, l]; raises the edge's tolerance to
     /// it if larger. Returns the tolerance.
     /// </summary>
-    /// <exception cref="Standard_NotImplemented">Until unit 5A (GeomLib_CheckCurveOnSurface) is merged.</exception>
     internal static double EvalAndUpdateTol(in TopoDS_Edge theE,
                                             Geom_Curve C3d,
                                             Geom2d_Curve C2d,
@@ -1128,8 +1128,86 @@ public static partial class BRepTools
                                             double f,
                                             double l)
     {
-        // TODO(5A): GeomLib_CheckCurveOnSurface, then the estimate by sample points of OCCT's error statuses 2 and 3.
-        throw new Standard_NotImplemented("BRepTools::EvalAndUpdateTol needs GeomLib_CheckCurveOnSurface (unit 5A)");
+        double newtol = 0.0;
+        double first = f, last = l;
+        // Set first, last to avoid ErrosStatus = 2 because of
+        // too strong checking of limits in class CheckCurveOnSurface
+        //
+        if (!C3d.IsPeriodic())
+        {
+            first = Max(first, C3d.FirstParameter());
+            last = Min(last, C3d.LastParameter());
+        }
+        if (!C2d.IsPeriodic())
+        {
+            first = Max(first, C2d.FirstParameter());
+            last = Min(last, C2d.LastParameter());
+        }
+        Adaptor3d_Curve aGeomAdaptorCurve = new GeomAdaptor_Curve(C3d, first, last);
+
+        Adaptor2d_Curve2d aGeom2dAdaptorCurve = new Geom2dAdaptor_Curve(C2d, first, last);
+        GeomAdaptor_Surface aGeomAdaptorSurface = new GeomAdaptor_Surface(S);
+
+        Adaptor3d_CurveOnSurface anAdaptor3dCurveOnSurface =
+            new Adaptor3d_CurveOnSurface(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
+
+        GeomLib_CheckCurveOnSurface CT = new GeomLib_CheckCurveOnSurface(aGeomAdaptorCurve);
+        CT.Perform(anAdaptor3dCurveOnSurface);
+        if (CT.IsDone())
+        {
+            newtol = CT.MaxDistance();
+        }
+        else
+        {
+            if (CT.ErrorStatus() == 3
+                || (CT.ErrorStatus() == 2 && (C3d.IsPeriodic() || C2d.IsPeriodic())))
+            {
+                // Try to estimate by sample points
+                int nbint = 22;
+                double dt = (last - first) / nbint;
+                dt = Max(dt, Precision.Confusion());
+                double d, dmax = 0.0;
+                gp_Pnt2d aP2d;
+                gp_Pnt aPC, aPS;
+                int cnt = 0;
+                double t = first;
+                for (; t <= last; t += dt)
+                {
+                    cnt++;
+                    C2d.D0(t, out aP2d);
+                    C3d.D0(t, out aPC);
+                    S.D0(aP2d.X(), aP2d.Y(), out aPS);
+                    d = aPS.SquareDistance(aPC);
+                    if (d > dmax)
+                    {
+                        dmax = d;
+                    }
+                }
+                if (cnt < nbint + 1)
+                {
+                    t = last;
+                    C2d.D0(t, out aP2d);
+                    C3d.D0(t, out aPC);
+                    S.D0(aP2d.X(), aP2d.Y(), out aPS);
+                    d = aPS.SquareDistance(aPC);
+                    if (d > dmax)
+                    {
+                        dmax = d;
+                    }
+                }
+
+                newtol = 1.2 * Math.Sqrt(dmax);
+            }
+        }
+        double Tol = BRep_Tool.Tolerance(theE);
+        if (newtol > Tol)
+        {
+            Tol = newtol;
+            BRep_Builder B = new BRep_Builder();
+            B.UpdateEdge(theE, Tol);
+        }
+
+        return Tol;
     }
 
     /// <summary>The orientation of the edge in the face.</summary>
