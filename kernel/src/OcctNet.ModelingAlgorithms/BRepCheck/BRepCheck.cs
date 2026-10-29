@@ -160,7 +160,18 @@ public static class BRepCheck
         }
     }
 
-    // SelfIntersection(W, F, E1, E2) needs BRepCheck_Wire: TODO(3J), ported with BRepCheck_Wire.
+    /// <summary>
+    /// True if the wire <paramref name="W"/> intersects itself on the face <paramref name="myFace"/>
+    /// (<see cref="BRepCheck_Wire.SelfIntersect"/>); <paramref name="RetE1"/> and <paramref name="RetE2"/> then receive
+    /// the intersecting edges (<paramref name="RetE2"/> unchanged for an edge that intersects itself or has no pcurve).
+    /// </summary>
+    /// <remarks>The edges are <c>ref</c>: OCCT leaves them unchanged when nothing is found.</remarks>
+    public static bool SelfIntersection(in TopoDS_Wire W, in TopoDS_Face myFace, ref TopoDS_Edge RetE1, ref TopoDS_Edge RetE2)
+    {
+        var chkw = new BRepCheck_Wire(W);
+        BRepCheck_Status stat = chkw.SelfIntersect(myFace, ref RetE1, ref RetE2);
+        return stat == BRepCheck_SelfIntersectingWire;
+    }
 
     /// <summary>
     /// The precision of the curve's numbers: Epsilon of the largest of an ellipse's centre coordinates and radii,
