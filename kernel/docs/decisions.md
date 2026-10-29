@@ -1251,3 +1251,76 @@ GC (the Geom-returning makers, 3D and 2D), GCE2d, CPnts and GCPnts.
       reversed sub-ranges) are compared: 191,740 values, all bit-identical. GC_MakeSegment and the other makers,
       GCPnts_UniformAbscissa, GCPnts_QuasiUniformAbscissa and GCPnts_TangentialDeflection are not bound and are
       unit-tested only.
+## Phase 2: unit 2D, AdvApp2Var
+
+AdvApp2Var_ApproxF2var (f2c), the working classes (Context, Criterion, Node, Iso, Patch, Network, Framework; OCCT's
+"strips" are sequences of isos, with no class of their own), AdvApp2Var_EvaluatorFunc2Var and
+AdvApp2Var_ApproxAFunc2Var. With unit 1F, all 35 files of the package.
+
+192. **ApproxF2var is converted by `tools/f2c-to-cs.py`** (decision 115), given MathBase's signatures as JSON (read off
+      AdvApp2Var_MathBase.cs, one letter per parameter). The script now also knows the evaluator parameter
+      (`const AdvApp2Var_EvaluatorFunc2Var&`, passed through), `int const*` parameters, the AdvApp2Var_ApproxF2var
+      prefix, and the evaluator calls (`(*const_cast<AdvApp2Var_EvaluatorFunc2Var*>(&foncnp)).Evaluate(...)`,
+      rewritten as a call with the evaluator's parameter modes). Fixed by hand: the three work pointers OCCT builds
+      from an offset alone (`reinterpret_cast<double*>(iofwr * sizeof(double))`), which are `wrkar + iofwr` after the
+      port's `mcrrqst_` (decision 114); a `(int*)ndimen` cast; two comma expressions spread over several lines. The
+      class is internal and static, with OCCT's public and private functions. It has no state: its Fortran DATA
+      tables (`xmax2`, `xmax4`, `xmax6`) are constant spans, each routine that allocates makes its own
+      AdvApp2Var_SysBase, and MathBase's Hermite cache is per thread (decision 113), so approximations run in parallel
+      (`Approximations_RunInParallel_AsSequentially`).
+193. **AdvApp2Var_EvaluatorFunc2Var is a public abstract class with by-value inputs** (as decision 145):
+      `Evaluate(int theDimension, ReadOnlySpan<double> theUStartEnd, ReadOnlySpan<double> theVStartEnd, int
+      theFavorIso, double theConstParam, int theNbParams, ReadOnlySpan<double> theParameters, int theUOrder, int
+      theVOrder, Span<double> theResult, out int theErrorCode)`. None of OCCT's implementations writes an input.
+      `operator()` is left out. ApproxF2var calls it through a private extension method taking f2c pointers, so its
+      call sites keep OCCT's arguments; the spans run to the end of the caller's arrays (a C pointer has no length),
+      and an implementation writes `theNbParams * theDimension` values.
+194. **The working classes are public classes with OCCT's public mutators** (decision 21): GeomPlate's criteria and
+      GeomFill use them. Where C++ copies by value: AdvApp2Var_Network's and AdvApp2Var_Framework's constructors copy
+      their sequences (the Framework its strips too), sharing the patches, nodes and isos as OCCT's handles do;
+      AdvApp2Var_Node's `operator=` is `Assign`, which ApproxAFunc2Var's ComputeConstraints uses as OCCT does
+      (`N1 = *myConstraints.Node(indN1)`, `*myConstraints.Node(indN1) = N1`); AdvApp2Var_Context has no mutators and
+      is shared. Their accessors return their own arrays (shared: don't modify), nullable where OCCT's handles may be
+      null (a default context, an iso or patch not yet approximated). Network's `operator()` are indexers;
+      `FirstNotApprox` takes `ref` indices (left unchanged when it finds nothing); `SameDegree` has `out`
+      parameters. `Dump` takes a TextWriter and `ToString()` returns what it writes (decision 34).
+195. **Small translations.** Iso::MakeApprox's moving pointers (`CRBAPP += SZCRB`) are offsets into the arrays'
+      spans, and its `goto FINISH` (which only freed two arrays) a return. The Context's tolerance arrays of a
+      dimension without subspaces may be null: OCCT passes the handles to helpers that read them only for each
+      subspace, as the port does. `pow` is `Math.Pow`.
+196. **Only 3D, as OCCT documents.** Iso and Patch read and write three coordinates whatever the dimension, and pass
+      3 as the subspace dimension to the Fortran: with 1D or 2D subspaces OCCT reads and writes outside its arrays,
+      and the port throws (IndexOutOfRangeException in MathBase's `mmtrpj4_` for a 1D function).
+197. **ApproxAFunc2Var's results.** `Surface(i)` returns the stored Geom_BSplineSurface, frozen when it is built
+      (section 8 of the rules): callers keep it, and ported code that would change it copies it first. The error
+      accessors `MaxError(Dimension)`, `AverageError`, `UFrontError` and `VFrontError` return copies, null where
+      OCCT returns a null handle (decision 146); the `(Dimension, Index)` forms read the stored values. The tolerance
+      arguments are nullable.
+198. **mma2ce1_'s stray write is kept in its work zone.** OCCT writes the Jacobi maxima of both directions at the
+      same place (occt-issues.md); when the U Jacobi degree exceeds the V one by more than about 13, the U values run
+      past the work zone, and native OCCT corrupts its heap (the native harness crashes). The port allocates the
+      excess (`iszwr += Max(0, isz5 - isz6 - isz7)`), so the stray values land in the zone, unread: results are
+      OCCT's wherever OCCT doesn't crash, and defined where it does. Rejected: throwing, which would make
+      GeomConvert_ApproxSurface fail for valid, if lopsided, degree limits. Fixing the bug itself (writing the U
+      maxima at ipt4) waits, as decision 10 says: it changes every approximation's result.
+199. **AdvApp2Var is checked against native OCCT** (a harness not committed, as decisions 84 and 116): a DLL built
+      with MSVC against build123d.NET's OCCT 8.0.1 install (`.deps/install/win-x64`: headers and TKernel, TKMath,
+      TKG3d, TKGeomBase), whose evaluator calls back into the same C# function as the port's, so both sides
+      approximate identical values. End to end, AdvApp2Var_ApproxAFunc2Var on 15,100 random cases (polynomial,
+      trigonometric, mixed, spherical and planar functions; random domains, tolerances 1e-2 to 1e-9, frontier
+      tolerances, favoured iso U, V or none, continuities C0 to C2 in each direction, precision codes 0 to 3, degree
+      limits 2·order+1 to 14, 1 to 200 patches, without and with a criterion of each type and repartition): every
+      result (IsDone, HasResult, the errors, CritError, degrees, knots, multiplicities and poles; 19.6 million
+      values) is bit-identical in the 15,062 cases native OCCT survives; the other 38 overflow OCCT's work zone
+      (1907) and are run by the port only. Function by function, the 13 public routines of AdvApp2Var_ApproxF2var
+      (mma2roo_, mma2jmx_, mmapptt_, mma1her_, mma2can_, mma2ac1_ to mma2ac3_, mma2fx6_, mma2cdi_, mma2ds1_,
+      mma2fnc_, mma2ce1_), including the order -1 paths that ApproxAFunc2Var never takes, on 12,977 random calls
+      over buffers prefilled with the same random values: all outputs and error codes bit-identical. Not compared
+      natively: the failure paths (no random case failed on either side) and Patch's `Poles`.
+200. **For unit 4C (GeomConvert_ApproxSurface).** It passes `nul1` (one zero) and `nul2` (four zeros) for the 1D and
+      2D tolerances, an AdvApprox_PrefAndRec in each direction, and an evaluator over an Adaptor3d_Surface that
+      re-trims the adaptor on each call (`myAdaptor = myAdaptor->UTrim(...)` on a mutable member: the port's
+      evaluator holds a reassignable field). Its `MaxError()` is `approx.MaxError(3, 1)`, which inherits the error
+      underestimate of occt-issues.md, and its surface is ApproxAFunc2Var's frozen one. The native harness's approach
+      (a callback evaluator) carries over to an oracle test of GeomConvert_ApproxSurface once the bindings whitelist
+      it.

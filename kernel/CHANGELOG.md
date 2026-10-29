@@ -65,3 +65,11 @@ Phase 2 (part): constructions and sampling.
 - Tests: the GC and GCPnts GTests; oracle tests of the GC arc makers and of GCPnts_AbscissaPoint,
   GCPnts_UniformDeflection and GCPnts_QuasiUniformDeflection against native OCCT, all bit-identical; test stand-ins
   for GeomAdaptor_Curve and Geom2dAdaptor_Curve, bit-identical to the native adaptors.
+Phase 2 (part): surface approximation.
+
+- `OcctNet.ModelingData`: AdvApp2Var (approximation of a function F(U, V) by B-spline surfaces,
+  `AdvApp2Var_ApproxAFunc2Var`, with its evaluator, criterion and working classes). Results are frozen surfaces and
+  copies of the error tables; approximations run in parallel.
+- Tests: the AdvApp2Var GTests; unit tests reproducing planes and polynomial surfaces and approximating a sphere and
+  sin(u)cos(v) under each continuity and criterion, in parallel too. Checked against native OCCT on 15,100 random
+  approximations (not committed): bit-identical.

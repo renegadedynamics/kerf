@@ -128,9 +128,16 @@ def parse_params(theText):
             continue
         p = {"const": code.startswith("const ")}
         code = re.sub(r"^const\s+", "", code)
+        code = re.sub(r"^(\w+)\s+const\s*\*", r"\1*", code)  # `int const* x`, as `const int* x`
+        p["const"] = p["const"] or "const" in part
         m = re.match(r"int\s*\(\*\s*(\w+)\)\s*\((.*)\)$", code, re.S)
         if m:
             p.update(kind="fptr", name=m.group(1), ctype="int", sig=m.group(2))
+            params.append(p)
+            continue
+        m = re.match(r"AdvApp2Var_EvaluatorFunc2Var\s*&\s*(\w+)$", code)
+        if m:
+            p.update(kind="eval", name=m.group(1), ctype="AdvApp2Var_EvaluatorFunc2Var")
             params.append(p)
             continue
         m = re.match(r"NCollection_Array1<(\w+)>\s*&\s*(\w+)$", code)
@@ -238,7 +245,7 @@ def infer(funcs):
 def mode_of(f, p):
     if p["kind"] == "fptr":
         return "x"
-    if p["kind"] == "arr1":
+    if p["kind"] in ("arr1", "eval"):
         return "x"
     n = p["name"]
     if f.isarr.get(n):
@@ -254,6 +261,8 @@ def cs_param(f, p):
         return f"AdvApp2Var_MathBase_bfunx {n}"
     if p["kind"] == "arr1":
         return f"NCollection_Array1<{t}> {n}"
+    if p["kind"] == "eval":
+        return f"AdvApp2Var_EvaluatorFunc2Var {n}"
     return {"v": f"{t} {n}", "r": f"ref {t} {n}", "c": f"F2cConstPtr<{t}> {n}",
             "p": f"F2cPtr<{t}> {n}"}[m]
 
@@ -446,6 +455,8 @@ def post_code(text, f, locals_arr):
     text = text.replace("AdvApp2Var_SysBase::", "AdvApp2Var_SysBase.")
     text = text.replace("AdvApp2Var_MathBase::", "AdvApp2Var_MathBase.")
     text = text.replace("AdvApp2Var_Data::", "AdvApp2Var_Data.")
+    text = text.replace("AdvApp2Var_ApproxF2var::", "AdvApp2Var_ApproxF2var.")
+    text = re.sub(r"\b(\w+)_Evaluate\(", r"\1.Evaluate(", text)
     text = re.sub(r"\bstd::max\(", "Max(", text)
     text = re.sub(r"\bstd::min\(", "Min(", text)
     text = re.sub(r"\bstd::abs\(", "Math.Abs(", text)
@@ -486,6 +497,10 @@ def main():
     if len(sys.argv) > 4:
         KNOWN.update(json.load(open(sys.argv[4])))
     text = open(src, encoding="utf-8").read()
+    # ApproxF2var calls its evaluator through a const_cast: a pseudo-function with the evaluator's modes, which the
+    # output then writes as foncnp.Evaluate(...) (its spans fixed by hand).
+    text = re.sub(r"\(\*const_cast<AdvApp2Var_EvaluatorFunc2Var\*>\(&(\w+)\)\)\s*\.Evaluate\(", r"\1_Evaluate(", text)
+    KNOWN.update({n + "_Evaluate": "vccvvvcvvpr" for n in set(re.findall(r"(\w+)_Evaluate\(", text))})
     code = strip_comments(text)
     funcs = parse_functions(text, code)
     sigs = infer(funcs)
