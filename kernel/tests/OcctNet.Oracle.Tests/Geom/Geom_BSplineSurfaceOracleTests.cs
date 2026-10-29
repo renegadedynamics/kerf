@@ -3,6 +3,7 @@
 
 using Xunit.Abstractions;
 using N = Build123d.Occt;
+using static OcctNet.Oracle.Tests.Geom.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests.Geom;
 
@@ -276,44 +277,6 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
 
         Assert.True((aNErr is null) == (aPErr is null), $"{theWhat}: native {aNErr?.Message ?? "ok"}, port {aPErr?.ToString() ?? "ok"}");
         return aNErr is null;
-    }
-
-    private static (N.gp_Trsf Native, gp_Trsf Port) RandomTrsf(Oracle theOracle)
-    {
-        var aNative = new N.gp_Trsf();
-        switch (theOracle.Int(0, 3))
-        {
-            case 0:
-            {
-                gp_Ax1 anAxis = theOracle.Ax1();
-                double anAngle = theOracle.Angle();
-                using var aNAxis = Oracle.ToNative(anAxis);
-                aNative.SetRotation(aNAxis, anAngle);
-                return (aNative, gp_Trsf.Rotation(anAxis, anAngle));
-            }
-            case 1:
-            {
-                gp_Vec aV = theOracle.Vec();
-                using var aNV = Oracle.ToNative(aV);
-                aNative.SetTranslation(aNV);
-                return (aNative, gp_Trsf.Translation(aV));
-            }
-            case 2:
-            {
-                gp_Pnt aP = theOracle.Pnt();
-                double aS = theOracle.Real(0.2, 3);
-                using var aNP = Oracle.ToNative(aP);
-                aNative.SetScale(aNP, aS);
-                return (aNative, gp_Trsf.Scale(aP, aS));
-            }
-            default:
-            {
-                gp_Ax2 anAxes = theOracle.Ax2();
-                using var aNAxes = Oracle.ToNative(anAxes);
-                aNative.SetMirror(aNAxes);
-                return (aNative, gp_Trsf.Mirror(anAxes));
-            }
-        }
     }
 
     [Fact]

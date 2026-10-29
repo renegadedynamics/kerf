@@ -72,8 +72,8 @@ broken down by package.
 | ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
-| ModelingData | TKG2d | 0 / 102 | 0 / 23,488 | 0.0 |
-| ModelingData | TKG3d | 0 / 237 | 0 / 70,301 | 0.0 |
+| ModelingData | TKG2d | 30 / 102 | 3,925 / 23,488 | 16.7 |
+| ModelingData | TKG3d | 75 / 237 | 20,692 / 70,301 | 29.4 |
 | ModelingData | TKGeomBase | 0 / 720 | 0 / 317,408 | 0.0 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 468 | 151,640 / 2,897,781 | 5.2 |
+| **All** |  | 573 | 176,257 / 2,897,781 | 6.1 |
 
 ## TKMath
 
@@ -131,4 +131,28 @@ broken down by package.
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
+
+## TKG2d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor2d | 4 / 6 | 926 / 1,720 | 53.8 |
+| Geom2d | 24 / 44 | 2,450 / 11,019 | 22.2 |
+| Geom2dAdaptor | 0 / 4 | 0 / 1,826 | 0.0 |
+| Geom2dEval | 2 / 14 | 549 / 4,405 | 12.5 |
+| Geom2dGridEval | 0 / 20 | 0 / 3,491 | 0.0 |
+| Geom2dHash | 0 / 14 | 0 / 1,027 | 0.0 |
+
+## TKG3d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor3d | 8 / 16 | 1,374 / 7,038 | 19.5 |
+| AdvApprox | 0 / 14 | 0 / 2,320 | 0.0 |
+| Geom | 59 / 84 | 17,718 / 30,530 | 58.0 |
+| GeomAdaptor | 0 / 14 | 0 / 7,175 | 0.0 |
+| GeomEval | 3 / 25 | 1,182 / 9,820 | 12.0 |
+| GeomGridEval | 0 / 43 | 0 / 10,200 | 0.0 |
+| GeomHash | 0 / 36 | 0 / 2,800 | 0.0 |
+| TopAbs | 5 / 5 | 418 / 418 | 100.0 |
 

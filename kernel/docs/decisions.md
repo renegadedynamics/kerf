@@ -494,6 +494,69 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
 
 ## Phase 2: unit 1C, Geom surfaces
 
+Geom_Plane, the cylindrical, conical, spherical and toroidal surfaces, Geom_RectangularTrimmedSurface,
+Geom_SurfaceOfRevolution and Geom_SurfaceOfLinearExtrusion with Geom_RevolutionUtils and Geom_ExtrusionUtils
+(1101-1109); Geom_BezierSurface and Geom_BSplineSurface (1110-1113).
+
+1101. **The surfaces follow unit 1A's conventions for the curves**: OCCT's `final` members are `sealed override`
+      (`Copy` included) and the classes are not sealed (1A's 604); every `Set` method is internal with
+      `CheckMutable()` and has a public `With` twin returning the concrete class: `WithPln`; `WithCylinder`,
+      `WithRadius`; `WithCone`, `WithRadius`, `WithSemiAngle`; `WithSphere`, `WithRadius`; `WithTorus`,
+      `WithMajorRadius`, `WithMinorRadius`; `WithAxis`, `WithDirection`, `WithBasisCurve`, `WithLocation` (revolution);
+      `WithDirection`, `WithBasisCurve` (extrusion); and `WithTrim` with OCCT's two public `SetTrim` signatures (the
+      eight-argument `SetTrim` stays private, without the check, as a helper reached only from mutators and
+      constructors). Geom_ElementarySurface's `WithAxis`, `WithLocation`, `WithPosition` and the bases' `UReversed`,
+      `VReversed`, `Transformed`, ... cover the rest.
+1102. **Composite surfaces share their basis as OCCT does** (1A's 606): `Geom_RectangularTrimmedSurface.BasisSurface()`
+      and `Geom_SweptSurface.BasisCurve()` return the stored object, which the constructors and `SetBasisCurve` copy
+      from the caller's, as in OCCT. Callers can't change it, but freezing a trimmed or swept surface doesn't freeze
+      its basis, and the trimmed and swept surfaces' own `Transform`, `UReverse` and `VReverse` change the basis in
+      place (OCCT's code). Phase 3, which decides where topology freezes geometry, should freeze the basis with its
+      owner (or make `Freeze` virtual); these mutators are then only reached on unfrozen owners.
+1103. **Iso-curves that build unported curves throw until unit 1A is merged.** `UIso`/`VIso` of the elementary
+      surfaces (Geom_Line, Geom_Circle, Geom_TrimmedCurve), `VIso` of Geom_SurfaceOfRevolution (Geom_Circle), `UIso` of
+      Geom_SurfaceOfLinearExtrusion (Geom_Line) and the trimmed-direction iso-curves of Geom_RectangularTrimmedSurface
+      (Geom_TrimmedCurve) throw `Standard_NotImplemented`, with OCCT's code in a `// TODO(1A)` comment (see also 1112).
+      Revolution `UIso` and extrusion `VIso` (copies of the basis, rotated or translated) work. Unit tests named
+      `*_NotImplementedUntil1A` flag them for the merge. Geom_RectangularTrimmedSurface's constructors turn an
+      offset basis into an offset of a trimmed surface; Geom_OffsetSurface is unit 2A's, so that code is a
+      `// TODO(2A)` comment (until then no surface can be an offset surface).
+1104. **Geom_RevolutionUtils and Geom_ExtrusionUtils are internal static classes.** Their `Calculate*` functions are
+      ported as written (`in` inputs, `out` results). Their evaluator templates over the curve type are ported for
+      `Adaptor3d_Curve` only, the one instantiation OCCT makes (GeomAdaptor_Surface; GeomGridEval uses the
+      `Calculate*` functions), as 1A's 607.
+1105. **Small translations.** `std::remainder` (closure and periodicity of trimmed surfaces) is `Math.IEEERemainder`,
+      which has the same definition (quotient rounded to even). `Geom_RectangularTrimmedSurface::Copy` returns a null
+      handle when neither direction is trimmed; no constructor or `SetTrim` can produce that state, so the port
+      throws `Standard_ProgramError` there instead of returning null from a non-nullable `Copy`. OCCT's
+      `Geom_SurfaceOfRevolution::ReferencePlane` throws `Standard_NotImplemented`, and so does the port's.
+1106. **Evaluation representations of the swept surfaces** follow 1A's 602: `HasEvalRepresentation()` is public;
+      `EvalRepresentation()`, `SetEvalRepresentation` and `ClearEvalRepresentation` are internal (the setters with
+      `CheckMutable()`); callers use `WithEvalRepresentation(desc)`, which validates the descriptor and stores a
+      deep copy in a copy of the surface. Every modification drops it, as in OCCT, and `Copy` clones it.
+1107. **Stand-in basis curves in the tests.** Until unit 1A's Geom_Line, Geom_Circle and Geom_BSplineCurve are merged,
+      the unit tests revolve and extrude `TestLine` (the abstract layer's) and `TestCircle`, and the oracle tests
+      `PortCircle` and `PortBSplineCurve` (non-periodic), which mirror OCCT 8's Geom_Circle and Geom_BSplineCurve
+      (ElCLib's evaluators; BSplCLib's D0-D3 on the knots with multiplicities after LocateParameter, DN on the flat
+      knots; BSplCLib's Reverse; poles transformed one by one). They don't mirror Geom_BSplineCurve's continuity or
+      closure, which the oracle tests then don't compare. Replace them with the real classes after the merge.
+1108. **Oracle inputs are built identically on both sides.** `Oracle.ToNative(gp_Dir)` and `ToNative(gp_Ax3)` pass
+      the port's normalised (and orthogonalised) values to native constructors that normalise them again, which can
+      change the last bit of the input. The Geom oracle tests therefore build directions, axes, coordinate systems
+      and transformations on both sides from the same raw coordinates through the same constructors
+      (`tests/OcctNet.Oracle.Tests/Geom/GeomOracleInputs.cs`). With that, every value is bit-identical, rotations
+      (sin, cos) included: the differences first seen after rotations and mirrors (up to 2.1e-13) were all input
+      differences. docs/oracle-testing.md says so.
+1109. **The elementary, swept and trimmed surfaces are oracle-tested** (`tests/OcctNet.Oracle.Tests/Geom/
+      Geom_SurfacesOracleTests.cs`): 300 random elementary surfaces (each kind, left-handed frames half the time,
+      cones of zero reference radius, tori with minor radius above major), 300 surfaces of revolution and extrusion
+      of circles and B-spline curves, and 600 trimmed surfaces of every basis kind (B-spline surfaces included),
+      trimmed in one or both directions with both senses, trimmed again, and copied. Compared: D0-D3, DN up to order
+      4, bounds, closure, periodicity and periods, continuity and IsCN, reversed parameters, U and V reversal, random
+      transformations (rotation, translation, positive and negative scale, mirror) with TransformParameters and
+      ParametricTransformation, and each class's queries (position, radii, Coefficients, Apex, Area, Volume, basis
+      curve, iso-curves). 1.33 million values, all bit-identical.
+
 1110. **Geom_BSplineSurface and Geom_BezierSurface return their arrays as immutable values.** The one-dimensional
       arrays (`UKnots()`, `VKnots()`, `UMultiplicities()`, `VMultiplicities()`, `UKnotSequence()`, `VKnotSequence()`)
       are `PackedList<T>`s, as unit 1A's Geom_BSplineCurve returns its knots (index 0 is OCCT's index 1). The
@@ -532,9 +595,9 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
       surfaces (B-spline: degrees 1 to 5, every periodicity, rational in U, V or both, some closed; Bezier: degrees 1
       to 8), every field and D0-D3, DN, local evaluation, LocateU/V, Resolution, PeriodicNormalization and the
       reversed parameters, before and after random edits (B-spline: 20 kinds, from knot insertion and removal to
-      Segment, periodicity, origin, ExchangeUV, MovePoint, reverses and Transform; Bezier: 14). 8.35 million values;
-      every one is bit-identical except after rotations and mirrors, where the trigonometry of gp_Trsf (MSVC's
-      against .NET's) differs in the last bits (largest relative difference 2.1e-13; with translations only, 100%).
+      Segment, periodicity, origin, ExchangeUV, MovePoint, reverses and Transform; Bezier: 14). 8.37 million values,
+      all bit-identical once the transformations are built identically on both sides (1108; the differences after
+      rotations and mirrors first reported, up to 2.1e-13, came from the inputs).
       Left out, because OCCT's release build reads out of range there (occt-issues.md): MovePoint on periodic
       surfaces or with a window away from the point, RemoveUKnot/RemoveVKnot of the end knots of a periodic
       direction, CheckAndSegment over the whole range of a periodic direction, and periodic IncreaseDegree
