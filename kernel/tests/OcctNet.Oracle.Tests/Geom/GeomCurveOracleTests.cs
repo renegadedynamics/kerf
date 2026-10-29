@@ -3,7 +3,7 @@
 
 using Xunit.Abstractions;
 using N = Build123d.Occt;
-using static OcctNet.Oracle.Tests.Geom.GeomOracleInputs;
+using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
 

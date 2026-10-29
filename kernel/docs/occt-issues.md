@@ -152,3 +152,13 @@ it upstream) is a later decision, made with the oracle tests showing what change
 | `Adaptor3d_TopolTool::Classify` and `IsThePointOn`, infinite lower bound (Adaptor3d_TopolTool.cxx) | U is OUT when `U >= Usup + Tol`, V when `V > Vsup + Tol` | A point exactly at the upper bound + Tol is OUT in U and ON in V. Harmless in practice |
 | `Adaptor3d_TopolTool::BSplSamplePnts` | With fewer than 4 candidate parameters in a direction (e.g. degree 1, one span, minimum below 4), `nn = nbsu / 4` is 0 and no parameter is flagged, but the count is still set to 4 | The sample parameters end in zeros (e.g. [0, 1, 0, 0]) and the samples include parameter 0 where no knot is |
 | `Adaptor3d_TopolTool(const handle<Adaptor3d_Surface>&)` | Leaves `myNbSamplesV`, `nbVtx` and `idVtx` uninitialised | Harmless: nothing reads them before they are set (C# zeroes them) |
+
+## Phase 2: unit 2E, constructions and sampling
+
+| Where | What | Effect |
+|---|---|---|
+| `GC_MakeSegment(const gp_Pnt&, const gp_Pnt&)` (GC_MakeSegment.cxx) | Converts `GC_MakeLine(P1, P2)` to a handle without checking its status | With coincident points OCCT's release build passes a null line to Geom_TrimmedCurve and crashes; the port throws StdFail_NotDone |
+| `GC_MakeArcOfCircle2d(P1, V, P2)` (GC_MakeArcOfCircle2d.cxx) | Converts `gce_MakeLin2d(P1, P2)` without checking its status | With P1 = P2 the release build goes on with the default line, finds the center at P1 with radius 0 and computes NaN parameters; the port throws Standard_ConstructionError from `ElCLib::Parameter` |
+| `GCPnts_QuasiUniformAbscissa::initialize` (GCPnts_QuasiUniformAbscissa.cxx) | Reads `NbPoints()` and `Parameter()` of its GCPnts_UniformAbscissa without checking `IsDone()` | The debug build throws StdFail_NotDone on curves other than Bezier and B-spline whose abscissa computation fails (a zero-length curve); the release build copies the failed result. The port copies it, as the release build does |
+| `GCPnts_TangentialDeflection::initialize` (GCPnts_TangentialDeflection.cxx) | `Standard_ConstructionError_Raise_if(...)` is followed by `myParameters.Clear();` without a semicolon in between | Harmless: both expansions of the macro still clear the parameters |
+| `GCPnts_UniformDeflection::Value`, `GCPnts_QuasiUniformDeflection::Value` | Their StdFail_NotDone messages name `GCPnts_UniformAbscissa::Parameter()` and `GCPnts_QuasiUniformAbscissa::Parameter()` | Cosmetic |

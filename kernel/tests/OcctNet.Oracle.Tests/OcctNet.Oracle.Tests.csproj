@@ -17,4 +17,9 @@
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Test stand-ins for GeomAdaptor_Curve and Geom2dAdaptor_Curve, shared with the unit tests -->
+    <Compile Include="..\OcctNet.ModelingData.Tests\TestGeomAdaptors.cs" Link="TestGeomAdaptors.cs" />
+  </ItemGroup>
+
 </Project>

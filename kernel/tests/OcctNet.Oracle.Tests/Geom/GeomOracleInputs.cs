@@ -3,7 +3,7 @@
 
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Geom;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>Random inputs of the Geom and Geom2d oracle tests, identical on both sides to the last bit.</summary>
 /// <remarks>
