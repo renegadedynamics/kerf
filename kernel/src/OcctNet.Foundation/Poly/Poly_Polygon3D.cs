@@ -77,7 +77,11 @@ public class Poly_Polygon3D : Standard_Transient
     public double Deflection() => myDeflection;
 
     /// <summary>Sets the deflection of this polygon (see <see cref="Poly_Polygon2D.Deflection()"/>).</summary>
-    public void Deflection(double theDefl) => myDeflection = theDefl;
+    public void Deflection(double theDefl)
+    {
+        CheckMutable();
+        myDeflection = theDefl;
+    }
 
     /// <summary>The number of nodes; a closed polygon repeats its first node, so a closed triangle has 4.</summary>
     public int NbNodes() => myNodes.Length();
@@ -86,7 +90,11 @@ public class Poly_Polygon3D : Standard_Transient
     public NCollection_Array1<gp_Pnt> Nodes() => myNodes;
 
     /// <summary>The nodes, from 1, for writing.</summary>
-    public NCollection_Array1<gp_Pnt> ChangeNodes() => myNodes;
+    public NCollection_Array1<gp_Pnt> ChangeNodes()
+    {
+        CheckMutable();
+        return myNodes;
+    }
 
     /// <summary>True if the nodes have curve parameters.</summary>
     public bool HasParameters() => myParameters is not null;
@@ -105,6 +113,7 @@ public class Poly_Polygon3D : Standard_Transient
     /// <summary>The curve parameters of the nodes, shared, for writing. Throws if there are none.</summary>
     public NCollection_Array1<double> ChangeParameters()
     {
+        CheckMutable();
         Standard_NullObject_Raise_if(myParameters is null, "Poly_Polygon3D::ChangeParameters : parameters is NULL");
         return myParameters!.ChangeArray1();
     }

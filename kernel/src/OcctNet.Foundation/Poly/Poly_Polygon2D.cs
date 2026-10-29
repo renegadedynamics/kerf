@@ -52,7 +52,11 @@ public class Poly_Polygon2D : Standard_Transient
     public double Deflection() => myDeflection;
 
     /// <summary>Sets the deflection of this polygon.</summary>
-    public void Deflection(double theDefl) => myDeflection = theDefl;
+    public void Deflection(double theDefl)
+    {
+        CheckMutable();
+        myDeflection = theDefl;
+    }
 
     /// <summary>The number of nodes; a closed polygon repeats its first node, so a closed triangle has 4.</summary>
     public int NbNodes() => myNodes.Length();
@@ -61,7 +65,11 @@ public class Poly_Polygon2D : Standard_Transient
     public NCollection_Array1<gp_Pnt2d> Nodes() => myNodes;
 
     /// <summary>The nodes, from 1, for writing.</summary>
-    public NCollection_Array1<gp_Pnt2d> ChangeNodes() => myNodes;
+    public NCollection_Array1<gp_Pnt2d> ChangeNodes()
+    {
+        CheckMutable();
+        return myNodes;
+    }
 
     public override string ToString()
         => string.Create(CultureInfo.InvariantCulture, $"Poly_Polygon2D({NbNodes()} nodes, deflection {myDeflection:R})");

@@ -147,17 +147,26 @@ public class Poly_Triangulation : Standard_Transient
     public double Deflection() => myDeflection;
 
     /// <summary>Sets the deflection of this triangulation.</summary>
-    public void Deflection(double theDeflection) => myDeflection = theDeflection;
+    public void Deflection(double theDeflection)
+    {
+        CheckMutable();
+        myDeflection = theDeflection;
+    }
 
     /// <summary>The parameters this triangulation was generated with, or null.</summary>
     public Poly_TriangulationParameters? Parameters() => myParams;
 
     /// <summary>Sets the parameters this triangulation was generated with.</summary>
-    public void Parameters(Poly_TriangulationParameters? theParams) => myParams = theParams;
+    public void Parameters(Poly_TriangulationParameters? theParams)
+    {
+        CheckMutable();
+        myParams = theParams;
+    }
 
     /// <summary>Clears the nodes, the triangles and all the attributes.</summary>
     public virtual void Clear()
     {
+        CheckMutable();
         if (!myNodes.IsEmpty())
         {
             var anEmptyNodes = new Poly_ArrayOfNodes();
@@ -192,19 +201,31 @@ public class Poly_Triangulation : Standard_Transient
     public gp_Pnt Node(int theIndex) => myNodes.Value(theIndex - 1);
 
     /// <summary>Sets the node at an index in [1, NbNodes()].</summary>
-    public void SetNode(int theIndex, in gp_Pnt thePnt) => myNodes.SetValue(theIndex - 1, thePnt);
+    public void SetNode(int theIndex, in gp_Pnt thePnt)
+    {
+        CheckMutable();
+        myNodes.SetValue(theIndex - 1, thePnt);
+    }
 
     /// <summary>The UV node at an index in [1, NbNodes()].</summary>
     public gp_Pnt2d UVNode(int theIndex) => myUVNodes.Value(theIndex - 1);
 
     /// <summary>Sets the UV node at an index in [1, NbNodes()].</summary>
-    public void SetUVNode(int theIndex, in gp_Pnt2d thePnt) => myUVNodes.SetValue(theIndex - 1, thePnt);
+    public void SetUVNode(int theIndex, in gp_Pnt2d thePnt)
+    {
+        CheckMutable();
+        myUVNodes.SetValue(theIndex - 1, thePnt);
+    }
 
     /// <summary>The triangle at an index in [1, NbTriangles()].</summary>
     public Poly_Triangle Triangle(int theIndex) => myTriangles.Value(theIndex);
 
     /// <summary>Sets the triangle at an index in [1, NbTriangles()].</summary>
-    public void SetTriangle(int theIndex, in Poly_Triangle theTriangle) => myTriangles.SetValue(theIndex, theTriangle);
+    public void SetTriangle(int theIndex, in Poly_Triangle theTriangle)
+    {
+        CheckMutable();
+        myTriangles.SetValue(theIndex, theTriangle);
+    }
 
     /// <summary>The normal at a node index in [1, NbNodes()].</summary>
     public gp_Dir Normal(int theIndex)
@@ -217,7 +238,11 @@ public class Poly_Triangulation : Standard_Transient
     public void Normal(int theIndex, out NCollection_Vec3<float> theVec3) => theVec3 = myNormals.Value(theIndex - 1);
 
     /// <summary>Sets the normal (a unit vector) at a node index in [1, NbNodes()].</summary>
-    public void SetNormal(int theIndex, in NCollection_Vec3<float> theNormal) => myNormals.SetValue(theIndex - 1, theNormal);
+    public void SetNormal(int theIndex, in NCollection_Vec3<float> theNormal)
+    {
+        CheckMutable();
+        myNormals.SetValue(theIndex - 1, theNormal);
+    }
 
     /// <summary>Sets the normal at a node index in [1, NbNodes()], rounded to single precision.</summary>
     public void SetNormal(int theIndex, in gp_Dir theNormal)
@@ -227,7 +252,11 @@ public class Poly_Triangulation : Standard_Transient
     public Poly_MeshPurpose MeshPurpose() => myPurpose;
 
     /// <summary>Sets the mesh purpose bits.</summary>
-    public void SetMeshPurpose(Poly_MeshPurpose thePurpose) => myPurpose = thePurpose;
+    public void SetMeshPurpose(Poly_MeshPurpose thePurpose)
+    {
+        CheckMutable();
+        myPurpose = thePurpose;
+    }
 
     /// <summary>The cached range of the nodes, void if there is none.</summary>
     public Bnd_Box CachedMinMax()
@@ -321,6 +350,7 @@ public class Poly_Triangulation : Standard_Transient
     /// </summary>
     public void SetDoublePrecision(bool theIsDouble)
     {
+        CheckMutable();
         myNodes.SetDoublePrecision(theIsDouble);
         myUVNodes.SetDoublePrecision(theIsDouble);
     }
@@ -328,6 +358,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Resizes the nodes and the UV nodes and normals with them, keeping the old values if asked.</summary>
     public void ResizeNodes(int theNbNodes, bool theToCopyOld)
     {
+        CheckMutable();
         myNodes.Resize(theNbNodes, theToCopyOld);
         if (!myUVNodes.IsEmpty())
         {
@@ -341,11 +372,16 @@ public class Poly_Triangulation : Standard_Transient
     }
 
     /// <summary>Resizes the triangles, keeping the old ones if asked.</summary>
-    public void ResizeTriangles(int theNbTriangles, bool theToCopyOld) => myTriangles.Resize(1, theNbTriangles, theToCopyOld);
+    public void ResizeTriangles(int theNbTriangles, bool theToCopyOld)
+    {
+        CheckMutable();
+        myTriangles.Resize(1, theNbTriangles, theToCopyOld);
+    }
 
     /// <summary>Allocates the UV nodes, if not yet allocated for every node.</summary>
     public void AddUVNodes()
     {
+        CheckMutable();
         if (myUVNodes.IsEmpty() || myUVNodes.Size() != myNodes.Size())
         {
             myUVNodes.Resize(myNodes.Size(), false);
@@ -355,6 +391,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Deallocates the UV nodes.</summary>
     public void RemoveUVNodes()
     {
+        CheckMutable();
         if (!myUVNodes.IsEmpty())
         {
             var anEmpty = new Poly_ArrayOfUVNodes();
@@ -366,6 +403,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Allocates the normals, if not yet allocated for every node.</summary>
     public void AddNormals()
     {
+        CheckMutable();
         if (myNormals.IsEmpty() || myNormals.Length() != myNodes.Length())
         {
             myNormals.Resize(0, myNodes.Size() - 1, false);
@@ -375,6 +413,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Deallocates the normals.</summary>
     public void RemoveNormals()
     {
+        CheckMutable();
         if (!myNormals.IsEmpty())
         {
             var anEmpty = new NCollection_Array1<NCollection_Vec3<float>>();
@@ -385,6 +424,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Computes smooth normals at the nodes, averaging the normals of the triangles (weighted by area).</summary>
     public void ComputeNormals()
     {
+        CheckMutable();
         // zero values
         AddNormals();
         myNormals.Init(new NCollection_Vec3<float>(0.0f));
@@ -596,6 +636,7 @@ public class Poly_Triangulation : Standard_Transient
     [Obsolete("Deprecated method, SetNormal() should be used instead")]
     public void SetNormals(NCollection_HArray1<float>? theNormals)
     {
+        CheckMutable();
         if (theNormals is null || theNormals.Length() != 3 * NbNodes())
         {
             throw new Standard_DomainError("Poly_Triangulation::SetNormals : wrong length");
@@ -617,10 +658,18 @@ public class Poly_Triangulation : Standard_Transient
     public NCollection_Array1<Poly_Triangle> Triangles() => myTriangles;
 
     [Obsolete("Deprecated method, SetTriangle() should be used instead")]
-    public NCollection_Array1<Poly_Triangle> ChangeTriangles() => myTriangles;
+    public NCollection_Array1<Poly_Triangle> ChangeTriangles()
+    {
+        CheckMutable();
+        return myTriangles;
+    }
 
     [Obsolete("Deprecated method, SetTriangle() should be used instead")]
-    public ref Poly_Triangle ChangeTriangle(int theIndex) => ref myTriangles.ChangeValue(theIndex);
+    public ref Poly_Triangle ChangeTriangle(int theIndex)
+    {
+        CheckMutable();
+        return ref myTriangles.ChangeValue(theIndex);
+    }
 
     // Deferred data (OCCT's OSD_FileSystem argument is left out: the file system isn't ported)
 
@@ -636,6 +685,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Loads the deferred triangulation data into this triangulation.</summary>
     public virtual bool LoadDeferredData()
     {
+        CheckMutable();
         if (!HasDeferredData())
         {
             return false;
@@ -671,6 +721,7 @@ public class Poly_Triangulation : Standard_Transient
     /// <summary>Releases the triangulation data if it has deferred storage.</summary>
     public virtual bool UnloadDeferredData()
     {
+        CheckMutable();
         if (HasDeferredData())
         {
             Clear();

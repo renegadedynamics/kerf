@@ -70,7 +70,11 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     public double Deflection() => myDeflection;
 
     /// <summary>Sets the deflection of this polygon (see <see cref="Poly_Polygon2D.Deflection()"/>).</summary>
-    public void Deflection(double theDefl) => myDeflection = theDefl;
+    public void Deflection(double theDefl)
+    {
+        CheckMutable();
+        myDeflection = theDefl;
+    }
 
     /// <summary>The number of nodes; a closed polygon repeats its first node, so a closed triangle has 4.</summary>
     public int NbNodes() => myNodes.Length();
@@ -79,10 +83,18 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     public int Node(int theIndex) => myNodes.Value(theIndex);
 
     /// <summary>The node indices, for writing.</summary>
-    public NCollection_Array1<int> ChangeNodeArray() => myNodes;
+    public NCollection_Array1<int> ChangeNodeArray()
+    {
+        CheckMutable();
+        return myNodes;
+    }
 
     /// <summary>Sets the triangulation node index at an index of this polygon.</summary>
-    public void SetNode(int theIndex, int theNode) => myNodes.SetValue(theIndex, theNode);
+    public void SetNode(int theIndex, int theNode)
+    {
+        CheckMutable();
+        myNodes.SetValue(theIndex, theNode);
+    }
 
     /// <summary>True if the nodes have curve parameters.</summary>
     public bool HasParameters() => myParameters is not null;
@@ -97,6 +109,7 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     /// <summary>Sets the curve parameter at an index. Throws <see cref="Standard_NullObject"/> if there are no parameters.</summary>
     public void SetParameter(int theIndex, double theValue)
     {
+        CheckMutable();
         Standard_NullObject_Raise_if(myParameters is null, "Poly_PolygonOnTriangulation::Parameter : parameters is NULL");
         myParameters!.SetValue(theIndex, theValue);
     }
@@ -104,6 +117,7 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     /// <summary>The curve parameters, for writing. Throws <see cref="Standard_NullObject"/> if there are none.</summary>
     public NCollection_Array1<double> ChangeParameterArray()
     {
+        CheckMutable();
         Standard_NullObject_Raise_if(myParameters is null, "Poly_PolygonOnTriangulation::Parameter : parameters is NULL");
         return myParameters!.ChangeArray1();
     }
@@ -114,6 +128,7 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     /// </summary>
     public void SetParameters(NCollection_HArray1<double>? theParameters)
     {
+        CheckMutable();
         if (theParameters is not null
             && (theParameters.Lower() != myNodes.Lower() || theParameters.Upper() != myNodes.Upper()))
         {
@@ -130,10 +145,18 @@ public class Poly_PolygonOnTriangulation : Standard_Transient
     public NCollection_HArray1<double>? Parameters() => myParameters;
 
     [Obsolete("Deprecated method, SetNode() should be used instead")]
-    public NCollection_Array1<int> ChangeNodes() => myNodes;
+    public NCollection_Array1<int> ChangeNodes()
+    {
+        CheckMutable();
+        return myNodes;
+    }
 
     [Obsolete("Deprecated method, SetParameter() should be used instead")]
-    public NCollection_Array1<double> ChangeParameters() => myParameters!.ChangeArray1();
+    public NCollection_Array1<double> ChangeParameters()
+    {
+        CheckMutable();
+        return myParameters!.ChangeArray1();
+    }
 
     public override string ToString()
         => string.Create(CultureInfo.InvariantCulture, $"Poly_PolygonOnTriangulation({NbNodes()} nodes, deflection {myDeflection:R})");
