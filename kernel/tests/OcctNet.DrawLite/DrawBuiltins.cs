@@ -16,7 +16,7 @@ internal static class DrawBuiltins
     [
         "pload", "cpulimit", "checkview", "vinit", "vdisplay", "vfit", "vdump", "vclear",
         "vsetdispmode", "vmoveto", "vselect", "vclose", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
-        "donly", "display", "clear", "xwd", "decho", "dlog", "dchrono", "chrono", "vrenderparams", "vcamera",
+        "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
         "dsetsignal", "dtracelevel", "dbreak", "wait",
     ];
 
@@ -31,6 +31,10 @@ internal static class DrawBuiltins
         DrawVariableCommands.Register(theInterpreter);
         DBRepCommands.Register(theInterpreter);
         BRepTestCommands.Register(theInterpreter);
+        BRepTestCheckCommands.Register(theInterpreter);
+        BRepTestBoundingCommands.Register(theInterpreter);
+        BOPTestClassifyCommands.Register(theInterpreter);
+        DrawChronoCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

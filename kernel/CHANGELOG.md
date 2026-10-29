@@ -248,3 +248,14 @@ Phase 3 (part): shape checking.
   valid and deliberately broken shapes in both modes; oracle tests of the analyzer's verdict on every sub-shape
   against native OCCT on random native shapes, natively broken edges, vertices, wires, faces, shells and solids, the
   37 `.brep` files of OCCT's data and 2,320 files of its test dataset: all 396,118 verdicts agree.
+
+Phase 3 (part): Draw-lite checking commands.
+
+- Draw-lite (tests, not packaged): `checkshape` (contextual and structural dumps, `-top`, `-short`, `-parallel`,
+  `-exact`, the faulty shapes bound as Draw binds them), `checksection`, `computetolerance`, `bounding` (every option
+  but `-shape`, which needs the primitives, and `-dumpJson`), `isbbinterf`, `gbounding`, `getcoords`, `bclassify`,
+  `b2dclassify`, `point`, `dchrono`/`chrono` and `dlog`. Corpus runs log each command's words and result as DRAWEXE
+  does, so OCCT's log rules judge checkshape's verdicts.
+- Tests: every command's text against Draw's source; oracle tests of checkshape's verdicts, bounding's boxes
+  (bit-identical) and bclassify's states against native OCCT on OCCT's data files and test dataset. The corpus has
+  380 runnable cases (23 before), most of them waiting for data files that aren't public.

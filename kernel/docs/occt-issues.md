@@ -419,3 +419,15 @@ Found while porting Draw's commands (Draw-lite reproduces them, so the corpus se
 | `BRepCheck_Face.cxx`, `IsInside` | Evaluates the 3D curve at the pcurve's first parameter (`aCurve->D0(aFirst, ...)`) to measure the edge's length | Measures the wrong point on an edge whose pcurve and 3D curve aren't parametrised alike; harmless on same-parameter edges. By reading |
 | `BRepCheck_Wire::SelfIntersect` | Returns NoCurveOnSurface or InvalidRange for an edge after the first with no pcurve or an empty range, without recording it even with `Update` | The wire's context status stays NoError while the call returns a fault. Ported as is |
 | `BRepCheck_Wire::SetStatus` | Takes no lock, unlike Edge's and Face's | Nothing parallel calls it |
+
+## Phase 3: unit 3L2a, Draw-lite checks
+
+Found while porting Draw's checking commands (Draw-lite reproduces them, so the corpus sees OCCT's behaviour).
+
+| Where | What | Effect |
+|---|---|---|
+| `isbbinterf` (BRepTest_BasicCommands.cxx) | Checks `theNArg < 2`, then reads `theArgVal[2]` | `isbbinterf a` passes a null name to DBRep::Get. The port gives the usage message for fewer than two shapes. By reading |
+| `checksection` (BRepTest_CheckCommands.cxx) | `-r` reads `a[++anAI]` without checking that a value follows | `checksection s -r` calls Draw::Atoi on a null pointer. The port compares with 0. By reading |
+| `checkshape` structural dump (`StructuralDump`, BRepTest_CheckCommands.cxx) | Writes `"%s_v"` (and `_e`, `_w`, `_f`, `_s`, `_o`) with the user's prefix into `char aName[20]` | A prefix of 18 characters or more overflows the buffer. The port has no limit. By reading |
+| `checksection` (not a bug, a consequence) | Lists the lone vertices from a `NCollection_Map` hashed by TopTools_ShapeMapHasher, whose order follows the TShapes' addresses | The names `alone_1`, `alone_2`, ... aren't given in a reproducible order. The port names them in the order first met (decision 439) |
+| `computetolerance` | Prints `(void*)&(*S.TShape())`, and calls `S.ShapeType()` without checking for a null shape | The output holds addresses; a null shape throws Standard_NullObject (as in the port). The port prints a per-run number instead of an address (decision 440) |

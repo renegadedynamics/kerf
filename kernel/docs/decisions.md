@@ -3896,3 +3896,92 @@ reviewed and merged, as were the oracle tests. Numbers from 3451 are renumbered 
         its message, which is the port's text, not OCCT's `what()`. `computetolerance` uses `BRepCheck_Edge.Tolerance`.
       - 3K and later: the GTests of BRepBuilderAPI and the algorithms that check their results with
         BRepCheck_Analyzer can be ported as their makers come.
+
+## Phase 3: unit 3L2a, Draw-lite checks
+
+The checking commands of Draw in Draw-lite (tests/OcctNet.DrawLite), the first half of 3L2: BRepTest_CheckCommands'
+checkshape, checksection and computetolerance; BRepTest_BasicCommands' bounding, isbbinterf, gbounding and getcoords;
+BOPTest_LowCommands' bclassify and b2dclassify; GeomliteTest's point; Draw_BasicCommands' dchrono, chrono and dlog
+(no-ops until now). Each family is a new file, registered in DrawBuiltins. Numbers from 3551 are renumbered on merge.
+
+437. **The command log.** Draw_Interpretor's CommandCmd, when logging is on (`dlog on` in OCCT's `_run_test`), writes
+      each C++ command's words (each followed by a space) and, after the command, its result when it isn't empty (an
+      error's message included); `dlog` and `decho` are left out. Draw-lite now does the same in `DrawCxx.Add` when
+      `DrawInterpreter.DoLog` is set, and `DrawCorpus.RunAndCheck` sets it, so a corpus log has what DRAWEXE's has:
+      checkshape's verdict and faulty shapes reach the log, where parse.rules and the cases' REQUIRED and TODO lines
+      judge them (before, a command's result never reached the log). `dlog on|off|reset|get|add|status` work: the
+      log is the interpreter's output, and `get` returns it since the last `reset` when the output is a StringWriter.
+      Draw-lite has one stream, so `dlog off` stops the words and results but not what commands print themselves.
+438. **checkshape is ported as written**: the contextual dump (`Print`, `PrintSub`), the structural dump
+      (`GetProblemShapes`, `GetProblemSub`, the table of counts, the compounds `prefix_v` ... `prefix_o`), `-top`,
+      `-short`, `-parallel` and `-exact` over `new BRepCheck_Analyzer(S, !top, parallel, exact)`. Draw's file statics
+      (`theMap` with TopTools_ShapeMapHasher, `nbfaulty`, `lfaulty`, `checkfaultyname` "faulty_") are the state of one
+      dump; `lfaulty` keeps names and shapes (FindNamed compares with IsSame). The faulty shapes are bound with
+      `SetShape` in the current frame, as DBRep::Set. `Result(sub)` is looked up with the sub-shape as TopExp_Explorer
+      or TopoDS_Iterator gives it from the checked shape (decision 430); the dump takes the one context IsSame the
+      parent, so `-parallel` prints the serial text. What OCC_CATCH_SIGNALS and `catch (Standard_Failure)` catch is
+      caught (Standard_Failure and the .NET stand-ins for signals, as in the analyzer, decision 432) and printed as
+      "checkshape exception : " with the failure's message, which is the port's text, not OCCT's `what()` (the .NET
+      type's name for a stand-in). The corpus confirms the dump: heal/checkshape/bug32448_1 requires "Faulty shapes
+      in variables faulty_1 to faulty_88" from `checkshape -exact -parallel` on the dataset's bug27814.brep, and gets
+      it.
+439. **checksection** names the vertices met an odd number of times `alone_1`, ... in the order they were first
+      met. OCCT's map iterates in the order of the TShapes' addresses, which no run reproduces (occt-issues.md); the
+      count and the set are OCCT's. `-r` with no value compares with 0 (OCCT reads a null pointer).
+440. **computetolerance** prints `BRepCheck_Edge.Tolerance()` at precision 6 for each distinct edge, with OCCT's
+      text. Where OCCT prints the TShape's address (`(void*)`, 16 upper-case hex digits with MSVC), the port prints
+      the TShape's `RuntimeHelpers.GetHashCode` in the same form: the same for one TShape during a run, not an address.
+441. **bounding** parses as OCCT (options case-insensitive, `-save` and six names, the box given by six reals read
+      as `TCollection_AsciiString::IsRealValue` reads them: a prefix that strtod converts), prints with Draw's
+      `%.17g`, and binds `-save`'s Draw numbers. Its errors go to Message::SendFail (the output). Two options need code
+      that isn't ported and fail with "bounding ... is not ported yet": `-shape` makes the box with
+      BRepPrimAPI_MakeBox (unit 3M; a void box binds a null shape, as OCCT, without it) and `-dumpJson` needs Bnd_Box's
+      and Bnd_OBB's DumpJson. Draw_Box (the drawn box) is left out. The port's Bnd_Box mutators are internal, so the
+      command uses the functional forms (`Bnd_Box.Void().Added(p)`). `isbbinterf`, `gbounding` (BndLib over a
+      DrawTrSurf curve, 2D curve or surface) and `getcoords` come with it.
+442. **Classification.** `bclassify` (BRepClass3d_SolidClassifier, tolerance 1e-7 by default) and `b2dclassify`
+      (BRepClass_FaceClassifier with the box and gap options) print OCCT's states; a point name that isn't a point of
+      the right dimension leaves Draw's default point ((8, 9, 10), (8, 9)), as DrawTrSurf::GetPoint does.
+      GeomliteTest's `point name x y [z]` binds a DrawTrSurf point. Not here: `b2dclassifx` (IntTools_FClass2d, TKBO),
+      `bhaspc` (BOPTools_AlgoTools2D) and `checkdiff`, whose BRepAlgo::IsValid (TKBool) calls BRepTools::Update and
+      BRepLib::SameParameter on the result's edges in place: it needs BRepAlgo and a copy for write (decision 417).
+443. **dchrono and chrono** bind a Draw_Chronometer (`DrawChronometer`, type "chronometer") whose OSD_Timer is a
+      Stopwatch and the process's CPU times (OSD_Chronometer's default, not the thread's), and print OSD_Timer::Show at
+      precision 12 ("Elapsed time: h Hours m Minutes s Seconds", then the CPU user and system times), so the corpus's
+      timing regexps match. `-thread` and `-process` stop and reset the timer as OCCT does but keep measuring the
+      process.
+444. **Tests.**
+      - Draw-lite (DrawCheckCommandsTests, 12 tests): checkshape's three styles on data/occ's solid.brep and Top.brep
+        (the one invalid file: a self-intersecting wire), the faulty shapes bound, -parallel, -short, -top, usage and
+        errors; checksection with and without -r on a face and an edge; computetolerance's format; bounding's
+        outputs, -save, the explicit box, OBB, its error messages and the options not ported; void boxes;
+        isbbinterf, gbounding, getcoords; bclassify, b2dclassify and point with their errors; dchrono's text and the
+        harness's regexp on it; the command log (`dlog`).
+      - Oracle (`DrawLiteChecksOracleTests`): both sides read the same file (native OCCT's F1 copy of it).
+        - data/occ's 42 files: checkshape with and without -top, -parallel, -short and the structural dump against
+          BRepCheck_Analyzer::IsValid (336 verdicts); bounding with nine option sets against BRepBndLib's Add,
+          AddOptimal and AddOBB (378 boxes, 3,780 values, all bit-identical); bclassify on up to four solids of each
+          file at 40 points each (in the box enlarged by a tenth and at its corners; tolerances 1e-7, 1e-3 and 0.1)
+          against BRepClass3d_SolidClassifier (2,240 points). No disagreement.
+        - the test dataset: 2,320 of its 2,369 files (the others aren't shapes, are over 2 MB or have more than
+          200,000 sub-shape occurrences): 2,320 checkshape verdicts, 6,960 boxes (plain, -optimal, -obb; 62,517 values,
+          all bit-identical; 4 -optimal boxes throw Geom_UndefinedValue on both sides, which bounding reports as Draw
+          does), 5,000 bclassify points. No disagreement; 189 s.
+        - Reading the original file natively and its F1 copy in the port gave 13 OBB values on Top.brep
+          (`-obb -noTriangulation`) that differed in the last bits: the two native shapes aren't bit-identical, so the
+          comparison reads the same file on both sides.
+      - Corpus (`DrawCorpusTests.Runnable_cases_run_and_OCCTs_log_check_judges_them`, which now reports before and
+        after 3L2a): runnable cases 23 before, 380 after. Before: 8 OK, 11 FAILED, 4 SKIPPED. After: 13 OK, 1 BAD
+        (lowalgos/classifier/bug538, OCCT's own TODO), 1 IMPROVEMENT (boolean/gdml_private/B5: its data file is
+        missing, and its TODO expects the exception that follows), 350 SKIPPED (data files the public dataset lacks:
+        322 boolean/gdml_private, 18 heal/checkshape, 1 heal/reshape, 4 lowalgos/classifier, 5 v3d/bugs), 15 FAILED, all on
+        commands Draw-lite lacks inside sourced or conditional code (`box`, `vertex`, `line`, `polyline`, `circle`,
+        `psphere`, `pcylinder`, `vglinfo`) or on `getsourcefile`; none on a port bug. The new OK cases:
+        heal/checkshape/bug27814_1 (serial and -parallel give the same text), bug32448_1 (the 88 faulty shapes),
+        lowalgos/classifier/buc60609 and bug23849_2 (b2dclassify), demo/draw/binpersist_2 (bounding, checkshape).
+445. **For later units.**
+      - 3L2 (rest): `distmini` (BRepExtrema, unit 3K) and the primitives (unit 3M) go in new files registered in
+        DrawBuiltins, and in `DrawCorpusTests`' lists of a unit's commands. With BRepPrimAPI_MakeBox, `bounding -shape`
+        makes its box (ConvertBndToShape in BRepTestBoundingCommands). checkshape, bounding and the classifiers are
+        ready for the primitives' cases.
+      - The command log is on in corpus runs: a new command's result is logged, so its text must be Draw's.

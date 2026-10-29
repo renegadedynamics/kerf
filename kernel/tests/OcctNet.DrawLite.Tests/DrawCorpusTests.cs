@@ -57,6 +57,32 @@ public class DrawCorpusTests(ITestOutputHelper output)
         "maxtolerance", "purgeloc", "checkloc", "lprops", "sprops", "vprops", "vpropsgk", "tolerance",
     ];
 
+    /// <summary>The Draw commands unit 3L2a added.</summary>
+    internal static readonly string[] Unit3L2aCommands =
+    [
+        "checkshape", "checksection", "computetolerance", "bounding", "isbbinterf", "gbounding", "getcoords", "bclassify",
+        "b2dclassify", "point",
+    ];
+
+    /// <summary>Commands that were no-ops before unit 3L2a and now work (dlog also turns on the command log).</summary>
+    internal static readonly string[] Unit3L2aFormerNoOps = ["dlog", "dchrono", "chrono"];
+
+    /// <summary>Draw-lite as unit 3L1 left it: without 3L2a's commands, its former no-ops back, and no command log.</summary>
+    internal static void Before3L2a(DrawInterpreter theInterpreter)
+    {
+        foreach (string aCommand in Unit3L2aCommands)
+        {
+            theInterpreter.Eval($"rename {aCommand} {{}}");
+        }
+
+        foreach (string aCommand in Unit3L2aFormerNoOps)
+        {
+            theInterpreter.Register(aCommand, static (_, _) => "");
+        }
+
+        theInterpreter.DoLog = false;
+    }
+
     private static readonly System.Text.RegularExpressions.Regex s_failure =
         new(@"\b(?:[Ee]xception|[Ee][Rr][Rr][Oo][Rr]|[Ff][Aa][Ii][Ll](?:[0-9]|[Ee][Dd]|[Uu][Rr][Ee]))\b|could not be found");
 
@@ -66,7 +92,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
     /// <summary>
     /// Runs every case whose commands are all implemented, as OCCT's harness does, and judges each log with OCCT's
-    /// own _check_log; reports the cases runnable before and after unit 3L1, the statuses, and what blocks the rest.
+    /// own _check_log; reports the cases runnable before and after unit 3L2a, the statuses, and what blocks the rest.
     /// </summary>
     [Fact]
     public void Runnable_cases_run_and_OCCTs_log_check_judges_them()
@@ -77,16 +103,13 @@ public class DrawCorpusTests(ITestOutputHelper output)
         anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
         var aBefore = new DrawInterpreter();
         aBefore.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        foreach (string aCommand in Unit3L1Commands)
-        {
-            aBefore.Eval($"rename {aCommand} {{}}");
-        }
+        Before3L2a(aBefore);
 
         List<DrawTestCase> aCases = aCorpus.Cases().ToList();
         var aScans = aCases.AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
         List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        output.WriteLine($"{aCases.Count} cases; runnable before 3L1: {aRunnableBefore.Count}, now: {aRunnable.Count}");
+        output.WriteLine($"{aCases.Count} cases; runnable before 3L2a: {aRunnableBefore.Count}, now: {aRunnable.Count}");
 
         List<DrawCaseRun> Run(List<DrawTestCase> theCases, Action<DrawInterpreter>? theSetup)
             => theCases.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
@@ -101,13 +124,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
                                                                         .Select(g => $"{g.Key} {g.Count()}")));
         }
 
-        Statuses("before 3L1", Run(aRunnableBefore, i =>
-        {
-            foreach (string aCommand in Unit3L1Commands)
-            {
-                i.Eval($"rename {aCommand} {{}}");
-            }
-        }));
+        Statuses("before 3L2a", Run(aRunnableBefore, Before3L2a));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
 
