@@ -17,7 +17,7 @@ namespace OcctNet.ModelingData.Tests;
 /// against the adaptor's cache): there the values agree to 1e-12 relative. Three OCCT errors are pinned
 /// separately (occt-issues.md): B-spline DN, rational DN above the degree, and the parabola of an indirect frame.
 /// </remarks>
-public class Geom2dGridEval_ConsistencyTests(ITestOutputHelper theOutput)
+public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
 {
     private const double THE_REL_TOL = 1e-12;
 
@@ -588,5 +588,21 @@ public class Geom2dGridEval_ConsistencyTests(ITestOutputHelper theOutput)
         NCollection_Array1<gp_Pnt2d> aGrid = aCircle.EvaluateGrid(aShifted);
         Assert.Equal(1, aGrid.Lower());
         Assert.Equal(2, aGrid.Upper());
+    }
+
+    /// <summary>
+    /// OCCT's Geom2dGridEval_Parabola divides by the focal length, which Geom2d_Parabola allows to be zero
+    /// (ElCLib then evaluates the line Location + U * XDir): the grid is not finite (occt-issues.md).
+    /// </summary>
+    [Fact]
+    public void ZeroFocalParabola_GridIsNotFinite()
+    {
+        Geom2d_Parabola aParab = new(new gp_Ax22d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0), new gp_Dir2d(0, 1)), 0.0);
+        NCollection_Array1<double> aParams = NCollection_Array1<double>.From([0.0, 1.5]);
+
+        Assert.Equal(new gp_Pnt2d(2.5, 2), aParab.EvalD0(1.5));
+        NCollection_Array1<gp_Pnt2d> aGrid = new Geom2dGridEval_Parabola(aParab).EvaluateGrid(aParams);
+        Assert.True(double.IsNaN(aGrid.Value(1).X())); // 0 * inf
+        Assert.True(double.IsInfinity(aGrid.Value(2).X()));
     }
 }

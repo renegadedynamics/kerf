@@ -41,7 +41,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         gp_Pnt2d aCenter = aParab.Location();
         gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
         gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
-        double aFocal = aParab.Focal();
+        double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
         double aCY = aCenter.Y();
@@ -78,7 +78,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         gp_Pnt2d aCenter = aParab.Location();
         gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
         gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
-        double aFocal = aParab.Focal();
+        double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
         double aCY = aCenter.Y();
@@ -121,7 +121,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         gp_Pnt2d aCenter = aParab.Location();
         gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
         gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
-        double aFocal = aParab.Focal();
+        double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
         double aCY = aCenter.Y();
@@ -166,7 +166,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         gp_Pnt2d aCenter = aParab.Location();
         gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
         gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
-        double aFocal = aParab.Focal();
+        double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
         double aCY = aCenter.Y();
@@ -211,7 +211,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         gp_Parab2d aParab = myGeom.Parab2d();
         gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
         gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
-        double aFocal = aParab.Focal();
+        double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aXX = aXDir.X();
         double aXY = aXDir.Y();
