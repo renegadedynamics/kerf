@@ -98,6 +98,43 @@ public class DrawCorpusTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>The Draw commands unit 3L2b added: geometry, construction, distances and modifications.</summary>
+    internal static readonly string[] Unit3L2bCommands =
+    [
+        // GeomliteTest's curves and surfaces
+        "line", "circle", "ellipse", "parabola", "hyperbola", "beziercurve", "bsplinecurve", "pbsplinecurve",
+        "2dbeziercurve", "2dbsplinecurve", "2dpbsplinecurve", "reverse", "segment", "setorigin", "cvalue", "2dcvalue",
+        "coord", "plane", "cone", "cylinder", "sphere", "torus", "beziersurf", "bsplinesurf", "upbsplinesurf",
+        "vpbsplinesurf", "uvpbsplinesurf", "extsurf", "revsurf", "offset", "trim", "trimu", "trimv", "ureverse",
+        "vreverse", "uiso", "viso", "svalue", "sderivative", "parameters", "bounds", "length",
+        // GeometryTest's gcarc and extrema
+        "gcarc", "extrema",
+        // DrawTrSurf's transformations
+        "translate", "rotate", "pmirror", "lmirror", "smirror", "pscale", "2dtranslate", "2drotate", "2dpmirror",
+        "2dlmirror", "2dpscale",
+        // BRepTest_ExtremaCommands
+        "dist", "distmini", "proximity", "selfintersect",
+        // BRepTest_CurveCommands
+        "vertex", "edge", "mkedge", "wire", "polyline", "polyvertex", "mkcurve", "mkoricurve", "mkpoint", "mk2dcurve",
+        "uisoedge", "visoedge", "profile",
+        // BRepTest_SurfaceCommands
+        "mkface", "mkshell", "mksurface", "mkplane", "pcurve", "encoderegularity", "getedgeregularity", "projponf",
+        // BRepTest_BasicCommands
+        "nurbsconvert", "deform", "scalexyz", "sameparameter", "fsameparameter", "updatetolerance", "solidorientation",
+        "mkedgecurve", "findplane", "compare", "issubshape", "wexplo",
+    ];
+
+    /// <summary>Draw-lite as unit 3L2a left it: without 3L2b's commands and the sources getsourcefile reads.</summary>
+    internal static void Before3L2b(DrawInterpreter theInterpreter)
+    {
+        foreach (string aCommand in Unit3L2bCommands)
+        {
+            theInterpreter.Eval($"rename {aCommand} {{}}");
+        }
+
+        theInterpreter.Eval("unset -nocomplain Draw_Files");
+    }
+
     private static readonly System.Text.RegularExpressions.Regex s_failure =
         new(@"\b(?:[Ee]xception|[Ee][Rr][Rr][Oo][Rr]|[Ff][Aa][Ii][Ll](?:[0-9]|[Ee][Dd]|[Uu][Rr][Ee]))\b|could not be found");
 
@@ -107,7 +144,8 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
     /// <summary>
     /// Runs every case whose commands are all implemented, as OCCT's harness does, and judges each log with OCCT's
-    /// own _check_log; reports the cases runnable before and after unit 3M, the statuses, and what blocks the rest.
+    /// own _check_log; reports the cases runnable before and after phase 3's last wave (units 3M and 3L2b), the
+    /// statuses, and what blocks the rest.
     /// </summary>
     [Fact]
     public void Runnable_cases_run_and_OCCTs_log_check_judges_them()
@@ -119,12 +157,13 @@ public class DrawCorpusTests(ITestOutputHelper output)
         var aBefore = new DrawInterpreter();
         aBefore.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
         Before3M(aBefore);
+        Before3L2b(aBefore);
 
         List<DrawTestCase> aCases = aCorpus.Cases().ToList();
         var aScans = aCases.AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
         List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        output.WriteLine($"{aCases.Count} cases; runnable before 3M: {aRunnableBefore.Count}, now: {aRunnable.Count}");
+        output.WriteLine($"{aCases.Count} cases; runnable before 3M and 3L2b: {aRunnableBefore.Count}, now: {aRunnable.Count}");
 
         List<DrawCaseRun> Run(List<DrawTestCase> theCases, Action<DrawInterpreter>? theSetup)
             => theCases.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
@@ -139,7 +178,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
                                                                         .Select(g => $"{g.Key} {g.Count()}")));
         }
 
-        Statuses("before 3M", Run(aRunnableBefore, Before3M));
+        Statuses("before 3M and 3L2b", Run(aRunnableBefore, t => { Before3M(t); Before3L2b(t); }));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
 

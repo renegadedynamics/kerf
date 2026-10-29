@@ -292,3 +292,18 @@ Phase 3 (part): primitives and sweeps.
   shape cases of the Bnd_BoundSortBox and Bnd_OBB GTests are ported; known-answer tests; oracle tests of every maker,
   their histories and the Draw commands against native OCCT through BRep text (byte-identical apart from the Free flag
   of frozen inputs). The corpus has 395 runnable cases (28 OK).
+Phase 3 (part): Draw-lite construction, distance and modification commands.
+
+- Draw-lite (tests, not packaged): GeomliteTest's curves and surfaces (line, circle, ellipse, parabola, hyperbola,
+  Bezier and B-spline curves and surfaces in 3D and 2D, extsurf, revsurf, offset, trim, isos, reverse, segment,
+  setorigin, cvalue, svalue, bounds, parameters, length), GeometryTest's `gcarc` and `extrema`, DrawTrSurf's
+  transformations, `distmini`, `dist`, `proximity`, `selfintersect`, the topology constructions (`vertex`, `edge`,
+  `mkedge`, `wire`, `polyline`, `polyvertex`, `mkcurve`, `mkpoint`, `mk2dcurve`, `uisoedge`, `visoedge`, `profile`,
+  `mkface`, `mkshell`, `mksurface`, `mkplane`, `pcurve`) and modifications (`nurbsconvert`, `deform`, `scalexyz`,
+  `sameparameter`, `updatetolerance`, `encoderegularity`, `solidorientation`, `mkedgecurve`, `findplane`, `compare`,
+  `issubshape`, `wexplo`, `getedgeregularity`, `projponf`), and `getsourcefile`'s `Draw_Files`. Geometry is frozen when
+  bound; in-place commands work on a copy of the shape's graph and bind it.
+- Tests: unit tests of every command; oracle tests against native OCCT of the geometry (131,947 values), distmini
+  (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
+  for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
+  (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.

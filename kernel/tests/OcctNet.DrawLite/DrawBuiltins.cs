@@ -17,7 +17,7 @@ internal static class DrawBuiltins
         "pload", "cpulimit", "checkview", "vinit", "vdisplay", "vfit", "vdump", "vclear",
         "vsetdispmode", "vmoveto", "vselect", "vclose", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -37,6 +37,14 @@ internal static class DrawBuiltins
         BRepTestPrimitiveCommands.Register(theInterpreter);
         BRepTestSweepCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
+        GeomliteTestCommands.Register(theInterpreter);
+        BRepTestExtremaCommands.Register(theInterpreter);
+        BRepTestCurveCommands.Register(theInterpreter);
+        BRepTestSurfaceCommands.Register(theInterpreter);
+        BRepTestModifyCommands.Register(theInterpreter);
+        GeometryTestCommands.Register(theInterpreter);
+        DrawTrSurfCommands.Register(theInterpreter);
+        DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>
