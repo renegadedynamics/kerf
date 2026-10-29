@@ -4179,3 +4179,106 @@ NurbsConvert, Collect, FindPlane, the enums and BRepBuilderAPI.cxx's statics), i
         (3M). `bclassify` (BOPTest_LowCommands.cxx) is BRepClass3d_SolidClassifier (3G). Draw's `gtransform` and
         `nurbsconvert` (BRepTest_BasicCommands.cxx) can now run BRepBuilderAPI_GTransform and NurbsConvert. The GTests'
         `TODO(3J)` checks can be restored once BRepCheck_Analyzer merges.
+
+## Phase 3: unit 3L2b, Draw-lite construction and distances
+
+The rest of 3L2 that needs only what is ported (up to TKTopAlgo), in Draw-lite (tests/OcctNet.DrawLite), each family in
+a new file registered in DrawBuiltins: GeomliteTest's curves and surfaces (line, circle, ellipse, parabola, hyperbola,
+beziercurve, bsplinecurve, pbsplinecurve and their 2D forms, reverse, segment, setorigin, cvalue, 2dcvalue, coord,
+length, plane, cone, cylinder, sphere, torus, beziersurf, the bsplinesurf family, extsurf, revsurf, offset, trim,
+trimu, trimv, ureverse, vreverse, uiso, viso, svalue, sderivative, parameters, bounds); GeometryTest's gcarc and
+extrema; DrawTrSurf's translate, rotate, pmirror, lmirror, smirror, pscale and their 2D forms;
+BRepTest_ExtremaCommands (dist, distmini, proximity, selfintersect); BRepTest_CurveCommands (vertex, edge, mkedge,
+wire, polyline, polyvertex, mkcurve, mkoricurve, mkpoint, mk2dcurve, uisoedge, visoedge, profile);
+BRepTest_SurfaceCommands (mkface, mkshell, mksurface, mkplane, pcurve, encoderegularity, getedgeregularity,
+projponf); BRepTest_BasicCommands (nurbsconvert, deform, scalexyz, sameparameter, fsameparameter, updatetolerance,
+solidorientation, mkedgecurve, findplane, compare, issubshape, wexplo); `Draw_Files` for `getsourcefile`. The
+GeomliteTest commands were written in a forked worktree, reviewed and merged. Numbers from 3601 are renumbered on merge.
+
+3601. **Geometry is frozen when bound** (as shapes, decision 407). `DrawTrSurf` (DrawTrSurf.cs) is DrawTrSurf's Set and
+      Get over `DrawGeometry`: `Set` freezes the curve or surface and binds it (a null one unbinds the name, as OCCT's
+      null drawable); the typed `Get*` answer by the geometry's type, as OCCT's down-casts of the drawable do. OCCT's
+      commands that change bound geometry in place (reverse, ureverse, vreverse, segment, setorigin, and DrawTrSurf's
+      transformations) bind the changed copy from the public API (`Reversed`, `UReversed`/`VReversed`, `Segmented`,
+      `WithOrigin`, `Transformed`) under the same name. As with decision 407, a shape built from the earlier geometry
+      keeps it, where in OCCT it would see the change.
+3602. **GeomliteTest's and GeometryTest's commands are written as OCCT writes them**: the same argument counts (a
+      wrong count returns 1, a Tcl error with an empty message), curve names compared with `strcmp` and surface names
+      with `strcasecmp`, and constructor failures reported as CommandCmd reports them ("An exception was caught
+      Standard_ConstructionError: ..."). Where OCCT reads Tcl's null `argv[argc]` (extsurf with 5 words, revsurf with 8,
+      trim of a surface with 8, gcarc cir with 5) the port reads an empty word (0 for Draw::Atof, no point). `gp_Ax2(P,
+      N)` and `gp_Ax3`'s default frame make an X direction of (1, 0, -0); `dump` prints the `-0` as Draw does. OCCT's
+      quirks are kept and logged (occt-issues.md): setorigin of a 3D curve sets the origin and returns 1, 2dbeziercurve
+      divides by `n - 2`, gcarc returns 1 when it has made its curve (scripts call it in `catch`), pmirror and pscale
+      leave the point's coordinates in the list of names they print.
+3603. **distmini and the extrema commands.** distmini is BRepTest_ExtremaCommands' code: LoadS1, LoadS2, SetDeflection
+      (default `Precision::Confusion()`), SetMultiThread, Perform; `name_val` is bound by `SetNumber` (Draw::Set of a
+      real), each solution as a `BRepLib_MakeVertex` (value at most 1e-9) or a `BRepLib_MakeEdge(P1, P2)` named `name`,
+      `name2`, ... The solutions come in OCCT's order on a machine with the native processor count (decision 447).
+      The Draw_ProgressIndicator is left out. `dist` (BRepExtrema_Poly), `proximity` and `selfintersect` need meshes
+      (incmesh, phase 4); they list the overlapping sub-shapes in ascending index order where OCCT iterates its
+      NCollection_DataMap in bucket order (decision 18); the names, made of the indices, are OCCT's. `-profile` times
+      with a Stopwatch.
+3604. **The topology constructions use the makers' freezing forms**, as Draw binds their results; where OCCT writes into
+      a result before binding it, the makers' internal forms (decision 455): `uisoedge`/`visoedge` set the edge's
+      location and pcurve, `profile` builds the 3D curves of a profile on a non-planar face (BRepLib::BuildCurves3d)
+      in place. `vertex name P` with a name that isn't a point dereferences a null handle in OCCT; the port throws
+      Standard_NullObject, as do mksurface and pcurve where OCCT dereferences a null surface or pcurve. Message::SendFail
+      and std::cout write to the interpreter's output (decision 405).
+3605. **In-place modifications run on a copy of the graph** (`DrawShapeCopy`). sameparameter, fsameparameter and
+      updatetolerance without a result name, encoderegularity and mkedgecurve change their shape in place in OCCT. The
+      port copies the shape TShape by TShape (once each, with the flags, every curve representation including polygons,
+      the triangulations, the vertex's point representations shared, and the children at their locations and
+      orientations), runs OCCT's in-place algorithm on the copy (BRepLib's internal forms, `IsMutableInput`) and binds
+      it to the name. The copy has the input's graph, so the result writes the same BRep text as OCCT's in-place
+      result. A first version used `BRepTools.CopyForWrite` (BRepTools_Modifier): its copy has other locations
+      (data/occ's MODERN_MVCooker_1.brep: 11 locations where the input has 16), so its text differed. With a result
+      name the commands use the reshaper forms, as OCCT. `solidorientation` binds the reoriented value, as OCCT.
+3606. **Not here**: `precision` (sets BRepBuilderAPI's precision, a process-wide static that Draw-lite's parallel corpus
+      runs share); `range`, `etrim`, `transfert` and `addpcurve` (they change a bound edge in place; no runnable case
+      uses them); `quilt`, `sewing`, `fastsewing`, `continuity`, `mkoffset`, `bsplineprof`, `2dprofile`, `edgeintersector`
+      (unported packages); `halfspace`, `box` and the primitives (unit 3M); `triarea` and `incmesh` (phase 4); `fixshape`
+      (phase 7); DrawTrSurf's display commands (no viewer).
+3607. **getsourcefile** is StandardCommands.tcl's procedure over the array `Draw_Files`, which Draw_Interpretor::Add fills
+      with each C++ command's `__FILE__` cut to its last four directories. `DrawSourceFiles` fills it for `pload` and
+      the commands of this unit; the commands of earlier units aren't listed yet. demo/draw/getsource passes.
+3608. **lappend extends the lists it made** (TclList.Append). Draw-lite's variables hold strings, and lappend formatted the
+      whole list again on each call, so a list built element by element cost a quadratic time: OCCT's `_check_log` builds
+      the HTML log a line at a time, and lowalgos/extcs/circ_sph_inter (6,250 extrema, a log of some 20,000 lines) spent
+      19 minutes there. A list string written by `Make` or `Append` is now remembered with its elements (a growing list
+      that the strings appended to it share, the newest extending it in place); lappend on it formats only the new
+      elements and concatenates (one copy of the string). Values that aren't canonical take the former path, as Tcl
+      regenerates the string. The three extcs cases take 7 to 30 s; the corpus run went from 41 minutes to 4.
+      `pu`, `pd`, `pl` and `pr` (Draw's viewer panning, used in geometry/bsplinecurve's loops) are ignored as the other
+      viewer commands.
+3609. **Tests.**
+      - Draw-lite: DrawGeometryCommandsTests (9) and DrawConstructionCommandsTests (13): each command's result, text
+        and errors, gcarc, length, extrema, the transformations, getsourcefile, lappend's canonical lists.
+      - Oracle (OcctNet.Oracle.Tests/DrawLite), against native OCCT with random arguments written with "R":
+        DrawLiteGeometryOracleTests: the curves and surfaces made as the C++ makes them, parameters, bounds and D0 to
+        D2, cvalue, 2dcvalue, svalue, sderivative and bounds: 131,947 values, all bit-identical (2D hyperbolas,
+        parabolas, Bezier curves, 2D offsets and GeomLib_Tool have no native binding). DrawLiteConstructionOracleTests:
+        distmini on data/occ's 15 files under 60 KB against points around them (three deflections, serial and
+        parallel), the next file and its first face: 1,052 values bit-identical, 182 solution shapes byte-identical as
+        BRep text; vertex, edge, polyline, wire, mkedge, mkface, mkshell and mkplane on 60 random cases: 480 shapes
+        (300 byte-identical, 180 equal with the Free column masked: frozen inputs, design 4.4); profile on 200 random
+        programs: 156 shapes byte-identical, 44 failing on both sides; scalexyz, deform, sameparameter, fsameparameter,
+        updatetolerance (with and without a result), encoderegularity and solidorientation on the 15 files: 185 shapes
+        byte-identical, and 3 in-place updatetolerance results equal but for vertex tolerances that OCCT writes in
+        address order (occt-issues.md).
+      - Corpus (`DrawCorpusTests`, before and after 3L2b, `Unit3L2bCommands`): runnable cases 380 before, 714 after.
+        Before: 13 OK, 1 BAD, 1 IMPROVEMENT, 350 SKIPPED, 15 FAILED. After: 327 OK, 7 BAD (OCCT's own TODOs:
+        heal/same_parameter/A9, lowalgos/classifier/bug538, mkface/after_extsurf_and_offset/C6 to C9, mkface/mkplane/A1),
+        1 IMPROVEMENT (boolean/gdml_private/B5, as before), 364 SKIPPED (data files the public dataset lacks), 15 FAILED:
+        13 demo/samples and v3d cases on commands of later units or of the viewer (box, prism, psphere, pcylinder, bcut,
+        bcommon, fixshape, vglinfo), and lowalgos/extss/bug29712_44, an OCCT test bug (it measures `extrema s1 s1` and
+        `extrema s2 s2`, each plane with itself, and expects the distance 10 between the two planes; DRAWEXE prints 0
+        as well). No failure on a port bug. demo/draw/getsource passes.
+3610. **For later units.**
+      - 3M: the corpus's samples wait for the primitives (bottle, raytrace and snowflake for `prism`; anc101, cad and
+        penrose for `box`; logo2019 for `psphere`; xde for `pcylinder`).
+      - Phase 4: `incmesh` and `triarea` (157 cases miss only triarea, 21 only incmesh) unlock `dist`, `proximity` and
+        `selfintersect`.
+      - The cases that miss one command: thrusections (358), bcut (305), blend (187), bfuse (178), bcommon (169),
+        bsection (158), triarea (157), fixshape (81), prj (76), DT_ClosedSplit (59), DT_ToBspl (58), pipe (55).
+      - Draw_Files lists only `pload` and this unit's commands; a later unit can fill it for every command.

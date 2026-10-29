@@ -11,6 +11,12 @@ public static class TclList
     // Values flow through variables unchanged, so the same string instance is often read as a list many times
     private static readonly ConditionalWeakTable<string, string[]> s_parsed = new();
 
+    // The strings Make and Append wrote: canonical, so lappend can extend them without formatting the list again.
+    // Their elements are the first Count of a list that only grows, which the strings appended to it share.
+    private static readonly ConditionalWeakTable<string, MadeList> s_made = new();
+
+    private sealed record MadeList(List<string> Items, int Count);
+
     /// <summary>The elements of a list, as Tcl reads them (braces, quotes and backslashes).</summary>
     public static IReadOnlyList<string> Parse(string theList)
     {
@@ -199,17 +205,46 @@ public static class TclList
     public static string Make(string[] theElements)
     {
         string aList = Format(theElements);
-        if (aList.Length > 16)
-        {
-            s_parsed.AddOrUpdate(aList, theElements);
-        }
-
+        Remember(aList, theElements);
         return aList;
+    }
+
+    private static void Remember(string theList, string[] theElements)
+    {
+        if (theList.Length > 16)
+        {
+            s_parsed.AddOrUpdate(theList, theElements);
+            s_made.AddOrUpdate(theList, new MadeList([.. theElements], theElements.Length));
+        }
     }
 
     /// <summary>Appends elements to a list (lappend), giving the canonical string of the longer list.</summary>
     public static string Append(string theList, IReadOnlyList<string> theElements)
     {
+        // A canonical list extended by canonical elements is canonical: only the new elements are formatted, so a
+        // list built element by element (OCCT's _check_log builds the HTML log so) costs a copy per lappend, not a
+        // formatting of the whole list
+        if (theList.Length > 0 && theElements.Count > 0 && s_made.TryGetValue(theList, out MadeList? aMade))
+        {
+            var aBuilder = new StringBuilder();
+            List<string> anItems;
+            lock (aMade.Items)
+            {
+                // the newest string of the list extends it in place; an older one copies its elements
+                anItems = aMade.Items.Count == aMade.Count ? aMade.Items : aMade.Items.GetRange(0, aMade.Count);
+                foreach (string anElement in theElements)
+                {
+                    aBuilder.Append(' ');
+                    AppendElement(aBuilder, anElement, false);
+                    anItems.Add(anElement);
+                }
+            }
+
+            string aList = string.Concat(theList, aBuilder.ToString());
+            s_made.AddOrUpdate(aList, new MadeList(anItems, anItems.Count));
+            return aList;
+        }
+
         IReadOnlyList<string> anOld = Parse(theList);
         var aNew = new string[anOld.Count + theElements.Count];
         for (int i = 0; i < anOld.Count; i++)

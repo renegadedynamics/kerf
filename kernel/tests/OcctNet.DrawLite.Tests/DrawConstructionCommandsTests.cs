@@ -334,6 +334,29 @@ public class DrawConstructionCommandsTests
         Assert.Equal(0.0, ((Geom2d_Line)((DrawGeometry)i.GetDrawable("l2")!).Geometry).Direction().X(), 15);
     }
 
+    [Fact]
+    public void Lappend_extends_canonical_lists_and_their_older_versions()
+    {
+        // lappend extends a list it made without formatting it again (OCCT's _check_log builds a long list so)
+        (DrawInterpreter i, _) = Load();
+        i.Eval("set l {}; for {set k 0} {$k < 2000} {incr k} { lappend l \"line $k\" {} {#x} }");
+        Assert.Equal("6000", i.Eval("llength $l"));
+        Assert.Equal("{line 1999} {} #x", i.Eval("lrange $l end-2 end"));
+        Assert.EndsWith(" {line 1999} {} #x", i.Eval("set l"), StringComparison.Ordinal);
+        Assert.Equal("{#x} y", i.Eval("lrange $l end end; list #x y"));
+        Assert.Equal("{line 0} {} #x {line 1}", i.Eval("lrange $l 0 3"));
+
+        // an older value of the list extended again keeps its own elements
+        i.Eval("set a [list aaaaaaaaaa bbbbbbbbbb cccccccccc]; set b $a; lappend a x; lappend b y z");
+        Assert.Equal("aaaaaaaaaa bbbbbbbbbb cccccccccc x", i.Eval("set a"));
+        Assert.Equal("aaaaaaaaaa bbbbbbbbbb cccccccccc y z", i.Eval("set b"));
+        Assert.Equal("4 5", i.Eval("list [llength $a] [llength $b]"));
+
+        // a value that isn't canonical is read and written again, as Tcl does
+        i.Eval("set c \"aaaaaaaaaa   bbbbbbbbbb  cccccccccc\"; lappend c d");
+        Assert.Equal("aaaaaaaaaa bbbbbbbbbb cccccccccc d", i.Eval("set c"));
+    }
+
     private static Geom_Curve DrawTrSurf_Curve(DrawInterpreter theDI, string theName)
         => Assert.IsAssignableFrom<Geom_Curve>(((DrawGeometry)theDI.GetDrawable(theName)!).Geometry);
 

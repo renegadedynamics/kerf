@@ -276,3 +276,19 @@ Phase 3 (part): distances and makers.
   t-commands and `tcopy` run the real makers; known-answer tests; oracle tests of BRepExtrema_DistShapeShape on twin
   scenes and native shapes (bit-identical), of the makers through BRep text (byte-identical apart from the Free flag of
   reused frozen inputs) and of Transform, Copy and GTransform on twin scenes and native shapes (bit-identical).
+
+Phase 3 (part): Draw-lite construction, distance and modification commands.
+
+- Draw-lite (tests, not packaged): GeomliteTest's curves and surfaces (line, circle, ellipse, parabola, hyperbola,
+  Bezier and B-spline curves and surfaces in 3D and 2D, extsurf, revsurf, offset, trim, isos, reverse, segment,
+  setorigin, cvalue, svalue, bounds, parameters, length), GeometryTest's `gcarc` and `extrema`, DrawTrSurf's
+  transformations, `distmini`, `dist`, `proximity`, `selfintersect`, the topology constructions (`vertex`, `edge`,
+  `mkedge`, `wire`, `polyline`, `polyvertex`, `mkcurve`, `mkpoint`, `mk2dcurve`, `uisoedge`, `visoedge`, `profile`,
+  `mkface`, `mkshell`, `mksurface`, `mkplane`, `pcurve`) and modifications (`nurbsconvert`, `deform`, `scalexyz`,
+  `sameparameter`, `updatetolerance`, `encoderegularity`, `solidorientation`, `mkedgecurve`, `findplane`, `compare`,
+  `issubshape`, `wexplo`, `getedgeregularity`, `projponf`), and `getsourcefile`'s `Draw_Files`. Geometry is frozen when
+  bound; in-place commands work on a copy of the shape's graph and bind it.
+- Tests: unit tests of every command; oracle tests against native OCCT of the geometry (131,947 values), distmini
+  (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
+  for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
+  (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.

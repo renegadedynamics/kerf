@@ -17,7 +17,7 @@ internal static class DrawBuiltins
         "pload", "cpulimit", "checkview", "vinit", "vdisplay", "vfit", "vdump", "vclear",
         "vsetdispmode", "vmoveto", "vselect", "vclose", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
