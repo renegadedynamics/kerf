@@ -491,6 +491,8 @@ public sealed class GeomConvert_CurveToAnaCurve
                 auxil = Math.Sqrt(term1 * term1 + term2 * term2);
             }
 
+            // OCCT: cos2t and sint are taken positive, so the sign of the rotation is lost and the axis is
+            // always within [0, 45] degrees of X: ellipses rotated otherwise in the fitting frame are rejected
             double cost = Math.Sqrt((1 + cos2t) / 2.0);
             double sint = Math.Sqrt((1 - cos2t) / 2.0);
 
