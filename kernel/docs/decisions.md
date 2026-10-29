@@ -4419,7 +4419,7 @@ GeomliteTest commands were written in a forked worktree, reviewed and merged. Nu
 The scope and design of meshing ([phase4-plan.md](phase4-plan.md)). Numbers from 4001 are placeholders, renumbered on
 merge.
 
-4001. **Phase 4's scope** is TKMesh (19,930 lines) and TKXMesh (100), plus what they need beyond phases 0 to 3:
+486. **Phase 4's scope** is TKMesh (19,930 lines) and TKXMesh (100), plus what they need beyond phases 0 to 3:
       - ShapeAnalysis's wire analysis (14,100 lines of TKShHealing, open question 11): ShapeExtend, ShapeAnalysis
         Wire, WireOrder, Edge, Curve, Surface, TransferParameters(Proj), ShapeBuild_Edge;
       - Message_Algorithm with its status types and Message's package statics;
@@ -4427,19 +4427,19 @@ merge.
 
       About 37,000 lines in seven units over four waves. Found at the call sites: `BRepMesh_ShapeVisitor` (CheckOrder,
       OuterWire) and `BRepMesh_ShapeTool::Range` (ShapeAnalysis_Edge). design.md's phase table is updated.
-4002. **One parallel-loop helper, `OSD_Parallel.For`/`ForEach`** (internal, OcctNet.Foundation), with OCCT's
+487. **One parallel-loop helper, `OSD_Parallel.For`/`ForEach`** (internal, OcctNet.Foundation), with OCCT's
       `isSequential` flag.
       - It runs a plain loop when the runtime has no threads: browser WebAssembly without threading, which Bento.Web
         is.
       - It unwraps an `AggregateException` to its first inner exception (decision 431).
       - The direct `Parallel.For` calls of phases 1 to 3 (BVH, BRepCheck_Analyzer, BRepExtrema_DistShapeShape,
         GeomLib_CheckCurveOnSurface) move onto it in unit 4A.
-4003. **The mesher attaches its triangulations and polygons unfrozen.** `BRepMesh_ShapeTool` uses an internal
+488. **The mesher attaches its triangulations and polygons unfrozen.** `BRepMesh_ShapeTool` uses an internal
       non-freezing form of `BRep_Builder.UpdateFace`/`UpdateEdge`. So the post-processor can set each triangulation's
       deflection and parameters in place as OCCT does, without `UpdateDeflection`'s copies. They freeze with the
       result when it is published (`FreezeGraph`). Reused triangulations from the input stay frozen and aren't
       written.
-4004. **Meshing a frozen shape returns a meshed copy.**
+489. **Meshing a frozen shape returns a meshed copy.**
       - On input whose graph holds a frozen TShape, `BRepMesh_IncrementalMesh` meshes `BRepTools.ExactCopyForWrite`
         of it. Then `KeepUnchanged` gives back the input's own sub-shapes wherever meshing changed nothing, as
         decisions 416 and 468 do. `Shape()` returns the frozen result, with a history.
@@ -4449,25 +4449,25 @@ merge.
       - The viewer's buffers are an extraction from the meshed shape, not a second mesher.
 
       Provisional: open question 15.
-4005. **A parallel run gives the serial run's mesh bit for bit.**
+490. **A parallel run gives the serial run's mesh bit for bit.**
       - IMeshData's pointer-keyed maps are maps compared by reference that iterate in insertion order. Where OCCT's
         result could depend on address order, that goes in occt-issues.md.
       - An adaptor evaluated from two loop bodies is shallow-copied per thread, as decision 431 does.
       - A determinism test runs every corpus shape serially and in parallel, repeatedly.
-4006. **BRepMesh_Delaun's `std::make_heap` + `std::sort_heap` keep MSVC's element order on tied keys**, through a
+491. **BRepMesh_Delaun's `std::make_heap` + `std::sort_heap` keep MSVC's element order on tied keys**, through a
       helper. The oracle is MSVC-built, and `Array.Sort` orders ties differently. Delabella's `std::sort` of points
       is checked for ties the same way, or the difference is recorded.
-4007. **Process-wide mesher state.**
+492. **Process-wide mesher state.**
       - `CSF_MeshAlgo` is not read: the default algorithm is Watson, and a result must not depend on the environment.
       - `BRepMesh_IncrementalMesh`'s parallel default and `BRepMesh_DiscretFactory`'s default name stay statics with
         internal setters, as decision 415. Draw-lite's `mpparallel` and `mpsetdefaultname` set them.
       - `BRepMesh_DiscretAlgoFactory`'s registry has internal mutators. "FastDiscret" (IncrementalMeshFactory) and
         "XBRepMesh" register when the type initialises.
-4008. **Message's default messenger sends nothing.** `Message::Send`, `SendWarning` and `DefaultMessenger()` are
+493. **Message's default messenger sends nothing.** `Message::Send`, `SendWarning` and `DefaultMessenger()` are
       ported over a process-wide messenger with an internal setter; Draw-lite installs a printer. A library call in a
       Bento cell must not write to the console. Message_Algorithm keeps OCCT's statuses; its message texts don't need
       MsgFile's resource files.
-4009. **How meshes are compared with native OCCT.**
+494. **How meshes are compared with native OCCT.**
       - Both sides mesh the same re-read F1.
       - The shapes are compared as BRep text with triangulations, byte for byte. That text has 15 significant digits.
       - Then every face's Poly_Triangulation is compared node by node and triangle by triangle, every double bit for
@@ -4475,14 +4475,102 @@ merge.
       - Each shape is reported as bit-identical, same topology, or a different but valid triangulation (with counts,
         area difference and `tricheck`'s verdict).
       - Target: at least 99% of faces bit-identical; every other difference attributed.
-4010. **Draw-lite's mesh commands** (provisional, unit 4L2).
+495. **Draw-lite's mesh commands** (provisional, unit 4L2).
       - `incmesh` and `tclean` work on a copy of the graph (decision 480) and rebind the name. Other Draw variables
         that hold sub-shapes of the same shape are rebound through the history, so that `explode` before `incmesh`
         sees the meshes as in DRAWEXE.
       - `vdisplay` meshes the shape as AIS does (StdPrs_ToolTriangulatedShape with Prs3d_Drawer's defaults), so the
         mesh group's shading grids can run.
-4011. **DrawCorpus reads `cases.list`.** Grids whose cases live in a shared data directory are scanned and run:
+496. **DrawCorpus reads `cases.list`.** Grids whose cases live in a shared data directory are scanned and run:
       mesh (699 cases), heal (2,259), chamfer (279), opengl and xml. Today's scan doesn't see them.
-4012. **Delabella keeps its MIT licence notice.** `delabella.cpp` is third-party code inside OCCT (GUMIX, Marcin
+497. **Delabella keeps its MIT licence notice.** `delabella.cpp` is third-party code inside OCCT (GUMIX, Marcin
       Sokalski, 2018). Its C# port keeps the MIT notice at the top, beside OCCT's provenance, and the notice goes in
       a THIRD-PARTY-NOTICES file.
+
+## Phase 4: unit 4L1, Draw-lite mesh readers
+
+The Draw commands that read the meshes shapes already carry, in Draw-lite (tests/OcctNet.DrawLite), in two new files
+registered in DrawBuiltins: DBRep's `tclean`; MeshTest.cxx's `trinfo` (with `-lods`), `triepoints`, `trmergenodes` and
+`correctnormals`; MeshTest_PluginCommands.cxx's `triarea`, `tricheck` (MeshTest_CheckTopology, ported as
+`MeshTestCheckTopology`) and `mpparallel`. DrawResources' `checktrinfo` now runs over `trinfo`. DrawCorpus reads the
+grids that have a `cases.list`. Numbers from 4301 are placeholders, renumbered on merge.
+
+498. **DrawCorpus reads `cases.list`** (decision 496), as TestCommands.tcl's `test` does: a grid with a cases.list
+      takes its cases from the directory the file's first line names, relative to the grid (mesh/standard_incmesh
+      reads mesh/data/standard), and runs them between its own and its group's begin and end scripts. The scan and
+      the runs now see mesh (699 cases), heal's split and surface-to-revolution grids (2,259), chamfer (279), opengl,
+      opengles2, opengles3 and xml: 21,068 cases where there were 17,237. `DrawCorpus.ReadCaseLists = false` gives the
+      former set, `IsListed` tells a case of those grids. `IndirectCalls` now also covers procedures of a grid's begin
+      script: chamfer/begin's `compute_chamf` runs its command from a string (`catch "$chamf_str"`), so the scan
+      counted the 279 chamfer cases runnable without `chamf`; they now miss it.
+499. **The mesh readers are written as OCCT writes them**, over DrawCxx (decision 405): `di <<` builds the result
+      (reals at `%.17g`: "Maximal deflection 1.6000000007999999"), `std::cout` and Message::SendFail write to the
+      output (triarea's "face N has no triangulation", mpparallel's line, trinfo's usage). tricheck draws its faulty
+      links, nodes and triangles with `DrawTrSurf::Set(".", ...)`, which only displays them; Draw-lite has no viewer,
+      so they aren't made. trinfo `-lods` names a triangulation's type by its .NET type name (`Poly_Triangulation`,
+      as Standard_Type::Name). tclean's `PrintHelp` (no arguments, or only flags) gives an empty error message:
+      Draw-lite has no help texts, and OCCT's `Tcl_Eval("help ...")` replaces the result anyway.
+500. **The in-place commands run on a copy of the graph** (decision 480): `tclean` copies one compound of all its
+      shapes (shared sub-shapes stay shared), cleans it with BRepTools::Clean or CleanGeometry and binds each name to
+      its copy; `trmergenodes` without `-oneFace` binds its copy only when a face's triangulation was replaced, and
+      `correctnormals` only when EnsureNormalConsistency corrected something. As before, other variables that hold
+      sub-shapes of the shape keep the old TShapes (`explode` before `tclean` sees the meshes; in DRAWEXE it doesn't);
+      decision 495 rebinds them through the history in 4L2. The port's EnsureNormalConsistency attaches corrected
+      copies of the frozen triangulations with BRep_Builder::UpdateFace, which marks the faces modified and
+      unchecked, where OCCT writes into the attached triangulations and leaves the flags: correctnormals gives the
+      faces their flags back, so the shape writes OCCT's text (the oracle found the Checked flag differing first).
+501. **Orders that follow addresses in OCCT** (decision 18): `triepoints` numbers the edges in TopExp_Explorer's
+      order, where OCCT iterates an NCollection_Map of shapes; `tricheck` lists the links of "Not connected mesh
+      inside face" in the order they were first met, where OCCT iterates an NCollection_Map of BRepMesh_Edge. The
+      names and counts are OCCT's.
+502. **mpparallel keeps its flag per interpreter**: BRepMesh_IncrementalMesh's parallel default isn't ported yet, and
+      parallel corpus runs must not share it. Unit 4L2 makes the command set BRepMesh_IncrementalMesh's static
+      (decision 492).
+503. **Tests.**
+      - Draw-lite (DrawMeshCommandsTests, 10 tests): each command's text and errors on data/occ's solid.brep,
+        Room.brep and CrankArm.brep, checktrinfo, tricheck's small triangles, faces without triangulation and free
+        links (Room's triangulations merged into one face by `trmergenodes -oneFace`), the copies tclean,
+        trmergenodes and correctnormals bind, the command log and Draw_Files. DrawCorpusTests: the cases.list grids.
+      - Oracle (DrawLiteMeshOracleTests): 525 shapes, data/occ's files with their triangulations and meshed natively
+        (BRepTools::Clean, BRepMesh_IncrementalMesh at a relative deflection of 0.05) and the dataset's 459 .brep files
+        under 400 KB that carry triangulations, read by both sides from native OCCT's copy: trinfo's faces, empty
+        faces, triangles, nodes and maximal deflection; triarea's two areas with and without an epsilon; tricheck's
+        faces without triangulation, free nodes and small triangles (computed from the native triangulations): 5,769
+        values, all bit-identical. correctnormals' verdict and tclean against EnsureNormalConsistency and
+        BRepTools::Clean: 974 BRep texts (with normals for correctnormals), all byte-identical. 38 shapes fail on both
+        sides: triangles that name nodes out of range in dataset files (Standard_OutOfRange) and EnsureNormalConsistency's
+        null polygon (an access violation natively, occt-issues.md). 38 shapes have free links, cross-face errors or
+        asynchronous edges by tricheck (not compared: no native binding of MeshTest_CheckTopology). 458 s.
+      - Corpus: see decision 504.
+504. **The corpus** (`DrawCorpusTests`, before and after 4L1, `Unit4L1Commands`, `Before4L1`).
+      - Grids: 21,068 cases where the former scan saw 17,237; the 3,831 cases of the cases.list grids have no
+        runnable case yet. Before the `compute_chamf` entry (decision 498) the scan counted chamfer's 279 cases
+        runnable: 261 FAILED on `chamf` ("invalid command name") and 18 SKIPPED; they now miss `chamf`. What the
+        listed grids miss: heal's split and conversion grids `DT_SplitAngle`, `DT_ShapeDivide` and `statshape`,
+        `DT_ShapeConvertRev` and `expshape` (phase 7); mesh `incmesh`, and in branches its .brep cases don't take,
+        `stepread` and `tpcompound` (STEP data) and `vglinfo` (the shading grids); chamfer `chamf`; opengl and
+        xml the viewer and OCAF commands.
+      - Runnable cases 734 before 4L1, 961 after (all in the former grids). Before: 347 OK, 7 BAD, 1 IMPROVEMENT,
+        364 SKIPPED, 15 FAILED. After: 452 OK, 12 BAD (5 new, OCCT's own TODOs: bugs/fclasses/bug63,
+        bugs/moddata_1/buc60755, bugs/moddata_2/bug22910_1, bug592, bug889), 1 IMPROVEMENT, 468 SKIPPED (data files
+        the public dataset lacks), 28 FAILED: the 15 of before (13 demo/samples and v3d cases on later commands,
+        lowalgos/extss/bug29712_44, an OCCT test bug), 12 that mesh through the viewer (`vdisplay` and
+        `vsetdispmode 1`, which Draw-lite ignores, then `checktrinfo` or `tricheck` find no triangles:
+        bugs/heal/bug26716, bugs/mesh/bug28719 and bug31258, bugs/moddata_1/bug16, bugs/moddata_2/bug258_1, bug258_2
+        and bug6412, bugs/moddata_3/bug26359, v3d/bugs/bug19_2, bug22304, bug364 and bug4894; decision 495's
+        `vdisplay` meshing, unit 4L2), and bugs/fclasses/bug1281, which tests `pload ALL`'s plugin loading (a no-op
+        in Draw-lite). No failure on a port bug of this unit.
+      - A Draw-lite bug the new cases found: `dgetenv` of a variable that isn't set failed ("Environment variable
+        ... is not set"); Draw's returns an empty result (getenv). Fixed; bugs/demo/bug23671 is OK.
+      - The cases that miss one command: DT_SplitAngle 800, bcut 432, thrusections 362, bfuse 316, chamf 285,
+        blend 284, bcommon 269, bsection 165, fixshape 146, incmesh 85, prj 76.
+505. **For unit 4L2.**
+      - `incmesh` goes beside these commands (MeshTestCommands), binds its meshed copy as tclean does, and rebinds the
+        variables that share sub-shapes (decision 495); `mpparallel` then sets BRepMesh_IncrementalMesh's parallel
+        default instead of its per-interpreter flag.
+      - The mesh group's 699 cases also need, for the scan to count them runnable, `stepread` and `tpcompound` (a
+        branch for STEP files only) and `vglinfo` (shading grids): an ignored `vglinfo` and a scan that knows the
+        branch, or the STEP commands (phase 8). 83 of the 233 data files are in the public dataset.
+      - The 12 viewer-meshed cases above pass when `vdisplay` meshes as AIS does.
+      - tricheck and triarea are validated against native OCCT; the mesh end script's `area difference`,
+        `Free links`, `Cross face errors` and `Free nodes` checks then judge 4L2's meshes.

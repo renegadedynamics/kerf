@@ -882,7 +882,7 @@ internal static class DBRepCommands
         }
     }
 
-    private static bool ParseOnOffIterator(IReadOnlyList<string> a, ref int theArgIter)
+    internal static bool ParseOnOffIterator(IReadOnlyList<string> a, ref int theArgIter)
     {
         bool isOn = true;
         if (theArgIter + 1 < a.Count && ParseOnOff(a[theArgIter + 1], ref isOn))

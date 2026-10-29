@@ -71,11 +71,11 @@ TShape").
 |---|---:|---|---|
 | **ShapeAnalysis's wire analysis** (TKShHealing, design.md's phase 7) | 14,100 | `BRepMesh_ShapeVisitor` orders each wire with `ShapeAnalysis_Wire::CheckOrder` over `ShapeExtend_WireData` and `ShapeAnalysis_WireOrder`, and takes the outer wire from `ShapeAnalysis::OuterWire`; `BRepMesh_ShapeTool::Range` uses `ShapeAnalysis_Edge::PCurve` and `Curve3d` | Unit 4S ports the whole classes (owner question 1): ShapeExtend (package, Status, WireData, ComplexCurve), ShapeAnalysis (package, Wire, WireOrder, Edge, Curve, Surface, TransferParameters, TransferParametersProj), ShapeBuild (package, Edge, Vertex). `ShapeAnalysis_Wire`'s constructor makes a `ShapeAnalysis_Surface`, and its other checks reach Curve, TransferParametersProj and ShapeBuild_Edge, which is why it is 14,100 lines and not the 600 BRepMesh calls. All their own dependencies are ported (Geom2dInt, IntRes2d, BRepTopAdaptor_FClass2d, BRepLib_ValidateEdge, GeomAPI_ProjectPointOnSurf, Geom2dConvert_ApproxCurve, BRepBuilderAPI_MakeEdge/MakeWire, BRepTools_WireExplorer). `ShapeExtend::Init`'s message file is left for phase 7 |
 | **Message_Algorithm** and its status types (TKernel) | ≈ 1,500 | `IMeshTools_MeshBuilder` and `IMeshTools_ModelBuilder` derive from it (`SetStatus(Message_Fail1)`, ...) | Unit 4A: Message_Algorithm, ExecStatus, Status, and Msg without MsgFile's resource files |
-| **Message's package statics and Messenger** | ≈ 900 | `Message::SendWarning` (Context), `Message::Send` (Delabella), `Message::DefaultMessenger` (Triangulator) | Unit 4A, as a process-wide messenger whose default sends nothing (decision 4008) |
+| **Message's package statics and Messenger** | ≈ 900 | `Message::SendWarning` (Context), `Message::Send` (Delabella), `Message::DefaultMessenger` (Triangulator) | Unit 4A, as a process-wide messenger whose default sends nothing (decision 493) |
 | **NCollection_EBTree, NCollection_MapAlgo** | 518 | IMeshData's `BndBox2dTree` (FaceChecker); `NCollection_MapAlgo::Unite` (FaceChecker, ModelHealer) | Unit 4A. `NCollection_Shared` and the allocators (`IncAllocator`, `OccAllocator`) go, by the rules |
-| **OSD_Parallel** | — | 9 loops in BRepMesh (`For`, `ForEach` over a map) | One internal helper for the whole port, with a sequential fallback for single-threaded WebAssembly (decision 4002); unit 4A |
-| **OSD_Environment** | — | `BRepMesh_Context` reads `CSF_MeshAlgo` to choose Watson or Delabella | Not read: a result must not depend on the process environment (decision 4007) |
-| **The plugin factory** | 325 + 100 | `BRepMesh_DiscretFactory` (a global singleton with a default name), `BRepMesh_DiscretAlgoFactory` (a global registry, new in OCCT 8), `BRepMesh_IncrementalMeshFactory` ("FastDiscret"), `XBRepMesh_Factory` (self-registering) | Ported, with the two factories registered when the type initialises and the registry's mutators internal (decision 4007). No plugin loading: OCCT 8 has none either (`Plugin` appears only in a comment) |
+| **OSD_Parallel** | — | 9 loops in BRepMesh (`For`, `ForEach` over a map) | One internal helper for the whole port, with a sequential fallback for single-threaded WebAssembly (decision 487); unit 4A |
+| **OSD_Environment** | — | `BRepMesh_Context` reads `CSF_MeshAlgo` to choose Watson or Delabella | Not read: a result must not depend on the process environment (decision 492) |
+| **The plugin factory** | 325 + 100 | `BRepMesh_DiscretFactory` (a global singleton with a default name), `BRepMesh_DiscretAlgoFactory` (a global registry, new in OCCT 8), `BRepMesh_IncrementalMeshFactory` ("FastDiscret"), `XBRepMesh_Factory` (self-registering) | Ported, with the two factories registered when the type initialises and the registry's mutators internal (decision 492). No plugin loading: OCCT 8 has none either (`Plugin` appears only in a comment) |
 | **MoniTool_TimerSentry** | — | Triangulator, under `CHECK_PERF` only | Left out |
 | **BRepBuilderAPI_MakeVertex/Edge/Polygon/Face, BRepTools::Write** | — | The debug dumps of DataStructureOfDelaun, Delaun (`OCCT_DEBUG`), MeshTool and ModelHealer (`DEBUG_HEALER`) | `BRepMesh_MeshTool::DumpTriangles` and `DataStructureOfDelaun::Statistics`/dump are public: ported (all their callees exist); the `#ifdef`'d ones are left out |
 
@@ -122,7 +122,7 @@ A scan of today's corpus (17,237 cases, 734 runnable after phase 3) with a scrat
   Unit 4L1 adds `cases.list` to DrawCorpus.
 - **The `*_shading` grids** mesh through the viewer (`vdisplay`, AIS's default deflection), which Draw-lite makes a
   no-op. Unit 4L2 makes `vdisplay` mesh the shape as AIS does (StdPrs_ToolTriangulatedShape with Prs3d_Drawer's
-  defaults), so those grids can run (decision 4010).
+  defaults), so those grids can run (decision 495).
 - **What still blocks the mesh-using cases**, by the one other command they miss:
   - `vdefaults` 101 (a viewer setting, a no-op candidate),
   - `fixshape` 65 (phase 7), `unifysamedom` 51,
@@ -156,7 +156,7 @@ Phase 3 settled that meshes stay on the shapes and that meshing returns a meshed
 2. **Mesh data returned separately for the viewer**: buffers of nodes, normals, triangles and edge polylines, as
    build123d.NET's `ShapeMesh` holds. That is an extraction from form 1 (unit 4W), not a second mesher.
 
-**The API** (decision 4004):
+**The API** (decision 489):
 
 - `BRepMesh_IncrementalMesh` keeps OCCT's constructors and `Perform`, `Shape()`, `IsDone()`, `GetStatusFlags()`.
   - On an unfrozen shape (ported code) it meshes in place, as OCCT does.
@@ -171,7 +171,7 @@ Phase 3 settled that meshes stay on the shapes and that meshing returns a meshed
   - it is a value, so changing a copy changes nothing shared;
   - it gets `IEquatable`, so `(shape, parameters)` can key Bento's mesh cache.
 
-**Freezing inside the mesher** (decision 4003). `BRep_Builder.UpdateFace(face, triangulation)` freezes the
+**Freezing inside the mesher** (decision 488). `BRep_Builder.UpdateFace(face, triangulation)` freezes the
 triangulation it attaches (decision 272). The post-processor then writes `Deflection` and `Parameters` into it.
 
 - Phase 3's internal `BRepLib.UpdateDeflection` replaces frozen triangulations with copies (`WritableTriangulations`).
@@ -189,7 +189,7 @@ Rejected: mesh the input's TShapes in place under a lock (the side effect phase 
 
 OCCT meshes edges, then faces, in parallel when `InParallel` is set. build123d.NET always sets it.
 
-**The rule** (decision 4005): **a parallel run gives the serial run's result bit for bit, every run.** It holds by
+**The rule** (decision 490): **a parallel run gives the serial run's result bit for bit, every run.** It holds by
 construction if each loop body writes only its own face or edge, which BRepMesh's design intends. The port must also:
 
 - **Not iterate in address order.** IMeshData's maps keyed by pointer (`MapOfIEdgePtr`, `MapOfIFacePtr`,
@@ -221,7 +221,7 @@ One different last bit upstream can flip a decision, and the result is then a di
 the port's read of the same F1. The F1/F2 lesson of unit 3C applies: mesh the re-read shape on both sides, not
 native's original.
 
-**The expectation** (decision 4009):
+**The expectation** (decision 494):
 
 - Where the arithmetic is the same, the meshes are bit-identical: node coordinates, UV nodes, triangles and their
   order, polygons on triangulation with their parameters, and deflections.
@@ -230,14 +230,14 @@ native's original.
     They are used by GCPnts on circles, ElSLib on spheres and tori, and the range splitters.
   - **Heap and sort order on ties.** `BRepMesh_Delaun` orders vertices with `std::make_heap` + `std::sort_heap`,
     whose element order on equal keys is the C++ library's. The port reproduces MSVC's heap algorithm, because the
-    oracle is MSVC-built (decision 4006). Delabella's `std::sort` of points has the same issue; its ties are
+    oracle is MSVC-built (decision 491). Delabella's `std::sort` of points has the same issue; its ties are
     duplicate points.
   - **OCCT's own bugs.** Reproduced and pinned (rules, section 7).
 - **The targets:**
   - at least 99% of faces bit-identical on data/occ and on the mesh group's available data;
   - every other face a valid mesh (`tricheck` clean) whose area is within the test's tolerance of native's.
 
-**The comparison** (decision 4009). BRep text writes nodes with 15 significant digits, so equal text doesn't prove
+**The comparison** (decision 494). BRep text writes nodes with 15 significant digits, so equal text doesn't prove
 equal bits. The oracle compares:
 
 1. BRep text with triangulations, byte for byte. This is unit 3C's writer, and covers the shape, the polygon
@@ -259,7 +259,7 @@ Bento.Web, the engine of published workbooks, is **plain WebAssembly**:
 The port must run there unchanged.
 
 - **Threads.** On single-threaded WebAssembly, `Parallel.For` can't rely on blocking waits.
-  - The port routes every parallel loop through one internal `OSD_Parallel.For`/`ForEach` (decision 4002). It runs a
+  - The port routes every parallel loop through one internal `OSD_Parallel.For`/`ForEach` (decision 487). It runs a
     plain loop when threads aren't available (`OperatingSystem.IsBrowser()` without threading, checked once).
   - The loops of phases 1 to 3 move onto it: BVH, BRepCheck_Analyzer, BRepExtrema_DistShapeShape,
     GeomLib_CheckCurveOnSurface.
@@ -320,7 +320,7 @@ Also available:
 
 ShapeAnalysis_Curve, Edge and Surface are bound.
 
-**How the units compare** (decision 4009):
+**How the units compare** (decision 494):
 
 - **Shapes:** native shapes from three sources:
   - random primitives, sweeps, Booleans and fillets built natively,
@@ -346,7 +346,7 @@ comparisons; Corpus is Draw-lite cases.
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **4A** Mesh foundations and data model (the pilot) | TKernel: Message_Algorithm, Message_ExecStatus, Message_Status, Message_Msg (no MsgFile resources), Message_Messenger and Printer, the Message package's Send statics (decision 4008); NCollection_EBTree, NCollection_MapAlgo. `OSD_Parallel` (decision 4002), with the parallel loops of phases 1 to 3 moved onto it. IMeshData, IMeshTools, BRepMeshData. BRepMesh_GeomTool, DefaultRangeSplitter, ShapeTool, Deflection, EdgeParameterProvider. **Design:** the non-freezing attach for the mesher (decision 4003), with FreezeGraph freezing attached Poly objects (checked); `IMeshTools_Parameters` as an equatable struct; the copy-for-write shell of the public API (decision 4004) with a stub mesher, so that 4D only fills it | 8.0 | phase 3 | GT: BRepMesh_GeomTool. Unit tests: Message_Algorithm's statuses; BRepMeshData's model built by hand; ShapeTool's ranges and UpdateEdge/AddInFace through the non-freezing attach; the API shell: a frozen input is never written, `KeepUnchanged` gives back the input when the stub changes nothing; OSD_Parallel's serial fallback. Oracle: GeomTool's curve discretisation through GCPnts (indirect) |
+| **4A** Mesh foundations and data model (the pilot) | TKernel: Message_Algorithm, Message_ExecStatus, Message_Status, Message_Msg (no MsgFile resources), Message_Messenger and Printer, the Message package's Send statics (decision 493); NCollection_EBTree, NCollection_MapAlgo. `OSD_Parallel` (decision 487), with the parallel loops of phases 1 to 3 moved onto it. IMeshData, IMeshTools, BRepMeshData. BRepMesh_GeomTool, DefaultRangeSplitter, ShapeTool, Deflection, EdgeParameterProvider. **Design:** the non-freezing attach for the mesher (decision 488), with FreezeGraph freezing attached Poly objects (checked); `IMeshTools_Parameters` as an equatable struct; the copy-for-write shell of the public API (decision 489) with a stub mesher, so that 4D only fills it | 8.0 | phase 3 | GT: BRepMesh_GeomTool. Unit tests: Message_Algorithm's statuses; BRepMeshData's model built by hand; ShapeTool's ranges and UpdateEdge/AddInFace through the non-freezing attach; the API shell: a frozen input is never written, `KeepUnchanged` gives back the input when the stub changes nothing; OSD_Parallel's serial fallback. Oracle: GeomTool's curve discretisation through GCPnts (indirect) |
 | **4S** ShapeAnalysis for wires (owner question 1) | ShapeExtend (package, Status, WireData, ComplexCurve); ShapeAnalysis (package statics including OuterWire and TotCross2D, Wire, WireOrder, Edge, Curve, Surface, TransferParameters, TransferParametersProj); ShapeBuild (package, Edge, Vertex). Writes into shapes (ShapeBuild_Edge's Copy/Replace, TransferParametersProj) follow design 4.6 and are listed in decisions.md | 14.1 | phase 3 | Oracle: ShapeAnalysis_Edge (vertices, curves, pcurves, CheckSameParameter, CheckVerticesWithCurve3d), ShapeAnalysis_Curve (Project, ValidateRange, GetSamplePoints), ShapeAnalysis_Surface (ValueOfUV, NextValueOfUV, IsDegenerated, singularities) on native shapes and surfaces read through 3C; Wire and WireOrder indirectly through 4C's models. GT: ShapeAnalysis_Edge_Test (91 lines) |
 | **4L1** Draw-lite: mesh readers and the hidden grids | DrawCorpus: grids with `cases.list` (mesh, heal, chamfer, opengl, xml), counted in the scans. Commands that read meshes already on shapes: `tclean` (on a copy of the graph, as decision 480), `trinfo`, `tricheck` (MeshTest_CheckTopology), `triarea`, `triepoints`, `trmergenodes` (Poly_MergeNodesTool), `correctnormals`, `mpparallel` | ≈ 1.2 (C#) | phase 3 | Draw-lite tests per command against DRAWEXE output captured once, on data/occ and dataset `.brep` files that carry triangulations; `checktrinfo` over `trinfo`. The scan's new totals with the `cases.list` grids |
 
@@ -354,20 +354,20 @@ comparisons; Corpus is Draw-lite cases.
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **4B** Delaunay core | The plain types (Vertex, Edge, OrientedEdge, Triangle, PairOfIndex, Circle, DegreeOfFreedom), CircleInspector, VertexInspector, CircleTool, VertexTool, DataStructureOfDelaun, SelectorOfDataStructureOfDelaun, Delaun, Classifier, MeshTool, Triangulator; Delabella's library (`delabella.cpp`/`.pxx`, MIT notice kept, decision 4012). MSVC's heap order for Delaun (decision 4006) | 7.9 | 4A | GT: BRepMesh_Delaun (6 tests), BRepMesh_CircleTool. Property tests on random and degenerate point sets (grids, collinear runs, duplicates, near-cocircular points): empty circumcircles, Euler counts, constraint edges kept, the same triangulation for the same input every time; Watson against Delabella on the same points (same point set covered). Oracle: indirect (4D). The heap-order helper against recorded MSVC orders on tied keys |
+| **4B** Delaunay core | The plain types (Vertex, Edge, OrientedEdge, Triangle, PairOfIndex, Circle, DegreeOfFreedom), CircleInspector, VertexInspector, CircleTool, VertexTool, DataStructureOfDelaun, SelectorOfDataStructureOfDelaun, Delaun, Classifier, MeshTool, Triangulator; Delabella's library (`delabella.cpp`/`.pxx`, MIT notice kept, decision 497). MSVC's heap order for Delaun (decision 491) | 7.9 | 4A | GT: BRepMesh_Delaun (6 tests), BRepMesh_CircleTool. Property tests on random and degenerate point sets (grids, collinear runs, duplicates, near-cocircular points): empty circumcircles, Euler counts, constraint edges kept, the same triangulation for the same input every time; Watson against Delabella on the same points (same point set covered). Oracle: indirect (4D). The heap-order helper against recorded MSVC orders on tied keys |
 | **4C** Model and edge discretisation | ShapeVisitor, ModelBuilder (with IMeshTools_ShapeExplorer from 4A), CurveTessellator, EdgeTessellationExtractor, EdgeDiscret, FaceChecker, ModelHealer, ModelPreProcessor, ModelPostProcessor. The parallel audit of 2.2 for the edge and healer loops | 3.1 | 4A, 4S | Unit tests on data/occ shapes: the model's faces, wires, edges, pcurves and orientations; edge polygons with reused tessellations (ModelPreProcessor on shapes carrying meshes); the healer's self-intersection fixes on OCCT's examples (bug428, `mesh standard C7`); serial against parallel. Oracle: indirect (4D's polygons on triangulation) |
 
 ### Wave 3
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **4D** Face meshing and the incremental mesh | BaseMeshAlgo, ConstrainedBaseMeshAlgo, DelaunayBaseMeshAlgo, CustomBaseMeshAlgo, CustomDelaunayBaseMeshAlgo; NodeInsertionMeshAlgo, DelaunayNodeInsertionMeshAlgo, DelaunayDeflectionControlMeshAlgo as generics over the range splitter (notes, section 6); the range splitters (UVParam, NURBS, Cone, Cylinder, Sphere, Torus, Extrusion, Undefined, BoundaryParams); MeshAlgoFactory, DelabellaBaseMeshAlgo, DelabellaMeshAlgoFactory, FaceDiscret; Context, DiscretRoot, IncrementalMesh, IncrementalMeshFactory, DiscretAlgoFactory, DiscretFactory, FastDiscret; XBRepMesh_Factory. The public API filled in (decision 4004), the determinism test (2.2) | 5.0 | 4B, 4C | **Oracle milestone 1** (section 5). GT: BRepMesh_BaseMeshAlgo, BRepMesh_DiscretAlgoFactory, BRepMesh_IncrementalMesh (its Fuse case waits for phase 6). Oracle: section 3 in full; BRepGProp and BRepBndLib with `useTriangulation` on the port's meshes against native's on native meshes |
+| **4D** Face meshing and the incremental mesh | BaseMeshAlgo, ConstrainedBaseMeshAlgo, DelaunayBaseMeshAlgo, CustomBaseMeshAlgo, CustomDelaunayBaseMeshAlgo; NodeInsertionMeshAlgo, DelaunayNodeInsertionMeshAlgo, DelaunayDeflectionControlMeshAlgo as generics over the range splitter (notes, section 6); the range splitters (UVParam, NURBS, Cone, Cylinder, Sphere, Torus, Extrusion, Undefined, BoundaryParams); MeshAlgoFactory, DelabellaBaseMeshAlgo, DelabellaMeshAlgoFactory, FaceDiscret; Context, DiscretRoot, IncrementalMesh, IncrementalMeshFactory, DiscretAlgoFactory, DiscretFactory, FastDiscret; XBRepMesh_Factory. The public API filled in (decision 489), the determinism test (2.2) | 5.0 | 4B, 4C | **Oracle milestone 1** (section 5). GT: BRepMesh_BaseMeshAlgo, BRepMesh_DiscretAlgoFactory, BRepMesh_IncrementalMesh (its Fuse case waits for phase 6). Oracle: section 3 in full; BRepGProp and BRepBndLib with `useTriangulation` on the port's meshes against native's on native meshes |
 
 ### Wave 4
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **4L2** Draw-lite: incmesh and the corpus | `incmesh` with all its options (`-a`, `-min`, `-parallel`, `-relative`, `-algo`, `-surf_def_all`, `-surf_def_off`, `-int_vert_off`, `-force_face_def`, `-decrease`, `-adjust_min`, ...), rebinding the name to the meshed result and propagating to variables that share its sub-shapes (decision 4010); `tessellate`, `mpincmesh`, `mpnames`, `mpsetdefaultname`, `mpgetdefaultname`; `vdisplay` meshing as AIS does, so the shading grids run (decision 4010) | ≈ 0.8 (C#) | 4D, 4L1 | **The corpus milestone** (section 5). Per command against DRAWEXE output captured once |
+| **4L2** Draw-lite: incmesh and the corpus | `incmesh` with all its options (`-a`, `-min`, `-parallel`, `-relative`, `-algo`, `-surf_def_all`, `-surf_def_off`, `-int_vert_off`, `-force_face_def`, `-decrease`, `-adjust_min`, ...), rebinding the name to the meshed result and propagating to variables that share its sub-shapes (decision 495); `tessellate`, `mpincmesh`, `mpnames`, `mpsetdefaultname`, `mpgetdefaultname`; `vdisplay` meshing as AIS does, so the shading grids run (decision 495) | ≈ 0.8 (C#) | 4D, 4L1 | **The corpus milestone** (section 5). Per command against DRAWEXE output captured once |
 | **4W** Viewer and WebAssembly | A managed equivalent of build123d.NET's `b3d_mesh_extract` (owner question 2): every face's located nodes, normals (BRepLib_ToolTriangulatedShape.ComputeNormals on an unattached copy, design 5) and outward triangles, every edge's polyline (from a face's polygon on triangulation, else the mesher's 3D polygon, else GCPnts_TangentialDeflection), in the order of the shape's faces and edges. The benchmark project (2.5). The WebAssembly spike (2.4): a `samples/OcctNet.WasmDemo` built as Bento.Web is (plain WebAssembly, interpreter, single-threaded, trimmed) that reads a `.brep`, meshes it, extracts the buffers and draws them with WebGL | ≈ 0.5 (C#) + the sample | 4D | Oracle: the managed extraction's buffers against native `Extras.ExtractMesh` on the same native shapes, float for float. Benchmarks against native. In the browser: the same buffers as on win-x64 (bit-identical share reported), timings, trimmed size, deepest recursion |
 
 ### Totals
@@ -404,7 +404,7 @@ That is about 37,000 lines of OCCT: TKMesh 19,900, TKXMesh 100, ShapeAnalysis 14
    - Every runnable case with a mesh command passes with the reference values in its script.
    - Those are the 313 cases the scan finds (168 with their data), and the mesh group's `standard_incmesh`,
      `standard_incmesh_parallel`, `advanced_incmesh` and `advanced_incmesh_parallel` cases whose data is public
-     (about 165), plus the shading grids if decision 4010's `vdisplay` meshing holds.
+     (about 165), plus the shading grids if decision 495's `vdisplay` meshing holds.
    - Expected failures are OCCT's own TODOs (the mesh `end` script turns `bug_*` variables into TODOs) and missing
      data.
 3. **After 4W: Bento's viewer without native code.**
@@ -423,7 +423,7 @@ That is about 37,000 lines of OCCT: TKMesh 19,900, TKXMesh 100, ShapeAnalysis 14
   into frozen inputs means copying first, and every twin goes in decisions.md.
 - **Handles of IMeshData.** `IMeshData::IFaceHandle` and the other handles are references to the classes.
   - `IMeshData::IFacePtr` (a raw pointer used as a map key) is the same reference, in a map compared by reference
-    that iterates in insertion order (decision 4005).
+    that iterates in insertion order (decision 490).
   - `NCollection_Shared<X>` is `X`.
   - The allocator arguments go.
 - **Multiple inheritance.** `IMeshData_Face`, `IMeshData_Wire` and `IMeshData_Edge` derive from
@@ -443,33 +443,33 @@ That is about 37,000 lines of OCCT: TKMesh 19,900, TKXMesh 100, ShapeAnalysis 14
   - `BRepMesh_EdgeParameterProvider<ParametersCollection>` is a generic.
   - `IMeshData_ParametersListArrayAdaptor<T>` is a generic over the list.
 - **Functors.** `OSD_Parallel::For(0, n, *this, isSequential)` → `OSD_Parallel.For(0, n, process, isSequential)` with a
-  method group (decision 4002). Keep each `!myParameters.InParallel`, including OCCT's forced `true` in the
+  method group (decision 487). Keep each `!myParameters.InParallel`, including OCCT's forced `true` in the
   post-processor.
 - **Exceptions in loop bodies.** OCCT's `try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure&)` sets a face's
   `IMeshData_Exception` status. Keep it per face. An exception that escapes a parallel loop is unwrapped from
   `AggregateException` to its first inner exception (decision 431).
 - **Sorting.**
-  - `std::make_heap` + `std::sort_heap` → the MSVC-order helper of 4B (decision 4006), never `Array.Sort`, which
+  - `std::make_heap` + `std::sort_heap` → the MSVC-order helper of 4B (decision 491), never `Array.Sort`, which
     orders ties differently.
   - `std::sort` on doubles or on three integers (NURBSRangeSplitter, Triangle) can use `Array.Sort`.
   - Delabella's `std::sort` of points: use the helper or record the difference.
 - **Writing into shapes.**
-  - Only `BRepMesh_ShapeTool` attaches meshes, through the non-freezing attach (decision 4003). `BRepTools::Update(face)`
+  - Only `BRepMesh_ShapeTool` attaches meshes, through the non-freezing attach (decision 488). `BRepTools::Update(face)`
     in ShapeVisitor returns early on frozen faces, as in phase 3.
   - Anything else that writes into the shape being meshed goes in decisions.md.
-- **Process-wide state** (decision 4007).
+- **Process-wide state** (decision 492).
   - `BRepMesh_IncrementalMesh::IS_IN_PARALLEL` and `BRepMesh_DiscretFactory`'s default name stay statics with
     internal setters, as `BRepLib.Precision` (decision 415).
   - `CSF_MeshAlgo` isn't read.
   - `BRepMesh_DiscretAlgoFactory.RegisterFactory` and `UnregisterFactory` are internal. The two factories register
     when the type initialises.
 - **Messages.** `Message::SendWarning`, `Send` and `DefaultMessenger()` go to `Message`'s process-wide messenger
-  (decision 4008). Draw-lite installs one that prints as DRAWEXE does.
+  (decision 493). Draw-lite installs one that prints as DRAWEXE does.
 - **Debug code.** `#ifdef OCCT_DEBUG`, `DEBUG_HEALER` and `CHECK_PERF` blocks go. Public dump methods
   (`BRepMesh_MeshTool::DumpTriangles`, DataStructureOfDelaun's) are ported, writing through BRepTools.
 - **Delabella's licence.** `delabella.cpp` is MIT-licensed third-party code inside OCCT. Its C# port keeps the MIT
   notice at the top of the file, beside OCCT's provenance. The notice is added to a THIRD-PARTY-NOTICES file
-  (decision 4012).
+  (decision 497).
 
 ## 7. Questions for the owner
 

@@ -307,3 +307,14 @@ Phase 3 (part): Draw-lite construction, distance and modification commands.
   (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
   for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
   (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.
+
+Phase 4 (part): Draw-lite mesh readers.
+
+- Draw-lite (tests, not packaged): `tclean`, `trinfo` (with `-lods`), `triepoints`, `trmergenodes`, `correctnormals`,
+  `triarea`, `tricheck` (MeshTest_CheckTopology) and `mpparallel`; DrawResources' `checktrinfo` runs. In-place commands
+  work on a copy of the shape's graph and bind it. DrawCorpus reads the grids that list their cases' directory in a
+  `cases.list` (mesh, heal, chamfer, opengl, xml): 21,068 cases where it saw 17,237. `dgetenv` of an unset variable
+  returns an empty result, as Draw's.
+- Tests: unit tests of every command; oracle tests against native OCCT on 525 meshed shapes (5,769 values of trinfo,
+  triarea and tricheck bit-identical, 974 BRep texts after correctnormals and tclean byte-identical). The corpus has
+  961 runnable cases (734 before) and 452 OK (347 before).

@@ -8,8 +8,8 @@ namespace OcctNet.DrawLite;
 /// (<c>src/Draw/TKDraw/Draw/Draw_PloadCommands.cxx</c>).
 /// </summary>
 /// <remarks>
-/// Draw-lite fills it for <c>pload</c> and for the commands of unit 3L2b, whose sources are known here; the commands
-/// of earlier units aren't listed yet.
+/// Draw-lite fills it for <c>pload</c> and for the commands of units 3L2b and 4L1, whose sources are known here; the
+/// commands of earlier units aren't listed yet.
 /// </remarks>
 internal static class DrawSourceFiles
 {
@@ -38,6 +38,9 @@ internal static class DrawSourceFiles
         ("src/Draw/TKTopTest/BRepTest/BRepTest_BasicCommands.cxx",
          ["nurbsconvert", "deform", "scalexyz", "sameparameter", "fsameparameter", "updatetolerance", "solidorientation",
           "mkedgecurve", "findplane", "compare", "issubshape", "wexplo"]),
+        ("src/Draw/TKDraw/DBRep/DBRep.cxx", ["tclean"]),
+        ("src/Draw/TKTopTest/MeshTest/MeshTest.cxx", ["trinfo", "triepoints", "trmergenodes", "correctnormals"]),
+        ("src/Draw/TKTopTest/MeshTest/MeshTest_PluginCommands.cxx", ["mpparallel", "triarea", "tricheck"]),
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
