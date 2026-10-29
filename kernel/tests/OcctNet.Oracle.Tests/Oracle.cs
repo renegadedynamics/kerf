@@ -58,6 +58,43 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return myRandom.Next(2) == 0 ? anAx3 : anAx3.ZReversed();
     }
 
+    /// <summary>
+    /// Random knots and multiplicities for a B-spline of the given degree: 4 to 8 knots (max(6, degree + 2) if
+    /// periodic) spaced 0.2 to 1.2 apart from a start in [-2, 2]; end multiplicities degree + 1 unless periodic
+    /// (then the last equals the first), interior multiplicities 1 to degree.
+    /// </summary>
+    public void BSplineKnots(int theDegree, bool thePeriodic,
+                             out NCollection_Array1<double> theKnots, out NCollection_Array1<int> theMults)
+    {
+        int aNbKnots = thePeriodic ? Math.Max(6, theDegree + 2) : Int(4, 8);
+        theKnots = new NCollection_Array1<double>(1, aNbKnots);
+        theMults = new NCollection_Array1<int>(1, aNbKnots);
+        double aKnot = Real(-2, 2);
+        for (int i = 1; i <= aNbKnots; i++)
+        {
+            theKnots[i] = aKnot;
+            aKnot += Real(0.2, 1.2);
+            theMults[i] = !thePeriodic && (i == 1 || i == aNbKnots) ? theDegree + 1 : Int(1, theDegree);
+        }
+
+        if (thePeriodic)
+        {
+            theMults[aNbKnots] = theMults[1];
+        }
+    }
+
+    /// <summary>Weights in [0.5, 1.5] if rational, ones otherwise.</summary>
+    public NCollection_Array1<double> Weights(int theNb, bool theRational)
+    {
+        var aWeights = new NCollection_Array1<double>(1, theNb);
+        for (int i = 1; i <= theNb; i++)
+        {
+            aWeights[i] = theRational ? Real(0.5, 1.5) : 1.0;
+        }
+
+        return aWeights;
+    }
+
     // Conversions to and from the native wrappers. Each native object is disposed by the caller's `using`.
 
     public static N.gp_Pnt ToNative(in gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
@@ -98,6 +135,125 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
+    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
+
+    public static N.gp_Vec2d ToNative(in gp_Vec2d theV) => new(theV.X(), theV.Y());
+
+    public static N.TColStd_Array1OfReal ToNative(NCollection_Array1<double> theArray)
+    {
+        var aNative = new N.TColStd_Array1OfReal(theArray.Lower(), theArray.Upper());
+        for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
+        {
+            aNative.SetValue(i, theArray[i]);
+        }
+
+        return aNative;
+    }
+
+    public static N.TColStd_Array1OfInteger ToNative(NCollection_Array1<int> theArray)
+    {
+        var aNative = new N.TColStd_Array1OfInteger(theArray.Lower(), theArray.Upper());
+        for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
+        {
+            aNative.SetValue(i, theArray[i]);
+        }
+
+        return aNative;
+    }
+
+    public static N.TColgp_Array1OfPnt ToNative(NCollection_Array1<gp_Pnt> theArray)
+    {
+        var aNative = new N.TColgp_Array1OfPnt(theArray.Lower(), theArray.Upper());
+        for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
+        {
+            using var aP = ToNative(theArray[i]);
+            aNative.SetValue(i, aP);
+        }
+
+        return aNative;
+    }
+
+    public static N.TColgp_Array1OfPnt2d ToNative(NCollection_Array1<gp_Pnt2d> theArray)
+    {
+        var aNative = new N.TColgp_Array1OfPnt2d(theArray.Lower(), theArray.Upper());
+        for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
+        {
+            using var aP = ToNative(theArray[i]);
+            aNative.SetValue(i, aP);
+        }
+
+        return aNative;
+    }
+
+    public static N.TColStd_Array2OfReal ToNative(NCollection_Array2<double> theArray)
+    {
+        var aNative = new N.TColStd_Array2OfReal(theArray.LowerRow(), theArray.UpperRow(), theArray.LowerCol(), theArray.UpperCol());
+        for (int i = theArray.LowerRow(); i <= theArray.UpperRow(); i++)
+        {
+            for (int j = theArray.LowerCol(); j <= theArray.UpperCol(); j++)
+            {
+                aNative.SetValue(i, j, theArray[i, j]);
+            }
+        }
+
+        return aNative;
+    }
+
+    public static N.TColgp_Array2OfPnt ToNative(NCollection_Array2<gp_Pnt> theArray)
+    {
+        var aNative = new N.TColgp_Array2OfPnt(theArray.LowerRow(), theArray.UpperRow(), theArray.LowerCol(), theArray.UpperCol());
+        for (int i = theArray.LowerRow(); i <= theArray.UpperRow(); i++)
+        {
+            for (int j = theArray.LowerCol(); j <= theArray.UpperCol(); j++)
+            {
+                using var aP = ToNative(theArray[i, j]);
+                aNative.SetValue(i, j, aP);
+            }
+        }
+
+        return aNative;
+    }
+
+    /// <summary>A native B-spline curve; non-rational (OCCT's constructor without weights) when theWeights is null.</summary>
+    public static N.Geom_BSplineCurve ToNativeCurve(NCollection_Array1<gp_Pnt> thePoles, NCollection_Array1<double>? theWeights,
+                                                    NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults,
+                                                    int theDegree, bool thePeriodic)
+    {
+        using var aPoles = ToNative(thePoles);
+        using var aKnots = ToNative(theKnots);
+        using var aMults = ToNative(theMults);
+        if (theWeights is null)
+        {
+            return new N.Geom_BSplineCurve(aPoles, aKnots, aMults, theDegree, thePeriodic);
+        }
+
+        using var aWeights = ToNative(theWeights);
+        return new N.Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, theDegree, thePeriodic);
+    }
+
+    /// <summary>A native 2D B-spline curve; non-rational when theWeights is null.</summary>
+    public static N.Geom2d_BSplineCurve ToNativeCurve(NCollection_Array1<gp_Pnt2d> thePoles, NCollection_Array1<double>? theWeights,
+                                                      NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults,
+                                                      int theDegree, bool thePeriodic)
+    {
+        using var aPoles = ToNative(thePoles);
+        using var aKnots = ToNative(theKnots);
+        using var aMults = ToNative(theMults);
+        if (theWeights is null)
+        {
+            return new N.Geom2d_BSplineCurve(aPoles, aKnots, aMults, theDegree, thePeriodic);
+        }
+
+        using var aWeights = ToNative(theWeights);
+        return new N.Geom2d_BSplineCurve(aPoles, aWeights, aKnots, aMults, theDegree, thePeriodic);
+    }
+
+    public static gp_Vec FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
+
+    public static gp_Pnt2d FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
+
+    public static gp_Vec2d FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
+
     public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
     public static gp_Pnt FromNative(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
@@ -110,6 +266,54 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     // Comparisons
 
     public void Same(double theNative, double thePort, string theWhat, double theTolerance = Tolerance)
+        => Compare(theNative, thePort, theWhat, theTolerance, Math.Max(1.0, Math.Abs(theNative)));
+
+    /// <summary>
+    /// Like <see cref="Same(double, double, string, double)"/>, but relative to the native value however small
+    /// (absolute only for a native zero): for small results such as parametric resolutions.
+    /// </summary>
+    public void SameRelative(double theNative, double thePort, string theWhat, double theTolerance = Tolerance)
+        => Compare(theNative, thePort, theWhat, theTolerance, theNative == 0.0 ? 1.0 : Math.Abs(theNative));
+
+    // Points and vectors against native wrappers: each coordinate is compared relative to the largest native
+    // coordinate (at least 1), so a coordinate that is small next to the others isn't held to its own magnitude.
+
+    public void Same(N.gp_Pnt theNative, in gp_Pnt thePort, string theWhat, double theTolerance = Tolerance)
+        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+
+    public void Same(N.gp_Vec theNative, in gp_Vec thePort, string theWhat, double theTolerance = Tolerance)
+        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+
+    public void Same(N.gp_Pnt2d theNative, in gp_Pnt2d thePort, string theWhat, double theTolerance = Tolerance)
+        => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
+
+    public void Same(N.gp_Vec2d theNative, in gp_Vec2d thePort, string theWhat, double theTolerance = Tolerance)
+        => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
+
+    private void Same3(double theNX, double theNY, double theNZ, double thePX, double thePY, double thePZ,
+                       string theWhat, double theTolerance)
+    {
+        double aScale = Math.Max(1.0, Math.Max(Math.Abs(theNX), Math.Max(Math.Abs(theNY), Math.Abs(theNZ))));
+        Compare(theNX, thePX, theWhat + ".X", theTolerance, aScale);
+        Compare(theNY, thePY, theWhat + ".Y", theTolerance, aScale);
+        Compare(theNZ, thePZ, theWhat + ".Z", theTolerance, aScale);
+    }
+
+    private void Same2(double theNX, double theNY, double thePX, double thePY, string theWhat, double theTolerance)
+    {
+        double aScale = Math.Max(1.0, Math.Max(Math.Abs(theNX), Math.Abs(theNY)));
+        Compare(theNX, thePX, theWhat + ".X", theTolerance, aScale);
+        Compare(theNY, thePY, theWhat + ".Y", theTolerance, aScale);
+    }
+
+    public void Same(int theNative, int thePort, string theWhat)
+    {
+        myValues++;
+        Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
+        myExact++;
+    }
+
+    private void Compare(double theNative, double thePort, string theWhat, double theTolerance, double theScale)
     {
         myValues++;
         if (BitConverter.DoubleToInt64Bits(theNative) == BitConverter.DoubleToInt64Bits(thePort))
@@ -118,7 +322,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
             return;
         }
 
-        double aDiff = Math.Abs(theNative - thePort) / Math.Max(1.0, Math.Abs(theNative));
+        double aDiff = Math.Abs(theNative - thePort) / theScale;
         myMaxDiff = Math.Max(myMaxDiff, aDiff);
         Assert.True(aDiff <= theTolerance,
                     string.Create(CultureInfo.InvariantCulture, $"{theWhat}: native {theNative:R}, port {thePort:R} (relative difference {aDiff:E2})"));
