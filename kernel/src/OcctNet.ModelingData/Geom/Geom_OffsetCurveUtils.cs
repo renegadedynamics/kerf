@@ -207,6 +207,8 @@ internal static class Geom_OffsetCurveUtils
             {
                 return false;
             }
+            // OCCT: the DNdir and Ndir coefficients of V3 below don't match the derivative of V2 (see
+            // occt-issues.md); V3 is right only where |p'| is constant (Dr = D2r = D3r = 0, e.g. a circle).
             // V3 = P"' (U) :
             D3Ndir.Subtract(D2Ndir.Multiplied(3.0 * Dr / R2));
             D3Ndir.Subtract(DNdir.Multiplied(3.0 * ((D2r / R2) + (Dr * Dr / R4))));
@@ -215,6 +217,7 @@ internal static class Geom_OffsetCurveUtils
             D3Ndir.Multiply(theOffset / R);
             // V2 = P" (U) :
             R4 = R2 * R2;
+            // OCCT: subtracts the Ndir term that CalculateD2 adds (see occt-issues.md).
             D2Ndir.Subtract(DNdir.Multiplied(2.0 * Dr / R2));
             D2Ndir.Subtract(Ndir.Multiplied((3.0 * Dr * Dr / R4) - (D2r / R2)));
             D2Ndir.Multiply(theOffset / R);
@@ -225,6 +228,8 @@ internal static class Geom_OffsetCurveUtils
         }
         else
         {
+            // OCCT: the DNdir and Ndir coefficients of V3 below don't match the derivative of V2 (see
+            // occt-issues.md); V3 is right only where |p'| is constant (Dr = D2r = D3r = 0, e.g. a circle).
             // V3 = P"' (U) :
             D3Ndir.Divide(R);
             D3Ndir.Subtract(D2Ndir.Multiplied(3.0 * Dr / R3));
@@ -235,6 +240,7 @@ internal static class Geom_OffsetCurveUtils
             // V2 = P" (U) :
             D2Ndir.Divide(R);
             D2Ndir.Subtract(DNdir.Multiplied(2.0 * Dr / R3));
+            // OCCT: subtracts the Ndir term that CalculateD2 adds (see occt-issues.md).
             D2Ndir.Subtract(Ndir.Multiplied((3.0 * Dr * Dr / R5) - (D2r / R3)));
             D2Ndir.Multiply(theOffset);
             // V1 = P' (U) :

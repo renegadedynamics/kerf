@@ -43,7 +43,7 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
     private GeomAbs_BSplKnotDistribution myKnotSet = GeomAbs_NonUniform;
     private GeomAbs_Shape mySmooth = GeomAbs_C0;
     private double myMaxDerivInv = 0.0;
-    private volatile bool myMaxDerivInvOk = false;
+    private bool myMaxDerivInvOk = false;
 
     //=============================================================================================
     // Geom_BSplineCurve.cxx
@@ -1956,8 +1956,10 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
     /// <remarks>Non-const in OCCT, because it caches a value; not a mutator, so it works on a frozen curve.</remarks>
     public void Resolution(double Tolerance3D, out double UTolerance)
     {
-        if (!myMaxDerivInvOk)
+        // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
+        if (!Volatile.Read(ref myMaxDerivInvOk))
         {
+            double aMaxDerivInv;
             if (myPeriodic)
             {
                 int NbKnots, NbPoles;
@@ -1981,7 +1983,7 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
                                     myFlatKnots,
                                     myDeg,
                                     1.0,
-                                    out myMaxDerivInv);
+                                    out aMaxDerivInv);
             }
             else
             {
@@ -1991,9 +1993,10 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
                                     myFlatKnots,
                                     myDeg,
                                     1.0,
-                                    out myMaxDerivInv);
+                                    out aMaxDerivInv);
             }
-            myMaxDerivInvOk = true;
+            myMaxDerivInv = aMaxDerivInv;
+            Volatile.Write(ref myMaxDerivInvOk, true);
         }
         UTolerance = Tolerance3D * myMaxDerivInv;
     }
@@ -2257,6 +2260,14 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
         GeomEval_RepUtils.ValidateCurveDesc(theDesc, this);
         Geom_BSplineCurve aCopy = CopyBSpline();
         aCopy.SetEvalRepresentation(GeomEval_RepUtils.CloneCurveDesc(theDesc));
+        return aCopy;
+    }
+
+    /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
+    public Geom_BSplineCurve WithoutEvalRepresentation()
+    {
+        Geom_BSplineCurve aCopy = CopyBSpline();
+        aCopy.ClearEvalRepresentation();
         return aCopy;
     }
 }

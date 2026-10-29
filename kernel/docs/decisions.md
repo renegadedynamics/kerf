@@ -685,13 +685,17 @@ Geom_BSplineCurve_1.cxx), OffsetCurve and Geom_OffsetCurveUtils.pxx.
      OCCT.
 126. **`Resolution(Tolerance3D, out UTolerance)` of Bezier and B-spline curves is public and not a mutator**,
      although non-const in OCCT: it only caches 1 / max derivative, so it works on frozen curves. The "cached"
-     flag is volatile; concurrent first calls compute the same value.
-127. **Composite curves share their basis as OCCT does.** `Geom_TrimmedCurve.BasisCurve()` and
-     `Geom_OffsetCurve.BasisCurve()` return the stored basis curve (the constructors copy the curve they are
-     given, as in OCCT). Callers can't change it. But `Freeze()` is not virtual, so freezing a trimmed or offset
-     curve doesn't freeze its basis, and ported code could still change the basis through `BasisCurve()`.
-     Whoever decides where topology freezes geometry (phase 3) should freeze the basis too, for instance by
-     making `Freeze` virtual.
+     value is computed into a local and published before its flag (`Volatile.Write`, decision 1501), as in Geom2d;
+     concurrent first calls compute the same value.
+127. **Composite curves share their basis as OCCT does, frozen, and copy it on write** (as Geom2d, decision 132;
+     changed in decision 1501). `Geom_TrimmedCurve.BasisCurve()` and `Geom_OffsetCurve.BasisCurve()` return the
+     stored basis curve (the constructors copy the curve they are given, as in OCCT), after freezing it, and the
+     same object each time. The owners' own mutators (`Reverse`, `Transform`, and `SetTrim` through `Reverse`)
+     copy a frozen basis curve before changing it, so a basis curve that was handed out never changes, and ported
+     code that tries to change it through `BasisCurve()` throws (rules, section 8). The values computed are
+     OCCT's: a copy is equal to its original. A trimmed curve built from a trimmed curve copies the inner basis
+     without freezing it. First version: `BasisCurve()` returned the basis unfrozen, so ported code could change
+     it.
 128. **Geom_OffsetCurveUtils' templates are ported per instantiation** (rules, section 9): `AdjustDerivative` over
      `Geom_Curve` (Geom_OffsetCurve, GeomGridEval) and over `Adaptor3d_Curve` (GeomAdaptor_Curve's basis adaptor),
      with identical bodies, and `EvaluateD0` to `EvaluateDN` over `Adaptor3d_Curve` only, the one instantiation
@@ -720,11 +724,12 @@ Geom2d_OffsetCurveUtils, and Adaptor2d_OffsetCurve.
      `KnotSequence()`, `WeightsArray()`, and the `Weights()` pointer), the public method returns a new
      `PackedList<T>`. `Weights()` returns null for a non-rational curve, as OCCT returns `BSplCLib::NoWeights()`.
      A copy can't change when the curve is modified later, and it is what decision 11 asks for numeric arrays.
-     Ported code gets the arrays themselves, without copying, through internal accessors named with a `Ref`
-     suffix (`PolesRef()`, `WeightsRef()` (null if not rational), `WeightsArrayRef()`, `KnotsRef()`,
-     `MultiplicitiesRef()`, `KnotSequenceRef()`), to pass to BSplCLib as OCCT does. It must not modify them (the
-     unit weights and the Bezier knot arrays are shared). A ported `C->Poles()` passed to BSplCLib doesn't compile
-     until it is changed to `PolesRef()`. OCCT's deprecated copy-out overloads (`Poles(NCollection_Array1&)`, ...)
+     Ported code gets the arrays themselves, without copying, through internal accessors named as in Geom
+     (`InternalPoles()`, `InternalWeights()` (null if not rational), `InternalWeightsArray()`, `InternalKnots()`,
+     `InternalMultiplicities()`, `InternalKnotSequence()`; first named with a `Ref` suffix, decision 1501), to pass
+     to BSplCLib as OCCT does. It must not modify them (the unit weights and the Bezier knot arrays are shared). A
+     ported `C->Poles()` passed to BSplCLib doesn't compile until it is changed to `InternalPoles()`. OCCT's
+     deprecated copy-out overloads (`Poles(NCollection_Array1&)`, ...)
      are public. The indexed accessors (`Pole(i)`, `Knot(i)`, `Weight(i)`) don't allocate.
      Rejected: returning the internal arrays publicly (callers could write into them) and a `PackedList` view of
      them (it would change when the curve is modified). Caching the copies in the curve is easy if profiling
@@ -771,3 +776,25 @@ Geom2d_OffsetCurveUtils, and Adaptor2d_OffsetCurve.
      IndexOutOfRangeException. The edit chains stop at a curve that `IncreaseDegree` left inconsistent
      (occt-issues.md), and leave rotations out of composed transformations, whose last-bit sin/cos differences
      grow to about 1e-9 after several edits.
+
+## Phase 2: curve consistency (29 October 2026)
+
+Aligning the Geom (1A) and Geom2d (1B) curves where they made different choices for no OCCT reason.
+
+1501. **One set of conventions for both curve families.** (a) The internal array accessors are `InternalPoles()`,
+      `InternalWeights()`, `InternalWeightsArray()`, `InternalKnots()`, `InternalMultiplicities()` and
+      `InternalKnotSequence()` in both (Geom2d's `...Ref()` names renamed; decision 131), as for the surfaces
+      (1C); the public `PackedList` accessors already had the same names. (b) Geom's trimmed and offset curves
+      freeze their shared basis curve and copy it on write, as Geom2d's (decision 127, changed; 132). Every
+      mutator path was checked against OCCT: only `Reverse` and `Transform` (and `SetTrim` through `Reverse`)
+      change the basis, and a copy evaluates as the original, so results are OCCT's (oracle shares unchanged).
+      (c) The non-mutating twins already had the same names in both families (decisions 124, 133);
+      `WithoutEvalRepresentation` (Geom2d's twin of `ClearEvalRepresentation`) is added to Geom_BezierCurve,
+      Geom_BSplineCurve and Geom_OffsetCurve. (d) Geom_OffsetCurveUtils' `CalculateD3` reproduces the same OCCT
+      error as Geom2d's and is marked `// OCCT` the same way (occt-issues.md). (e) The evaluation
+      representation rules differ between the families in OCCT (Geom2d_BSplineCurve never drops it,
+      Geom_BSplineCurve always does, both Bezier curves only in `Transform` and `init`); the ports already
+      matched OCCT, and tests now pin it in both. (f) `Resolution`'s cache is published the same way in both
+      (decisions 126, 135); the default tolerance of `Segment` is the same named constant for
+      `Precision::PConfusion()`; the Geom oracle tests use `Oracle`'s array converters instead of private
+      copies, and Geom2dOracle builds native B-splines through `Oracle.ToNativeCurve`.

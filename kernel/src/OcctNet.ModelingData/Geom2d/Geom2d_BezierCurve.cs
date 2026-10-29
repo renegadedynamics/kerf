@@ -16,7 +16,7 @@ namespace Occt;
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
 /// <see cref="PackedList{T}"/> copies (<see cref="Poles()"/>, <see cref="Weights()"/>, ...), and gives ported
-/// code the arrays themselves through internal <c>...Ref()</c> accessors, which must not be modified
+/// code the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified
 /// (decision 131).
 /// </para>
 /// <para>
@@ -162,8 +162,8 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
                                     false,
                                     myPoles,
                                     myWeights,
-                                    KnotsRef(),
-                                    MultiplicitiesRef(),
+                                    InternalKnots(),
+                                    InternalMultiplicities(),
                                     npoles,
                                     nweights,
                                     nknots,
@@ -177,8 +177,8 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
                                     false,
                                     myPoles,
                                     BSplCLib.NoWeights(),
-                                    KnotsRef(),
-                                    MultiplicitiesRef(),
+                                    InternalKnots(),
+                                    InternalMultiplicities(),
                                     npoles,
                                     BSplCLib.NoWeights(),
                                     nknots,
@@ -376,7 +376,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
                                 1.0,
                                 false,
                                 Degree(),
-                                KnotSequenceRef(),
+                                InternalKnotSequence(),
                                 myPoles,
                                 myWeights,
                                 coeffs,
@@ -390,7 +390,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
                                 1.0,
                                 false,
                                 Degree(),
-                                KnotSequenceRef(),
+                                InternalKnotSequence(),
                                 myPoles,
                                 BSplCLib.NoWeights(),
                                 coeffs,
@@ -493,7 +493,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         gp_Pnt2d P;
-        BSplCLib.D0(U, myPoles, WeightsRef(), out P);
+        BSplCLib.D0(U, myPoles, InternalWeights(), out P);
         return P;
     }
 
@@ -505,7 +505,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD1 aResult;
-        BSplCLib.D1(U, myPoles, WeightsRef(), out aResult.Point, out aResult.D1);
+        BSplCLib.D1(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1);
         return aResult;
     }
 
@@ -517,7 +517,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD2 aResult;
-        BSplCLib.D2(U, myPoles, WeightsRef(), out aResult.Point, out aResult.D1, out aResult.D2);
+        BSplCLib.D2(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
@@ -529,7 +529,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD3 aResult;
-        BSplCLib.D3(U, myPoles, WeightsRef(), out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+        BSplCLib.D3(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
         return aResult;
     }
 
@@ -546,7 +546,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         gp_Vec2d V;
-        BSplCLib.DN(U, N, 0, Degree(), false, myPoles, WeightsRef(), KnotsRef(), MultiplicitiesRef(), out V);
+        BSplCLib.DN(U, N, 0, Degree(), false, myPoles, InternalWeights(), InternalKnots(), InternalMultiplicities(), out V);
         return V;
     }
 
@@ -582,7 +582,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public PackedList<gp_Pnt2d> Poles() => myPoles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<gp_Pnt2d> PolesRef() => myPoles;
+    internal NCollection_Array1<gp_Pnt2d> InternalPoles() => myPoles;
 
     /// <summary>The first pole.</summary>
     public sealed override gp_Pnt2d StartPoint() => myPoles[1];
@@ -625,13 +625,13 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public PackedList<double>? Weights() => myRational ? myWeights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
-    internal NCollection_Array1<double>? WeightsRef() => myRational ? myWeights : BSplCLib.NoWeights();
+    internal NCollection_Array1<double>? InternalWeights() => myRational ? myWeights : BSplCLib.NoWeights();
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
     public PackedList<double> WeightsArray() => myWeights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
-    internal NCollection_Array1<double> WeightsArrayRef() => myWeights;
+    internal NCollection_Array1<double> InternalWeightsArray() => myWeights;
 
     /// <summary>Applies T to the poles; the evaluation representation is dropped.</summary>
     protected internal sealed override void Transform(in gp_Trsf2d T)
@@ -659,9 +659,9 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         {
             double aMaxDerivInv;
             BSplCLib.Resolution(myPoles,
-                                WeightsRef(),
+                                InternalWeights(),
                                 myPoles.Length(),
-                                KnotSequenceRef(),
+                                InternalKnotSequence(),
                                 Degree(),
                                 1.0,
                                 out aMaxDerivInv);
@@ -675,13 +675,13 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public sealed override Geom2d_Geometry Copy() => new Geom2d_BezierCurve(this);
 
     /// <summary>The knots {0, 1} of the curve seen as a B-spline (a copy).</summary>
-    public PackedList<double> Knots() => KnotsRef().ToPackedList();
+    public PackedList<double> Knots() => InternalKnots().ToPackedList();
 
     /// <summary>The multiplicities {Degree() + 1, Degree() + 1} of the curve seen as a B-spline (a copy).</summary>
-    public PackedList<int> Multiplicities() => MultiplicitiesRef().ToPackedList();
+    public PackedList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
 
     /// <summary>The flat knots of the curve seen as a B-spline: Degree() + 1 zeros then Degree() + 1 ones (a copy).</summary>
-    public PackedList<double> KnotSequence() => KnotSequenceRef().ToPackedList();
+    public PackedList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
 
     private static readonly NCollection_Array1<double> THE_KNOTS = NCollection_Array1<double>.From([0.0, 1.0]);
 
@@ -713,17 +713,17 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The shared knot array {0, 1}, for ported code: don't modify it.</summary>
-    internal NCollection_Array1<double> KnotsRef() => THE_KNOTS;
+    internal NCollection_Array1<double> InternalKnots() => THE_KNOTS;
 
     /// <summary>The shared multiplicity array of this degree, for ported code: don't modify it.</summary>
-    internal NCollection_Array1<int> MultiplicitiesRef()
+    internal NCollection_Array1<int> InternalMultiplicities()
     {
         Standard_ProgramError_Raise_if(myPoles.IsEmpty(), "Geom2d_BezierCurve: empty poles");
         return THE_MULTS[myPoles.Length() - 1];
     }
 
     /// <summary>The shared flat knot array of this degree, for ported code: don't modify it.</summary>
-    internal NCollection_Array1<double> KnotSequenceRef()
+    internal NCollection_Array1<double> InternalKnotSequence()
     {
         Standard_ProgramError_Raise_if(myPoles.IsEmpty(), "Geom2d_BezierCurve: empty poles");
         return THE_FKNOTS[myPoles.Length() - 1];

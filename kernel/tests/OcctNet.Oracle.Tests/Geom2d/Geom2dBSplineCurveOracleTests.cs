@@ -174,8 +174,8 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                 double aTol = theOracle.Bool() ? 0.0 : 1e-9;
                 theNativeEdit = c =>
                 {
-                    using var aNK = Geom2dOracle.ToNative(aKnots);
-                    using var aNM = Geom2dOracle.ToNative(aMults);
+                    using var aNK = Oracle.ToNative(NCollection_Array1<double>.From(aKnots));
+                    using var aNM = Oracle.ToNative(NCollection_Array1<int>.From(aMults));
                     c.InsertKnots(aNK, aNM, aTol, anAdd);
                     return [];
                 };
@@ -488,7 +488,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 
                 // Some edits of unclamped curves leave a pole count that doesn't match the multiplicities, natively
                 // as in the port (compared just above); later edits would then read past the arrays. Stop there.
-                if (aPort.NbPoles() != BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic(), aPort.MultiplicitiesRef()))
+                if (aPort.NbPoles() != BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic(), aPort.InternalMultiplicities()))
                 {
                     anInconsistent[aWhat] = anInconsistent.GetValueOrDefault(aWhat) + 1;
                     break;
