@@ -74,7 +74,7 @@ broken down by package.
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
 | ModelingData | TKG2d | 68 / 102 | 18,970 / 23,488 | 80.8 |
 | ModelingData | TKG3d | 137 / 237 | 45,424 / 70,301 | 64.6 |
-| ModelingData | TKGeomBase | 315 / 720 | 99,810 / 317,408 | 31.4 |
+| ModelingData | TKGeomBase | 380 / 720 | 238,225 / 317,408 | 75.1 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 988 | 315,844 / 2,897,781 | 10.9 |
+| **All** |  | 1053 | 454,259 / 2,897,781 | 15.7 |
 
 ## TKMath
 
@@ -161,10 +161,10 @@ broken down by package.
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
 | AdvApp2Var | 35 / 35 | 51,697 / 51,697 | 100.0 |
-| AppCont | 0 / 9 | 0 / 125,352 | 0.0 |
-| AppDef | 10 / 60 | 1,120 / 10,573 | 10.6 |
+| AppCont | 9 / 9 | 125,352 / 125,352 | 100.0 |
+| AppDef | 60 / 60 | 10,573 / 10,573 | 100.0 |
 | AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
-| Approx | 0 / 28 | 0 / 10,308 | 0.0 |
+| Approx | 6 / 28 | 3,610 / 10,308 | 35.0 |
 | BndLib | 0 / 8 | 0 / 2,537 | 0.0 |
 | CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
 | Extrema | 17 / 104 | 5,242 / 22,613 | 23.2 |
