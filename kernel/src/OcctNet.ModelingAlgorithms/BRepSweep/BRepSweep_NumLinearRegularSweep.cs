@@ -460,7 +460,13 @@ internal abstract class BRepSweep_NumLinearRegularSweep
         // Change the "Closed" flag only for Wires and Shells
         if (myShapes[iGenS, iDirS].ShapeType() == TopAbs_WIRE || myShapes[iGenS, iDirS].ShapeType() == TopAbs_SHELL)
         {
-            myShapes[iGenS, iDirS].Closed(BRep_Tool.IsClosed(myShapes[iGenS, iDirS]));
+            // OCCT.NET: frozen. OCCT sets the flag again on each call; a result already published (frozen), or a
+            // generating shape's own wire, is written only if the flag changes.
+            bool isClosed = BRep_Tool.IsClosed(myShapes[iGenS, iDirS]);
+            if (myShapes[iGenS, iDirS].Closed() != isClosed)
+            {
+                myShapes[iGenS, iDirS].Closed(isClosed);
+            }
         }
         return myShapes[iGenS, iDirS];
     }
