@@ -38,3 +38,5 @@ its native build: see [docs/oracle-testing.md](docs/oracle-testing.md).
 
 GNU Lesser General Public License 2.1 with the Open CASCADE exception, as OCCT: see [LICENSE](LICENSE),
 [OCCT_LGPL_EXCEPTION.txt](OCCT_LGPL_EXCEPTION.txt) and [NOTICE](NOTICE).
+Delabella's port (`BRepMesh/delabella.cs`) keeps its MIT licence: see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
