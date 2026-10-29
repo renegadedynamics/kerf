@@ -32,6 +32,7 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
         Clear();
         myIsDone = true;
         performCurExt(C);
+        // OCCT: performInf sets myIsDone again, hiding a failure of performCurExt (occt-issues.md)
         performInf(C);
     }
 

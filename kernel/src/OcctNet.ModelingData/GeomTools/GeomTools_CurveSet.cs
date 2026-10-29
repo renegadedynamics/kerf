@@ -952,7 +952,7 @@ public class GeomTools_CurveSet
         }
         catch (NullReferenceException)
         {
-            // a trimmed or offset curve whose basis couldn't be read: OCCT dereferences the null handle, which
+            // OCCT: a trimmed or offset curve whose basis couldn't be read: OCCT dereferences the null handle, which
             // OCC_CATCH_SIGNALS turns into a caught Standard_AccessViolation where signals are converted
         }
 
@@ -980,6 +980,7 @@ public class GeomTools_CurveSet
         {
             Geom_Curve? C = ReadCurve(IS);
             C?.Freeze();
+            // OCCT: every curve that can't be read is the one null entry, so the later indices shift
             myMap.Add((object?)C ?? theNullKey);
         }
     }

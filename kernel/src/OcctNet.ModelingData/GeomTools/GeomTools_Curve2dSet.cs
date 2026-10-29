@@ -45,6 +45,7 @@ public class GeomTools_Curve2dSet
     /// <summary>Adds a curve to the set (once) and returns its index. Null is added too, as in OCCT.</summary>
     public int Add(Geom2d_Curve? S)
     {
+        // OCCT: adds the null handle too, as one entry (occt-issues.md)
         return myMap.Add((object?)S ?? GeomTools_CurveSet.theNullKey);
     }
 
@@ -901,7 +902,7 @@ public class GeomTools_Curve2dSet
         }
         catch (NullReferenceException)
         {
-            // a trimmed or offset curve whose basis couldn't be read: OCCT dereferences the null handle, which
+            // OCCT: a trimmed or offset curve whose basis couldn't be read: OCCT dereferences the null handle, which
             // OCC_CATCH_SIGNALS turns into a caught Standard_AccessViolation where signals are converted
         }
 
@@ -929,6 +930,7 @@ public class GeomTools_Curve2dSet
         {
             Geom2d_Curve? C = ReadCurve2d(IS);
             C?.Freeze();
+            // OCCT: every object that can't be read is the one null entry, so the later indices shift
             myMap.Add((object?)C ?? GeomTools_CurveSet.theNullKey);
         }
     }

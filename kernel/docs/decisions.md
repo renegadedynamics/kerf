@@ -1491,3 +1491,112 @@ GeomAdaptor_TransformedCurve, GeomAdaptor_TransformedSurface); Adaptor3d_HSurfac
       reversed: 1,082,775 values. All 5,221,375 values are bit-identical. GeomAdaptor_SurfaceOfRevolution,
       GeomAdaptor_SurfaceOfLinearExtrusion, the transformed adaptors, GeomAdaptor and Adaptor3d_HSurfaceTool have no
       native binding: the ported GTests and OCCT.NET's own unit tests cover them.
+
+## Phase 2: unit 3C, properties, persistence, hashes
+
+LProp and GeomLProp (local properties of curves and surfaces: OCCT 8's templates `GeomLProp_CLPropsBase` and
+`GeomLProp_SLPropsBase` with `LProp_CurveUtils` and `LProp_SurfaceUtils`; GeomLProp::Continuity; GeomLProp_CurAndInf2d
+with its numeric helpers), GeomTools (OCCT's text format of curves, 2D curves and surfaces, the geometry of a `.brep`
+file), GeomHash and Geom2dHash, and `Standard_Stream` in Foundation.
+
+2401. **C++ stream state lives beside the TextWriter and TextReader** (`Standard_Stream`, new, in Foundation). OCCT's
+      `Standard_OStream&`/`Standard_IStream&` stay `TextWriter`/`TextReader` (rules, section 9); the state a C++ stream
+      carries and .NET's don't is kept per writer or reader in a `ConditionalWeakTable`: the output precision
+      (`Standard_Stream.Precision(OS)` and `Precision(OS, n)`, OCCT's `OS.precision()`, 6 by default) and the input's
+      fail and end-of-file flags. So the GeomTools sets set precision 17 and restore it as OCCT does, a caller can set
+      the precision for `GeomTools::Write`, and several reads on one reader share its failure state (phase 3's
+      BRepTools reads geometry and topology from one stream). `OS << double` is `Standard_Stream.Write`:
+      `printf("%.*g")` as the Windows C runtime writes it, which is .NET's "G" format with a lowercase exponent: exact
+      digits, ties to even (the C runtime's "standard rounding", on in programs built with a recent SDK such as native
+      OCCT; a first version rounded ties away from zero, the C runtime's legacy rounding, after a test that called it
+      without that option; the oracle showed native OCCT writing 229.121246337890625 as 229.12124633789062). `inf`,
+      `-inf`, `nan`, `-nan(ind)` as before (decision 68); Poly's writer now calls the same function (same output).
+      Extraction follows C++: white space skipped, `>> int` stops at the first non-digit, `>> bool` reads 0 or 1 (other
+      numbers give true and fail), a failed stream extracts nothing and leaves the value, overflow clamps; `ReadWord`
+      with a width reads width - 1 characters. OCCT's `Strtod` (C's strtod in the C locale) is `Standard_Stream.Strtod`,
+      with the end position; hexadecimal reals, which OCCT never writes, read as 0. Unit tests compare the formatting
+      (about 170,000 values at precisions 1 to 20, exact ties included) and strtod (10,000 texts) with ucrtbase.dll
+      through P/Invoke. Rejected: a `Standard_OStream` wrapper class (OCCT's signatures and every phase 3 caller would
+      change), a precision parameter on each Print method (OCCT's callers set it on the stream), and a new extractor
+      per call as Poly's (decision 68), which loses the failure state between calls.
+2402. **GeomTools writes `'\n'`**, as a C++ stream does; OCCT's files have CRLF on Windows only because `std::ofstream`
+      opens them in text mode. Phase 3's file-level `BRepTools::Write` decides what a file gets. Reading treats CR as
+      white space, as C++ does.
+2403. **The GeomTools sets keep OCCT's map semantics, null included.** `NCollection_IndexedMap<handle<Standard_Transient>>`
+      is an `NCollection_IndexedMap<object>` with reference equality (handles hash by address) and a sentinel key for
+      the null handle, which OCCT's map can hold once: `GeomTools_Curve2dSet.Add(null)` and `GeomTools_SurfaceSet.Add(null)`
+      add it (the 3D set returns 0, as OCCT does), and every curve or surface that `Read` can't build is that one null
+      entry, so the indices of the later ones shift, as in OCCT (occt-issues.md). The sets are classes (decision 16).
+      `Read` freezes the geometry it creates (the set hands it to every caller that asks, and BRepTools shares it
+      between shapes); `Add` doesn't freeze the caller's object, and the static `ReadCurve`/`ReadCurve2d`/`ReadSurface`
+      return new, unfrozen geometry. A trimmed, offset or swept object whose basis couldn't be read makes OCCT
+      dereference a null handle, which `OCC_CATCH_SIGNALS` turns into a caught exception where signals are converted:
+      the port catches the NullReferenceException there, so the object reads as null. OCCT's console messages ("Not a
+      Curve table", and the unknown-type line that the compact form writes to std::cout) go to `Console.Out`.
+2404. **GeomTools' API.** `GeomTools.Read(out Geom_Curve?, TextReader)` and its 2D and surface overloads (OCCT's
+      `handle&` output), `GetReal(TextReader, out double)` (a word of at most 30 characters, as OCCT's `width(31)`, then
+      Strtod). `GeomTools_UndefinedTypeHandler` is a public class with OCCT's virtuals; its `Read*` methods take the
+      result by `ref` and return the reader. The installed handler is a process-wide static, as OCCT's is (volatile;
+      `SetUndefinedTypeHandler(null)` is ignored). The type tests are on the exact type (`DynamicType() == typeof(...)`,
+      OCCT's `STANDARD_TYPE` comparison), so derived classes go to the handler. GeomTools_Debug.cxx (a function for
+      the debugger's command window) is not ported.
+2405. **The local-property templates are ported per instantiation** (rules, section 9; as decisions 128 and 187):
+      `GeomLProp_CLProps` (Geom_Curve), `GeomLProp_CLProps2d` (Geom2d_Curve) and `LProp_CLProps3d` (Adaptor3d_Curve),
+      `GeomLProp_SLProps` (Geom_Surface) and `LProp_SLProps3d` (Adaptor3d_Surface), each a class with the template's
+      body and `LProp_CurveUtils`'s or `LProp_SurfaceUtils`'s wrappers written out with OCCT's `DirectAccess`; the 2D
+      and adaptor classes are generated from the Geom ones by substituting the types (the surface bounds differ: Geom's
+      `Bounds`, the adaptor's first and last parameters). The helpers that don't depend on the curve or surface are the
+      internal static classes `LProp_CurveUtils` (3D and 2D overloads) and `LProp_SurfaceUtils` (in
+      GeomLProp_SurfaceUtils.cs, OCCT's file). Phase 3 adds `BRepLProp_CLProps`/`BRepLProp_SLProps` (on BRepAdaptor,
+      an Adaptor3d in the port, so the `LProp_*3d` bodies apply unchanged) and, later, HLRBRep's `ToolAccess`
+      instantiations the same way. Rejected: one generic class over a static-abstract access interface (the gp types
+      share no interface, and the bodies are short).
+2406. **The wrappers' reference and value arguments are reproduced.** Where OCCT binds a `const&` to a field, the port
+      reads the field after the calls that update it (`IsTangentUDefined` evaluates D1U and D2U, then reads both; a D2
+      evaluation can change D1's last bits). Where OCCT passes a field by value before computing it, the port copies
+      it first: `MaxCurvature`, `MinCurvature`, `MeanCurvature`, `GaussianCurvature` and `IsUmbilic` return or
+      compare the previous values when `IsCurvatureDefined` hasn't run (occt-issues.md; native OCCT confirms it).
+      Outputs are `out` (`Tangent`, `Normal`, `CentreOfCurvature`, `TangentU/V`, `CurvatureDirections`); `Value()`,
+      `D1()` and the like return values. The classes are working objects with public setters (decision 21).
+      `LProp_NotDefined_Raise_if` always throws (decision 9). `LProp_BadContinuity` is ported; its macro, never used,
+      isn't (decision 102). GeomLProp_NumericCurInf2d and the two function classes, private .pxx classes in OCCT, are
+      internal; their `out` results are 0 where OCCT leaves them unset.
+2407. **The hashers are `IEqualityComparer<T>` classes** (GeomHash_CurveHasher, GeomHash_SurfaceHasher, the four mesh
+      hashers, Geom2dHash_CurveHasher). OCCT's `aHasher(x)` is `GetHashCode(x)` (0 for null, as in OCCT) and
+      `aHasher(a, b)` is `Equals(a, b)`, so they plug into Dictionary and HashSet. `CompTolerance` and `HashTolerance`
+      are public readonly fields (mutable in OCCT, but changing them would corrupt a collection using the hasher); the
+      default arguments are constants equal to Precision::Angular(), Confusion() and Computational() (decision 129; a
+      test checks them). The .pxx helpers are internal readonly structs with `Hash` (a `ulong`, OCCT's `size_t`) and
+      `IsEqual`, without default arguments (a struct's parameterless `new` would skip them); `PolygonOnTriHashKey` is a
+      public `readonly record struct (Poly, TriRepId)`, whose own equality compares the polygon by reference (the
+      hasher compares it by value).
+2408. **The hashers keep OCCT's semantics but not its hash values.** The same fields are compared with the same
+      tolerances, dispatch is on the exact type, a type the hasher doesn't know hashes by its name and compares by
+      reference, numbers are rounded to multiples of `HashTolerance` before hashing (`std::round`: away from zero), and
+      Bezier and B-spline objects hash their degrees and counts only. So equal objects hash equally, and objects equal
+      within the tolerance can hash differently across a rounding boundary, as in OCCT. `opencascade::hash` of an
+      integer is the integer; `hashBytes` is 64-bit FNV-1a over the hashes' bytes (`GeomHash_HashUtils`), folded to 32
+      bits for `GetHashCode`: deterministic across runs and platforms, unlike `System.HashCode`, so the GTests'
+      inequality checks always give the same result.
+2409. **Test data.** The ModelingData and oracle test projects get OCCT's source directory as assembly metadata, as
+      the Draw-lite tests do, and fail when it is missing. `GeomTools_CorpusTests` reads the Curve2ds, Curves and
+      Surfaces sections of the 37 `.brep` files of data/occ (18,108 curves and surfaces) and writes them back at each
+      file's precision: the files come from older OCCT releases (15 digits in some, three-digit exponents, CRLF,
+      directions normalised differently), so the test compares word for word, numbers within two units of the last
+      digit; 905,752 of 910,971 words are identical. The byte-for-byte comparisons are against native OCCT 8 (2410).
+2410. **Oracle tests** (`tests/OcctNet.Oracle.Tests/GeomTools`, `GeomLProp`). GeomTools against native
+      `BRepTools::Write` of an edge, a face, or an edge with a curve on a plane, each holding one random object built
+      identically on both sides (decision 165): 1,000 3D curves of the ten kinds, 1,100 surfaces of the eleven kinds
+      and 300 more offset surfaces, 1,000 2D curves (lines, circles, ellipses, B-splines and trimmed curves, the 2D
+      kinds native OCCT binds); every section byte-identical, and the port, reading that file, writes what native OCCT
+      writes after reading it (reading normalises directions again, so that text can differ from the first in the last
+      digits); 2.7 MB in all. The corpus: native OCCT reads each data/occ file and writes it (F1), then reads F1 and
+      writes it (F2); the port reads F1's geometry and writes it: F2's text, byte for byte, for all 37 files (18,108
+      objects, 8,732,494 bytes). Surface properties against `BRepLProp_SLProps` on a BRepAdaptor_Surface: the port's
+      LProp_SLProps3d on a GeomAdaptor_Surface, on random surfaces of every kind at random and boundary parameters with
+      derivative orders 0 to 2, every query (and the curvatures asked first, before IsCurvatureDefined, after
+      construction and after SetParameters): 262,620 values, all bit-identical; GeomLProp_SLProps on the Geom_Surface
+      itself: within 2.4e-13 (54,391 of 68,030 bit-identical; the adaptor's caches evaluate B-splines differently).
+      Not bound natively, so unit-tested only: the curve properties (GeomLProp_CLProps and its 2D and adaptor forms,
+      which a unit test finds bit-identical to each other on analytic curves), GeomLProp::Continuity,
+      GeomLProp_CurAndInf2d and the hashers.

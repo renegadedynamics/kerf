@@ -26,6 +26,7 @@ public class GeomTools_UndefinedTypeHandler : Standard_Transient
         }
         else
         {
+            // OCCT: the compact (file) form goes to the console, not to the stream
             Console.Out.Write("****** UNKNOWN CURVE TYPE ******" + "\n");
         }
     }
@@ -45,6 +46,7 @@ public class GeomTools_UndefinedTypeHandler : Standard_Transient
         }
         else
         {
+            // OCCT: the compact (file) form goes to the console, not to the stream
             Console.Out.Write("****** UNKNOWN CURVE2d TYPE ******" + "\n");
         }
     }
@@ -64,6 +66,7 @@ public class GeomTools_UndefinedTypeHandler : Standard_Transient
         }
         else
         {
+            // OCCT: the compact (file) form goes to the console, not to the stream
             Console.Out.Write("****** UNKNOWN SURFACE TYPE ******" + "\n");
         }
     }

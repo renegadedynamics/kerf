@@ -47,6 +47,7 @@ public class GeomTools_SurfaceSet
     /// <summary>Adds a surface to the set (once) and returns its index. Null is added too, as in OCCT.</summary>
     public int Add(Geom_Surface? S)
     {
+        // OCCT: adds the null handle too, as one entry (occt-issues.md)
         return myMap.Add((object?)S ?? GeomTools_CurveSet.theNullKey);
     }
 
@@ -1192,7 +1193,7 @@ public class GeomTools_SurfaceSet
         }
         catch (NullReferenceException)
         {
-            // a swept, trimmed or offset surface whose basis couldn't be read: OCCT dereferences the null handle,
+            // OCCT: a swept, trimmed or offset surface whose basis couldn't be read: OCCT dereferences the null handle,
             // which OCC_CATCH_SIGNALS turns into a caught Standard_AccessViolation where signals are converted
         }
 
@@ -1220,6 +1221,7 @@ public class GeomTools_SurfaceSet
         {
             Geom_Surface? S = ReadSurface(IS);
             S?.Freeze();
+            // OCCT: every object that can't be read is the one null entry, so the later indices shift
             myMap.Add((object?)S ?? GeomTools_CurveSet.theNullKey);
         }
     }
