@@ -420,3 +420,23 @@ Phase 4 (part): Draw-lite incmesh and the corpus milestone (unit 4L2).
   1 IMPROVEMENT, 947 SKIPPED (data files the public dataset lacks), 17 FAILED (later commands, viewer queries,
   plugin loading, an OCCT test bug; none on a port bug). The mesh group: 684 of its 699 cases runnable, 233 OK,
   16 BAD (OCCT's TODOs), 435 SKIPPED, none FAILED.
+Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spike (unit 4W).
+
+- `OcctNet.ModelingAlgorithms`: `OcctNet.MeshExtraction` (an OCCT.NET addition, namespace `OcctNet`): a meshed
+  shape's faces as located nodes, outward normals and outward-wound triangles, and its edges as polylines, in flat
+  `MeshBuffers` laid out as build123d.NET's native `Extras.ExtractMesh`, in the order of build123d.NET's
+  `Shape.Faces()` and `Edges()` (`MeshExtraction.Faces`, `Edges`) or of given sub-shapes. It only reads the shape
+  (normals are computed on a copy), so it is safe from any thread on a shared shape.
+- `benchmarks/OcctNet.Benchmarks`: mesh-and-extract against native OCCT through build123d.NET (BenchmarkDotNet in
+  process, a Stopwatch table, allocation sampling). Serially the port is 0.9–1.5× native; in parallel it is
+  allocation-bound (1.4–4.5× native under workstation GC). Typical models mesh and extract in 7–65 ms.
+- `samples/OcctNet.WasmDemo`: reads a .brep, meshes it, extracts the buffers and draws them with WebGL 2 in the
+  browser, built as Bento.Web is (plain WebAssembly, interpreter, single-threaded, trimmed, no workload);
+  `run-headless.ps1` runs it over a folder in headless Chrome and compares with win-x64. OcctNet's trimmed
+  assemblies are 2.39 MB (1.08 MB Brotli); typical models take 0.24–0.7 s in the browser; 92.5% of faces and every
+  edge are bit-identical to win-x64 (the rest come from the browser's sin and cos).
+- Tests: unit tests of the extraction (counts, order, normals on planar and curved faces, located, mirrored and
+  reversed shapes, edges from polygons on triangulation, 3D polygons and GCPnts, thread safety); the extraction
+  oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
+  (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
+  6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).

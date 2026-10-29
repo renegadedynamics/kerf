@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/OcctNet.Benchmarks/OcctNet.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/OcctNet.WasmDemo/OcctNet.WasmDemo.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/OcctNet.Analyzers/OcctNet.Analyzers.csproj" />
     <Project Path="src/OcctNet.Foundation/OcctNet.Foundation.csproj" />

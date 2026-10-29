@@ -5199,3 +5199,105 @@ their numbers (437–445, 476–485, 489–490, 495–505, 547–556).
         port bug: the one the new cases found (decision 565) is fixed.
       - The cases that miss one command: DT_SplitAngle 800, bcut 436, thrusections 362, bfuse 316, chamf 285,
         blend 284, bcommon 269, bsection 165, fixshape 146, prj 76.
+## Phase 4: unit 4W, viewer and WebAssembly
+
+The viewer's mesh extraction, the benchmark project and the WebAssembly spike (phase4-plan sections 2.4, 2.5, 5).
+Numbers from 4801 are placeholders, renumbered on merge; merged decisions are cited by their numbers (486–497,
+519–556).
+
+568. **The extraction is an OCCT.NET addition** (open question 12, provisional answer): `OcctNet.MeshExtraction` and
+      `OcctNet.MeshBuffers` in OcctNet.ModelingAlgorithms (`src/OcctNet.ModelingAlgorithms/OcctNet/`). Ported code is in
+      namespace `Occt` (translation-rules.md); an addition with no OCCT counterpart goes in namespace `OcctNet`, so it
+      can't be mistaken for OCCT API or collide with a future OCCT name.
+      - `Extract(root, faces, edges, deflection, angle)` is `b3d_mesh_extract`: the same nine buffers as build123d.NET's
+        `MeshBuffers` (positions, normals, triangles, face node and triangle offsets, face types, edge points, edge
+        point offsets, edge types), the same order, the same rules (normals reversed on a reversed face, winding
+        flipped when the face is reversed xor its location mirrors, each edge from the first ancestor face carrying
+        its polygon on triangulation, else its 3D polygon, else `GCPnts_TangentialDeflection(curve, angle,
+        deflection)`, reversed for a reversed edge).
+      - `Extract(root, deflection, angle)` takes `Faces(root)` and `Edges(root)`: build123d.NET's `Shape.Faces()` and
+        `Edges()` (TopoUtil.Entities: exploration order, each sub-shape once by `IsSame`, at its first place with the
+        orientation of its last occurrence), so a picked index is the face's or edge's index as in `ShapeMesh`.
+      - `MeshBuffers` exposes the arrays it owns (get-only properties), as build123d.NET's; nothing else holds them.
+569. **Normals on an unattached copy** (phase3-design section 5). Native's shim calls
+      `BRepLib_ToolTriangulatedShape::ComputeNormals` on the face's own triangulation, writing into the meshed shape.
+      The port calls `NormalsComputed` (decision 422's functional twin, as BRepLib_PointCloudShape does, decision 424), which copies the triangulation when it has no
+      normals; the frozen result is never written, so extraction is safe from any thread on a shared shape (decision
+      547's frozen results). The values are native's: both go through the single-precision normal storage and back
+      through `gp_Dir`. The copy costs about 2% of mesh-and-extract.
+570. **Buffers allocated once.** The face buffers' sizes are summed from the triangulations first; the edge points grow
+      in one list (their count isn't known before GCPnts runs). Located nodes go through `gp_Pnt.Transformed` and
+      normals through `gp_Dir.Transformed`, as the shim's `Transformed`/`Transform`, then are rounded to float.
+571. **The extraction oracle** (`MeshExtractionOracleTests`). Three comparisons, every float bit for bit:
+      - the same mesh: native meshes F1 and writes F2 with its triangulations and polygons; both sides read F2 and
+        extract, which isolates the extraction;
+      - end to end, what the viewer does: both read F1, mesh with the same arguments, extract (data/occ under 1 MB,
+        the mesh group's 82 public files, and native shapes with located, mirrored and reversed solids and faces, free
+        edges with 3D polygons, fillets and Booleans);
+      - unmeshed shapes, where every edge comes from GCPnts_TangentialDeflection.
+      Result: every face and edge bit-identical in all three (counts in CHANGELOG.md), including GCPnts on circles,
+      where decision 494 allowed for transcendental-function differences: on win-x64 .NET's `Math.Sin`/`Cos` give
+      MSVC's bits on these inputs.
+572. **The benchmark project** (`benchmarks/OcctNet.Benchmarks`, in OcctNet.slnx; plan 2.5). BenchmarkDotNet 0.15.8
+      from nuget.org, in process (`InProcessEmitToolchain`, so the native binding and the MSBuild properties need no
+      regenerated project), with its memory diagnoser (`bdn`); a Stopwatch table that splits mesh from extraction and
+      excludes native's `BRepTools::Clean` (`quick`); the allocating types by the runtime's allocation ticks
+      (`alloc`); the WebAssembly comparison (`wasm-compare`) and one-file timings against native (`demo`). Inputs:
+      seven data/occ files of 25 to 223 faces and four native shapes (a filleted block with holes, a fuse of box,
+      cylinder and sphere, a sphere, a torus), all as F1 text, at the viewer's tolerances (0.1% of the diagonal,
+      0.2 rad). The port's mesh time includes `ExactCopyForWrite` of the frozen input (decision 526); native's is
+      meshing in place. Without the native build, only the port is timed.
+573. **Desktop results and the gap** (win-x64, Ryzen 5 9600X, 12 logical processors, .NET 10.0.11, workstation GC):
+      - Serial mesh-and-extract is within the 2× target: 1.04–1.5× native (BenchmarkDotNet: bottle 1.39×, CrankArm
+        0.91×, filleted block 0.93×, Pump_Nut 1.18×, sphere 1.43×). On one huge B-spline face it is not: MAT.brep
+        2.7×, terrain.brep 2.0×.
+      - The parallel speed-up is not native's: native gains 3–6× on 45+ faces, the port 1.3–2× (hammer 61→42 ms,
+        native 58→11 ms). The cause is allocation, not the parallel loop: the port allocates 12–260 MB per mesh (native
+        0.1–0.4 MB of managed memory, its own allocator being incremental), and workstation GC serialises the threads.
+        Under server GC the same runs scale (hammer 18 ms parallel, Axis_of_bearing 185→76 ms). The allocation
+        ticks put 25–30% in `NCollection_CellFilter`'s per-insertion `ListNode` and per-cell `Cell` objects (the
+        circle filter of BRepMesh_Delaun), then the bool maps' nodes, the triangle and circle arrays, and iterator
+        objects.
+      - Bento's viewer target (a typical model, at most a few hundred faces, under 100 ms): met for every typical
+        model (13–65 ms serial, 7–44 ms parallel); Motor-c (223 faces, 26k nodes) takes 155–209 ms (native 35–156)
+        and Axis_of_bearing (32k nodes) 185–248 ms (native 28–167).
+      - Not fixed here: the allocations are in units 4A/4B's faithful ports of NCollection_CellFilter and BRepMesh's
+        structures, which a pooled node store could cut without changing results; that is a follow-up for the owner
+        to schedule (open question 14), as is choosing server GC or a larger gen0 budget in Bento's host.
+574. **The WebAssembly demo is built as Bento.Web is** (`samples/OcctNet.WasmDemo`): `Microsoft.NET.Sdk.WebAssembly`,
+      net10.0, Exe, no Blazor, `WasmBuildNative=false` (no workload: the Mono interpreter, with .NET 10's jiterpreter as
+      shipped), single-threaded (so `OSD_Parallel` runs serially, decision 522), trimmed on publish, Release without
+      symbols, compressed, unfingerprinted names. Bento.Web roots its own engine's assemblies for reflection; the
+      OcctNet assemblies use none, so they are trimmed (`-p:RootOcctNet=true` measures them rooted). It builds with
+      the SDK alone (`dotnet workload list` shows none installed) and restores the browser-wasm runtime pack from
+      nuget.org, so it is in OcctNet.slnx with the benchmark project. Its page calls `[JSExport]` methods; JavaScript interop has no float arrays,
+      so the float buffers cross as their bytes, and the run's JSON is written by hand (no reflection). `serve.mjs`
+      (Node, no packages) serves it with data/occ, and `run-headless.ps1` publishes, runs it in headless Chrome or
+      Edge with `?auto=1` and compares with win-x64 (`wasm-compare`, which links the demo's `DemoCore.cs`, so both
+      sides run the same code).4808. **The spike's results** (headless Chrome 155 on the same machine, `run-headless.ps1` over data/occ, 36 files;
+      sizes from `_framework`):
+      - **Size.** Trimmed, the OcctNet assemblies are 2.39 MB (1.08 MB Brotli): Foundation 0.57, ModelingData 1.66,
+        ModelingAlgorithms 0.16 MB. Rooted as Bento.Web roots its engine, 5.80 MB (2.14 MB Brotli). The whole app,
+        runtime and ICU data included, is 9.8 MB (3.2 MB Brotli) trimmed. The ILLink run reports no trim warning for
+        the OcctNet assemblies (warnings are errors).
+      - **Speed.** .NET starts in 90–160 ms. A typical model meshes and extracts in 0.25–0.7 s warm (Pump_Nut 241 ms,
+        Chair 383, CrankArm 473, bottle 509, hammer 683), under the provisional 2 s; the largest (Motor-c 223 faces,
+        1.9 s; Axis_of_bearing 2.7 s; Bottom and Top, 324 faces and 40k nodes, 3.7 s; MAT's single 30k-node face 8.8 s)
+        are over it. The interpreter (with the jiterpreter) is 8–19× the port's win-x64 JIT on models of a few thousand
+        nodes or more, 3× on MAT's single large face; reading BRep text costs 30–500 ms more. AOT needs the wasm-tools
+        workload, which isn't installed, so it isn't measured.
+      - **Stack.** Every file but one ran: the deepest recursions (BRepTools' readers on the 3.8 MB Bottom.brep,
+        Delaun's frontier walks and UBTree on 30–40k-node faces) fit the browser's stack under the interpreter.
+      - **Memory.** terrain.brep (one B-spline face, 255k nodes) aborts the runtime ("Garbage collector could not
+        allocate 16384u bytes of memory for major heap section"): on win-x64 the port's mesh of it peaks at 5.6 GB of
+        managed heap (7.9 GB allocated; 57 s, native 28 s), beyond 32-bit WebAssembly's address space. It is excluded
+        from the run (`-Exclude`) and recorded as a memory finding of the mesher, with decision 573's allocations.
+575. **Bit-identity with win-x64** (the same `DemoCore` on both sides; every face's nodes, triangles and type hashed,
+      its normals apart, and every edge's points): 22 of 36 files identical; every edge (7,316 of 7,316) and 1,793 of
+      1,938 faces (92.5%). By surface type: all 415 B-spline faces identical; 136 faces mesh differently (78 planes, 55
+      tori, 2 spheres, 1 cone) and 9 have only their normals different (5 cylinders, 2 spheres, 2 tori). Attributed (by surface type, not yet node by node) to
+      decision 494's transcendental-function source: the browser's `Math.Sin`/`Cos` (the runtime's libm compiled to
+      WebAssembly) round differently from win-x64's on some arguments; tori and spheres evaluate them for their nodes
+      and normals, and planes bounded by circles most likely get their UV nodes from the circles' pcurves, so their Delaunay
+      triangulation can differ though every boundary point (the edges') is the same. The win-x64 reference stays the
+      oracle (plan 2.4); a browser mesh is a valid mesh of the same shape, not native's bits.

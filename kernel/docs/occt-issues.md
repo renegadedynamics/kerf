@@ -579,3 +579,13 @@ named; Draw-lite keeps OCCT's behaviour. The oracle found no difference from nat
 | `StdPrs_ToolTriangulatedShape::GetDeflection` (a property) | Stores the absolute deflection it computes into the object's drawer as its own maximal chordial deviation | An object displayed with a relative deflection keeps that absolute value: a later `vdefaults -absDefl` doesn't reach it. Kept (Prs3d_Drawer is a working object) |
 | mesh group, standard_shading/M4 (a test reference) | The script expects an area difference of 1.9456% when meshed for shading, under `TODO ?OCC22687` | The port's AIS mesh, bit-identical to native's by the oracle, gives 1.918%: the optional TODO makes the case BAD, not FAILED. The reference may come from another OCCT version's shading deflection |
 | v3d/bugs/bug29020 (a test of the viewer) | Reads the maximal texture size from `vglinfo` | Can't run without OpenGL; FAILED in Draw-lite, which ignores vglinfo |
+## Phase 4: unit 4W, viewer extraction, benchmarks and WebAssembly
+
+No OCCT bug found. The extraction calls BRep_Tool, BRepLib_ToolTriangulatedShape::ComputeNormals,
+BRepAdaptor_Surface/Curve and GCPnts_TangentialDeflection as build123d.NET's native shim does, and its buffers are
+float-identical to native's on every compared face and edge.
+
+| Where | What | Effect |
+|---|---|---|
+| build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
+| BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |
