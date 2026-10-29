@@ -1,0 +1,187 @@
+using static Occt.TopAbs_State;
+
+namespace OcctNet.ModelingAlgorithms.Tests;
+
+/// <summary>The statics of the IntTools package.</summary>
+public class IntToolsTests
+{
+    private static NCollection_Sequence<IntTools_Root> Roots(params (double Root, int Type)[] theRoots)
+    {
+        NCollection_Sequence<IntTools_Root> aSeq = new();
+        foreach ((double aRoot, int aType) in theRoots)
+        {
+            aSeq.Append(new IntTools_Root(aRoot, aType));
+        }
+        return aSeq;
+    }
+
+    [Fact]
+    public void SortRoots_IncreasingOrder()
+    {
+        NCollection_Sequence<IntTools_Root> aSeq = Roots((3.0, 0), (1.0, 0), (2.0, 0), (-1.0, 0));
+        IntTools.SortRoots(aSeq, 1.0e-7);
+        Assert.Equal(new[] { -1.0, 1.0, 2.0, 3.0 }, aSeq.Select(r => r.Root()));
+        IntTools.SortRoots(new NCollection_Sequence<IntTools_Root>(), 1.0e-7); // empty
+    }
+
+    [Fact]
+    public void SortRoots_TiesKeepTheirOrderUpTo32Roots()
+    {
+        // MSVC's std::sort sorts up to 32 elements by insertion: tied roots keep their order (decision 491)
+        var aRandom = new Random(3);
+        var anInput = new (double, int)[32];
+        for (int i = 0; i < anInput.Length; ++i)
+        {
+            anInput[i] = (aRandom.Next(4), i); // the type records the input position
+        }
+        NCollection_Sequence<IntTools_Root> aSeq = Roots(anInput);
+        IntTools.SortRoots(aSeq, 0.0);
+        Assert.Equal(anInput.OrderBy(r => r.Item1).ThenBy(r => r.Item2).Select(r => r.Item2), aSeq.Select(r => r.Type()));
+    }
+
+    [Fact]
+    public void SortRoots_ManyRoots()
+    {
+        var aRandom = new Random(5);
+        var anInput = Enumerable.Range(0, 200).Select(i => (Math.Round(aRandom.NextDouble(), 1), i)).ToArray();
+        NCollection_Sequence<IntTools_Root> aSeq = Roots(anInput);
+        IntTools.SortRoots(aSeq, 0.0);
+        Assert.Equal(200, aSeq.Length());
+        for (int i = 2; i <= aSeq.Length(); ++i)
+        {
+            Assert.True(aSeq.Value(i - 1).Root() <= aSeq.Value(i).Root());
+        }
+        Assert.Equal(Enumerable.Range(0, 200), aSeq.Select(r => r.Type()).Order());
+    }
+
+    [Fact]
+    public void RemoveIdenticalRoots_RemovesCloseRoots()
+    {
+        NCollection_Sequence<IntTools_Root> aSeq = Roots((1.0, 0), (2.0, 0), (1.1, 0), (3.0, 0));
+        IntTools.RemoveIdenticalRoots(aSeq, 0.4); // |ti - tj| < 0.2
+        Assert.Equal(new[] { 1.0, 2.0, 3.0 }, aSeq.Select(r => r.Root()));
+    }
+
+    [Fact]
+    public void RemoveIdenticalRoots_OcctBug_SkipsTheRootAfterARemoval()
+    {
+        // OCCT doesn't step back after removing the k-th root, so the next one isn't compared: of three roots within
+        // the tolerance of the first, the third stays
+        NCollection_Sequence<IntTools_Root> aSeq = Roots((1.0, 0), (1.0001, 0), (1.0002, 0));
+        IntTools.RemoveIdenticalRoots(aSeq, 1.0);
+        Assert.Equal(new[] { 1.0, 1.0002 }, aSeq.Select(r => r.Root()));
+    }
+
+    [Fact]
+    public void FindRootStates_ByType()
+    {
+        NCollection_Sequence<IntTools_Root> aSeq = new();
+        void Add(int theType, double f1, double f2) =>
+            aSeq.Append(new IntTools_Root(0.5, theType).WithInterval(0.0, 1.0, f1, f2));
+        Add(0, 1.0, -1.0);   // simple, + to -
+        Add(0, -1.0, 1.0);   // simple, otherwise
+        Add(1, 0.0, 0.0);    // pure zero
+        Add(2, 1.0, 0.0);    // smart, f2 null, f1 > 0
+        Add(2, -1.0, 0.0);   // smart, f2 null, f1 <= 0
+        Add(2, 0.0, 1.0);    // smart, f2 > 0
+        Add(2, 0.0, -1.0);   // smart, f2 < 0
+        Add(-1, 1.0, 1.0);   // unknown type: unchanged
+        IntTools.FindRootStates(aSeq, 1.0e-10);
+
+        (TopAbs_State, TopAbs_State)[] anExpected =
+        [
+            (TopAbs_OUT, TopAbs_IN), (TopAbs_IN, TopAbs_OUT), (TopAbs_ON, TopAbs_ON), (TopAbs_OUT, TopAbs_ON),
+            (TopAbs_IN, TopAbs_ON), (TopAbs_ON, TopAbs_OUT), (TopAbs_ON, TopAbs_IN), (TopAbs_UNKNOWN, TopAbs_UNKNOWN),
+        ];
+        Assert.Equal(anExpected, aSeq.Select(r => (r.StateBefore(), r.StateAfter())));
+    }
+
+    [Fact]
+    public void Length_OfEdges()
+    {
+        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(3, 4, 0)).Edge();
+        Assert.Equal(5.0, IntTools.Length(aLine), 1.0e-12);
+
+        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI / 2).Edge();
+        Assert.Equal(Math.PI, IntTools.Length(anArc), 1.0e-9);
+
+    }
+
+    [Fact]
+    public void Parameter_ByCurveType()
+    {
+        double aPar = -1.0;
+        Geom_Line aLine = new(new gp_Pnt(1, 0, 0), new gp_Dir(1, 0, 0));
+        Assert.Equal(0, IntTools.Parameter(new gp_Pnt(4, 1, 0), aLine, ref aPar));
+        Assert.Equal(3.0, aPar, 1.0e-15);
+
+        Geom_Circle aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        Assert.Equal(0, IntTools.Parameter(new gp_Pnt(0, 5, 0), aCircle, ref aPar));
+        Assert.Equal(Math.PI / 2, aPar, 1.0e-15);
+
+        Geom_Ellipse anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0, 1.0);
+        Assert.Equal(0, IntTools.Parameter(new gp_Pnt(-3, 0, 0), anEllipse, ref aPar));
+        Assert.Equal(Math.PI, aPar, 1.0e-12);
+
+        NCollection_Array1<gp_Pnt> aPoles = NCollection_Array1<gp_Pnt>.From([new gp_Pnt(0, 0, 0), new gp_Pnt(1, 2, 0), new gp_Pnt(2, 0, 0)]);
+        Geom_BezierCurve aBezier = new(aPoles);
+        Assert.Equal(0, IntTools.Parameter(aBezier.Value(0.3), aBezier, ref aPar));
+        Assert.Equal(0.3, aPar, 1.0e-9);
+
+        aPar = -1.0;
+        Geom_OffsetCurve anOffset = new(aCircle, 1.0, new gp_Dir(0, 0, 1));
+        Assert.Equal(1, IntTools.Parameter(new gp_Pnt(3, 0, 0), anOffset, ref aPar));
+        Assert.Equal(-1.0, aPar); // untouched
+    }
+
+    [Fact]
+    public void GetRadius_LineCircleAndThreePoints()
+    {
+        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(3, 4, 0)).Edge();
+        Assert.Equal(1, IntTools.GetRadius(new BRepAdaptor_Curve(aLine), 0.0, 1.0, out _));
+
+        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anArc), 0.0, 1.0, out double aR));
+        Assert.Equal(2.0, aR);
+
+        // an ellipse: the circle through three points of it
+        gp_Elips anElips = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0, 1.0);
+        TopoDS_Edge anEllipseEdge = new BRepBuilderAPI_MakeEdge(anElips, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anEllipseEdge), -0.1, 0.1, out aR));
+        gce_MakeCirc aCheck = new(ElCLib.Value(-0.1, anElips), ElCLib.Value(0.0, anElips), ElCLib.Value(0.1, anElips));
+        Assert.Equal(aCheck.Value().Radius(), aR);
+
+        // three coincident points: gce_MakeCirc makes a circle of radius 0
+        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anEllipseEdge), 0.5, 0.5, out aR));
+        Assert.Equal(0.0, aR);
+    }
+
+    [Fact]
+    public void PrepareArgs_LineAndCircle()
+    {
+        NCollection_Array1<double> anArgs = new(1, 1);
+        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(aLine), 10.0, 0.0, 4, 0.01, anArgs));
+        Assert.Equal(0, anArgs.Lower());
+        Assert.Equal(new[] { 0.0, 2.5, 5.0, 7.5, 10.0 }, Enumerable.Range(0, anArgs.Length()).Select(anArgs.Value));
+
+        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(anArc), Math.PI, 0.0, 2, 0.001, anArgs));
+        double[] aValues = Enumerable.Range(0, anArgs.Length()).Select(anArgs.Value).ToArray();
+        Assert.True(aValues.Length > 3); // refined by the deflection
+        Assert.Equal(0.0, aValues[0]);
+        Assert.Equal(Math.PI, aValues[^1]);
+        Assert.Contains(Math.PI / 2, aValues);
+        for (int i = 1; i < aValues.Length; ++i)
+        {
+            Assert.True(aValues[i - 1] < aValues[i]);
+        }
+
+        // a step below 1e-5 isn't refined
+        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(anArc), 1.0e-5, 0.0, 2, 0.001, anArgs));
+        Assert.Equal(3, anArgs.Length());
+    }
+}
