@@ -519,6 +519,7 @@ public sealed class ShapeAnalysis_Curve
         // 15.11.2002 PTV OCC966
         if (ShapeAnalysis_Curve.IsPeriodic(theCurve))
         {
+            // OCCT: on a trimmed (or offset) periodic curve, [cf, cl] is the trimmed range, not the period
             ElCLib.AdjustPeriodic(cf, cl, Precision.PConfusion(), ref First, ref Last); //:a7 abv 11 Feb 98: preci -> PConfusion()
         }
         else if (First < Last)

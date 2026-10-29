@@ -185,6 +185,20 @@ public class ShapeAnalysis_CurveTests
     }
 
     [Fact]
+    public void ValidateRange_on_a_trimmed_arc_wraps_with_the_trimmed_range_ReproducesOcctError()
+    {
+        // OCCT: IsPeriodic asks the basis circle, but the period given to ElCLib::AdjustPeriodic is the trimmed range
+        // [0, 3]: the reversed range (2, 1) becomes (2, 4), past the end of the arc, where the circle's period would
+        // give (2, 1 + 2pi) and a non-periodic curve the reversed (1, 2) of the reversed curve.
+        var anArc = new Geom_TrimmedCurve(Circle(1), 0, 3);
+        double aFirst = 2, aLast = 1;
+        Assert.True(SAC.ValidateRange(anArc, ref aFirst, ref aLast, 1e-7));
+        Assert.Equal(2.0, aFirst);
+        Assert.Equal(4.0, aLast);
+        Assert.True(aLast > anArc.LastParameter());
+    }
+
+    [Fact]
     public void FillBndBox_exact_finds_the_extrema()
     {
         var aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 3);
