@@ -1832,3 +1832,129 @@ Units.
       bit-identical. Not bound natively, so unit-tested only: ConcatG1, ConcatC1, the C0BSplineTo* functions, the
       knot splittings and Bezier conversions, CompBezierSurfacesToBSplineSurface, CurveToAnaCurve, the LSDist
       functions, Units, ApproxArcsSegments, ApproxSurface's other parameters, and the 2D Bezier and offset paths.
+## Phase 2: unit 4A, surface extrema
+
+Extrema's point/surface classes (Extrema_ExtPS, GenExtPS, ExtPExtS, ExtPRevS, GenLocateExtPS, FuncPSNorm, FuncPSDist,
+POnSurfParams), curve/surface and surface/surface classes but Extrema_ExtCS (GenExtCS, GenLocateExtCS, FuncExtCS,
+GlobOptFuncCS, GlobOptFuncConicS, GlobOptFuncCQuadric, ExtSS, GenExtSS, GenLocateExtSS, FuncExtSS), the enums
+Extrema_ExtFlag, ExtAlgo and ElementType; OCCT 8's ExtremaPC package; and, for Extrema_GenExtPS's sphere tree,
+NCollection_UBTree, NCollection_UBTreeFiller and `std_mt19937` (Foundation).
+
+251. **Algorithm classes with OCCT's API** (decisions 117 and 220). Every class is a working object with OCCT's
+      public `Initialize`/`Perform`/`SetFlag`/`SetAlgo`; results are returned by value (`const Extrema_POnSurf&` is a
+      copy), `Points` and `TrimmedSquareDistances` take `out`. Surfaces and curves are adaptor references kept as
+      OCCT keeps its pointers and references: the caller's adaptor must outlive the algorithm. Extrema_ExtPExtS and
+      Extrema_ExtPRevS are Standard_Transient classes (OCCT holds them by handle) taking a
+      GeomAdaptor_SurfaceOfLinearExtrusion/SurfaceOfRevolution directly; Extrema_ExtPS builds them as OCCT does
+      (OCCT's copy of a temporary adaptor is a plain construction). By-value C++ members are allocated with the
+      object; the fixed arrays of ExtPExtS (4) and ExtPRevS (8) are .NET arrays filled with `new Extrema_POnSurf()`.
+      A `Perform` on a default-constructed GenExtCS, GenExtSS or ExtSS throws StdFail_NotDone where OCCT
+      dereferences a null pointer. Extrema_FuncExtCS's `SquareDistances()`, `PointsOnCurve()` and `PointsOnSurf()`
+      return the stored sequences, which GenExtCS edits as OCCT edits the non-const references.
+252. **Extrema_POnSurfParams is a struct embedding an Extrema_POnSurf** (Extrema_POnSurf is a struct, decision 117,
+      and C# structs can't derive). It forwards `Value`, `Parameter` and the internal `SetParameters`, and
+      `POnSurf()` is C++'s slicing conversion. Its setters are internal with the twins `WithSqrDistance`,
+      `WithElementType`, `WithIndices`; `new()` has OCCT's defaults (an indefinite point), `default` is zeros.
+      Extrema_GenExtPS's `ComputeEdgeParameters`, which returns a reference to one of its arguments or to the member
+      `myGridParam`, returns a copy (its callers copy it into an array).
+253. **File-local code.** Extrema_GenExtPS.cxx's selector classes `Bnd_SphereUBTreeSelector(Min/Max)` are private
+      nested classes holding the solution themselves (OCCT holds a reference to the caller's local and to the sphere
+      array handle); `fillParams`, `LengthOfIso` and `CorrectNbSamples` are private static methods (`int&` is `ref`);
+      `NCollection_Handle<NCollection_UBTree>` and the HArray handles are nullable references. The file-static
+      functions of ExtPS, ExtPExtS, ExtPRevS, GenLocateExtPS and GenExtCS (`IsoIsDeg`, `ProjectPnt`,
+      `IsOriginalPnt`, `GetPosition`, `PerformExtPElC`, `IsCaseAnalyticallyComputable`, `IsExtremum`, `CorrectTol`,
+      `IsQuadric`, `IsConic`, ...) are private static methods of their class; GenExtSS's local class
+      `Extrema_FuncDistSS` is a private nested sealed class. The small local arrays (`double aU[2]`) are
+      `stackalloc` spans, hoisted out of the loop where C++ declares them inside (CA2014). GenExtSS's unread locals
+      `PP1min`/`PP2min`/`PP1max`/`PP2max` are left out; its `myInit` is set and never read and kept with CS0414
+      suppressed on that field (decision 221).
+254. **Implicit gp_Vec to gp_Dir conversions are written out where C++ makes them.** Extrema_ExtPExtS keeps OCCT's
+      `gp_Vec myDirection` and passes it where a gp_Dir is expected (`ProjectPnt`, `gp_Ax2(P, myDirection)`,
+      `IsCaseAnalyticallyComputable`): each place is `new gp_Dir(myDirection)`, which normalises again as C++'s
+      converting constructor does, while `gp_Vec(E, Pe) * gp_Vec(myDirection)` and `myDirection.IsParallel(...)` stay
+      gp_Vec operations (gp_Vec::IsParallel, not gp_Dir's). Extrema_ExtPRevS's `N.IsParallel(OO, ...)` and
+      `N ^= OO` (a gp_Dir with a gp_Vec) convert OO likewise. The oracle tests confirm the choice (bit-identical).
+255. **NCollection_UBTree's bounding type is the interface `INCollection_UBTreeBnd<T>`** (`Add(in T)`, `IsOut(in T)`,
+      `SquareExtent()`), constrained `where T : struct`. Bnd_Sphere and Bnd_Box implement it, `Add` explicitly over
+      their internal mutator: through the interface on a boxed copy it changes only the copy, so callers' values stay
+      immutable, while the tree changes its own nodes' values in place through the constraint as C++ does.
+      `Selector` is an abstract class (its `Reject`, const in C++, is not readonly: OCCT's own selectors cast the
+      const away to lower their distance); `TreeNode` is a sealed class holding its two children in an array, with
+      OCCT's `Gemmate`/`Kill` internal. The allocators are dropped (rules, section 9); the move constructor and
+      move assignment are a constructor taking a tree and `Move(tree)`, which empty the source. `Clear` also resets
+      the last node, which OCCT leaves dangling. `Select` keeps OCCT's explicit stack (an array doubled as needed).
+      Rejected: a third type parameter of static traits (the tree would no longer read as
+      `NCollection_UBTree<int, Bnd_Sphere>`), and making Bnd's `Add` public.
+256. **NCollection_UBTreeFiller is IDisposable, and shuffles with `std_mt19937`.** OCCT's destructor fills the tree
+      with the objects not yet added; `Dispose` does it (`using var` where C++ relies on the scope). The shuffle
+      decides the tree's shape and so, on ties, which sphere a selector keeps: `std_mt19937` (Foundation/Standard, new;
+      decision 55's naming) is the standard Mersenne Twister, checked against the C++ standard's 10000th value, so the
+      port's trees are OCCT's. It is a class, as in decision 58. `CheckTree` writes to a TextWriter in `Sprintf`'s
+      format.
+257. **Failure values** (decision 221). Where Extrema_FuncPSDist's `Value`/`Values` and the GlobOptFunc classes'
+      `Value` return false outside the parameter range without writing `F`, the port writes 0. Extrema_GenLocateExtPS's
+      default tolerances `Precision::PConfusion()` are the constant `1e-7 * 0.01` (decision 129).
+258. **ExtremaPC is OCCT's API on classes.**
+      - `ExtremaPC.hxx` is `public static partial class ExtremaPC` (decision 50): the `THE_*` constants (`const`;
+        `THE_DEFAULT_TOLERANCE` and `THE_PARAM_TOLERANCE` written as the literals 1e-7 and 1e-9), the `Status` and
+        `SearchMode` enums, `ExtremumResult`, `Result`, `Config` and `AddEndpointExtrema`. The alias
+        `ExtremaPC::Domain1D` is `MathUtils.Domain1D` (decision 186). `ExtremumResult` is a struct with public fields
+        (decision 54; `new()` has `IsMinimum = true`, `default` false); `Config` is a class with public fields and a
+        copy constructor (decision 53), `std::optional<Domain1D>` a `Domain1D?`.
+      - `ExtremaPC.Result` is a sealed class shared as OCCT shares it: each evaluator returns a reference to its own
+        buffer, overwritten by the next `Perform`, and the port returns that object. `Status` and
+        `InfiniteSquareDistance` have public getters and internal setters, `Clear()` is internal, the extrema
+        (`NCollection_DynamicArray`) an internal field read through `NbExt()`, the indexer, `MinIndex`/`MaxIndex` and
+        `Min/MaxSquareDistance`. `ExtremaPC_Curve`'s static not-done result is one shared instance.
+      - The evaluators (Line, Circle, Ellipse, Hyperbola, Parabola, BezierCurve, BSplineCurve, OffsetCurve,
+        OtherCurve) are sealed classes implementing `ExtremaPC.ICurveEvaluator` (an addition: `Value`, `Perform`,
+        `PerformWithEndpoints`; the constraint of the generic `AddEndpointExtrema<CurveEvaluator>`).
+        `ExtremaPC_Curve`'s `std::variant` is an `ICurveEvaluator?` field (decision 236's pattern); `mutable` members
+        are ordinary fields; offset and other curves keep the caller's adaptor (decision 220).
+      - `ExtremaPC_GridEvaluator.BuildGrid<GridEval>` is constrained on `GeomGridEval.ICurveEvaluator` (decision 236);
+        the B-spline grid reads `InternalKnots()` and its parameters ascend (decision 235).
+        `ExtremaPC_DistanceFunction` is a readonly struct functor (`MathUtils.IScalarFunction`,
+        `IScalarFunctionWithDerivative`) for `MathRoot.NewtonBounded` (decision 51). The `std::sort` of candidates is
+        `Span.Sort`, unstable like std::sort: candidates of equal estimated distance may be visited in another order
+        than MSVC's. Lambdas with captured state are private methods; `std::clamp` is written out (`Math.Clamp`
+        throws when min > max).
+259. **Tests.** Every ExtremaPC GTest is ported (12 files, 305 tests; the random tests' `std::mt19937` is exact but
+      `uniform_real_distribution` is a linear mapping, decision 60), and NCollection_UBTree's (9 tests; the file's
+      NCollection_EBTree tests wait for EBTree), with tests of the filler, the parent links and `std_mt19937`. OCCT has
+      no GTests of the surface extrema but GeomAPI_ProjectPointOnSurf's Bug867, ported on the Extrema_ExtPS path
+      GeomAPI takes. Unit tests (`Extrema_SurfacePSTests`, `Extrema_SurfaceCSSSTests`) check the rest against known
+      answers, the elementary solvers, finite differences and dense sampling; the generic solvers return stationary
+      points refined from a grid (interior, or clamped by bounded solvers), so their tests put the extremum inside the
+      domain (bumps).
+260. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/Extrema/ExtremaSurfaceOracleTests.cs`; every value
+      bit-identical). Extrema_ExtPS is not bound; its callers are, and the port's side mirrors their call paths:
+      - Extrema_ExtPS through GeomAPI_ProjectPointOnSurf on every surface kind (elementary, revolution, extrusion,
+        Bezier, B-spline, offset, trimmed), whole (infinite bounds become ±1e10) or on a sub-range, OCCT's default
+        or a random tolerance, gradient or tree algorithm, the three flags, one projector reused for up to three
+        points (GeomAPI loads a GeomAdaptor_Surface on the range, then calls SetAlgo, Initialize and Perform on a
+        default Extrema_ExtPS): 4,712 extrema of 2,186 projections, 34,830 values.
+      - Extrema_ExtPS through BRepExtrema_DistShapeShape between a vertex and a face (BRepExtrema_ExtPF: the whole
+        surface as BRepAdaptor_Surface, which is a GeomAdaptor_TransformedSurface, the face's UV bounds and resolution
+        tolerances, MINMAX and Grad): 347 solutions, 2,082 values. The port reads BRepTools::UVBounds and the
+        tolerance natively, and builds the surface BRepLib_MakeFace stores (it trims offsets of swept surfaces:
+        without that, 17 values of offset faces differed in the last bits).
+      - Extrema_GenExtCS through DistShapeShape between an edge and a face, on Bezier and smooth B-spline curves and on
+        conics Extrema_ExtCS doesn't solve analytically, so that GenExtCS's general, conic and quadric paths all run
+        (Extrema_ExtCS's generic path mirrored: Initialize(S, 10, 10), 12 or 13 samples, hyperbolas within ±20,
+        AddSolution's periods; the edge's range read natively, since BRepLib_MakeEdge moves a periodic curve's range
+        into the period): 580 solutions, 5,800 values.
+      - Extrema_ExtSS (ExtElSS and GenExtSS) through DistShapeShape between two faces (BRepExtrema_ExtFF: Initialize
+        with face 2, Perform with face 1), surface 2 turned so that the normals at two random points are opposite and
+        moved to put them face to face, so that solutions fall inside both faces: 103 solutions, 1,133 values.
+      Each native solution inside the shapes must be one of the port's extrema. Not compared natively: the
+      Extrema_*Locate* classes, GenExtSS on its own, ExtPExtS/ExtPRevS on their own and ExtremaPC (no binding); the
+      unit tests and ExtremaPC's comparison GTests (against Extrema_ExtPC) cover them.
+261. **For later units.** 4B (Extrema_ExtCS): `Extrema_GenExtCS` has OCCT's API (`new()`, `Initialize(S, NbU, NbV,
+      Tol2)` and the bounded overload, `Perform(C, NbT, Tol1)` and `Perform(C, NbT, tmin, tsup, Tol1)`, `IsDone`,
+      `NbExt`, `SquareDistance`, `PointOnCurve`, `PointOnSurface`), and `Extrema_ExtPS` projects the sharp points;
+      `GenExtCS_through_BRepExtrema_DistShapeShape_EdgeFace` mirrors ExtCS's generic path and can compare the port's
+      Extrema_ExtCS directly once it exists. NCollection_UBTree (with Bnd_Box) is ready for BRepClass3d, Sewing,
+      ShapeAnalysis and IntPolyh. 5A/6A (GeomLib, ProjLib_CompProjectedCurve, ProjLib_PrjResolve, GeomAPI) use
+      Extrema_ExtPS, GenLocateExtPS and GenExtPS on adaptors that must outlive them; a port of
+      GeomAPI_ProjectPointOnSurf should be the oracle test's port side (a default Extrema_ExtPS, SetAlgo before each
+      Initialize, the flag kept across Init).

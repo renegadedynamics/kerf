@@ -6,7 +6,7 @@
 namespace Occt;
 
 /// <summary>A bounding sphere of a geometric entity (triangle, line segment, ...), with the entity's U and V indices.</summary>
-public partial struct Bnd_Sphere : IEquatable<Bnd_Sphere>
+public partial struct Bnd_Sphere : IEquatable<Bnd_Sphere>, INCollection_UBTreeBnd<Bnd_Sphere>
 {
     private gp_XYZ myCenter;
     private double myRadius;
@@ -37,6 +37,9 @@ public partial struct Bnd_Sphere : IEquatable<Bnd_Sphere>
     // Mutators (internal: see docs/translation-rules.md)
 
     internal void SetValid(bool isValid) => myIsValid = isValid;
+
+    // NCollection_UBTree's bounding-type contract (the tree mutates its own nodes' values through it)
+    void INCollection_UBTreeBnd<Bnd_Sphere>.Add(in Bnd_Sphere theOther) => Add(theOther);
 
     internal void Add(in Bnd_Sphere theOther)
     {

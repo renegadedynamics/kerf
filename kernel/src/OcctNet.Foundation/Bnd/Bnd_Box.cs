@@ -16,7 +16,7 @@ namespace Occt;
 /// OCCT's default (and <c>new Bnd_Box()</c>) is a void box with a null gap. <c>default(Bnd_Box)</c> is not: it is a
 /// non-void box reduced to the origin. Ported code must write <c>new Bnd_Box()</c>.
 /// </remarks>
-public partial struct Bnd_Box : IEquatable<Bnd_Box>
+public partial struct Bnd_Box : IEquatable<Bnd_Box>, INCollection_UBTreeBnd<Bnd_Box>
 {
     /// <summary>The box limits (Xmin, Xmax, Ymin, Ymax, Zmin, Zmax), gap and open directions included.</summary>
     public readonly record struct Limits(double Xmin, double Xmax, double Ymin, double Ymax, double Zmin, double Zmax);
@@ -158,6 +158,9 @@ public partial struct Bnd_Box : IEquatable<Bnd_Box>
     internal void OpenZmin() => Flags |= ZminMask;
 
     internal void OpenZmax() => Flags |= ZmaxMask;
+
+    // NCollection_UBTree's bounding-type contract (the tree mutates its own nodes' values through it)
+    void INCollection_UBTreeBnd<Bnd_Box>.Add(in Bnd_Box theOther) => Add(theOther);
 
     internal void Add(in Bnd_Box Other)
     {
