@@ -1453,6 +1453,7 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
         gp_Pnt P;
         int aSpanIndex = 0;
         double aNewU = U;
+        // OCCT: the normalized aNewU is overwritten by LocateParameter, which is given U (dead code, harmless)
         PeriodicNormalization(ref aNewU);
         BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
         if (aNewU < myKnots[aSpanIndex])
@@ -1760,7 +1761,7 @@ public class Geom_BSplineCurve : Geom_BoundedCurve
     /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
     public gp_Vec LocalDN(double U, int FromK1, int ToK2, int N)
     {
-        Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom_BSplineCurve::LocalD3");
+        Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom_BSplineCurve::LocalD3"); // OCCT: says LocalD3 in LocalDN
 
         double u = U;
         int index = 0;

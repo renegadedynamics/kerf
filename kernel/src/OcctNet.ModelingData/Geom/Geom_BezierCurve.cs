@@ -119,7 +119,7 @@ public class Geom_BezierCurve : Geom_BoundedCurve
 
         for (int i = 1; i <= nbpoles; i++)
         {
-            // OCCT indexes Weights from 1 whatever its lower bound
+            // OCCT: indexes Weights from 1 whatever its lower bound, as Rational does (out of range otherwise)
             if (Weights[i] <= gp.Resolution())
             {
                 throw new Standard_ConstructionError();
@@ -208,6 +208,7 @@ public class Geom_BezierCurve : Geom_BoundedCurve
         CheckMutable();
         int nbpoles = NbPoles();
 
+        // OCCT: refuses a 25-pole curve, though the constructors accept MaxDegree() + 1 = 26 poles
         if (nbpoles >= Geom_BezierCurve.MaxDegree() || Weight <= gp.Resolution())
         {
             throw new Standard_ConstructionError("Geom_BezierCurve::InsertPoleAfter");
@@ -727,7 +728,7 @@ public class Geom_BezierCurve : Geom_BoundedCurve
 
         myMaxDerivInv = 0.0;
         myMaxDerivInvOk = false;
-        myEvalRep = null; // OCCT: ClearEvalRepresentation()
+        ClearEvalRepresentation();
     }
 
     // The Bezier knots and multiplicities, shared per degree as OCCT's static arrays.

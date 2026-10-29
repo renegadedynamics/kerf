@@ -328,7 +328,7 @@ internal static class Geom_OffsetCurveUtils
         for (int i = 1; i < theMaxDerivative; i++)
         {
             gp_Vec aDN = theCurve.EvalDN(theU, anIndex + i);
-            // OCCT: *(aDeriv[i - 1]) = aDN * aSign, with aDeriv = {&theD2, &theD3, &theD4}
+            // C++: *(aDeriv[i - 1]) = aDN * aSign, with aDeriv = {&theD2, &theD3, &theD4}
             switch (i)
             {
                 case 1:
