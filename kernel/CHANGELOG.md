@@ -54,3 +54,12 @@ Phase 2 (part): approximation leaves.
   `IAppParCurves_LineTool<MultiLine>`).
 - Tests: the GProp GTests; unit tests of AdvApprox, FEmTool and AppParCurves on known approximations; oracle tests
   of GProp_GProps and GProp_PrincipalProps against native OCCT (through BRepGProp), all bit-identical.
+
+Phase 2 (part): surface approximation.
+
+- `OcctNet.ModelingData`: AdvApp2Var (approximation of a function F(U, V) by B-spline surfaces,
+  `AdvApp2Var_ApproxAFunc2Var`, with its evaluator, criterion and working classes). Results are frozen surfaces and
+  copies of the error tables; approximations run in parallel.
+- Tests: the AdvApp2Var GTests; unit tests reproducing planes and polynomial surfaces and approximating a sphere and
+  sin(u)cos(v) under each continuity and criterion, in parallel too. Checked against native OCCT on 15,100 random
+  approximations (not committed): bit-identical.
