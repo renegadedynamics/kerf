@@ -145,6 +145,15 @@ public static class Standard
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Standard_ProgramError_Raise_if(bool condition, string? message = null)
+    {
+        if (condition)
+        {
+            throw new Standard_ProgramError(message);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Standard_DivideByZero_Raise_if(bool condition, string? message = null)
     {
         if (condition)

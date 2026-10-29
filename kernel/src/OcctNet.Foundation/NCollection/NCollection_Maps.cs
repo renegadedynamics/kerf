@@ -133,6 +133,31 @@ public class NCollection_IndexedMap<TKey> : IEnumerable<TKey> where TKey : notnu
         return true;
     }
 
+    /// <summary>
+    /// Replaces the key at an index. Throws <see cref="Standard_DomainError"/> if an equal key is already in the map at
+    /// another index; an equal key at the same index is replaced by the new one.
+    /// </summary>
+    public void Substitute(int theIndex, TKey theKey1)
+    {
+        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myKeys.Count, "NCollection_IndexedMap::Substitute : Index is out of range");
+        if (myIndices.TryGetValue(theKey1, out int anIndex))
+        {
+            if (anIndex != theIndex)
+            {
+                throw new Standard_DomainError("NCollection_IndexedMap::Substitute : Attempt to substitute existing key");
+            }
+
+            myIndices.Remove(theKey1);
+        }
+        else
+        {
+            myIndices.Remove(myKeys[theIndex - 1]);
+        }
+
+        myKeys[theIndex - 1] = theKey1;
+        myIndices.Add(theKey1, theIndex);
+    }
+
     public void Swap(int theIndex1, int theIndex2)
     {
         Standard_OutOfRange_Raise_if(theIndex1 < 1 || theIndex1 > myKeys.Count || theIndex2 < 1 || theIndex2 > myKeys.Count,

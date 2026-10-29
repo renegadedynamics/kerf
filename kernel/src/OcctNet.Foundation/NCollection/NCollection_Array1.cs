@@ -195,10 +195,22 @@ public class NCollection_Array1<T> : IEnumerable<T>
         return this;
     }
 
+    /// <summary>Resizes to new bounds; as in OCCT, the range may not be empty.</summary>
     public void Resize(int theLower, int theUpper, bool theToCopyData)
     {
-        Standard_RangeError_Raise_if(theUpper < theLower - 1, "NCollection_Array1::Resize");
-        int aNewSize = theUpper - theLower + 1;
+        Standard_RangeError_Raise_if(theUpper < theLower, "NCollection_Array1::Resize");
+        ResizeImpl(theUpper - theLower + 1, theLower, theToCopyData);
+    }
+
+    /// <summary>Resizes to a number of elements, keeping the lower bound; as in OCCT, zero is allowed.</summary>
+    public void Resize(int theSize, bool theToCopyData)
+    {
+        Standard_RangeError_Raise_if(theSize < 0, "NCollection_Array1::Resize");
+        ResizeImpl(theSize, myLowerBound, theToCopyData);
+    }
+
+    private void ResizeImpl(int aNewSize, int theLower, bool theToCopyData)
+    {
         myLowerBound = theLower;
         if (aNewSize == mySize)
         {
@@ -216,8 +228,6 @@ public class NCollection_Array1<T> : IEnumerable<T>
         mySize = aNewSize;
         myIsOwner = true;
     }
-
-    public void Resize(int theSize, bool theToCopyData) => Resize(myLowerBound, myLowerBound + theSize - 1, theToCopyData);
 
     /// <summary>The elements, without copying; index 0 is <see cref="Lower"/>.</summary>
     public Span<T> AsSpan() => new(myData, myOffset, mySize);
