@@ -35,3 +35,7 @@ The first packages, for Bento's 3D-models extension.
   temporary native mesh at once.
 - Reading BRep data rejects truncated, garbled and overlong input instead of hanging or overrunning a
   buffer.
+- Selectors take build123d's `property` arguments by name (`FilterBy("IsClosed")`, `FilterByValue("Radius", 5)`,
+  `SortBy("Length")`, `GroupBy("Area")`), and `FilterByValue(SortBy, value)` takes a measure.
+- `Selector`: a selection as plain values that can be kept and applied again. `Selector.For` finds the
+  simplest selectors for a picked face, edge or vertex.

@@ -317,3 +317,36 @@ It follows your sketch, with these differences:
   Degenerate geometry, such as zero-size primitives, extrusion by nothing, a coincident loft or an
   oversized fillet, throws `OcctException`, `ArgumentException` or `InvalidOperationException` with a
   message.
+
+### Selectors are in (4.5)
+
+- **Plain values.** Every selector now takes values, with the lambda overloads kept.
+  - build123d's `property` arguments are taken by name: `FilterBy("IsClosed")`,
+    `FilterByValue("Radius", 5)`, `SortBy("Length")` and `GroupBy("Area")`.
+  - A name is a public property, or a method with no required arguments, of each shape's own class.
+    Case and underscores don't matter, so `is_closed` works as well as `IsClosed`.
+  - An unknown name throws `ArgumentException` listing the names that class has, which a cell could
+    show as a hint.
+  - `FilterByValue("GeomType", "Plane")` accepts an enum by its name.
+  - `FilterByValue(SortBy.Length, 20)` filters by a measure.
+  - Axes, planes and the other enums are still values to map from your formula vocabulary.
+- **Selections** are `ShapeList<T>` as before. `GroupBy(...)` returns groups whose `First`, `Last`,
+  `[i]`, `Keys` and `Group(key)` are all plain-value calls.
+- **A selector for a picked face or edge** fell out naturally, so it's in.
+
+  ```csharp
+  IReadOnlyList<Selector> options = Selector.For(part, part.Faces()[pickedIndex]);
+  options[0].ToString();    // "Faces().GroupBy(Axis.Z).Last"
+  options[0].ToPython();    // "faces().group_by(Axis.Z)[-1]"
+  ShapeList<Shape> again = options[0].Apply(changedPart);
+  ```
+
+  - **What a `Selector` is:** a value (faces, edges or vertices, then filters and groups) that compares
+    by value, so a cell can keep it and reapply it when the model changes.
+  - **Ranking:** fewest steps first, then the most robust. That means groups at the ends of the model's
+    axes, then filters by type or direction, then the largest or smallest of a measure, then inner groups
+    such as `GroupBy(Axis.X)[2]`.
+  - **Checking:** every selector returned has been applied to the shape and picks exactly the pick.
+  - **No selector:** the list is empty if three steps can't tell the pick apart, for example from an
+    identical coincident twin.
+  - **Speed:** it takes 5 to 20 ms on a plate of 78 faces and 192 edges.

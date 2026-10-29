@@ -102,6 +102,8 @@ public class InputsUnchangedTests
             C("triangulate", [Fused], () => Fused.Triangulate(0.01)),
             C("triangulate free edge", [Spline], () => Spline.Triangulate(0.01)),
             C("triangulate tree", [Box, MovedBox], () => Compound.Assembly([Box, MovedBox]).TriangulateTree()),
+            C("selectors by name", [Fused], () => Fused.Faces().SortBy("Area").GroupBy("GeomType").Count + Fused.Edges().FilterBy("IsClosed").Count),
+            C("selector for a pick", [Fused], () => Selector.For(Fused, Fused.Faces()[0])),
             C("distance", [Box, Sphere], () => Box.DistanceToWithClosestPoints(Sphere.Moved(new Location((20.0, 0.0, 0.0))))),
             C("surface intersections", [Sphere], () => Sphere.FindIntersectionPoints(Axis.X)),
             C("clean", [Fused], () => Fused.Clean()),
