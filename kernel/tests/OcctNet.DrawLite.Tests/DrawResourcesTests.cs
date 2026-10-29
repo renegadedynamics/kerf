@@ -200,13 +200,13 @@ public class DrawResourcesTests(ITestOutputHelper output)
             output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {aCall,-14} used by {string.Join(", ", aUsers)}"));
         }
 
-        // unit 3L1's and 3L2a's commands are there; the meshing commands are not yet
-        foreach (string aPrimitive in new[] { "nbshapes", "tolerance", "isdraw", "dtyp", "sprops", "vprops", "lprops", "explode", "dump", "checkshape" })
+        // unit 3L1's, 3L2a's and 4L1's commands are there (checktrinfo's trinfo); freebounds is not yet
+        foreach (string aPrimitive in new[] { "nbshapes", "tolerance", "isdraw", "dtyp", "sprops", "vprops", "lprops", "explode", "dump", "checkshape", "trinfo" })
         {
             Assert.DoesNotContain(aPrimitive, aMissing.Keys);
         }
 
-        foreach (string aPrimitive in new[] { "freebounds", "trinfo" })
+        foreach (string aPrimitive in new[] { "freebounds" })
         {
             Assert.Contains(aPrimitive, aMissing.Keys);
         }

@@ -112,7 +112,12 @@ public class BRep_TFace : TopoDS_TFace
     /// one, active (empty if null). Otherwise the triangulation becomes active if it is in the list, or replaces the
     /// active one.
     /// </summary>
-    internal void Triangulation(Poly_Triangulation? theTriangulation, bool theToReset = true)
+    /// <param name="theTriangulation">The triangulation, or null to remove them all.</param>
+    /// <param name="theToReset">Whether the list becomes just this triangulation.</param>
+    /// <param name="theToFreeze">
+    /// False for the mesher's non-freezing attach (decision 488): the triangulation freezes with the face's graph.
+    /// </param>
+    internal void Triangulation(Poly_Triangulation? theTriangulation, bool theToReset = true, bool theToFreeze = true)
     {
         CheckMutable();
         if (theToReset || theTriangulation is null)
@@ -132,7 +137,10 @@ public class BRep_TFace : TopoDS_TFace
                 myActiveTriangulation = theTriangulation;
                 // Set Active bit
                 setActiveBit(theTriangulation, true);
-                theTriangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                if (theToFreeze)
+                {
+                    theTriangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                }
             }
 
             return;
@@ -167,7 +175,10 @@ public class BRep_TFace : TopoDS_TFace
                 myActiveTriangulation = theTriangulation;
                 // Set Active bit
                 setActiveBit(theTriangulation, true);
-                theTriangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                if (theToFreeze)
+                {
+                    theTriangulation.Freeze(); // OCCT.NET: attached meshes are frozen
+                }
                 return;
             }
         }

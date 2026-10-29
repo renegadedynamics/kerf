@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!--
+    The WebAssembly spike (phase4-plan 2.4, open question 14): reads a .brep, meshes it, extracts the viewer's buffers and
+    draws them with WebGL, in the browser. Built as Bento.Web is: plain WebAssembly (no Blazor, no AOT, no native
+    relinking: the Mono interpreter), single-threaded, trimmed, net10.0, with the .NET SDK alone (no wasm-tools workload).
+
+    It builds without any workload (the browser-wasm runtime pack restores from nuget.org), so it is in OcctNet.slnx.
+    Publish and run (from the repository root):
+
+      dotnet publish samples/OcctNet.WasmDemo -c Release -o artifacts/wasmdemo
+      node samples/OcctNet.WasmDemo/serve.mjs -root artifacts/wasmdemo/wwwroot -data <data/occ folder>
+        then open http://localhost:8642/ (or with ?auto=1 to mesh every file and report)
+
+    samples/OcctNet.WasmDemo/run-headless.ps1 does all of that with a headless Chrome or Edge and compares the buffers
+    with win-x64's (the benchmark project's "wasm-compare" mode).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- JSExport's generated marshalling needs unsafe code (as Bento.Web). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Nothing native is linked (as Bento.Web): no workload needed. -->
+    <WasmBuildNative>false</WasmBuildNative>
+    <!-- Bento.Web keeps its viewer's cultures; the port doesn't format with the culture, so this changes nothing here. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <CompressionEnabled>true</CompressionEnabled>
+    <WasmFingerprintAssets>false</WasmFingerprintAssets>
+    <!-- Trimmed on publish, as every browser-wasm app; the OcctNet assemblies use no reflection, so they are trimmed too
+         (Bento.Web roots its own engine's assemblies; RootOcctNet=true measures that case, after deleting obj/Release/net10.0/linked,
+         which the trimmer doesn't redo when only the roots change). -->
+    <PublishTrimmed>true</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(RootOcctNet)' == 'true'">
+    <TrimmerRootAssembly Include="OcctNet.Foundation" />
+    <TrimmerRootAssembly Include="OcctNet.ModelingData" />
+    <TrimmerRootAssembly Include="OcctNet.ModelingAlgorithms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+  </ItemGroup>
+</Project>

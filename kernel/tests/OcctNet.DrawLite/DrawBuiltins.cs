@@ -10,12 +10,13 @@ internal static class DrawBuiltins
     /// <summary>
     /// Draw commands that only drive OCCT's viewers, plugins, logging or resource limits. The port has no viewer,
     /// so these do nothing and a script that uses them still runs. OCCT's CheckCommands.tcl defines checkview as
-    /// a procedure that drives the viewers; Draw-lite keeps it a no-op.
+    /// a procedure that drives the viewers; Draw-lite keeps it a no-op. vglinfo only reports the OpenGL driver. The
+    /// commands that mesh the shapes they display (vdisplay, vsetdispmode, ...) are ViewerTestCommands.
     /// </summary>
     internal static readonly string[] Ignored =
     [
-        "pload", "cpulimit", "checkview", "vinit", "vdisplay", "vfit", "vdump", "vclear",
-        "vsetdispmode", "vmoveto", "vselect", "vclose", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
+        "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
+        "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
         "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
     ];
@@ -44,6 +45,8 @@ internal static class DrawBuiltins
         BRepTestModifyCommands.Register(theInterpreter);
         GeometryTestCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
+        MeshTestCommands.Register(theInterpreter);
+        ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
@@ -62,9 +65,17 @@ internal static class DrawBuiltins
 
             return "";
         });
-        theInterpreter.Register("dgetenv", static (i, a) => a.Count == 2
-                                                               ? i.TryGetVariable("::env", a[1], out string aValue) ? aValue : throw new DrawException($"Environment variable {a[1]} is not set")
-                                                               : throw TclControlCommands.Usage("dgetenv name"));
+        // dgetenv name: the variable's value, empty when it isn't set (Draw_VariableCommands.cxx: getenv)
+        theInterpreter.Register("dgetenv", static (i, a) =>
+        {
+            if (a.Count < 2)
+            {
+                i.Output.WriteLine($"Use: {a[0]} {{varname}}");
+                throw new DrawException("");
+            }
+
+            return i.TryGetVariable("::env", a[1], out string aValue) ? aValue : "";
+        });
         theInterpreter.Register("dsetenv", static (i, a) =>
         {
             if (a.Count == 3)

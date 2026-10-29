@@ -132,18 +132,9 @@ public static partial class BVH
             int anOffset = PartitionLinks(theLinks, theStart, theFinal, theDigit);
             (int Start, int Final, int Digit)[] aSplits = [(theStart, anOffset, theDigit - 1),
                                                            (anOffset, theFinal, theDigit - 1)];
-            if (isParallel)
-            {
-                Parallel.For(0, 2, theIndex => RadixSort(theLinks, aSplits[theIndex].Start, aSplits[theIndex].Final,
-                                                         aSplits[theIndex].Digit, isParallel));
-            }
-            else
-            {
-                for (int theIndex = 0; theIndex < 2; ++theIndex)
-                {
-                    RadixSort(theLinks, aSplits[theIndex].Start, aSplits[theIndex].Final, aSplits[theIndex].Digit, isParallel);
-                }
-            }
+            // OSD_Parallel::For(0, 2, Functor, !isParallel)
+            OSD_Parallel.For(0, 2, theIndex => RadixSort(theLinks, aSplits[theIndex].Start, aSplits[theIndex].Final,
+                                                         aSplits[theIndex].Digit, isParallel), !isParallel);
         }
     }
 

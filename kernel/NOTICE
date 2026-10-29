@@ -14,3 +14,7 @@ exception defined in OCCT_LGPL_EXCEPTION.txt. See LICENSE for the full text of t
 
 OCCT.NET is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
 implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Third-party code: src/OcctNet.ModelingAlgorithms/BRepMesh/delabella.cs is a port of Delabella, MIT-licensed code
+inside OCCT (Copyright (C) 2018 GUMIX - Marcin Sokalski), and stays under the MIT licence. See
+THIRD-PARTY-NOTICES.md.

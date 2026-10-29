@@ -13,12 +13,31 @@ public class BRep_PolygonOnTriangulation : BRep_CurveRepresentation
 
     /// <summary>The polygon <paramref name="P"/> on <paramref name="T"/> (both frozen here).</summary>
     public BRep_PolygonOnTriangulation(Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L)
+        : this(P, T, L, true)
+    {
+    }
+
+    /// <summary>
+    /// The polygon <paramref name="P"/> on <paramref name="T"/>, both frozen if <paramref name="theToFreeze"/> (the
+    /// mesher's non-freezing attach, decision 488).
+    /// </summary>
+    internal BRep_PolygonOnTriangulation(Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L,
+                                         bool theToFreeze)
         : base(L)
     {
-        P?.Freeze(); // OCCT.NET: attached meshes are frozen
-        T?.Freeze();
+        if (theToFreeze)
+        {
+            P?.Freeze(); // OCCT.NET: attached meshes are frozen
+            T?.Freeze();
+        }
         myPolygon = P;
         myTriangulation = T;
+    }
+
+    internal override void FreezeContents()
+    {
+        myPolygon?.Freeze();
+        myTriangulation?.Freeze();
     }
 
     /// <summary>True.</summary>

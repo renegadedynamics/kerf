@@ -24,9 +24,9 @@ namespace Occt;
 /// <para>
 /// OCCT splits the work into tasks by the number of threads of OSD_ThreadPool's default pool, in single-threaded mode
 /// too, and the split decides which pairs of sub-shapes are measured and in which order the solutions come. The port
-/// takes <see cref="Environment.ProcessorCount"/>, as that pool does (one thread per logical processor), so it splits
-/// as native OCCT does on the same machine. In multi-threaded mode the solid treatment's result depends on which
-/// thread finds an inner point first, as in OCCT.
+/// takes <c>OSD_Parallel.NbLogicalProcessors()</c> (<see cref="Environment.ProcessorCount"/>), as that pool does
+/// (one thread per logical processor), so it splits as native OCCT does on the same machine, serial or parallel. In
+/// multi-threaded mode the solid treatment's result depends on which thread finds an inner point first, as in OCCT.
 /// </para>
 /// </remarks>
 public sealed class BRepExtrema_DistShapeShape
@@ -60,7 +60,7 @@ public sealed class BRepExtrema_DistShapeShape
     private bool myIsMultiThread;
 
     /// <summary>OSD_ThreadPool::DefaultPool()->NbThreads(): one thread per logical processor.</summary>
-    private static int NbThreads() => Environment.ProcessorCount;
+    private static int NbThreads() => OSD_Parallel.NbLogicalProcessors();
 
     //=================================================================================================
 
@@ -114,24 +114,6 @@ public sealed class BRepExtrema_DistShapeShape
             Dist.Init(double.MaxValue);
         }
     }
-
-    /// <summary>OSD_Parallel::For(0, theCount, theFunctor, theIsSequential).</summary>
-    private static void ParallelFor(int theCount, Action<int> theFunctor, bool theIsSequential)
-    {
-        if (theIsSequential)
-        {
-            for (int i = 0; i < theCount; i++)
-            {
-                theFunctor(i);
-            }
-        }
-        else
-        {
-            Parallel.For(0, theCount, theFunctor);
-        }
-    }
-
-    //=================================================================================================
 
     private sealed class VertexFunctor
     {
@@ -250,7 +232,7 @@ public sealed class BRepExtrema_DistShapeShape
         aFunctor.StartDist = myDistRef;
         aFunctor.Eps = myEps;
 
-        ParallelFor(aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
         if (!aDistScope.More())
         {
@@ -484,7 +466,7 @@ public sealed class BRepExtrema_DistShapeShape
         aPairFunctor.DistRef = myDistRef;
         aPairFunctor.Eps = myEps;
 
-        ParallelFor(aNbPairTasks, aPairFunctor.Invoke, !myIsMultiThread);
+        OSD_Parallel.For(0, aNbPairTasks, aPairFunctor.Invoke, !myIsMultiThread);
         aPairFunctor.Scope.Close();
         if (!aTwinScope.More())
         {
@@ -557,7 +539,7 @@ public sealed class BRepExtrema_DistShapeShape
         aFunctor.Eps = myEps;
         aFunctor.StartDist = myDistRef;
 
-        ParallelFor(aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
         if (!aTwinScope.More())
         {
@@ -804,7 +786,7 @@ public sealed class BRepExtrema_DistShapeShape
             aFunctor.Mutex = new Lock();
         }
 
-        ParallelFor(aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
 
         // Copy the results back to the class members after the parallel section completes

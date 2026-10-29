@@ -450,6 +450,12 @@ public sealed partial class DrawInterpreter
 
     internal TclFrame GlobalFrame => myGlobal;
 
+    /// <summary>The frames of the procedure calls in progress, outermost first (the global frame isn't among them).</summary>
+    private readonly List<TclFrame> myActiveFrames = [];
+
+    /// <summary>The global frame and the frames of the procedure calls in progress (uplevel or not).</summary>
+    internal IEnumerable<TclFrame> LiveFrames() => myActiveFrames.Prepend(myGlobal);
+
     private string CallProc(TclProc theProc, IReadOnlyList<string> theArgs)
     {
         var aFrame = new TclFrame(myFrame.Level + 1, myFrame, theArgs);
@@ -487,6 +493,7 @@ public sealed partial class DrawInterpreter
         TclFrame aSaved = myFrame;
         myFrame = aFrame;
         myProcDepth++;
+        myActiveFrames.Add(aFrame);
         try
         {
             return EvalScript(theProc.Body);
@@ -514,6 +521,7 @@ public sealed partial class DrawInterpreter
         {
             myFrame = aSaved;
             myProcDepth--;
+            myActiveFrames.RemoveAt(myActiveFrames.Count - 1);
         }
     }
 

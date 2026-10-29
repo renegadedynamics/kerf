@@ -478,3 +478,114 @@ the corpus sees OCCT's behaviour; all were found by reading unless a test is nam
 | `BRepLib::UpdateTolerances` in place (`InternalUpdateTolerances` with `IsMutableInput`, then `UpdShTol`) | A vertex TShape reached at several locations is a key per location in an NCollection_DataMap hashed by TopTools_ShapeMapHasher (the TShape's address); with `theVForceUpdate` each key's tolerance is written into the shared TShape | The vertex keeps the tolerance of the key iterated last, in an order set by addresses: the result isn't reproducible. The port iterates in insertion order (decision 18). data/occ's solid.brep, mal_tige.brep and MODERN_MVCooker_1.brep (`updatetolerance s 1`) differ from native OCCT only there (DrawLiteConstructionOracleTests); the reshaper form makes a copy per location and is reproducible |
 | `proximity`, `selfintersect` (BRepTest_ExtremaCommands.cxx; a property, not a bug) | List the overlapping sub-shapes by iterating an `NCollection_DataMap<int, ...>` | The order of the printed names is the map's bucket order. The port prints them in ascending order; the names are the same |
 | lowalgos/extss/bug29712_44 (a test, not the library) | Computes `extrema s1 s1` and `extrema s2 s2`, each plane with itself, and expects the distance 10 between the two parallel planes | The distance is 0, so the case fails in DRAWEXE as in Draw-lite (`extrema s1 s2` was meant). By reading |
+## Phase 4: unit 4L1, Draw-lite mesh readers
+
+Found while porting Draw's mesh readers (tclean, trinfo, triepoints, trmergenodes, correctnormals, triarea, tricheck,
+mpparallel). Draw-lite reproduces the command bugs, so the corpus sees OCCT's behaviour; by reading unless a test is
+named.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepLib::EnsureNormalConsistency` (`correctnormals`) | Computes the missing normals from `aPT->UVNode(i)` without checking that the triangulation has UV nodes | On a triangulation without UV nodes (Poly_MergeNodesTool's result, so after `trmergenodes`) OCCT reads past an empty array. The port throws Standard_OutOfRange, which Draw-lite reports as CommandCmd does. Marked `// OCCT` in the command; unit test |
+| `BRepLib::EnsureNormalConsistency` (already in 3I) | Uses a null polygon on triangulation | The oracle confirms it natively: OSD_Exception_ACCESS_VIOLATION on several data/occ and dataset files, where the port fails too (DrawLiteMeshOracleTests counts them as failing on both sides) |
+| `tricheck` (MeshTest_PluginCommands.cxx), the check of the meshes inside the faces | `if (aBoundaryEdgeMap.Size() == 0) break;` | The first face with no polygon on its triangulation (a face meshed without its edges, or not meshed) ends the loop: the faces after it are never checked for "Not connected mesh inside face". Kept; unit test |
+| `MeshTest_CheckTopology::Perform`, cross-face errors | Records `i1` and `i2`, the indices in the edge's polygons, where tricheck prints them as "node1" and "node2" | The numbers printed aren't node numbers. Kept |
+| `tricheck -small` | Takes `const gp_Trsf& aTrsf = aLoc.Transformation()` before `BRep_Tool::Triangulation(aFace, aLoc)` fills `aLoc` | The null-area triangles are drawn untransformed. Display only; Draw-lite draws nothing |
+| `trmergenodes` without `-oneFace` (MeshTest.cxx) | Replaces each face's triangulation (`UpdateFace(F, T, false)`) and leaves the edges' polygons on the former triangulation | The edges keep polygons on triangulations no face carries: `tricheck` finds no boundary on the face and stops (above), `tclean` doesn't remove those polygons (it walks the faces' triangulations). Kept; unit test |
+| `correctnormals` (MeshTest.cxx) | Reads `argv[1]` without checking the count | Without an argument DBRep::Get gets Tcl's null `argv[argc]`. The port reads an empty word: no shape, "Normals have not been changed!" |
+| `triepoints` (MeshTest.cxx; a property, not a bug) | Numbers the edges by iterating an `NCollection_Map` of shapes, hashed by TShape address | The edge numbers in the vertex names aren't reproducible. The port numbers the edges in TopExp_Explorer's order |
+
+## Phase 4: unit 4S, ShapeAnalysis
+
+Found while porting ShapeExtend, ShapeAnalysis's wire analysis and ShapeBuild. Reproduced in the port, each marked
+`// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeAnalysis_Curve::ValidateRange` (ShapeAnalysis_Curve.cxx) | Tests `IsPeriodic` on the basis curve (through trimmed and offset curves), but passes the curve's own `[cf, cl]` to `ElCLib::AdjustPeriodic` as the period | On a trimmed arc of a circle, the trimmed range is taken as the period: the reversed range (2, 1) on the arc [0, 3] becomes (2, 4), past the arc's end. By reading; pinned by `ValidateRange_on_a_trimmed_arc_wraps_with_the_trimmed_range_ReproducesOcctError`; the oracle matches native on trimmed circles |
+| `ShapeAnalysis_Edge::CheckOverlapping` through the static `IsOverlapPartEdges` (ShapeAnalysis_Edge.cxx) | The sampling step is half the shorter edge's length | With a degenerated (zero-length) edge whose vertex is within tolerance of the other edge, the step is 0 and the loop never ends. Found when the first oracle run hung; the oracle skips degenerated edges. Not pinned (it would hang) |
+| `ShapeAnalysis_Edge::CheckOverlapping` | Doesn't reset the status; in the domain branch, the `aStartLength < 0` case sets `aEndLength`, which the next line overwrites | Status flags add up across calls. By reading |
+| `ShapeAnalysis_Edge::CheckVerticesWithCurve3d` and `CheckVerticesWithPCurve` | OR the enumerator `ShapeExtend_DONE1` into the status, not its encoding | Harmless: equal for DONE1 and DONE2. By reading |
+| `ShapeExtend_WireData::Add(const Handle(ShapeExtend_WireData)&, int)` | In non-manifold mode adds `wire->Edge(i)` where it means `wire->NonmanifoldEdge(i)` | The other wire's INTERNAL/EXTERNAL edges are lost and ordinary edges added twice. Pinned by `Add_wire_data_in_non_manifold_mode_adds_the_wrong_edges` |
+| `ShapeAnalysis_WireOrder::SetChains` | Also checks the wrap-around from the last edge to the start of its own chain | On an open chain the last chain's start is appended twice: 3 chains, the second the empty range (3, 2). Pinned by `Chains_of_an_open_and_a_closed_wire` |
+| `ShapeAnalysis_WireOrder::Gap(0)`, `SetCouples` | `myGap` is never computed, and SetCouples is empty | `Gap()` is always 0 and `NbCouples()` always 0. Pinned |
+| `ShapeAnalysis_TransferParameters` constructors | Leave `myMaxTolerance` uninitialised | Undefined until `SetMaxTolerance`; the port starts it at 0 |
+| `ShapeAnalysis_Wire::CheckLoop` (ShapeAnalysis_Wire.cxx) | Sets the analyser's precision to `Precision::Infinite()` and, on the FAIL2 return for an edge without vertices, doesn't restore it | Later checks on the same analyser run with an infinite precision and pass everything. By reading |
+| `ShapeAnalysis::TotCross2D` | With no pcurve of the wire on the face, the points stay at their defaults | The result is 0, so `IsOuterBound` counts such a wire as outer. By reading |
+
+## Phase 4: unit 4A, mesh foundations
+
+Found while porting Message, NCollection_MapAlgo, IMeshData, IMeshTools, BRepMeshData and BRepMesh's geometry tools.
+All are reproduced and pinned by unit tests.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_GeomTool::IntSegSeg` (BRepMesh_GeomTool.cxx) | `aPointHash[0]`/`[1]` classify the second segment's start/end on the first segment, `[2]`/`[3]` the first's on the second; the `PointOnSegment` branch returns the first segment's start for `[0]`, its end for `[1]`, the second's start for `[2]` and its end for `[3]` | The point given with `PointOnSegment` is an end point of the wrong segment. BRepMesh_Delaun, its only caller asking for it, recomputes the chopping point and ignores it, so meshes aren't affected. Kept (`// OCCT`); BRepMeshGeomToolTests |
+| `Message_Algorithm::AddStatus` (Message_Algorithm.cxx) | Copies the other algorithm's strings with `for (n = 1; n < Length; n++)` | The last string of each status is dropped. Kept; unit test |
+| `Message_Msg::Get` (Message_Msg.cxx) | Replaces the unfilled placeholders but keeps their positions | A second `Get` garbles the text ("a %s b" → "a UNKNOWN b" → "a UNKNOWNKNOWN b"); `SendStatusMessages` calls `Get` on a stored custom message, so sending it twice garbles it. Kept; unit test |
+| `Message_Msg::Set` (Message_Msg.cxx) | After "%%", reads the next characters as a format | "100%% done" gets a placeholder "% d": `Arg(7)` gives "100 7one". Kept; unit test |
+| `NCollection_MapAlgo::Differ` (NCollection_MapAlgo.hxx; a property, not a bug) | Reports a change by comparing the counts before and after | Swapping one key for another returns false. Kept; unit test |
+
+## Phase 4: unit 4C, model and edges
+
+Found while porting BRepMesh's model building, edge discretisation, healer and pre- and post-processors. Reproduced in
+the port, each marked `// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_FaceChecker`'s selector, `Accept` (BRepMesh_FaceChecker.cxx) | When a wire is checked against itself, a crossing is kept only if the loop it closes has an area; the area sums the cross products of each segment's second point, in the order of each pcurve's parameter, not the wire's | Along reversed edges the second points are the wire's first ones: a bow tie bounded by reversed edges measures zero area, its crossing is taken for a tangency, and the face is meshed with a self-intersecting wire (the same bow tie with forward edges fails with SelfIntersectingWire). Pinned by `Face_checker_misses_a_crossing_of_reversed_edges_as_OCCT_does` |
+| `BRepMesh_ModelPostProcessor`'s PolygonCommitter, `commitPolygons` (BRepMesh_ModelPostProcessor.cxx) | Stores a seam's first discrete pcurve on the face as the polygon of the forward edge and the last as the reversed edge's, whatever their orientations | The model's pcurves follow the wire order of ShapeAnalysis_Wire::CheckOrder. On BRepPrimAPI's cylinder (top, seam reversed at u = 0, bottom, seam forward at u = 2pi) `BRep_Tool::PolygonOnTriangulation` of the forward seam gives the nodes at u = 0, the reversed seam's side. Same 3D points; the UV side is swapped. Pinned by `Seam_polygons_are_stored_in_the_model_order_as_OCCT_does`; the oracle compares native polygons in this order |
+## Phase 4: unit 4B, Delaunay core
+
+Found while porting the Delaunay core and Delabella. Reproduced in the port, each marked `// OCCT`. Of the
+BRepMesh_Delaun and DataStructureOfDelaun entries, only the first is on the mesher's path, where it sizes the
+circles' cells.
+
+| Where | What | Effect |
+|---|---|---|
+| `CDelaBella::Triangulate` (delabella.cpp), all points cocircular | With more than 3 points, all cocircular ("[NFO] all input points are cocircular."), the last point is retracted and made the cone's top, which is coplanar with the base; no point is left for the main loop, and the final loop over `2 * points - 4` faces reads the adjacency (`f[0..2]`) of faces this run never allocated | Native (MSVC, release) crashes with an access violation, confirmed on the unit square's corners and on the twelve integer points of the circle of radius 5. The port throws NullReferenceException. Pinned by `Exactly_cocircular_points_fail_as_in_OCCT_ReproducesOcctError`. BRepMesh_DelabellaBaseMeshAlgo adds the four corners of an enlarged box to the face's nodes, so it can't reach this with distinct nodes |
+| `CDelaBella::Triangulate`, 0 points | The duplicate removal starts with `w = 0, r = 1` and ends with `w = 1`: it reports "detected -1 dups" and sets `points = 1`, then the single-point branch writes `vert_alloc[0]` of an empty allocation (null on a first call) | Undefined behaviour natively; the port throws NullReferenceException. Pinned by `No_points_fail_as_in_OCCT_ReproducesOcctError` |
+| `CDelaBella::Triangulate`, `assert(0)` and `assert(_f != face_alloc)` | Release builds compile the asserts out: a coplanar point that is on neither side of the contour is taken as `last` without being linked in; the emergency search for a visible face runs below `face_alloc` when none is visible | Undefined behaviour natively (the port throws IndexOutOfRangeException in the second case). By reading; not reached by any test |
+| `IDelaBella::Triangulate` (a property, not a bug) | The header says triangles are returned clockwise "in abc"; the Delaunay triangles (lifted faces with `n.z < 0`) are clockwise in `v[0..2]`, and the hull contour counter-clockwise | BRepMesh_DelabellaBaseMeshAlgo takes `v[0], v[2], v[1]` to get counter-clockwise triangles. Tested |
+| `BRepMesh_Delaun::initCirclesTool` (BRepMesh_Delaun.cxx) | `if (NbNodes() > 100) aScaler = 5; else if (NbNodes() > 1000) aScaler = 7;` | The second branch is unreachable: the circles' cells are at most a fifth of the box for any number of nodes above 100. Kept; by reading |
+| `BRepMesh_DataStructureOfDelaun::SubstituteElement` and `clearDeletedLinks` | `myElements(theIndex) = ...` on an `NCollection_DynamicArray` indexed from 0, where `GetElement(theIndex)` reads `theIndex - 1` | The triangle after the one meant is replaced; past the last triangle the write goes into unused capacity (or, at a block boundary, a missing block). The port replaces the next triangle and drops a write past the end. The mesher calls neither. Pinned by `SubstituteElement_writes_one_triangle_too_far_ReproducesOcctError` |
+| `BRepMesh_VertexTool::RemoveLast`, through `BRepMesh_DataStructureOfDelaun::clearDeletedNodes` | `RemoveLast` is `DeleteVertex(Extent())`, which marks the vertex deleted but doesn't shrink the vector | `clearDeletedNodes` calls it once per moved node: from the second on it deletes the same last vertex again instead of the current last one, which stays live as a duplicate of the node copied from it, and `NbNodes()` never decreases. The mesher doesn't call `ClearDeleted`. Pinned by `ClearDeleted_renumbers_links_and_nodes_ReproducesOcctError` |
+| `BRepMesh_Triangulator::prepareMeshStructure` | Maps the triangles' nodes back to the wires' points with `myTmpMap.Bind(aNumNode + 1, ...)`, while the triangles use the indices `AddNode` returns, and `AddNode` merges points within `Precision::Confusion()` | With two coincident wire points the indices shift: triangles get the wrong points, or `Find` throws and `Perform` returns false. By reading |
+| `NCollection_Sequence::Remove(from, to)` in `BRepMesh_Delaun::meshPolygon` (a property of release builds) | When the crossing link's start is the closer end and the two frontier links are consecutive, the range is `(aPolyIt + 1, aPolyIt)` | OCCT's range check is compiled out in release builds and the call removes nothing. The port's `Remove` checks, so `meshPolygon` skips that call (`removeRange`). By reading |
+| `BRepMesh_CircleInspector::Inspect` (OCCT's own comment) | Compares `d² - r²` with the square of the linear tolerance | The circles are effectively exact. OCCT keeps it because the correct test hangs "perf mesh bug27119". Kept |
+| `BRepMesh_Delaun` with free nodes only (a property, not a bug) | `frontierAdjust`'s `cleanupMesh` removes every triangle with a free link whose nodes no frontier holds, until none is left to remove | Triangulating points without a frontier keeps only an inner part of their Delaunay triangulation (nothing for three points). The mesher always has a frontier. Tested |
+| `BRepMesh_Delaun::createTrianglesOnNewVertices` (a property, not a bug) | `Contains` reports a non-free link when the node is within a fifth of its length, and a free node there is skipped | A free node closer to a frontier link than a fifth of the link's length is never inserted. Tested |
+
+## Phase 4: unit 4D, face meshing and the incremental mesh
+
+Found while porting the face algorithms, range splitters and factories. Reproduced in the port, each marked `// OCCT`.
+Native BRepMesh_IncrementalMesh (Watson) itself showed no bug in the oracle: every compared face is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_DelabellaMeshAlgoFactory::GetAlgo`, `default:` (BRepMesh_DelabellaMeshAlgoFactory.cxx) | Surfaces of extrusion, offset and other surfaces fall to the default branch, which uses `BRepMesh_NURBSRangeSplitter` (the Watson factory gives extrusions BRepMesh_ExtrusionRangeSplitter). Its `getUndefinedIntervalNb` asks the surface for `NbVPoles()`, and `GeomAdaptor_Surface::NbVPoles` throws Standard_NoSuchObject for a surface of extrusion | With `-algo 1` (Delabella) a face on a surface of extrusion is left without a mesh: BRepMesh_BaseMeshAlgo's `catch (Standard_Failure)` swallows the exception without setting a status, so GetStatusFlags() is 0. By reading OCCT's code; the port does the same. Pinned by `Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does_ReproducesOcctError` |
+| `BRepMesh_BaseMeshAlgo::Perform` (a property) | A failure caught while a face is meshed leaves the face without a triangulation and without a status; only FaceDiscret's own catch sets IMeshData_Failure | A face can be silently unmeshed (see the row above). Kept |
+
+## Phase 4: unit 4L2, incmesh and the corpus
+
+Found while porting incmesh, tessellate, the mesh factory's commands and AIS's meshing. By reading unless a test is
+named; Draw-lite keeps OCCT's behaviour. The oracle found no difference from native incmesh or AIS meshing.
+
+| Where | What | Effect |
+|---|---|---|
+| `incmesh` (MeshTest.cxx), argument parsing | Any word that parses fully as a real (`IsRealValue(true)`) is taken as the deflection, before shape names are looked up | A shape named like a number can't be meshed by name. Kept |
+| `incmesh` | Returns 0 whatever the statuses (Failure, SelfIntersectingWire, ...) | A failed mesh is only visible in the text; the mesh group's TODOs match it there. Kept |
+| `incmesh -prs` with a deflection | The deflection given becomes the drawer's deviation coefficient, so `incmesh s 1 -prs` meshes at 4 times the shape's size | The help text calls it "0.001 of bounding box linear deflection"; the value is taken as written. Kept; unit test |
+| `StdPrs_ToolTriangulatedShape::GetDeflection` (a property) | Stores the absolute deflection it computes into the object's drawer as its own maximal chordial deviation | An object displayed with a relative deflection keeps that absolute value: a later `vdefaults -absDefl` doesn't reach it. Kept (Prs3d_Drawer is a working object) |
+| mesh group, standard_shading/M4 (a test reference) | The script expects an area difference of 1.9456% when meshed for shading, under `TODO ?OCC22687` | The port's AIS mesh, bit-identical to native's by the oracle, gives 1.918%: the optional TODO makes the case BAD, not FAILED. The reference may come from another OCCT version's shading deflection |
+| v3d/bugs/bug29020 (a test of the viewer) | Reads the maximal texture size from `vglinfo` | Can't run without OpenGL; FAILED in Draw-lite, which ignores vglinfo |
+## Phase 4: unit 4W, viewer extraction, benchmarks and WebAssembly
+
+No OCCT bug found. The extraction calls BRep_Tool, BRepLib_ToolTriangulatedShape::ComputeNormals,
+BRepAdaptor_Surface/Curve and GCPnts_TangentialDeflection as build123d.NET's native shim does, and its buffers are
+float-identical to native's on every compared face and edge.
+
+| Where | What | Effect |
+|---|---|---|
+| build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
+| BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |

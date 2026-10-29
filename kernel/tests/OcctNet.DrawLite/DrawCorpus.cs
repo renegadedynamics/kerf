@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace OcctNet.DrawLite;
 
@@ -30,18 +31,73 @@ public sealed record DrawCaseRun(DrawTestCase Case, string Status, string Log)
 public sealed class DrawCorpus(string theTestsDirectory)
 {
     /// <summary>
-    /// Commands that procedures of OCCT's DrawResources call through a variable (eval ${CommandName} ...), so a
-    /// scan of their bodies can't see them.
+    /// Commands that procedures of OCCT's DrawResources, or of a grid's begin script, call through a variable
+    /// (eval ${CommandName} ...), so a scan of their bodies can't see them.
     /// </summary>
     public static IReadOnlyDictionary<string, string[]> IndirectCalls { get; } = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         ["checkprops"] = ["lprops", "sprops", "vprops"],
         ["checklength"] = ["length"],
+
+        // procedures of a grid's begin script: chamfer/begin's compute_chamf runs `catch "$chamf_str"`
+        ["compute_chamf"] = ["chamf"],
     };
+
+    /// <summary>
+    /// Commands a group's scripts call only in a branch on the case's data file (<c>TheFileName</c>), and the data
+    /// files that don't take that branch: the mesh group's end script reads a .brep or .rle file with brestore and
+    /// any other (STEP) file with <c>stepread</c> and <c>tpcompound</c>. A case whose data file matches the pattern,
+    /// or that sets none, doesn't need the commands.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string[] Commands, Regex SkippedFor)> DataFileBranches { get; } =
+    [
+        ("mesh", ["stepread", "tpcompound"], new Regex(@"\.(brep|rle)", RegexOptions.CultureInvariant)),
+    ];
+
+    private static readonly Regex s_theFileName = new(@"^\s*set\s+TheFileName\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     private readonly ConcurrentDictionary<string, IReadOnlySet<string>> myProcCalls = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Whether the scan knows the branches of <see cref="DataFileBranches"/> (unit 4L2); false counts the commands of
+    /// every branch, as before.
+    /// </summary>
+    public bool KnowsDataFileBranches { get; init; } = true;
+
     public string TestsDirectory { get; } = theTestsDirectory;
+
+    /// <summary>
+    /// Whether grids whose cases live in a shared directory named by their <c>cases.list</c> (mesh, heal's split and
+    /// surface-to-revolution grids, chamfer, opengl, xml) are read, as OCCT's harness reads them. Before unit 4L1 the
+    /// scan skipped them; false gives that former set of cases.
+    /// </summary>
+    public bool ReadCaseLists { get; init; } = true;
+
+    /// <summary>
+    /// The directory a grid's cases are in: the grid's own, or the one the first line of its <c>cases.list</c> names
+    /// relative to it (TestCommands.tcl's <c>test</c>: "check if this grid is aliased to another one"); null if the
+    /// grid has a cases.list and <see cref="ReadCaseLists"/> is off.
+    /// </summary>
+    public string? CaseDirectory(string theGridDirectory)
+    {
+        string aList = Path.Combine(theGridDirectory, "cases.list");
+        if (!File.Exists(aList))
+        {
+            return theGridDirectory;
+        }
+
+        if (!ReadCaseLists)
+        {
+            return null;
+        }
+
+        string? aFirst = File.ReadLines(aList).FirstOrDefault();
+        return aFirst is null ? theGridDirectory : Path.GetFullPath(Path.Combine(theGridDirectory, aFirst.Trim()));
+    }
+
+    /// <summary>Whether a case is one of a grid that has a cases.list.</summary>
+    public bool IsListed(DrawTestCase theCase)
+        => File.Exists(Path.Combine(TestsDirectory, theCase.Group, theCase.Grid, "cases.list"));
 
     public IEnumerable<DrawTestCase> Cases()
     {
@@ -49,7 +105,12 @@ public sealed class DrawCorpus(string theTestsDirectory)
         {
             foreach (string aGrid in Directory.EnumerateDirectories(aGroup).Order(StringComparer.Ordinal))
             {
-                foreach (string aCase in Directory.EnumerateFiles(aGrid).Order(StringComparer.Ordinal))
+                if (CaseDirectory(aGrid) is not { } aCaseDirectory || !Directory.Exists(aCaseDirectory))
+                {
+                    continue;
+                }
+
+                foreach (string aCase in Directory.EnumerateFiles(aCaseDirectory).Order(StringComparer.Ordinal))
                 {
                     string aName = Path.GetFileName(aCase);
                     if (aName is "begin" or "end" or "parse.rules" or "cases.list" || aName.Contains('.'))
@@ -216,6 +277,24 @@ public sealed class DrawCorpus(string theTestsDirectory)
         }
 
         var aMissing = aCommands.Where(c => !theInterpreter.HasCommand(c) && !aDefined.Contains(c)).ToHashSet(StringComparer.Ordinal);
+        if (KnowsDataFileBranches)
+        {
+            foreach ((string aGroup, string[] aBranchCommands, Regex aSkippedFor) in DataFileBranches)
+            {
+                if (aGroup != theCase.Group)
+                {
+                    continue;
+                }
+
+                // the case's data file, as the case sets it (the last set wins, as when it runs)
+                Match? aSet = s_theFileName.Matches(File.ReadAllText(theCase.Path)).LastOrDefault();
+                if (aSet is null || aSet.Groups[1].Value is "\"\"" or "{}" || aSkippedFor.IsMatch(aSet.Groups[1].Value))
+                {
+                    aMissing.ExceptWith(aBranchCommands);
+                }
+            }
+        }
+
         return new DrawCaseScan(theCase, aCommands, aMissing);
     }
 
@@ -292,6 +371,10 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 if (aName == "proc" && aWords.Count > 1 && aWords[1].Literal is { } aProc)
                 {
                     theDefined.Add(aProc.TrimStart(':'));
+                    if (IndirectCalls.TryGetValue(aProc.TrimStart(':'), out string[]? anIndirect))
+                    {
+                        theCommands.UnionWith(anIndirect);
+                    }
                 }
             }
 

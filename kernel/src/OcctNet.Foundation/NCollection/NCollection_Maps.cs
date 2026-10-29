@@ -17,7 +17,7 @@ namespace Occt;
 /// <summary>OCCT's set (<c>NCollection_Map</c>).</summary>
 public class NCollection_Map<TKey> : IEnumerable<TKey> where TKey : notnull
 {
-    private readonly HashSet<TKey> myItems;
+    private HashSet<TKey> myItems;
 
     public NCollection_Map(IEqualityComparer<TKey>? theHasher = null) => myItems = new HashSet<TKey>(theHasher);
 
@@ -37,6 +37,9 @@ public class NCollection_Map<TKey> : IEnumerable<TKey> where TKey : notnull
     public bool Contains(TKey theKey) => myItems.Contains(theKey);
 
     public bool Remove(TKey theKey) => myItems.Remove(theKey);
+
+    /// <summary>Exchanges the contents (and hashers) of the two maps.</summary>
+    public void Exchange(NCollection_Map<TKey> theOther) => (myItems, theOther.myItems) = (theOther.myItems, myItems);
 
     public HashSet<TKey>.Enumerator GetEnumerator() => myItems.GetEnumerator();
 

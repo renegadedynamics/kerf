@@ -56,7 +56,7 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 35 / 470 | 14,988 / 132,410 | 11.3 |
+| FoundationClasses | TKernel | 62 / 470 | 20,296 / 132,410 | 15.3 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -65,12 +65,12 @@ broken down by package.
 | ModelingAlgorithms | TKGeomAlgo | 186 / 868 | 39,663 / 218,548 | 18.1 |
 | ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
-| ModelingAlgorithms | TKMesh | 0 / 156 | 0 / 19,930 | 0.0 |
+| ModelingAlgorithms | TKMesh | 156 / 156 | 19,930 / 19,930 | 100.0 |
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
 | ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
-| ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
+| ModelingAlgorithms | TKShHealing | 32 / 258 | 14,100 / 88,297 | 16.0 |
 | ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
-| ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
+| ModelingAlgorithms | TKXMesh | 2 / 2 | 100 / 100 | 100.0 |
 | ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
@@ -80,9 +80,9 @@ broken down by package.
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
 | Visualization | TKOpenGl | 0 / 155 | 0 / 80,774 | 0.0 |
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
-| Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
-| Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 2156 | 702,314 / 2,897,781 | 24.2 |
+| Visualization | TKService | 1 / 380 | 28 / 69,480 | 0.0 |
+| Visualization | TKV3d | 5 / 493 | 2,282 / 112,071 | 2.0 |
+| **All** |  | 2380 | 744,062 / 2,897,781 | 25.7 |
 
 ## TKMath
 
@@ -116,9 +116,9 @@ broken down by package.
 |---|---:|---:|---:|
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
-| Message | 3 / 50 | 897 / 7,261 | 12.4 |
-| NCollection | 26 / 81 | 12,934 / 26,993 | 47.9 |
-| OSD | 0 / 94 | 0 / 19,678 | 0.0 |
+| Message | 24 / 50 | 4,552 / 7,261 | 62.7 |
+| NCollection | 30 / 81 | 13,941 / 26,993 | 51.6 |
+| OSD | 2 / 94 | 646 / 19,678 | 3.3 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
 | Quantity | 0 / 14 | 0 / 6,917 | 0.0 |
@@ -170,6 +170,15 @@ broken down by package.
 | TopClass | 2 / 2 | 405 / 405 | 100.0 |
 | TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
 
+## TKMesh
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepMesh | 102 / 102 | 16,826 / 16,826 | 100.0 |
+| BRepMeshData | 12 / 12 | 919 / 919 | 100.0 |
+| IMeshData | 22 / 22 | 1,077 / 1,077 | 100.0 |
+| IMeshTools | 20 / 20 | 1,108 / 1,108 | 100.0 |
+
 ## TKPrim
 
 | Package | Files ported | Lines ported | % of lines |
@@ -179,6 +188,22 @@ broken down by package.
 | BRepPrimAPI | 23 / 23 | 3,076 / 3,076 | 100.0 |
 | BRepSweep | 20 / 20 | 4,049 / 4,049 | 100.0 |
 | Sweep | 8 / 8 | 626 / 626 | 100.0 |
+
+## TKShHealing
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| SHMessage | 0 / 2 | 0 / 572 | 0.0 |
+| ShapeAlgo | 0 / 7 | 0 / 1,048 | 0.0 |
+| ShapeAnalysis | 18 / 44 | 11,359 / 19,056 | 59.6 |
+| ShapeBuild | 6 / 8 | 1,233 / 1,692 | 72.9 |
+| ShapeConstruct | 0 / 8 | 0 / 5,043 | 0.0 |
+| ShapeCustom | 0 / 27 | 0 / 6,081 | 0.0 |
+| ShapeExtend | 8 / 18 | 1,508 / 3,427 | 44.0 |
+| ShapeFix | 0 / 53 | 0 / 31,777 | 0.0 |
+| ShapeProcess | 0 / 13 | 0 / 2,983 | 0.0 |
+| ShapeProcessAPI | 0 / 2 | 0 / 254 | 0.0 |
+| ShapeUpgrade | 0 / 76 | 0 / 16,364 | 0.0 |
 
 ## TKTopAlgo
 
@@ -200,6 +225,12 @@ broken down by package.
 | IntCurvesFace | 5 / 5 | 1,172 / 1,172 | 100.0 |
 | MAT | 0 / 25 | 0 / 3,179 | 0.0 |
 | MAT2d | 0 / 14 | 0 / 5,982 | 0.0 |
+
+## TKXMesh
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| XBRepMesh | 2 / 2 | 100 / 100 | 100.0 |
 
 ## TKBRep
 
@@ -271,4 +302,35 @@ broken down by package.
 | LProp | 9 / 9 | 843 / 843 | 100.0 |
 | ProjLib | 32 / 32 | 12,847 / 12,847 | 100.0 |
 | gce | 48 / 48 | 4,513 / 4,513 | 100.0 |
+
+## TKService
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Aspect | 1 / 82 | 28 / 7,198 | 0.4 |
+| Cocoa | 0 / 2 | 0 / 205 | 0.0 |
+| Font | 0 / 19 | 0 / 5,646 | 0.0 |
+| Graphic3d | 0 / 198 | 0 / 38,107 | 0.0 |
+| Image | 0 / 20 | 0 / 6,453 | 0.0 |
+| Media | 0 / 18 | 0 / 3,240 | 0.0 |
+| Shaders | 0 / 27 | 0 / 4,753 | 0.0 |
+| WNT | 0 / 10 | 0 / 2,005 | 0.0 |
+| Wasm | 0 / 2 | 0 / 969 | 0.0 |
+| Xw | 0 / 2 | 0 / 904 | 0.0 |
+
+## TKV3d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| AIS | 0 / 107 | 0 / 32,185 | 0.0 |
+| DsgPrs | 0 / 51 | 0 / 8,092 | 0.0 |
+| Prs3d | 3 / 60 | 1,992 / 6,160 | 32.3 |
+| PrsDim | 0 / 56 | 0 / 18,859 | 0.0 |
+| PrsMgr | 0 / 9 | 0 / 2,819 | 0.0 |
+| Select3D | 0 / 40 | 0 / 6,943 | 0.0 |
+| SelectBasics | 0 / 4 | 0 / 432 | 0.0 |
+| SelectMgr | 0 / 62 | 0 / 15,374 | 0.0 |
+| StdPrs | 2 / 52 | 290 / 9,149 | 3.2 |
+| StdSelect | 0 / 18 | 0 / 2,412 | 0.0 |
+| V3d | 0 / 34 | 0 / 9,646 | 0.0 |
 

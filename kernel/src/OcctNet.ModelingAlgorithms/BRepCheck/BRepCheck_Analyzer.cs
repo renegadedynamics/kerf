@@ -3,7 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using System.Runtime.ExceptionServices;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -227,7 +226,7 @@ public class BRepCheck_Analyzer
         int aMapSize = myMap.Extent();
         const int aMinTaskSize = 10;
         // OSD_ThreadPool::DefaultPool()->NbThreads() is the number of logical processors
-        int aNbThreads = Environment.ProcessorCount;
+        int aNbThreads = OSD_Parallel.NbLogicalProcessors();
         int aNbTasks = aNbThreads * 10;
         int aTaskSize = (int)Math.Ceiling((double)aMapSize / aNbTasks);
         if (aTaskSize < aMinTaskSize)
@@ -263,26 +262,7 @@ public class BRepCheck_Analyzer
         }
 
         var aParallelAnalyzer = new BRepCheck_ParallelAnalyzer(aArrayOfArray, myMap);
-        // OSD_Parallel::For(0, aArrayOfArray.Length(), aParallelAnalyzer, !myIsParallel)
-        if (!myIsParallel || aArrayOfArray.Length() <= 1)
-        {
-            for (int i = 0; i < aArrayOfArray.Length(); ++i)
-            {
-                aParallelAnalyzer.Perform(i);
-            }
-        }
-        else
-        {
-            try
-            {
-                Parallel.For(0, aArrayOfArray.Length(), aParallelAnalyzer.Perform);
-            }
-            catch (AggregateException anAggregate) when (anAggregate.InnerExceptions.Count > 0)
-            {
-                // OSD_Parallel rethrows the first exception of a task
-                ExceptionDispatchInfo.Capture(anAggregate.InnerExceptions[0]).Throw();
-            }
-        }
+        OSD_Parallel.For(0, aArrayOfArray.Length(), aParallelAnalyzer.Perform, !myIsParallel);
     }
 
     private bool ValidSub(in TopoDS_Shape S, TopAbs_ShapeEnum SubType)

@@ -28,6 +28,6 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup Condition="'$(IsPackable)' != 'false'">
-    <None Include="$(RepoRoot)README.md;$(RepoRoot)LICENSE;$(RepoRoot)OCCT_LGPL_EXCEPTION.txt;$(RepoRoot)NOTICE;$(RepoRoot)CHANGELOG.md" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(RepoRoot)README.md;$(RepoRoot)LICENSE;$(RepoRoot)OCCT_LGPL_EXCEPTION.txt;$(RepoRoot)NOTICE;$(RepoRoot)THIRD-PARTY-NOTICES.md;$(RepoRoot)CHANGELOG.md" Pack="true" PackagePath="" Visible="false" />
   </ItemGroup>
 </Project>

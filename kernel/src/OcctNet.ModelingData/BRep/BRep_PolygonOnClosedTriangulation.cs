@@ -15,10 +15,32 @@ public class BRep_PolygonOnClosedTriangulation : BRep_PolygonOnTriangulation
                                              Poly_PolygonOnTriangulation? P2,
                                              Poly_Triangulation? T,
                                              in TopLoc_Location L)
-        : base(P1, T, L)
+        : this(P1, P2, T, L, true)
     {
-        P2?.Freeze(); // OCCT.NET: attached meshes are frozen
+    }
+
+    /// <summary>
+    /// The polygons <paramref name="P1"/> and <paramref name="P2"/> on <paramref name="T"/>, all frozen if
+    /// <paramref name="theToFreeze"/> (the mesher's non-freezing attach, decision 488).
+    /// </summary>
+    internal BRep_PolygonOnClosedTriangulation(Poly_PolygonOnTriangulation? P1,
+                                               Poly_PolygonOnTriangulation? P2,
+                                               Poly_Triangulation? T,
+                                               in TopLoc_Location L,
+                                               bool theToFreeze)
+        : base(P1, T, L, theToFreeze)
+    {
+        if (theToFreeze)
+        {
+            P2?.Freeze(); // OCCT.NET: attached meshes are frozen
+        }
         myPolygon2 = P2;
+    }
+
+    internal override void FreezeContents()
+    {
+        base.FreezeContents();
+        myPolygon2?.Freeze();
     }
 
     /// <summary>True.</summary>

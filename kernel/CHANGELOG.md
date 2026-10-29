@@ -307,3 +307,136 @@ Phase 3 (part): Draw-lite construction, distance and modification commands.
   (values and solution shapes), the constructions and `profile` (BRep text) and the modifications, all identical but
   for vertex tolerances OCCT's in-place UpdateTolerances writes in address order. The corpus has 714 runnable cases
   (380 before) and 327 OK (13 before); `lappend` no longer formats a whole list again on each call.
+
+Phase 4 (part): Draw-lite mesh readers.
+
+- Draw-lite (tests, not packaged): `tclean`, `trinfo` (with `-lods`), `triepoints`, `trmergenodes`, `correctnormals`,
+  `triarea`, `tricheck` (MeshTest_CheckTopology) and `mpparallel`; DrawResources' `checktrinfo` runs. In-place commands
+  work on a copy of the shape's graph and bind it. DrawCorpus reads the grids that list their cases' directory in a
+  `cases.list` (mesh, heal, chamfer, opengl, xml): 21,068 cases where it saw 17,237. `dgetenv` of an unset variable
+  returns an empty result, as Draw's.
+- Tests: unit tests of every command; oracle tests against native OCCT on 525 meshed shapes (5,769 values of trinfo,
+  triarea and tricheck bit-identical, 974 BRep texts after correctnormals and tclean byte-identical). The corpus has
+  961 runnable cases (734 before) and 452 OK (347 before).
+Phase 4 (part): ShapeAnalysis's wire analysis.
+
+- `OcctNet.ModelingAlgorithms`: from TKShHealing, ShapeExtend (`ShapeExtend`, `ShapeExtend_Status`,
+  `ShapeExtend_WireData`, `ShapeExtend_ComplexCurve`), ShapeAnalysis (`ShapeAnalysis`'s statics including `OuterWire`,
+  `IsOuterBound`, `TotCross2D` and `GetFaceUVBounds`; `ShapeAnalysis_Wire`, `WireOrder`, `Edge`, `Curve`, `Surface`,
+  `TransferParameters`, `TransferParametersProj`) and ShapeBuild (`ShapeBuild`, `ShapeBuild_Edge`,
+  `ShapeBuild_Vertex`). The analyses only read their shapes and work on frozen ones; the shapes and curves they hand
+  out are frozen. ShapeBuild_Edge's writers are internal, with functional twins (`RangesCopied`, `PCurveReplaced`,
+  `Curve3dBuilt`, ...) that return a new edge sharing what didn't change.
+- Tests: OCCT's ShapeAnalysis_Edge GTest; known-answer tests (wire order of shuffled and reversed edges, outer wires of
+  faces with holes, every wire check, projections, UV on every surface kind including singular ones); oracle tests of
+  ShapeAnalysis_Curve, Surface and Edge against native OCCT, 907,014 values, all bit-identical.
+Phase 4 (part): mesh foundations and data model (unit 4A).
+
+- `OcctNet.Foundation`: Message_Algorithm with its statuses (Message_ExecStatus, Message_Status), Message_Msg,
+  Message_Messenger and printers, and the `Message` statics, whose default messenger sends nothing;
+  NCollection_EBTree and NCollection_MapAlgo; an internal `OSD_Parallel` that every parallel loop of the port now uses,
+  with a sequential fallback where there are no threads (WebAssembly).
+- `OcctNet.ModelingAlgorithms`: IMeshData, IMeshTools (with `IMeshTools_Parameters`, an equatable value) and
+  BRepMeshData; BRepMesh_GeomTool, DefaultRangeSplitter, ShapeTool, Deflection, EdgeParameterProvider, DiscretRoot;
+  `BRepMesh_IncrementalMesh`'s copy-for-write shell: a frozen shape is meshed on a copy, `Shape()` returns the frozen
+  result with a `History()`, and `Meshed` is the functional form (the meshing algorithms themselves come in later
+  units).
+- `OcctNet.ModelingData`: the mesher's non-freezing attach of triangulations and polygons, frozen with the shape when
+  it is published.
+- Tests: the GTests of BRepMesh_GeomTool, Message_Messenger, OSD_Parallel and NCollection_UBTree's EBTree cases; unit
+  tests of the data model, the parameters, the shape tools and the copy for write; an oracle of GeomTool and Deflection
+  against native OCCT's free-edge polygons (300 edges, 6,126 points, every count equal, values within 5e-15 through
+  BRep text).
+
+Phase 4 (part): the discrete model and edge discretisation (unit 4C).
+
+- `OcctNet.ModelingAlgorithms`: BRepMesh_ShapeVisitor and BRepMesh_ModelBuilder (the discrete model of a shape, each
+  face's wires ordered by ShapeAnalysis_Wire, the outer one first), BRepMesh_CurveTessellator and
+  BRepMesh_EdgeTessellationExtractor, BRepMesh_EdgeDiscret (edges tessellated, or read back from polygons that fit),
+  BRepMesh_FaceChecker and BRepMesh_ModelHealer (gaps closed, self-intersecting edges refined), BRepMesh_ModelPreProcessor
+  (meshes reused or outdated, cone seams split) and BRepMesh_ModelPostProcessor (polygons, deflections and parameters
+  stored); BRepMesh_ConeRangeSplitter, which the pre-processor uses. Their parallel loops give the serial result bit for
+  bit; they write into a shape only through BRepMesh_ShapeTool, and never into a frozen one (the mesher copies first).
+- Tests: unit tests of the model (faces, wires, edges, pcurves and orientations on primitives and data/occ shapes), the
+  edges' polygons (reused from meshes the shapes carry, outdated ones removed from a copy), the healer, the cone seams,
+  the post-processor through BRepMesh_IncrementalMesh with a stub face mesher, and parallel against serial; an oracle
+  against native BRepMesh_IncrementalMesh's edge polygons on data/occ, random primitives and re-meshed shapes: every
+  polygon has the port's points, 47,851 inner nodes bit for bit, parameters within the 15 digits of BRep text.
+Phase 4 (part): the Delaunay core (unit 4B).
+
+- `OcctNet.ModelingAlgorithms`: BRepMesh's plain types (`BRepMesh_Vertex`, `Edge`, `OrientedEdge`, `Triangle`,
+  `PairOfIndex`, `Circle`, `DegreeOfFreedom`), the cell-filter inspectors and the circle and vertex tools,
+  `BRepMesh_DataStructureOfDelaun` and its selector, `BRepMesh_Delaun` (Watson's algorithm with constraint insertion and
+  frontier adjustment), `BRepMesh_MeshTool`, `BRepMesh_Classifier` and `BRepMesh_Triangulator`; Delabella, the MIT
+  Delaunay library inside OCCT (`IDelaBella`), with its notice kept and listed in THIRD-PARTY-NOTICES.md.
+- `OcctNet.Foundation`: `std_heap`, C++'s heap algorithms as MSVC implements them, so that ties sort in native OCCT's
+  order; `NCollection_IntDataMap`, OCCT's data map of integer keys iterating in OCCT's order.
+- Tests: OCCT's BRepMesh_CircleTool GTest and BRepMesh_Delaun GTests (three of the six wait for unit 4D's face
+  meshing); property tests of Watson's triangulation on random points, grids, collinear runs, duplicates and
+  near-cocircular points (empty circumcircles, Euler's formula, orientation, frontier and internal links kept, the same
+  result on every run and in parallel); Watson against Delabella on the same constrained point sets; the heap order
+  against orders recorded from an MSVC-built program; Delabella against output recorded from OCCT's own delabella.cpp
+  built with MSVC.
+
+Phase 4 (part): face meshing and the incremental mesh (unit 4D). Shapes now mesh as native OCCT meshes them.
+
+- `OcctNet.ModelingAlgorithms`: the face algorithms (`BRepMesh_BaseMeshAlgo`, `ConstrainedBaseMeshAlgo`,
+  `DelaunayBaseMeshAlgo`, `CustomBaseMeshAlgo`, `DelabellaBaseMeshAlgo`; the node-insertion, Delaunay node-insertion and
+  deflection-control algorithms as generics over the range splitter, for Watson and, as `...OfDelabella`, for
+  Delabella); the range splitters of every surface type (UVParam, NURBS, Cylinder, Sphere, Torus, Extrusion, Undefined,
+  BoundaryParams); `BRepMesh_MeshAlgoFactory` and `BRepMesh_DelabellaMeshAlgoFactory`; `BRepMesh_FaceDiscret`;
+  `BRepMesh_Context`; the plugin registry (`BRepMesh_DiscretAlgoFactory` with "FastDiscret" and `XBRepMesh_Factory`'s
+  "XBRepMesh", `BRepMesh_DiscretFactory`). `BRepMesh_IncrementalMesh` now meshes: a frozen shape on a copy, whose
+  frozen result is `Shape()` with a `History()`, or functionally with `BRepMesh_IncrementalMesh.Meshed(shape,
+  parameters)`. Parallel meshing gives the serial result bit for bit.
+- Tests: OCCT's BRepMesh_BaseMeshAlgo, BRepMesh_DiscretAlgoFactory and BRepMesh_IncrementalMesh GTests (the Fuse case
+  waits for phase 6) and the three BRepMesh_Delaun GTests that waited for face meshing; unit tests of the range
+  splitters, of Watson and Delabella on every surface type, of the parameters native OCCT's binding can't set, and of
+  Delabella in parallel. Oracle milestone 1 against native BRepMesh_IncrementalMesh on the same input, with several
+  deflections and angles, relative and absolute, serial and parallel: data/occ, the mesh group's 82 public data
+  files, the public dataset's .brep files, random native shapes (primitives, fillets, Booleans, sweeps) and
+  re-meshed shapes. Every compared face is bit-identical to native (nodes, UV nodes, triangles, deflection), every
+  BRep text is byte-identical but for the Checked flag of faces the mesher keeps (decision 4605), the status flags
+  agree, and BRepGProp and BRepBndLib on the meshes are bit-identical; the port's parallel runs equal its serial run.
+
+Phase 4 (part): Draw-lite incmesh and the corpus milestone (unit 4L2).
+
+- `OcctNet.ModelingAlgorithms`: meshing for display as OCCT's presentations do it: `Prs3d_Drawer` (its deflection
+  settings: type of deflection, deviation coefficient and angle, maximal chordial deviation, automatic
+  triangulation, links), `Prs3d.GetDeflection`, `StdPrs_ToolTriangulatedShape` (`GetDeflection`, `IsTessellated`,
+  `Tessellate`, with a twin returning the meshed copy and its history), `Aspect_TypeOfDeflection`.
+- Draw-lite (tests, not packaged): `incmesh` with all its options (`-a`, `-min`, `-relative`, `-parallel`, `-algo`,
+  `-di`, `-ai`, `-prs`, `-surf_def_all`, `-surf_def_off`, `-int_vert_off`, `-force_face_def`, `-decrease`,
+  `-adjust_min`), `tessellate`, `mpnames`, `mpsetdefaultname`, `mpgetdefaultname`, `mpincmesh`; `mpparallel` sets the
+  mesher's process-wide default. Commands that change a shape in place in OCCT (incmesh, mpincmesh, tclean,
+  trmergenodes, correctnormals, and the viewer's meshing) now rebind every variable that shares the changed
+  sub-shapes, as in DRAWEXE. `vdisplay`, `vsetdispmode`, `vdefaults`, `vinit`, `vclose`, `verase`, `vremove`, `vclear`
+  and `vdisplayall` mesh what they display as AIS does (selection and shaded presentation); `vglinfo` is ignored.
+  The corpus scan knows the mesh group's STEP-only branch. Tcl's `time` returns an integer for one iteration.
+- Tests: unit tests of every command and of the StdPrs port; oracle tests of incmesh (deflection, `-relative`, `-a`,
+  `-parallel`) and of vdisplay's meshing against native OCCT on 72 shapes: 288 runs, every BRep text byte-identical
+  (4 but for the Checked flag of decision 551), every exploded face rebound to native's mesh, 1,656 values equal.
+  **The corpus milestone**: 21,068 cases, 1,834 runnable (961 before), 841 OK, 28 BAD (OCCT's own TODOs),
+  1 IMPROVEMENT, 947 SKIPPED (data files the public dataset lacks), 17 FAILED (later commands, viewer queries,
+  plugin loading, an OCCT test bug; none on a port bug). The mesh group: 684 of its 699 cases runnable, 233 OK,
+  16 BAD (OCCT's TODOs), 435 SKIPPED, none FAILED.
+Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spike (unit 4W).
+
+- `OcctNet.ModelingAlgorithms`: `OcctNet.MeshExtraction` (an OCCT.NET addition, namespace `OcctNet`): a meshed
+  shape's faces as located nodes, outward normals and outward-wound triangles, and its edges as polylines, in flat
+  `MeshBuffers` laid out as build123d.NET's native `Extras.ExtractMesh`, in the order of build123d.NET's
+  `Shape.Faces()` and `Edges()` (`MeshExtraction.Faces`, `Edges`) or of given sub-shapes. It only reads the shape
+  (normals are computed on a copy), so it is safe from any thread on a shared shape.
+- `benchmarks/OcctNet.Benchmarks`: mesh-and-extract against native OCCT through build123d.NET (BenchmarkDotNet in
+  process, a Stopwatch table, allocation sampling). Serially the port is 0.9–1.5× native; in parallel it is
+  allocation-bound (1.4–4.5× native under workstation GC). Typical models mesh and extract in 7–65 ms.
+- `samples/OcctNet.WasmDemo`: reads a .brep, meshes it, extracts the buffers and draws them with WebGL 2 in the
+  browser, built as Bento.Web is (plain WebAssembly, interpreter, single-threaded, trimmed, no workload);
+  `run-headless.ps1` runs it over a folder in headless Chrome and compares with win-x64. OcctNet's trimmed
+  assemblies are 2.39 MB (1.08 MB Brotli); typical models take 0.24–0.7 s in the browser; 92.5% of faces and every
+  edge are bit-identical to win-x64 (the rest come from the browser's sin and cos).
+- Tests: unit tests of the extraction (counts, order, normals on planar and curved faces, located, mirrored and
+  reversed shapes, edges from polygons on triangulation, 3D polygons and GCPnts, thread safety); the extraction
+  oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
+  (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
+  6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).

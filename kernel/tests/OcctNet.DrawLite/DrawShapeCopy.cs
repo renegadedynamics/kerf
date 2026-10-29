@@ -30,14 +30,7 @@ internal static class DrawShapeCopy
         TopoDS_TShape aTShape = theShape.TShape()!;
         if (!theMap.TryGetValue(aTShape, out TopoDS_TShape? aCopy))
         {
-            aCopy = CopyRepresentations(aTShape);
-            aCopy.Free(aTShape.Free());
-            aCopy.Modified(aTShape.Modified());
-            aCopy.Checked(aTShape.Checked());
-            aCopy.Orientable(aTShape.Orientable());
-            aCopy.Closed(aTShape.Closed());
-            aCopy.Infinite(aTShape.Infinite());
-            aCopy.Convex(aTShape.Convex());
+            aCopy = CopyNode(aTShape);
             foreach (TopoDS_Shape aChild in aTShape.myShapes)
             {
                 aCopy.myShapes.Append(Copy(aChild, theMap));
@@ -49,6 +42,20 @@ internal static class DrawShapeCopy
         TopoDS_Shape aResult = theShape;
         aResult.TShape(aCopy);
         return aResult;
+    }
+
+    /// <summary>A copy of the TShape without its children: its flags and its representations.</summary>
+    internal static TopoDS_TShape CopyNode(TopoDS_TShape theTShape)
+    {
+        TopoDS_TShape aCopy = CopyRepresentations(theTShape);
+        aCopy.Free(theTShape.Free());
+        aCopy.Modified(theTShape.Modified());
+        aCopy.Checked(theTShape.Checked());
+        aCopy.Orientable(theTShape.Orientable());
+        aCopy.Closed(theTShape.Closed());
+        aCopy.Infinite(theTShape.Infinite());
+        aCopy.Convex(theTShape.Convex());
+        return aCopy;
     }
 
     private static TopoDS_TShape CopyRepresentations(TopoDS_TShape theTShape)

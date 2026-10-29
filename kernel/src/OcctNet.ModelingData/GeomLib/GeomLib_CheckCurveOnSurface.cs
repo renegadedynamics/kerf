@@ -115,7 +115,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                              anIntervals);
 
             // OSD_ThreadPool's default pool launches one thread per logical processor.
-            int aNbThreads = myIsParallel ? Min(anIntervals.Length(), Environment.ProcessorCount) : 1;
+            int aNbThreads = myIsParallel ? Min(anIntervals.Length(), OSD_Parallel.NbLogicalProcessors()) : 1;
             NCollection_Array1<Adaptor3d_Curve> aCurveArray = new(0, aNbThreads - 1);
             NCollection_Array1<Adaptor3d_Curve> aCurveOnSurfaceArray = new(0, aNbThreads - 1);
             for (int anI = 0; anI < aNbThreads; ++anI)
@@ -134,20 +134,13 @@ public sealed class GeomLib_CheckCurveOnSurface
                 // OSD_ThreadPool::Launcher: each thread takes the next element of [Lower, Upper); every element is
                 // computed on its own, so the distribution doesn't change the results.
                 int aLower = anIntervals.Lower(), anUpper = anIntervals.Upper();
-                try
+                OSD_Parallel.For(0, aNbThreads, theThreadIndex =>
                 {
-                    Parallel.For(0, aNbThreads, theThreadIndex =>
+                    for (int anI = aLower + theThreadIndex; anI < anUpper; anI += aNbThreads)
                     {
-                        for (int anI = aLower + theThreadIndex; anI < anUpper; anI += aNbThreads)
-                        {
-                            aComp.Run(theThreadIndex, anI);
-                        }
-                    });
-                }
-                catch (AggregateException anExc) when (anExc.InnerException is Standard_Failure)
-                {
-                    throw anExc.InnerException;
-                }
+                        aComp.Run(theThreadIndex, anI);
+                    }
+                });
             }
             else
             {

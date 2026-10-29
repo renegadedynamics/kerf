@@ -45,6 +45,29 @@ public class DrawCorpusTests(ITestOutputHelper output)
         Assert.DoesNotContain(aMissing, m => aTclCore.Contains(m.Command));
     }
 
+    [Fact]
+    public void Grids_with_a_cases_list_read_their_cases_from_the_directory_it_names()
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        List<DrawTestCase> aMesh = aCorpus.Cases().Where(c => c.Group == "mesh").ToList();
+
+        // three grids on data/standard's 212 cases, three on data/advanced's 21
+        Assert.Equal(3 * 212 + 3 * 21, aMesh.Count);
+        DrawTestCase aCase = aMesh.Single(c => c.Grid == "standard_incmesh" && c.Name == "A1");
+        Assert.Equal(Path.GetFullPath(Path.Combine(TestsDirectory, "mesh", "data", "standard", "A1")), aCase.Path);
+        Assert.True(aCorpus.IsListed(aCase));
+        Assert.False(aCorpus.IsListed(aCorpus.Cases().First(c => c.Group == "bugs")));
+
+        // the grid's own begin and end scripts run around the case
+        string aScript = aCorpus.Script(aCase);
+        Assert.Contains("set command incmesh", aScript, StringComparison.Ordinal);
+        Assert.Contains("set TheFileName shading_001.brep", aScript, StringComparison.Ordinal);
+        Assert.Contains("tricheck res", aScript, StringComparison.Ordinal);
+
+        // the scan before unit 4L1 didn't see them
+        Assert.DoesNotContain(new DrawCorpus(TestsDirectory) { ReadCaseLists = false }.Cases(), c => c.Group == "mesh");
+    }
+
     /// <summary>The Draw commands unit 3L1 added (dset and protect were no-ops before it).</summary>
     internal static readonly string[] Unit3L1Commands =
     [
@@ -135,6 +158,51 @@ public class DrawCorpusTests(ITestOutputHelper output)
         theInterpreter.Eval("unset -nocomplain Draw_Files");
     }
 
+    /// <summary>The Draw commands unit 4L1 added: the readers of the meshes shapes carry.</summary>
+    internal static readonly string[] Unit4L1Commands =
+    [
+        "tclean", "trinfo", "triepoints", "trmergenodes", "correctnormals", "mpparallel", "triarea", "tricheck",
+    ];
+
+    /// <summary>Draw-lite as phase 3 left it: without 4L1's commands.</summary>
+    internal static void Before4L1(DrawInterpreter theInterpreter)
+    {
+        foreach (string aCommand in Unit4L1Commands)
+        {
+            theInterpreter.Eval($"rename {aCommand} {{}}");
+        }
+    }
+
+    /// <summary>
+    /// The Draw commands unit 4L2 added: the mesher's commands, and the viewer commands that mesh what they display
+    /// (vinit, vdisplay, vsetdispmode and vclose were no-ops before it, and vglinfo, an ignored viewer query, is new).
+    /// </summary>
+    internal static readonly string[] Unit4L2Commands =
+    [
+        "incmesh", "tessellate", "mpnames", "mpsetdefaultname", "mpgetdefaultname", "mpincmesh", "vdisplay",
+        "vdisplayall", "vsetdispmode", "vunsetdispmode", "vdefaults", "verase", "vremove", "vclear", "vglinfo",
+    ];
+
+    /// <summary>The viewer commands that were no-ops before unit 4L2.</summary>
+    internal static readonly string[] Unit4L2FormerNoOps = ["vinit", "vdisplay", "vclear", "vsetdispmode", "vclose"];
+
+    /// <summary>
+    /// Draw-lite as unit 4L1 left it: without 4L2's commands, its former no-ops back. (mpparallel now sets the
+    /// mesher's process-wide default; the meshes don't depend on it, decision 490.)
+    /// </summary>
+    internal static void Before4L2(DrawInterpreter theInterpreter)
+    {
+        foreach (string aCommand in Unit4L2Commands)
+        {
+            theInterpreter.Eval($"rename {aCommand} {{}}");
+        }
+
+        foreach (string aCommand in Unit4L2FormerNoOps)
+        {
+            theInterpreter.Register(aCommand, static (_, _) => "");
+        }
+    }
+
     private static readonly System.Text.RegularExpressions.Regex s_failure =
         new(@"\b(?:[Ee]xception|[Ee][Rr][Rr][Oo][Rr]|[Ff][Aa][Ii][Ll](?:[0-9]|[Ee][Dd]|[Uu][Rr][Ee]))\b|could not be found");
 
@@ -144,8 +212,9 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
     /// <summary>
     /// Runs every case whose commands are all implemented, as OCCT's harness does, and judges each log with OCCT's
-    /// own _check_log; reports the cases runnable before and after phase 3's last wave (units 3M and 3L2b), the
-    /// statuses, and what blocks the rest.
+    /// own _check_log; reports the cases runnable before and after unit 4L2 (its commands, and the scan's knowledge of
+    /// the mesh group's data-file branch), the statuses, and what blocks the rest. The totals are given for the grids
+    /// without a cases.list, for those with one (mesh, heal, chamfer, opengl, xml), and for the mesh group apart.
     /// </summary>
     [Fact]
     public void Runnable_cases_run_and_OCCTs_log_check_judges_them()
@@ -156,14 +225,20 @@ public class DrawCorpusTests(ITestOutputHelper output)
         anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
         var aBefore = new DrawInterpreter();
         aBefore.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        Before3M(aBefore);
-        Before3L2b(aBefore);
+        Before4L2(aBefore);
+        var aCorpusBefore = new DrawCorpus(TestsDirectory) { KnowsDataFileBranches = false };
 
         List<DrawTestCase> aCases = aCorpus.Cases().ToList();
+        HashSet<string> aListed = aCases.Where(aCorpus.IsListed).Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
         var aScans = aCases.AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
-        List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpusBefore.Scan(c, aBefore).IsRunnable).ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        output.WriteLine($"{aCases.Count} cases; runnable before 3M and 3L2b: {aRunnableBefore.Count}, now: {aRunnable.Count}");
+        output.WriteLine($"{aCases.Count} cases ({aCases.Count - aListed.Count} in the former grids, {aListed.Count} in the cases.list grids)");
+        output.WriteLine($"mesh group: {aCases.Count(c => c.Group == "mesh")} cases");
+        output.WriteLine($"runnable before 4L2: {aRunnableBefore.Count} ({aRunnableBefore.Count(c => aListed.Contains(c.Id))} in the cases.list grids, "
+                         + $"{aRunnableBefore.Count(c => c.Group == "mesh")} in mesh), "
+                         + $"now: {aRunnable.Count} ({aRunnable.Count(c => aListed.Contains(c.Id))} in the cases.list grids, "
+                         + $"{aRunnable.Count(c => c.Group == "mesh")} in mesh)");
 
         List<DrawCaseRun> Run(List<DrawTestCase> theCases, Action<DrawInterpreter>? theSetup)
             => theCases.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
@@ -173,12 +248,21 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
         void Statuses(string theWhat, List<DrawCaseRun> theRuns)
         {
-            output.WriteLine($"{theWhat}: " + string.Join(", ", theRuns.GroupBy(r => r.Status.Split(' ')[0])
-                                                                        .OrderBy(g => g.Key, StringComparer.Ordinal)
-                                                                        .Select(g => $"{g.Key} {g.Count()}")));
+            string Counts(IEnumerable<DrawCaseRun> theSome)
+            {
+                string aCounts = string.Join(", ", theSome.GroupBy(r => r.Status.Split(' ')[0])
+                                                          .OrderBy(g => g.Key, StringComparer.Ordinal)
+                                                          .Select(g => $"{g.Key} {g.Count()}"));
+                return aCounts.Length > 0 ? aCounts : "none";
+            }
+
+            output.WriteLine($"{theWhat}: {Counts(theRuns)}");
+            output.WriteLine($"  former grids: {Counts(theRuns.Where(r => !aListed.Contains(r.Case.Id)))}");
+            output.WriteLine($"  cases.list grids: {Counts(theRuns.Where(r => aListed.Contains(r.Case.Id)))}");
+            output.WriteLine($"  mesh group: {Counts(theRuns.Where(r => r.Case.Group == "mesh"))}");
         }
 
-        Statuses("before 3M and 3L2b", Run(aRunnableBefore, t => { Before3M(t); Before3L2b(t); }));
+        Statuses("before 4L2", Run(aRunnableBefore, Before4L2));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
 
