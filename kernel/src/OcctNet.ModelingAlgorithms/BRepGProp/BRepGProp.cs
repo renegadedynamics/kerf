@@ -125,7 +125,7 @@ public static class BRepGProp
         P.Transform(S.Location().Transformation());
         LProps.Assign(new GProp_GProps(P));
 
-        GeomAdaptor_TransformedCurve BAC; // TODO(3B): BRepAdaptor_Curve
+        var BAC = new BRepAdaptor_Curve();
         var anEMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         var ex = new TopExp_Explorer();
         for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
@@ -154,7 +154,7 @@ public static class BRepGProp
             {
                 if (IsGeom)
                 {
-                    BAC = BRepLib_CheckCurveOnSurface.BRepAdaptorCurve(aE); // TODO(3B): BAC.Initialize(aE)
+                    BAC.Initialize(aE);
                     var CG = new BRepGProp_Cinert(BAC, P);
                     LProps.Add(CG);
                 }

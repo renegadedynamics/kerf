@@ -56,10 +56,8 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             var aModification = new BRepTools_TrsfModification(aT);
             aModification.IsCopyMesh() = aCopyMesh;
             var aModifier = new BRepTools_Modifier(aShape.P, aModification);
-            // TODO(6A): TrsfModification gives planar faces no pcurves (OCCT computes them on the fly with
-            // BRep_Tool::CurveOnPlane, which projects), so the faces on planes are compared once unit 6A is merged.
-            CompareResult(anOracle, aShape, aNTransform.Shape(), aModifier, aNTransform.ModifiedShape, aCounts,
-                          f => BRep_Tool.Surface(f) is not Geom_Plane);
+            // TrsfModification gives planar faces no pcurves: BRep_Tool computes them on the fly (CurveOnPlane)
+            CompareResult(anOracle, aShape, aNTransform.Shape(), aModifier, aNTransform.ModifiedShape, aCounts);
             aNT.Dispose();
         }
 
@@ -87,6 +85,116 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
         output.WriteLine($"{Scenes} scenes: {aCounts.Shapes} explored sub-shapes, {aCounts.Edges} edges, {aCounts.Faces} faces");
         anOracle.Report("BRepTools_Modifier with BRepTools_GTrsfModification against BRepBuilderAPI_GTransform");
+    }
+
+    /// <summary>
+    /// BRepTools_NurbsConvertModification on shapes with faces. BRepBuilderAPI_NurbsConvert isn't bound, but
+    /// BRepBuilderAPI_GTransform runs it first (the modifier with the NURBS conversion, then CorrectVertexTol) and
+    /// then the modifier with the general transformation; the port's side mirrors those two steps. The scenes are the
+    /// global properties oracle's (boxes, whose pcurves on planes are projected with ProjLib_ComputeApprox; closed
+    /// cylinders, whose circles and seam are projected with ProjLib_ComputeApproxOnPolarSurface; holed faces;
+    /// compounds sharing solids at rigid, reversed and scaled locations; natural spheres, tori and sphere patches;
+    /// B-spline faces; meshed boxes), with an identity or a random affine transformation.
+    /// </summary>
+    [Fact]
+    public void NURBS_conversion_answers_as_BRepBuilderAPI_GTransform()
+    {
+        var anOracle = new Oracle(output, 20261030);
+        var aCounts = new TopologyOracleTests.Counts();
+        int aReplaced = 0;
+        for (int aScene = 0; aScene < Scenes; aScene++)
+        {
+            // the mesh-only tetrahedron (scene 7) has no geometry to convert
+            (Twin<N.TopoDS_Shape, TopoDS_Shape> aShape, _) = BRepGPropOracleTests.RandomScene(anOracle, aScene % 7);
+            aShape.P.TShape()!.FreezeGraph();
+            (N.gp_GTrsf aNG, gp_GTrsf aG) = anOracle.Int(0, 2) == 0
+                ? (new N.gp_GTrsf(new N.gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new N.gp_XYZ(0, 0, 0)),
+                   new gp_GTrsf(new gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new gp_XYZ(0, 0, 0)))
+                : RandomGTrsf(anOracle);
+            using (aNG)
+            {
+                using var aNGTransform = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);
+                TopoDS_Shape aConverted = NurbsConvert(aShape.P, ref aReplaced);
+                var aModifier = new BRepTools_Modifier(aConverted, new BRepTools_GTrsfModification(aG));
+                Assert.True(aModifier.IsDone());
+                Twin<N.TopoDS_Shape, TopoDS_Shape> aResult = new(aNGTransform.Shape(), aModifier.InternalModifiedShape(aConverted));
+                TopologyOracleTests.CompareFlags(anOracle, aResult);
+                aResult.P.TShape()!.FreezeGraph();
+                TopologyOracleTests.CompareTopology(anOracle, aResult, aCounts);
+                TopologyOracleTests.CompareGeometry(anOracle, aResult, aCounts);
+                CompareMeshes(anOracle, aResult);
+            }
+        }
+
+        output.WriteLine($"{Scenes} scenes: {aCounts.Shapes} explored sub-shapes, {aCounts.Edges} edges, {aCounts.Faces} faces, "
+                         + $"{aReplaced} vertices replaced by CorrectVertexTol");
+        anOracle.Report("BRepTools_Modifier with BRepTools_NurbsConvertModification (through BRepBuilderAPI_GTransform)");
+    }
+
+    // BRepBuilderAPI_NurbsConvert::Perform (unit 3K), mirrored: the modifier with the NURBS conversion, then
+    // CorrectVertexTol, which raises the tolerance of the vertices of the edges whose tolerance the conversion raised
+    // (replacing the input's own vertices by new ones). The result is unfrozen.
+    private static TopoDS_Shape NurbsConvert(in TopoDS_Shape S, ref int theReplaced)
+    {
+        var aModif = new BRepTools_NurbsConvertModification();
+        var aModifier = new BRepTools_Modifier(S, aModif);
+        Assert.True(aModifier.IsDone());
+        TopoDS_Shape myShape = aModifier.InternalModifiedShape(S);
+
+        var anInitVertices = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        for (var anExp = new TopExp_Explorer(S, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        {
+            anInitVertices.Add(anExp.Current());
+        }
+
+        var aBB = new BRep_Builder();
+        var myVtxToReplace = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        foreach (TopoDS_Shape anE in aModif.GetUpdatedEdges())
+        {
+            double anETol = BRep_Tool.Tolerance(TopoDS.Edge(anE));
+            for (var anIter = new TopoDS_Iterator(anE); anIter.More(); anIter.Next())
+            {
+                TopoDS_Vertex aVtx = TopoDS.Vertex(anIter.Value());
+                if (anInitVertices.Contains(aVtx))
+                {
+                    if (myVtxToReplace.IsBound(aVtx))
+                    {
+                        aBB.UpdateVertex(TopoDS.Vertex(myVtxToReplace[aVtx]), anETol + Standard.Epsilon(anETol));
+                    }
+                    else
+                    {
+                        double aVTol = BRep_Tool.Tolerance(aVtx);
+                        if (aVTol < anETol)
+                        {
+                            TopoDS_Vertex aNewVtx = new();
+                            gp_Pnt aVPnt = BRep_Tool.Pnt(aVtx);
+                            aBB.MakeVertex(ref aNewVtx, aVPnt, anETol + Standard.Epsilon(anETol));
+                            aNewVtx.Orientation(aVtx.Orientation());
+                            myVtxToReplace.Bind(aVtx, aNewVtx);
+                        }
+                    }
+                }
+                else
+                {
+                    aBB.UpdateVertex(aVtx, anETol + Standard.Epsilon(anETol));
+                }
+            }
+        }
+
+        if (myVtxToReplace.IsEmpty())
+        {
+            return myShape;
+        }
+
+        theReplaced += myVtxToReplace.Extent();
+        var mySubs = new BRepTools_ReShape();
+        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myVtxToReplace)
+        {
+            mySubs.Replace(anItem.Key, anItem.Value);
+        }
+
+        mySubs.InternalApply(myShape);
+        return mySubs.InternalValue(myShape);
     }
 
     [Fact]
@@ -387,7 +495,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
     private static void CompareResult(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theInput, N.TopoDS_Shape theNResult,
                                       BRepTools_Modifier theModifier, Func<N.TopoDS_Shape, N.TopoDS_Shape> theNModifiedShape,
-                                      TopologyOracleTests.Counts theCounts, Func<TopoDS_Face, bool>? theFaceFilter = null)
+                                      TopologyOracleTests.Counts theCounts)
     {
         Assert.True(theModifier.IsDone());
         TopoDS_Shape aResult = theModifier.InternalModifiedShape(theInput.P);
@@ -400,7 +508,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         Assert.True(aPublished.TShape()!.IsFrozen());
 
         TopologyOracleTests.CompareTopology(theOracle, aTwin, theCounts);
-        TopologyOracleTests.CompareGeometry(theOracle, aTwin, theCounts, theFaceFilter);
+        TopologyOracleTests.CompareGeometry(theOracle, aTwin, theCounts);
         CompareMeshes(theOracle, aTwin);
 
         foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aS in AllSubShapes(theInput))

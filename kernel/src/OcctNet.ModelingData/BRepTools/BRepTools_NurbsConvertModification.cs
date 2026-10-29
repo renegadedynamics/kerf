@@ -12,9 +12,8 @@ namespace Occt;
 /// the new geometry.
 /// </summary>
 /// <remarks>
-/// The pcurves are recomputed with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface, which
-/// come with unit 6A: until then <see cref="NewCurve2d"/> throws <see cref="Standard_NotImplemented"/> where it would
-/// project. The maps of converted geometry compare handles by reference, as OCCT's do.
+/// The pcurves are recomputed with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface. The maps
+/// of converted geometry compare handles by reference, as OCCT's do.
 /// </remarks>
 public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
 {
@@ -475,7 +474,6 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     /// The edge's pcurve on the face as a B-spline on the new surface, the edge's tolerance raised to the new
     /// deviation (recorded in <see cref="GetUpdatedEdges"/>).
     /// </summary>
-    /// <exception cref="Standard_NotImplemented">Where the pcurve must be projected again, until unit 6A.</exception>
     public override bool NewCurve2d(in TopoDS_Edge E,
                                     in TopoDS_Face F,
                                     in TopoDS_Edge newE,
@@ -619,25 +617,89 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
             else
             {
                 S = BRep_Tool.Surface(F)!; // If S is a plane, no change of parametrization
-                // TODO(6A): ProjLib_ComputeApprox ProjOnCurve(G3dAHC, new GeomAdaptor_Surface(S), Tol); then
-                // Curve2d = ProjOnCurve.BSpline(), or Geom2dConvert::CurveToBSplineCurve(ProjOnCurve.Bezier()) when
-                // null; EvalAndUpdateTol(newE, C3d, Curve2d, S, f3d, l3d) raising Tol and recording newE;
-                // myMap.Add(aBaseC2d, Curve2d); return true.
-                throw new Standard_NotImplemented(
-                    "BRepTools_NurbsConvertModification::NewCurve2d on a plane needs ProjLib_ComputeApprox (unit 6A)");
+                GeomAdaptor_Surface GAHS = new GeomAdaptor_Surface(S);
+                ProjLib_ComputeApprox ProjOnCurve = new ProjLib_ComputeApprox(G3dAHC, GAHS, Tol);
+                if (ProjOnCurve.InternalBSpline() is null)
+                {
+                    Curve2d = Geom2dConvert.CurveToBSplineCurve(ProjOnCurve.InternalBezier()!);
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d, Curve2d, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                    myMap.Add(aBaseC2d!, Curve2d);
+                    return true;
+                }
+                Curve2d = ProjOnCurve.InternalBSpline();
+                {
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d, Curve2d!, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                }
+                myMap.Add(aBaseC2d!, Curve2d!);
+                return true;
             }
 
             //
-            // TODO(6A): GeomAdaptor_Surface GAS(S, Uinf - u, Usup + u, Vinf - v, Vsup + v);
-            // ProjLib_ComputeApproxOnPolarSurface ProjOnCurve(G2dAHC, G3dAHC, GAS, Tol); if done, Curve2d =
-            // ProjOnCurve.BSpline(), translated by a period when its start is farther than half a period from the old
-            // pcurve's on a periodic surface; otherwise Curve2d = Geom2dConvert::CurveToBSplineCurve(C2d); then
-            // EvalAndUpdateTol and myMap.Add(aBaseC2d, Curve2d) as above.
-            _ = G2dAHC;
-            _ = G3dAHC;
-            _ = Loc;
-            throw new Standard_NotImplemented(
-                "BRepTools_NurbsConvertModification::NewCurve2d needs ProjLib_ComputeApproxOnPolarSurface (unit 6A)");
+            {
+                GeomAdaptor_Surface GAHS = new GeomAdaptor_Surface(S, Uinf - u, Usup + u, Vinf - v, Vsup + v);
+
+                ProjLib_ComputeApproxOnPolarSurface ProjOnCurve =
+                    new ProjLib_ComputeApproxOnPolarSurface(G2dAHC, G3dAHC, GAHS, Tol);
+
+                if (ProjOnCurve.IsDone())
+                {
+                    Curve2d = ProjOnCurve.InternalBSpline()!;
+                    if (S.IsUPeriodic() || S.IsVPeriodic())
+                    {
+                        // Surface is periodic, checking curve2d domain
+                        // Old domain
+                        double aMinDist = Precision.Infinite();
+                        if (S.IsUPeriodic())
+                        {
+                            aMinDist = Min(0.5 * S.UPeriod(), aMinDist);
+                        }
+                        if (S.IsVPeriodic())
+                        {
+                            aMinDist = Min(0.5 * S.VPeriod(), aMinDist);
+                        }
+                        aMinDist *= aMinDist;
+                        // Old domain
+                        gp_Pnt2d aPf = C2d.Value(f2d);
+                        // New domain
+                        gp_Pnt2d aNewPf = Curve2d.Value(f2d);
+                        gp_Vec2d aT = new gp_Vec2d(aNewPf, aPf);
+                        if (aT.SquareMagnitude() > aMinDist)
+                        {
+                            Curve2d = (Geom2d_Curve)Curve2d.Translated(aT);
+                        }
+                    }
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d, Curve2d, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                    myMap.Add(aBaseC2d!, Curve2d);
+                    return true;
+                }
+                else
+                {
+                    Curve2d = Geom2dConvert.CurveToBSplineCurve(C2d);
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d, Curve2d, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                    myMap.Add(aBaseC2d!, Curve2d);
+                    return true;
+                }
+            }
         }
         else
         {
@@ -657,10 +719,12 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
             { // store the edge and the 2D curve
                 Geom2d_Curve? C2dBis;
                 C2d = new Geom2d_TrimmedCurve(C2d, f2d, l2d);
+                Geom2dAdaptor_Curve G2dAHC = new Geom2dAdaptor_Curve(C2d, f2d, l2d);
                 TopoDS_Edge ERevers = E;
                 ERevers.Reverse();
                 C2dBis = BRep_Tool.CurveOnSurface(ERevers, F, out double f2dBis, out double l2dBis);
                 C2dBis = new Geom2d_TrimmedCurve(C2dBis!, f2dBis, l2dBis);
+                Geom2dAdaptor_Curve G2dAHCBis = new Geom2dAdaptor_Curve(C2dBis, f2dBis, l2dBis);
 
                 if (C3d is null)
                 {
@@ -695,6 +759,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                 {
                     C3d = BRep_Tool.Curve(newE, out f3d, out l3d);
                 }
+                GeomAdaptor_Curve G3dAHC = new GeomAdaptor_Curve(C3d!, f3d, l3d);
 
                 Geom_Surface S = BRep_Tool.Surface(F)!;
                 if (newF.IsNull())
@@ -722,15 +787,73 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                 {
                     S = BRep_Tool.Surface(newF)!; // S is a BSplineSurface: no need for the trimmed one
                 }
+                double Uinf, Usup, Vinf, Vsup, u = 0, v = 0;
+                S.Bounds(out Uinf, out Usup, out Vinf, out Vsup);
+                // Uinf -= 1e-9; Usup += 1e-9; Vinf -= 1e-9; Vsup += 1e-9;
+                u = (Usup - Uinf) * 0.1;
+                v = (Vsup - Vinf) * 0.1;
+                if (S.IsUPeriodic())
+                {
+                    double uperiod = S.UPeriod();
+                    if (uperiod < (Usup + 2 * u - Uinf))
+                    {
+                        if (uperiod <= (Usup - Uinf))
+                        {
+                            u = 0;
+                        }
+                        else
+                        {
+                            u = (uperiod - (Usup - Uinf)) * 0.5;
+                        }
+                    }
+                }
+                if (S.IsVPeriodic())
+                {
+                    double vperiod = S.VPeriod();
+                    if (vperiod < (Vsup + 2 * v - Vinf))
+                    {
+                        if (vperiod <= (Vsup - Vinf))
+                        {
+                            v = 0;
+                        }
+                        else
+                        {
+                            v = (vperiod - (Vsup - Vinf)) * 0.5;
+                        }
+                    }
+                }
+                GeomAdaptor_Surface GAHS = new GeomAdaptor_Surface(S, Uinf - u, Usup + u, Vinf - v, Vsup + v);
                 myled.Append(E);
 
-                // TODO(6A): the surface's bounds widened by a tenth (within a period), then
-                // ProjLib_ComputeApproxOnPolarSurface ProjOnCurve(G2dAHC, G2dAHCBis, G3dAHC, GAS, Tol): if done,
-                // Curve2d = ProjOnCurve.BSpline() and mylcu.Append(ProjOnCurve.Curve2d()); otherwise Curve2d =
-                // Geom2dConvert::CurveToBSplineCurve(C2d) and mylcu.Append(C2dBis); then EvalAndUpdateTol and
-                // myMap.Add(aBaseC2d, Curve2d).
-                throw new Standard_NotImplemented(
-                    "BRepTools_NurbsConvertModification::NewCurve2d on a seam needs ProjLib_ComputeApproxOnPolarSurface (unit 6A)");
+                ProjLib_ComputeApproxOnPolarSurface ProjOnCurve =
+                    new ProjLib_ComputeApproxOnPolarSurface(G2dAHC, G2dAHCBis, G3dAHC, GAHS, Tol);
+
+                if (ProjOnCurve.IsDone())
+                {
+                    Curve2d = ProjOnCurve.InternalBSpline()!;
+                    mylcu.Append(ProjOnCurve.InternalCurve2d());
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d!, Curve2d, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                    myMap.Add(aBaseC2d!, Curve2d);
+                    return true;
+                }
+                else
+                {
+                    Curve2d = Geom2dConvert.CurveToBSplineCurve(C2d);
+                    double newTol = BRepTools.EvalAndUpdateTol(newE, C3d!, Curve2d, S, f3d, l3d);
+                    if (newTol > Tol)
+                    {
+                        Tol = newTol;
+                        myUpdatedEdges.Append(newE);
+                    }
+                    mylcu.Append(C2dBis);
+                    myMap.Add(aBaseC2d!, Curve2d);
+                    return true;
+                }
             }
             else
             { // we are on the second pass

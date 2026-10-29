@@ -172,3 +172,13 @@ Phase 3 (part): global properties.
 - Tests: the BRepGProp GTests (with BRep_Builder shapes until the primitives are ported); known-answer tests; oracle
   tests of every BRepGProp form and of BRepGProp_Face against native OCCT, all bit-identical, and of BRepCheck_Shell
   and BRepLib_ValidateEdge through BRepCheck_Analyzer.
+Phase 3 (part): cross-unit integration.
+
+- `OcctNet.ModelingData`: `BRepTools_NurbsConvertModification` projects pcurves again (ProjLib_ComputeApprox on
+  planes, ProjLib_ComputeApproxOnPolarSurface elsewhere and on seams), so shapes with faces convert to NURBS.
+- `OcctNet.ModelingAlgorithms`: BRepGProp and `BRepLib_CheckCurveOnSurface` use `BRepAdaptor_Curve`;
+  `BRepGProp_Cinert` and `BRepGProp_EdgeTool` take a `BRepAdaptor_Curve`, as in OCCT.
+- `OcctNet.Foundation`: `NCollection_DataMap.Bound` replaces the value of a bound key, as OCCT's does; `TryBind` and
+  `TryBound` keep it.
+- Tests: NCollection_DataMap GTests; NURBS conversion unit tests; oracle tests of the NURBS conversion through
+  BRepBuilderAPI_GTransform, and of BRepBuilderAPI_Transform now with faces on planes, all bit-identical.

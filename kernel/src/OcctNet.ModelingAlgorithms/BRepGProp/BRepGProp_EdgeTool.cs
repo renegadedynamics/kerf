@@ -11,22 +11,18 @@ namespace Occt;
 /// The curve tool of <see cref="BRepGProp_Cinert"/>: the methods GProp's CurveTool template requires, on the curve of an
 /// edge.
 /// </summary>
-/// <remarks>
-/// OCCT's methods take a BRepAdaptor_Curve. They take its base class, <see cref="GeomAdaptor_TransformedCurve"/>, until
-/// unit 3B ports BRepAdaptor_Curve (TODO(3B)); a BRepAdaptor_Curve will then be accepted unchanged.
-/// </remarks>
 public static class BRepGProp_EdgeTool
 {
     /// <summary>The parameter of the start point of the curve.</summary>
-    public static double FirstParameter(GeomAdaptor_TransformedCurve C) => C.FirstParameter();
+    public static double FirstParameter(BRepAdaptor_Curve C) => C.FirstParameter();
 
     /// <summary>The parameter of the end point of the curve.</summary>
-    public static double LastParameter(GeomAdaptor_TransformedCurve C) => C.LastParameter();
+    public static double LastParameter(BRepAdaptor_Curve C) => C.LastParameter();
 
     /// <summary>
     /// The number of Gauss points for an accurate integration: for a polynomial curve of degree n, 2n - 1.
     /// </summary>
-    public static int IntegrationOrder(GeomAdaptor_TransformedCurve BAC)
+    public static int IntegrationOrder(BRepAdaptor_Curve BAC)
     {
         switch (BAC.GetType())
         {
@@ -51,14 +47,14 @@ public static class BRepGProp_EdgeTool
     }
 
     /// <summary>The point of parameter U.</summary>
-    public static gp_Pnt Value(GeomAdaptor_TransformedCurve C, double U) => C.Value(U);
+    public static gp_Pnt Value(BRepAdaptor_Curve C, double U) => C.Value(U);
 
     /// <summary>The point of parameter U and the first derivative there.</summary>
-    public static void D1(GeomAdaptor_TransformedCurve C, double U, out gp_Pnt P, out gp_Vec V1) => C.D1(U, out P, out V1);
+    public static void D1(BRepAdaptor_Curve C, double U, out gp_Pnt P, out gp_Vec V1) => C.D1(U, out P, out V1);
 
     /// <summary>The number of intervals of continuity <paramref name="S"/>.</summary>
-    public static int NbIntervals(GeomAdaptor_TransformedCurve C, GeomAbs_Shape S) => C.NbIntervals(S);
+    public static int NbIntervals(BRepAdaptor_Curve C, GeomAbs_Shape S) => C.NbIntervals(S);
 
     /// <summary>The parameters bounding the intervals of continuity <paramref name="S"/> (T.Length() > NbIntervals).</summary>
-    public static void Intervals(GeomAdaptor_TransformedCurve C, NCollection_Array1<double> T, GeomAbs_Shape S) => C.Intervals(T, S);
+    public static void Intervals(BRepAdaptor_Curve C, NCollection_Array1<double> T, GeomAbs_Shape S) => C.Intervals(T, S);
 }

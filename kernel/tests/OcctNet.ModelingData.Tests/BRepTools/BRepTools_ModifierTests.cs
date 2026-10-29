@@ -213,7 +213,7 @@ public class BRepTools_ModifierTests
     }
 
     [Fact]
-    public void NURBS_conversion_of_a_frozen_edge_and_its_wait_for_6A_on_faces()
+    public void NURBS_conversion_of_a_frozen_edge()
     {
         TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(3, 4, 0)));
         var aSnapshot = ShapeSnapshot.Of(anEdge);
@@ -232,10 +232,97 @@ public class BRepTools_ModifierTests
         aMutable.Init(anEdge);
         Assert.Throws<TopoDS_LockedShape>(() => aMutable.Perform(new BRepTools_NurbsConvertModification()));
         aSnapshot.AssertUnchanged(anEdge);
+    }
 
-        // TODO(6A): the pcurves are projected again with ProjLib_ComputeApprox
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<Standard_NotImplemented>(() => new BRepTools_Modifier(aBox, new BRepTools_NurbsConvertModification()));
+    [Fact]
+    public void NURBS_conversion_of_a_box_projects_the_pcurves_on_the_planes()
+    {
+        // the box's faces carry no pcurves (BRep_Tool computes them on the planes): ProjLib_ComputeApprox projects the
+        // converted edges again
+        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
+        var aSnapshot = ShapeSnapshot.Of(aBox);
+        var aModification = new BRepTools_NurbsConvertModification();
+        var aModifier = new BRepTools_Modifier(aBox, aModification);
+        TopoDS_Shape aResult = aModifier.ModifiedShape(aBox);
+        Assert.True(aResult.TShape()!.IsFrozen());
+        AssertNurbsAndConsistent(aResult, 6, 12);
+        aSnapshot.AssertUnchanged(aBox);
+        AssertAllNew(aBox, aResult);
+
+        // on a plane the parametrization doesn't change: the new pcurve of each edge has the old one's points
+        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        {
+            TopoDS_Face aNewF = TopoDS.Face(aModifier.ModifiedShape(aF));
+            foreach (TopoDS_Shape anE in SubShapes(aF, TopAbs_EDGE))
+            {
+                TopoDS_Edge aNewE = TopoDS.Edge(aModifier.ModifiedShape(anE));
+                Geom2d_Curve anOld = BRep_Tool.CurveOnSurface(TopoDS.Edge(anE), TopoDS.Face(aF), out double f, out double l)!;
+                Geom2d_Curve aNew = BRep_Tool.CurveOnSurface(aNewE, aNewF, out double nf, out double nl)!;
+                Assert.Equal(f, nf, 1e-12);
+                Assert.Equal(l, nl, 1e-12);
+                Assert.True(anOld.Value(0.5 * (f + l)).IsEqual(aNew.Value(0.5 * (nf + nl)), 1e-9));
+            }
+        }
+    }
+
+    [Fact]
+    public void NURBS_conversion_of_a_cylinder_face_projects_the_circles_and_the_seam()
+    {
+        // the circles are projected again with ProjLib_ComputeApproxOnPolarSurface, the seam with both its pcurves
+        TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
+        var aSnapshot = ShapeSnapshot.Of(aFace);
+        var aModifier = new BRepTools_Modifier(aFace, new BRepTools_NurbsConvertModification());
+        TopoDS_Face aResult = TopoDS.Face(aModifier.ModifiedShape(aFace));
+        Assert.True(aResult.TShape()!.IsFrozen());
+        AssertNurbsAndConsistent(aResult, 1, 3);
+        aSnapshot.AssertUnchanged(aFace);
+        AssertAllNew(aFace, aResult);
+
+        // the seam stays a seam, its two pcurves a period apart on the B-spline surface
+        TopoDS_Edge aSeam = TopoDS.Edge(SubShapes(aResult, TopAbs_EDGE).Single(e => BRep_Tool.IsClosed(TopoDS.Edge(e), aResult)));
+        Geom2d_Curve aC1 = BRep_Tool.CurveOnSurface(aSeam, aResult, out double f, out double l)!;
+        Geom2d_Curve aC2 = BRep_Tool.CurveOnSurface(TopoDS.Edge(aSeam.Reversed()), aResult, out _, out _)!;
+        Geom_Surface aSurf = BRep_Tool.Surface(aResult)!;
+        aSurf.Bounds(out double u1, out double u2, out _, out _);
+        double aMid = 0.5 * (f + l);
+        Assert.Equal(u2 - u1, Math.Abs(aC1.Value(aMid).X() - aC2.Value(aMid).X()), 1e-7);
+    }
+
+    // Every face of the result on a B-spline surface, every edge's curve and pcurves B-splines, the pcurves on the
+    // surface within the edge's tolerance of the 3D curve.
+    private static void AssertNurbsAndConsistent(in TopoDS_Shape theResult, int theNbFaces, int theNbEdges)
+    {
+        Assert.Equal(theNbFaces, SubShapes(theResult, TopAbs_FACE).Count);
+        Assert.Equal(theNbEdges, SubShapes(theResult, TopAbs_EDGE).Count);
+        foreach (TopoDS_Shape aS in SubShapes(theResult, TopAbs_FACE))
+        {
+            TopoDS_Face aF = TopoDS.Face(aS);
+            Geom_Surface aSurf = BRep_Tool.Surface(aF, out TopLoc_Location aSL)!;
+            Assert.IsType<Geom_BSplineSurface>(aSurf);
+            foreach (TopoDS_Shape anS in SubShapes(aF, TopAbs_EDGE))
+            {
+                TopoDS_Edge anE = TopoDS.Edge(anS);
+                Geom_Curve aC = BRep_Tool.Curve(anE, out TopLoc_Location aCL, out double f, out double l)!;
+                Assert.IsType<Geom_BSplineCurve>(aC);
+                foreach (TopoDS_Edge anOriented in new[] { anE, TopoDS.Edge(anE.Reversed()) })
+                {
+                    Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anOriented, aF, out double pf, out double pl, out bool aStored)!;
+                    Assert.True(aStored);
+                    Assert.IsType<Geom2d_BSplineCurve>(aPC);
+                    Assert.Equal(f, pf, 1e-12);
+                    Assert.Equal(l, pl, 1e-12);
+                    double aTol = BRep_Tool.Tolerance(anE);
+                    for (int i = 0; i <= 10; i++)
+                    {
+                        double t = f + (l - f) * i / 10;
+                        gp_Pnt2d aUV = aPC.Value(t);
+                        gp_Pnt aOnS = aSurf.Value(aUV.X(), aUV.Y()).Transformed(aSL.Transformation());
+                        gp_Pnt aOnC = aC.Value(t).Transformed(aCL.Transformation());
+                        Assert.True(aOnS.Distance(aOnC) <= aTol, $"{aOnS.Distance(aOnC)} > {aTol}");
+                    }
+                }
+            }
+        }
     }
 
     [Fact]

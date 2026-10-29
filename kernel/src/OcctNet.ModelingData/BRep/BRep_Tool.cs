@@ -316,7 +316,6 @@ public static class BRep_Tool
     /// For a plane, the projection of the edge's 3D curve on it, as a curve in its parametric space; its range in
     /// <paramref name="First"/> and <paramref name="Last"/>. Null for other surfaces or an edge without a 3D curve.
     /// </summary>
-    /// <exception cref="Standard_NotImplemented">The projection itself, until unit 6A (ProjLib_ProjectedCurve and GeomProjLib) is merged.</exception>
     public static Geom2d_Curve? CurveOnPlane(in TopoDS_Edge E,
                                              Geom_Surface? S,
                                              in TopLoc_Location L,
