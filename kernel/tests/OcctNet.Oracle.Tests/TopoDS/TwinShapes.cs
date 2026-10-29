@@ -206,6 +206,36 @@ internal sealed class TwinShapes
         return new(aNF, aF);
     }
 
+    /// <summary>
+    /// A face on the surface bounded by one closed wire of the given edges, in order, each reversed in the wire or not
+    /// and given its pcurve on the face.
+    /// </summary>
+    public Twin<N.TopoDS_Face, TopoDS_Face> FaceOn(N.Geom_Surface theNS, Geom_Surface theS,
+                                                   params (Twin<N.TopoDS_Edge, TopoDS_Edge> Edge, bool Reversed, N.Geom2d_Curve NC, Geom2d_Curve C)[] theEdges)
+    {
+        var aNF = new N.TopoDS_Face();
+        myN.MakeFace(aNF, theNS, Tol);
+        TopoDS_Face aF = new();
+        myP.MakeFace(ref aF, theS, Tol);
+        var aNW = new N.TopoDS_Wire();
+        myN.MakeWire(aNW);
+        TopoDS_Wire aW = new();
+        myP.MakeWire(ref aW);
+        foreach ((Twin<N.TopoDS_Edge, TopoDS_Edge> anEdge, bool isReversed, N.Geom2d_Curve aNC, Geom2d_Curve aC) in theEdges)
+        {
+            myN.UpdateEdge(anEdge.N, aNC, aNF, Tol);
+            myP.UpdateEdge(anEdge.P, aC, aF, Tol);
+            myN.Add(aNW, isReversed ? anEdge.N.Reversed() : anEdge.N);
+            myP.Add(aW, isReversed ? anEdge.P.Reversed() : anEdge.P);
+        }
+
+        aNW.Closed(true);
+        aW.Closed(true);
+        myN.Add(aNF, aNW);
+        myP.Add(aF, aW);
+        return new(aNF, aF);
+    }
+
     /// <summary>A wire of the edges, in this order.</summary>
     public Twin<N.TopoDS_Wire, TopoDS_Wire> Wire(bool theClosed, params Twin<N.TopoDS_Edge, TopoDS_Edge>[] theEdges)
     {

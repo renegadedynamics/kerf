@@ -21,7 +21,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     private static readonly TopAbs_ShapeEnum[] theTypes =
         [TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX];
 
-    private sealed class Counts
+    internal sealed class Counts
     {
         public int Shapes;
         public int Pairs;
@@ -255,7 +255,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         return aList;
     }
 
-    private static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
+    internal static void CompareFlags(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
     {
         foreach (TopAbs_ShapeEnum aType in theTypes)
         {
@@ -273,7 +273,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareTopology(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
+    internal static void CompareTopology(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
     {
         foreach (TopAbs_ShapeEnum aType in theTypes)
         {
@@ -416,7 +416,8 @@ public class TopologyOracleTests(ITestOutputHelper output)
         theOracle.Same(N.BRep_Tool.Tolerance(theN), BRep_Tool.Tolerance(theP), theWhat + " tolerance");
     }
 
-    private static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
+    internal static void CompareGeometry(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts,
+                                         Func<TopoDS_Face, bool>? theFaceFilter = null)
     {
         foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE })
         {
@@ -458,7 +459,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
         {
             N.TopoDS_Face aNF = N.TopoDS.Face(aF.N);
             TopoDS_Face aPF = TopoDS.Face(aF.P);
-            CompareFace(theOracle, aNF, aPF, theCounts);
+            if (theFaceFilter is null || theFaceFilter(aPF))
+            {
+                CompareFace(theOracle, aNF, aPF, theCounts);
+            }
         }
     }
 
