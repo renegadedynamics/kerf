@@ -4413,3 +4413,76 @@ GeomliteTest commands were written in a forked worktree, reviewed and merged. Nu
       - The cases that miss one command: thrusections (358), bcut (305), blend (187), bfuse (178), bcommon (169),
         bsection (158), triarea (157), fixshape (81), prj (76), DT_ClosedSplit (59), DT_ToBspl (58), pipe (55).
       - Draw_Files lists only `pload` and this unit's commands; a later unit can fill it for every command.
+
+## Phase 4: plan (29 October 2026)
+
+The scope and design of meshing ([phase4-plan.md](phase4-plan.md)). Numbers from 4001 are placeholders, renumbered on
+merge.
+
+4001. **Phase 4's scope** is TKMesh (19,930 lines) and TKXMesh (100), plus what they need beyond phases 0 to 3:
+      - ShapeAnalysis's wire analysis (14,100 lines of TKShHealing, open question 11): ShapeExtend, ShapeAnalysis
+        Wire, WireOrder, Edge, Curve, Surface, TransferParameters(Proj), ShapeBuild_Edge;
+      - Message_Algorithm with its status types and Message's package statics;
+      - NCollection_EBTree and NCollection_MapAlgo.
+
+      About 37,000 lines in seven units over four waves. Found at the call sites: `BRepMesh_ShapeVisitor` (CheckOrder,
+      OuterWire) and `BRepMesh_ShapeTool::Range` (ShapeAnalysis_Edge). design.md's phase table is updated.
+4002. **One parallel-loop helper, `OSD_Parallel.For`/`ForEach`** (internal, OcctNet.Foundation), with OCCT's
+      `isSequential` flag.
+      - It runs a plain loop when the runtime has no threads: browser WebAssembly without threading, which Bento.Web
+        is.
+      - It unwraps an `AggregateException` to its first inner exception (decision 431).
+      - The direct `Parallel.For` calls of phases 1 to 3 (BVH, BRepCheck_Analyzer, BRepExtrema_DistShapeShape,
+        GeomLib_CheckCurveOnSurface) move onto it in unit 4A.
+4003. **The mesher attaches its triangulations and polygons unfrozen.** `BRepMesh_ShapeTool` uses an internal
+      non-freezing form of `BRep_Builder.UpdateFace`/`UpdateEdge`. So the post-processor can set each triangulation's
+      deflection and parameters in place as OCCT does, without `UpdateDeflection`'s copies. They freeze with the
+      result when it is published (`FreezeGraph`). Reused triangulations from the input stay frozen and aren't
+      written.
+4004. **Meshing a frozen shape returns a meshed copy.**
+      - On input whose graph holds a frozen TShape, `BRepMesh_IncrementalMesh` meshes `BRepTools.ExactCopyForWrite`
+        of it. Then `KeepUnchanged` gives back the input's own sub-shapes wherever meshing changed nothing, as
+        decisions 416 and 468 do. `Shape()` returns the frozen result, with a history.
+      - The functional twin is `BRepMesh_IncrementalMesh.Meshed(in TopoDS_Shape, in IMeshTools_Parameters)`.
+      - `IMeshTools_Parameters` stays OCCT's struct with public fields, and is equatable.
+      - Unfrozen shapes (ported code) are meshed in place.
+      - The viewer's buffers are an extraction from the meshed shape, not a second mesher.
+
+      Provisional: open question 15.
+4005. **A parallel run gives the serial run's mesh bit for bit.**
+      - IMeshData's pointer-keyed maps are maps compared by reference that iterate in insertion order. Where OCCT's
+        result could depend on address order, that goes in occt-issues.md.
+      - An adaptor evaluated from two loop bodies is shallow-copied per thread, as decision 431 does.
+      - A determinism test runs every corpus shape serially and in parallel, repeatedly.
+4006. **BRepMesh_Delaun's `std::make_heap` + `std::sort_heap` keep MSVC's element order on tied keys**, through a
+      helper. The oracle is MSVC-built, and `Array.Sort` orders ties differently. Delabella's `std::sort` of points
+      is checked for ties the same way, or the difference is recorded.
+4007. **Process-wide mesher state.**
+      - `CSF_MeshAlgo` is not read: the default algorithm is Watson, and a result must not depend on the environment.
+      - `BRepMesh_IncrementalMesh`'s parallel default and `BRepMesh_DiscretFactory`'s default name stay statics with
+        internal setters, as decision 415. Draw-lite's `mpparallel` and `mpsetdefaultname` set them.
+      - `BRepMesh_DiscretAlgoFactory`'s registry has internal mutators. "FastDiscret" (IncrementalMeshFactory) and
+        "XBRepMesh" register when the type initialises.
+4008. **Message's default messenger sends nothing.** `Message::Send`, `SendWarning` and `DefaultMessenger()` are
+      ported over a process-wide messenger with an internal setter; Draw-lite installs a printer. A library call in a
+      Bento cell must not write to the console. Message_Algorithm keeps OCCT's statuses; its message texts don't need
+      MsgFile's resource files.
+4009. **How meshes are compared with native OCCT.**
+      - Both sides mesh the same re-read F1.
+      - The shapes are compared as BRep text with triangulations, byte for byte. That text has 15 significant digits.
+      - Then every face's Poly_Triangulation is compared node by node and triangle by triangle, every double bit for
+        bit.
+      - Each shape is reported as bit-identical, same topology, or a different but valid triangulation (with counts,
+        area difference and `tricheck`'s verdict).
+      - Target: at least 99% of faces bit-identical; every other difference attributed.
+4010. **Draw-lite's mesh commands** (provisional, unit 4L2).
+      - `incmesh` and `tclean` work on a copy of the graph (decision 480) and rebind the name. Other Draw variables
+        that hold sub-shapes of the same shape are rebound through the history, so that `explode` before `incmesh`
+        sees the meshes as in DRAWEXE.
+      - `vdisplay` meshes the shape as AIS does (StdPrs_ToolTriangulatedShape with Prs3d_Drawer's defaults), so the
+        mesh group's shading grids can run.
+4011. **DrawCorpus reads `cases.list`.** Grids whose cases live in a shared data directory are scanned and run:
+      mesh (699 cases), heal (2,259), chamfer (279), opengl and xml. Today's scan doesn't see them.
+4012. **Delabella keeps its MIT licence notice.** `delabella.cpp` is third-party code inside OCCT (GUMIX, Marcin
+      Sokalski, 2018). Its C# port keeps the MIT notice at the top, beside OCCT's provenance, and the notice goes in
+      a THIRD-PARTY-NOTICES file.

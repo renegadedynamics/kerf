@@ -62,10 +62,10 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | 1. Foundation and maths | Rest of TKMath: math, PLib, BSplCLib/BSplSLib, ElCLib/ElSLib, Bnd, Poly, BVH, Convert, CSLib; NCollection replacements | Matches the oracle |
 | 2. Geometry | TKG2d, TKG3d, TKGeomBase (AppCont's tables generated; AdvApp2Var last). Rules for Handle classes and freezing finalised. | Curves, surfaces, projections, extrema |
 | 3. Topology and input/output | TopoDS, TopLoc, BRep, TopExp, BRepTools/BinTools, BRepGProp, BRepBndLib, BRepCheck, BRepExtrema, and what they need: the 2D and curve/surface intersections (IntRes2d, IntCurve, Geom2dInt, IntCurveSurface), BRepClass/BRepClass3d, BRepLib, BRepBuilderAPI's makers and TKPrim (provisional, open-questions.md 2); Draw-lite `restore`, `checkshape`, `checkprops` ([phase3-plan.md](phase3-plan.md)) | Every `.brep` in the corpus round-trips byte-identical; Bento can store, load and measure shapes without native code |
-| 4. Meshing | BRepMesh | Bento's viewer fully managed; WebAssembly demo |
+| 4. Meshing | TKMesh (IMeshData, IMeshTools, BRepMeshData, BRepMesh with Delabella) and TKXMesh, and what they need: ShapeAnalysis's wire analysis from TKShHealing (ShapeExtend_WireData, ShapeAnalysis_Wire, WireOrder, Edge, Curve, Surface, ShapeBuild_Edge; provisional, open-questions.md 11), Message_Algorithm; one parallel-loop helper with a single-threaded fallback; Draw-lite `incmesh`, `tclean`, `trinfo`, `tricheck`, `triarea` and the corpus's `cases.list` grids ([phase4-plan.md](phase4-plan.md)) | Shapes mesh as native OCCT meshes them, in parallel as serially; Bento's viewer fully managed; WebAssembly demo |
 | 5. Construction | Sweeps, BRepFill/GeomFill, Geom2dGcc, intersections (IntPatch, IntWalk, IntPolyh) | build123d's objects can be built |
 | 6. Booleans | IntTools, BOPDS, BOPAlgo, BRepAlgoAPI (not the legacy TopOpeBRep) | build123d.NET's algebra-mode tests pass |
-| 7. Finishing | ShapeHealing, fillets and chamfers, offsets, drafts and features, helix, then HLR | build123d parity |
+| 7. Finishing | ShapeHealing (the rest after phase 4's wire analysis), fillets and chamfers, offsets, drafts and features, helix, then HLR | build123d parity |
 | 8. Data exchange | STEP generated from the EXPRESS schemas, StepData/XSBase/STEPControl ported; immutable assembly tree; STL, glTF, 3MF, OBJ written fresh | Bytes in and out without native code |
 | 9. Switch-over | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
 

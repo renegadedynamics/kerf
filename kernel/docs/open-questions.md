@@ -29,6 +29,34 @@ until you say otherwise; changing one later is cheap unless the entry says so. N
 5. **Public construction once `BRep_Builder` is internal.** *Provisional:* a functional `TopoDS_Builder.MakeCompound`
    plus the BRepBuilderAPI makers is the public surface; build123d.NET will tell us what else it needs.
 
+## Phase 4 (meshing), from the plan in [phase4-plan.md](phase4-plan.md)
+
+The numbers in brackets are the plan's (section 7).
+
+11. **ShapeAnalysis in phase 4** (plan 1). BRepMesh needs `ShapeAnalysis_Wire::CheckOrder`,
+    `ShapeAnalysis_WireOrder`, `ShapeExtend_WireData`, `ShapeAnalysis::OuterWire` and `ShapeAnalysis_Edge`.
+    *Provisional:* unit 4S ports the classes whole, with ShapeAnalysis_Curve, Surface, TransferParameters(Proj) and
+    ShapeBuild_Edge that they reach: 14,100 lines of design.md's phase 7. design.md's phase table is updated to
+    match. Alternative: only the methods BRepMesh calls (about 600 lines).
+12. **The viewer's mesh extraction** (plan 2). *Provisional:* a managed equivalent of build123d.NET's
+    `b3d_mesh_extract` goes into OcctNet.ModelingAlgorithms as a public helper (an addition, not a port), checked
+    float for float against the native shim. Whether build123d.NET's viewer switches to it in phase 4 (through BRep
+    text) or in phase 9 is yours to decide.
+13. **A native oracle for the mesher's parameters** (plan 3). build123d.NET binds only BRepMesh_IncrementalMesh's
+    five-argument constructor. *Provisional:* the oracle uses that constructor, and the other parameters (MinSize,
+    interior deflections, surface-deflection control, Delabella) are checked by the corpus and the GTests. Options:
+    bind `IMeshTools_Parameters`, the `(shape, parameters)` constructor, `Poly_PolygonOnTriangulation` and
+    `Poly_Polygon3D` there.
+14. **The WebAssembly demo and performance targets** (plan 4). *Provisional:*
+    - a standalone sample, `samples/OcctNet.WasmDemo`, built as Bento.Web is (plain WebAssembly, the interpreter,
+      single-threaded, trimmed), timed with AOT too where the workload is installed;
+    - targets: the port within 2× native serial on the desktop; a typical model meshed and extracted in under
+      100 ms on the desktop and under 2 s in the browser.
+15. **Meshing a frozen shape through OCCT's class** (plan 5). *Provisional:*
+    `new BRepMesh_IncrementalMesh(frozenShape, ...)` meshes an exact copy, and `Shape()` returns the frozen meshed
+    result, sharing what meshing left unchanged; a functional `Meshed` twin as well. Alternative: throw on frozen
+    input.
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and
