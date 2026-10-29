@@ -589,3 +589,25 @@ float-identical to native's on every compared face and edge.
 |---|---|---|
 | build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
 | BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |
+
+## Phase 5: unit 5A, intersection foundations
+
+Found while porting IntSurf, IntImp, IntStart and IntPatch's data model and tools. By reading OCCT's code unless a
+test is named; the port reproduces each (`// OCCT` at the line). No class of this unit is bound natively, so none
+is confirmed by the oracle yet (5G).
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_GLine::ComputeVertexParameters`, the third filter (points on S2 only) | Tests `VTXi.IsVertexOnS1()` where `IsVertexOnS2` is meant; always false for these points | Of two coincident points on S2, point i is always the one removed, even when it is the vertex. Kept |
+| `IntPatch_GLine::Replace` | Appends the point and ignores Index (the replacement is commented out) | A "replaced" vertex is added at the end and the old one stays. Kept; pinned by `IntPatch_GLineTests` |
+| `IntPatch_GLine::ComputeVertexParameters` (a property) | Sets `indf = 1` and `indl = nbvtx` without setting `fipt`/`lapt` | HasFirstPoint/HasLastPoint stay as they were. Kept; pinned |
+| `IntPatch_ALine::ComputeVertexParameters`, the periodic-line block | The `Prepend` branch is inside `VTX0 == ParamMinOnLine` but requires `VTX0 != ParamMinOnLine` (and measures from VTX0 where VTXN seems meant) | A closed line whose last vertex is at its end never gets the matching vertex at its start. Kept |
+| `IntPatch_WLine::ComputeVertexParameters`, the insertion of a vertex before the line | The loop that shifts the other vertices tests `j != 1` where `j != i` is meant | Vertex 1 keeps parameter 1 while its point moves to index 2. Kept; pinned by `ComputeVertexParameters_reproduces_OCCTs_unshifted_vertex_before_the_line` |
+| `IntPatch_WLine::ComputeVertexParameters`, the seam phase | The S2 creation block runs even after the S1 block has appended a vertex; its search loop is skipped and its else branch resets `encoreunefois` | The loops continue past the new vertex. Kept |
+| `IntPatch_WLine::Dump`, `IntPatch_RLine::Dump`, mode 0 | Print `Vertex(pol)` instead of `Point(pol)`, and only while `pol <= NbVertex` | The dump shows vertices where points are announced. Kept |
+| `IntPatch_RstInt.cxx`, `Recadre`, torus case | The V2 loop compares `V2 < V1p - 1.5π` where V2p is meant | A torus's V2 can be left a period off. Kept |
+| `IntPatch_PolyArc::SetOffset` | `Get` returns the bounds with the gap, and the box is reset to the unshifted bounds before the shifted ones are added | The box covers both positions and grows by the gap on each call. Kept |
+| `IntPatch_HInterTool::SamplePoint`, perturbation 1 | `dv *= 1.001; dv *= 0.999;` scales dv twice (du was presumably meant first) | The sample is moved by a factor 0.999999 in v only. Kept; pinned by `IntPatch_HInterToolTests` |
+| `IntStart_SearchOnBoundaries.gxx`, `BoundedArc` (a site, decision 5104) | `std::sort` of the roots (SolInfo) by parameter: ties keep their order with MSVC on up to 32 roots (insertion sort) | The port sorts as MSVC on up to 32; with more roots, tied parameters could come out in another order than native's |
+| `IntImp_ZerImpFunc`, `IntImp_ZerParFunc`, `IntPatch_CSFunction` (a property, decision 5102) | Keep `void*` pointers to the caller's handles (and quadric) | A later reassignment of the caller's handle variable would change the function's surface in OCCT; the port keeps the object. No caller does it |
+| `IntSurf_Transition::SetValue()` and `SetValue(Tangent, Type)` (a property) | Leave the other fields (situation, opposite flag, tangency) as they were | Two in transitions can differ in fields their queries don't show; MakeTransition passes the caller's objects (`ref` in the port). Kept |
