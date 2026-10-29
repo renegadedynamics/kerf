@@ -3557,7 +3557,8 @@ reviewed and merged, as were the oracle tests. Numbers from 3451 are renumbered 
         `BRepCheck_Analyzer` and `IsValid`, so the comparison is per sub-shape: native writes each shape as BRep text,
         both sides read it, and native `IsValid(sub)` is compared with the port's for every sub-shape (TopExp
         MapShapes order) with geometric controls on and off; native parallel equals native serial, and the port's
-        parallel run equals its serial run status for status. All agree:
+        parallel run equals its serial run status for status (native parallel runs that differ from native serial are
+        reported, not failed: OCCT's parallel mode isn't deterministic, occt-issues.md). All agree:
         - 120 random native shapes (boxes, cylinders, spheres, cones, tori, wedges, prisms, revolutions, fuses, cuts,
           commons, fillets, lofts; placed and meshed at random): 8,060 of 8,060 verdicts;
         - nine edge and vertex breaks applied natively on private copies of 36 shapes (vertex moved, 3D curve

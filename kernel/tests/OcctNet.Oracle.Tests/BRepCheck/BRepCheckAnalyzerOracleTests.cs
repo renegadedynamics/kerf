@@ -29,6 +29,12 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
 
     private readonly List<string> myDisagreements = [];
 
+    // Native parallel runs that differ from native serial: OCCT's parallel mode isn't deterministic (it shares each
+    // edge's reference adaptor between threads, occt-issues.md); under load, 1 run in 40 of
+    // bug29502_split_faces.brep reports a valid face invalid. Reported, not failed: the port is compared with native
+    // serial, and its own parallel run with its serial run.
+    private readonly List<string> myNativeParallelNotes = [];
+
     public void Dispose()
     {
         Directory.Delete(myDirectory, true);
@@ -229,7 +235,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
                 (bool[]? aNPar, _) = NativeVerdicts(aNative, aGeom, true);
                 if (aNPar is null || !aNPar.SequenceEqual(aN))
                 {
-                    myDisagreements.Add($"{theCategory} {theWhat} geom={aGeom}: native parallel differs from native serial");
+                    myNativeParallelNotes.Add($"{theCategory} {theWhat} geom={aGeom}: native parallel differs from native serial");
                 }
 
                 (bool[]? aPPar, string aPParDump, _) = PortVerdicts(aPort, aGeom, true);
@@ -260,6 +266,11 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
 
         int aTotal = myStats.Values.Sum(s => s.Compared), anAgreedTotal = myStats.Values.Sum(s => s.Agreed);
         output.WriteLine($"{theWhat}: {anAgreedTotal}/{aTotal} verdicts agree, {myDisagreements.Count} disagreements");
+        foreach (string aNote in myNativeParallelNotes)
+        {
+            output.WriteLine($"note (OCCT's parallel mode): {aNote}");
+        }
+
         foreach (string aDisagreement in myDisagreements)
         {
             output.WriteLine(aDisagreement);
