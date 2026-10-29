@@ -11,11 +11,6 @@ namespace Occt;
 /// </summary>
 public static class GeomConvert_Units
 {
-    // TODO(4C merge): Geom2dConvert is ported by another part of unit 4C. Replace the body with OCCT's
-    // `return Geom2dConvert.CurveToBSplineCurve(theCurve);` once it is merged.
-    private static Geom2d_BSplineCurve CurveToBSplineCurve2d(Geom2d_Curve theCurve)
-        => throw new Standard_NotImplemented("GeomConvert_Units: Geom2dConvert::CurveToBSplineCurve not merged yet");
-
     /// <summary>
     /// The pcurve theCurve2d on theSurf converted from radians to degrees (theFactorRadianDegree, for example
     /// 180 / Pi) on the angular parameters and scaled by 1 / theLengthFactor on the linear ones. Circles and
@@ -97,7 +92,7 @@ public static class GeomConvert_Units
             if (aCurve2d is Geom2d_Circle
                 || aCurve2d is Geom2d_Ellipse)
             {
-                Geom2d_BSplineCurve aBSpline2d = CurveToBSplineCurve2d(aCurve2d);
+                Geom2d_BSplineCurve aBSpline2d = Geom2dConvert.CurveToBSplineCurve(aCurve2d);
                 aCurve2d = aBSpline2d;
             }
 
@@ -200,7 +195,7 @@ public static class GeomConvert_Units
             if (aPcurve is Geom2d_Circle
                 || aPcurve is Geom2d_Ellipse)
             {
-                Geom2d_BSplineCurve aBSpline2d = CurveToBSplineCurve2d(aPcurve);
+                Geom2d_BSplineCurve aBSpline2d = Geom2dConvert.CurveToBSplineCurve(aPcurve);
                 aPcurve = aBSpline2d;
             }
             else if (aPcurve is Geom2d_Parabola)

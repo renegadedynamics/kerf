@@ -91,11 +91,19 @@ public class GeomConvert_UnitsTests
     }
 
     [Fact]
-    public void CircleOnPeriodicSurface_NotImplementedUntil4CMerge()
+    public void CircleOnPeriodicSurface_BecomesScaledBSpline()
     {
-        // Needs Geom2dConvert::CurveToBSplineCurve (ported in another part of unit 4C)
+        // Circles on a periodic surface go through Geom2dConvert::CurveToBSplineCurve, then the poles are scaled
         var aCyl = new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 3.0);
-        var aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(1.0, 2.0), new gp_Dir2d(1.0, 0.0)), 3.0);
-        Assert.ThrowsAny<Standard_NotImplemented>(() => GeomConvert_Units.DegreeToRadian(aCircle, aCyl, 1.0, DegToRad));
+        var aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(100.0, 2.0), new gp_Dir2d(1.0, 0.0)), 30.0);
+        var aRes = Assert.IsType<Geom2d_BSplineCurve>(GeomConvert_Units.DegreeToRadian(aCircle, aCyl, 10.0, DegToRad));
+        Geom2d_BSplineCurve aRef = Geom2dConvert.CurveToBSplineCurve(aCircle);
+        Assert.Equal(aRef.NbPoles(), aRes.NbPoles());
+        for (int i = 0; i <= 8; i++)
+        {
+            double aU = aRef.FirstParameter() + i * (aRef.LastParameter() - aRef.FirstParameter()) / 8;
+            gp_Pnt2d aP = aRef.Value(aU);
+            AssertNear(new gp_Pnt2d(aP.X() * DegToRad, aP.Y() * 10.0), aRes.Value(aU), 1e-12);
+        }
     }
 }

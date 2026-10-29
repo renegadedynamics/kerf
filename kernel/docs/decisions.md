@@ -422,6 +422,7 @@ namespaces of function templates over duck-typed functors, returning result stru
      differences came from the harness, which built the deltas with `EvalDN` where Geom uses `Geom_Curve::D1`; the
      two differ in the last bit and the nearly singular system magnified it. BSplCLib_Cache, BSplSLib.Iso,
      CacheD0-D2 and FunctionMultiply have no native entry point in the bindings and are covered by unit tests only.
+     The long RationalC1 arcs are compared since 2508, and the test calls the ported GeomConvert.
 ## Phase 2: geometry (29 October 2026)
 
 92. **Geometry and topology objects freeze when shared.** `Standard_Transient` has a one-way frozen flag
@@ -1685,3 +1686,77 @@ file), GeomHash and Geom2dHash, and `Standard_Stream` in Foundation.
       Not bound natively, so unit-tested only: the curve properties (GeomLProp_CLProps and its 2D and adaptor forms,
       which a unit test finds bit-identical to each other on analytic curves), GeomLProp::Continuity,
       GeomLProp_CurAndInf2d and the hashers.
+
+## Phase 2: unit 4C, conversion (29 October 2026)
+
+Geom2dConvert (all of it: the statics, ApproxArcsSegments with PPoint, ApproxCurve, BSplineCurveKnotSplitting,
+BSplineCurveToBezierCurve, CompCurveToBSplineCurve) and GeomConvert except SurfToAnaSurf (unit 5A): the statics of
+GeomConvert.cxx and GeomConvert_1.cxx, ApproxCurve, ApproxSurface, CompCurveToBSplineCurve, the curve and surface
+knot splitting and Bezier conversions, CompBezierSurfacesToBSplineSurface, CurveToAnaCurve with GeomConvert_ConvType
+(in OCCT 8 an enum of Target, Simplest and MinGap only), FuncConeLSDist, FuncCylinderLSDist, FuncSphereLSDist and
+Units.
+
+2501. **What a conversion algorithm keeps is frozen when handed out; what it builds per call is not** (as GC,
+      decision 185). `GeomConvert_CompCurveToBSplineCurve.BSplineCurve()`, `GeomConvert_ApproxCurve.Curve()`, their 2D
+      twins and `Geom2dConvert_ApproxArcsSegments.GetResult()` freeze the stored objects and return the same ones at
+      every call. `CompCurveToBSplineCurve.Add` raises the degree of its current curve in place, as OCCT does, so it
+      copies a frozen current curve first: a curve already handed out never changes. `GeomConvert_ApproxSurface.Surface()`
+      is AdvApp2Var's surface, frozen when built (decision 197). `Arc(i)`, `Arcs`, `Patch(i, j)` and `Patches` of the
+      Bezier conversions build new objects at each call, as OCCT does, and return them unfrozen.
+2502. **The statics return objects the caller owns, unfrozen.** Ported code (GeomLib, GeomFill, ShapeUpgrade, ...)
+      modifies what `CurveToBSplineCurve`, `SplitBSpline*`, `Concat*` and `C0BSplineToC1BSplineCurve` return, as OCCT
+      does. Where OCCT takes the result from a local algorithm object (CompCurveToBSplineCurve, ApproxCurve), the port
+      reads it through internal accessors that don't freeze it (`InternalBSplineCurve()`, `InternalCurve()`): the
+      object is discarded at once, so nothing is copied. `SurfaceToBSplineSurface` returns a copy of ApproxSurface's
+      frozen surface. As in OCCT, a result can be one of the caller's own curves: a group of one curve in
+      ConcatG1/ConcatC1, a curve without C0 knots in C0BSplineToArrayOfC1BSplineCurve, the input of a
+      CurveToAnaCurve `Compute*` that already has the requested type (a frozen `BasisCurve()` when reached through a
+      trimmed curve).
+2503. **The caller's geometry is never modified.** OCCT changes it in four places; the port changes copies, with the
+      same values: Pretreatment of ConcatG1/ConcatC1 (2D and 3D) divides the weights of the caller's curves in place,
+      and the port puts normalised copies into the caller's array, which the caller sees as OCCT's array does; with a
+      single closed curve, ConcatG1/ConcatC1 call SetPeriodic and RemoveKnot on it, and the port on a copy;
+      `C0BSplineToC1BSplineCurve(ref BS, ...)` gives BS a new curve (GeomConvert always does, through
+      C0BSplineToArrayOfC1BSplineCurve and a concatenation; Geom2dConvert only when there are C0 knots);
+      CompBezierSurfacesToBSplineSurface raises the degree of copies of the caller's patches.
+2504. **Signatures.** Arrays of curves are `NCollection_Array1<Geom_BSplineCurve>`; OCCT's handle outputs are
+      `out NCollection_HArray1<Geom_BSplineCurve>` and `out NCollection_HArray1<int>`; the closed flags are
+      `ref bool` (`ClosedG1Flag` in 3D, `ClosedFlag` in 2D, as OCCT names them). Accessors that fill a caller's array
+      (`Arcs`, `Knots`, `Patches`, `Splitting`, ...) keep OCCT's form. CompBezierSurfacesToBSplineSurface's
+      `Poles()`, `UKnots()`, `VKnots()`, `UMultiplicities()` and `VMultiplicities()` return `NCollection_HArray1/2`
+      copies (decision 88: GeomFill and ShapeUpgrade pass them to Geom constructors). `ApproxArcsSegments.GetResult()`
+      returns an `IBentoList<Geom2d_Curve>`, a PackedList of the frozen curves. CurveToAnaCurve's outputs that OCCT
+      leaves unchanged on some paths are `ref` (`cf`, `cl` and `Deviation` of ComputeLine, ComputeCircle and
+      ComputeEllipse, IsLinear's `Deviation`, GetCircle's circle, ComputeCurve's `theGap`, ConvertToAnalytical's result),
+      the others `out` (assigned 0 where OCCT leaves them unset, decision 32).
+2505. **Small classes.** Geom2dConvert_PPoint is a public struct: exact `==`/`Equals`, OCCT's tolerant `operator==` as
+      `IsEqual(in)`, its `operator!=` as internal `IsNotEqual`, `WithD1` for SetD1, OCCT's RealLast parameter from
+      the parameterless constructor. The Func*LSDist classes are public sealed subclasses of
+      math_MultipleVarFunction(WithGradient) with public `SetPoints`/`SetDir`, keeping the caller's point array as
+      OCCT keeps the handle. GeomConvert_Units is a static class returning new curves.
+2506. **Evaluators and small translations.** The AdvApprox and AdvApp2Var evaluators of ApproxCurve and ApproxSurface
+      are private nested classes holding their adaptor in a reassignable field, re-trimmed as OCCT's mutable handle is
+      (decision 200). The law and reparameterise evaluators of the statics are private nested classes; the latter
+      evaluates into a stack buffer of `order + 1` values (OCCT's single `double&`, occt-issues.md). `Dump` takes a
+      TextWriter, and `ToString()` returns what it writes. GeomConvert's ConcatG1/ConcatC1 read
+      `Geom2d_BSplineCurve::MaxDegree()`, as OCCT does (the same 25). GeomConvert uses GeomLProp::Continuity and
+      Geom2dConvert its own private Continuity, as in OCCT. `calculateLines`, which OCCT never calls, is ported.
+2507. **Tests.** GTests: GeomConvert_Test (3), GeomConvert_CompCurveToBSplineCurve_Test (8),
+      Geom2dConvert_CompCurveToBSplineCurve_Test (1) and TKGeomAlgo's Geom2dConvert_BSplineCurveToBezierCurve_Test (1;
+      Geom2dAPI_Interpolate isn't ported, so its periodic curve is native GeomAPI_Interpolate's result for the same
+      points, hard-coded at full precision). 72 tests of OCCT.NET's own cover every class and static, the rules of
+      2501-2503, and each OCCT issue found (occt-issues.md).
+2508. **Oracle tests** (`tests/OcctNet.Oracle.Tests/{GeomConvert,Geom2dConvert,Convert}`; inputs built identically,
+      decision 165): GeomConvert::CurveToBSplineCurve on every curve kind, whole and trimmed with both senses and every
+      parameterisation (offsets through ApproxCurve), long RationalC1 arcs (400 3D, 300 2D, whole turns included),
+      SplitBSplineCurve and all four SplitBSplineSurface overloads (throwing on both sides or neither),
+      SurfaceToBSplineSurface on every surface kind, trimmed or not, and on offset surfaces (22 approximated by
+      AdvApp2Var), GeomConvert_ApproxCurve (both constructors, C0 to C2, tolerances to 1e-11), and
+      GeomConvert_CompCurveToBSplineCurve on curves cut into pieces, some reversed, added in random order with random
+      After, WithRatio and MinM (2,312 added, 1,169 refused; BSplineCurve() read between adds). Geom2dConvert's
+      CurveToBSplineCurve on lines, conics, B-splines and, through GeomAPI::To2d, parabolas and hyperbolas; its
+      SplitBSplineCurve. ConvertOracleTests now calls the ported GeomConvert and Geom2dConvert instead of re-doing
+      their post-processing (decision 91), with the long RationalC1 arcs it had to leave out. 1,232,862 values, all
+      bit-identical. Not bound natively, so unit-tested only: ConcatG1, ConcatC1, the C0BSplineTo* functions, the
+      knot splittings and Bezier conversions, CompBezierSurfacesToBSplineSurface, CurveToAnaCurve, the LSDist
+      functions, Units, ApproxArcsSegments, ApproxSurface's other parameters, and the 2D Bezier and offset paths.
