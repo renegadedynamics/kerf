@@ -329,9 +329,9 @@ override.
 
 Three things need care:
 
-- **Writers.** `TopTools_ShapeSet`, `BinTools_ShapeSet` and `BinTools_ShapeWriter` write the raw bit (internal
-  `LockedFlag()`), not `Locked()`, so files are OCCT's bytes. That changes three ported lines, each marked with a
-  comment.
+- **Writers.** No file format stores the Locked bit: the text and binary writers write the seven flags Free to
+  Convex. Only `TopTools_ShapeSet::Dump` prints it, and the port prints the raw bit (internal `LockedFlag()`), not
+  `Locked()` (unit 3C, decision 381).
 - **Unlocking.** `Locked(false)` on a frozen shape throws (BRepOffset will need a copy there).
 - **Paths that bypass `BRep_Builder`** still throw `Standard_ImmutableObject` through `CheckMutable()`. These are
   `ChangeCurves()`, `ChangePoints()`, `TE->Tolerance(...)`, `UpdateTolerance`, the flag setters, the
@@ -469,11 +469,11 @@ TShapes created.
 - Shapes, locations and geometry are numbered by insertion-ordered indexed maps, so the output order is OCCT's.
 - Format versions 1 to 3, with or without triangles and normals, as `TopTools_FormatVersion`.
 - **Line endings.** The stream overloads write `'\n'`, as decision 226 does. The file-path overloads also write
-  `'\n'`: native OCCT's CRLF on Windows comes from `std::ofstream`'s text mode and isn't part of the format.
-  "Byte-identical" means identical to native `BRepTools::Write` to a stream. Reading accepts CR.
-- **Corpus files.** The `.brep` files in OCCT's corpus come from older releases. They round-trip in the sense of
-  decision 233's F1/F2 scheme: native OCCT 8 reads the file and writes F1; the port reads F1 and must write F1's
-  bytes.
+  `'\n'`, as native OCCT 8 does (it opens the file in binary mode; older releases wrote CRLF on Windows through
+  `std::ofstream`'s text mode). Reading accepts CR.
+- **Corpus files.** The `.brep` files in OCCT's corpus come from older releases, and reading normalises directions
+  again. They round-trip in the sense of decision 233's F1/F2 scheme: native OCCT 8 reads the file and writes F1,
+  reads F1 and writes F2; the port reads F1 and must write F2's bytes (unit 3C: every readable file does).
 
 **Binary.**
 

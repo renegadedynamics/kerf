@@ -97,6 +97,7 @@ public static class Standard_Stream
     {
         public bool Fail;
         public bool Eof;
+        public long Length = -1;
     }
 
     private static readonly ConditionalWeakTable<TextReader, InputState> theInputStates = new();
@@ -301,6 +302,208 @@ public static class Standard_Stream
 
         theValue = isOverflow ? (isNegative ? long.MinValue : long.MaxValue) : isNegative ? -aValue : aValue;
         return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // C strings and lines
+
+    /// <summary>
+    /// Extracts a word into a C buffer, as C++'s <c>IS &gt;&gt; theBuffer</c> into a <c>char[N]</c>: the word and a
+    /// terminating <c>'\0'</c> are stored at the start of the buffer, and the rest of the buffer is left as it was.
+    /// Returns false, leaving the buffer as it was and setting the fail flag, if there is no word.
+    /// </summary>
+    /// <exception cref="Storage_StreamFormatError">The word doesn't fit in the buffer with its terminating null (OCCT
+    /// writes past the end of its buffer).</exception>
+    public static bool ReadWord(TextReader IS, char[] theBuffer)
+    {
+        // OCCT.NET: untrusted input: at most the buffer's length is read, and a word that long doesn't fit
+        string? aWord = ReadWord(IS, theBuffer.Length + 1);
+        if (aWord is null)
+        {
+            return false;
+        }
+
+        if (aWord.Length >= theBuffer.Length)
+        {
+            throw new Storage_StreamFormatError("A word longer than " + (theBuffer.Length - 1) + " characters");
+        }
+
+        aWord.CopyTo(0, theBuffer, 0, aWord.Length);
+        theBuffer[aWord.Length] = '\0';
+        return true;
+    }
+
+    /// <summary>
+    /// C++'s <c>IS.getline(theBuffer, theCount, theDelim)</c>: extracts characters without skipping white space, up to
+    /// and including the delimiter (which isn't stored), the end of the text (setting the end-of-file flag), or
+    /// <c>theCount - 1</c> stored characters followed by another one (setting the fail flag, without extracting it);
+    /// then stores a terminating <c>'\0'</c>. Extracting nothing sets the fail flag, as does a stream that isn't good
+    /// (which stores only the <c>'\0'</c>). Returns true if the fail flag isn't set.
+    /// </summary>
+    public static bool GetLine(TextReader IS, char[] theBuffer, int theCount, char theDelim)
+    {
+        if (theCount > theBuffer.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(theCount));
+        }
+
+        InputState aState = State(IS);
+        int aStored = 0;
+        int anExtracted = 0;
+        if (!aState.Fail && !aState.Eof && theCount > 0)
+        {
+            while (true)
+            {
+                int aChar = IS.Peek();
+                if (aChar < 0)
+                {
+                    aState.Eof = true;
+                    break;
+                }
+
+                if (aChar == theDelim)
+                {
+                    IS.Read();
+                    anExtracted++;
+                    break;
+                }
+
+                if (aStored >= theCount - 1)
+                {
+                    aState.Fail = true;
+                    break;
+                }
+
+                theBuffer[aStored++] = (char)IS.Read();
+                anExtracted++;
+            }
+        }
+
+        if (theCount > 0)
+        {
+            theBuffer[aStored] = '\0';
+        }
+
+        if (anExtracted == 0)
+        {
+            aState.Fail = true;
+        }
+
+        return !aState.Fail;
+    }
+
+    /// <summary>The length of a C string in the buffer: the characters before the first <c>'\0'</c>.</summary>
+    public static int Strlen(ReadOnlySpan<char> theBuffer)
+    {
+        int aLength = theBuffer.IndexOf('\0');
+        return aLength < 0 ? theBuffer.Length : aLength;
+    }
+
+    /// <summary>The C string in the buffer, up to its first <c>'\0'</c>.</summary>
+    public static string CString(ReadOnlySpan<char> theBuffer) => new(theBuffer[..Strlen(theBuffer)]);
+
+    /// <summary>
+    /// C's <c>atoi</c> on the C string in the buffer: white space skipped, an optional sign and decimal digits; 0 if
+    /// there are none; clamped to the range of an <c>int</c> on overflow, as Microsoft's C runtime does.
+    /// </summary>
+    public static int Atoi(ReadOnlySpan<char> theBuffer)
+    {
+        int aLength = Strlen(theBuffer);
+        int i = 0;
+        while (i < aLength && IsSpace(theBuffer[i]))
+        {
+            i++;
+        }
+
+        bool isNegative = false;
+        if (i < aLength && theBuffer[i] is '+' or '-')
+        {
+            isNegative = theBuffer[i] == '-';
+            i++;
+        }
+
+        long aValue = 0;
+        for (; i < aLength && theBuffer[i] is >= '0' and <= '9'; i++)
+        {
+            aValue = Math.Min(aValue * 10 + (theBuffer[i] - '0'), (long)int.MaxValue + 1);
+        }
+
+        aValue = isNegative ? -aValue : aValue;
+        return (int)Math.Clamp(aValue, int.MinValue, int.MaxValue);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // Untrusted input
+
+    /// <summary>
+    /// The length assumed for a reader whose length isn't known (2^28 characters): one that isn't a
+    /// <see cref="StreamReader"/> over a seekable stream and wasn't given a length with
+    /// <see cref="SetInputLength"/>.
+    /// </summary>
+    public const long UnknownInputLength = 1L << 28;
+
+    /// <summary>
+    /// Declares how many characters the reader holds at most, so that the readers of OCCT's formats can reject
+    /// counts that the input couldn't hold before allocating for them. A <see cref="StreamReader"/> over a seekable
+    /// stream needs no declaration; for a <see cref="StringReader"/>, pass the string's length.
+    /// </summary>
+    public static void SetInputLength(TextReader IS, long theLength)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(theLength);
+        State(IS).Length = theLength;
+    }
+
+    /// <summary>
+    /// The number of characters the reader holds at most: the length given to <see cref="SetInputLength"/>, the
+    /// length in bytes of a <see cref="StreamReader"/>'s seekable stream, or <see cref="UnknownInputLength"/>.
+    /// </summary>
+    public static long InputLength(TextReader IS)
+    {
+        if (theInputStates.TryGetValue(IS, out InputState? aState) && aState.Length >= 0)
+        {
+            return aState.Length;
+        }
+
+        try
+        {
+            if (IS is StreamReader { BaseStream: { CanSeek: true } aStream })
+            {
+                // a character takes at least one byte in every encoding a StreamReader reads
+                return aStream.Length;
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        return UnknownInputLength;
+    }
+
+    /// <summary>
+    /// Checks a count read from the reader before it is used to allocate or to loop: it must not be negative, and
+    /// the items, taking at least <paramref name="theMinChars"/> characters each, must fit in the reader's
+    /// <see cref="InputLength"/>.
+    /// </summary>
+    /// <exception cref="Storage_StreamFormatError">The count is negative or larger than the input could hold.</exception>
+    public static void CheckCount(TextReader IS, long theCount, int theMinChars, string theWhat)
+    {
+        if (theCount < 0 || theCount > InputLength(IS) / Math.Max(theMinChars, 1))
+        {
+            throw new Storage_StreamFormatError("A count of " + theWhat + " (" + theCount
+                                                + ") that the input can't hold");
+        }
+    }
+
+    /// <summary>
+    /// Throws <see cref="Storage_StreamFormatError"/> if an extraction from the reader has failed: for the places
+    /// where OCCT's readers would loop for ever, or for as long as a count says, on a stream that has failed.
+    /// </summary>
+    public static void CheckNotFailed(TextReader IS, string theWhere)
+    {
+        if (Fail(IS))
+        {
+            throw new Storage_StreamFormatError(theWhere + ": unexpected end or format of the input");
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------

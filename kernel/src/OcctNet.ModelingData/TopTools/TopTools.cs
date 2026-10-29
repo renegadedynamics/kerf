@@ -11,7 +11,7 @@ namespace Occt;
 /// with <see cref="TopTools_ShapeMapHasher.Instance"/>).
 /// </summary>
 /// <remarks>
-/// <c>Dump</c>, which writes a shape set, comes with TopTools_ShapeSet (unit 3C, as a partial of this class).
+/// <c>Dump</c>, which writes a shape set, is in TopTools.Dump.cs with TopTools_ShapeSet.
 /// OCCT's <c>Dummy</c>, a workaround for an old extraction bug, does nothing.
 /// </remarks>
 public static partial class TopTools

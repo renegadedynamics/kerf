@@ -1004,6 +1004,11 @@ public class GeomTools_SurfaceSet
         int udegree = 0, vdegree = 0;
         Standard_Stream.Read(IS, ref udegree);
         Standard_Stream.Read(IS, ref vdegree);
+        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
+        // characters, a knot 4)
+        Standard_Stream.CheckCount(IS, Math.Max(udegree + 1L, 0), 6, "Bezier poles");
+        Standard_Stream.CheckCount(IS, Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
+        Standard_Stream.CheckCount(IS, Math.Max(udegree + 1L, 0) * Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
         var poles = new NCollection_Array2<gp_Pnt>(1, udegree + 1, 1, vdegree + 1);
         var weights = new NCollection_Array2<double>(1, udegree + 1, 1, vdegree + 1);
 
@@ -1043,6 +1048,13 @@ public class GeomTools_SurfaceSet
         Standard_Stream.Read(IS, ref nbuknots);
         Standard_Stream.Read(IS, ref nbvknots);
 
+        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
+        // characters, a knot 4)
+        Standard_Stream.CheckCount(IS, Math.Max(nbupoles, 0), 6, "B-spline poles");
+        Standard_Stream.CheckCount(IS, Math.Max(nbvpoles, 0), 6, "B-spline poles");
+        Standard_Stream.CheckCount(IS, Math.Max(nbupoles, 0) * (long)Math.Max(nbvpoles, 0), 6, "B-spline poles");
+        Standard_Stream.CheckCount(IS, Math.Max(nbuknots, 0), 4, "B-spline knots");
+        Standard_Stream.CheckCount(IS, Math.Max(nbvknots, 0), 4, "B-spline knots");
         var poles = new NCollection_Array2<gp_Pnt>(1, nbupoles, 1, nbvpoles);
         var weights = new NCollection_Array2<double>(1, nbupoles, 1, nbvpoles);
 
@@ -1129,6 +1141,8 @@ public class GeomTools_SurfaceSet
         int stype = 0;
 
         Geom_Surface? S = null;
+        // OCCT.NET: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
+        using var aNesting = GeomTools.Nesting();
         try
         {
             Standard_Stream.Read(IS, ref stype);
@@ -1187,7 +1201,7 @@ public class GeomTools_SurfaceSet
                     break;
             }
         }
-        catch (Standard_Failure)
+        catch (Standard_Failure anException) when (anException is not Storage_StreamFormatError)
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_SurfaceSet::ReadSurface(..)!!!"
         }
@@ -1206,8 +1220,10 @@ public class GeomTools_SurfaceSet
     /// </summary>
     public void Read(TextReader IS, Message_ProgressRange theProgress = default)
     {
-        string? buffer = Standard_Stream.ReadWord(IS);
-        if (buffer != "Surfaces")
+        // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
+        char[] buffer = new char[255];
+        bool isRead = Standard_Stream.ReadWord(IS, buffer);
+        if (!isRead || Standard_Stream.CString(buffer) != "Surfaces")
         {
             Console.Out.Write("Not a surface table" + "\n");
             return;
@@ -1216,6 +1232,8 @@ public class GeomTools_SurfaceSet
         // OCCT's nbsurf is uninitialised if the count can't be read
         int i, nbsurf = 0;
         Standard_Stream.Read(IS, ref nbsurf);
+        // OCCT.NET: untrusted input: an object takes at least 2 characters
+        Standard_Stream.CheckCount(IS, Math.Max(nbsurf, 0), 2, "surfaces");
         using var aPS = new Message_ProgressScope(theProgress, "Surfaces", nbsurf);
         for (i = 1; i <= nbsurf && aPS.More(); i++, aPS.Next())
         {

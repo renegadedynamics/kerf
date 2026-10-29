@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A partial class: Read, Write and Dump come with the shape sets (unit 3C).
+/// A partial class: Read, Write and Dump, which use BRepTools_ShapeSet, are in BRepTools.IO.cs.
 /// </para>
 /// <para>
 /// The statics that change the shape they are given (Update, UpdateFaceUVPoints, Clean, CleanGeometry,

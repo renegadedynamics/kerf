@@ -182,3 +182,16 @@ Phase 3 (part): cross-unit integration.
   `TryBound` keep it.
 - Tests: NCollection_DataMap GTests; NURBS conversion unit tests; oracle tests of the NURBS conversion through
   BRepBuilderAPI_GTransform, and of BRepBuilderAPI_Transform now with faces on planes, all bit-identical.
+Phase 3 (part): BRep input and output.
+
+- `OcctNet.ModelingData`: OCCT's text format of shapes (`TopTools_ShapeSet`, `TopTools_LocationSet`,
+  `BRepTools_ShapeSet`, `BRepTools.Read`, `Write` and `Dump`, `TopTools.Dump`), versions 1 to 3, with or without
+  triangulations and normals, and the binary format (`BinTools`: `BinTools.Read`/`Write`, the shape, location,
+  curve and surface sets, `BinTools_ShapeReader`/`ShapeWriter`, `BinTools_IStream`/`OStream`). Shapes read are frozen.
+  Untrusted input is read safely: counts are checked against the input's length, nesting is capped, and malformed
+  input throws `Storage_StreamFormatError` instead of hanging, overflowing the stack or allocating without bound.
+- `OcctNet.Foundation`: `Storage_StreamFormatError`; `Standard_Stream`'s C buffers, getline and atoi, and its input
+  length (`SetInputLength`, `InputLength`) and count checks.
+- Tests: unit and fuzz tests of both formats; oracle tests against native `BRepTools::Write` and `Read`: random
+  native shapes, shapes built identically on both sides, the port's files read natively, the 37 `.brep` files of
+  OCCT's data and 2,327 files of its test dataset, all byte-identical.
