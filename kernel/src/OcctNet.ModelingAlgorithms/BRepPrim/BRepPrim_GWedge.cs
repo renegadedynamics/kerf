@@ -140,7 +140,7 @@ internal class BRepPrim_GWedge
     private readonly bool[] FacesBuilt = new bool[NBFACES];
     private readonly bool[] myInfinite = new bool[NBFACES];
 
-    // OCCT's arrays of shapes are default-constructed (null shapes)
+    // Arrays of null shapes, as C++ default-constructs its arrays of shapes
     internal static T[] NewArray<T>(int theSize) where T : struct
     {
         var anArray = new T[theSize];
@@ -1024,8 +1024,8 @@ internal class BRepPrim_GWedge
         {
             myBuilder.MakeVertex(ref myVertices[i], Point(d1, d2, d3));
 
-            // As OCCT: the vertices shared by a degenerated top are copied in pairs, a partner not built yet as a null
-            // vertex marked built (it is copied again when that partner is built).
+            // OCCT: the vertices shared by a degenerated top are copied in pairs, a partner not built yet as a null vertex
+            // marked built, which a later request for it then returns (occt-issues.md).
             if (Z2Max == Z2Min)
             {
                 if (i == 2 || i == 6)

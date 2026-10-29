@@ -276,3 +276,19 @@ Phase 3 (part): distances and makers.
   t-commands and `tcopy` run the real makers; known-answer tests; oracle tests of BRepExtrema_DistShapeShape on twin
   scenes and native shapes (bit-identical), of the makers through BRep text (byte-identical apart from the Free flag of
   reused frozen inputs) and of Transform, Copy and GTransform on twin scenes and native shapes (bit-identical).
+
+Phase 3 (part): primitives and sweeps.
+
+- `OcctNet.ModelingAlgorithms`: TKPrim. The makers `BRepPrimAPI_MakeBox`, `MakeWedge`, `MakeCylinder`, `MakeCone`,
+  `MakeSphere`, `MakeTorus`, `MakeRevolution` (whole and partial, with their faces, shells and solids),
+  `MakeHalfSpace`, `MakePrism` (finite, semi-infinite and infinite) and `MakeRevol`, with `Generated`, `IsDeleted`,
+  `FirstShape` and `LastShape`; `BRepPreviewAPI_MakeBox`. Results are frozen; BRepPrim, BRepSweep and Sweep are
+  internal. Sweeping a frozen profile works on a copy and shares what the sweep didn't change with the profile, which
+  is never changed; histories answer for the caller's sub-shapes.
+- `OcctNet.ModelingData`: `BRepTools.KeepUnchangedIn` (internal), for operations that build on a copy for write.
+- Draw-lite (tests, not packaged): `box` (every form, `-preview`), `wedge`, `pcylinder`, `pcone`, `psphere`, `ptorus`,
+  `halfspace`, `prism`, `revol`, and `bounding -shape`.
+- Tests: TKPrim's GTests; the phase 3 GTests that used stand-ins now use the real makers, and BRepTools_Test and the
+  shape cases of the Bnd_BoundSortBox and Bnd_OBB GTests are ported; known-answer tests; oracle tests of every maker,
+  their histories and the Draw commands against native OCCT through BRep text (byte-identical apart from the Free flag
+  of frozen inputs). The corpus has 395 runnable cases (28 OK).

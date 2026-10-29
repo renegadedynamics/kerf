@@ -190,14 +190,29 @@ public class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     /// <summary>The ZMax face (frozen).</summary>
     public TopoDS_Face TopFace() => PublishedFace(BRepPrim_ZMax);
 
-    // OCCT.NET: the face is published once the whole shell is built (decision 3203): the other faces add pcurves to its
-    // edges, which OCCT does in place after handing the face out. A degenerated box has no shell; its face is
-    // published as it is.
+    // OCCT.NET: the face is published once every face of the box is built (decision 3203): the other faces add pcurves
+    // to its edges, which OCCT does in place after handing the face out. A degenerated box has no shell (Shell()
+    // throws), so all six of its faces are built first, the six the accessors give (a face that fails to build is
+    // left for its own accessor to throw).
     private TopoDS_Face PublishedFace(BRepPrim_Direction theDirection)
     {
         if (!myWedge.IsDegeneratedShape())
         {
             myWedge.Shell();
+        }
+        else
+        {
+            foreach (BRepPrim_Direction aD in (ReadOnlySpan<BRepPrim_Direction>)
+                     [BRepPrim_XMin, BRepPrim_XMax, BRepPrim_YMin, BRepPrim_YMax, BRepPrim_ZMin, BRepPrim_ZMax])
+            {
+                try
+                {
+                    myWedge.Face(aD);
+                }
+                catch (Standard_Failure)
+                {
+                }
+            }
         }
         TopoDS_Face aFace = myWedge.Face(theDirection);
         aFace.TShape()?.FreezeGraph();

@@ -67,7 +67,7 @@ broken down by package.
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
 | ModelingAlgorithms | TKMesh | 0 / 156 | 0 / 19,930 | 0.0 |
 | ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
-| ModelingAlgorithms | TKPrim | 0 / 75 | 0 / 12,932 | 0.0 |
+| ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
 | ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
 | ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 2081 | 689,382 / 2,897,781 | 23.8 |
+| **All** |  | 2156 | 702,314 / 2,897,781 | 24.2 |
 
 ## TKMath
 
@@ -169,6 +169,16 @@ broken down by package.
 | Plate | 0 / 37 | 0 / 4,742 | 0.0 |
 | TopClass | 2 / 2 | 405 / 405 | 100.0 |
 | TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
+
+## TKPrim
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepPreviewAPI | 2 / 2 | 174 / 174 | 100.0 |
+| BRepPrim | 22 / 22 | 5,007 / 5,007 | 100.0 |
+| BRepPrimAPI | 23 / 23 | 3,076 / 3,076 | 100.0 |
+| BRepSweep | 20 / 20 | 4,049 / 4,049 | 100.0 |
+| Sweep | 8 / 8 | 626 / 626 | 100.0 |
 
 ## TKTopAlgo
 

@@ -72,7 +72,7 @@ internal sealed class BRepPrim_Cone : BRepPrim_Revolution
     public BRepPrim_Cone(double Angle, in gp_Ax2 Axes)
         : base(Axes, 0, RealLast())
     {
-        // OCCT leaves myRadius uninitialised here; the port's field is 0
+        // OCCT leaves myRadius uninitialised here (occt-issues.md); the port's field is 0
         myHalfAngle = Angle;
         if ((Angle < 0) || (Angle > M_PI / 2))
         {
