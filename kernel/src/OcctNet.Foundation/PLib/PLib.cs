@@ -651,10 +651,186 @@ public static class PLib
     }
 
     //=======================================================================
-    // Evaluation of a polynomial and its derivatives. OCCT dispatches dimensions 1 to 15 to templates that keep
-    // the accumulators in local arrays; the port runs the general loops for every dimension. The arithmetic is the
-    // same, operation for operation, so the results are identical.
+    // Auxiliary functions used for optimized evaluation of polynome and its derivatives for smaller dimensions
+    // of the polynome. OCCT dispatches dimensions 1 to 15 to templates keeping the accumulators in local arrays
+    // (registers); the port specialises dimensions 1 to 4 (curves and their weights: 1, 2, 3, 4) the same way,
+    // through a type parameter whose constant N lets the JIT drop the unused accumulators, and runs the general
+    // loops above that. The arithmetic is the same, operation for operation, so the results are identical.
     //=======================================================================
+
+    private interface IEvalDim
+    {
+        static abstract int N { get; }
+    }
+
+    private struct EvalDim1 : IEvalDim
+    {
+        public static int N => 1;
+    }
+
+    private struct EvalDim2 : IEvalDim
+    {
+        public static int N => 2;
+    }
+
+    private struct EvalDim3 : IEvalDim
+    {
+        public static int N => 3;
+    }
+
+    private struct EvalDim4 : IEvalDim
+    {
+        public static int N => 4;
+    }
+
+    // Evaluation of only value using local variables (register-friendly). Writes to output only at the end.
+    private static void eval_poly0<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
+                                         int theDegree, double thePar)
+        where TDim : struct, IEvalDim
+    {
+        int dim = TDim.N;
+        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        double l0 = aTop[0];
+        double l1 = dim > 1 ? aTop[1] : 0.0;
+        double l2 = dim > 2 ? aTop[2] : 0.0;
+        double l3 = dim > 3 ? aTop[3] : 0.0;
+
+        int aCoeffs = theTop;
+        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        {
+            aCoeffs -= dim;
+            l0 = l0 * thePar + theCoeffs[aCoeffs];
+            if (dim > 1) l1 = l1 * thePar + theCoeffs[aCoeffs + 1];
+            if (dim > 2) l2 = l2 * thePar + theCoeffs[aCoeffs + 2];
+            if (dim > 3) l3 = l3 * thePar + theCoeffs[aCoeffs + 3];
+        }
+
+        Span<double> aRes = theResult.Slice(0, dim);
+        aRes[0] = l0;
+        if (dim > 1) aRes[1] = l1;
+        if (dim > 2) aRes[2] = l2;
+        if (dim > 3) aRes[3] = l3;
+    }
+
+    // Evaluation of value and first derivative using local variables.
+    private static void eval_poly1<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
+                                         int theDegree, double thePar)
+        where TDim : struct, IEvalDim
+    {
+        int dim = TDim.N;
+        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        double v0 = aTop[0], d0 = 0.0;
+        double v1 = dim > 1 ? aTop[1] : 0.0, d1 = 0.0;
+        double v2 = dim > 2 ? aTop[2] : 0.0, d2 = 0.0;
+        double v3 = dim > 3 ? aTop[3] : 0.0, d3 = 0.0;
+
+        int aCoeffs = theTop;
+        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        {
+            aCoeffs -= dim;
+            d0 = d0 * thePar + v0;
+            v0 = v0 * thePar + theCoeffs[aCoeffs];
+            if (dim > 1)
+            {
+                d1 = d1 * thePar + v1;
+                v1 = v1 * thePar + theCoeffs[aCoeffs + 1];
+            }
+            if (dim > 2)
+            {
+                d2 = d2 * thePar + v2;
+                v2 = v2 * thePar + theCoeffs[aCoeffs + 2];
+            }
+            if (dim > 3)
+            {
+                d3 = d3 * thePar + v3;
+                v3 = v3 * thePar + theCoeffs[aCoeffs + 3];
+            }
+        }
+
+        Span<double> aRes = theResult.Slice(0, 2 * dim);
+        aRes[0] = v0;
+        aRes[dim] = d0;
+        if (dim > 1)
+        {
+            aRes[1] = v1;
+            aRes[dim + 1] = d1;
+        }
+        if (dim > 2)
+        {
+            aRes[2] = v2;
+            aRes[dim + 2] = d2;
+        }
+        if (dim > 3)
+        {
+            aRes[3] = v3;
+            aRes[dim + 3] = d3;
+        }
+    }
+
+    // Evaluation of value and first and second derivatives using local variables.
+    private static void eval_poly2<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
+                                         int theDegree, double thePar)
+        where TDim : struct, IEvalDim
+    {
+        int dim = TDim.N;
+        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        double v0 = aTop[0], d0 = 0.0, s0 = 0.0;
+        double v1 = dim > 1 ? aTop[1] : 0.0, d1 = 0.0, s1 = 0.0;
+        double v2 = dim > 2 ? aTop[2] : 0.0, d2 = 0.0, s2 = 0.0;
+        double v3 = dim > 3 ? aTop[3] : 0.0, d3 = 0.0, s3 = 0.0;
+
+        int aCoeffs = theTop;
+        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        {
+            aCoeffs -= dim;
+            s0 = s0 * thePar + d0 * 2.0;
+            d0 = d0 * thePar + v0;
+            v0 = v0 * thePar + theCoeffs[aCoeffs];
+            if (dim > 1)
+            {
+                s1 = s1 * thePar + d1 * 2.0;
+                d1 = d1 * thePar + v1;
+                v1 = v1 * thePar + theCoeffs[aCoeffs + 1];
+            }
+            if (dim > 2)
+            {
+                s2 = s2 * thePar + d2 * 2.0;
+                d2 = d2 * thePar + v2;
+                v2 = v2 * thePar + theCoeffs[aCoeffs + 2];
+            }
+            if (dim > 3)
+            {
+                s3 = s3 * thePar + d3 * 2.0;
+                d3 = d3 * thePar + v3;
+                v3 = v3 * thePar + theCoeffs[aCoeffs + 3];
+            }
+        }
+
+        Span<double> aRes = theResult.Slice(0, 3 * dim);
+        aRes[0] = v0;
+        aRes[dim] = d0;
+        aRes[2 * dim] = s0;
+        if (dim > 1)
+        {
+            aRes[1] = v1;
+            aRes[dim + 1] = d1;
+            aRes[2 * dim + 1] = s1;
+        }
+        if (dim > 2)
+        {
+            aRes[2] = v2;
+            aRes[dim + 2] = d2;
+            aRes[2 * dim + 2] = s2;
+        }
+        if (dim > 3)
+        {
+            aRes[3] = v3;
+            aRes[dim + 3] = d3;
+            aRes[2 * dim + 3] = s3;
+        }
+    }
+
+    // Runtime evaluations, for dimension > 4
 
     // Evaluation of only value. theCoeffs starts at the highest-degree coefficient (index theTop).
     private static void eval_poly0_runtime(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
@@ -770,12 +946,26 @@ public static class PLib
         {
             case 1:
                 {
-                    eval_poly1_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension);
+                    switch (Dimension)
+                    {
+                        case 1: eval_poly1<EvalDim1>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 2: eval_poly1<EvalDim2>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 3: eval_poly1<EvalDim3>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 4: eval_poly1<EvalDim4>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        default: eval_poly1_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension); break;
+                    }
                     break;
                 }
             case 2:
                 {
-                    eval_poly2_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension);
+                    switch (Dimension)
+                    {
+                        case 1: eval_poly2<EvalDim1>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 2: eval_poly2<EvalDim2>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 3: eval_poly2<EvalDim3>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        case 4: eval_poly2<EvalDim4>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
+                        default: eval_poly2_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension); break;
+                    }
                     break;
                 }
             default:
@@ -819,7 +1009,14 @@ public static class PLib
     public static void NoDerivativeEvalPolynomial(double U, int Degree, int Dimension, int DegreeDimension,
                                                   ReadOnlySpan<double> PolynomialCoeff, Span<double> Results)
     {
-        eval_poly0_runtime(Results, PolynomialCoeff, DegreeDimension, Degree, U, Dimension);
+        switch (Dimension)
+        {
+            case 1: eval_poly0<EvalDim1>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
+            case 2: eval_poly0<EvalDim2>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
+            case 3: eval_poly0<EvalDim3>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
+            case 4: eval_poly0<EvalDim4>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
+            default: eval_poly0_runtime(Results, PolynomialCoeff, DegreeDimension, Degree, U, Dimension); break;
+        }
     }
 
     /// <summary>
