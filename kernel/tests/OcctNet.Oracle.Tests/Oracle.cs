@@ -94,8 +94,89 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
         return aWeights;
     }
+    public bool Bool() => myRandom.Next(2) == 0;
+
+    /// <summary>
+    /// A direction that the port's normalisation leaves unchanged. <see cref="ToNative(in gp_Dir)"/> goes through
+    /// the native constructor, which normalises again: about one in eight random directions moves by an ulp there,
+    /// and about one in a hundred settled ones still does (native OCCT's normalisation doesn't always round as .NET's).
+    /// </summary>
+    public static gp_Dir Settled(gp_Dir theD)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            var aNext = new gp_Dir(theD.X(), theD.Y(), theD.Z());
+            if (aNext == theD)
+            {
+                break;
+            }
+            theD = aNext;
+        }
+
+        return theD;
+    }
+
+    /// <summary>The 2D twin of <see cref="Settled(gp_Dir)"/>.</summary>
+    public static gp_Dir2d Settled(gp_Dir2d theD)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            var aNext = new gp_Dir2d(theD.X(), theD.Y());
+            if (aNext == theD)
+            {
+                break;
+            }
+            theD = aNext;
+        }
+
+        return theD;
+    }
+
+    public gp_Pnt2d Pnt2d() => new(Real(), Real());
+
+    public gp_Vec2d Vec2d() => new(Real(), Real());
+
+    /// <summary>A random 2D direction, kept away from zero so it can be normalised, and <see cref="Settled(gp_Dir2d)"/>.</summary>
+    public gp_Dir2d Dir2d()
+    {
+        while (true)
+        {
+            var aV = new gp_Vec2d(Real(-1, 1), Real(-1, 1));
+            if (aV.Magnitude() > 0.1)
+            {
+                return Settled(new gp_Dir2d(aV));
+            }
+        }
+    }
+
+    public gp_Ax2d Ax2d() => new(Pnt2d(), Dir2d());
+
+    /// <summary>A 2D coordinate system, indirect half the time.</summary>
+    public gp_Ax22d Ax22d() => new(Pnt2d(), Dir2d(), Bool());
 
     // Conversions to and from the native wrappers. Each native object is disposed by the caller's `using`.
+
+    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
+
+    public static N.gp_Dir2d ToNative(in gp_Dir2d theD) => new(theD.X(), theD.Y());
+
+    public static N.gp_Ax2d ToNative(in gp_Ax2d theA)
+    {
+        using var aP = ToNative(theA.Location());
+        using var aD = ToNative(theA.Direction());
+        return new N.gp_Ax2d(aP, aD);
+    }
+
+    /// <summary>A native gp_Ax22d with exactly the port's two directions.</summary>
+    public static N.gp_Ax22d ToNative(in gp_Ax22d theA)
+    {
+        using var aP = ToNative(theA.Location());
+        using var aX = ToNative(theA.XDirection());
+        using var aY = ToNative(theA.YDirection());
+        return new N.gp_Ax22d(aP, aX, aY);
+    }
+
+    public static gp_Pnt2d FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
     public static N.gp_Pnt ToNative(in gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
 
@@ -134,8 +215,6 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
         return aNative;
     }
-
-    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
     public static N.gp_Vec2d ToNative(in gp_Vec2d theV) => new(theV.X(), theV.Y());
 
@@ -250,9 +329,11 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public static gp_Vec FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
-    public static gp_Pnt2d FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
-
     public static gp_Vec2d FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
+
+    public static gp_XY FromNative(N.gp_Dir2d theD) => new(theD.X(), theD.Y());
+
+    public static gp_XY FromNative(N.gp_XY theXY) => new(theXY.X(), theXY.Y());
 
     public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
@@ -335,6 +416,26 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
             Same(theNative.Coord(i), thePort.Coord(i), $"{theWhat}[{i}]", theTolerance);
         }
     }
+
+    public void Same(in gp_Pnt2d theNative, in gp_Pnt2d thePort, string theWhat, double theTolerance = Tolerance)
+    {
+        Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
+        Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
+    }
+
+    // 2D comparisons against the port's gp_XY coordinates (the Geom2d tests compare XY() of points, vectors and directions)
+
+    public void Same(in gp_XY theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    {
+        Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
+        Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
+    }
+
+    public void Same(in gp_Pnt2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+        => Same(theNative.XY(), thePort, theWhat, theTolerance);
+
+    public void Same(in gp_Vec2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+        => Same(theNative.XY(), thePort, theWhat, theTolerance);
 
     public void Same(in gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTolerance = Tolerance)
     {

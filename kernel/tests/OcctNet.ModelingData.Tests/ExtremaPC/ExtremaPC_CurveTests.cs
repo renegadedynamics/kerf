@@ -1,0 +1,1183 @@
+// Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Curve_Test.cxx (V8_0_1).
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace OcctNet.ModelingData.Tests;
+
+public class ExtremaPC_CurveTest
+{
+    // Test fixture for ExtremaPC tests.
+
+    private const double THE_TOL = 1.0e-6;
+
+    //==================================================================================================
+    // Line tests
+    //==================================================================================================
+
+    [Fact]
+    public void Line_PointOnLine()
+    {
+        // Line along X axis with bounded domain
+        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        // Point on line
+        gp_Pnt aPoint = new(5.0, 0.0, 0.0);
+
+        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 100.0));
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(3, aResult.NbExt()); // 1 min + 2 max (endpoints)
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.True(aResult[aMinIdx].IsMinimum);
+    }
+
+    [Fact]
+    public void Line_PointOffLine()
+    {
+        // Line along X axis with bounded domain
+        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        // Point off line
+        gp_Pnt aPoint = new(5.0, 3.0, 4.0);
+
+        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 100.0));
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(3, aResult.NbExt()); // 1 min + 2 max (endpoints)
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(25.0, aResult[aMinIdx].SquareDistance, THE_TOL); // 3^2 + 4^2 = 25
+        Assert.True(aResult[aMinIdx].IsMinimum);
+    }
+
+    [Fact]
+    public void Line_ProjectionOutsideBounds()
+    {
+        // Line along X axis with bounded domain
+        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        // Point that projects outside bounds
+        gp_Pnt aPoint = new(-50.0, 3.0, 4.0);
+
+        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 100.0));
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(2, aResult.NbExt()); // min at 0, max at 100
+
+        int aMinIdx = aResult.MinIndex();
+        // Should be at endpoint U=0
+        Assert.Equal(0.0, aResult[aMinIdx].Parameter, THE_TOL);
+    }
+
+    //==================================================================================================
+    // Circle tests
+    //==================================================================================================
+
+    [Fact]
+    public void Circle_PointOutside()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point outside circle
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle, new MathUtils.Domain1D(0.0, 2.0 * M_PI));
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(2, aResult.NbExt());
+
+        // Find min and max
+        int aMinIdx = aResult[0].SquareDistance < aResult[1].SquareDistance ? 0 : 1;
+        int aMaxIdx = 1 - aMinIdx;
+
+        // Minimum should be at (10, 0, 0), distance = 10
+        Assert.Equal(10.0, Math.Sqrt(aResult[aMinIdx].SquareDistance), THE_TOL);
+        Assert.True(aResult[aMinIdx].IsMinimum);
+
+        // Maximum should be at (-10, 0, 0), distance = 30
+        Assert.Equal(30.0, Math.Sqrt(aResult[aMaxIdx].SquareDistance), THE_TOL);
+        Assert.False(aResult[aMaxIdx].IsMinimum);
+    }
+
+    [Fact]
+    public void Circle_PointInside()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point inside circle
+        gp_Pnt aPoint = new(3.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle);
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(2, aResult.NbExt());
+
+        // Find min distance
+        double aMinDist =
+            Min(Math.Sqrt(aResult[0].SquareDistance), Math.Sqrt(aResult[1].SquareDistance));
+
+        // Minimum distance should be 10 - 3 = 7
+        Assert.Equal(7.0, aMinDist, THE_TOL);
+    }
+
+    [Fact]
+    public void Circle_PointAtCenter_Degenerate()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point at center - degenerate case
+        gp_Pnt aPoint = new(0.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle);
+        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+
+        // Should return infinite solutions
+        Assert.True(aResult.IsInfinite());
+        Assert.Equal(10.0, Math.Sqrt(aResult.InfiniteSquareDistance), THE_TOL);
+    }
+
+    //==================================================================================================
+    // Aggregator tests with GeomAdaptor_Curve
+    //==================================================================================================
+
+    [Fact]
+    public void Aggregator_Line()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        gp_Pnt aPoint = new(5.0, 3.0, 4.0);
+        ExtremaPC.Result aResult = anExtPC.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(3, aResult.NbExt()); // 1 min + 2 max (endpoints)
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(25.0, aResult[aMinIdx].SquareDistance, THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_Circle()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Check minimum distance
+        double aMinSqDist = aResult.MinSquareDistance();
+        Assert.Equal(10.0, Math.Sqrt(aMinSqDist), THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_BSpline()
+    {
+        // Create a simple cubic BSpline
+        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        aPoles[1] = new gp_Pnt(0, 0, 0);
+        aPoles[2] = new gp_Pnt(1, 2, 0);
+        aPoles[3] = new gp_Pnt(2, 2, 0);
+        aPoles[4] = new gp_Pnt(3, 0, 0);
+
+        NCollection_Array1<double> aKnots = new(1, 2);
+        aKnots[1] = 0.0;
+        aKnots[2] = 1.0;
+
+        NCollection_Array1<int> aMults = new(1, 2);
+        aMults[1] = 4;
+        aMults[2] = 4;
+
+        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point near the curve
+        gp_Pnt aPoint = new(1.5, 3.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        // Should find at least one extremum
+        Assert.True(aResult.NbExt() >= 0);
+    }
+
+    [Fact]
+    public void Aggregator_Ellipse()
+    {
+        Geom_Ellipse aGeomEllipse =
+            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point on major axis
+        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Minimum distance should be 30 - 20 = 10
+        double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
+        Assert.Equal(10.0, aMinDist, THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_Parabola()
+    {
+        // y^2 = 4*p*x with p = 2, so y^2 = 8x
+        Geom_Parabola aGeomParabola =
+            new Geom_Parabola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -10.0, 10.0);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point on X axis at focus
+        gp_Pnt aPoint = new(2.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Focus is at (p, 0) = (2, 0), vertex is at origin
+        // Minimum distance should be 2.0
+        double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
+        Assert.Equal(2.0, aMinDist, THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_Hyperbola()
+    {
+        // Hyperbola with major radius 10, minor radius 5
+        // x = a*cosh(u), y = b*sinh(u)
+        Geom_Hyperbola aGeomHyperbola =
+            new Geom_Hyperbola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 5.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point near the vertex
+        gp_Pnt aPoint = new(10.0, 5.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Verify that stored distance matches computed distance
+        for (int i = 0; i < aResult.NbExt(); ++i)
+        {
+            double aStoredSqDist = aResult[i].SquareDistance;
+            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL);
+        }
+    }
+
+    [Fact]
+    public void Aggregator_Bezier()
+    {
+        // Create a cubic Bezier curve
+        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        aPoles[1] = new gp_Pnt(0, 0, 0);
+        aPoles[2] = new gp_Pnt(1, 3, 0);
+        aPoles[3] = new gp_Pnt(3, 3, 0);
+        aPoles[4] = new gp_Pnt(4, 0, 0);
+
+        Geom_BezierCurve aBezier = new Geom_BezierCurve(aPoles);
+        GeomAdaptor_Curve anAdaptor = new(aBezier);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point above the curve's peak
+        gp_Pnt aPoint = new(2.0, 5.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Verify that stored distance matches computed distance
+        for (int i = 0; i < aResult.NbExt(); ++i)
+        {
+            double aStoredSqDist = aResult[i].SquareDistance;
+            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL);
+        }
+    }
+
+    [Fact]
+    public void Aggregator_OffsetCurve()
+    {
+        // Create a circle and its offset
+        Geom_Circle aCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        Geom_OffsetCurve anOffsetCurve = new Geom_OffsetCurve(aCircle, 5.0, new gp_Dir(0, 0, 1));
+        GeomAdaptor_Curve anAdaptor = new(anOffsetCurve);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point outside the offset circle
+        gp_Pnt aPoint = new(25.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Offset circle has radius 15, distance should be 25 - 15 = 10
+        double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
+        Assert.Equal(10.0, aMinDist, THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_TrimmedCurve()
+    {
+        // Create a trimmed circle (quarter arc)
+        Geom_Circle aCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        Geom_TrimmedCurve aTrimmedCurve = new Geom_TrimmedCurve(aCircle, 0.0, M_PI / 2.0);
+        GeomAdaptor_Curve anAdaptor = new(aTrimmedCurve);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point in first quadrant
+        gp_Pnt aPoint = new(15.0, 15.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Check that all extrema are within bounds
+        for (int i = 0; i < aResult.NbExt(); ++i)
+        {
+            Assert.True(aResult[i].Parameter >= -THE_TOL);
+            Assert.True(aResult[i].Parameter <= M_PI / 2.0 + THE_TOL);
+        }
+    }
+
+    //==================================================================================================
+    // Edge case tests
+    //==================================================================================================
+
+    [Fact]
+    public void Aggregator_PointOnCurve()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        // Point exactly on the circle
+        gp_Pnt aPoint = new(10.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        // Distance should be ~0
+        double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
+        Assert.Equal(0.0, aMinDist, THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_IsInitialized()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        GeomAdaptor_Curve anAdaptor = new(aGeomLine, 0.0, 100.0);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+        Assert.True(anExtPC.IsInitialized());
+
+        gp_Pnt aPoint = new(50.0, 5.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+        Assert.Equal(50.0, aResult[0].Parameter, THE_TOL);
+    }
+
+    //==================================================================================================
+    // Result utility tests
+    //==================================================================================================
+
+    [Fact]
+    public void Result_MinSquareDistance()
+    {
+        ExtremaPC.Result aResult = new();
+        aResult.Status = ExtremaPC.Status.OK;
+
+        // Add some extrema
+        ExtremaPC.ExtremumResult anExt1 = new();
+        anExt1.SquareDistance = 100.0;
+        aResult.Extrema.Append(anExt1);
+
+        ExtremaPC.ExtremumResult anExt2 = new();
+        anExt2.SquareDistance = 50.0;
+        aResult.Extrema.Append(anExt2);
+
+        ExtremaPC.ExtremumResult anExt3 = new();
+        anExt3.SquareDistance = 75.0;
+        aResult.Extrema.Append(anExt3);
+
+        Assert.Equal(50.0, aResult.MinSquareDistance(), THE_TOL);
+        Assert.Equal(1, aResult.MinIndex());
+    }
+
+    [Fact]
+    public void Result_Empty()
+    {
+        ExtremaPC.Result aResult = new();
+        Assert.False(aResult.IsDone());
+        Assert.Equal(0, aResult.NbExt());
+        Assert.Equal(-1, aResult.MinIndex());
+        Assert.True(double.IsInfinity(aResult.MinSquareDistance()));
+    }
+
+    //==================================================================================================
+    // SearchMode tests
+    //==================================================================================================
+
+    [Fact]
+    public void Circle_SearchMode_MinMax()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point outside circle
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle);
+        ExtremaPC.Result aResult =
+            anEval.PerformWithEndpoints(aPoint, THE_TOL, ExtremaPC.SearchMode.MinMax);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(2, aResult.NbExt()); // Both min and max
+    }
+
+    [Fact]
+    public void Circle_SearchMode_Min()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point outside circle
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle);
+        ExtremaPC.Result aResult =
+            anEval.PerformWithEndpoints(aPoint, THE_TOL, ExtremaPC.SearchMode.Min);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt()); // Only min
+        Assert.True(aResult[0].IsMinimum);
+        Assert.Equal(10.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL); // 20 - 10 = 10
+    }
+
+    [Fact]
+    public void Circle_SearchMode_Max()
+    {
+        // Circle with radius 10 in XY plane
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        // Point outside circle
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+
+        ExtremaPC_Circle anEval = new(aCircle);
+        ExtremaPC.Result aResult =
+            anEval.PerformWithEndpoints(aPoint, THE_TOL, ExtremaPC.SearchMode.Max);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt()); // Only max
+        Assert.False(aResult[0].IsMinimum);
+        Assert.Equal(30.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL); // 20 + 10 = 30
+    }
+
+    [Fact]
+    public void Aggregator_SearchMode_Min()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL, ExtremaPC.SearchMode.Min);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt()); // Only min
+        Assert.True(aResult[0].IsMinimum);
+        Assert.Equal(10.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_SearchMode_Max()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL, ExtremaPC.SearchMode.Max);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt()); // Only max
+        Assert.False(aResult[0].IsMinimum);
+        Assert.Equal(30.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL);
+    }
+
+    [Fact]
+    public void Aggregator_BSpline_SearchMode_Min()
+    {
+        // Create a simple cubic BSpline
+        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        aPoles[1] = new gp_Pnt(0, 0, 0);
+        aPoles[2] = new gp_Pnt(1, 2, 0);
+        aPoles[3] = new gp_Pnt(2, 2, 0);
+        aPoles[4] = new gp_Pnt(3, 0, 0);
+
+        NCollection_Array1<double> aKnots = new(1, 2);
+        aKnots[1] = 0.0;
+        aKnots[2] = 1.0;
+
+        NCollection_Array1<int> aMults = new(1, 2);
+        aMults[1] = 4;
+        aMults[2] = 4;
+
+        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        // Point near the curve
+        gp_Pnt aPoint = new(1.5, 3.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL, ExtremaPC.SearchMode.Min);
+
+        Assert.True(aResult.IsDone());
+        // In Min mode, should only return minimum extrema
+        for (int i = 0; i < aResult.NbExt(); ++i)
+        {
+            Assert.True(aResult[i].IsMinimum);
+        }
+    }
+
+    [Fact]
+    public void Result_MaxSquareDistance()
+    {
+        ExtremaPC.Result aResult = new();
+        aResult.Status = ExtremaPC.Status.OK;
+
+        // Add some extrema
+        ExtremaPC.ExtremumResult anExt1 = new();
+        anExt1.SquareDistance = 100.0;
+        anExt1.IsMinimum = false;
+        aResult.Extrema.Append(anExt1);
+
+        ExtremaPC.ExtremumResult anExt2 = new();
+        anExt2.SquareDistance = 50.0;
+        anExt2.IsMinimum = true;
+        aResult.Extrema.Append(anExt2);
+
+        ExtremaPC.ExtremumResult anExt3 = new();
+        anExt3.SquareDistance = 75.0;
+        anExt3.IsMinimum = false;
+        aResult.Extrema.Append(anExt3);
+
+        Assert.Equal(50.0, aResult.MinSquareDistance(), THE_TOL);
+        Assert.Equal(1, aResult.MinIndex());
+        Assert.Equal(100.0, aResult.MaxSquareDistance(), THE_TOL);
+        Assert.Equal(0, aResult.MaxIndex());
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve tests - helpers
+    //==================================================================================================
+
+    // Helper: create a cubic BSpline for reuse across tests.
+    private static Geom_BSplineCurve MakeTestBSpline()
+    {
+        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        aPoles[1] = new gp_Pnt(0, 0, 0);
+        aPoles[2] = new gp_Pnt(1, 2, 0);
+        aPoles[3] = new gp_Pnt(2, 2, 0);
+        aPoles[4] = new gp_Pnt(3, 0, 0);
+
+        NCollection_Array1<double> aKnots = new(1, 2);
+        aKnots[1] = 0.0;
+        aKnots[2] = 1.0;
+
+        NCollection_Array1<int> aMults = new(1, 2);
+        aMults[1] = 4;
+        aMults[2] = 4;
+
+        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+    }
+
+    // Helper: create a cubic Bezier for reuse across tests.
+    private static Geom_BezierCurve MakeTestBezier()
+    {
+        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        aPoles[1] = new gp_Pnt(0, 0, 0);
+        aPoles[2] = new gp_Pnt(1, 3, 0);
+        aPoles[3] = new gp_Pnt(3, 3, 0);
+        aPoles[4] = new gp_Pnt(4, 0, 0);
+
+        return new Geom_BezierCurve(aPoles);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Identity transform
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Identity_LineMatchesNonTransformed()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf anIdentity = new();
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomLine, -100.0, 100.0, anIdentity);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        Assert.True(anExtPC.IsInitialized());
+        Assert.True(anExtPCTr.IsInitialized());
+
+        gp_Pnt aPoint = new(5.0, 3.0, 4.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.NbExt(), aResult.NbExt());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Identity_BSplineMatchesNonTransformed()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf anIdentity = new();
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, anIdentity);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aPoint = new(1.5, 3.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Translation
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Translation_Line()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 10, 0));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomLine, -100.0, 100.0, aTrsf);
+
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Point at (5, 13, 4): closest to translated line at (5, 10, 0), distance = sqrt(9+16) = 5
+        gp_Pnt aPoint = new(5.0, 13.0, 4.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(25.0, aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(10.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Translation_Circle()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(100, 0, 0));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
+
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+
+        // Circle center at (100,0,0), closest at (110,0,0), dist = 10
+        gp_Pnt aPoint = new(120.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+        Assert.Equal(10.0, Math.Sqrt(aResult.MinSquareDistance()), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Translation_BSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(10, 20, 30));
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aTransPoint = new(11.5, 23.0, 30.0);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.NbExt(), aResult.NbExt());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+
+        int aMinIdx = aResult.MinIndex();
+        int aMinIdxTr = aResultTr.MinIndex();
+        Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.X() + 10.0, aResultTr[aMinIdxTr].Point.X(), THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.Y() + 20.0, aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.Z() + 30.0, aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Rotation
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Rotation_Line()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        // Rotate 90 degrees around Z . line becomes along Y
+        gp_Trsf aTrsf = new();
+        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), M_PI / 2.0);
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomLine, 0.0, 100.0, aTrsf);
+
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+
+        // Point at (3, 5, 0): rotated line along Y, closest at (0, 5, 0), dist = 3
+        gp_Pnt aPoint = new(3.0, 5.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(3.0, Math.Sqrt(aResult[aMinIdx].SquareDistance), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.X(), THE_TOL);
+        Assert.Equal(5.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Rotation_BSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), M_PI / 2.0);
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aTransPoint = new(-3.0, 1.5, 0.0);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+
+        int aMinIdx = aResult.MinIndex();
+        int aMinIdxTr = aResultTr.MinIndex();
+        Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Compound transform (rotation + translation)
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Compound_BSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), M_PI / 4.0);
+        gp_Trsf aTransl = new();
+        aTransl.SetTranslation(new gp_Vec(5, 5, 0));
+        aTrsf.Multiply(aTransl);
+
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aTransPoint = aOrigPoint.Transformed(aTrsf);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+
+        int aMinIdx = aResult.MinIndex();
+        int aMinIdxTr = aResultTr.MinIndex();
+        Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
+
+        gp_Pnt aExpectedPt = aResult[aMinIdx].Point.Transformed(aTrsf);
+        Assert.Equal(aExpectedPt.X(), aResultTr[aMinIdxTr].Point.X(), THE_TOL);
+        Assert.Equal(aExpectedPt.Y(), aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
+        Assert.Equal(aExpectedPt.Z(), aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Uniform scale
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Scale_BSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetScale(new gp_Pnt(0, 0, 0), 2.0);
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aScaledPoint = new(3.0, 6.0, 0.0);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aScaledPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+
+        // Distances scale by s^2 = 4
+        Assert.Equal(aResult.MinSquareDistance() * 4.0, aResultTr.MinSquareDistance(), THE_TOL);
+
+        int aMinIdx = aResult.MinIndex();
+        int aMinIdxTr = aResultTr.MinIndex();
+        Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Scale_Bezier()
+    {
+        Geom_BezierCurve aBezier = MakeTestBezier();
+
+        GeomAdaptor_Curve anAdaptor = new(aBezier);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetScale(new gp_Pnt(0, 0, 0), 3.0);
+        GeomAdaptor_TransformedCurve aTransformed = new(aBezier, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(2.0, 5.0, 0.0);
+        gp_Pnt aScaledPoint = new(6.0, 15.0, 0.0);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aScaledPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+
+        // Distances scale by s^2 = 9
+        Assert.Equal(aResult.MinSquareDistance() * 9.0, aResultTr.MinSquareDistance(), 1.0e-4);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Offset curve via Adaptor3d_Curve interface
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Translation_OffsetCurve()
+    {
+        Geom_Circle aCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+        Geom_OffsetCurve anOffsetCurve = new Geom_OffsetCurve(aCircle, 5.0, new gp_Dir(0, 0, 1));
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(50, 0, 0));
+        GeomAdaptor_TransformedCurve aTransformed = new(anOffsetCurve, aTrsf);
+
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+        Assert.True(anExtPC.IsInitialized());
+
+        // Offset circle radius 15, center (50, 0, 0), point at (75, 0, 0): dist = 10
+        gp_Pnt aPoint = new(75.0, 0.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+        Assert.Equal(10.0, Math.Sqrt(aResult.MinSquareDistance()), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Domain-limited
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_DomainLimited_Circle()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 0, 50));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomCircle, 0.0, M_PI / 2.0, aTrsf);
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+
+        gp_Pnt aPoint = new(15.0, 15.0, 50.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        for (int i = 0; i < aResult.NbExt(); ++i)
+        {
+            Assert.True(aResult[i].Parameter >= -THE_TOL);
+            Assert.True(aResult[i].Parameter <= M_PI / 2.0 + THE_TOL);
+            Assert.Equal(50.0, aResult[i].Point.Z(), THE_TOL);
+        }
+    }
+
+    [Fact]
+    public void TransformedCurve_DomainLimited_Constructor()
+    {
+        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 5, 0));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomLine, aTrsf);
+        ExtremaPC_Curve anExtPC = new(aTransformed, 0.0, 10.0);
+
+        gp_Pnt aPoint = new(5.0, 8.0, 0.0);
+        ExtremaPC.Result aResult = anExtPC.PerformWithEndpoints(aPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResult.NbExt() >= 1);
+
+        int aMinIdx = aResult.MinIndex();
+        Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
+        Assert.Equal(9.0, aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(5.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - PerformWithEndpoints
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_PerformWithEndpoints_BSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 0, 10));
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aTransPoint = new(1.5, 3.0, 10.0);
+
+        ExtremaPC.Result aResult = anExtPC.PerformWithEndpoints(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.PerformWithEndpoints(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.NbExt(), aResult.NbExt());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_PerformWithEndpoints_ScaledBSpline()
+    {
+        Geom_BSplineCurve aBSpline = MakeTestBSpline();
+
+        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetScale(new gp_Pnt(0, 0, 0), 2.0);
+        GeomAdaptor_TransformedCurve aTransformed = new(aBSpline, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(1.5, 3.0, 0.0);
+        gp_Pnt aScaledPoint = new(3.0, 6.0, 0.0);
+
+        ExtremaPC.Result aResult = anExtPC.PerformWithEndpoints(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.PerformWithEndpoints(aScaledPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResult.MinSquareDistance() * 4.0, aResultTr.MinSquareDistance(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - Bezier with transform
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_Translation_Bezier()
+    {
+        Geom_BezierCurve aBezier = MakeTestBezier();
+
+        GeomAdaptor_Curve anAdaptor = new(aBezier);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(10, 20, 30));
+        GeomAdaptor_TransformedCurve aTransformed = new(aBezier, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(2.0, 5.0, 0.0);
+        gp_Pnt aTransPoint = new(12.0, 25.0, 30.0);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+
+        int aMinIdx = aResult.MinIndex();
+        int aMinIdxTr = aResultTr.MinIndex();
+        gp_Pnt aExpectedPt = aResult[aMinIdx].Point.Transformed(aTrsf);
+        Assert.Equal(aExpectedPt.X(), aResultTr[aMinIdxTr].Point.X(), THE_TOL);
+        Assert.Equal(aExpectedPt.Y(), aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
+        Assert.Equal(aExpectedPt.Z(), aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_Compound_Bezier()
+    {
+        Geom_BezierCurve aBezier = MakeTestBezier();
+
+        GeomAdaptor_Curve anAdaptor = new(aBezier);
+        ExtremaPC_Curve anExtPC = new(anAdaptor);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), M_PI / 3.0);
+        gp_Trsf aTransl = new();
+        aTransl.SetTranslation(new gp_Vec(10, 0, 0));
+        aTrsf.Multiply(aTransl);
+
+        GeomAdaptor_TransformedCurve aTransformed = new(aBezier, aTrsf);
+        ExtremaPC_Curve anExtPCTr = new(aTransformed);
+
+        gp_Pnt aOrigPoint = new(2.0, 5.0, 0.0);
+        gp_Pnt aTransPoint = aOrigPoint.Transformed(aTrsf);
+
+        ExtremaPC.Result aResult = anExtPC.Perform(aOrigPoint, THE_TOL);
+        ExtremaPC.Result aResultTr = anExtPCTr.Perform(aTransPoint, THE_TOL);
+
+        Assert.True(aResult.IsDone());
+        Assert.True(aResultTr.IsDone());
+        Assert.Equal(aResultTr.MinSquareDistance(), aResult.MinSquareDistance(), THE_TOL);
+    }
+
+    //==================================================================================================
+    // GeomAdaptor_TransformedCurve - SearchMode with transform
+    //==================================================================================================
+
+    [Fact]
+    public void TransformedCurve_SearchMode_Min()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 0, 5));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+
+        gp_Pnt aPoint = new(20.0, 0.0, 5.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL, ExtremaPC.SearchMode.Min);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt());
+        Assert.True(aResult[0].IsMinimum);
+        Assert.Equal(10.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL);
+    }
+
+    [Fact]
+    public void TransformedCurve_SearchMode_Max()
+    {
+        Geom_Circle aGeomCircle =
+            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+
+        gp_Trsf aTrsf = new();
+        aTrsf.SetTranslation(new gp_Vec(0, 0, 5));
+        GeomAdaptor_TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
+        ExtremaPC_Curve anExtPC = new(aTransformed);
+
+        gp_Pnt aPoint = new(20.0, 0.0, 5.0);
+        ExtremaPC.Result aResult = anExtPC.Perform(aPoint, THE_TOL, ExtremaPC.SearchMode.Max);
+
+        Assert.True(aResult.IsDone());
+        Assert.Equal(1, aResult.NbExt());
+        Assert.False(aResult[0].IsMinimum);
+        Assert.Equal(30.0, Math.Sqrt(aResult[0].SquareDistance), THE_TOL);
+    }
+}

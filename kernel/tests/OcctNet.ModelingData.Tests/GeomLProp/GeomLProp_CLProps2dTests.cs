@@ -1,0 +1,210 @@
+// Port of: src/ModelingData/TKGeomBase/GTests/GeomLProp_CLProps2d_Test.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace OcctNet.ModelingData.Tests;
+
+public class GeomLProp_CLProps2dTest
+{
+    private readonly Geom2d_Circle myCircle;
+    private readonly Geom2d_Line myLine;
+    private readonly Geom2d_Ellipse myEllipse;
+
+    public GeomLProp_CLProps2dTest()
+    {
+        // Circle centered at origin, radius 5
+        var aCirc = new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 5.0);
+        myCircle = new Geom2d_Circle(aCirc);
+
+        // Line through origin along X
+        var aLin = new gp_Lin2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0));
+        myLine = new Geom2d_Line(aLin);
+
+        // Ellipse centered at origin, major radius 10, minor radius 5
+        var anElips = new gp_Elips2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 10.0, 5.0);
+        myEllipse = new Geom2d_Ellipse(anElips);
+    }
+
+    [Fact]
+    public void Circle_Value()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+
+        gp_Pnt2d aPnt = aProps.Value();
+        Assert.Equal(5.0, aPnt.X(), Precision.Confusion());
+        Assert.Equal(0.0, aPnt.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_SetParameter()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, 2, Precision.Confusion());
+
+        aProps.SetParameter(Math.PI / 2.0);
+        gp_Pnt2d aPnt = aProps.Value();
+        Assert.Equal(0.0, aPnt.X(), Precision.Confusion());
+        Assert.Equal(5.0, aPnt.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_TangentDefined()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+        Assert.True(aProps.IsTangentDefined());
+    }
+
+    [Fact]
+    public void Circle_TangentAtZero()
+    {
+        // At U=0 on a circle, the tangent should point in +Y direction
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+
+        aProps.Tangent(out gp_Dir2d aTangent);
+        Assert.Equal(0.0, aTangent.X(), Precision.Confusion());
+        Assert.Equal(1.0, aTangent.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_Curvature()
+    {
+        // Curvature of a circle of radius R is 1/R
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+
+        double aCurvature = aProps.Curvature();
+        Assert.Equal(1.0 / 5.0, aCurvature, Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_CurvatureConstant()
+    {
+        // Curvature on a circle should be the same at every point
+        var aProps = new GeomLProp_CLProps2d(myCircle, 2, Precision.Confusion());
+
+        for (double u = 0.0; u < 2.0 * Math.PI; u += Math.PI / 4.0)
+        {
+            aProps.SetParameter(u);
+            Assert.Equal(1.0 / 5.0, aProps.Curvature(), Precision.Confusion());
+        }
+    }
+
+    [Fact]
+    public void Circle_Normal()
+    {
+        // Normal at U=0 on a circle centered at origin should point inward (-X)
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+
+        aProps.Normal(out gp_Dir2d aNormal);
+        // Normal should be perpendicular to tangent
+        aProps.Tangent(out gp_Dir2d aTangent);
+        Assert.Equal(0.0, Math.Abs(aTangent.X() * aNormal.X() + aTangent.Y() * aNormal.Y()), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_CentreOfCurvature()
+    {
+        // Centre of curvature of a circle is its center
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+
+        aProps.CentreOfCurvature(out gp_Pnt2d aCenter);
+        Assert.Equal(0.0, aCenter.X(), Precision.Confusion());
+        Assert.Equal(0.0, aCenter.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Circle_CentreOfCurvature_AtPiHalf()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, Math.PI / 2.0, 2, Precision.Confusion());
+
+        aProps.CentreOfCurvature(out gp_Pnt2d aCenter);
+        Assert.Equal(0.0, aCenter.X(), Precision.Confusion());
+        Assert.Equal(0.0, aCenter.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Line_TangentDefined()
+    {
+        var aProps = new GeomLProp_CLProps2d(myLine, 0.0, 2, Precision.Confusion());
+        Assert.True(aProps.IsTangentDefined());
+    }
+
+    [Fact]
+    public void Line_Tangent()
+    {
+        var aProps = new GeomLProp_CLProps2d(myLine, 5.0, 2, Precision.Confusion());
+
+        aProps.Tangent(out gp_Dir2d aTangent);
+        Assert.Equal(1.0, aTangent.X(), Precision.Confusion());
+        Assert.Equal(0.0, aTangent.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void Line_CurvatureIsZero()
+    {
+        var aProps = new GeomLProp_CLProps2d(myLine, 5.0, 2, Precision.Confusion());
+        double aCurvature = aProps.Curvature();
+        Assert.Equal(0.0, aCurvature, Precision.Confusion());
+    }
+
+    [Fact]
+    public void Line_CentreOfCurvature_Throws()
+    {
+        // Centre of curvature is not defined for a line (zero curvature)
+        var aProps = new GeomLProp_CLProps2d(myLine, 5.0, 2, Precision.Confusion());
+        Assert.ThrowsAny<LProp_NotDefined>(() => aProps.CentreOfCurvature(out _));
+    }
+
+    [Fact]
+    public void Ellipse_CurvatureAtMajorVertex()
+    {
+        // Radius of curvature at the major vertex = b^2/a, so curvature = a/b^2
+        var aProps = new GeomLProp_CLProps2d(myEllipse, 0.0, 2, Precision.Confusion());
+
+        double aCurvature = aProps.Curvature();
+        double aExpected = 10.0 / (5.0 * 5.0); // a/b^2 = 10/25 = 0.4
+        Assert.Equal(aExpected, aCurvature, 1e-6);
+    }
+
+    [Fact]
+    public void Ellipse_CurvatureAtMinorVertex()
+    {
+        // At U=PI/2, ellipse is at minor vertex. Curvature = b/a^2
+        var aProps = new GeomLProp_CLProps2d(myEllipse, Math.PI / 2.0, 2, Precision.Confusion());
+
+        double aCurvature = aProps.Curvature();
+        double aExpected = 5.0 / (10.0 * 10.0); // b/a^2 = 5/100 = 0.05
+        Assert.Equal(aExpected, aCurvature, 1e-6);
+    }
+
+    [Fact]
+    public void SetCurve()
+    {
+        var aProps = new GeomLProp_CLProps2d(myEllipse, 0.0, 2, Precision.Confusion());
+        aProps.SetCurve(myCircle);
+        aProps.SetParameter(0.0);
+
+        gp_Pnt2d aPnt = aProps.Value();
+        Assert.Equal(5.0, aPnt.X(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void D1_Circle()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+        gp_Vec2d aD1 = aProps.D1();
+
+        // First derivative at U=0 on circle(R=5) is (0, 5)
+        Assert.Equal(0.0, aD1.X(), Precision.Confusion());
+        Assert.Equal(5.0, aD1.Y(), Precision.Confusion());
+    }
+
+    [Fact]
+    public void D2_Circle()
+    {
+        var aProps = new GeomLProp_CLProps2d(myCircle, 0.0, 2, Precision.Confusion());
+        gp_Vec2d aD2 = aProps.D2();
+
+        // Second derivative at U=0 on circle(R=5) is (-5, 0)
+        Assert.Equal(-5.0, aD2.X(), Precision.Confusion());
+        Assert.Equal(0.0, aD2.Y(), Precision.Confusion());
+    }
+}

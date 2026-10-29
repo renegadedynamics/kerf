@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Bnd;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>Bnd_Box against native OCCT, on random inputs.</summary>
 public class BndBoxOracleTests(ITestOutputHelper output)

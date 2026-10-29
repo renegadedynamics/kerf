@@ -21,6 +21,7 @@ Requirements: the .NET 10 SDK and git.
 
 ```powershell
 ./tools/get-occt.ps1          # OCCT V8_0_1 source into .deps/occt-src (for the corpus test and port status)
+./tools/get-occt-testdata.ps1 # OCCT's test data (99 MB) into .deps/occt-testdata, for the Draw corpus
 ./tools/pack-bento.ps1        # Bento.Collections from ../bento into the local feed .deps/nuget
 dotnet test
 ```

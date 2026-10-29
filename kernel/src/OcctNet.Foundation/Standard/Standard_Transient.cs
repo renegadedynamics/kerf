@@ -23,4 +23,25 @@ public abstract class Standard_Transient
     public bool IsInstance(Type theType) => GetType() == theType;
 
     public Standard_Transient This() => this;
+
+    // Freezing (OCCT.NET, not OCCT): objects that callers or topology share must not change underneath them.
+    // Ported mutators of geometry and topology classes start with CheckMutable(); the port freezes an object
+    // when it is attached to topology or otherwise shared. Freezing is one-way. See docs/translation-rules.md.
+
+    private volatile bool myIsFrozen;
+
+    /// <summary>True once the object can no longer change.</summary>
+    public bool IsFrozen() => myIsFrozen;
+
+    /// <summary>Makes the object unchangeable from now on. Idempotent and thread-safe.</summary>
+    internal void Freeze() => myIsFrozen = true;
+
+    /// <summary>Throws <see cref="Standard_ImmutableObject"/> if the object is frozen: the first line of every mutator.</summary>
+    protected internal void CheckMutable()
+    {
+        if (myIsFrozen)
+        {
+            throw new Standard_ImmutableObject($"{GetType().Name} is frozen: it is shared, so it cannot change. Change a copy.");
+        }
+    }
 }

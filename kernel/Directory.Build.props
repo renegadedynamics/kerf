@@ -10,6 +10,8 @@
     <NoWarn>$(NoWarn);CS8981;IDE1006</NoWarn>
     <!-- The OCCT source this port follows (occt-version.json); tools/get-occt.ps1 fetches it here -->
     <OcctSourceDir>$(RepoRoot).deps/occt-src/</OcctSourceDir>
+    <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->
+    <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
     <!-- A sibling build123d.NET checkout, whose native OCCT build the oracle tests compare against -->
     <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../build123d.net/'))</Build123dNetRoot>
   </PropertyGroup>

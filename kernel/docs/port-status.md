@@ -56,7 +56,7 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 32 / 470 | 14,224 / 132,410 | 10.7 |
+| FoundationClasses | TKernel | 34 / 470 | 14,954 / 132,410 | 11.3 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -72,9 +72,9 @@ broken down by package.
 | ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
-| ModelingData | TKG2d | 0 / 102 | 0 / 23,488 | 0.0 |
-| ModelingData | TKG3d | 0 / 237 | 0 / 70,301 | 0.0 |
-| ModelingData | TKGeomBase | 0 / 720 | 0 / 317,408 | 0.0 |
+| ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
+| ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
+| ModelingData | TKGeomBase | 703 / 720 | 316,755 / 317,408 | 99.8 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 468 | 151,640 / 2,897,781 | 5.2 |
+| **All** |  | 1512 | 562,914 / 2,897,781 | 19.4 |
 
 ## TKMath
 
@@ -117,7 +117,7 @@ broken down by package.
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
 | Message | 3 / 50 | 897 / 7,261 | 12.4 |
-| NCollection | 24 / 81 | 12,204 / 26,993 | 45.2 |
+| NCollection | 26 / 81 | 12,934 / 26,993 | 47.9 |
 | OSD | 0 / 94 | 0 / 19,678 | 0.0 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
@@ -131,4 +131,60 @@ broken down by package.
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
+
+## TKG2d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor2d | 6 / 6 | 1,720 / 1,720 | 100.0 |
+| Geom2d | 44 / 44 | 11,019 / 11,019 | 100.0 |
+| Geom2dAdaptor | 4 / 4 | 1,826 / 1,826 | 100.0 |
+| Geom2dEval | 14 / 14 | 4,405 / 4,405 | 100.0 |
+| Geom2dGridEval | 20 / 20 | 3,491 / 3,491 | 100.0 |
+| Geom2dHash | 14 / 14 | 1,027 / 1,027 | 100.0 |
+
+## TKG3d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor3d | 16 / 16 | 7,038 / 7,038 | 100.0 |
+| AdvApprox | 14 / 14 | 2,320 / 2,320 | 100.0 |
+| Geom | 84 / 84 | 30,530 / 30,530 | 100.0 |
+| GeomAdaptor | 14 / 14 | 7,175 / 7,175 | 100.0 |
+| GeomEval | 25 / 25 | 9,820 / 9,820 | 100.0 |
+| GeomGridEval | 43 / 43 | 10,200 / 10,200 | 100.0 |
+| GeomHash | 36 / 36 | 2,800 / 2,800 | 100.0 |
+| TopAbs | 5 / 5 | 418 / 418 | 100.0 |
+
+## TKGeomBase
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| AdvApp2Var | 35 / 35 | 51,697 / 51,697 | 100.0 |
+| AppCont | 9 / 9 | 125,352 / 125,352 | 100.0 |
+| AppDef | 60 / 60 | 10,573 / 10,573 | 100.0 |
+| AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
+| Approx | 28 / 28 | 10,308 / 10,308 | 100.0 |
+| BndLib | 8 / 8 | 2,537 / 2,537 | 100.0 |
+| CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
+| Extrema | 103 / 104 | 22,481 / 22,613 | 99.4 |
+| ExtremaPC | 18 / 18 | 3,990 / 3,990 | 100.0 |
+| FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
+| GC | 65 / 65 | 5,462 / 5,462 | 100.0 |
+| GCE2d | 0 / 15 | 0 / 432 | 0.0 |
+| GCPnts | 19 / 19 | 5,022 / 5,022 | 100.0 |
+| GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
+| Geom2dConvert | 14 / 14 | 4,160 / 4,160 | 100.0 |
+| GeomBndLib | 65 / 65 | 9,343 / 9,343 | 100.0 |
+| GeomConvert | 33 / 33 | 9,390 / 9,390 | 100.0 |
+| GeomLProp | 10 / 10 | 2,214 / 2,214 | 100.0 |
+| GeomLib | 28 / 28 | 7,033 / 7,033 | 100.0 |
+| GeomProjLib | 2 / 2 | 491 / 491 | 100.0 |
+| GeomTools | 10 / 11 | 3,757 / 3,846 | 97.7 |
+| Hermit | 2 / 2 | 1,280 / 1,280 | 100.0 |
+| IntAna | 20 / 20 | 7,605 / 7,605 | 100.0 |
+| IntAna2d | 18 / 18 | 1,971 / 1,971 | 100.0 |
+| LProp | 9 / 9 | 843 / 843 | 100.0 |
+| ProjLib | 32 / 32 | 12,847 / 12,847 | 100.0 |
+| gce | 48 / 48 | 4,513 / 4,513 | 100.0 |
 

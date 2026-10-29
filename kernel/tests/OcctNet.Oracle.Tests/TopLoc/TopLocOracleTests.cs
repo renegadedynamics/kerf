@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.TopLoc;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// TopLoc_Location against native OCCT: random chains of compositions, inversions, divisions and powers over a

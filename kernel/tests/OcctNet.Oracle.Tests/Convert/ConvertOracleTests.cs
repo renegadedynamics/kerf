@@ -4,16 +4,15 @@
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 
-namespace OcctNet.Oracle.Tests.Convert;
+namespace OcctNet.Oracle.Tests;
 
 /// <summary>
 /// The Convert package against native OCCT, through GeomConvert::CurveToBSplineCurve,
-/// Geom2dConvert::CurveToBSplineCurve and GeomConvert::SurfaceToBSplineSurface, which build the B-spline from the
-/// converters' output. The tests repeat what those functions do around the converters (GeomConvert.cxx,
-/// GeomConvert_1.cxx, Geom2dConvert.cxx): lifting the 2D poles into the conic's plane, the Geom_BSplineCurve
-/// SetPeriodic of a whole circle or ellipse, the mirror of a left-handed 2D conic. Arcs of 6 or more radians with
-/// Convert_RationalC1 are left out: OCCT converts two halves and concatenates them with
-/// GeomConvert_CompCurveToBSplineCurve, which isn't ported.
+/// Geom2dConvert::CurveToBSplineCurve and GeomConvert::SurfaceToBSplineSurface, which build their B-splines from the
+/// converters' output, compared with the ported GeomConvert and Geom2dConvert on the same inputs. Long RationalC1
+/// arcs (6 radians or more), which OCCT converts in two halves joined by GeomConvert_CompCurveToBSplineCurve, are
+/// included (first version: a re-implementation of GeomConvert's post-processing in the test, which had to leave them
+/// out).
 /// </summary>
 public class ConvertOracleTests(ITestOutputHelper output)
 {
@@ -80,92 +79,6 @@ public class ConvertOracleTests(ITestOutputHelper output)
         theNative = new N.gp_Ax22d(aNP, aND, isSense);
     }
 
-    /// <summary>A Convert result as GeomConvert's BSplineCurveBuilder makes it, before any SetPeriodic.</summary>
-    private sealed class CurveData
-    {
-        public int Degree;
-        public bool Periodic;
-        public NCollection_Array1<double> Weights = null!;
-        public NCollection_Array1<double> Knots = null!;
-        public NCollection_Array1<int> Mults = null!;
-
-        public static CurveData From(Convert_ConicToBSplineCurve theConvert)
-            => new()
-            {
-                Degree = theConvert.Degree(),
-                Periodic = theConvert.IsPeriodic(),
-                Weights = theConvert.Weights(),
-                Knots = theConvert.Knots(),
-                Mults = theConvert.Multiplicities(),
-            };
-
-        /// <summary>Geom_BSplineCurve::SetPeriodic: the knots from the first to the last used one, the end multiplicities
-        /// evened out, the poles cut to the periodic count. Returns that count.</summary>
-        public int SetPeriodic()
-        {
-            int aFirst = Periodic ? 1 : Occt.BSplCLib.FirstUKnotIndex(Degree, Mults);
-            int aLast = Periodic ? Knots.Length() : Occt.BSplCLib.LastUKnotIndex(Degree, Mults);
-            var aKnots = new NCollection_Array1<double>(1, aLast - aFirst + 1);
-            var aMults = new NCollection_Array1<int>(1, aLast - aFirst + 1);
-            for (int k = aFirst; k <= aLast; k++)
-            {
-                aKnots[k - aFirst + 1] = Knots[k];
-                aMults[k - aFirst + 1] = Mults[k];
-            }
-
-            int anEnd = Math.Min(Degree, Math.Max(aMults[1], aMults[aMults.Upper()]));
-            aMults[1] = anEnd;
-            aMults[aMults.Upper()] = anEnd;
-            Knots = aKnots;
-            Mults = aMults;
-            Periodic = true;
-            return Occt.BSplCLib.NbPoles(Degree, true, Mults);
-        }
-    }
-
-    private static void SameCurve(Oracle theOracle, N.Geom_BSplineCurve theNative, CurveData theData,
-                                  NCollection_Array1<gp_Pnt> thePoles, int theNbPoles, string theWhat)
-    {
-        theOracle.Same(theNative.Degree(), theData.Degree, theWhat + " degree");
-        theOracle.Same(theNative.IsPeriodic(), theData.Periodic, theWhat + " periodic");
-        theOracle.Same(theNative.NbPoles(), theNbPoles, theWhat + " NbPoles");
-        for (int i = 1; i <= theNbPoles; i++)
-        {
-            using N.gp_Pnt aNP = theNative.Pole(i);
-            theOracle.Same(aNP, thePoles[i], theWhat + " pole");
-            // A curve whose weights are all equal is not rational for Geom, which then answers 1
-            theOracle.Same(theNative.Weight(i), theNative.IsRational() ? theData.Weights[i] : 1.0, theWhat + " weight");
-        }
-
-        theOracle.Same(theNative.NbKnots(), theData.Knots.Length(), theWhat + " NbKnots");
-        for (int k = 1; k <= theData.Knots.Length(); k++)
-        {
-            theOracle.Same(theNative.Knot(k), theData.Knots[k], theWhat + " knot");
-            theOracle.Same(theNative.Multiplicity(k), theData.Mults[k], theWhat + " mult");
-        }
-    }
-
-    private static void SameCurve2d(Oracle theOracle, N.Geom2d_BSplineCurve theNative, CurveData theData,
-                                    NCollection_Array1<gp_Pnt2d> thePoles, int theNbPoles, string theWhat)
-    {
-        theOracle.Same(theNative.Degree(), theData.Degree, theWhat + " degree");
-        theOracle.Same(theNative.IsPeriodic(), theData.Periodic, theWhat + " periodic");
-        theOracle.Same(theNative.NbPoles(), theNbPoles, theWhat + " NbPoles");
-        for (int i = 1; i <= theNbPoles; i++)
-        {
-            using N.gp_Pnt2d aNP = theNative.Pole(i);
-            theOracle.Same(aNP, thePoles[i], theWhat + " pole");
-            theOracle.Same(theNative.Weight(i), theNative.IsRational() ? theData.Weights[i] : 1.0, theWhat + " weight");
-        }
-
-        theOracle.Same(theNative.NbKnots(), theData.Knots.Length(), theWhat + " NbKnots");
-        for (int k = 1; k <= theData.Knots.Length(); k++)
-        {
-            theOracle.Same(theNative.Knot(k), theData.Knots[k], theWhat + " knot");
-            theOracle.Same(theNative.Multiplicity(k), theData.Mults[k], theWhat + " mult");
-        }
-    }
-
     private enum ConicKind
     {
         Circle,
@@ -195,8 +108,16 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 _ => new N.Geom_Parabola(aNAx2, aR1),
             };
 
-            double aU1 = 0.0, aU2 = 0.0;
+            Geom_Curve aConic = aKind switch
+            {
+                ConicKind.Circle => new Geom_Circle(anAx2, aR1),
+                ConicKind.Ellipse => new Geom_Ellipse(anAx2, aR1, aR2),
+                ConicKind.Hyperbola => new Geom_Hyperbola(anAx2, aR1, aR2),
+                _ => new Geom_Parabola(anAx2, aR1),
+            };
+
             N.Geom_Curve aNCurve = aNConic;
+            Geom_Curve aCurve = aConic;
             N.Geom_TrimmedCurve? aNTrimmed = null;
             if (!isWhole)
             {
@@ -204,71 +125,31 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 double aLength = aKind <= ConicKind.Ellipse ? anOracle.Real(0.05, 2 * Math.PI) : anOracle.Real(0.05, aKind == ConicKind.Hyperbola ? 3 : 10);
                 aNTrimmed = new N.Geom_TrimmedCurve(aNConic, aFirst, aFirst + aLength);
                 aNCurve = aNTrimmed;
-                aU1 = aNTrimmed.FirstParameter();
-                aU2 = aNTrimmed.LastParameter();
-                if (aParam == Convert_ParameterisationType.Convert_RationalC1 && aKind <= ConicKind.Ellipse && aU2 - aU1 >= 6.0)
+                aCurve = new Geom_TrimmedCurve(aConic, aFirst, aFirst + aLength);
+                if (aParam == Convert_ParameterisationType.Convert_RationalC1 && aKind <= ConicKind.Ellipse
+                    && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
                     aNbSplit++;
-                    aNTrimmed.Dispose();
-                    continue;
                 }
             }
 
             N.Geom_BSplineCurve? aNative = null;
-            bool isNativeThrown = false;
-            try
-            {
-                aNative = N.GeomConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam);
-            }
-            catch (Exception)
-            {
-                isNativeThrown = true;
-            }
-
-            Convert_ConicToBSplineCurve? aConvert = null;
-            bool isPortThrown = false;
-            try
-            {
-                aConvert = aKind switch
-                {
-                    ConicKind.Circle when isWhole => new Convert_CircleToBSplineCurve(new gp_Circ2d(Occt.gp.OX2d(), aR1), aParam),
-                    ConicKind.Circle => new Convert_CircleToBSplineCurve(new gp_Circ2d(Occt.gp.OX2d(), aR1), aU1, aU2, aParam),
-                    ConicKind.Ellipse when isWhole => new Convert_EllipseToBSplineCurve(new gp_Elips2d(Occt.gp.OX2d(), aR1, aR2), aParam),
-                    ConicKind.Ellipse => new Convert_EllipseToBSplineCurve(new gp_Elips2d(Occt.gp.OX2d(), aR1, aR2), aU1, aU2, aParam),
-                    ConicKind.Hyperbola => new Convert_HyperbolaToBSplineCurve(new gp_Hypr2d(Occt.gp.OX2d(), aR1, aR2), aU1, aU2),
-                    _ => new Convert_ParabolaToBSplineCurve(new gp_Parab2d(Occt.gp.OX2d(), aR1), aU1, aU2),
-                };
-            }
-            catch (Exception)
-            {
-                isPortThrown = true;
-            }
-
+            Geom_BSplineCurve? aPort = null;
+            Exception? aNErr = AdaptorOracleInputs.Catch(
+                () => aNative = N.GeomConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = GeomConvert.CurveToBSplineCurve(aCurve, aParam));
             aNTrimmed?.Dispose();
-            anOracle.Same(isNativeThrown, isPortThrown, $"{aKind} {aParam} throws");
-            if (isNativeThrown)
+            if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, $"{aKind} {aParam}"))
             {
                 aNbThrows++;
                 continue;
             }
 
             using N.Geom_BSplineCurve aNResult = aNative!;
-            CurveData aData = CurveData.From(aConvert!);
-
-            // BSplineCurveBuilder: the 2D poles in the plane z = 0, moved from the global system to the conic's
-            NCollection_Array1<gp_Pnt2d> aPoles2d = aConvert!.Poles();
-            gp_Trsf aT = gp_Trsf.Transformation(new gp_Ax3(anAx2), new gp_Ax3(Occt.gp.XOY()));
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aPoles2d.Length());
-            for (int k = aPoles2d.Lower(); k <= aPoles2d.Upper(); k++)
-            {
-                aPoles[k] = new gp_Pnt(aPoles2d[k].X(), aPoles2d[k].Y(), 0.0).Transformed(aT);
-            }
-
-            int aNbPoles = isWhole ? aData.SetPeriodic() : aPoles.Length();
-            SameCurve(anOracle, aNResult, aData, aPoles, aNbPoles, $"{aKind} {aParam}");
+            GeomConvertOracleTests.SameBSplineCurve(anOracle, aNResult, aPort!, $"{aKind} {aParam}");
         }
 
-        output.WriteLine($"Native and port threw for the same {aNbThrows} conics; {aNbSplit} long RationalC1 arcs left out");
+        output.WriteLine($"Native and port threw for the same {aNbThrows} conics; {aNbSplit} long RationalC1 arcs");
         anOracle.Report("Convert conics (GeomConvert::CurveToBSplineCurve)");
     }
 
@@ -287,86 +168,41 @@ public class ConvertOracleTests(ITestOutputHelper output)
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.Geom2d_Curve aNConic = aKind == ConicKind.Circle ? new N.Geom2d_Circle(aNAx, aR1)
                                                                      : new N.Geom2d_Ellipse(aNAx, aR1, aR2);
-            double aU1 = 0.0, aU2 = 0.0;
+            Geom2d_Curve aConic = aKind == ConicKind.Circle ? new Geom2d_Circle(anAx, aR1) : new Geom2d_Ellipse(anAx, aR1, aR2);
             N.Geom2d_Curve aNCurve = aNConic;
+            Geom2d_Curve aCurve = aConic;
             N.Geom2d_TrimmedCurve? aNTrimmed = null;
             if (!isWhole)
             {
                 double aFirst = anOracle.Real(-7, 7);
-                aNTrimmed = new N.Geom2d_TrimmedCurve(aNConic, aFirst, aFirst + anOracle.Real(0.05, 2 * Math.PI));
+                double aLast = aFirst + anOracle.Real(0.05, 2 * Math.PI);
+                aNTrimmed = new N.Geom2d_TrimmedCurve(aNConic, aFirst, aLast);
                 aNCurve = aNTrimmed;
-                aU1 = aNTrimmed.FirstParameter();
-                aU2 = aNTrimmed.LastParameter();
-                if (aParam == Convert_ParameterisationType.Convert_RationalC1 && aU2 - aU1 >= 6.0)
+                aCurve = new Geom2d_TrimmedCurve(aConic, aFirst, aLast);
+                if (aParam == Convert_ParameterisationType.Convert_RationalC1
+                    && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
                     aNbSplit++;
-                    aNTrimmed.Dispose();
-                    continue;
                 }
             }
 
             N.Geom2d_BSplineCurve? aNative = null;
-            bool isNativeThrown = false;
-            try
-            {
-                aNative = N.Geom2dConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam);
-            }
-            catch (Exception)
-            {
-                isNativeThrown = true;
-            }
-
-            Convert_ConicToBSplineCurve? aConvert = null;
-            bool isPortThrown = false;
-            try
-            {
-                aConvert = (aKind, isWhole) switch
-                {
-                    (ConicKind.Circle, true) => new Convert_CircleToBSplineCurve(new gp_Circ2d(Occt.gp.OX2d(), aR1), aParam),
-                    (ConicKind.Circle, false) => new Convert_CircleToBSplineCurve(new gp_Circ2d(Occt.gp.OX2d(), aR1), aU1, aU2, aParam),
-                    (_, true) => new Convert_EllipseToBSplineCurve(new gp_Elips2d(Occt.gp.OX2d(), aR1, aR2), aParam),
-                    _ => new Convert_EllipseToBSplineCurve(new gp_Elips2d(Occt.gp.OX2d(), aR1, aR2), aU1, aU2, aParam),
-                };
-            }
-            catch (Exception)
-            {
-                isPortThrown = true;
-            }
-
+            Geom2d_BSplineCurve? aPort = null;
+            Exception? aNErr = AdaptorOracleInputs.Catch(
+                () => aNative = N.Geom2dConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = Geom2dConvert.CurveToBSplineCurve(aCurve, aParam));
             aNTrimmed?.Dispose();
-            anOracle.Same(isNativeThrown, isPortThrown, $"2d {aKind} {aParam} throws");
-            if (isNativeThrown)
+            if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, $"2d {aKind} {aParam}"))
             {
                 aNbThrows++;
                 continue;
             }
 
             using N.Geom2d_BSplineCurve aNResult = aNative!;
-            CurveData aData = CurveData.From(aConvert!);
-
-            // Geom2dConvert's BSplineCurveBuilder: a mirror for a left-handed conic, then from the global system to the
-            // conic's X axis
-            NCollection_Array1<gp_Pnt2d> aPoles = aConvert!.Poles();
-            if ((anAx.XDirection() ^ anAx.YDirection()) < 0.0)
-            {
-                gp_Trsf2d aSym = gp_Trsf2d.Mirror(Occt.gp.OX2d());
-                for (int k = aPoles.Lower(); k <= aPoles.Upper(); k++)
-                {
-                    aPoles[k] = aPoles[k].Transformed(aSym);
-                }
-            }
-
-            gp_Trsf2d aT = gp_Trsf2d.Transformation(anAx.XAxis(), Occt.gp.OX2d());
-            for (int k = aPoles.Lower(); k <= aPoles.Upper(); k++)
-            {
-                aPoles[k] = aPoles[k].Transformed(aT);
-            }
-
-            int aNbPoles = isWhole ? aData.SetPeriodic() : aPoles.Length();
-            SameCurve2d(anOracle, aNResult, aData, aPoles, aNbPoles, $"2d {aKind} {aParam}");
+            Geom2dOracle.SameStructure(anOracle, aNResult, aPort!, $"2d {aKind} {aParam}");
         }
 
-        output.WriteLine($"Native and port threw for the same {aNbThrows} 2D conics; {aNbSplit} long RationalC1 arcs left out");
+        output.WriteLine($"Native and port threw for the same {aNbThrows} 2D conics; {aNbSplit} long RationalC1 arcs");
         anOracle.Report("Convert 2D conics (Geom2dConvert::CurveToBSplineCurve)");
     }
 
@@ -433,107 +269,30 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 aV2 = 2 * Math.PI;
             }
 
-            N.Geom_RectangularTrimmedSurface? aNTrimmed = aMode == 3 ? null : new N.Geom_RectangularTrimmedSurface(aNSurface, aU1, aU2, aV1, aV2);
-            if (aNTrimmed != null)
+            Geom_Surface aSurface = aKind switch
             {
-                aNTrimmed.Bounds(ref aU1, ref aU2, ref aV1, ref aV2);
-            }
+                QuadricKind.Cylinder => new Geom_CylindricalSurface(anAx3, aR1),
+                QuadricKind.Cone => new Geom_ConicalSurface(anAx3, anAngle, aR1),
+                QuadricKind.Sphere => new Geom_SphericalSurface(anAx3, aR1),
+                _ => new Geom_ToroidalSurface(anAx3, aR1, aR2),
+            };
+            N.Geom_RectangularTrimmedSurface? aNTrimmed = aMode == 3 ? null : new N.Geom_RectangularTrimmedSurface(aNSurface, aU1, aU2, aV1, aV2);
+            Geom_Surface aPortInput = aMode == 3 ? aSurface : new Geom_RectangularTrimmedSurface(aSurface, aU1, aU2, aV1, aV2);
 
             N.Geom_BSplineSurface? aNative = null;
-            bool isNativeThrown = false;
-            try
-            {
-                aNative = N.GeomConvert.SurfaceToBSplineSurface(aNTrimmed ?? aNSurface);
-            }
-            catch (Exception)
-            {
-                isNativeThrown = true;
-            }
-
-            // GeomConvert::SurfaceToBSplineSurface's choice of converter
-            bool isUClosed = Math.Abs((aU2 - aU1) - 2.0 * Math.PI) <= Precision.PConfusion();
-            Convert_ElementarySurfaceToBSplineSurface? aConvert = null;
-            bool isPortThrown = false;
-            try
-            {
-                switch (aKind)
-                {
-                    case QuadricKind.Cylinder:
-                        var aCyl = new gp_Cylinder(anAx3, aR1);
-                        aConvert = isUClosed ? new Convert_CylinderToBSplineSurface(aCyl, aV1, aV2)
-                                             : new Convert_CylinderToBSplineSurface(aCyl, aU1, aU2, aV1, aV2);
-                        break;
-                    case QuadricKind.Cone:
-                        var aCone = new gp_Cone(anAx3, anAngle, aR1);
-                        aConvert = isUClosed ? new Convert_ConeToBSplineSurface(aCone, aV1, aV2)
-                                             : new Convert_ConeToBSplineSurface(aCone, aU1, aU2, aV1, aV2);
-                        break;
-                    case QuadricKind.Sphere:
-                        var aSph = new gp_Sphere(anAx3, aR1);
-                        aConvert = aMode == 3 ? new Convert_SphereToBSplineSurface(aSph)
-                                   : isUClosed ? new Convert_SphereToBSplineSurface(aSph, aV1, aV2, false)
-                                               : new Convert_SphereToBSplineSurface(aSph, aU1, aU2, aV1, aV2);
-                        break;
-                    default:
-                        var aTor = new gp_Torus(anAx3, aR1, aR2);
-                        bool isVClosed = aMode == 2;
-                        aConvert = aMode == 3 ? new Convert_TorusToBSplineSurface(aTor)
-                                   : isUClosed ? new Convert_TorusToBSplineSurface(aTor, aV1, aV2, false)
-                                   : isVClosed ? new Convert_TorusToBSplineSurface(aTor, aU1, aU2)
-                                               : new Convert_TorusToBSplineSurface(aTor, aU1, aU2, aV1, aV2);
-                        break;
-                }
-            }
-            catch (Exception)
-            {
-                isPortThrown = true;
-            }
-
+            Geom_BSplineSurface? aPort = null;
+            Exception? aNErr = AdaptorOracleInputs.Catch(() => aNative = N.GeomConvert.SurfaceToBSplineSurface(aNTrimmed ?? aNSurface));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = GeomConvert.SurfaceToBSplineSurface(aPortInput));
             aNTrimmed?.Dispose();
-            anOracle.Same(isNativeThrown, isPortThrown, $"{aKind} throws");
-            if (isNativeThrown)
+            string aWhat = $"{aKind} mode {aMode}";
+            if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, aWhat))
             {
                 aNbThrows++;
                 continue;
             }
 
             using N.Geom_BSplineSurface aNResult = aNative!;
-            string aWhat = $"{aKind} mode {aMode}";
-            Convert_ElementarySurfaceToBSplineSurface C = aConvert!;
-            anOracle.Same(aNResult.UDegree(), C.UDegree(), aWhat + " UDegree");
-            anOracle.Same(aNResult.VDegree(), C.VDegree(), aWhat + " VDegree");
-            anOracle.Same(aNResult.IsUPeriodic(), C.IsUPeriodic(), aWhat + " UPeriodic");
-            anOracle.Same(aNResult.IsVPeriodic(), C.IsVPeriodic(), aWhat + " VPeriodic");
-            NCollection_Array2<gp_Pnt> aPoles = C.Poles();
-            NCollection_Array2<double> aWeights = C.Weights();
-            anOracle.Same(aNResult.NbUPoles(), aPoles.ColLength(), aWhat + " NbUPoles");
-            anOracle.Same(aNResult.NbVPoles(), aPoles.RowLength(), aWhat + " NbVPoles");
-            bool isRational = aNResult.IsURational() || aNResult.IsVRational();
-            for (int r = 1; r <= aPoles.ColLength(); r++)
-            {
-                for (int c = 1; c <= aPoles.RowLength(); c++)
-                {
-                    using N.gp_Pnt aNP = aNResult.Pole(r, c);
-                    anOracle.Same(aNP, aPoles[r, c], aWhat + " pole");
-                    anOracle.Same(aNResult.Weight(r, c), isRational ? aWeights[r, c] : 1.0, aWhat + " weight");
-                }
-            }
-
-            NCollection_Array1<double> aUKnots = C.UKnots(), aVKnots = C.VKnots();
-            NCollection_Array1<int> aUMults = C.UMultiplicities(), aVMults = C.VMultiplicities();
-            anOracle.Same(aNResult.NbUKnots(), aUKnots.Length(), aWhat + " NbUKnots");
-            anOracle.Same(aNResult.NbVKnots(), aVKnots.Length(), aWhat + " NbVKnots");
-            for (int k = 1; k <= aUKnots.Length(); k++)
-            {
-                anOracle.Same(aNResult.UKnot(k), aUKnots[k], aWhat + " UKnot");
-                anOracle.Same(aNResult.UMultiplicity(k), aUMults[k], aWhat + " UMult");
-            }
-
-            for (int k = 1; k <= aVKnots.Length(); k++)
-            {
-                anOracle.Same(aNResult.VKnot(k), aVKnots[k], aWhat + " VKnot");
-                anOracle.Same(aNResult.VMultiplicity(k), aVMults[k], aWhat + " VMult");
-            }
+            GeomConvertOracleTests.SameBSplineSurface(anOracle, aNResult, aPort!, aWhat);
         }
 
         output.WriteLine($"Native and port threw for the same {aNbThrows} surfaces");

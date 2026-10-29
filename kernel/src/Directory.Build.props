@@ -18,5 +18,12 @@
     <InternalsVisibleTo Include="OcctNet.ModelingData" />
     <InternalsVisibleTo Include="OcctNet.ModelingAlgorithms" />
     <InternalsVisibleTo Include="OcctNet.DataExchange" />
+    <!-- and so may the tests (ported GTests call OCCT's mutators, as the C++ tests do) -->
+    <InternalsVisibleTo Include="OcctNet.Foundation.Tests" />
+    <InternalsVisibleTo Include="OcctNet.ModelingData.Tests" />
+    <InternalsVisibleTo Include="OcctNet.ModelingAlgorithms.Tests" />
+    <InternalsVisibleTo Include="OcctNet.DataExchange.Tests" />
+    <InternalsVisibleTo Include="OcctNet.Oracle.Tests" />
+    <InternalsVisibleTo Include="OcctNet.DrawLite" />
   </ItemGroup>
 </Project>
