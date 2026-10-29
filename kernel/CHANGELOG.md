@@ -318,3 +318,15 @@ Phase 4 (part): Draw-lite mesh readers.
 - Tests: unit tests of every command; oracle tests against native OCCT on 525 meshed shapes (5,769 values of trinfo,
   triarea and tricheck bit-identical, 974 BRep texts after correctnormals and tclean byte-identical). The corpus has
   961 runnable cases (734 before) and 452 OK (347 before).
+Phase 4 (part): ShapeAnalysis's wire analysis.
+
+- `OcctNet.ModelingAlgorithms`: from TKShHealing, ShapeExtend (`ShapeExtend`, `ShapeExtend_Status`,
+  `ShapeExtend_WireData`, `ShapeExtend_ComplexCurve`), ShapeAnalysis (`ShapeAnalysis`'s statics including `OuterWire`,
+  `IsOuterBound`, `TotCross2D` and `GetFaceUVBounds`; `ShapeAnalysis_Wire`, `WireOrder`, `Edge`, `Curve`, `Surface`,
+  `TransferParameters`, `TransferParametersProj`) and ShapeBuild (`ShapeBuild`, `ShapeBuild_Edge`,
+  `ShapeBuild_Vertex`). The analyses only read their shapes and work on frozen ones; the shapes and curves they hand
+  out are frozen. ShapeBuild_Edge's writers are internal, with functional twins (`RangesCopied`, `PCurveReplaced`,
+  `Curve3dBuilt`, ...) that return a new edge sharing what didn't change.
+- Tests: OCCT's ShapeAnalysis_Edge GTest; known-answer tests (wire order of shuffled and reversed edges, outer wires of
+  faces with holes, every wire check, projections, UV on every surface kind including singular ones); oracle tests of
+  ShapeAnalysis_Curve, Surface and Edge against native OCCT, 907,014 values, all bit-identical.

@@ -494,3 +494,21 @@ named.
 | `trmergenodes` without `-oneFace` (MeshTest.cxx) | Replaces each face's triangulation (`UpdateFace(F, T, false)`) and leaves the edges' polygons on the former triangulation | The edges keep polygons on triangulations no face carries: `tricheck` finds no boundary on the face and stops (above), `tclean` doesn't remove those polygons (it walks the faces' triangulations). Kept; unit test |
 | `correctnormals` (MeshTest.cxx) | Reads `argv[1]` without checking the count | Without an argument DBRep::Get gets Tcl's null `argv[argc]`. The port reads an empty word: no shape, "Normals have not been changed!" |
 | `triepoints` (MeshTest.cxx; a property, not a bug) | Numbers the edges by iterating an `NCollection_Map` of shapes, hashed by TShape address | The edge numbers in the vertex names aren't reproducible. The port numbers the edges in TopExp_Explorer's order |
+
+## Phase 4: unit 4S, ShapeAnalysis
+
+Found while porting ShapeExtend, ShapeAnalysis's wire analysis and ShapeBuild. Reproduced in the port, each marked
+`// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeAnalysis_Curve::ValidateRange` (ShapeAnalysis_Curve.cxx) | Tests `IsPeriodic` on the basis curve (through trimmed and offset curves), but passes the curve's own `[cf, cl]` to `ElCLib::AdjustPeriodic` as the period | On a trimmed arc of a circle, the trimmed range is taken as the period: the reversed range (2, 1) on the arc [0, 3] becomes (2, 4), past the arc's end. By reading; pinned by `ValidateRange_on_a_trimmed_arc_wraps_with_the_trimmed_range_ReproducesOcctError`; the oracle matches native on trimmed circles |
+| `ShapeAnalysis_Edge::CheckOverlapping` through the static `IsOverlapPartEdges` (ShapeAnalysis_Edge.cxx) | The sampling step is half the shorter edge's length | With a degenerated (zero-length) edge whose vertex is within tolerance of the other edge, the step is 0 and the loop never ends. Found when the first oracle run hung; the oracle skips degenerated edges. Not pinned (it would hang) |
+| `ShapeAnalysis_Edge::CheckOverlapping` | Doesn't reset the status; in the domain branch, the `aStartLength < 0` case sets `aEndLength`, which the next line overwrites | Status flags add up across calls. By reading |
+| `ShapeAnalysis_Edge::CheckVerticesWithCurve3d` and `CheckVerticesWithPCurve` | OR the enumerator `ShapeExtend_DONE1` into the status, not its encoding | Harmless: equal for DONE1 and DONE2. By reading |
+| `ShapeExtend_WireData::Add(const Handle(ShapeExtend_WireData)&, int)` | In non-manifold mode adds `wire->Edge(i)` where it means `wire->NonmanifoldEdge(i)` | The other wire's INTERNAL/EXTERNAL edges are lost and ordinary edges added twice. Pinned by `Add_wire_data_in_non_manifold_mode_adds_the_wrong_edges` |
+| `ShapeAnalysis_WireOrder::SetChains` | Also checks the wrap-around from the last edge to the start of its own chain | On an open chain the last chain's start is appended twice: 3 chains, the second the empty range (3, 2). Pinned by `Chains_of_an_open_and_a_closed_wire` |
+| `ShapeAnalysis_WireOrder::Gap(0)`, `SetCouples` | `myGap` is never computed, and SetCouples is empty | `Gap()` is always 0 and `NbCouples()` always 0. Pinned |
+| `ShapeAnalysis_TransferParameters` constructors | Leave `myMaxTolerance` uninitialised | Undefined until `SetMaxTolerance`; the port starts it at 0 |
+| `ShapeAnalysis_Wire::CheckLoop` (ShapeAnalysis_Wire.cxx) | Sets the analyser's precision to `Precision::Infinite()` and, on the FAIL2 return for an edge without vertices, doesn't restore it | Later checks on the same analyser run with an infinite precision and pass everything. By reading |
+| `ShapeAnalysis::TotCross2D` | With no pcurve of the wire on the face, the points stay at their defaults | The result is 0, so `IsOuterBound` counts such a wire as outer. By reading |

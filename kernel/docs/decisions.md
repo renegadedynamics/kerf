@@ -4574,3 +4574,130 @@ grids that have a `cases.list`. Numbers from 4301 are placeholders, renumbered o
       - The 12 viewer-meshed cases above pass when `vdisplay` meshes as AIS does.
       - tricheck and triarea are validated against native OCCT; the mesh end script's `area difference`,
         `Free links`, `Cross face errors` and `Free nodes` checks then judge 4L2's meshes.
+## Phase 4: unit 4S, ShapeAnalysis
+
+ShapeAnalysis's wire analysis from TKShHealing (open question 11, ported whole), in OcctNet.ModelingAlgorithms:
+ShapeExtend (package, Status, WireData, ComplexCurve), ShapeAnalysis (package statics, Wire, WireOrder, Edge, Curve,
+Surface, TransferParameters, TransferParametersProj), ShapeBuild (package, Edge, Vertex). Ported in three forked
+worktrees (Curve and Surface; WireData, WireOrder, Edge, ShapeBuild; Wire, TransferParametersProj and the statics),
+reviewed and merged. Numbers from 4201 are placeholders, renumbered on merge; plan decisions are cited by their merged
+numbers (486–497).
+
+506. **ShapeAnalysis_Curve is a public sealed working object** (decision 21) with OCCT's instance methods; OCCT uses
+      it by value and it has no state.
+      - `Project`, `ProjectAct` and `NextProject` take a non-null curve or adaptor, and their `proj` and `param` are
+        `out` (OCCT writes them on every path). `ValidateRange`'s bounds, `IsPlanar`'s normal and `FillBndBox`'s
+        `Bnd_Box2d` are `ref`.
+      - When Extrema finds nothing, OCCT's `ProjectAct` reads the caller's projected point before writing it; that
+        value never reaches the result, and the port starts it at the origin.
+      - `ValidateRange` reverses the caller's curve in place where OCCT does (`Geom_Curve::Reverse`): on a frozen
+        curve that throws `Standard_ImmutableObject`, so callers pass a copy (unit test).
+507. **ShapeAnalysis_Surface is a public working object** (Standard_Transient) with OCCT's protected fields.
+      - `Singularity`, `DegeneratedValues` and `ProjectDegenerated(P, preci, neighbour, result)` take `ref` outputs:
+        OCCT leaves them unchanged when it returns false. `UVFromIso` takes `ref U, ref V`; `Bounds` takes `out`.
+      - `Adaptor3d()` and `TrueAdaptor3d()` return the shared `GeomAdaptor_Surface`, and `Init(other)` shares the other
+        analyser's adaptor, as OCCT. An analyser isn't thread-safe: one per loop body (decision 490).
+      - The iso-curves of `UIso`, `VIso` and `ComputeBoundIsos` are frozen before they are cached or handed out; the
+        bound isos are the same instance on every call. The analysed surface isn't frozen by the analyser.
+      - `GetBox*` return `Bnd_Box` by value. A null surface leaves an empty analyser; OCCT's
+        `Message::SendWarning` there is a no-op until unit 4A (`// TODO(4A)`; decision 493's default messenger sends
+        nothing anyway).
+508. **ShapeExtend_ComplexCurve** is an abstract Geom_Curve subclass: `Transform` is `protected internal override`
+      with `CheckMutable()` and transforms each segment; `CheckConnectivity` sets `myClosed`, so it is a mutator
+      (`protected internal`, `CheckMutable()`); `TransformDN` takes `ref gp_Vec`.
+509. **Exceptions.** OCCT's `try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure&)` blocks in ShapeAnalysis_Curve
+      and Surface (ProjectAct, AppendControlPoles, ComputeIso, ValueOfUV, UVFromIso) catch `Standard_Failure` only.
+510. **ShapeExtend_WireData** is a public working object (Standard_Transient) with OCCT's public mutators.
+      - `ManifoldMode()` returns `ref bool`.
+      - `Wire()` and `WireAPIMake()` freeze the wire they return; `InternalWire()` and `InternalWireAPIMake()` don't,
+        for ported code that goes on building (ShapeAnalysis_Wire's CheckOuterBound and CheckSmallArea use them).
+      - `NonmanifoldEdges()` returns a new `IBentoList`; the internal `InternalNonmanifoldEdges()` the object's own
+        sequence.
+      - `Reverse(TopoDS_Face)` is internal: SwapSeam writes the seam edges' pcurves in place and throws on frozen
+        edges. No twin yet.
+      - The seam cache (TColStd_PackedMapOfInteger) is `NCollection_PackedMapOfInteger`; ComputeSeams' map uses
+        `TopTools_ShapeMapHasher`.
+511. **ShapeAnalysis_Edge and ShapeAnalysis_WireOrder** are sealed public working objects.
+      - `out`: Edge's `Curve3d`, `PCurve`, `BoundUV`, `GetEndTangent2d` and `CheckVertexTolerance`; WireOrder's `XYZ`,
+        `XY`, `Chain` and `Couple`. BoundUV and GetEndTangent2d give the origin when there is no pcurve, and
+        CheckVertexTolerance 0 when a vertex is missing, where OCCT leaves the caller's values unchanged.
+      - `ref`: `CheckSameParameter`'s maxdev and `CheckOverlapping`'s tolerance. `KeepLoopsMode()` returns `ref bool`.
+      - `CheckCurve3dWithPCurve(edge, surface, location)` takes a non-null surface.
+512. **ShapeBuild_Edge writes into shapes** (design 4.6). It is a sealed partial class.
+      - The creators (`CopyReplaceVertices`, `Copy`, the six `MakeEdge`) are public and return frozen edges; their
+        `InternalCopyReplaceVertices`, `InternalCopy` and `InternalMakeEdge` forms don't freeze, for ported code
+        (ShapeAnalysis_Wire's CheckTail, TransferParametersProj, phase 7). `MakeEdge` takes `ref TopoDS_Edge`,
+        unchanged on failure.
+      - The in-place writers are internal and throw on frozen edges: `CopyRanges`, `SetRange3d`, `CopyPCurves`, the
+        three `RemovePCurve`, `ReplacePCurve`, `ReassignPCurve`, `RemoveCurve3d`, `BuildCurve3d`.
+      - Their public twins (`ShapeBuild_Edge.Twins.cs`, no OCCT file) run the writer on `BRepTools.ExactCopyForWrite`,
+        give back what it left unchanged with `KeepUnchanged`, and freeze, as decision 420: `RangesCopied` (also with
+        a history), `WithRange3d`, `PCurvesCopied`, `PCurveRemoved` (three forms), `PCurveReplaced`,
+        `PCurveReassigned(out bool)`, `Curve3dRemoved`, `Curve3dBuilt(out bool)`. A twin that changes nothing returns
+        its input.
+      - Reads of the source edge's representations use `Curves()` (`// OCCT.NET: frozen`); `BuildCurve3d` lets a
+        frozen edge's exception through (`catch ... when (!IsFrozen())`, as decision 423).
+      - `TransformPCurve(..., ref aFirst, ref aLast)` returns a new unfrozen curve, like `Copy()`; it works on a copy
+        of a trimmed curve's basis, because `BasisCurve()` freezes (`// OCCT.NET: frozen`).
+513. **ShapeBuild_Vertex.CombineVertex** returns a frozen vertex; `InternalCombineVertex` doesn't freeze.
+      `ShapeBuild.PlaneXOY()` is one shared frozen plane, set lazily with `Interlocked`, as `BRepLib.Plane`.
+514. **ShapeAnalysis_TransferParameters and TransferParametersProj.**
+      - `Init`, both `Perform` and `IsSameRange` are public virtual; `TransferRange(in TopoDS_Edge newEdge, ...)` is
+        `internal virtual` (overridden in Proj): it writes the edge's ranges and SameRange flag and throws on a frozen
+        edge. Ported callers run it on edges they built. `myMaxTolerance` starts at 0 (OCCT leaves it uninitialised).
+      - Proj's `ForceProjection()` is `ref bool`. The static `CopyNMVertex` (edge and face forms) returns its new
+        vertex frozen; `InternalCopyNMVertex` doesn't freeze. The edge form updates the vertex on `toedge` through
+        `BRep_Builder.UpdateVertex`, which refuses a locked edge as OCCT does, so `toedge` must be writable.
+      - Reads of `fromedge`/`toedge` where OCCT walks `ChangeCurves()` use `Curves()` (`// OCCT.NET: frozen`, as
+        decision 421).
+515. **ShapeAnalysis_Wire is a public working object** (decision 21). Its checks only read the wire, the face and
+      their geometry, so they work on frozen shapes.
+      - Protected fields keep OCCT's names. The `Precision()` method hides the Precision class inside the class, so
+        it writes `Occt.Precision.Confusion()`.
+      - Outputs are `ref` where OCCT may return without writing them (CheckSeam's curves and range, CheckDegenerated's
+        and CheckLacking's points, CheckNotchedEdges' `shortNum`/`param`, CheckTail's four edges).
+        `CheckShapeConnect`'s four distances are `out`, 0 on OCCT's early FAIL1 return (as decision 313). CheckTail's
+        `TopoDS_Edge*` table is a local array copied back into the `ref` parameters.
+      - What it publishes is frozen (design 4.2): the face `SetSurface(surface, location)` builds (`Face()` hands it
+        out), and the edge parts CheckTail cuts (made with `InternalCopyReplaceVertices`, `CopyPCurves` and
+        `TransferRange`, then frozen). CheckOuterBound and CheckSmallArea add the wire to a private `EmptyCopied` face
+        that is never published.
+      - Each analyser builds its own ShapeAnalysis_Surface: a parallel loop gives each body its own (decision 490).
+516. **ShapeAnalysis's package statics.** `FindBounds` and `GetFaceUVBounds` take `out` (OCCT always writes them);
+      `TotCross2D` takes a ShapeExtend_WireData. `ShapeExtend.Init()` does nothing: Message_MsgFile and SHMessage's
+      resources wait for phase 7, and no ported class reads those messages.
+517. **Tests.**
+      - Ported GTest: ShapeAnalysis_Edge_Test (5, OCCT's names, on the real makers).
+      - Unit and known-answer tests (108 more): ShapeAnalysis_Curve (15) and Surface (15) on every surface kind
+        (plane, cylinder, cone apex, sphere poles, ring and spindle tori, revolution with a profile through the axis,
+        closed, open and nearly closed extrusions, Bezier, closed B-spline, B-spline with a degenerated edge, offset,
+        rectangular trimmed), ComplexCurve through a test subclass; Edge (12) on box, cylinder and sphere edges and
+        hand-built bad edges; WireOrder (12) on shuffled, reversed and partly reversed chains, gaps, loops, chains,
+        couples, 2D and both modes; WireData (10); ShapeBuild and TransferParameters (10, every twin against the
+        in-place writer on an exact copy, frozen inputs unchanged); ShapeAnalysis_Wire (22: every check, CheckOrder on
+        shuffled and reversed polygons, faces with holes and seam faces as BRepMesh calls it); the package statics (7:
+        OuterWire and IsOuterBound with permuted wires, TotCross2D, ContourArea, GetFaceUVBounds, FindBounds);
+        TransferParametersProj (5).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/ShapeAnalysis`), all bit-identical:
+        - ShapeAnalysis_Curve: 270 curves of every kind, Project (3 forms), ProjectAct, NextProject (2 forms),
+          ValidateRange, IsPlanar, IsClosed, IsPeriodic: 73,980 values; SelectForwardSeam on 500 pairs.
+        - ShapeAnalysis_Surface: 240 random surfaces of every kind, 1,920 points (90 at singularities), 49,660 values;
+          258 faces of 48 random native shapes read through BRep text, 2,064 points, 48,322 values (singularities,
+          closure, Gap, ValueOfUV, NextValueOfUV, UVFromIso, IsDegenerated, DegeneratedValues, ProjectDegenerated,
+          the boxes).
+        - ShapeAnalysis_Edge: 72 random native scenes read on both sides, 1,666 edge-face pairs and 310 overlap
+          checks, every bound method and every status after each call: 734,552 values. CheckOverlapping skips
+          degenerated edges, where OCCT's loop never ends (occt-issues.md).
+        - Wire, WireOrder, OuterWire and the package statics aren't bound natively, nor GetSamplePoints and
+          FillBndBox. They have unit tests only; 4C and 4D compare them indirectly through whole meshes.
+518. **For later units.**
+      - 4C: BRepMesh_ShapeVisitor's calls (`ShapeAnalysis.OuterWire`, which gives a null wire for a face without
+        wires; `new ShapeExtend_WireData(w, true, false)`; `new ShapeAnalysis_Wire(wd, face, Precision.Confusion())`;
+        `CheckOrder(sawo, true, false)`, then `LastCheckStatus(FAIL)`/`(DONE3)` and `sawo.NbEdges()`) are public,
+        read-only and safe on frozen shapes. On the lateral faces of BRepPrimAPI's cylinder, sphere and cone,
+        CheckOrder gives order [1,4,3,2] with DONE5 ("only shifted"), never FAIL or DONE3: OCCT's result.
+        BRepMesh_ShapeTool::Range uses `ShapeAnalysis_Edge.Curve3d`/`PCurve` (`out` handle and range, `orient`
+        default true).
+      - Phase 7: ShapeFix works on its own copies and calls the internal in-place writers of ShapeBuild_Edge,
+        `TransferRange`, `InternalCopyNMVertex` and `ShapeExtend_WireData.Reverse(face)` on edges it owns. CheckTail's
+        parts arrive frozen. `ShapeExtend.Init` loads SHMessage then.
