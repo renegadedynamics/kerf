@@ -1685,3 +1685,75 @@ file), GeomHash and Geom2dHash, and `Standard_Stream` in Foundation.
       Not bound natively, so unit-tested only: the curve properties (GeomLProp_CLProps and its 2D and adaptor forms,
       which a unit test finds bit-identical to each other on analytic curves), GeomLProp::Continuity,
       GeomLProp_CurAndInf2d and the hashers.
+## Phase 2: unit 3A, grid evaluation
+
+GeomGridEval (Line, Circle, Ellipse, Hyperbola, Parabola, BezierCurve, BSplineCurve, OffsetCurve, OtherCurve,
+Curve; Plane, Cylinder, Sphere, Cone, Torus, BezierSurface, BSplineSurface, OffsetSurface, SurfaceOfRevolution,
+SurfaceOfExtrusion, OtherSurface, Surface) and Geom2dGridEval (the curve evaluators in 2D).
+
+235. **Each evaluator is a sealed class with OCCT's API.** OCCT's evaluators are non-copyable value classes held in
+      a `std::variant`; the port's are `public sealed class GeomGridEval_X`, built from a nullable geometry
+      (`new GeomGridEval_Circle(Geom_Circle?)`; null gives empty results, as OCCT's null handle), with `Geometry()`
+      and OCCT's `EvaluateGrid`, `EvaluateGridD1/D2/D3` and `EvaluateGridDN`, which return new 1-based
+      `NCollection_Array1`/`NCollection_Array2` arrays as OCCT does. The bodies are OCCT's line for line, in OCCT's
+      order of operations. As in OCCT, the parameters of a non-periodic B-spline direction must be ascending (the 3D
+      evaluators skip locating a parameter below the current span's end); the class remarks say so.
+236. **Interfaces for the evaluators** (additions): `GeomGridEval.ICurveEvaluator`, `GeomGridEval.ISurfaceEvaluator`
+      and `Geom2dGridEval.ICurveEvaluator`, implemented by every evaluator. The dispatchers' `std::variant` is an
+      interface field, null for `std::monostate`, and `std::visit` is a call through it (decisions 176 and 210 used an
+      `object?` for data variants; here every alternative has the same five methods). Ported templates over "a grid
+      evaluator" (ExtremaPC_GridEvaluator::BuildGrid, unit 4A) take a type parameter constrained on the interface.
+      `GetType()` is `public new` (decision 98); the dispatchers' protected `initialization` overloads are private
+      (the classes are sealed); GeomGridEval_Surface's `HasTransformation`/`GetTransformation` use `gp_Trsf?` for
+      `std::optional<gp_Trsf>`. GeomGridEval_OtherCurve and the 2D one keep the adaptor object where OCCT keeps a
+      reference (so OCCT's "must outlive the evaluator" caveat is gone); GeomGridEval_OtherSurface's
+      `std::variant<const Adaptor3d_Surface*, handle<Geom_Surface>>` is one `object` field read with a type pattern.
+237. **Result types.** OCCT's aliases `GeomGridEval::CurveD1..SurfD3` are written as `Geom_Curve.ResD1..D3` and
+      `Geom_Surface.ResD1..D3` (decision 97); Geom2dGridEval's own `CurveD1..D3` structs, which have the same members,
+      as `Geom2d_Curve.ResD1..D3`. Brace initialisations are object initialisers; results computed through `out`
+      parameters are written straight into the array element (`ref aGrid.ChangeValue(i, j)`).
+238. **Templates over functors** (the B-spline `evaluateGridCached`/`evaluateGridDirect` with their lambdas) are
+      generic methods over a private interface with static abstract members (`CacheEval`, `DirectEval`), implemented
+      by private structs per derivative order (decision 51's pattern), which the JIT specialises; the B-spline
+      surface DN functor gets NU and NV as arguments where OCCT's lambda captures them. GeomGridEval.hxx's five
+      `EvaluateGrid*Helper` templates (unused in OCCT) take a functor constrained on `GeomGridEval.IGridFunctor<T>`
+      and share one body.
+239. **Allocations.** As in OCCT, each call returns new arrays and builds one BSplCLib_Cache/BSplSLib_Cache (B-spline,
+      Bezier), a basis GeomAdaptor_Surface and `Geom_OffsetSurface.Surface()` (offset surfaces), or a basis grid
+      (offsets, swept surfaces); the inner loops allocate nothing (functor structs, `ref` writes, no boxing, no
+      delegates). Span-based overloads were not added: the units that call these evaluators (Extrema's GenExt*,
+      ExtremaPC, GeomBndLib, later the mesher) consume OCCT's arrays; an overload writing into a caller's span is
+      a small addition if profiling asks for it.
+240. **Smaller translations.** GeomGridEval_BezierSurface's V-isoline path ports `OCC_CATCH_SIGNALS` and
+      `catch (const Standard_Failure&)` as `catch (Standard_Failure)` and falls back to the cache, as OCCT does. The
+      swept evaluators keep OCCT's fields (including `myAxisDirection`, which OCCT never reads), at OCCT's defaults
+      for a null geometry. GeomGridEval_OffsetSurface passes `Geom_OffsetSurface.OsculatingSurface()` as the
+      osculating query (decision 212) and checks the equivalent surface with `ReferenceEquals`.
+      GeomGridEval_OffsetCurve's DN keeps OCCT's missing empty-grid check (occt-issues.md): the port throws
+      Standard_OutOfRange where OCCT's behaviour is undefined. The 3D OtherCurve calls the adaptor's
+      `Value`/`D1`-`D3`/`DN`, the 2D one its `EvalD*`, as the two OCCT files do.
+241. **Consistency tests replace the oracle** (no native binding exists). `GeomGridEval_CurveConsistencyTest`,
+      `GeomGridEval_AnalyticSurfaceConsistencyTest`, `GeomGridEval_SurfaceConsistencyTest` and
+      `Geom2dGridEval_ConsistencyTest` evaluate random geometry of every kind (directly, through the adaptors,
+      trimmed, transformed, offset) and compare every grid value with point evaluation (Geom EvalD*/EvalDN and the
+      adaptors), which the oracle tests found bit-identical to native OCCT. Each comparison has a stated
+      expectation: bit-identical where OCCT's grid runs the point evaluation's algorithm, else a relative tolerance
+      (1e-13 to 1e-12) with the reason, because OCCT's own grid is not bit-identical to its point evaluation there.
+      - Bit-identical: lines; ellipse and hyperbola derivatives; parabola D2, D3 and higher; plane derivatives;
+        Bezier curves and surfaces against the adaptors (the same single-span cache) and Bezier DN against Geom;
+        B-spline curves on a run of two or more parameters in a span against the adaptor; B-spline surfaces at a
+        lone grid point against Geom, and their D3 and DN against both; offset surfaces' D2 and D3 (and all of a
+        Bezier basis against the adaptor); swept surfaces against Geom where the basis curve's grid is exact;
+        OtherCurve/OtherSurface against what they wrap; transformed B-spline D3/DN against the transformed adaptor.
+      - Last bits (up to 4e-15 for elementary formulas, 6e-14 for B-spline caches): OCCT's elementary formulas
+        group terms differently from ElCLib/ElSLib (`R·(cos X + sin Y)` against `R cos X + R sin Y`; the centre
+        added first; `u·(1/2F)` against `u/2F`); B-spline surface patches are evaluated through
+        `BSplSLib_Cache.D0Local/D1Local/D2Local` on `(u - mid)/halfLen`, where GeomAdaptor_Surface uses the cache's
+        `D0/D1/D2` (inverse span lengths) and Geom BSplSLib directly; a lone B-spline curve parameter in its span is
+        evaluated directly on flat knots.
+      OCCT's grid errors are compared separately and pinned by named tests (occt-issues.md).
+242. **GTests.** All are ported (GeomGridEval 15 files, Geom2dGridEval 5, and GeomAdaptor_TransformedSurface's
+      `GridEvalUsesTransformedGeometryOnlyOnce`, left out by unit 2A). Suites spread over several OCCT files are
+      partial classes (decision 60): GeomGridEval_Surface_Test.cxx holds tests of the Sphere, Cylinder, Cone and
+      Torus suites; GeomGridEval_Curve_Test.cxx and Geom2dGridEval_Curve_Test.cxx hold several suites each. Where a
+      helper needed a test's name, the helper was renamed.

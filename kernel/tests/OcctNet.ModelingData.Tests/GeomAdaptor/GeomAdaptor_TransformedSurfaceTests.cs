@@ -3,10 +3,7 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-/// <summary>
-/// GeomAdaptor_TransformedSurface. Not ported: GridEvalUsesTransformedGeometryOnlyOnce (GeomGridEval_Surface,
-/// unit 3A).
-/// </summary>
+/// <summary>GeomAdaptor_TransformedSurface. All of OCCT's tests are ported.</summary>
 public class GeomAdaptor_TransformedSurfaceTest
 {
     private const double THE_TOLERANCE = 1.0e-10;
@@ -219,5 +216,25 @@ public class GeomAdaptor_TransformedSurfaceTest
 
         gp_Pnt aPoint = aTrimmed.EvalD0(2.0, 4.0);
         Assert.Equal(7.0, aPoint.Z(), THE_TOLERANCE);
+    }
+
+    [Fact]
+    public void GridEvalUsesTransformedGeometryOnlyOnce()
+    {
+        Geom_Plane aPlane = new(new gp_Pln(new gp_Ax3(gp.XOY())));
+        GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, createTranslation(0.0, 0.0, 5.0));
+
+        GeomGridEval_Surface anEval = new(anAdaptor);
+
+        NCollection_Array1<double> aUParams = new(1, 2);
+        NCollection_Array1<double> aVParams = new(1, 2);
+        aUParams.SetValue(1, 0.0);
+        aUParams.SetValue(2, 1.0);
+        aVParams.SetValue(1, 0.0);
+        aVParams.SetValue(2, 1.0);
+
+        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        Assert.Equal(5.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
+        Assert.Equal(5.0, aGrid.Value(2, 2).Z(), THE_TOLERANCE);
     }
 }

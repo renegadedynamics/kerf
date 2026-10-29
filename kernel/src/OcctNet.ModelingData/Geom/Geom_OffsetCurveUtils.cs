@@ -543,6 +543,7 @@ internal static class Geom_OffsetCurveUtils
             case 2:
                 return EvaluateD2(theU, theBasisCurve, theDir, theOffset, out aPnt, out aDummy, out theDN);
             case 3:
+                // OCCT: one variable receives both D1 and D2, which EvaluateD3 uses while computing D3
                 return EvaluateD3(theU, theBasisCurve, theDir, theOffset, out aPnt, out aDummy, out aDummy, out theDN);
             default:
             {

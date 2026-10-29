@@ -93,3 +93,14 @@ Phase 2 (part): curve extrema.
   Extrema_ExtPC (directly and through GeomAPI_ProjectPointOnCurve), Extrema_ExtPC2d (through
   Geom2dAPI_ProjectPointOnCurve) and Extrema_ExtCC (through BRepExtrema_DistShapeShape) against native OCCT,
   bit-identical but for last-bit differences on offset curves (test adaptor) and one line/circle pair.
+Phase 2 (part): grid evaluation.
+
+- `OcctNet.ModelingData`: GeomGridEval and Geom2dGridEval, OCCT 8's batch evaluators of curves and surfaces on
+  parameter lists and grids (points and derivatives up to D3 and DN): one evaluator per curve and surface kind
+  (conics, Bezier and B-spline on span caches, offsets, revolutions, extrusions, any other through its adaptor),
+  and the dispatchers `GeomGridEval_Curve`, `GeomGridEval_Surface` (trimmed surfaces, the GeomAdaptor and
+  transformed-surface adaptors) and `Geom2dGridEval_Curve`. Every evaluator implements
+  `GeomGridEval.ICurveEvaluator`, `GeomGridEval.ISurfaceEvaluator` or `Geom2dGridEval.ICurveEvaluator`.
+- Tests: the GeomGridEval and Geom2dGridEval GTests (and GeomAdaptor_TransformedSurface's grid test); consistency
+  tests of every evaluator against point evaluation on random geometry, bit-identical where OCCT's grid uses the
+  same algorithm, and OCCT's grid errors pinned.
