@@ -2,19 +2,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_State;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// OCCT's BRepClass3d_SolidClassifier GTests. BRepPrimAPI_MakeBox and MakeSphere (unit 3M) are replaced by shapes
-/// built with BRep_Builder (TestShapes.Box, BRepGPropTestShapes.SphereSolid), frozen as the makers' results will be.
-/// The sphere is one natural face where MakeSphere makes a face with a seam and degenerated edges.
+/// OCCT's BRepClass3d_SolidClassifier GTests, on BRepPrimAPI_MakeBox's and MakeSphere's (frozen) solids.
 /// </summary>
 public class BRepClass3d_SolidClassifierTest
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
+    private static TopoDS_Shape Box10() => new BRepPrimAPI_MakeBox(new gp_Pnt(0.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
 
     [Fact]
     public void PointInside_Box()
@@ -52,7 +49,7 @@ public class BRepClass3d_SolidClassifierTest
     [Fact]
     public void PointInside_Sphere()
     {
-        TopoDS_Shape aSphere = TestShapes.Frozen(BRepGPropTestShapes.SphereSolid(10.0));
+        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(10.0).Shape();
 
         var aClassifier = new BRepClass3d_SolidClassifier(aSphere);
         aClassifier.Perform(new gp_Pnt(0.0, 0.0, 0.0), Precision.Confusion());

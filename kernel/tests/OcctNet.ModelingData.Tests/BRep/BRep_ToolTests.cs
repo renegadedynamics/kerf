@@ -9,12 +9,11 @@ namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
 /// OCCT's BRep_Tool GTests, with BRepBuilderAPI_MakeEdge (its internal accessor where the test goes on changing the
-/// edge with BRep_Builder) and <see cref="TestShapes.Box"/> in place of BRepPrimAPI_MakeBox (3M), and further tests of
-/// BRep_Tool and BRep_Builder.
+/// edge with BRep_Builder) and BRepPrimAPI_MakeBox (frozen), and further tests of BRep_Tool and BRep_Builder.
 /// </summary>
 public class BRep_ToolTests
 {
-    private static TopoDS_Shape MakeBox() => TestShapes.Frozen(TestShapes.Box(10.0, 20.0, 30.0));
+    private static TopoDS_Shape MakeBox() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
     private static TopoDS_Edge FullCircleEdge() =>
         FullCircleEdge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0));

@@ -11,12 +11,11 @@ using OcctNet.ModelingData.Tests;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// OCCT's BRepBuilderAPI_Copy GTests. BRepPrimAPI_MakeBox (unit 3M) is replaced by <see cref="TestShapes.Box"/>,
-/// frozen as the maker's result will be.
+/// OCCT's BRepBuilderAPI_Copy GTests, on BRepPrimAPI_MakeBox's (frozen) box.
 /// </summary>
 public class BRepBuilderAPI_CopyTest
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
+    private static TopoDS_Shape Box10() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
     private static double Volume(in TopoDS_Shape theShape)
     {
@@ -335,12 +334,11 @@ public class BRepBuilderAPI_MakeWire_Test
 }
 
 /// <summary>
-/// OCCT's BRepBuilderAPI_Transform GTests. BRepPrimAPI_MakeBox (unit 3M) is replaced by <see cref="TestShapes.Box"/>,
-/// frozen (the mirrored box at (10, 0, 0) is that box translated with BRepBuilderAPI_Transform).
+/// OCCT's BRepBuilderAPI_Transform GTests, on BRepPrimAPI_MakeBox's (frozen) boxes.
 /// </summary>
 public class BRepBuilderAPI_TransformTest
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
+    private static TopoDS_Shape Box10() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
     private static GProp_GProps VolumeProps(in TopoDS_Shape theShape)
     {
@@ -405,10 +403,7 @@ public class BRepBuilderAPI_TransformTest
     [Fact]
     public void Mirror()
     {
-        // BRepPrimAPI_MakeBox(gp_Pnt(10.0, 0.0, 0.0), 10.0, 10.0, 10.0)
-        var aMove = new gp_Trsf();
-        aMove.SetTranslation(new gp_Vec(10.0, 0.0, 0.0));
-        TopoDS_Shape aBox = new BRepBuilderAPI_Transform(Box10(), aMove, true).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(10.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
 
         var aTrsf = new gp_Trsf();
         var aYZPlane = new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));

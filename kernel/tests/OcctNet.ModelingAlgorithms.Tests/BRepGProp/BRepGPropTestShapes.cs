@@ -7,8 +7,9 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Shapes for the BRepGProp tests, built with BRep_Builder until the primitives are ported (unit 3M): closed cylinders,
-/// spheres and sphere patches (natural faces), and meshes attached to the faces of a box.
+/// Shapes for the BRepGProp tests and other unit tests, built with BRep_Builder on purpose: closed cylinders, spheres
+/// and sphere patches as natural faces (BRepPrimAPI's makers give faces with seams and degenerated edges, which the
+/// ported GTests use), and meshes attached to the faces of a box.
 /// </summary>
 internal static class BRepGPropTestShapes
 {

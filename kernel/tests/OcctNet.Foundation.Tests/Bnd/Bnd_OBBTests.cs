@@ -27,8 +27,9 @@ public class Bnd_OBB_Test
     public void OCC30704_AddBoundingBoxToVoidBox()
     {
         // Bug OCC30704: adding a box to a void box must set the centre of the void box.
-        // OCCT builds the OBB of a box shape (100, 100, 100)-(200, 200, 200) with BRepBndLib::AddOBB, which is not
-        // ported yet; the port builds it from the shape's eight vertices, which is what AddOBB uses for a box.
+        // OCCT builds the OBB of a box shape (100, 100, 100)-(200, 200, 200) with BRepBndLib::AddOBB: that form is in
+        // OcctNet.ModelingAlgorithms.Tests (Bnd/Bnd_ShapeGTests.cs); here the OBB is built from the box's eight vertices,
+        // which is what AddOBB uses for a box.
         NCollection_Array1<gp_Pnt> aVertices = new(1, 8);
         for (int i = 0; i < 8; ++i)
         {

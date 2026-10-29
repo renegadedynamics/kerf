@@ -2,16 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using OcctNet.ModelingData.Tests;
-
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// OCCT's BRepGProp GTests, with BRepBuilderAPI_MakeEdge. BRepPrimAPI_MakeBox, MakeCylinder and MakeSphere (unit 3M)
-/// are replaced by shapes built with BRep_Builder with the same geometry (TestShapes, BRepGPropTestShapes), frozen as
-/// the makers' results will be. The sphere is one natural face where MakeSphere makes
-/// a face with a seam and degenerated edges, so the integration takes the natural-restriction path. The Cut case waits
-/// for the Booleans (phase 6).
+/// OCCT's BRepGProp GTests, with BRepBuilderAPI_MakeEdge and BRepPrimAPI's MakeBox, MakeCylinder and MakeSphere. The
+/// Cut case waits for the Booleans (phase 6).
 /// </summary>
 public class BRepGPropTest
 {
@@ -30,7 +25,7 @@ public class BRepGPropTest
     [Fact]
     public void SurfaceProperties_BoxFaceArea()
     {
-        TopoDS_Shape aShape = TestShapes.Frozen(TestShapes.Box(10.0, 20.0, 30.0));
+        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
         // Total surface area = 2*(10*20 + 10*30 + 20*30) = 2*(200+300+600) = 2200
         var aProps = new GProp_GProps();
@@ -41,7 +36,7 @@ public class BRepGPropTest
     [Fact]
     public void VolumeProperties_UnitBox()
     {
-        TopoDS_Shape aShape = TestShapes.Frozen(TestShapes.Box(1.0, 1.0, 1.0));
+        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
 
         var aProps = new GProp_GProps();
         BRepGProp.VolumeProperties(aShape, aProps);
@@ -52,7 +47,7 @@ public class BRepGPropTest
     public void VolumeProperties_Sphere()
     {
         const double aRadius = 5.0;
-        TopoDS_Shape aShape = TestShapes.Frozen(BRepGPropTestShapes.SphereSolid(aRadius));
+        TopoDS_Shape aShape = new BRepPrimAPI_MakeSphere(aRadius).Shape();
 
         var aProps = new GProp_GProps();
         BRepGProp.VolumeProperties(aShape, aProps);
@@ -65,7 +60,7 @@ public class BRepGPropTest
     public void VolumeProperties_BoxCenterOfMass()
     {
         // Box from (0,0,0) to (10,10,10)
-        TopoDS_Shape aShape = TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
+        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
         var aProps = new GProp_GProps();
         BRepGProp.VolumeProperties(aShape, aProps);
@@ -81,7 +76,7 @@ public class BRepGPropTest
     [Fact]
     public void LinearProperties_SkipShared()
     {
-        TopoDS_Shape aShape = TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
+        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
         // With SkipShared = false, shared edges are counted multiple times
         var aPropsNotSkipped = new GProp_GProps();
@@ -104,7 +99,7 @@ public class BRepGPropTest
     [Fact]
     public void OCC49_CylinderHasSymmetryAxis()
     {
-        TopoDS_Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(10.0, 20.0));
+        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(10.0, 20.0).Shape();
 
         var aProps = new GProp_GProps();
         BRepGProp.VolumeProperties(aCylinder, aProps);
