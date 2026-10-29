@@ -58,6 +58,27 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return myRandom.Next(2) == 0 ? anAx3 : anAx3.ZReversed();
     }
 
+    public gp_Pnt2d Pnt2d() => new(Real(), Real());
+
+    public gp_Vec2d Vec2d() => new(Real(), Real());
+
+    /// <summary>A random 2D direction, kept away from zero so it can be normalised.</summary>
+    public gp_Dir2d Dir2d()
+    {
+        while (true)
+        {
+            var aV = new gp_Vec2d(Real(-1, 1), Real(-1, 1));
+            if (aV.Magnitude() > 0.1)
+            {
+                return new gp_Dir2d(aV);
+            }
+        }
+    }
+
+    public gp_Ax2d Ax2d() => new(Pnt2d(), Dir2d());
+
+    public bool Bool() => myRandom.Next(2) == 0;
+
     // Conversions to and from the native wrappers. Each native object is disposed by the caller's `using`.
 
     public static N.gp_Pnt ToNative(in gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
@@ -98,6 +119,27 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
+    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
+
+    public static N.gp_Vec2d ToNative(in gp_Vec2d theV) => new(theV.X(), theV.Y());
+
+    public static N.gp_Dir2d ToNative(in gp_Dir2d theD) => new(theD.X(), theD.Y());
+
+    public static N.gp_Ax2d ToNative(in gp_Ax2d theA)
+    {
+        using var aP = ToNative(theA.Location());
+        using var aD = ToNative(theA.Direction());
+        return new N.gp_Ax2d(aP, aD);
+    }
+
+    public static gp_XY FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
+
+    public static gp_XY FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
+
+    public static gp_XY FromNative(N.gp_Dir2d theD) => new(theD.X(), theD.Y());
+
+    public static gp_XY FromNative(N.gp_XY theXY) => new(theXY.X(), theXY.Y());
+
     public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
     public static gp_Pnt FromNative(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
@@ -130,6 +172,19 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         {
             Same(theNative.Coord(i), thePort.Coord(i), $"{theWhat}[{i}]", theTolerance);
         }
+    }
+
+    public void Same(in gp_XY theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    {
+        Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
+        Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
+    }
+
+    public void Same(int theNative, int thePort, string theWhat)
+    {
+        myValues++;
+        Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
+        myExact++;
     }
 
     public void Same(in gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTolerance = Tolerance)
