@@ -82,7 +82,8 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     /// or on a sub-range, with OCCT's default tolerances or a random one, the gradient or the tree algorithm, and the
     /// three flags (SetExtremaFlag). One projector is used for several points, so the grid or tree built for the first
     /// point is reused. GeomAPI loads a GeomAdaptor_Surface on the range and calls SetAlgo, Initialize and Perform on a
-    /// default Extrema_ExtPS: the port's side does the same. Every extremum is compared: parameters, point, distance.
+    /// default Extrema_ExtPS. Native against the port's GeomAPI_ProjectPointOnSurf (unit 3F; until then the port's
+    /// side mirrored its call path). Every extremum is compared: parameters, point, distance.
     /// </summary>
     [Fact]
     public void ExtPS_through_GeomAPI_ProjectPointOnSurf()
@@ -115,13 +116,8 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 aN.SetExtremaFlag((N.Extrema_ExtFlag)(int)aFlag);
                 var aNAlgo = (N.Extrema_ExtAlgo)(int)anAlgo;
 
-                // The port's side of GeomAPI_ProjectPointOnSurf::Init
-                var anAdaptor = new GeomAdaptor_Surface();
-                var aPort = new Extrema_ExtPS();
-                aPort.SetFlag(aFlag);
-                double aLU1 = aWhole ? aU1 : aWU1, aLU2 = aWhole ? aU2 : aWU2;
-                double aLV1 = aWhole ? aV1 : aWV1, aLV2 = aWhole ? aV2 : aWV2;
-                double aPortTol = aWithTol ? aTol : (aWhole ? Precision.Confusion() : Precision.PConfusion());
+                var aPort = new GeomAPI_ProjectPointOnSurf();
+                aPort.SetExtremaFlag(aFlag);
 
                 int aNbPoints = anOracle.Int(1, 3);
                 for (int p = 0; p < aNbPoints; p++)
@@ -155,13 +151,26 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         },
                         () =>
                         {
-                            if (p == 0)
+                            if (p > 0)
                             {
-                                anAdaptor.Load(aPS, aLU1, aLU2, aLV1, aLV2);
-                                aPort.SetAlgo(anAlgo);
-                                aPort.Initialize(anAdaptor, aLU1, aLU2, aLV1, aLV2, aPortTol, aPortTol);
+                                aPort.Perform(aP);
                             }
-                            aPort.Perform(aP);
+                            else if (aWhole && aWithTol)
+                            {
+                                aPort.Init(aP, aPS, aTol, anAlgo);
+                            }
+                            else if (aWhole)
+                            {
+                                aPort.Init(aP, aPS, anAlgo);
+                            }
+                            else if (aWithTol)
+                            {
+                                aPort.Init(aP, aPS, aWU1, aWU2, aWV1, aWV2, aTol, anAlgo);
+                            }
+                            else
+                            {
+                                aPort.Init(aP, aPS, aWU1, aWU2, aWV1, aWV2, anAlgo);
+                            }
                         },
                         aWP);
                     if (!anOk)
@@ -169,21 +178,19 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         break;
                     }
                     aCases++;
-                    bool aPortDone = aPort.IsDone() && aPort.NbExt() > 0;
-                    anOracle.Same(aN.IsDone(), aPortDone, $"{aWP} IsDone");
+                    anOracle.Same(aN.IsDone(), aPort.IsDone(), $"{aWP} IsDone");
                     int aNb = aN.NbPoints();
-                    anOracle.Same(aNb, aPortDone ? aPort.NbExt() : 0, $"{aWP} NbPoints");
+                    anOracle.Same(aNb, aPort.NbPoints(), $"{aWP} NbPoints");
                     for (int i = 1; i <= aNb; i++)
                     {
                         double aNU = 0.0, aNV = 0.0;
                         aN.Parameters(i, ref aNU, ref aNV);
-                        Extrema_POnSurf aPOnS = aPort.Point(i);
-                        aPOnS.Parameter(out double aU, out double aV);
+                        aPort.Parameters(i, out double aU, out double aV);
                         anOracle.Same(aNU, aU, $"{aWP} extremum {i} U");
                         anOracle.Same(aNV, aV, $"{aWP} extremum {i} V");
                         using N.gp_Pnt aNPi = aN.Point(i);
-                        anOracle.Same(aNPi, aPOnS.Value(), $"{aWP} extremum {i} point");
-                        anOracle.Same(aN.Distance(i), Math.Sqrt(aPort.SquareDistance(i)), $"{aWP} extremum {i} distance");
+                        anOracle.Same(aNPi, aPort.Point(i), $"{aWP} extremum {i} point");
+                        anOracle.Same(aN.Distance(i), aPort.Distance(i), $"{aWP} extremum {i} distance");
                         anExtrema++;
                         aByKind[aKind]++;
                     }
