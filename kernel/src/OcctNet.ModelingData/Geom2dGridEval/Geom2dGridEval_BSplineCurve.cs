@@ -331,6 +331,11 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
     /// <summary>
     /// Evaluates the Nth derivative at all grid points, directly with BSplCLib (zero above the degree).
     /// </summary>
+    /// <remarks>
+    /// As in OCCT, the values are wrong (or, where OCCT reads outside the knot array, an
+    /// <see cref="IndexOutOfRangeException"/> is thrown) wherever the span's flat-knot index is also a valid knot
+    /// index, and zero above the degree for rational curves too (occt-issues.md).
+    /// </remarks>
     public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (theParams.IsEmpty() || theN < 1 || !extractCurveData(myGeom, out CurveData aData))
@@ -342,6 +347,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         int aLow = theParams.Lower();
 
         // Derivatives beyond degree are zero
+        // OCCT: not for a rational curve, whose derivatives above the degree are generally not zero
         if (theN > aData.Degree)
         {
             NCollection_Array1<gp_Vec2d> aZeroResult = new(1, aNbParams);
@@ -362,6 +368,10 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
             int aSpan = 0;
             locateSpan(aParam, aData.FlatKnots, aData.Degree, aData.IsPeriodic, out double aAdjParam, ref aSpan);
 
+            // OCCT: aSpan indexes the flat knots, but BSplCLib::DN takes it as an index into the knots given with
+            // their multiplicities. When it is a valid knot index, DN evaluates that span's polynomial at the
+            // parameter (wrong values); building the span's knots may then read past the knots (garbage in OCCT,
+            // IndexOutOfRangeException here). See occt-issues.md.
             BSplCLib.DN(aAdjParam,
                         theN,
                         aSpan,

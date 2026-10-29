@@ -117,7 +117,7 @@ public sealed class Geom2dGridEval_BezierCurve : Geom2dGridEval.ICurveEvaluator
         return aResult;
     }
 
-    /// <summary>Evaluates the Nth derivative at all grid points (zero above the degree).</summary>
+    /// <summary>Evaluates the Nth derivative at all grid points (zero above the degree, also when rational, as in OCCT).</summary>
     public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
@@ -129,6 +129,7 @@ public sealed class Geom2dGridEval_BezierCurve : Geom2dGridEval.ICurveEvaluator
         NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
 
         // For Bezier curves, derivatives become zero when order exceeds degree
+        // OCCT: not for a rational curve, whose derivatives above the degree are generally not zero
         int aDegree = myGeom.Degree();
         if (theN > aDegree)
         {
