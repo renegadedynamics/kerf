@@ -62,7 +62,7 @@ broken down by package.
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
 | ModelingAlgorithms | TKFeat | 0 / 96 | 0 / 32,591 | 0.0 |
 | ModelingAlgorithms | TKFillet | 0 / 261 | 0 / 97,078 | 0.0 |
-| ModelingAlgorithms | TKGeomAlgo | 0 / 868 | 0 / 218,548 | 0.0 |
+| ModelingAlgorithms | TKGeomAlgo | 116 / 868 | 24,749 / 218,548 | 11.3 |
 | ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
 | ModelingAlgorithms | TKMesh | 0 / 156 | 0 / 19,930 | 0.0 |
@@ -71,10 +71,10 @@ broken down by package.
 | ModelingAlgorithms | TKShHealing | 0 / 258 | 0 / 88,297 | 0.0 |
 | ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
-| ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
+| ModelingData | TKBRep | 102 / 277 | 13,806 / 90,279 | 15.3 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 683 / 720 | 305,429 / 317,408 | 96.2 |
+| ModelingData | TKGeomBase | 704 / 720 | 316,887 / 317,408 | 99.8 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1492 | 551,588 / 2,897,781 | 19.0 |
+| **All** |  | 1731 | 601,601 / 2,897,781 | 20.8 |
 
 ## TKMath
 
@@ -132,6 +132,59 @@ broken down by package.
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
 
+## TKGeomAlgo
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| AppBlend | 0 / 5 | 0 / 1,463 | 0.0 |
+| ApproxInt | 0 / 9 | 0 / 4,210 | 0.0 |
+| FairCurve | 0 / 30 | 0 / 4,481 | 0.0 |
+| GccAna | 0 / 61 | 0 / 16,486 | 0.0 |
+| GccEnt | 0 / 8 | 0 / 556 | 0.0 |
+| GccInt | 0 / 15 | 0 / 670 | 0.0 |
+| Geom2dAPI | 9 / 13 | 1,021 / 2,706 | 37.7 |
+| Geom2dGcc | 0 / 54 | 0 / 15,966 | 0.0 |
+| Geom2dHatch | 0 / 16 | 0 / 3,936 | 0.0 |
+| Geom2dInt | 26 / 26 | 2,240 / 2,240 | 100.0 |
+| GeomAPI | 0 / 27 | 0 / 5,792 | 0.0 |
+| GeomFill | 0 / 127 | 0 / 33,355 | 0.0 |
+| GeomInt | 0 / 60 | 0 / 9,217 | 0.0 |
+| GeomPlate | 0 / 18 | 0 / 6,566 | 0.0 |
+| Hatch | 0 / 8 | 0 / 805 | 0.0 |
+| HatchGen | 0 / 12 | 0 / 1,368 | 0.0 |
+| IntCurve | 29 / 29 | 11,757 / 11,757 | 100.0 |
+| IntCurveSurface | 0 / 35 | 0 / 7,635 | 0.0 |
+| IntImp | 0 / 11 | 0 / 1,568 | 0.0 |
+| IntImpParGen | 6 / 6 | 1,446 / 1,446 | 100.0 |
+| IntPatch | 0 / 91 | 0 / 42,474 | 0.0 |
+| IntPolyh | 0 / 26 | 0 / 7,806 | 0.0 |
+| IntRes2d | 18 / 18 | 1,932 / 1,932 | 100.0 |
+| IntStart | 0 / 6 | 0 / 1,716 | 0.0 |
+| IntSurf | 0 / 32 | 0 / 2,743 | 0.0 |
+| IntWalk | 0 / 12 | 0 / 8,124 | 0.0 |
+| Intf | 22 / 23 | 4,583 / 5,951 | 77.0 |
+| Law | 0 / 22 | 0 / 5,410 | 0.0 |
+| LocalAnalysis | 0 / 7 | 0 / 2,193 | 0.0 |
+| NLPlate | 0 / 18 | 0 / 1,464 | 0.0 |
+| Plate | 0 / 37 | 0 / 4,742 | 0.0 |
+| TopClass | 2 / 2 | 405 / 405 | 100.0 |
+| TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
+
+## TKBRep
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRep | 50 / 50 | 8,105 / 8,105 | 100.0 |
+| BRepAdaptor | 2 / 8 | 180 / 1,384 | 13.0 |
+| BRepGraph | 0 / 83 | 0 / 44,744 | 0.0 |
+| BRepGraphInc | 0 / 18 | 0 / 11,240 | 0.0 |
+| BRepLProp | 0 / 6 | 0 / 430 | 0.0 |
+| BRepTools | 2 / 30 | 1,899 / 11,664 | 16.3 |
+| BinTools | 0 / 25 | 0 / 7,330 | 0.0 |
+| TopExp | 4 / 4 | 883 / 883 | 100.0 |
+| TopTools | 4 / 9 | 193 / 1,722 | 11.2 |
+| TopoDS | 40 / 44 | 2,546 / 2,777 | 91.7 |
+
 ## TKG2d
 
 | Package | Files ported | Lines ported | % of lines |
@@ -167,7 +220,7 @@ broken down by package.
 | Approx | 28 / 28 | 10,308 / 10,308 | 100.0 |
 | BndLib | 8 / 8 | 2,537 / 2,537 | 100.0 |
 | CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
-| Extrema | 103 / 104 | 22,481 / 22,613 | 99.4 |
+| Extrema | 104 / 104 | 22,613 / 22,613 | 100.0 |
 | ExtremaPC | 18 / 18 | 3,990 / 3,990 | 100.0 |
 | FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
 | GC | 65 / 65 | 5,462 / 5,462 | 100.0 |
@@ -179,12 +232,12 @@ broken down by package.
 | GeomConvert | 33 / 33 | 9,390 / 9,390 | 100.0 |
 | GeomLProp | 10 / 10 | 2,214 / 2,214 | 100.0 |
 | GeomLib | 28 / 28 | 7,033 / 7,033 | 100.0 |
-| GeomProjLib | 0 / 2 | 0 / 491 | 0.0 |
+| GeomProjLib | 2 / 2 | 491 / 491 | 100.0 |
 | GeomTools | 10 / 11 | 3,757 / 3,846 | 97.7 |
 | Hermit | 2 / 2 | 1,280 / 1,280 | 100.0 |
 | IntAna | 20 / 20 | 7,605 / 7,605 | 100.0 |
 | IntAna2d | 18 / 18 | 1,971 / 1,971 | 100.0 |
 | LProp | 9 / 9 | 843 / 843 | 100.0 |
-| ProjLib | 14 / 32 | 2,012 / 12,847 | 15.7 |
+| ProjLib | 32 / 32 | 12,847 / 12,847 | 100.0 |
 | gce | 48 / 48 | 4,513 / 4,513 | 100.0 |
 

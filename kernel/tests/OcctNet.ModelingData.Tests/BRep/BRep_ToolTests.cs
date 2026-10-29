@@ -15,11 +15,11 @@ public class BRep_ToolTests
 {
     private static TopoDS_Shape MakeBox() => TestShapes.Frozen(TestShapes.Box(10.0, 20.0, 30.0));
 
-    private static TopoDS_Edge FullCircleEdge()
-    {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
-        return TestShapes.Edge(aCircle, aCircle.FirstParameter(), aCircle.LastParameter());
-    }
+    private static TopoDS_Edge FullCircleEdge() =>
+        FullCircleEdge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0));
+
+    private static TopoDS_Edge FullCircleEdge(Geom_Circle aCircle) =>
+        TestShapes.Edge(aCircle, aCircle.FirstParameter(), aCircle.LastParameter());
 
     [Fact]
     public void Pnt_FromVertex()
@@ -124,14 +124,39 @@ public class BRep_ToolTests
         Assert.Equal(THE_EDGE_LAST, aLast);
     }
 
-    [Fact(Skip = "TODO(6A): the projection needs ProjLib_ProjectedCurve and GeomProjLib")]
+    [Fact]
     public void CurveOnPlane_ProjectsShiftedPeriodicRange()
     {
+        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
+        TopoDS_Edge anEdge = FullCircleEdge(aCircle);
+
+        double aRangeFirst = aCircle.Period();
+        double aRangeLast = 2.0 * aCircle.Period();
+        new BRep_Builder().Range(anEdge, aRangeFirst, aRangeLast, true);
+
+        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        Assert.NotNull(aPCurve);
+        Assert.Equal(aRangeFirst, aFirst);
+        Assert.Equal(aRangeLast, aLast);
     }
 
-    [Fact(Skip = "TODO(6A): the projection needs ProjLib_ProjectedCurve and GeomProjLib")]
+    // OCCT builds the edge with BRepBuilderAPI_MakeEdge(aCircle, 0, 0), which widens the equal parameters to a whole
+    // period; the edge here is built with that range directly
+    [Fact]
     public void CurveOnPlane_ProjectsPeriodicEdgeBuiltFromEqualParameters()
     {
+        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
+        TopoDS_Edge anEdge = FullCircleEdge(aCircle);
+
+        BRep_Tool.Range(anEdge, out double aEdgeFirst, out double aEdgeLast);
+        Assert.Equal(aCircle.Period(), aEdgeLast - aEdgeFirst, Precision.PConfusion());
+
+        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        Assert.NotNull(aPCurve);
+        Assert.Equal(aEdgeFirst, aFirst);
+        Assert.Equal(aEdgeLast, aLast);
     }
 
     [Fact]
@@ -150,11 +175,14 @@ public class BRep_ToolTests
     // Additions
 
     [Fact]
-    public void CurveOnPlane_throws_until_6A_where_it_would_project()
+    public void CurveOnPlane_projects_an_edge_without_a_pcurve()
     {
         TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
         var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        Assert.Throws<Standard_NotImplemented>(() => BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out _, out _));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        Assert.NotNull(aPCurve);
+        Assert.True(aPCurve.Value(aFirst).Distance(new gp_Pnt2d(0, 0)) < 1e-12);
+        Assert.True(aPCurve.Value(aLast).Distance(new gp_Pnt2d(1, 0)) < 1e-12);
         // not a plane: null without projecting
         var aCyl = new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0);
         Assert.Null(BRep_Tool.CurveOnSurface(anEdge, aCyl, new TopLoc_Location(), out _, out _));
@@ -280,8 +308,12 @@ public class BRep_ToolTests
         Assert.Same(aPC, BRep_Tool.CurveOnSurface(anEdge, aFace, out _, out _));
         TopoDS_Face aMovedFace = TopoDS.Face(aFace.Moved(aLoc));
         Assert.Same(aPC, BRep_Tool.CurveOnSurface(aMoved, aMovedFace, out _, out _));
-        // the unmoved edge has no pcurve on the moved plane: BRep_Tool projects its 3D curve (unit 6A)
-        Assert.Throws<Standard_NotImplemented>(() => BRep_Tool.CurveOnSurface(anEdge, aMovedFace, out _, out _));
+        // the unmoved edge has no pcurve on the moved plane, so BRep_Tool projects its 3D curve: the line from (5, 0, 0)
+        // lies along the moved plane's u axis from its origin
+        Geom2d_Curve? aProjected = BRep_Tool.CurveOnSurface(anEdge, aMovedFace, out double aFirst, out _, out bool isStored);
+        Assert.NotNull(aProjected);
+        Assert.False(isStored);
+        Assert.True(aProjected.Value(aFirst).Distance(new gp_Pnt2d(aFirst, 0)) < 1e-12);
     }
 
     [Fact]

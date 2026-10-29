@@ -369,10 +369,23 @@ public static class BRep_Tool
             return null;
         }
 
+        var aTrimmedCurve = new Geom_TrimmedCurve(C3D, f, l, true, false);
+
         // Perform projection
-        // TODO(6A): GeomProjLib::ProjectOnPlane of the trimmed curve along the plane's normal, then
-        // ProjLib_ProjectedCurve on the plane and Geom2dAdaptor::MakeCurve (the basis curve if trimmed).
-        throw new Standard_NotImplemented("BRep_Tool::CurveOnPlane needs ProjLib_ProjectedCurve and GeomProjLib (unit 6A)");
+        Geom_Curve? ProjOnPlane = GeomProjLib.ProjectOnPlane(aTrimmedCurve, GP, GP.Position().Direction(), true);
+
+        var HS = new GeomAdaptor_Surface(GP);
+        var HC = new GeomAdaptor_Curve(ProjOnPlane!);
+
+        var Proj = new ProjLib_ProjectedCurve(HS, HC);
+        Geom2d_Curve pc = Geom2dAdaptor.MakeCurve(Proj);
+
+        if (pc is Geom2d_TrimmedCurve TC)
+        {
+            pc = TC.BasisCurve();
+        }
+
+        return pc;
     }
 
     /// <summary>The first curve on a surface of the edge, with its surface, location and range; nulls if none.</summary>
