@@ -89,6 +89,10 @@ public sealed class DefensiveCopyAnalyzer : DiagnosticAnalyzer
             case IArrayElementReferenceOperation:
                 return true;
 
+            case IInlineArrayAccessOperation inlineArray:
+                // An element of an [InlineArray] buffer is part of its struct: as writable as the buffer
+                return IsWritable(inlineArray.Instance, containingSymbol);
+
             case IPropertyReferenceOperation property:
                 return property.Property.ReturnsByRef;
 
