@@ -565,3 +565,17 @@ Native BRepMesh_IncrementalMesh (Watson) itself showed no bug in the oracle: eve
 |---|---|---|
 | `BRepMesh_DelabellaMeshAlgoFactory::GetAlgo`, `default:` (BRepMesh_DelabellaMeshAlgoFactory.cxx) | Surfaces of extrusion, offset and other surfaces fall to the default branch, which uses `BRepMesh_NURBSRangeSplitter` (the Watson factory gives extrusions BRepMesh_ExtrusionRangeSplitter). Its `getUndefinedIntervalNb` asks the surface for `NbVPoles()`, and `GeomAdaptor_Surface::NbVPoles` throws Standard_NoSuchObject for a surface of extrusion | With `-algo 1` (Delabella) a face on a surface of extrusion is left without a mesh: BRepMesh_BaseMeshAlgo's `catch (Standard_Failure)` swallows the exception without setting a status, so GetStatusFlags() is 0. By reading OCCT's code; the port does the same. Pinned by `Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does_ReproducesOcctError` |
 | `BRepMesh_BaseMeshAlgo::Perform` (a property) | A failure caught while a face is meshed leaves the face without a triangulation and without a status; only FaceDiscret's own catch sets IMeshData_Failure | A face can be silently unmeshed (see the row above). Kept |
+
+## Phase 4: unit 4L2, incmesh and the corpus
+
+Found while porting incmesh, tessellate, the mesh factory's commands and AIS's meshing. By reading unless a test is
+named; Draw-lite keeps OCCT's behaviour. The oracle found no difference from native incmesh or AIS meshing.
+
+| Where | What | Effect |
+|---|---|---|
+| `incmesh` (MeshTest.cxx), argument parsing | Any word that parses fully as a real (`IsRealValue(true)`) is taken as the deflection, before shape names are looked up | A shape named like a number can't be meshed by name. Kept |
+| `incmesh` | Returns 0 whatever the statuses (Failure, SelfIntersectingWire, ...) | A failed mesh is only visible in the text; the mesh group's TODOs match it there. Kept |
+| `incmesh -prs` with a deflection | The deflection given becomes the drawer's deviation coefficient, so `incmesh s 1 -prs` meshes at 4 times the shape's size | The help text calls it "0.001 of bounding box linear deflection"; the value is taken as written. Kept; unit test |
+| `StdPrs_ToolTriangulatedShape::GetDeflection` (a property) | Stores the absolute deflection it computes into the object's drawer as its own maximal chordial deviation | An object displayed with a relative deflection keeps that absolute value: a later `vdefaults -absDefl` doesn't reach it. Kept (Prs3d_Drawer is a working object) |
+| mesh group, standard_shading/M4 (a test reference) | The script expects an area difference of 1.9456% when meshed for shading, under `TODO ?OCC22687` | The port's AIS mesh, bit-identical to native's by the oracle, gives 1.918%: the optional TODO makes the case BAD, not FAILED. The reference may come from another OCCT version's shading deflection |
+| v3d/bugs/bug29020 (a test of the viewer) | Reads the maximal texture size from `vglinfo` | Can't run without OpenGL; FAILED in Draw-lite, which ignores vglinfo |

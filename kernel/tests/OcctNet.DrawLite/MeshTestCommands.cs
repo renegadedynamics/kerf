@@ -1,39 +1,43 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using System.Runtime.CompilerServices;
 using Occt;
 
 namespace OcctNet.DrawLite;
 
 /// <summary>
-/// Draw's commands that read the meshes shapes already carry: DBRep's <c>tclean</c>; MeshTest.cxx's <c>trinfo</c>,
-/// <c>triepoints</c>, <c>trmergenodes</c> and <c>correctnormals</c>; MeshTest_PluginCommands.cxx's <c>triarea</c>,
-/// <c>tricheck</c> (over <see cref="MeshTestCheckTopology"/>) and <c>mpparallel</c>.
+/// Draw's mesh commands: DBRep's <c>tclean</c>; MeshTest.cxx's <c>incmesh</c>, <c>tessellate</c>, <c>trinfo</c>,
+/// <c>triepoints</c>, <c>trmergenodes</c> and <c>correctnormals</c>; MeshTest_PluginCommands.cxx's <c>mpnames</c>,
+/// <c>mpsetdefaultname</c>, <c>mpgetdefaultname</c>, <c>mpincmesh</c>, <c>mpparallel</c>, <c>triarea</c> and
+/// <c>tricheck</c> (over <see cref="MeshTestCheckTopology"/>).
 /// </summary>
 /// <remarks>
 /// <para>
-/// tclean, trmergenodes (without -oneFace) and correctnormals change their shape in place in OCCT; the port runs
-/// OCCT's in-place algorithm on a copy of the graph (DrawShapeCopy) and binds the copy to the name (decision 480).
-/// Other variables that hold sub-shapes of it keep the old TShapes.
+/// incmesh, mpincmesh, tclean, trmergenodes (without -oneFace) and correctnormals change their shape in place in
+/// OCCT; the port meshes a frozen shape on a copy (BRepMesh_IncrementalMesh, decision 489) and runs the other
+/// in-place algorithms on a copy of the graph (DrawShapeCopy, decision 480). <see cref="DrawShapeRebind"/> then gives
+/// the copy's TShapes to every variable that shares the changed ones, as the in-place change does in DRAWEXE
+/// (decision 495).
 /// </para>
 /// <para>
-/// Not here: <c>incmesh</c>, <c>tessellate</c> and the mesher's factory commands (<c>mpnames</c>,
-/// <c>mpsetdefaultname</c>, <c>mpgetdefaultname</c>, <c>mpincmesh</c>) wait for BRepMesh (unit 4L2);
-/// <c>trlateload</c> (deferred triangulations), <c>tri2d</c>, <c>veriftriangles</c> and <c>wavefront</c> aren't in
-/// this unit.
+/// mpparallel and mpsetdefaultname set process-wide state, as in OCCT (decision 492): BRepMesh_IncrementalMesh's
+/// parallel default and BRepMesh_DiscretFactory's default name.
+/// </para>
+/// <para>
+/// Not here: <c>trlateload</c> (deferred triangulations), <c>tri2d</c>, <c>veriftriangles</c>, <c>wavefront</c> and
+/// <c>MemLeakTest</c>.
 /// </para>
 /// </remarks>
 internal static class MeshTestCommands
 {
-    /// <summary>
-    /// mpparallel's flag: BRepMesh_IncrementalMesh's parallel default, which isn't ported yet (unit 4L2 makes the
-    /// command set BRepMesh_IncrementalMesh's static). Kept per interpreter, so parallel corpus runs don't share it.
-    /// </summary>
-    private static readonly ConditionalWeakTable<DrawInterpreter, StrongBox<bool>> s_parallelDefault = new();
-
     public static void Register(DrawInterpreter theInterpreter)
     {
         DrawCxx.Add(theInterpreter, "tclean", TClean);
+        DrawCxx.Add(theInterpreter, "incmesh", IncrementalMesh);
+        DrawCxx.Add(theInterpreter, "tessellate", Tessellate);
+        DrawCxx.Add(theInterpreter, "mpnames", MpNames);
+        DrawCxx.Add(theInterpreter, "mpsetdefaultname", MpSetDefaultName);
+        DrawCxx.Add(theInterpreter, "mpgetdefaultname", MpGetDefaultName);
+        DrawCxx.Add(theInterpreter, "mpincmesh", MpIncMesh);
         DrawCxx.Add(theInterpreter, "trinfo", TrianglesInfo);
         DrawCxx.Add(theInterpreter, "triepoints", TriEdgePoints);
         DrawCxx.Add(theInterpreter, "trmergenodes", TrMergeNodes);
@@ -43,16 +47,13 @@ internal static class MeshTestCommands
         DrawCxx.Add(theInterpreter, "tricheck", TriCheck);
     }
 
-    /// <summary>Whether mpparallel has turned the mesher's parallel default on in this interpreter.</summary>
-    internal static bool IsParallelDefault(DrawInterpreter theInterpreter)
-        => s_parallelDefault.TryGetValue(theInterpreter, out StrongBox<bool>? aBox) && aBox.Value;
-
     // -----------------------------------------------------------------------------------------------------------------
     // DBRep.cxx
 
     /// <summary>
     /// tclean [-force] [-geom] name...: BRepTools::Clean (or CleanGeometry) on a compound of the shapes, which changes
-    /// them in place in OCCT. The port cleans a copy of the compound and binds each name to its copy.
+    /// them in place in OCCT. The port cleans a copy of the compound and rebinds the variables that share its
+    /// sub-shapes to the copy's (decision 495).
     /// </summary>
     private static int TClean(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
@@ -65,7 +66,6 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        var aNames = new List<string>();
         var aShapes = new List<TopoDS_Shape>();
         for (int anArgIter = 1; anArgIter < n; ++anArgIter)
         {
@@ -86,7 +86,6 @@ internal static class MeshTestCommands
                     return 1;
                 }
 
-                aNames.Add(a[anArgIter]);
                 aShapes.Add(aShape);
             }
         }
@@ -104,7 +103,8 @@ internal static class MeshTestCommands
         }
 
         // in place in OCCT: on a copy of the graph here, one copy for all the shapes, so shared sub-shapes stay shared
-        TopoDS_Shape aCompound = DrawShapeCopy.Copy(TopoDS_Builder.MakeCompound(aShapes));
+        TopoDS_Shape anOriginal = TopoDS_Builder.MakeCompound(aShapes);
+        TopoDS_Shape aCompound = DrawShapeCopy.Copy(anOriginal);
         if (toRemoveGeometry)
         {
             BRepTools.CleanGeometry(aCompound);
@@ -114,17 +114,394 @@ internal static class MeshTestCommands
             BRepTools.Clean(aCompound, isForceClean);
         }
 
-        int anIndex = 0;
-        for (var anIter = new TopoDS_Iterator(aCompound); anIter.More(); anIter.Next())
-        {
-            theDI.SetShape(aNames[anIndex++], anIter.Value());
-        }
-
+        DrawShapeRebind.Rebind(theDI, anOriginal, aCompound);
         return 0;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     // MeshTest.cxx
+
+    /// <summary>
+    /// incmesh shape... deflection [-angular A] [-prs] [-relative {0|1}] [-parallel {0|1}] [-min size]
+    /// [-algo {watson|delabella}] [-di V] [-ai A] [-int_vert_off] [-surf_def_off] [-surf_def_all] [-adjust_min]
+    /// [-force_face_def] [-decrease]: BRepMesh_IncrementalMesh with these parameters, on a compound of the shapes when
+    /// there are several. OCCT meshes the shapes in place; the port meshes a copy (decision 489) and rebinds every
+    /// variable that shares the meshed sub-shapes (decision 495).
+    /// </summary>
+    private static int IncrementalMesh(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgVec)
+    {
+        int theNbArgs = theArgVec.Count;
+        if (theNbArgs < 3)
+        {
+            di.Append("Syntax error: wrong number of arguments");
+            return 1;
+        }
+
+        var aListOfShapes = new List<TopoDS_Shape>();
+        var aMeshParams = new IMeshTools_Parameters();
+        bool hasDefl = false, hasAngDefl = false, isPrsDefl = false;
+
+        IMeshTools_Context aContext = new BRepMesh_Context();
+        for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
+        {
+            string aNameCase = theArgVec[anArgIter].ToLowerInvariant();
+            if (aNameCase is "-relative" or "-norelative")
+            {
+                aMeshParams.Relative = DBRepCommands.ParseOnOffNoIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase is "-parallel" or "-noparallel")
+            {
+                aMeshParams.InParallel = DBRepCommands.ParseOnOffNoIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-int_vert_off")
+            {
+                aMeshParams.InternalVerticesMode = !DBRepCommands.ParseOnOffIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-surf_def_off")
+            {
+                aMeshParams.ControlSurfaceDeflection = !DBRepCommands.ParseOnOffIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-surf_def_all")
+            {
+                aMeshParams.EnableControlSurfaceDeflectionAllSurfaces = DBRepCommands.ParseOnOffIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-adjust_min")
+            {
+                aMeshParams.AdjustMinSize = DBRepCommands.ParseOnOffNoIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-force_face_def")
+            {
+                aMeshParams.ForceFaceDeflection = DBRepCommands.ParseOnOffNoIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-decrease")
+            {
+                aMeshParams.AllowQualityDecrease = DBRepCommands.ParseOnOffNoIterator(theArgVec, ref anArgIter);
+            }
+            else if (aNameCase == "-algo" && anArgIter + 1 < theNbArgs)
+            {
+                string anAlgoStr = theArgVec[++anArgIter].ToLowerInvariant();
+                if (anAlgoStr is "watson" or "0")
+                {
+                    aMeshParams.MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Watson;
+                    aContext.SetFaceDiscret(new BRepMesh_FaceDiscret(new BRepMesh_MeshAlgoFactory()));
+                }
+                else if (anAlgoStr is "delabella" or "1")
+                {
+                    aMeshParams.MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Delabella;
+                    aContext.SetFaceDiscret(new BRepMesh_FaceDiscret(new BRepMesh_DelabellaMeshAlgoFactory()));
+                }
+                else if (anAlgoStr is "-1" or "default")
+                {
+                    // already handled by BRepMesh_Context constructor
+                }
+                else
+                {
+                    di.Append("Syntax error at '").Append(anAlgoStr).Append("'");
+                    return 1;
+                }
+            }
+            else if (aNameCase is "-prs" or "-presentation" or "-vis" or "-visualization" && !isPrsDefl)
+            {
+                isPrsDefl = true;
+            }
+            else if (aNameCase is "-angular" or "-angdefl" or "-angulardeflection" or "-a" && anArgIter + 1 < theNbArgs)
+            {
+                double aVal = theDI.Atof(theArgVec[++anArgIter]) * Math.PI / 180.0;
+                if (aVal <= Precision.Angular())
+                {
+                    di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
+                    return 1;
+                }
+
+                aMeshParams.Angle = aVal;
+                hasAngDefl = true;
+            }
+            else if (aNameCase == "-ai" && anArgIter + 1 < theNbArgs)
+            {
+                double aVal = theDI.Atof(theArgVec[++anArgIter]) * Math.PI / 180.0;
+                if (aVal <= Precision.Angular())
+                {
+                    di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
+                    return 1;
+                }
+
+                aMeshParams.AngleInterior = aVal;
+            }
+            else if (aNameCase == "-min" && anArgIter + 1 < theNbArgs)
+            {
+                double aVal = theDI.Atof(theArgVec[++anArgIter]);
+                if (aVal <= Precision.Confusion())
+                {
+                    di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
+                    return 1;
+                }
+
+                aMeshParams.MinSize = aVal;
+            }
+            else if (aNameCase == "-di" && anArgIter + 1 < theNbArgs)
+            {
+                double aVal = theDI.Atof(theArgVec[++anArgIter]);
+                if (aVal <= Precision.Confusion())
+                {
+                    di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
+                    return 1;
+                }
+
+                aMeshParams.DeflectionInterior = aVal;
+            }
+            else if (IsFullRealValue(aNameCase) && !hasDefl)
+            {
+                aMeshParams.Deflection = Math.Max(theDI.Atof(theArgVec[anArgIter]), Precision.Confusion());
+                if (aMeshParams.DeflectionInterior < Precision.Confusion())
+                {
+                    aMeshParams.DeflectionInterior = aMeshParams.Deflection;
+                }
+
+                hasDefl = true;
+            }
+            else
+            {
+                TopoDS_Shape anArgShape = theDI.GetShape(theArgVec[anArgIter]);
+                if (anArgShape.IsNull())
+                {
+                    di.Append("Syntax error: null shapes are not allowed here '").Append(theArgVec[anArgIter]).Append("'\n");
+                    return 1;
+                }
+
+                aListOfShapes.Add(anArgShape);
+            }
+        }
+
+        if (aListOfShapes.Count == 0)
+        {
+            theDI.Output.WriteLine("Syntax error: wrong number of arguments.");
+            return 1;
+        }
+
+        di.Append("Incremental Mesh, multi-threading ").Append(aMeshParams.InParallel ? "ON" : "OFF").Append("\n");
+
+        TopoDS_Shape aShape = aListOfShapes.Count == 1 ? aListOfShapes[0] : TopoDS_Builder.MakeCompound(aListOfShapes);
+        if (isPrsDefl)
+        {
+            var aDrawer = new Prs3d_Drawer();
+            if (hasDefl)
+            {
+                aDrawer.SetDeviationCoefficient(aMeshParams.Deflection);
+            }
+
+            aMeshParams.Deflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, aDrawer);
+            if (!hasAngDefl)
+            {
+                aMeshParams.Angle = aDrawer.DeviationAngle();
+            }
+        }
+
+        var aMesher = new BRepMesh_IncrementalMesh();
+        aMesher.SetShape(aShape);
+        aMesher.ChangeParameters() = aMeshParams;
+        aMesher.Perform(aContext);
+
+        // OCCT meshes the shapes in place: the meshed copy, for every variable that shares their sub-shapes
+        DrawShapeRebind.Rebind(theDI, aShape, aMesher.Shape());
+
+        di.Append("Meshing statuses: ");
+        int aStatus = aMesher.GetStatusFlags();
+        if (aStatus == 0)
+        {
+            di.Append("NoError");
+            return 0;
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            int aFlag = aStatus & (1 << i);
+            if (aFlag != 0)
+            {
+                di.Append((IMeshData_Status)aFlag switch
+                {
+                    IMeshData_Status.IMeshData_OpenWire => "OpenWire ",
+                    IMeshData_Status.IMeshData_SelfIntersectingWire => "SelfIntersectingWire ",
+                    IMeshData_Status.IMeshData_Failure => "Failure ",
+                    IMeshData_Status.IMeshData_ReMesh => "ReMesh ",
+                    IMeshData_Status.IMeshData_UnorientedWire => "UnorientedWire ",
+                    IMeshData_Status.IMeshData_TooFewPoints => "TooFewPoints ",
+                    IMeshData_Status.IMeshData_Outdated => "Outdated ",
+                    IMeshData_Status.IMeshData_Reused => "Reused ",
+                    IMeshData_Status.IMeshData_UserBreak => "UserBreak ",
+                    _ => "",
+                });
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>TCollection_AsciiString::IsRealValue(true): strtod reads the whole text.</summary>
+    private static bool IsFullRealValue(string theText)
+    {
+        Standard_Stream.Strtod(theText, out int anEnd);
+        return anEnd == theText.Length;
+    }
+
+    /// <summary>
+    /// tessellate result {surface|face} nbu nbv: a face with natural bounds on the surface (or the face's surface
+    /// within its UV bounds) carrying a regular triangulation of 2*nbu*nbv triangles, with polygons on its edges.
+    /// </summary>
+    private static int Tessellate(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
+    {
+        if (argv.Count != 5)
+        {
+            theDI.Output.WriteLine("Builds regular triangulation with specified number of triangles\n"
+                                   + "    Usage: tessellate result {surface|face} nbu nbv\n"
+                                   + "    Triangulation is put into the face with natural bounds (result);\n"
+                                   + "    it will have 2*nbu*nbv triangles and (nbu+1)*(nbv+1) nodes");
+            return 1;
+        }
+
+        string aResName = argv[1];
+        string aSrcName = argv[2];
+        int aNbU = theDI.Atoi(argv[3]);
+        int aNbV = theDI.Atoi(argv[4]);
+
+        if (aNbU <= 0 || aNbV <= 0)
+        {
+            theDI.Output.WriteLine("Error: Arguments nbu and nbv must be both greater than 0");
+            return 1;
+        }
+
+        Geom_Surface? aSurf = DrawTrSurf.GetSurface(theDI, aSrcName);
+        double aUMin, aUMax, aVMin, aVMax;
+        if (aSurf is not null)
+        {
+            aSurf.Bounds(out aUMin, out aUMax, out aVMin, out aVMax);
+        }
+        else
+        {
+            TopoDS_Shape aShape = theDI.GetShape(aSrcName);
+            if (aShape.IsNull() || aShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+            {
+                theDI.Output.WriteLine("Error: " + aSrcName + " is not a face");
+                return 1;
+            }
+
+            TopoDS_Face aSrcFace = TopoDS.Face(aShape);
+            aSurf = BRep_Tool.Surface(aSrcFace);
+            if (aSurf is null)
+            {
+                theDI.Output.WriteLine("Error: Face " + aSrcName + " has no surface");
+                return 1;
+            }
+
+            BRepTools.UVBounds(aSrcFace, out aUMin, out aUMax, out aVMin, out aVMax);
+        }
+
+        if (Precision.IsInfinite(aUMin) || Precision.IsInfinite(aUMax) || Precision.IsInfinite(aVMin) || Precision.IsInfinite(aVMax))
+        {
+            theDI.Output.WriteLine("Error: surface has infinite parametric range, aborting");
+            return 1;
+        }
+
+        var aFaceMaker = new BRepBuilderAPI_MakeFace(aSurf, aUMin, aUMax, aVMin, aVMax, Precision.Confusion());
+        if (!aFaceMaker.IsDone())
+        {
+            theDI.Output.WriteLine("Error: cannot build face with natural bounds, aborting");
+            return 1;
+        }
+
+        // OCCT writes into the new face: here into a copy of its graph, as the maker's face is frozen (decision 480)
+        TopoDS_Face aFace = TopoDS.Face(DrawShapeCopy.Copy(aFaceMaker.Face()));
+
+        // create triangulation
+        int aNbNodes = (aNbU + 1) * (aNbV + 1);
+        int aNbTriangles = 2 * aNbU * aNbV;
+        var aTriangulation = new Poly_Triangulation(aNbNodes, aNbTriangles, false);
+
+        // fill nodes
+        var anAdSurf = new GeomAdaptor_Surface(aSurf);
+        double aDU = (aUMax - aUMin) / aNbU;
+        double aDV = (aVMax - aVMin) / aNbV;
+        for (int iU = 0, iShift = 1; iU <= aNbU; iU++, iShift += aNbV + 1)
+        {
+            double aU = aUMin + iU * aDU;
+            for (int iV = 0; iV <= aNbV; iV++)
+            {
+                double aV = aVMin + iV * aDV;
+                gp_Pnt aP = anAdSurf.Value(aU, aV);
+                aTriangulation.SetNode(iShift + iV, aP);
+            }
+        }
+
+        // fill triangles
+        for (int iU = 0, iShift = 1, iTri = 0; iU < aNbU; iU++, iShift += aNbV + 1)
+        {
+            for (int iV = 0; iV < aNbV; iV++)
+            {
+                int iBase = iShift + iV;
+                var aTri1 = new Poly_Triangle(iBase, iBase + aNbV + 2, iBase + 1);
+                var aTri2 = new Poly_Triangle(iBase, iBase + aNbV + 1, iBase + aNbV + 2);
+                aTriangulation.SetTriangle(++iTri, aTri1);
+                aTriangulation.SetTriangle(++iTri, aTri2);
+            }
+        }
+
+        // put triangulation to face
+        var B = new BRep_Builder();
+        B.UpdateFace(aFace, aTriangulation);
+
+        // fill edge polygons
+        var aUMinIso = new NCollection_Array1<int>(1, aNbV + 1);
+        var aUMaxIso = new NCollection_Array1<int>(1, aNbV + 1);
+        for (int iV = 0; iV <= aNbV; iV++)
+        {
+            aUMinIso.SetValue(1 + iV, 1 + iV);
+            aUMaxIso.SetValue(1 + iV, 1 + iV + aNbU * (1 + aNbV));
+        }
+
+        var aVMinIso = new NCollection_Array1<int>(1, aNbU + 1);
+        var aVMaxIso = new NCollection_Array1<int>(1, aNbU + 1);
+        for (int iU = 0; iU <= aNbU; iU++)
+        {
+            aVMinIso.SetValue(1 + iU, 1 + iU * (1 + aNbV));
+            aVMaxIso.SetValue(1 + iU, (1 + iU) * (1 + aNbV));
+        }
+
+        var aUMinPoly = new Poly_PolygonOnTriangulation(aUMinIso);
+        var aUMaxPoly = new Poly_PolygonOnTriangulation(aUMaxIso);
+        var aVMinPoly = new Poly_PolygonOnTriangulation(aVMinIso);
+        var aVMaxPoly = new Poly_PolygonOnTriangulation(aVMaxIso);
+        for (var exp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+        {
+            TopoDS_Edge anEdge = TopoDS.Edge(exp.Current());
+            Geom2d_Curve aC = BRep_Tool.CurveOnSurface(anEdge, aFace, out double aFirst, out double aLast)!;
+            gp_Pnt2d aPFirst = aC.Value(aFirst);
+            gp_Pnt2d aPLast = aC.Value(aLast);
+            if (Math.Abs(aPFirst.X() - aPLast.X()) < 0.1 * (aUMax - aUMin)) // U=const
+            {
+                if (BRep_Tool.IsClosed(anEdge, aFace))
+                {
+                    B.UpdateEdge(anEdge, aUMinPoly, aUMaxPoly, aTriangulation);
+                }
+                else
+                {
+                    B.UpdateEdge(anEdge, aPFirst.X() < 0.5 * (aUMin + aUMax) ? aUMinPoly : aUMaxPoly, aTriangulation);
+                }
+            }
+            else // V=const
+            {
+                if (BRep_Tool.IsClosed(anEdge, aFace))
+                {
+                    B.UpdateEdge(anEdge, aVMinPoly, aVMaxPoly, aTriangulation);
+                }
+                else
+                {
+                    B.UpdateEdge(anEdge, aPFirst.Y() < 0.5 * (aVMin + aVMax) ? aVMinPoly : aVMaxPoly, aTriangulation);
+                }
+            }
+        }
+
+        theDI.SetShape(aResName, aFace);
+        return 0;
+    }
 
     private sealed class TriangulationStat
     {
@@ -558,7 +935,7 @@ internal static class MeshTestCommands
 
             if (isChanged)
             {
-                theDI.SetShape(theArgVec[1], aCopy);
+                DrawShapeRebind.Rebind(theDI, aShape, aCopy);
             }
         }
 
@@ -603,7 +980,7 @@ internal static class MeshTestCommands
         }
         else
         {
-            theDI.SetShape(aName, aCopy);
+            DrawShapeRebind.Rebind(theDI, S, aCopy);
             theResult.Append("Some corrections in source shape have been made!\n");
         }
 
@@ -616,13 +993,116 @@ internal static class MeshTestCommands
     /// <summary>mpparallel [toTurnOn]: shows or sets the incremental mesher's parallel default.</summary>
     private static int MpParallel(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        StrongBox<bool> aDefault = s_parallelDefault.GetOrCreateValue(theDI);
         if (argv.Count == 2)
         {
-            aDefault.Value = theDI.Atoi(argv[1]) == 1;
+            BRepMesh_IncrementalMesh.SetParallelDefault(theDI.Atoi(argv[1]) == 1);
         }
 
-        theDI.Output.Write("Incremental Mesh, multi-threading " + (aDefault.Value ? "ON\n" : "OFF\n"));
+        theDI.Output.Write("Incremental Mesh, multi-threading " + (BRepMesh_IncrementalMesh.IsParallelDefault() ? "ON\n" : "OFF\n"));
+        return 0;
+    }
+
+    /// <summary>mpnames: the names of the registered meshing algorithms (printf).</summary>
+    private static int MpNames(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        if (a.Count != 1)
+        {
+            theDI.Output.Write(" use mpnames\n");
+            return 0;
+        }
+
+        NCollection_List<BRepMesh_DiscretAlgoFactory> aFactories = BRepMesh_DiscretAlgoFactory.Factories();
+        if (aFactories.IsEmpty())
+        {
+            theDI.Output.Write(" *no algorithms registered\n");
+            return 0;
+        }
+
+        theDI.Output.Write(" *available algorithms:\n");
+        foreach (BRepMesh_DiscretAlgoFactory aFactory in aFactories)
+        {
+            theDI.Output.Write("  " + aFactory.Name() + "\n");
+        }
+
+        return 0;
+    }
+
+    /// <summary>mpsetdefaultname name: sets the default meshing algorithm (process-wide, as in OCCT).</summary>
+    private static int MpSetDefaultName(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        if (a.Count != 2)
+        {
+            theDI.Output.Write(" use mpsetdefaultname name\n");
+            return 0;
+        }
+
+        string aName = a[1];
+        if (BRepMesh_DiscretFactory.Get().SetDefaultName(aName))
+        {
+            theDI.Output.Write(" *ready\n");
+        }
+        else
+        {
+            theDI.Output.Write(" *algorithm '" + aName + "' not found\n");
+        }
+
+        return 0;
+    }
+
+    /// <summary>mpgetdefaultname: the default meshing algorithm's name.</summary>
+    private static int MpGetDefaultName(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        if (a.Count != 1)
+        {
+            theDI.Output.Write(" use mpgetdefaultname\n");
+            return 0;
+        }
+
+        theDI.Output.Write(" *default name: " + BRepMesh_DiscretFactory.Get().DefaultName() + "\n");
+        return 0;
+    }
+
+    /// <summary>
+    /// mpincmesh shape deflection [angle]: meshes the shape with the default algorithm of the mesh factory. A frozen
+    /// shape is meshed on a copy, which the variables sharing its sub-shapes are rebound to (decision 495).
+    /// </summary>
+    private static int MpIncMesh(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        if (a.Count < 3)
+        {
+            theDI.Output.Write(" use mpincmesh shape deflection [angle]\n");
+            return 0;
+        }
+
+        TopoDS_Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull())
+        {
+            theDI.Output.Write(" null shape is not allowed here\n");
+            return 0;
+        }
+
+        double aDeflection = theDI.Atof(a[2]);
+        double aAngle = 0.5;
+        if (a.Count > 3)
+        {
+            aAngle = theDI.Atof(a[3]);
+        }
+
+        BRepMesh_DiscretRoot? aMeshAlgo = BRepMesh_DiscretFactory.Get().Discret(aS, aDeflection, aAngle);
+        if (aMeshAlgo is null)
+        {
+            theDI.Output.Write(" *Cannot create the meshing algorithm\n");
+            return 0;
+        }
+
+        aMeshAlgo.Perform();
+        if (!aMeshAlgo.IsDone())
+        {
+            theDI.Output.Write(" *Meshing not done\n");
+        }
+
+        // OCCT.NET: the meshed copy (decision 489), seen by every variable that shares its sub-shapes
+        DrawShapeRebind.Rebind(theDI, aS, aMeshAlgo.Shape());
         return 0;
     }
 

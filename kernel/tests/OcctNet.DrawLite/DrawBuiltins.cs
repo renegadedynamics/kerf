@@ -10,12 +10,13 @@ internal static class DrawBuiltins
     /// <summary>
     /// Draw commands that only drive OCCT's viewers, plugins, logging or resource limits. The port has no viewer,
     /// so these do nothing and a script that uses them still runs. OCCT's CheckCommands.tcl defines checkview as
-    /// a procedure that drives the viewers; Draw-lite keeps it a no-op.
+    /// a procedure that drives the viewers; Draw-lite keeps it a no-op. vglinfo only reports the OpenGL driver. The
+    /// commands that mesh the shapes they display (vdisplay, vsetdispmode, ...) are ViewerTestCommands.
     /// </summary>
     internal static readonly string[] Ignored =
     [
-        "pload", "cpulimit", "checkview", "vinit", "vdisplay", "vfit", "vdump", "vclear",
-        "vsetdispmode", "vmoveto", "vselect", "vclose", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
+        "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
+        "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
         "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
     ];
@@ -45,6 +46,7 @@ internal static class DrawBuiltins
         GeometryTestCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
         MeshTestCommands.Register(theInterpreter);
+        ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops

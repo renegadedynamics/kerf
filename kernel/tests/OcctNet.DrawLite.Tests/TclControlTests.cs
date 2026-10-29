@@ -226,7 +226,14 @@ public class TclControlTests
     }
 
     [Fact]
-    public void Time_measures_a_script() => Assert.Matches(@"^[0-9.e+-]+ microseconds per iteration$", Tcl.Eval("time {set x 1} 10"));
+    public void Time_measures_a_script()
+    {
+        Assert.Matches(@"^[0-9.e+-]+ microseconds per iteration$", Tcl.Eval("time {set x 1} 10"));
+
+        // one iteration: an integer, as Tcl's (expr then divides it as an integer)
+        Assert.Matches(@"^[0-9]+ microseconds per iteration$", Tcl.Eval("time {set x 1}"));
+        Assert.Equal("0", Tcl.Eval("expr [lindex [time {set x 1}] 0]/1000000"));
+    }
 
     [Fact]
     public void Variables_scalar_array_unset_incr_append()

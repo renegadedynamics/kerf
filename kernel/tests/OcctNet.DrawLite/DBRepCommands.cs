@@ -867,7 +867,7 @@ internal static class DBRepCommands
     }
 
     // Draw::ParseOnOff, ParseOnOffIterator, ParseOnOffNoIterator
-    private static bool ParseOnOff(string theArg, ref bool theIsOn)
+    internal static bool ParseOnOff(string theArg, ref bool theIsOn)
     {
         switch (theArg.ToLowerInvariant())
         {
@@ -893,7 +893,7 @@ internal static class DBRepCommands
         return isOn;
     }
 
-    private static bool ParseOnOffNoIterator(IReadOnlyList<string> a, ref int theArgIter)
+    internal static bool ParseOnOffNoIterator(IReadOnlyList<string> a, ref int theArgIter)
     {
         bool toReverse = a[theArgIter].StartsWith("no", StringComparison.OrdinalIgnoreCase)
                          || a[theArgIter].StartsWith("-no", StringComparison.OrdinalIgnoreCase);

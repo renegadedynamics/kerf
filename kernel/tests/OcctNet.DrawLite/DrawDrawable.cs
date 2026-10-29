@@ -37,7 +37,8 @@ public abstract class DrawDrawable
 /// <summary>A shape (DBRep_DrawableShape). The shape is frozen when it is stored (decision 272).</summary>
 public sealed class DrawShape(in TopoDS_Shape theShape) : DrawDrawable
 {
-    public TopoDS_Shape Shape { get; } = theShape;
+    /// <summary>The shape; rebound in place when a command meshes or cleans a shape sharing its sub-shapes (DrawShapeRebind).</summary>
+    public TopoDS_Shape Shape { get; internal set; } = theShape;
 
     public override string TypeName => "DBRep_DrawableShape";
 

@@ -756,7 +756,15 @@ internal static class TclControlCommands
             theInterpreter.EvalScript(theArgs[1]);
         }
 
-        double aMicroseconds = aCount <= 0 ? 0 : aWatch.Elapsed.TotalMicroseconds / aCount;
+        // Tcl_TimeObjCmd: one iteration (or none) gives an integer ("time is not fractional", Tcl bug 1202178), more
+        // the mean as a double. OCCT's tests divide it by 10^6 with expr, so the type matters (bugs/mesh/bug25503_1).
+        if (aCount <= 1)
+        {
+            long aWhole = aCount <= 0 ? 0 : (long)aWatch.Elapsed.TotalMicroseconds;
+            return $"{aWhole} microseconds per iteration";
+        }
+
+        double aMicroseconds = aWatch.Elapsed.TotalMicroseconds / aCount;
         return $"{TclNumber.FormatDouble(Math.Round(aMicroseconds, 3))} microseconds per iteration";
     }
 
