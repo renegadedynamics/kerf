@@ -575,7 +575,9 @@ public sealed partial class ShapeBuild_Edge
 
         if (result is Geom2d_TrimmedCurve thecurve)
         {
-            result = thecurve.BasisCurve();
+            // OCCT.NET: frozen: BasisCurve() freezes the basis it hands out; OCCT changes the basis of its own discarded
+            // copy, so the port changes a copy of it
+            result = (Geom2d_Curve)thecurve.BasisCurve().Copy();
         }
 
         gp_GTrsf2d tMatu = new gp_GTrsf2d();
