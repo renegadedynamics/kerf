@@ -15,6 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- BRep_Builder shapes for the topology tests, until the makers are ported (units 3K, 3M), shared with the ModelingData tests -->
+    <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\TestShapes.cs" Link="TestShapes.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 

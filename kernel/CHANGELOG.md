@@ -163,3 +163,12 @@ Phase 3 (part): curve-surface intersection.
   ExtremaSurfaceSurface, Interpolate, PointsToBSpline and IntCS.
 - Tests: the IntCurveSurface, IntSurf_Quadric and GeomAPI GTests; unit tests on known intersections; oracle tests of
   GeomAPI_IntCS on every kind of curve and surface, and of the GeomAPI projections, Interpolate and PointsToBSpline.
+Phase 3 (part): global properties.
+
+- `OcctNet.ModelingAlgorithms`: BRepGProp (length, area, volume, centre of mass and inertia of shapes: the exact,
+  adaptive, Gauss-Kronrod and mesh-based forms, with functional overloads returning a new `GProp_GProps`, and the
+  integration classes); BRepCheck's statics, `BRepCheck_Status`, `BRepCheck_Result` and `BRepCheck_Shell`;
+  `BRepLib_ValidateEdge` and `BRepLib_CheckCurveOnSurface`.
+- Tests: the BRepGProp GTests (with BRep_Builder shapes until the primitives are ported); known-answer tests; oracle
+  tests of every BRepGProp form and of BRepGProp_Face against native OCCT, all bit-identical, and of BRepCheck_Shell
+  and BRepLib_ValidateEdge through BRepCheck_Analyzer.

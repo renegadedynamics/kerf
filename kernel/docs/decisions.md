@@ -3055,3 +3055,81 @@ BRepLProp. `BRepTools.EvalAndUpdateTol` is completed (its `TODO(5A)`). Numbers f
         exploration, identity, every vertex, edge and face), with their triangulations and each input sub-shape's
         ModifiedShape by its place in the result. BRepLProp_CLProps, PurgeLocations, Quilt, Substitution and ReShape's
         ModeConsiderLocation have no native binding and are covered by the unit tests.
+
+## Phase 3: unit 3H, global properties
+
+BRepGProp (all of it: the package statics, Cinert, Domain, EdgeTool, Face, Gauss, MeshCinert, MeshProps, Sinert,
+TFunction, UFunction, Vinert, VinertGK), BRepCheck.cxx's statics, BRepCheck_Status, BRepCheck_Result and
+BRepCheck_Shell, BRepLib_ValidateEdge and BRepLib_CheckCurveOnSurface, in OcctNet.ModelingAlgorithms (decision 280).
+Numbers from 3801 are renumbered on merge.
+
+361. **BRepAdaptor_Curve waits for unit 3B; its base class stands in.** `BRepLib_CheckCurveOnSurface.BRepAdaptorCurve(E)`
+      (internal, `// TODO(3B)`) builds a `GeomAdaptor_TransformedCurve` (BRepAdaptor_Curve's base, already ported) as
+      `BRepAdaptor_Curve::Initialize(E)` does: the 3D curve and its range, else the first curve on surface, and the
+      location as the transformation. BRepGProp_Cinert and BRepGProp_EdgeTool take a `GeomAdaptor_TransformedCurve`,
+      so a BRepAdaptor_Curve will be accepted unchanged; 3B replaces the helper's calls (BRepGProp.LinearProperties,
+      BRepLib_CheckCurveOnSurface.Init) and may narrow the signatures.
+362. **BRepGProp's statics reset the caller's GProp_GProps in place.** OCCT assigns `Props = GProp_GProps(P)`; the
+      port calls the new internal `GProp_GProps.Assign` (C++ copy assignment), so the caller's object, of any derived
+      type, is the one filled. Each non-Eps form also has a functional overload returning a new system, for Bento:
+      `LinearProperties(S, SkipShared, UseTriangulation)`, `SurfaceProperties(S, SkipShared, UseTriangulation)`,
+      `VolumeProperties(S, OnlyClosed, SkipShared, UseTriangulation)`. The Eps and GK forms return an error and have
+      no twin.
+363. **The BRepGProp classes are working objects** (decision 21). The GProp_GProps subclasses keep OCCT's public
+      SetLocation and Perform and fill the protected fields by `ref`. BRepGProp_Face, Domain and Gauss are sealed
+      classes; OCCT's by-value copies of the face into BRepGProp_TFunction and BRepGProp_UFunction are an internal copy
+      constructor that shallow-copies the adaptors; the functions copy their coefficients (OCCT keeps a pointer).
+      Signatures: Bounds, Normal and D12d have `out` results; the knot arrays are filled `NCollection_Array1`s;
+      PreparePolygon, GetUKnots and GetTKnots return the array (null for no polygon); their deprecated out-parameter
+      overloads are left out. `BRepGProp_MeshProps.CalculateProps` takes `Span<double>` and `ReadOnlySpan<double>`.
+      The anonymous enums are nested (`BRepGProp_Gauss.BRepGProp_GaussType`, `BRepGProp_MeshProps.BRepGProp_MeshObjType`).
+364. **BRepGProp_Gauss.** The `add` and `mult` function pointers are private methods of the same names reading a flag
+      that `checkBounds` sets for infinite bounds. `Inertia` is a private struct; its arrays are
+      `NCollection_Array1<Inertia>` used through `ref`. The coefficient arrays are `ReadOnlySpan<double>` (empty for
+      OCCT's null pointer). The outputs of Compute are `ref` (OCCT returns without writing them when an edge has no
+      pcurve). `Standard_ASSERT_RAISE` always checks and throws `Standard_ProgramError`. `IS_MIN_DIM` is defined, so the
+      `#ifndef IS_MIN_DIM` code is left out.
+365. **The volume's solid cache** keys TShapes by reference (`ReferenceEqualityComparer`), as OCCT hashes the handle;
+      its free-face compound is built with the internal BRep_Builder and never published. BRepGProp only reads its
+      input; every test runs on frozen shapes. `BRepGProp_VinertGK.GetAbsolutError`, declared and never defined in
+      OCCT (occt-issues.md), returns the absolute error that Perform returns.
+366. **BRepCheck_Result is an abstract working object.** Its status map is an `NCollection_DataMap<TopoDS_Shape,
+      NCollection_List<BRepCheck_Status>>` with `TopTools_ShapeMapHasher.Instance` (OCCT's NCollection_Shared handle is
+      the list itself); `std::mutex` is a `Lock`, entered only when IsParallel, as in OCCT; `Status()` and
+      `StatusOnShape()` return the result's own lists; the context iterator walks a snapshot taken by
+      `InitContextIterator`, in insertion order (OCCT's is hash order, decision 18); on an empty map the port checks
+      before reading the first key, which OCCT reads anyway. `InContext` takes `in TopoDS_Shape`.
+367. **BRepCheck_Shell.** `Closed`, `Orientation`, `NbConnectedSet` and the rest as OCCT, over its own shells built with
+      the internal BRep_Builder. The public `NbConnectedSet` freezes the shells it returns (published, design 4.2),
+      which also freezes unfrozen faces of the checked shell; `Closed` uses a private non-freezing variant. The sets come
+      from a hash map of multiconnected edges, so their order may differ from OCCT's.
+368. **BRepCheck's statics.** `Print` writes to a TextWriter; `PrecCurve` and `PrecSurface` as OCCT. `SelfIntersection`
+      needs BRepCheck_Wire and waits for unit 3J (`// TODO(3J)`).
+369. **BRepLib_ValidateEdge and BRepLib_CheckCurveOnSurface** are public working objects with OCCT's API over
+      GeomLib_CheckCurveOnSurface (decision 293); they keep the caller's adaptors; `UpdateTolerance` takes `ref double`.
+370. **A Foundation divergence found on the way:** the port's `NCollection_DataMap.Bound` keeps an existing value,
+      where OCCT's Bound replaces it (that is OCCT's `TryBound`). Nothing in this unit calls Bound on a bound key; left
+      for Foundation to fix, with a check of its callers.
+371. **Tests.**
+      - Ported GTests: BRepGProp_Test (9 of 10; OCC49_CutShapeHasNoSymmetryAxis waits for BRepAlgoAPI_Cut). Their makers
+        are replaced by BRep_Builder shapes (TestShapes, BRepGPropTestShapes), frozen; the sphere is one natural face
+        (MakeSphere's has a seam and degenerated edges), the cylinder a lateral face and two discs.
+      - Known-answer tests (22): unit cube and boxes (volume, area, edge length, centre, inertia), located, reversed
+        and shared solids (rigid, reversed, scaled, twice in place, with a free face), cylinders, spheres, hemisphere
+        and sphere patches, a holed face, the adaptive and Gauss-Kronrod forms (by point and by plane), OnlyClosed,
+        meshes on box faces (rigid and scaled locations), faces that are only a mesh and polygon-only edges,
+        MeshCinert and MeshProps, BRepGProp_Face and Domain, and the pinned OCCT issue of Vinert by plane.
+      - BRepCheck and BRepLib: 23 unit tests (Shell statuses on closed, open, badly oriented, repeated and disconnected
+        shells, Add and Print, PrecCurve and PrecSurface, ValidateEdge and CheckCurveOnSurface on exact, offset,
+        located and seam pcurves).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepGProp`): 48 random scenes built identically on both sides
+        (boxes, closed cylinders, holed faces, compounds sharing solids at rigid, reversed and scaled locations, natural
+        spheres, tori and sphere patches, B-spline faces and edges, boxes carrying triangulations, mesh-only
+        tetrahedra; placed and reversed at random), 1,296 calls of every BRepGProp form with SkipShared,
+        UseTriangulation, OnlyClosed, Eps and the GK flags varied: 17,376 values (mass, centre, inertia, errors), all
+        bit-identical. BRepGProp_Face method by method on 294 faces and 1,068 edges: 57,102 values, all bit-identical.
+        Gauss-Kronrod is left out on faces with holes, where native OCCT takes minutes even at 1e-3.
+        BRepCheck_Shell (240 shells) and BRepLib_ValidateEdge (300 faces) through the bound BRepCheck_Analyzer: 540
+        verdicts, all equal. Native BRepCheck_Shell, ValidateEdge and CheckCurveOnSurface aren't bound.
+      - Not covered natively: polygon-only edges (Poly_Polygon3D isn't bound), BRepGProp_Vinert, Sinert, VinertGK and
+        the functions directly (not bound; reached through the statics).
