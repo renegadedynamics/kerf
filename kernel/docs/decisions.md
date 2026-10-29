@@ -2130,7 +2130,7 @@ Tool); the rest of Approx (Approx_ComputeCLine.gxx with its instantiations FitAn
 Curve3d, CurveOnSurface, CurvlinFunc, CurvilinearParameter, SameParameter, SweepFunction, SweepApproximation); and
 GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
 
-280. **GeomLib's statics never change the caller's geometry, and return objects the caller owns** (decisions 244
+289. **GeomLib's statics never change the caller's geometry, and return objects the caller owns** (decisions 244
       and 245). Where OCCT writes a handle argument, the port takes it by `ref` and assigns a new object:
       `ExtendSurfByLength` raises the degree of, and segments, the caller's B-spline surface (or ApproxSurface's frozen
       one) in place in OCCT, and the port changes a copy; `CancelDenominatorDerivative` (used only by a Draw command)
@@ -2144,7 +2144,7 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       distances, `IsClosed`, and `isIsoLine`, which assigns false and 0 before any early return, decision 32);
       handles that may be null are nullable (`GTransform`, `buildC3dOnIsoLine`). `SameRange` throws Standard_Failure
       on a null curve, as OCCT does. GeomLib is a `static partial class`.
-281. **GeomLib's file-local code and small classes.** ComputeLambda, ExtendKPart, CanBeTreated, CheckIfKnotExists,
+290. **GeomLib's file-local code and small classes.** ComputeLambda, ExtendKPart, CanBeTreated, CheckIfKnotExists,
       AddAKnot, BuildFlatKnot, FunctionMultiply, CancelDenominatorDerivative1D and CompareWeightPoles are private
       statics (handle references `ref`, outputs `out`); the evaluators `GeomLib_CurveOnSurfaceEvaluator` (an
       AdvApprox_EvaluatorFunction holding the trimmed adaptor in a field) and `law_evaluator` (a
@@ -2155,11 +2155,11 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       GeomLib_LogSample and GeomLib_PolyFunc derive from math_FunctionSample and math_FunctionWithDerivative.
       **GeomLib_MakeCurvefromApprox** keeps the caller's AdvApprox_ApproxAFunction, which OCCT copies by value and
       never changes, and builds a new, unfrozen curve at each call.
-282. **GeomLib_IsPlanarSurface** is a sealed class computed in its constructor. `Plan()` returns the gp_Pln by value
+291. **GeomLib_IsPlanarSurface** is a sealed class computed in its constructor. `Plan()` returns the gp_Pln by value
       and throws StdFail_NotDone when the surface isn't planar, as OCCT does. The two file-static `Controle` functions
       are private static overloads (the points overload takes the plane by `ref`). The implicit gp_Vec to gp_Dir
       conversions are written out (decision 254).
-283. **GeomConvert_SurfToAnaSurf** is a working object with OCCT's public `Init`, `SetConvType` and `SetTarget`
+292. **GeomConvert_SurfToAnaSurf** is a working object with OCCT's public `Init`, `SetConvType` and `SetTarget`
       (decision 21). It keeps the caller's surface and never changes it: B-spline and Bezier sub-ranges are segmented
       on a `Copy()`, so a frozen input works. `ConvertToAnalytical` returns new, unfrozen surfaces the caller owns, or
       null (decision 244). CurveToAnaCurve is called with `out cf, cl` and `ref theGap` (decision 246), the gap locals
@@ -2167,7 +2167,7 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       GetCylByLS minimises GeomConvert_FuncCylinderLSDist with math_PSO then math_Powell, as OCCT does (only `Value`
       is called, so FuncCylinderLSDist's gradient error doesn't matter). `ComputeGap`'s default `RealLast()` is the
       constant `double.MaxValue`; the fixed arrays `newSurf[5]`, `dd[5]` and `aSTypes[5]` are an array and two spans.
-284. **GeomLib_CheckCurveOnSurface is a working object with OCCT's API.** It keeps the caller's adaptors, which must
+293. **GeomLib_CheckCurveOnSurface is a working object with OCCT's API.** It keeps the caller's adaptors, which must
       outlive it; `Perform(null)` sets error 1; the default `theTolRange` is `1.0e-7 * 0.01` (decision 257).
       OSD_ThreadPool is `Parallel.For` over `min(intervals, Environment.ProcessorCount)` threads, each with its own
       shallow-copied adaptors, taking the elements `Lower + t, Lower + t + n, ...` as OCCT's launcher does; each
@@ -2176,20 +2176,20 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       file-local TargetFunc and Local are private nested classes (`operator()` is `Run`); `Derive`'s optional
       `double*` is a flag and an `out`; `ElementaryMaximum`'s lambdas are private methods; `Value` writes 0 on
       failure (decision 221); FillSubIntervals' optional array pointer is a nullable array.
-285. **GeomLib_Tool is a public static class.** `Parameter` and `Parameters` have `out` results, assigned 0 also when
+294. **GeomLib_Tool is a public static class.** `Parameter` and `Parameters` have `out` results, assigned 0 also when
       the geometry is null (decision 32). ComputeDeviation's optional pointers are overloads (`(curve, f, l, double
       start, int iters = 100)`, `(..., int iters, ref prm, ref pnt, ref vec, ref line)` leaving each output unchanged
       where OCCT doesn't write it, `(curve, f, l, int nbSub, int iters = 10)` and `(..., int iters, ref prm)`), chosen
       by C# as C++ chooses them. FuncSolveDeviation is a private nested class keeping the caller's
       Geom2dAdaptor_Curve, which OCCT copies and only evaluates.
-286. **The tangent checks and the interpolation.** GeomLib_CheckBSplineCurve's and GeomLib_Check2dBSplineCurve's
+295. **The tangent checks and the interpolation.** GeomLib_CheckBSplineCurve's and GeomLib_Check2dBSplineCurve's
       `FixTangent` changes the checked curve in place, as OCCT does, but is internal: its OCCT callers
       (IntTools_FaceFace, GeomInt_IntSS, TopOpeBRepTool) pass curves they have just built, and a frozen curve throws
       Standard_ImmutableObject (tested). The public API is `FixedTangent`, which returns a new, unfrozen copy, or null
       when nothing needs fixing; `NeedTangentFix` has `out` parameters. GeomLib_Interpolate's `Curve()` freezes the
       stored curve and returns it at each call (decision 243), null on failure; `Error()` is GeomLib_NoError after a
       success, where OCCT leaves it uninitialised (occt-issues.md). GeomLib_InterpolationErrors keeps OCCT's names.
-287. **Approx_Curve2d, Approx_Curve3d and Approx_CurveOnSurface are working objects whose results are frozen when
+296. **Approx_Curve2d, Approx_Curve3d and Approx_CurveOnSurface are working objects whose results are frozen when
       handed out** (decision 243): `Curve()`, `Curve3d()` and `Curve2d()` freeze the stored B-spline and return the
       same object at each call; the internal `InternalCurve()`, `InternalCurve3d()` and `InternalCurve2d()` return it
       unfrozen for ported code that discards the algorithm (ProjLib, BRepLib). The AdvApprox evaluators are private
@@ -2199,7 +2199,7 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       `isIsoLine` and `buildC3dOnIsoLine` stay protected (`out` outputs assigned first, decision 32); its
       `buildC3dOnIsoLine` copies a frozen conversion result before reversing and re-knotting it (decision 244); its
       deprecated constructor is `[Obsolete]`.
-288. **Approx_SameParameter.** Its private struct `Approx_SameParameter_Data` is a private nested class owning four
+297. **Approx_SameParameter.** Its private struct `Approx_SameParameter_Data` is a private nested class owning four
       `double[1000]` arrays where OCCT has stack arrays; `Swap` swaps the arrays as OCCT swaps the pointers. OCCT saves
       and restores the curve on surface by copying it (`ACS = aData.myCOnS; ... aData.myCOnS = ACS`); only its 2D curve
       changes in between, so the port keeps that curve and loads it again. The evaluator keeps references to the
@@ -2210,7 +2210,7 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       Geom2dAdaptor::MakeCurve of the input, the result can be the caller's own pcurve, returned unfrozen as OCCT
       returns it; `InternalCurve2d()` never freezes. `Curve3d()` returns the caller's adaptor; `CurveOnSurface()` the
       algorithm's shallow-copied adaptor, or null when the computation stopped early (OCCT's null handle).
-289. **Approx_ComputeCLine.gxx is one non-generic body.** OCCT instantiates it twice, as Approx_FitAndDivide and
+298. **Approx_ComputeCLine.gxx is one non-generic body.** OCCT instantiates it twice, as Approx_FitAndDivide and
       Approx_FitAndDivide2d, both over AppCont_Function, and the `.gxx` calls no line tool (AppCont_LeastSquare takes
       the AppCont_Function itself), so the static tool interface decision 202 anticipated isn't needed. The body is a
       public abstract class `Approx_ComputeCLine` with protected constructors; the two instantiations are sealed
@@ -2219,13 +2219,13 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       (decision 141), and where the C++ copies a MultiCurve into a member or a sequence the port writes `new(x)`.
       `Parameters` and `Error` have `out` parameters, the private `Compute` takes its tolerances by `ref`. Compute's
       write of `aPrevCurve`/`aPrevTol*` just before a `break` is left out: they are never read again.
-290. **Approx_CurvlinFunc is a sealed Standard_Transient working object.** It keeps the caller's adaptors as OCCT
+299. **Approx_CurvlinFunc is a sealed Standard_Transient working object.** It keeps the caller's adaptors as OCCT
       keeps its handles; `Trim` replaces them with trimmed adaptors and never changes the caller's. OCCT's const_cast
       writes of `myPrevS`/`myPrevU` are plain field writes; the private `Init(C, Si, Ui)` has `out` arrays;
       `findfourpoints` and `cubic` are private statics over stackalloc spans; Trim's case 3 `[[fallthrough]]` is
       `goto case 2`; EvalCurOnSur's second, unread computation of `d2U_dS2` is left out. Two OCCT errors in the case
       of two curves on two surfaces are reproduced and marked (occt-issues.md).
-291. **Approx_CurvilinearParameter, Approx_SweepFunction and Approx_SweepApproximation.** Approx_CurvilinearParameter's
+300. **Approx_CurvilinearParameter, Approx_SweepFunction and Approx_SweepApproximation.** Approx_CurvilinearParameter's
       `Curve3d()`, `Curve2d1()` and `Curve2d2()` freeze the stored B-splines and return the same objects at each call
       (null without a result); its three AdvApprox evaluators are private nested classes; OCCT leaves `myMaxError2d2`
       uninitialised in the one-surface constructor, 0 in the port. Approx_SweepFunction is a public abstract
@@ -2238,7 +2238,7 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       OCCT reads the handle per element (the same values); `Dump` writes to its TextWriter the line end and
       " Not Done " that OCCT writes to std::cout. Every `Dump` takes a TextWriter and `ToString()` returns what it
       writes.
-292. **Oracle coverage** (all values bit-identical; inputs built identically on both sides, decision 165):
+301. **Oracle coverage** (all values bit-identical; inputs built identically on both sides, decision 165):
       - GeomLib_IsPlanarSurface (bound) on 2,000 random surfaces: elementary surfaces, planar and nearly planar
         B-splines and Beziers (noise 0 to 1e-2, some rational), random B-splines, revolutions, extrusions, trimmed and
         offset surfaces (native offsets built with `isNotCheckC0`), OCCT's default tolerance or 1e-9 to 1e-1; IsPlanar
@@ -2264,13 +2264,13 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       Not bound, so unit-tested only: GeomLib's other statics, GeomLib_Tool, the Check classes, Interpolate, the
       FitAndDivide classes, CurvlinFunc, CurvilinearParameter, the sweep classes, Curve2d, Curve3d and
       GeomConvert_SurfToAnaSurf (ShapeAnalysis_CanonicalRecognition isn't bound, and ShapeCustom doesn't reach it).
-293. **Tests.** OCCT's only GTest for these packages, GeomLib_CheckCurveOnSurface_Test (7 tests), is ported. 82 tests of
+302. **Tests.** OCCT's only GTest for these packages, GeomLib_CheckCurveOnSurface_Test (7 tests), is ported. 82 tests of
       OCCT.NET's own cover every class: known answers (curves on planes and cylinders, isolines, conic and helix
       approximations, quadrics and tori recognised from their B-spline conversions and from swept surfaces, planar
       surfaces of every kind), the copies made instead of OCCT's in-place changes (frozen inputs), CheckCurveOnSurface
       run in parallel and sequentially, and each OCCT issue that a test can reach, pinned. Not reached by any test:
       SurfToAnaSurf's Gauss-field cylinder path (`TryCylinderByGaussField`).
-294. **For later units.** 6A (ProjLib): `new Approx_CurveOnSurface(C2D, Surf, First, Last, Tol)` then
+303. **For later units.** 6A (ProjLib): `new Approx_CurveOnSurface(C2D, Surf, First, Last, Tol)` then
       `Perform(MaxSegments, MaxDegree, Continuity, only3d, only2d)`, results through `InternalCurve3d()` and
       `InternalCurve2d()` (unfrozen), `MaxError3d()`, `IsDone()`, `HasResult()`; `new Approx_FitAndDivide2d(F,
       degmin, degmax, tol3d, tol2d, cutting)` then `SetMaxSegments`, `SetInvOrder`, `SetHangChecking`, `Perform`,
