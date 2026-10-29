@@ -19,9 +19,10 @@ namespace Occt;
 /// prints as DRAWEXE does.
 /// </para>
 /// <para>
-/// Left out: <c>DefaultReport</c> (Message_Report and the alerts aren't ported), the metric helpers
-/// (<c>MetricToString</c>, <c>MetricFromString</c>, <c>ToOSDMetric</c>, <c>ToMessageMetric</c>: OSD_MemInfo isn't
-/// ported).
+/// <see cref="DefaultReport"/> (unit 6A) is internal process-wide state too (decisions 415 and 5009): only
+/// <see cref="Message_Level"/> and <see cref="Message_PrinterToReport"/> reach it, and an algorithm's alerts go to its
+/// own report. Left out: <c>ToOSDMetric</c> and <c>ToMessageMetric</c> (OSD_MemInfo isn't ported;
+/// <see cref="Message_AttributeMeter"/> reads .NET's counters instead).
 /// </para>
 /// </remarks>
 public static class Message
@@ -34,6 +35,60 @@ public static class Message
     /// <summary>Replaces the process-wide messenger (Draw-lite); null restores an empty one.</summary>
     internal static void SetDefaultMessenger(Message_Messenger? theMessenger) =>
         theDefaultMessenger = theMessenger ?? Message_Messenger.Empty();
+
+    private static volatile Message_Report? theDefaultReport;
+    private static readonly Lock theDefaultReportLock = new();
+
+    /// <summary>
+    /// The process-wide report, made first if <paramref name="theToCreate"/> (null otherwise until made). Internal:
+    /// only the report levels and the printer to a report use it (decision 5009).
+    /// </summary>
+    internal static Message_Report? DefaultReport(bool theToCreate = false)
+    {
+        if (theDefaultReport is null && theToCreate)
+        {
+            lock (theDefaultReportLock)
+            {
+                theDefaultReport ??= new Message_Report();
+            }
+        }
+        return theDefaultReport;
+    }
+
+    /// <summary>For tests and Draw-lite: replaces (or, with null, removes) the process-wide report.</summary>
+    internal static void SetDefaultReport(Message_Report? theReport) => theDefaultReport = theReport;
+
+    private static readonly string[] Message_Table_PrintMetricTypeEnum =
+    [
+        "NONE", "ThreadCPUUserTime", "ThreadCPUSystemTime", "ProcessCPUUserTime", "ProcessCPUSystemTime", "WallClock",
+        "MemPrivate", "MemVirtual", "MemWorkingSet", "MemWorkingSetPeak", "MemSwapUsage", "MemSwapUsagePeak",
+        "MemHeapUsage",
+    ];
+
+    /// <summary>The name of the metric ("WallClock", ...).</summary>
+    public static string MetricToString(Message_MetricType theType) => Message_Table_PrintMetricTypeEnum[(int)theType];
+
+    /// <summary>The metric named by the string; false if there is none.</summary>
+    public static bool MetricFromString(string theString, out Message_MetricType theType)
+    {
+        for (int aMetricIter = 0; aMetricIter <= (int)Message_MetricType.Message_MetricType_MemHeapUsage; ++aMetricIter)
+        {
+            if (theString == Message_Table_PrintMetricTypeEnum[aMetricIter])
+            {
+                theType = (Message_MetricType)aMetricIter;
+                return true;
+            }
+        }
+        theType = Message_MetricType.Message_MetricType_None;
+        return false;
+    }
+
+    /// <summary>The metric named by the string, or <see cref="Message_MetricType.Message_MetricType_None"/>.</summary>
+    public static Message_MetricType MetricFromString(string theString)
+    {
+        MetricFromString(theString, out Message_MetricType aMetric);
+        return aMetric;
+    }
 
     // ---- Short-cuts to DefaultMessenger
 
