@@ -72,6 +72,12 @@ internal sealed class TclVar
     public string? Value;
     public Dictionary<string, string>? Array;
 
+    /// <summary>The Draw variable held by this Tcl variable (Draw::Set), cleared when the variable is written or unset.</summary>
+    public DrawDrawable? Drawable;
+
+    /// <summary>The Draw variables held by elements of this array.</summary>
+    public Dictionary<string, DrawDrawable>? ElementDrawables;
+
     public bool Exists => Value is not null || Array is not null;
 }
 
@@ -681,6 +687,7 @@ public sealed partial class DrawInterpreter
                 throw new DrawException($"can't set \"{theName}\": variable is array");
             }
 
+            WriteTrace(aVar, null, theName);
             aVar.Value = theValue;
         }
         else
@@ -690,6 +697,7 @@ public sealed partial class DrawInterpreter
                 throw new DrawException($"can't set \"{DisplayName(theName, theIndex)}\": variable isn't array");
             }
 
+            WriteTrace(aVar, theIndex, DisplayName(theName, theIndex));
             aVar.Array ??= new Dictionary<string, string>(StringComparer.Ordinal);
             aVar.Array[theIndex] = theValue;
         }
@@ -708,11 +716,20 @@ public sealed partial class DrawInterpreter
 
         if (anIndex is null)
         {
+            if (aVar.Drawable is { Protected: true })
+            {
+                // Draw's trace sets a protected variable again
+                return true;
+            }
+
             aVar.Value = null;
             aVar.Array = null;
+            aVar.Drawable = null;
+            aVar.ElementDrawables = null;
             return true;
         }
 
+        aVar.ElementDrawables?.Remove(anIndex);
         return aVar.Array is not null && aVar.Array.Remove(anIndex);
     }
 

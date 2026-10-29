@@ -16,6 +16,9 @@ public class DrawResourcesTests(ITestOutputHelper output)
     internal static string OcctSourceDirectory
         => typeof(DrawResourcesTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == "OcctSourceDir").Value!;
 
+    internal static string OcctTestDataDirectory
+        => typeof(DrawResourcesTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!;
+
     internal static string ResourcesDirectory => Path.Combine(OcctSourceDirectory, "resources", "DrawResources");
 
     private static (DrawInterpreter Interpreter, StringWriter Output) Load()
@@ -197,7 +200,13 @@ public class DrawResourcesTests(ITestOutputHelper output)
             output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"  {aCall,-14} used by {string.Join(", ", aUsers)}"));
         }
 
-        foreach (string aPrimitive in new[] { "nbshapes", "tolerance", "isdraw", "dtyp", "sprops", "vprops", "lprops", "checkshape", "explode", "freebounds", "trinfo", "dump" })
+        // unit 3L1's commands are there; checkshape (3L2) and the meshing commands are not yet
+        foreach (string aPrimitive in new[] { "nbshapes", "tolerance", "isdraw", "dtyp", "sprops", "vprops", "lprops", "explode", "dump" })
+        {
+            Assert.DoesNotContain(aPrimitive, aMissing.Keys);
+        }
+
+        foreach (string aPrimitive in new[] { "checkshape", "freebounds", "trinfo" })
         {
             Assert.Contains(aPrimitive, aMissing.Keys);
         }

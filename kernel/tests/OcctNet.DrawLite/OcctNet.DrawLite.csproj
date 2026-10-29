@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.ModelingData\OcctNet.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
   </ItemGroup>
 
 </Project>

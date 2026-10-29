@@ -363,3 +363,13 @@ they hang, overflow the stack or read outside memory and would take the test hos
 | `BinTools_SurfaceSet::Write`, `BinTools_Curve2dSet::Write` | Dereference the null entry the sets can hold, outside their `try` | Writing a set holding a null surface or 2D curve (from a point representation read with a missing one) crashes; the port throws `Standard_Failure` (found by fuzzing) |
 | `BinTools_ShapeSet::ReadShape`, vertices of versions 1, 2 and 4 | Reads a real before the type byte and steps back unless the next byte is 1 to 3, for files written with the parameter first; version 4 files write the type first | A parameter whose last stored byte is 1, 2 or 3 (a positive real below about 1e-303) is misread. Ported as is |
 | BinTools readers: `ShapeReader` references and locations, `LocationSet::Read` | Stream positions and location indices aren't checked; `Powered` of a complex location recurses per power | A reference cycle recurses until the stack overflows; bad indices read outside the maps |
+
+## Phase 3: unit 3L1, Draw-lite shapes
+
+Found while porting Draw's commands (Draw-lite reproduces them, so the corpus sees OCCT's behaviour).
+
+| Where | What | Effect |
+|---|---|---|
+| `tcopy` (BRepTest_BasicCommands.cxx) | The pairs loop reads `a[i + iFirst]` and `a[i + iFirst + 1]` with `i` the pair number, where `2 * i` was meant | `tcopy a b c d` copies a to b, then b to c; d is never set. Pinned by `DrawShapeCommandsTests.Tcopy_copies_the_shapes` |
+| `ShapeAnalysis_ShapeTolerance::InTolerance` (ShapeAnalysis_ShapeTolerance.cxx) | Vertices are kept when `tol >= valmax` where faces and edges test `tol <= valmax` | `tolerance shape [mode] min max` lists every vertex over the upper bound among the shapes "below" or "between", and none under it (each vertex once per edge that holds it). Pinned by `DrawShapeCommandsTests.Tolerance_and_maxtolerance` |
+| `nexplode` (DBRep.cxx) | Sizes its arrays as the number of distinct sub-shapes minus one, assuming the shape itself is in the map and not of the type | `nexplode` of an edge into edges (or a face into faces, a vertex into vertices) writes past the array: Standard_OutOfRange in a build with range checks |
