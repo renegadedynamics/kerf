@@ -1017,6 +1017,8 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         {
             throw new Standard_OutOfRange();
         }
+        // OCCT: keeps the evaluation representation, as every edit but Transform, UReverse and VReverse does
+        // (Geom_BSplineSurface clears it): the surface goes on evaluating the old shape (occt-issues.md)
         myPoles[UIndex, VIndex] = P;
         myMaxDerivInvOk = false;
     }

@@ -517,4 +517,27 @@ public class Geom_BezierSurfaceTests
         Assert.False(myOriginalSurface.IsURational());
         Assert.True(myOriginalSurface.IsUClosed() == false && myOriginalSurface.IsVClosed() == false);
     }
+    [Fact]
+    public void EvalRepresentation_KeptByPoleEdits_AsInOCCT()
+    {
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new gp_Pnt(0, 0, 5);
+        aPoles[1, 2] = new gp_Pnt(1, 0, 5);
+        aPoles[2, 1] = new gp_Pnt(0, 1, 5);
+        aPoles[2, 2] = new gp_Pnt(1, 1, 5);
+        Geom_BezierSurface aRep = new(aPoles);
+        Geom_BezierSurface aSurf = myOriginalSurface.WithEvalRepresentation(new GeomEval_RepSurfaceDesc.Full { Representation = aRep });
+        Assert.True(aSurf.HasEvalRepresentation());
+        Assert.False(myOriginalSurface.HasEvalRepresentation());
+        Assert.True(aSurf.Value(0.5, 0.5).IsEqual(aRep.Value(0.5, 0.5), 0.0));
+        Assert.True(aSurf.Copy() is Geom_BezierSurface { } aCopy && aCopy.HasEvalRepresentation());
+
+        // OCCT: a pole edit keeps the representation (occt-issues.md), Transform drops it
+        aSurf.SetPole(1, 1, new gp_Pnt(-10, -10, -10));
+        Assert.True(aSurf.HasEvalRepresentation());
+        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new gp_Pnt(0, 0, 5), 0.0));
+        aSurf.Transform(gp_Trsf.Translation(new gp_Vec(0, 0, 1)));
+        Assert.False(aSurf.HasEvalRepresentation());
+        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new gp_Pnt(-10, -10, -9), 1e-12));
+    }
 }

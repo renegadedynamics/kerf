@@ -682,4 +682,24 @@ public class Geom_BSplineSurfaceTests
         Assert.False(myOriginalSurface.Pole(1, 1).IsEqual(new gp_Pnt(100, 100, 100), 1.0));
         Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.UKnotSequence());
     }
+    [Fact]
+    public void EvalRepresentation_DroppedByEdits()
+    {
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new gp_Pnt(0, 0, 5);
+        aPoles[1, 2] = new gp_Pnt(1, 0, 5);
+        aPoles[2, 1] = new gp_Pnt(0, 1, 5);
+        aPoles[2, 2] = new gp_Pnt(1, 1, 5);
+        Geom_BezierSurface aRep = new(aPoles);
+        Geom_BSplineSurface aSurf = myOriginalSurface.WithEvalRepresentation(new GeomEval_RepSurfaceDesc.Full { Representation = aRep });
+        Assert.True(aSurf.HasEvalRepresentation());
+        Assert.False(myOriginalSurface.HasEvalRepresentation());
+        Assert.True(aSurf.Value(0.5, 0.5).IsEqual(aRep.Value(0.5, 0.5), 0.0));
+        Assert.True(aSurf.DN(0.5, 0.5, 1, 0).IsEqual(aRep.DN(0.5, 0.5, 1, 0), 0.0, 0.0));
+        Assert.True(((Geom_BSplineSurface)aSurf.Copy()).HasEvalRepresentation());
+
+        aSurf.SetPole(1, 1, new gp_Pnt(1, 1, 0.2));
+        Assert.False(aSurf.HasEvalRepresentation());
+        Assert.True(aSurf.Value(0.5, 0.5).IsEqual(myOriginalSurface.Value(0.5, 0.5), 1e-15));
+    }
 }

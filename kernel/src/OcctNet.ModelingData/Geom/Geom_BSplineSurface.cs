@@ -649,6 +649,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
 
         // compute index1 and index2 to set the new knots and mults
+        // OCCT: for a periodic direction left whole (CheckAndSegment), NewU1 + deltaU locates on the first knot again,
+        // so index2U == index1U + 1 and the direction keeps one span while staying periodic with all its poles: the
+        // knots no longer match the poles (occt-issues.md)
         int index1U, index2U;
         int FromU1 = myUKnots.Lower();
         int ToU2 = myUKnots.Upper();
@@ -2995,6 +2998,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             throw new Standard_OutOfRange("Geom_BSplineSurface::MovePoint: Index and #pole mismatch");
         }
 
+        // OCCT: on a periodic surface, BSplSLib::MovePoint indexes the stored poles (and weights) with indices from the
+        // periodic flat knots, which run past the arrays (occt-issues.md; the port throws Standard_OutOfRange)
         NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.UpperRow(), 1, myPoles.UpperCol());
         gp_Pnt P0;
         D0(U, V, out P0);
@@ -3253,6 +3258,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int I1 = FirstUKnotIndex();
         int I2 = LastUKnotIndex();
 
+        // OCCT: accepts the first and last knots of a periodic surface; removing one leaves knots and multiplicities
+        // that BSplCLib::KnotSequence reads out of range (occt-issues.md; the port throws IndexOutOfRangeException)
         if (!myUPeriodic && (Index <= I1 || Index >= I2))
         {
             throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveUKnot: invalid Index");
@@ -3339,6 +3346,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int I1 = FirstVKnotIndex();
         int I2 = LastVKnotIndex();
 
+        // OCCT: the same as RemoveUKnot for the end knots of a periodic surface
         if (!myVPeriodic && (Index <= I1 || Index >= I2))
         {
             throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveVKnot: invalid Index");
