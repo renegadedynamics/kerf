@@ -59,14 +59,13 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
             basisSurf = (Geom_Surface)S.Copy();
         }
 
-        // TODO(2A): Geom_OffsetSurface is ported by unit 2A. Until then no surface is an offset surface. OCCT:
-        //   occ::handle<Geom_OffsetSurface> O = occ::down_cast<Geom_OffsetSurface>(basisSurf);
-        //   if (!O.IsNull())
-        //   {
-        //     occ::handle<Geom_RectangularTrimmedSurface> S2 =
-        //       new Geom_RectangularTrimmedSurface(O->BasisSurface(), U1, U2, V1, V2, USense, VSense);
-        //     basisSurf = new Geom_OffsetSurface(S2, O->Offset(), true);
-        //   }
+        Geom_OffsetSurface? O = basisSurf as Geom_OffsetSurface;
+        if (O is not null)
+        {
+            Geom_RectangularTrimmedSurface S2 =
+                new Geom_RectangularTrimmedSurface(O.BasisSurface(), U1, U2, V1, V2, USense, VSense);
+            basisSurf = new Geom_OffsetSurface(S2, O.Offset(), true);
+        }
 
         SetTrim(U1, U2, V1, V2, USense, VSense);
     }
@@ -95,14 +94,13 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
             basisSurf = (Geom_Surface)S.Copy();
         }
 
-        // TODO(2A): Geom_OffsetSurface is ported by unit 2A. Until then no surface is an offset surface. OCCT:
-        //   occ::handle<Geom_OffsetSurface> O = occ::down_cast<Geom_OffsetSurface>(basisSurf);
-        //   if (!O.IsNull())
-        //   {
-        //     occ::handle<Geom_RectangularTrimmedSurface> S2 =
-        //       new Geom_RectangularTrimmedSurface(O->BasisSurface(), Param1, Param2, UTrim, Sense);
-        //     basisSurf = new Geom_OffsetSurface(S2, O->Offset(), true);
-        //   }
+        Geom_OffsetSurface? O = basisSurf as Geom_OffsetSurface;
+        if (O is not null)
+        {
+            Geom_RectangularTrimmedSurface S2 =
+                new Geom_RectangularTrimmedSurface(O.BasisSurface(), Param1, Param2, UTrim, Sense);
+            basisSurf = new Geom_OffsetSurface(S2, O.Offset(), true);
+        }
 
         if (T is not null)
         {
