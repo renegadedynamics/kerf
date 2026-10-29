@@ -66,7 +66,7 @@ finds the edge's existing `BRep_GCurve` and calls `SetRange`, or replaces its pc
     its wire.
 - **Locked.** `BRep_Builder` throws `TopoDS_LockedShape` from all its update methods (32 checks) when the target is
   locked. `BOPAlgo_PaveFiller` switches itself to non-destructive mode when any argument is locked
-  (`BOPAlgo_PaveFiller_10.cxx:56`). `BRepTools::UpdateFaceUVPoints` skips locked edges. Only reading a file sets
+  (`BOPAlgo_PaveFiller_10.cxx:56`). `BRepTools::UpdateFaceUVPoints` stops at the first locked edge. Only reading a file sets
   Locked; BRepOffset clears it.
 - **Modified and Checked** are cache-validity bits:
   - `Add` and `Remove` set Modified, and setting Modified clears Checked.
@@ -161,8 +161,9 @@ BRepCheck_Shell, BRepClass3d, BRepGProp.
 
 - **Accessors are public:** `TShape()`, `Location()`, `Orientation()`, `ShapeType()`, `IsNull()`, `NbChildren()`,
   the flag getters (`Free()`, `Closed()`, ...), `IsPartner`, `IsSame` and `IsEqual`.
-- **OCCT's non-mutating forms are public:** `Located`, `Oriented`, `Moved`, `Reversed`, `Complemented`, `Composed`
-  and `EmptyCopied`.
+- **OCCT's non-mutating forms are public:** `Located`, `Oriented`, `Moved`, `Reversed`, `Complemented` and
+  `Composed`. `EmptyCopied` is internal (changed in unit 3A, decision 3103): it creates an unfrozen TShape, which
+  nothing a caller holds may be (4.2), and only a builder can fill it.
 - **The mutators are `internal`**, under the rules for value types: `Location(loc)`, `Orientation(o)`, `Move`,
   `Reverse`, `Complement`, `Compose`, `Nullify`, `EmptyCopy`, `TShape(t)` and the flag setters.
   - The OCCTNET0001 analyzer already catches a mutator called on a readonly copy.
@@ -257,7 +258,12 @@ Geom (decisions 127, 132, 245).
 
 **Poly.** Poly_Triangulation and the polygon classes get `CheckMutable()` in their mutators now. That is the
 follow-up decision 63 promised. Their mutators stay public, because a mesher or an importer fills them as builders
-(decision 63), but they throw once the object is attached.
+(decision 63), but they throw once the object is attached. The cached range of a triangulation stays writable: it
+is a cache of the frozen nodes (decision 3113).
+
+**The Active bit.** OCCT's `BRep_TFace` marks its active triangulation in the triangulation's purpose
+(`Poly_MeshPurpose_Active`) and clears the bit of the one it replaces. A frozen triangulation may be shared by another
+face, so the port leaves its purpose as it is (decision 3106).
 
 ### 4.2 TShapes and representations freeze on publication
 
@@ -319,7 +325,7 @@ override.
 - `BRep_Builder`'s 32 checks throw `TopoDS_LockedShape` on a frozen target, with OCCT's message.
 - `BOPAlgo_PaveFiller` goes non-destructive when an argument is frozen, so Booleans on frozen inputs work on copies
   without new code.
-- `BRepTools::UpdateFaceUVPoints` skips frozen edges.
+- `BRepTools::UpdateFaceUVPoints` stops at the first frozen edge (OCCT's `return`, occt-issues.md).
 
 Three things need care:
 
@@ -330,6 +336,8 @@ Three things need care:
 - **Paths that bypass `BRep_Builder`** still throw `Standard_ImmutableObject` through `CheckMutable()`. These are
   `ChangeCurves()`, `ChangePoints()`, `TE->Tolerance(...)`, `UpdateTolerance`, the flag setters, the
   `TopoDS_Builder` child list, and the representations' setters (`SetRange`, `PCurve(...)`, `Location(...)`, ...).
+- **The lists themselves** (`BRep_TEdge::Curves()`, `BRep_TVertex::Points()`, `BRep_TFace::Triangulations()`) are
+  mutable `NCollection_List`s, so their accessors are internal; callers get read-only copies (decision 3107).
 
 ### 4.4 The flags
 
@@ -349,11 +357,14 @@ frozen target:
 |---|---|
 | The target is frozen | Throws `TopoDS_LockedShape` (4.3), or `Standard_ImmutableObject` on paths OCCT doesn't guard. Never a silent copy. |
 | A frozen child is added to an unfrozen parent | Allowed. That is how new shapes share their inputs' sub-shapes. |
+| A Make method is given a variable holding a frozen shape | `MakeEdge` and `MakeFace` throw `TopoDS_LockedShape`, as OCCT does for a locked one; ported code makes into a new variable. |
 | Geometry or a mesh is attached | The object is frozen (4.1). |
 
 Callers outside OCCT.NET build shapes through public algorithms. Phase 3 has the `BRepLib_Make*` classes and
 `BRepBuilderAPI`'s makers (unit 3K). For compounds there is an addition, `TopoDS_Builder.MakeCompound(params
-TopoDS_Shape[])` and an `IEnumerable` overload, returning a frozen compound. build123d.NET uses `BRep_Builder`
+TopoDS_Shape[])` and an `IEnumerable` overload, returning a frozen compound. (`TopoDS_Builder` is therefore a public
+class whose constructor and members are internal; `BRep_Builder` is an internal class. The Make methods take the
+shape by `ref`, decision 3104.) build123d.NET uses `BRep_Builder`
 directly today, and moves to these when it switches over (phase 9).
 
 Rejected: **copying silently in `BRep_Builder` when the target is frozen** (copy-on-write at TShape level). A

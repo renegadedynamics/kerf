@@ -393,4 +393,63 @@ public class BRep_ToolTests
         Assert.Null(BRep_Tool.Triangulation(aFace, out _, Poly_MeshPurpose.Poly_MeshPurpose_Calculation));
         Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _, Poly_MeshPurpose.Poly_MeshPurpose_AnyFallback));
     }
+
+    [Fact]
+    public void PolygonOnClosedSurface_is_stored_without_the_location_as_in_OCCT()
+    {
+        // OCCT (occt-issues.md): BRep_Builder::UpdateEdge(E, P1, P2, S, L) stores the two polygons with the identity
+        // location, where the one-polygon form stores L relative to the edge: on a face at a location, the pair isn't
+        // found again
+        var aBuilder = new BRep_Builder();
+        var aLoc = new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(0, 0, 1)));
+        TopoDS_Face aFace = new();
+        aBuilder.MakeFace(ref aFace, new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0), aLoc, 1e-7);
+        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 0, 1));
+        var aP1 = new Poly_Polygon2D(2);
+        var aP2 = new Poly_Polygon2D(2);
+        aBuilder.UpdateEdge(anEdge, aP1, aP2, aFace);
+        Assert.Null(BRep_Tool.PolygonOnSurface(anEdge, aFace));
+        BRep_Tool.PolygonOnSurface(anEdge, out Poly_Polygon2D? aFound, out _, out TopLoc_Location aL);
+        Assert.Same(aP1, aFound);
+        Assert.True(aL.IsIdentity());
+
+        var aSingle = new Poly_Polygon2D(2);
+        TopoDS_Edge anOther = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 0, 1));
+        aBuilder.UpdateEdge(anOther, aSingle, aFace);
+        Assert.Same(aSingle, BRep_Tool.PolygonOnSurface(anOther, aFace));
+    }
+
+    [Fact]
+    public void UpdateFaceUVPoints_stops_at_the_first_locked_edge_as_in_OCCT()
+    {
+        // OCCT (occt-issues.md): BRepTools::UpdateFaceUVPoints returns at the first locked edge instead of skipping it,
+        // so the edges after it keep their old UV points
+        var aBuilder = new BRep_Builder();
+        TopoDS_Face aFace = new();
+        aBuilder.MakeFace(ref aFace, new Geom_Plane(new gp_Ax3(gp.XOY())), 1e-7);
+        TopoDS_Edge aLocked = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
+        TopoDS_Edge aStale = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0));
+        aBuilder.UpdateEdge(aStale, new Geom2d_Line(new gp_Pnt2d(1, 0), new gp_Dir2d(0, 1)), aFace, 1e-7);
+        BRep_Tool.SetUVPoints(aStale, aFace, new gp_Pnt2d(9, 9), new gp_Pnt2d(9, 9));
+        TopoDS_Wire aWire = new();
+        aBuilder.MakeWire(ref aWire);
+        aBuilder.Add(aWire, aLocked);
+        aBuilder.Add(aWire, aStale);
+        aBuilder.Add(aFace, aWire);
+
+        BRepTools.UpdateFaceUVPoints(aFace);
+        BRep_Tool.UVPoints(aStale, aFace, out gp_Pnt2d aP1, out _);
+        Assert.Equal(9.0, aP1.X());
+
+        // with the locked edge after it, the stale edge is updated
+        TopoDS_Face aFace2 = TopoDS.Face(aFace.EmptyCopied());
+        TopoDS_Wire aWire2 = new();
+        aBuilder.MakeWire(ref aWire2);
+        aBuilder.Add(aWire2, aStale);
+        aBuilder.Add(aWire2, aLocked);
+        aBuilder.Add(aFace2, aWire2);
+        BRepTools.UpdateFaceUVPoints(aFace2);
+        BRep_Tool.UVPoints(aStale, aFace2, out aP1, out _);
+        Assert.Equal(1.0, aP1.X());
+    }
 }
