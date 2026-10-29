@@ -10,7 +10,7 @@ B3D_API void* b3d_TopTools_HSequenceOfShape_downcast(void* t) { return b3d_retai
 B3D_API void* b3d_TopTools_HSequenceOfShape_new0(b3d_error** err)
 {
   *err = nullptr;
-  try { return b3d_retain(new NCollection_HSequence<TopoDS_Shape>()); }
+  B3D_TRY { return b3d_retain(new NCollection_HSequence<TopoDS_Shape>()); }
   B3D_CATCH(err)
   return {};
 }
@@ -18,7 +18,7 @@ B3D_API void* b3d_TopTools_HSequenceOfShape_new0(b3d_error** err)
 B3D_API int32_t b3d_TopTools_HSequenceOfShape_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -26,21 +26,21 @@ B3D_API int32_t b3d_TopTools_HSequenceOfShape_Length(void* self, b3d_error** err
 B3D_API void b3d_TopTools_HSequenceOfShape_Append(void* self, const TopoDS_Shape* item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Append(*item); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Append(*item); }
   B3D_CATCH(err)
 }
 
 B3D_API void b3d_TopTools_HSequenceOfShape_Prepend(void* self, const TopoDS_Shape* item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Prepend(*item); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Prepend(*item); }
   B3D_CATCH(err)
 }
 
 B3D_API void* b3d_TopTools_HSequenceOfShape_Value(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return new TopoDS_Shape(s.Value(index)); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return new TopoDS_Shape(s.Value(index)); }
   B3D_CATCH(err)
   return {};
 }
@@ -48,28 +48,28 @@ B3D_API void* b3d_TopTools_HSequenceOfShape_Value(void* self, int32_t index, b3d
 B3D_API void b3d_TopTools_HSequenceOfShape_SetValue(void* self, int32_t index, const TopoDS_Shape* item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.SetValue(index, *item); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.SetValue(index, *item); }
   B3D_CATCH(err)
 }
 
 B3D_API void b3d_TopTools_HSequenceOfShape_Remove(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Remove(index); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Remove(index); }
   B3D_CATCH(err)
 }
 
 B3D_API void b3d_TopTools_HSequenceOfShape_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Clear(); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); s.Clear(); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TopTools_HSequenceOfShape_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -77,6 +77,6 @@ B3D_API int32_t b3d_TopTools_HSequenceOfShape_Count(void* self, b3d_error** err)
 B3D_API void b3d_TopTools_HSequenceOfShape_Fill(void* self, void** out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); int n = 0; for (int i = 1; i <= s.Length(); i++) { auto&& x = s.Value(i); out[n++] = new TopoDS_Shape(x); } }
+  B3D_TRY { NCollection_Sequence<TopoDS_Shape>& s = *static_cast<NCollection_HSequence<TopoDS_Shape>*>(self); int n = 0; for (int i = 1; i <= s.Length(); i++) { auto&& x = s.Value(i); out[n++] = new TopoDS_Shape(x); } }
   B3D_CATCH(err)
 }

@@ -8,7 +8,7 @@ B3D_API void b3d_TColgp_Array1OfVec_delete(void* p) { delete static_cast<NCollec
 B3D_API void* b3d_TColgp_Array1OfVec_copy(const void* p, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array1<gp_Vec>(*static_cast<const NCollection_Array1<gp_Vec>*>(p)); }
+  B3D_TRY { return new NCollection_Array1<gp_Vec>(*static_cast<const NCollection_Array1<gp_Vec>*>(p)); }
   B3D_CATCH(err)
   return {};
 }
@@ -16,7 +16,7 @@ B3D_API void* b3d_TColgp_Array1OfVec_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TColgp_Array1OfVec_new0(int lower, int upper, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Array1<gp_Vec>(lower, upper); }
+  B3D_TRY { return new NCollection_Array1<gp_Vec>(lower, upper); }
   B3D_CATCH(err)
   return {};
 }
@@ -24,7 +24,7 @@ B3D_API void* b3d_TColgp_Array1OfVec_new0(int lower, int upper, b3d_error** err)
 B3D_API int32_t b3d_TColgp_Array1OfVec_Lower(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Lower(); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Lower(); }
   B3D_CATCH(err)
   return {};
 }
@@ -32,7 +32,7 @@ B3D_API int32_t b3d_TColgp_Array1OfVec_Lower(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColgp_Array1OfVec_Upper(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Upper(); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Upper(); }
   B3D_CATCH(err)
   return {};
 }
@@ -40,7 +40,7 @@ B3D_API int32_t b3d_TColgp_Array1OfVec_Upper(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColgp_Array1OfVec_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -48,7 +48,7 @@ B3D_API int32_t b3d_TColgp_Array1OfVec_Length(void* self, b3d_error** err)
 B3D_API void* b3d_TColgp_Array1OfVec_Value(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return new gp_Vec(s.Value(index)); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return new gp_Vec(s.Value(index)); }
   B3D_CATCH(err)
   return {};
 }
@@ -56,14 +56,14 @@ B3D_API void* b3d_TColgp_Array1OfVec_Value(void* self, int32_t index, b3d_error*
 B3D_API void b3d_TColgp_Array1OfVec_SetValue(void* self, int32_t index, const gp_Vec* item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); s.SetValue(index, *item); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); s.SetValue(index, *item); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TColgp_Array1OfVec_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -71,6 +71,6 @@ B3D_API int32_t b3d_TColgp_Array1OfVec_Count(void* self, b3d_error** err)
 B3D_API void b3d_TColgp_Array1OfVec_Fill(void* self, void** out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = new gp_Vec(x); } }
+  B3D_TRY { NCollection_Array1<gp_Vec>& s = *static_cast<NCollection_Array1<gp_Vec>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = new gp_Vec(x); } }
   B3D_CATCH(err)
 }

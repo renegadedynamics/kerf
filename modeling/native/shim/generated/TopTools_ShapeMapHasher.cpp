@@ -8,7 +8,7 @@ B3D_API void* b3d_TopTools_ShapeMapHasher_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopTools_ShapeMapHasher>)
   {
-    try { return new TopTools_ShapeMapHasher(*static_cast<const TopTools_ShapeMapHasher*>(p)); }
+    B3D_TRY { return new TopTools_ShapeMapHasher(*static_cast<const TopTools_ShapeMapHasher*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_TopTools_ShapeMapHasher_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<TopTools_ShapeMapHasher>)
   {
-    try { return new TopTools_ShapeMapHasher(); }
+    B3D_TRY { return new TopTools_ShapeMapHasher(); }
     B3D_CATCH(err)
   }
   else

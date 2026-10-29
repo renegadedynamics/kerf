@@ -14,7 +14,7 @@ B3D_API void* b3d_Geom2d_Conic_downcast(void* t) { return b3d_retain(dynamic_cas
 B3D_API void b3d_Geom2d_Conic_SetAxis__gp_Ax22d(void* self, const gp_Ax22d* theA, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Conic*>(self)->SetAxis(*theA);
     return;
@@ -25,7 +25,7 @@ B3D_API void b3d_Geom2d_Conic_SetAxis__gp_Ax22d(void* self, const gp_Ax22d* theA
 B3D_API void b3d_Geom2d_Conic_SetXAxis__gp_Ax2d(void* self, const gp_Ax2d* theAX, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Conic*>(self)->SetXAxis(*theAX);
     return;
@@ -36,7 +36,7 @@ B3D_API void b3d_Geom2d_Conic_SetXAxis__gp_Ax2d(void* self, const gp_Ax2d* theAX
 B3D_API void b3d_Geom2d_Conic_SetYAxis__gp_Ax2d(void* self, const gp_Ax2d* theAY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Conic*>(self)->SetYAxis(*theAY);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_Geom2d_Conic_SetYAxis__gp_Ax2d(void* self, const gp_Ax2d* theAY
 B3D_API void b3d_Geom2d_Conic_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Conic*>(self)->SetLocation(*theP);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_Geom2d_Conic_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* 
 B3D_API void* b3d_Geom2d_Conic_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->XAxis();
     return new gp_Ax2d(r);
@@ -70,7 +70,7 @@ B3D_API void* b3d_Geom2d_Conic_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Conic_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->YAxis();
     return new gp_Ax2d(r);
@@ -82,7 +82,7 @@ B3D_API void* b3d_Geom2d_Conic_YAxis(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Conic_Eccentricity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->Eccentricity();
     return r;
@@ -94,7 +94,7 @@ B3D_API double b3d_Geom2d_Conic_Eccentricity(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Conic_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->Location();
     return new gp_Pnt2d(r);
@@ -106,7 +106,7 @@ B3D_API void* b3d_Geom2d_Conic_Location(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Conic_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->Position();
     return new gp_Ax22d(r);
@@ -118,7 +118,7 @@ B3D_API void* b3d_Geom2d_Conic_Position(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_Conic_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Conic*>(self)->Reverse();
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_Geom2d_Conic_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Conic_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->ReversedParameter(U);
     return r;
@@ -141,7 +141,7 @@ B3D_API double b3d_Geom2d_Conic_ReversedParameter__double(void* self, double U, 
 B3D_API int32_t b3d_Geom2d_Conic_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -153,7 +153,7 @@ B3D_API int32_t b3d_Geom2d_Conic_Continuity(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Conic_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Conic*>(self)->IsCN(N);
     return r ? 1 : 0;

@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom_Parabola_downcast(void* t) { return b3d_retain(dynamic_ca
 B3D_API void* b3d_Geom_Parabola_new__gp_Parab(const gp_Parab* Prb, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Parabola(*Prb);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom_Parabola_new__gp_Parab(const gp_Parab* Prb, b3d_error** e
 B3D_API void* b3d_Geom_Parabola_new__gp_Ax2__double(const gp_Ax2* A2, double Focal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Parabola(*A2, Focal);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom_Parabola_new__gp_Ax2__double(const gp_Ax2* A2, double Foc
 B3D_API void* b3d_Geom_Parabola_new__gp_Ax1__gp_Pnt(const gp_Ax1* D, const gp_Pnt* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Parabola(*D, *F);
     return b3d_retain(r);
@@ -55,7 +55,7 @@ B3D_API void* b3d_Geom_Parabola_new__gp_Ax1__gp_Pnt(const gp_Ax1* D, const gp_Pn
 B3D_API void b3d_Geom_Parabola_SetFocal__double(void* self, double Focal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Parabola*>(self)->SetFocal(Focal);
     return;
@@ -66,7 +66,7 @@ B3D_API void b3d_Geom_Parabola_SetFocal__double(void* self, double Focal, b3d_er
 B3D_API void b3d_Geom_Parabola_SetParab__gp_Parab(void* self, const gp_Parab* Prb, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Parabola*>(self)->SetParab(*Prb);
     return;
@@ -77,7 +77,7 @@ B3D_API void b3d_Geom_Parabola_SetParab__gp_Parab(void* self, const gp_Parab* Pr
 B3D_API void* b3d_Geom_Parabola_Parab(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Parab();
     return new gp_Parab(r);
@@ -89,7 +89,7 @@ B3D_API void* b3d_Geom_Parabola_Parab(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Parabola_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->ReversedParameter(U);
     return r;
@@ -101,7 +101,7 @@ B3D_API double b3d_Geom_Parabola_ReversedParameter__double(void* self, double U,
 B3D_API double b3d_Geom_Parabola_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->FirstParameter();
     return r;
@@ -113,7 +113,7 @@ B3D_API double b3d_Geom_Parabola_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Parabola_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->LastParameter();
     return r;
@@ -125,7 +125,7 @@ B3D_API double b3d_Geom_Parabola_LastParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Parabola_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -137,7 +137,7 @@ B3D_API uint8_t b3d_Geom_Parabola_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Parabola_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -149,7 +149,7 @@ B3D_API uint8_t b3d_Geom_Parabola_IsPeriodic(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Parabola_Directrix(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Directrix();
     return new gp_Ax1(r);
@@ -161,7 +161,7 @@ B3D_API void* b3d_Geom_Parabola_Directrix(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Parabola_Eccentricity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Eccentricity();
     return r;
@@ -173,7 +173,7 @@ B3D_API double b3d_Geom_Parabola_Eccentricity(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Parabola_Focus(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Focus();
     return new gp_Pnt(r);
@@ -185,7 +185,7 @@ B3D_API void* b3d_Geom_Parabola_Focus(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Parabola_Focal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Focal();
     return r;
@@ -197,7 +197,7 @@ B3D_API double b3d_Geom_Parabola_Focal(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Parabola_Parameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Parameter();
     return r;
@@ -209,7 +209,7 @@ B3D_API double b3d_Geom_Parabola_Parameter(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Parabola_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->EvalD0(U);
     return new gp_Pnt(r);
@@ -221,7 +221,7 @@ B3D_API void* b3d_Geom_Parabola_EvalD0__double(void* self, double U, b3d_error**
 B3D_API void* b3d_Geom_Parabola_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->EvalDN(U, N);
     return new gp_Vec(r);
@@ -233,7 +233,7 @@ B3D_API void* b3d_Geom_Parabola_EvalDN__double__int(void* self, double U, int32_
 B3D_API void b3d_Geom_Parabola_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Parabola*>(self)->Transform(*T);
     return;
@@ -244,7 +244,7 @@ B3D_API void b3d_Geom_Parabola_Transform__gp_Trsf(void* self, const gp_Trsf* T, 
 B3D_API double b3d_Geom_Parabola_TransformedParameter__double__gp_Trsf(void* self, double U, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->TransformedParameter(U, *T);
     return r;
@@ -256,7 +256,7 @@ B3D_API double b3d_Geom_Parabola_TransformedParameter__double__gp_Trsf(void* sel
 B3D_API double b3d_Geom_Parabola_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->ParametricTransformation(*T);
     return r;
@@ -268,7 +268,7 @@ B3D_API double b3d_Geom_Parabola_ParametricTransformation__gp_Trsf(void* self, c
 B3D_API void* b3d_Geom_Parabola_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Parabola*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

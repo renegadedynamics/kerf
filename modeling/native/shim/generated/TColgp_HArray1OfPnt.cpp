@@ -10,7 +10,7 @@ B3D_API void* b3d_TColgp_HArray1OfPnt_downcast(void* t) { return b3d_retain(dyna
 B3D_API void* b3d_TColgp_HArray1OfPnt_new0(int lower, int upper, b3d_error** err)
 {
   *err = nullptr;
-  try { return b3d_retain(new NCollection_HArray1<gp_Pnt>(lower, upper)); }
+  B3D_TRY { return b3d_retain(new NCollection_HArray1<gp_Pnt>(lower, upper)); }
   B3D_CATCH(err)
   return {};
 }
@@ -18,7 +18,7 @@ B3D_API void* b3d_TColgp_HArray1OfPnt_new0(int lower, int upper, b3d_error** err
 B3D_API int32_t b3d_TColgp_HArray1OfPnt_Lower(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Lower(); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Lower(); }
   B3D_CATCH(err)
   return {};
 }
@@ -26,7 +26,7 @@ B3D_API int32_t b3d_TColgp_HArray1OfPnt_Lower(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColgp_HArray1OfPnt_Upper(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Upper(); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Upper(); }
   B3D_CATCH(err)
   return {};
 }
@@ -34,7 +34,7 @@ B3D_API int32_t b3d_TColgp_HArray1OfPnt_Upper(void* self, b3d_error** err)
 B3D_API int32_t b3d_TColgp_HArray1OfPnt_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -42,7 +42,7 @@ B3D_API int32_t b3d_TColgp_HArray1OfPnt_Length(void* self, b3d_error** err)
 B3D_API void* b3d_TColgp_HArray1OfPnt_Value(void* self, int32_t index, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return new gp_Pnt(s.Value(index)); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return new gp_Pnt(s.Value(index)); }
   B3D_CATCH(err)
   return {};
 }
@@ -50,14 +50,14 @@ B3D_API void* b3d_TColgp_HArray1OfPnt_Value(void* self, int32_t index, b3d_error
 B3D_API void b3d_TColgp_HArray1OfPnt_SetValue(void* self, int32_t index, const gp_Pnt* item, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); s.SetValue(index, *item); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); s.SetValue(index, *item); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TColgp_HArray1OfPnt_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Length(); }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); return s.Length(); }
   B3D_CATCH(err)
   return {};
 }
@@ -65,6 +65,6 @@ B3D_API int32_t b3d_TColgp_HArray1OfPnt_Count(void* self, b3d_error** err)
 B3D_API void b3d_TColgp_HArray1OfPnt_Fill(void* self, void** out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = new gp_Pnt(x); } }
+  B3D_TRY { NCollection_Array1<gp_Pnt>& s = *static_cast<NCollection_HArray1<gp_Pnt>*>(self); int n = 0; for (int i = s.Lower(); i <= s.Upper(); i++) { auto&& x = s.Value(i); out[n++] = new gp_Pnt(x); } }
   B3D_CATCH(err)
 }

@@ -9,7 +9,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_delete(void* p) { delete static_cast
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf();
     return r;
@@ -21,7 +21,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new(b3d_error** err)
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface(const gp_Pnt* P, Geom_Surface* Surface, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface));
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface(const gp_
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__Extrema_ExtAlgo(const gp_Pnt* P, Geom_Surface* Surface, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), static_cast<Extrema_ExtAlgo>(Algo));
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__Extrema_
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double(const gp_Pnt* P, Geom_Surface* Surface, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Tolerance);
     return r;
@@ -57,7 +57,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double(c
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__Extrema_ExtAlgo(const gp_Pnt* P, Geom_Surface* Surface, double Tolerance, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Tolerance, static_cast<Extrema_ExtAlgo>(Algo));
     return r;
@@ -69,7 +69,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__double__double__double__double(const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance);
     return r;
@@ -81,7 +81,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__double__double__double__double__Extrema_ExtAlgo(const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance, static_cast<Extrema_ExtAlgo>(Algo));
     return r;
@@ -93,7 +93,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__double__double__double(const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup);
     return r;
@@ -105,7 +105,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__double__double__double__Extrema_ExtAlgo(const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_ProjectPointOnSurf(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, static_cast<Extrema_ExtAlgo>(Algo));
     return r;
@@ -117,7 +117,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_new__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Tolerance);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double(v
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__Extrema_ExtAlgo(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Tolerance, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Tolerance, static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface(void* self, const gp_Pnt* P, Geom_Surface* Surface, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface));
     return;
@@ -150,7 +150,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface(void* sel
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__Extrema_ExtAlgo(void* self, const gp_Pnt* P, Geom_Surface* Surface, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -161,7 +161,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__Extrema_
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__double__double__double__double(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance);
     return;
@@ -172,7 +172,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__double__double__double__double__Extrema_ExtAlgo(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance, static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -183,7 +183,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__double__double__double(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup);
     return;
@@ -194,7 +194,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__double__double__double__Extrema_ExtAlgo(void* self, const gp_Pnt* P, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(*P, occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -205,7 +205,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__gp_Pnt__Geom_Surface__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__double__double__double(void* self, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance);
     return;
@@ -216,7 +216,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__double__double__double__Extrema_ExtAlgo(void* self, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, double Tolerance, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, Tolerance, static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -227,7 +227,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__double__double(void* self, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup);
     return;
@@ -238,7 +238,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__double__double__Extrema_ExtAlgo(void* self, Geom_Surface* Surface, double Umin, double Usup, double Vmin, double Vsup, int32_t Algo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Init(occ::handle<Geom_Surface>(Surface), Umin, Usup, Vmin, Vsup, static_cast<Extrema_ExtAlgo>(Algo));
     return;
@@ -249,7 +249,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Init__Geom_Surface__double__double__
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_SetExtremaAlgo__Extrema_ExtAlgo(void* self, int32_t theAlgo, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->SetExtremaAlgo(static_cast<Extrema_ExtAlgo>(theAlgo));
     return;
@@ -260,7 +260,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_SetExtremaAlgo__Extrema_ExtAlgo(void
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_SetExtremaFlag__Extrema_ExtFlag(void* self, int32_t theExtFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->SetExtremaFlag(static_cast<Extrema_ExtFlag>(theExtFlag));
     return;
@@ -271,7 +271,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_SetExtremaFlag__Extrema_ExtFlag(void
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Perform__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Perform(*P);
     return;
@@ -282,7 +282,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Perform__gp_Pnt(void* self, const gp
 B3D_API uint8_t b3d_GeomAPI_ProjectPointOnSurf_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->IsDone();
     return r ? 1 : 0;
@@ -294,7 +294,7 @@ B3D_API uint8_t b3d_GeomAPI_ProjectPointOnSurf_IsDone(void* self, b3d_error** er
 B3D_API int32_t b3d_GeomAPI_ProjectPointOnSurf_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->NbPoints();
     return r;
@@ -306,7 +306,7 @@ B3D_API int32_t b3d_GeomAPI_ProjectPointOnSurf_NbPoints(void* self, b3d_error** 
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_Point__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Point(Index);
     return new gp_Pnt(r);
@@ -318,7 +318,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_Point__int(void* self, int32_t Inde
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Parameters__int__ref_double__ref_double(void* self, int32_t Index, double* U, double* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Parameters(Index, *U, *V);
     return;
@@ -329,7 +329,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_Parameters__int__ref_double__ref_dou
 B3D_API double b3d_GeomAPI_ProjectPointOnSurf_Distance__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->Distance(Index);
     return r;
@@ -341,7 +341,7 @@ B3D_API double b3d_GeomAPI_ProjectPointOnSurf_Distance__int(void* self, int32_t 
 B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_NearestPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->NearestPoint();
     return new gp_Pnt(r);
@@ -353,7 +353,7 @@ B3D_API void* b3d_GeomAPI_ProjectPointOnSurf_NearestPoint(void* self, b3d_error*
 B3D_API void b3d_GeomAPI_ProjectPointOnSurf_LowerDistanceParameters__ref_double__ref_double(void* self, double* U, double* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_ProjectPointOnSurf*>(self)->LowerDistanceParameters(*U, *V);
     return;
@@ -364,7 +364,7 @@ B3D_API void b3d_GeomAPI_ProjectPointOnSurf_LowerDistanceParameters__ref_double_
 B3D_API double b3d_GeomAPI_ProjectPointOnSurf_LowerDistance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_ProjectPointOnSurf*>(self)->LowerDistance();
     return r;

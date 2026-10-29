@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepTools_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepTools>)
   {
-    try { return new BRepTools(*static_cast<const BRepTools*>(p)); }
+    B3D_TRY { return new BRepTools(*static_cast<const BRepTools*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepTools_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRepTools>)
   {
-    try { return new BRepTools(); }
+    B3D_TRY { return new BRepTools(); }
     B3D_CATCH(err)
   }
   else
@@ -48,7 +48,7 @@ B3D_API void* b3d_BRepTools_new(b3d_error** err)
 B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__ref_double__ref_double__ref_double__ref_double(const TopoDS_Face* F, double* UMin, double* UMax, double* VMin, double* VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::UVBounds(*F, *UMin, *UMax, *VMin, *VMax);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__ref_double__ref_double__ref_do
 B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__TopoDS_Wire__ref_double__ref_double__ref_double__ref_double(const TopoDS_Face* F, const TopoDS_Wire* W, double* UMin, double* UMax, double* VMin, double* VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::UVBounds(*F, *W, *UMin, *UMax, *VMin, *VMax);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__TopoDS_Wire__ref_double__ref_d
 B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__TopoDS_Edge__ref_double__ref_double__ref_double__ref_double(const TopoDS_Face* F, const TopoDS_Edge* E, double* UMin, double* UMax, double* VMin, double* VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::UVBounds(*F, *E, *UMin, *UMax, *VMin, *VMax);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_BRepTools_UVBounds__TopoDS_Face__TopoDS_Edge__ref_double__ref_d
 B3D_API void b3d_BRepTools_Update__TopoDS_Vertex(const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*V);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Vertex(const TopoDS_Vertex* V, b3d_err
 B3D_API void b3d_BRepTools_Update__TopoDS_Edge(const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*E);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Edge(const TopoDS_Edge* E, b3d_error**
 B3D_API void b3d_BRepTools_Update__TopoDS_Wire(const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*W);
     return;
@@ -114,7 +114,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Wire(const TopoDS_Wire* W, b3d_error**
 B3D_API void b3d_BRepTools_Update__TopoDS_Face(const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*F);
     return;
@@ -125,7 +125,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Face(const TopoDS_Face* F, b3d_error**
 B3D_API void b3d_BRepTools_Update__TopoDS_Shell(const TopoDS_Shell* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*S);
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Shell(const TopoDS_Shell* S, b3d_error
 B3D_API void b3d_BRepTools_Update__TopoDS_Solid(const TopoDS_Solid* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*S);
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Solid(const TopoDS_Solid* S, b3d_error
 B3D_API void b3d_BRepTools_Update__TopoDS_CompSolid(const TopoDS_CompSolid* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*C);
     return;
@@ -158,7 +158,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_CompSolid(const TopoDS_CompSolid* C, b
 B3D_API void b3d_BRepTools_Update__TopoDS_Compound(const TopoDS_Compound* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*C);
     return;
@@ -169,7 +169,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Compound(const TopoDS_Compound* C, b3d
 B3D_API void b3d_BRepTools_Update__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Update(*S);
     return;
@@ -180,7 +180,7 @@ B3D_API void b3d_BRepTools_Update__TopoDS_Shape(const TopoDS_Shape* S, b3d_error
 B3D_API void b3d_BRepTools_UpdateFaceUVPoints__TopoDS_Face(const TopoDS_Face* theF, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::UpdateFaceUVPoints(*theF);
     return;
@@ -191,7 +191,7 @@ B3D_API void b3d_BRepTools_UpdateFaceUVPoints__TopoDS_Face(const TopoDS_Face* th
 B3D_API void b3d_BRepTools_Clean__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Clean(*theShape);
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_BRepTools_Clean__TopoDS_Shape(const TopoDS_Shape* theShape, b3d
 B3D_API void b3d_BRepTools_Clean__TopoDS_Shape__bool(const TopoDS_Shape* theShape, uint8_t theForce, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Clean(*theShape, theForce != 0);
     return;
@@ -213,7 +213,7 @@ B3D_API void b3d_BRepTools_Clean__TopoDS_Shape__bool(const TopoDS_Shape* theShap
 B3D_API void b3d_BRepTools_CleanGeometry__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::CleanGeometry(*theShape);
     return;
@@ -224,7 +224,7 @@ B3D_API void b3d_BRepTools_CleanGeometry__TopoDS_Shape(const TopoDS_Shape* theSh
 B3D_API void b3d_BRepTools_RemoveUnusedPCurves__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::RemoveUnusedPCurves(*S);
     return;
@@ -235,7 +235,7 @@ B3D_API void b3d_BRepTools_RemoveUnusedPCurves__TopoDS_Shape(const TopoDS_Shape*
 B3D_API uint8_t b3d_BRepTools_Triangulation__TopoDS_Shape__double(const TopoDS_Shape* theShape, double theLinDefl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Triangulation(*theShape, theLinDefl);
     return r ? 1 : 0;
@@ -247,7 +247,7 @@ B3D_API uint8_t b3d_BRepTools_Triangulation__TopoDS_Shape__double(const TopoDS_S
 B3D_API uint8_t b3d_BRepTools_Triangulation__TopoDS_Shape__double__bool(const TopoDS_Shape* theShape, double theLinDefl, uint8_t theToCheckFreeEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Triangulation(*theShape, theLinDefl, theToCheckFreeEdges != 0);
     return r ? 1 : 0;
@@ -259,7 +259,7 @@ B3D_API uint8_t b3d_BRepTools_Triangulation__TopoDS_Shape__double__bool(const To
 B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::LoadTriangulation(*theShape);
     return r ? 1 : 0;
@@ -271,7 +271,7 @@ B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape(const TopoDS_Shape
 B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape__int(const TopoDS_Shape* theShape, int32_t theTriangulationIdx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::LoadTriangulation(*theShape, theTriangulationIdx);
     return r ? 1 : 0;
@@ -283,7 +283,7 @@ B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape__int(const TopoDS_
 B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape__int__bool(const TopoDS_Shape* theShape, int32_t theTriangulationIdx, uint8_t theToSetAsActive, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::LoadTriangulation(*theShape, theTriangulationIdx, theToSetAsActive != 0);
     return r ? 1 : 0;
@@ -295,7 +295,7 @@ B3D_API uint8_t b3d_BRepTools_LoadTriangulation__TopoDS_Shape__int__bool(const T
 B3D_API uint8_t b3d_BRepTools_UnloadTriangulation__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::UnloadTriangulation(*theShape);
     return r ? 1 : 0;
@@ -307,7 +307,7 @@ B3D_API uint8_t b3d_BRepTools_UnloadTriangulation__TopoDS_Shape(const TopoDS_Sha
 B3D_API uint8_t b3d_BRepTools_UnloadTriangulation__TopoDS_Shape__int(const TopoDS_Shape* theShape, int32_t theTriangulationIdx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::UnloadTriangulation(*theShape, theTriangulationIdx);
     return r ? 1 : 0;
@@ -319,7 +319,7 @@ B3D_API uint8_t b3d_BRepTools_UnloadTriangulation__TopoDS_Shape__int(const TopoD
 B3D_API uint8_t b3d_BRepTools_ActivateTriangulation__TopoDS_Shape__int(const TopoDS_Shape* theShape, int32_t theTriangulationIdx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::ActivateTriangulation(*theShape, theTriangulationIdx);
     return r ? 1 : 0;
@@ -331,7 +331,7 @@ B3D_API uint8_t b3d_BRepTools_ActivateTriangulation__TopoDS_Shape__int(const Top
 B3D_API uint8_t b3d_BRepTools_ActivateTriangulation__TopoDS_Shape__int__bool(const TopoDS_Shape* theShape, int32_t theTriangulationIdx, uint8_t theToActivateStrictly, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::ActivateTriangulation(*theShape, theTriangulationIdx, theToActivateStrictly != 0);
     return r ? 1 : 0;
@@ -343,7 +343,7 @@ B3D_API uint8_t b3d_BRepTools_ActivateTriangulation__TopoDS_Shape__int__bool(con
 B3D_API uint8_t b3d_BRepTools_LoadAllTriangulations__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::LoadAllTriangulations(*theShape);
     return r ? 1 : 0;
@@ -355,7 +355,7 @@ B3D_API uint8_t b3d_BRepTools_LoadAllTriangulations__TopoDS_Shape(const TopoDS_S
 B3D_API uint8_t b3d_BRepTools_UnloadAllTriangulations__TopoDS_Shape(const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::UnloadAllTriangulations(*theShape);
     return r ? 1 : 0;
@@ -367,7 +367,7 @@ B3D_API uint8_t b3d_BRepTools_UnloadAllTriangulations__TopoDS_Shape(const TopoDS
 B3D_API uint8_t b3d_BRepTools_Compare__TopoDS_Vertex__TopoDS_Vertex(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Compare(*V1, *V2);
     return r ? 1 : 0;
@@ -379,7 +379,7 @@ B3D_API uint8_t b3d_BRepTools_Compare__TopoDS_Vertex__TopoDS_Vertex(const TopoDS
 B3D_API uint8_t b3d_BRepTools_Compare__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* E1, const TopoDS_Edge* E2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Compare(*E1, *E2);
     return r ? 1 : 0;
@@ -391,7 +391,7 @@ B3D_API uint8_t b3d_BRepTools_Compare__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edg
 B3D_API void* b3d_BRepTools_OuterWire__TopoDS_Face(const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::OuterWire(*F);
     return new TopoDS_Wire(r);
@@ -403,7 +403,7 @@ B3D_API void* b3d_BRepTools_OuterWire__TopoDS_Face(const TopoDS_Face* F, b3d_err
 B3D_API void b3d_BRepTools_Map3DEdges__TopoDS_Shape__mut_TopTools_IndexedMapOfShape(const TopoDS_Shape* S, NCollection_IndexedMap<TopoDS_Shape,TopTools_ShapeMapHasher>* M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::Map3DEdges(*S, *M);
     return;
@@ -414,7 +414,7 @@ B3D_API void b3d_BRepTools_Map3DEdges__TopoDS_Shape__mut_TopTools_IndexedMapOfSh
 B3D_API uint8_t b3d_BRepTools_IsReallyClosed__TopoDS_Edge__TopoDS_Face(const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::IsReallyClosed(*E, *F);
     return r ? 1 : 0;
@@ -426,7 +426,7 @@ B3D_API uint8_t b3d_BRepTools_IsReallyClosed__TopoDS_Edge__TopoDS_Face(const Top
 B3D_API void b3d_BRepTools_DetectClosedness__TopoDS_Face__ref_bool__ref_bool(const TopoDS_Face* theFace, uint8_t* theUclosed, uint8_t* theVclosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     bool theUclosed_b = *theUclosed != 0;
     bool theVclosed_b = *theVclosed != 0;
@@ -441,7 +441,7 @@ B3D_API void b3d_BRepTools_DetectClosedness__TopoDS_Face__ref_bool__ref_bool(con
 B3D_API uint8_t b3d_BRepTools_Write__TopoDS_Shape__string(const TopoDS_Shape* theShape, const char* theFile, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Write(*theShape, theFile);
     return r ? 1 : 0;
@@ -453,7 +453,7 @@ B3D_API uint8_t b3d_BRepTools_Write__TopoDS_Shape__string(const TopoDS_Shape* th
 B3D_API uint8_t b3d_BRepTools_Write__TopoDS_Shape__string__bool__bool__TopTools_FormatVersion(const TopoDS_Shape* theShape, const char* theFile, uint8_t theWithTriangles, uint8_t theWithNormals, int32_t theVersion, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Write(*theShape, theFile, theWithTriangles != 0, theWithNormals != 0, static_cast<TopTools_FormatVersion>(theVersion));
     return r ? 1 : 0;
@@ -465,7 +465,7 @@ B3D_API uint8_t b3d_BRepTools_Write__TopoDS_Shape__string__bool__bool__TopTools_
 B3D_API uint8_t b3d_BRepTools_Read__mut_TopoDS_Shape__string__BRep_Builder(TopoDS_Shape* Sh, const char* File, const BRep_Builder* B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::Read(*Sh, File, *B);
     return r ? 1 : 0;
@@ -477,7 +477,7 @@ B3D_API uint8_t b3d_BRepTools_Read__mut_TopoDS_Shape__string__BRep_Builder(TopoD
 B3D_API double b3d_BRepTools_EvalAndUpdateTol__TopoDS_Edge__Geom_Curve__Geom2d_Curve__Geom_Surface__double__double(const TopoDS_Edge* theE, Geom_Curve* theC3d, Geom2d_Curve* theC2d, Geom_Surface* theS, double theF, double theL, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::EvalAndUpdateTol(*theE, occ::handle<Geom_Curve>(theC3d), occ::handle<Geom2d_Curve>(theC2d), occ::handle<Geom_Surface>(theS), theF, theL);
     return r;
@@ -489,7 +489,7 @@ B3D_API double b3d_BRepTools_EvalAndUpdateTol__TopoDS_Edge__Geom_Curve__Geom2d_C
 B3D_API int32_t b3d_BRepTools_OriEdgeInFace__TopoDS_Edge__TopoDS_Face(const TopoDS_Edge* theEdge, const TopoDS_Face* theFace, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepTools::OriEdgeInFace(*theEdge, *theFace);
     return static_cast<int32_t>(r);
@@ -501,7 +501,7 @@ B3D_API int32_t b3d_BRepTools_OriEdgeInFace__TopoDS_Edge__TopoDS_Face(const Topo
 B3D_API void b3d_BRepTools_RemoveInternals__mut_TopoDS_Shape(TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::RemoveInternals(*theS);
     return;
@@ -512,7 +512,7 @@ B3D_API void b3d_BRepTools_RemoveInternals__mut_TopoDS_Shape(TopoDS_Shape* theS,
 B3D_API void b3d_BRepTools_RemoveInternals__mut_TopoDS_Shape__bool(TopoDS_Shape* theS, uint8_t theForce, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::RemoveInternals(*theS, theForce != 0);
     return;
@@ -523,7 +523,7 @@ B3D_API void b3d_BRepTools_RemoveInternals__mut_TopoDS_Shape__bool(TopoDS_Shape*
 B3D_API void b3d_BRepTools_CheckLocations__TopoDS_Shape__mut_TopTools_ListOfShape(const TopoDS_Shape* theS, NCollection_List<TopoDS_Shape>* theProblemShapes, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepTools::CheckLocations(*theS, *theProblemShapes);
     return;

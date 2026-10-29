@@ -18,7 +18,7 @@ B3D_API void* b3d_Geom2d_Line_downcast(void* t) { return b3d_retain(dynamic_cast
 B3D_API void* b3d_Geom2d_Line_new__gp_Ax2d(const gp_Ax2d* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Line(*A);
     return b3d_retain(r);
@@ -30,7 +30,7 @@ B3D_API void* b3d_Geom2d_Line_new__gp_Ax2d(const gp_Ax2d* A, b3d_error** err)
 B3D_API void* b3d_Geom2d_Line_new__gp_Lin2d(const gp_Lin2d* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Line(*L);
     return b3d_retain(r);
@@ -42,7 +42,7 @@ B3D_API void* b3d_Geom2d_Line_new__gp_Lin2d(const gp_Lin2d* L, b3d_error** err)
 B3D_API void* b3d_Geom2d_Line_new__gp_Pnt2d__gp_Dir2d(const gp_Pnt2d* P, const gp_Dir2d* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Line(*P, *V);
     return b3d_retain(r);
@@ -54,7 +54,7 @@ B3D_API void* b3d_Geom2d_Line_new__gp_Pnt2d__gp_Dir2d(const gp_Pnt2d* P, const g
 B3D_API void b3d_Geom2d_Line_SetLin2d__gp_Lin2d(void* self, const gp_Lin2d* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->SetLin2d(*L);
     return;
@@ -65,7 +65,7 @@ B3D_API void b3d_Geom2d_Line_SetLin2d__gp_Lin2d(void* self, const gp_Lin2d* L, b
 B3D_API void b3d_Geom2d_Line_SetDirection__gp_Dir2d(void* self, const gp_Dir2d* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->SetDirection(*V);
     return;
@@ -76,7 +76,7 @@ B3D_API void b3d_Geom2d_Line_SetDirection__gp_Dir2d(void* self, const gp_Dir2d* 
 B3D_API void* b3d_Geom2d_Line_Direction(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Direction();
     return new gp_Dir2d(r);
@@ -88,7 +88,7 @@ B3D_API void* b3d_Geom2d_Line_Direction(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_Line_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->SetLocation(*P);
     return;
@@ -99,7 +99,7 @@ B3D_API void b3d_Geom2d_Line_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* P
 B3D_API void* b3d_Geom2d_Line_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Location();
     return new gp_Pnt2d(r);
@@ -111,7 +111,7 @@ B3D_API void* b3d_Geom2d_Line_Location(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_Line_SetPosition__gp_Ax2d(void* self, const gp_Ax2d* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->SetPosition(*A);
     return;
@@ -122,7 +122,7 @@ B3D_API void b3d_Geom2d_Line_SetPosition__gp_Ax2d(void* self, const gp_Ax2d* A, 
 B3D_API void* b3d_Geom2d_Line_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Position();
     return new gp_Ax2d(r);
@@ -134,7 +134,7 @@ B3D_API void* b3d_Geom2d_Line_Position(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Line_Lin2d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Lin2d();
     return new gp_Lin2d(r);
@@ -146,7 +146,7 @@ B3D_API void* b3d_Geom2d_Line_Lin2d(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_Line_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->Reverse();
     return;
@@ -157,7 +157,7 @@ B3D_API void b3d_Geom2d_Line_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Line_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->ReversedParameter(U);
     return r;
@@ -169,7 +169,7 @@ B3D_API double b3d_Geom2d_Line_ReversedParameter__double(void* self, double U, b
 B3D_API double b3d_Geom2d_Line_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->FirstParameter();
     return r;
@@ -181,7 +181,7 @@ B3D_API double b3d_Geom2d_Line_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Line_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->LastParameter();
     return r;
@@ -193,7 +193,7 @@ B3D_API double b3d_Geom2d_Line_LastParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Line_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -205,7 +205,7 @@ B3D_API uint8_t b3d_Geom2d_Line_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Line_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -217,7 +217,7 @@ B3D_API uint8_t b3d_Geom2d_Line_IsPeriodic(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom2d_Line_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -229,7 +229,7 @@ B3D_API int32_t b3d_Geom2d_Line_Continuity(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Line_Distance__gp_Pnt2d(void* self, const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Distance(*P);
     return r;
@@ -241,7 +241,7 @@ B3D_API double b3d_Geom2d_Line_Distance__gp_Pnt2d(void* self, const gp_Pnt2d* P,
 B3D_API uint8_t b3d_Geom2d_Line_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -253,7 +253,7 @@ B3D_API uint8_t b3d_Geom2d_Line_IsCN__int(void* self, int32_t N, b3d_error** err
 B3D_API void* b3d_Geom2d_Line_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->EvalD0(U);
     return new gp_Pnt2d(r);
@@ -265,7 +265,7 @@ B3D_API void* b3d_Geom2d_Line_EvalD0__double(void* self, double U, b3d_error** e
 B3D_API void* b3d_Geom2d_Line_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->EvalDN(U, N);
     return new gp_Vec2d(r);
@@ -277,7 +277,7 @@ B3D_API void* b3d_Geom2d_Line_EvalDN__double__int(void* self, double U, int32_t 
 B3D_API void b3d_Geom2d_Line_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Line*>(self)->Transform(*T);
     return;
@@ -288,7 +288,7 @@ B3D_API void b3d_Geom2d_Line_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T
 B3D_API double b3d_Geom2d_Line_TransformedParameter__double__gp_Trsf2d(void* self, double U, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->TransformedParameter(U, *T);
     return r;
@@ -300,7 +300,7 @@ B3D_API double b3d_Geom2d_Line_TransformedParameter__double__gp_Trsf2d(void* sel
 B3D_API double b3d_Geom2d_Line_ParametricTransformation__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->ParametricTransformation(*T);
     return r;
@@ -312,7 +312,7 @@ B3D_API double b3d_Geom2d_Line_ParametricTransformation__gp_Trsf2d(void* self, c
 B3D_API void* b3d_Geom2d_Line_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Line*>(self)->Copy();
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());

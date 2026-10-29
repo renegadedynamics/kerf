@@ -12,7 +12,7 @@ B3D_API void* b3d_Geom_BoundedCurve_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_Geom_BoundedCurve_EndPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BoundedCurve*>(self)->EndPoint();
     return new gp_Pnt(r);
@@ -24,7 +24,7 @@ B3D_API void* b3d_Geom_BoundedCurve_EndPoint(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BoundedCurve_StartPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BoundedCurve*>(self)->StartPoint();
     return new gp_Pnt(r);

@@ -15,7 +15,7 @@ B3D_API void* b3d_Geom_Surface_downcast(void* t) { return b3d_retain(dynamic_cas
 B3D_API void b3d_Geom_Surface_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->UReverse();
     return;
@@ -26,7 +26,7 @@ B3D_API void b3d_Geom_Surface_UReverse(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Surface_UReversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->UReversed();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -38,7 +38,7 @@ B3D_API void* b3d_Geom_Surface_UReversed(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Surface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->UReversedParameter(U);
     return r;
@@ -50,7 +50,7 @@ B3D_API double b3d_Geom_Surface_UReversedParameter__double(void* self, double U,
 B3D_API void b3d_Geom_Surface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->VReverse();
     return;
@@ -61,7 +61,7 @@ B3D_API void b3d_Geom_Surface_VReverse(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Surface_VReversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->VReversed();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -73,7 +73,7 @@ B3D_API void* b3d_Geom_Surface_VReversed(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Surface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->VReversedParameter(V);
     return r;
@@ -85,7 +85,7 @@ B3D_API double b3d_Geom_Surface_VReversedParameter__double(void* self, double V,
 B3D_API void b3d_Geom_Surface_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -96,7 +96,7 @@ B3D_API void b3d_Geom_Surface_TransformParameters__ref_double__ref_double__gp_Tr
 B3D_API void* b3d_Geom_Surface_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -108,7 +108,7 @@ B3D_API void* b3d_Geom_Surface_ParametricTransformation__gp_Trsf(void* self, con
 B3D_API void b3d_Geom_Surface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_Geom_Surface_Bounds__ref_double__ref_double__ref_double__ref_do
 B3D_API uint8_t b3d_Geom_Surface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -131,7 +131,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Surface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -143,7 +143,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Surface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -155,7 +155,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsUPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Surface_UPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->UPeriod();
     return r;
@@ -167,7 +167,7 @@ B3D_API double b3d_Geom_Surface_UPeriod(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Surface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -179,7 +179,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsVPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Surface_VPeriod(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->VPeriod();
     return r;
@@ -191,7 +191,7 @@ B3D_API double b3d_Geom_Surface_VPeriod(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Surface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -203,7 +203,7 @@ B3D_API void* b3d_Geom_Surface_UIso__double(void* self, double U, b3d_error** er
 B3D_API void* b3d_Geom_Surface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -215,7 +215,7 @@ B3D_API void* b3d_Geom_Surface_VIso__double(void* self, double V, b3d_error** er
 B3D_API int32_t b3d_Geom_Surface_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -227,7 +227,7 @@ B3D_API int32_t b3d_Geom_Surface_Continuity(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Surface_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -239,7 +239,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsCNu__int(void* self, int32_t N, b3d_error** e
 B3D_API uint8_t b3d_Geom_Surface_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -251,7 +251,7 @@ B3D_API uint8_t b3d_Geom_Surface_IsCNv__int(void* self, int32_t N, b3d_error** e
 B3D_API void* b3d_Geom_Surface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -263,7 +263,7 @@ B3D_API void* b3d_Geom_Surface_EvalD0__double__double(void* self, double U, doub
 B3D_API void* b3d_Geom_Surface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -275,7 +275,7 @@ B3D_API void* b3d_Geom_Surface_EvalDN__double__double__int__int(void* self, doub
 B3D_API void b3d_Geom_Surface_D0__double__double__mut_gp_Pnt(void* self, double U, double V, gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->D0(U, V, *P);
     return;
@@ -286,7 +286,7 @@ B3D_API void b3d_Geom_Surface_D0__double__double__mut_gp_Pnt(void* self, double 
 B3D_API void b3d_Geom_Surface_D1__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->D1(U, V, *P, *D1U, *D1V);
     return;
@@ -297,7 +297,7 @@ B3D_API void b3d_Geom_Surface_D1__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp
 B3D_API void b3d_Geom_Surface_D2__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, gp_Vec* D2U, gp_Vec* D2V, gp_Vec* D2UV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->D2(U, V, *P, *D1U, *D1V, *D2U, *D2V, *D2UV);
     return;
@@ -308,7 +308,7 @@ B3D_API void b3d_Geom_Surface_D2__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp
 B3D_API void b3d_Geom_Surface_D3__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double U, double V, gp_Pnt* P, gp_Vec* D1U, gp_Vec* D1V, gp_Vec* D2U, gp_Vec* D2V, gp_Vec* D2UV, gp_Vec* D3U, gp_Vec* D3V, gp_Vec* D3UUV, gp_Vec* D3UVV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Surface*>(self)->D3(U, V, *P, *D1U, *D1V, *D2U, *D2V, *D2UV, *D3U, *D3V, *D3UUV, *D3UVV);
     return;
@@ -319,7 +319,7 @@ B3D_API void b3d_Geom_Surface_D3__double__double__mut_gp_Pnt__mut_gp_Vec__mut_gp
 B3D_API void* b3d_Geom_Surface_DN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->DN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -331,7 +331,7 @@ B3D_API void* b3d_Geom_Surface_DN__double__double__int__int(void* self, double U
 B3D_API void* b3d_Geom_Surface_Value__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Surface*>(self)->Value(U, V);
     return new gp_Pnt(r);

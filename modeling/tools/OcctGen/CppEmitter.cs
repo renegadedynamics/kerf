@@ -39,7 +39,7 @@ static class CppEmitter
             sb.AppendLine("  *err = nullptr;");
             sb.AppendLine($"  if constexpr (std::is_copy_constructible_v<{self}>)");
             sb.AppendLine("  {");
-            sb.AppendLine($"    try {{ return new {self}(*static_cast<const {self}*>(p)); }}");
+            sb.AppendLine($"    B3D_TRY {{ return new {self}(*static_cast<const {self}*>(p)); }}");
             sb.AppendLine("    B3D_CATCH(err)");
             sb.AppendLine("  }");
             sb.AppendLine("  else");
@@ -79,7 +79,7 @@ static class CppEmitter
         {
             sb.AppendLine($"  if constexpr (std::is_default_constructible_v<{cls.Name}>)");
             sb.AppendLine("  {");
-            sb.AppendLine($"    try {{ return {(cls.IsTransient ? "b3d_retain(" : "")}new {cls.Name}(){(cls.IsTransient ? ")" : "")}; }}");
+            sb.AppendLine($"    B3D_TRY {{ return {(cls.IsTransient ? "b3d_retain(" : "")}new {cls.Name}(){(cls.IsTransient ? ")" : "")}; }}");
             sb.AppendLine("    B3D_CATCH(err)");
             sb.AppendLine("  }");
             sb.AppendLine("  else");
@@ -88,7 +88,7 @@ static class CppEmitter
             sb.AppendLine("}");
             return;
         }
-        sb.AppendLine("  try");
+        sb.AppendLine("  B3D_TRY");
         sb.AppendLine("  {");
 
         foreach (var p in m.Params.Where(p => p.Type.Kind == Kind.RefBool))

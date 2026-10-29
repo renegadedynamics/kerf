@@ -12,7 +12,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GC_MakeArcOfCircle>)
   {
-    try { return new GC_MakeArcOfCircle(*static_cast<const GC_MakeArcOfCircle*>(p)); }
+    B3D_TRY { return new GC_MakeArcOfCircle(*static_cast<const GC_MakeArcOfCircle*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_as_GC_Root(void* p) { return static_cast<GC
 B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__double__double__bool(const gp_Circ* theCirc, double theAlpha1, double theAlpha2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfCircle(*theCirc, theAlpha1, theAlpha2, theSense != 0);
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__double__double__bool(const gp
 B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__gp_Pnt__double__bool(const gp_Circ* theCirc, const gp_Pnt* theP, double theAlpha, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfCircle(*theCirc, *theP, theAlpha, theSense != 0);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__gp_Pnt__double__bool(const gp
 B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__gp_Pnt__gp_Pnt__bool(const gp_Circ* theCirc, const gp_Pnt* theP1, const gp_Pnt* theP2, uint8_t theSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfCircle(*theCirc, *theP1, *theP2, theSense != 0);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Circ__gp_Pnt__gp_Pnt__bool(const gp
 B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Pnt__gp_Pnt__gp_Pnt(const gp_Pnt* theP1, const gp_Pnt* theP2, const gp_Pnt* theP3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfCircle(*theP1, *theP2, *theP3);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Pnt__gp_Pnt__gp_Pnt(const gp_Pnt* t
 B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Pnt__gp_Vec__gp_Pnt(const gp_Pnt* theP1, const gp_Vec* theV, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GC_MakeArcOfCircle(*theP1, *theV, *theP2);
     return r;
@@ -84,7 +84,7 @@ B3D_API void* b3d_GC_MakeArcOfCircle_new__gp_Pnt__gp_Vec__gp_Pnt(const gp_Pnt* t
 B3D_API void* b3d_GC_MakeArcOfCircle_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GC_MakeArcOfCircle*>(self)->Value();
     return b3d_retain(occ::handle<Geom_TrimmedCurve>(r).get());

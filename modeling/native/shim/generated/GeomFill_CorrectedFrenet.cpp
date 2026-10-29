@@ -14,7 +14,7 @@ B3D_API void* b3d_GeomFill_CorrectedFrenet_downcast(void* t) { return b3d_retain
 B3D_API void* b3d_GeomFill_CorrectedFrenet_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomFill_CorrectedFrenet();
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_GeomFill_CorrectedFrenet_new(b3d_error** err)
 B3D_API void* b3d_GeomFill_CorrectedFrenet_new__bool(uint8_t ForEvaluation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomFill_CorrectedFrenet(ForEvaluation != 0);
     return b3d_retain(r);
@@ -38,7 +38,7 @@ B3D_API void* b3d_GeomFill_CorrectedFrenet_new__bool(uint8_t ForEvaluation, b3d_
 B3D_API void* b3d_GeomFill_CorrectedFrenet_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->Copy();
     return b3d_retain(occ::handle<GeomFill_TrihedronLaw>(r).get());
@@ -50,7 +50,7 @@ B3D_API void* b3d_GeomFill_CorrectedFrenet_Copy(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_SetCurve__Adaptor3d_Curve(void* self, Adaptor3d_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->SetCurve(occ::handle<Adaptor3d_Curve>(C));
     return r ? 1 : 0;
@@ -62,7 +62,7 @@ B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_SetCurve__Adaptor3d_Curve(void* sel
 B3D_API void b3d_GeomFill_CorrectedFrenet_SetInterval__double__double(void* self, double First, double Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_CorrectedFrenet*>(self)->SetInterval(First, Last);
     return;
@@ -73,7 +73,7 @@ B3D_API void b3d_GeomFill_CorrectedFrenet_SetInterval__double__double(void* self
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D0__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* Normal, gp_Vec* BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->D0(Param, *Tangent, *Normal, *BiNormal);
     return r ? 1 : 0;
@@ -85,7 +85,7 @@ B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D0__double__mut_gp_Vec__mut_gp_Vec_
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D1__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* BiNormal, gp_Vec* DBiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->D1(Param, *Tangent, *DTangent, *Normal, *DNormal, *BiNormal, *DBiNormal);
     return r ? 1 : 0;
@@ -97,7 +97,7 @@ B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D1__double__mut_gp_Vec__mut_gp_Vec_
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D2__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* D2Tangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* D2Normal, gp_Vec* BiNormal, gp_Vec* DBiNormal, gp_Vec* D2BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->D2(Param, *Tangent, *DTangent, *D2Tangent, *Normal, *DNormal, *D2Normal, *BiNormal, *DBiNormal, *D2BiNormal);
     return r ? 1 : 0;
@@ -109,7 +109,7 @@ B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_D2__double__mut_gp_Vec__mut_gp_Vec_
 B3D_API int32_t b3d_GeomFill_CorrectedFrenet_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -121,7 +121,7 @@ B3D_API int32_t b3d_GeomFill_CorrectedFrenet_NbIntervals__GeomAbs_Shape(void* se
 B3D_API void b3d_GeomFill_CorrectedFrenet_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_CorrectedFrenet*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -132,7 +132,7 @@ B3D_API void b3d_GeomFill_CorrectedFrenet_Intervals__mut_TColStd_Array1OfReal__G
 B3D_API int32_t b3d_GeomFill_CorrectedFrenet_EvaluateBestMode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->EvaluateBestMode();
     return static_cast<int32_t>(r);
@@ -144,7 +144,7 @@ B3D_API int32_t b3d_GeomFill_CorrectedFrenet_EvaluateBestMode(void* self, b3d_er
 B3D_API void b3d_GeomFill_CorrectedFrenet_GetAverageLaw__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, gp_Vec* ATangent, gp_Vec* ANormal, gp_Vec* ABiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_CorrectedFrenet*>(self)->GetAverageLaw(*ATangent, *ANormal, *ABiNormal);
     return;
@@ -155,7 +155,7 @@ B3D_API void b3d_GeomFill_CorrectedFrenet_GetAverageLaw__mut_gp_Vec__mut_gp_Vec_
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_IsConstant(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->IsConstant();
     return r ? 1 : 0;
@@ -167,7 +167,7 @@ B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_IsConstant(void* self, b3d_error** 
 B3D_API uint8_t b3d_GeomFill_CorrectedFrenet_IsOnlyBy3dCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_CorrectedFrenet*>(self)->IsOnlyBy3dCurve();
     return r ? 1 : 0;

@@ -153,6 +153,46 @@ change every shape sharing it, and race between threads. So:
   location relative to its parent, and meshes each `TShape` once in its own coordinates. Instances share
   the same `ShapeMesh` object.
 
+#### Errors and memory
+
+- **Faults come back as exceptions.** The shim is built with `/EHa`, so its `catch (...)` stops an
+  access violation in OCCT from ending the process. On Windows each shim function also starts with
+  `B3D_TRY`, which installs OCCT's structured-exception translator (`OSD::SetThreadLocalSignal`) the
+  first time a thread calls in.
+  - With the translator, a fault is a typed `Standard_Failure`, such as `OSD_Exception_ACCESS_VIOLATION`
+    with the address, so OCCT's own algorithms can catch it and recover as they were designed to.
+  - Floating-point traps stay off, as .NET expects.
+  - On Linux and macOS, OCCT's handlers would be process-wide signal handlers that take over the
+    runtime's own, so nothing is installed there.
+  - A stack overflow, or heap corruption that has already happened, can still end the process.
+  - `Occt.FaultForTesting` makes a deliberate fault for the tests.
+- **Failures say what was being done.** `OcctContext.Doing("extrude")` scopes nest per thread, and an
+  `OcctException` thrown inside them starts with them: "box 0.0 × 1.0 × 1.0 failed:
+  Standard_DomainError". These scopes are set:
+  - on primitives and on extrude, revolve, loft, sweep and thicken;
+  - on booleans, as "fuse of a Box with 2 Cylinders";
+  - on triangulation.
+
+  A boolean that fails reports OCCT's alerts (`BOPAlgo_Alert…`) instead of a bare `StdFail_NotDone`.
+  build123d's own messages (fillet, chamfer, offset) stand, with OCCT's exception inside.
+- **Memory pressure goes on results.** `Shape.Result`, called from `MadeBy`, `Rewrapped` and the
+  feature factories, gives the result's `TopoDS_Shape` wrapper an estimate of its native memory, and
+  calls `GC.AddMemoryPressure` with it. The estimate is one walk over its unique sub-shapes, curves,
+  surfaces and triangulations.
+  - The pressure is removed when that wrapper is disposed or finalised.
+  - Results under 4 KB, and sub-shapes taken out of a result, aren't counted, so shared geometry isn't
+    counted many times over.
+  - Triangulation frees its private meshed copy as soon as the mesh is copied out, rather than leaving
+    it for finalisation.
+- **Untrusted BRep.** OCCT's reader trusts its input. At the end of truncated data it loops for ever,
+  reusing the last word it read, and it reads words into fixed buffers with no length limit. So
+  `ReadBRep` first refuses NULs and words of 200 characters or more, then reads with stream exceptions
+  on, and reports any failure as `Storage_StreamFormatError`.
+  - A fuzz test mutates BRep data and checks that reading, validating and measuring the result fail
+    cleanly or not at all.
+  - Meshing or fusing a shape read from corrupted data can still run for a very long time, which is
+    left to cancellation (4.7).
+
 #### Objects
 
 - **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,

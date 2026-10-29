@@ -13,7 +13,7 @@ B3D_API void* b3d_gp_Circ_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Circ>)
   {
-    try { return new gp_Circ(*static_cast<const gp_Circ*>(p)); }
+    B3D_TRY { return new gp_Circ(*static_cast<const gp_Circ*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_gp_Circ_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Circ_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Circ();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_gp_Circ_new(b3d_error** err)
 B3D_API void* b3d_gp_Circ_new__gp_Ax2__double(const gp_Ax2* theA2, double theRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Circ(*theA2, theRadius);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_gp_Circ_new__gp_Ax2__double(const gp_Ax2* theA2, double theRad
 B3D_API void b3d_gp_Circ_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->SetAxis(*theA1);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_gp_Circ_SetAxis__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_er
 B3D_API void b3d_gp_Circ_SetLocation__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->SetLocation(*theP);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_gp_Circ_SetLocation__gp_Pnt(void* self, const gp_Pnt* theP, b3d
 B3D_API void b3d_gp_Circ_SetPosition__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->SetPosition(*theA2);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_gp_Circ_SetPosition__gp_Ax2(void* self, const gp_Ax2* theA2, b3
 B3D_API void b3d_gp_Circ_SetRadius__double(void* self, double theRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->SetRadius(theRadius);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_gp_Circ_SetRadius__double(void* self, double theRadius, b3d_err
 B3D_API double b3d_gp_Circ_Area(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Area();
     return r;
@@ -104,7 +104,7 @@ B3D_API double b3d_gp_Circ_Area(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Circ_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Axis();
     return new gp_Ax1(r);
@@ -116,7 +116,7 @@ B3D_API void* b3d_gp_Circ_Axis(void* self, b3d_error** err)
 B3D_API double b3d_gp_Circ_Length(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Length();
     return r;
@@ -128,7 +128,7 @@ B3D_API double b3d_gp_Circ_Length(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Circ_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Location();
     return new gp_Pnt(r);
@@ -140,7 +140,7 @@ B3D_API void* b3d_gp_Circ_Location(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Circ_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Position();
     return new gp_Ax2(r);
@@ -152,7 +152,7 @@ B3D_API void* b3d_gp_Circ_Position(void* self, b3d_error** err)
 B3D_API double b3d_gp_Circ_Radius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Radius();
     return r;
@@ -164,7 +164,7 @@ B3D_API double b3d_gp_Circ_Radius(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Circ_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->XAxis();
     return new gp_Ax1(r);
@@ -176,7 +176,7 @@ B3D_API void* b3d_gp_Circ_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Circ_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->YAxis();
     return new gp_Ax1(r);
@@ -188,7 +188,7 @@ B3D_API void* b3d_gp_Circ_YAxis(void* self, b3d_error** err)
 B3D_API double b3d_gp_Circ_Distance__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Distance(*theP);
     return r;
@@ -200,7 +200,7 @@ B3D_API double b3d_gp_Circ_Distance__gp_Pnt(void* self, const gp_Pnt* theP, b3d_
 B3D_API double b3d_gp_Circ_SquareDistance__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->SquareDistance(*theP);
     return r;
@@ -212,7 +212,7 @@ B3D_API double b3d_gp_Circ_SquareDistance__gp_Pnt(void* self, const gp_Pnt* theP
 B3D_API uint8_t b3d_gp_Circ_Contains__gp_Pnt__double(void* self, const gp_Pnt* theP, double theLinearTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Contains(*theP, theLinearTolerance);
     return r ? 1 : 0;
@@ -224,7 +224,7 @@ B3D_API uint8_t b3d_gp_Circ_Contains__gp_Pnt__double(void* self, const gp_Pnt* t
 B3D_API void b3d_gp_Circ_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Mirror(*theP);
     return;
@@ -235,7 +235,7 @@ B3D_API void b3d_gp_Circ_Mirror__gp_Pnt(void* self, const gp_Pnt* theP, b3d_erro
 B3D_API void* b3d_gp_Circ_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Mirrored(*theP);
     return new gp_Circ(r);
@@ -247,7 +247,7 @@ B3D_API void* b3d_gp_Circ_Mirrored__gp_Pnt(void* self, const gp_Pnt* theP, b3d_e
 B3D_API void b3d_gp_Circ_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Mirror(*theA1);
     return;
@@ -258,7 +258,7 @@ B3D_API void b3d_gp_Circ_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_err
 B3D_API void* b3d_gp_Circ_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Mirrored(*theA1);
     return new gp_Circ(r);
@@ -270,7 +270,7 @@ B3D_API void* b3d_gp_Circ_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_
 B3D_API void b3d_gp_Circ_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Mirror(*theA2);
     return;
@@ -281,7 +281,7 @@ B3D_API void b3d_gp_Circ_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_err
 B3D_API void* b3d_gp_Circ_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Mirrored(*theA2);
     return new gp_Circ(r);
@@ -293,7 +293,7 @@ B3D_API void* b3d_gp_Circ_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_
 B3D_API void b3d_gp_Circ_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Rotate(*theA1, theAng);
     return;
@@ -304,7 +304,7 @@ B3D_API void b3d_gp_Circ_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1,
 B3D_API void* b3d_gp_Circ_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Rotated(*theA1, theAng);
     return new gp_Circ(r);
@@ -316,7 +316,7 @@ B3D_API void* b3d_gp_Circ_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA
 B3D_API void b3d_gp_Circ_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Scale(*theP, theS);
     return;
@@ -327,7 +327,7 @@ B3D_API void b3d_gp_Circ_Scale__gp_Pnt__double(void* self, const gp_Pnt* theP, d
 B3D_API void* b3d_gp_Circ_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Scaled(*theP, theS);
     return new gp_Circ(r);
@@ -339,7 +339,7 @@ B3D_API void* b3d_gp_Circ_Scaled__gp_Pnt__double(void* self, const gp_Pnt* theP,
 B3D_API void b3d_gp_Circ_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Transform(*theT);
     return;
@@ -350,7 +350,7 @@ B3D_API void b3d_gp_Circ_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d
 B3D_API void* b3d_gp_Circ_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Transformed(*theT);
     return new gp_Circ(r);
@@ -362,7 +362,7 @@ B3D_API void* b3d_gp_Circ_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, 
 B3D_API void b3d_gp_Circ_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Translate(*theV);
     return;
@@ -373,7 +373,7 @@ B3D_API void b3d_gp_Circ_Translate__gp_Vec(void* self, const gp_Vec* theV, b3d_e
 B3D_API void* b3d_gp_Circ_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Translated(*theV);
     return new gp_Circ(r);
@@ -385,7 +385,7 @@ B3D_API void* b3d_gp_Circ_Translated__gp_Vec(void* self, const gp_Vec* theV, b3d
 B3D_API void b3d_gp_Circ_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Circ*>(self)->Translate(*theP1, *theP2);
     return;
@@ -396,7 +396,7 @@ B3D_API void b3d_gp_Circ_Translate__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* the
 B3D_API void* b3d_gp_Circ_Translated__gp_Pnt__gp_Pnt(void* self, const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Circ*>(self)->Translated(*theP1, *theP2);
     return new gp_Circ(r);

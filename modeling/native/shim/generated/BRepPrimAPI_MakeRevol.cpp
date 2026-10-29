@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeRevol>)
   {
-    try { return new BRepPrimAPI_MakeRevol(*static_cast<const BRepPrimAPI_MakeRevol*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeRevol(*static_cast<const BRepPrimAPI_MakeRevol*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_as_BRepBuilderAPI_Command(void* p) { ret
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__double(const TopoDS_Shape* S, const gp_Ax1* A, double D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeRevol(*S, *A, D);
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__double(const 
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__double__bool(const TopoDS_Shape* S, const gp_Ax1* A, double D, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeRevol(*S, *A, D, Copy != 0);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__double__bool(
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1(const TopoDS_Shape* S, const gp_Ax1* A, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeRevol(*S, *A);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1(const TopoDS_S
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__bool(const TopoDS_Shape* S, const gp_Ax1* A, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeRevol(*S, *A, Copy != 0);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_new__TopoDS_Shape__gp_Ax1__bool(const To
 B3D_API void b3d_BRepPrimAPI_MakeRevol_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeRevol*>(self)->Build();
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepPrimAPI_MakeRevol_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->FirstShape();
     return new TopoDS_Shape(r);
@@ -96,7 +96,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_FirstShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->LastShape();
     return new TopoDS_Shape(r);
@@ -108,7 +108,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_LastShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -120,7 +120,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_Generated__TopoDS_Shape(void* self, cons
 B3D_API uint8_t b3d_BRepPrimAPI_MakeRevol_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->IsDeleted(*S);
     return r ? 1 : 0;
@@ -132,7 +132,7 @@ B3D_API uint8_t b3d_BRepPrimAPI_MakeRevol_IsDeleted__TopoDS_Shape(void* self, co
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_FirstShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->FirstShape(*theShape);
     return new TopoDS_Shape(r);
@@ -144,7 +144,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_FirstShape__TopoDS_Shape(void* self, con
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_LastShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->LastShape(*theShape);
     return new TopoDS_Shape(r);
@@ -156,7 +156,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeRevol_LastShape__TopoDS_Shape(void* self, cons
 B3D_API uint8_t b3d_BRepPrimAPI_MakeRevol_HasDegenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->HasDegenerated();
     return r ? 1 : 0;
@@ -168,7 +168,7 @@ B3D_API uint8_t b3d_BRepPrimAPI_MakeRevol_HasDegenerated(void* self, b3d_error**
 B3D_API void* b3d_BRepPrimAPI_MakeRevol_Degenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeRevol*>(self)->Degenerated();
     return new NCollection_List<TopoDS_Shape>(r);

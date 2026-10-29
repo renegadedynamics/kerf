@@ -12,7 +12,7 @@ B3D_API void* b3d_BOPAlgo_Builder_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BOPAlgo_Builder>)
   {
-    try { return new BOPAlgo_Builder(*static_cast<const BOPAlgo_Builder*>(p)); }
+    B3D_TRY { return new BOPAlgo_Builder(*static_cast<const BOPAlgo_Builder*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_BOPAlgo_Builder_as_BOPAlgo_Options(void* p) { return static_ca
 B3D_API void* b3d_BOPAlgo_Builder_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BOPAlgo_Builder();
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_BOPAlgo_Builder_new(b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->Clear();
     return;
@@ -49,7 +49,7 @@ B3D_API void b3d_BOPAlgo_Builder_Clear(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_AddArgument__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->AddArgument(*theShape);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_BOPAlgo_Builder_AddArgument__TopoDS_Shape(void* self, const Top
 B3D_API void b3d_BOPAlgo_Builder_SetArguments__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* theLS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->SetArguments(*theLS);
     return;
@@ -71,7 +71,7 @@ B3D_API void b3d_BOPAlgo_Builder_SetArguments__TopTools_ListOfShape(void* self, 
 B3D_API void* b3d_BOPAlgo_Builder_Arguments(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Builder*>(self)->Arguments();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -83,7 +83,7 @@ B3D_API void* b3d_BOPAlgo_Builder_Arguments(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_SetNonDestructive__bool(void* self, uint8_t theFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->SetNonDestructive(theFlag != 0);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_BOPAlgo_Builder_SetNonDestructive__bool(void* self, uint8_t the
 B3D_API uint8_t b3d_BOPAlgo_Builder_NonDestructive(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Builder*>(self)->NonDestructive();
     return r ? 1 : 0;
@@ -106,7 +106,7 @@ B3D_API uint8_t b3d_BOPAlgo_Builder_NonDestructive(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_SetGlue__BOPAlgo_GlueEnum(void* self, int32_t theGlue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->SetGlue(static_cast<BOPAlgo_GlueEnum>(theGlue));
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_BOPAlgo_Builder_SetGlue__BOPAlgo_GlueEnum(void* self, int32_t t
 B3D_API int32_t b3d_BOPAlgo_Builder_Glue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Builder*>(self)->Glue();
     return static_cast<int32_t>(r);
@@ -129,7 +129,7 @@ B3D_API int32_t b3d_BOPAlgo_Builder_Glue(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_SetCheckInverted__bool(void* self, uint8_t theCheck, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->SetCheckInverted(theCheck != 0);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_BOPAlgo_Builder_SetCheckInverted__bool(void* self, uint8_t theC
 B3D_API uint8_t b3d_BOPAlgo_Builder_CheckInverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Builder*>(self)->CheckInverted();
     return r ? 1 : 0;
@@ -152,7 +152,7 @@ B3D_API uint8_t b3d_BOPAlgo_Builder_CheckInverted(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_Builder_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_Builder*>(self)->Perform();
     return;
@@ -163,7 +163,7 @@ B3D_API void b3d_BOPAlgo_Builder_Perform(void* self, b3d_error** err)
 B3D_API void* b3d_BOPAlgo_Builder_ShapesSD(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_Builder*>(self)->ShapesSD();
     return new NCollection_DataMap<TopoDS_Shape,TopoDS_Shape,TopTools_ShapeMapHasher>(r);

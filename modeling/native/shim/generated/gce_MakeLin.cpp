@@ -12,7 +12,7 @@ B3D_API void* b3d_gce_MakeLin_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gce_MakeLin>)
   {
-    try { return new gce_MakeLin(*static_cast<const gce_MakeLin*>(p)); }
+    B3D_TRY { return new gce_MakeLin(*static_cast<const gce_MakeLin*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_gce_MakeLin_as_gce_Root(void* p) { return static_cast<gce_Root
 B3D_API void* b3d_gce_MakeLin_new__gp_Ax1(const gp_Ax1* A1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gce_MakeLin(*A1);
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_gce_MakeLin_new__gp_Ax1(const gp_Ax1* A1, b3d_error** err)
 B3D_API void* b3d_gce_MakeLin_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gce_MakeLin(*P, *V);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_gce_MakeLin_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir*
 B3D_API void* b3d_gce_MakeLin_new__gp_Lin__gp_Pnt(const gp_Lin* Lin, const gp_Pnt* Point, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gce_MakeLin(*Lin, *Point);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_gce_MakeLin_new__gp_Lin__gp_Pnt(const gp_Lin* Lin, const gp_Pn
 B3D_API void* b3d_gce_MakeLin_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gce_MakeLin(*P1, *P2);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_gce_MakeLin_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt
 B3D_API void* b3d_gce_MakeLin_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gce_MakeLin*>(self)->Value();
     return new gp_Lin(r);
@@ -84,7 +84,7 @@ B3D_API void* b3d_gce_MakeLin_Value(void* self, b3d_error** err)
 B3D_API void* b3d_gce_MakeLin_Operator(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gce_MakeLin*>(self)->Operator();
     return new gp_Lin(r);

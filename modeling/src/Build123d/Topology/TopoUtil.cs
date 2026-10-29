@@ -210,9 +210,34 @@ internal static partial class TopoUtil
         operation.SetRunParallel(true);
         // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
         operation.SetNonDestructive(true);
-        operation.Build();
+        using (OcctContext.Doing(BooleanName(operation)))
+        {
+            operation.Build();
+            ThrowIfFailed(operation);
+        }
         var result = Downcast(operation.Shape());
         return result is TopoDS_Compound c ? UnwrapCompound(c) : result;
+    }
+
+    /// <summary>What a boolean is called in an error message.</summary>
+    internal static string BooleanName(BRepAlgoAPI_BuilderAlgo operation) => operation switch
+    {
+        BRepAlgoAPI_Cut => "cut",
+        BRepAlgoAPI_Fuse => "fuse",
+        BRepAlgoAPI_Common => "intersect",
+        BRepAlgoAPI_Section => "section",
+        BRepAlgoAPI_Splitter => "split",
+        _ => "boolean",
+    };
+
+    /// <summary>
+    /// Throws if a built boolean failed, naming OCCT's reasons ("BOPAlgo_AlertSelfInterferingShape", say) where a bare
+    /// <c>Shape()</c> would say only StdFail_NotDone.
+    /// </summary>
+    internal static void ThrowIfFailed(BRepAlgoAPI_Algo operation)
+    {
+        if (operation.HasErrors())
+            throw new OcctException("StdFail_NotDone", Extras.AlgoErrors(operation) ?? "");
     }
 
     internal static void SetTools(BRepAlgoAPI_BuilderAlgo operation, TopTools_ListOfShape tools)

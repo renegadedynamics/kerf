@@ -10,7 +10,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_copy(const void* p, b3d_er
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomConvert_CompCurveToBSplineCurve>)
   {
-    try { return new GeomConvert_CompCurveToBSplineCurve(*static_cast<const GeomConvert_CompCurveToBSplineCurve*>(p)); }
+    B3D_TRY { return new GeomConvert_CompCurveToBSplineCurve(*static_cast<const GeomConvert_CompCurveToBSplineCurve*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_copy(const void* p, b3d_er
 B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomConvert_CompCurveToBSplineCurve();
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new(b3d_error** err)
 B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Convert_ParameterisationType(int32_t Parameterisation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomConvert_CompCurveToBSplineCurve(static_cast<Convert_ParameterisationType>(Parameterisation));
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Convert_Parameterisat
 B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Geom_BoundedCurve(Geom_BoundedCurve* BasisCurve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomConvert_CompCurveToBSplineCurve(occ::handle<Geom_BoundedCurve>(BasisCurve));
     return r;
@@ -57,7 +57,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Geom_BoundedCurve(Geo
 B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Geom_BoundedCurve__Convert_ParameterisationType(Geom_BoundedCurve* BasisCurve, int32_t Parameterisation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomConvert_CompCurveToBSplineCurve(occ::handle<Geom_BoundedCurve>(BasisCurve), static_cast<Convert_ParameterisationType>(Parameterisation));
     return r;
@@ -69,7 +69,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_new__Geom_BoundedCurve__Co
 B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__double(void* self, Geom_BoundedCurve* NewCurve, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->Add(occ::handle<Geom_BoundedCurve>(NewCurve), Tolerance);
     return r ? 1 : 0;
@@ -81,7 +81,7 @@ B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__
 B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__double__bool(void* self, Geom_BoundedCurve* NewCurve, double Tolerance, uint8_t After, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->Add(occ::handle<Geom_BoundedCurve>(NewCurve), Tolerance, After != 0);
     return r ? 1 : 0;
@@ -93,7 +93,7 @@ B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__
 B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__double__bool__bool(void* self, Geom_BoundedCurve* NewCurve, double Tolerance, uint8_t After, uint8_t WithRatio, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->Add(occ::handle<Geom_BoundedCurve>(NewCurve), Tolerance, After != 0, WithRatio != 0);
     return r ? 1 : 0;
@@ -105,7 +105,7 @@ B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__
 B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__double__bool__bool__int(void* self, Geom_BoundedCurve* NewCurve, double Tolerance, uint8_t After, uint8_t WithRatio, int32_t MinM, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->Add(occ::handle<Geom_BoundedCurve>(NewCurve), Tolerance, After != 0, WithRatio != 0, MinM);
     return r ? 1 : 0;
@@ -117,7 +117,7 @@ B3D_API uint8_t b3d_GeomConvert_CompCurveToBSplineCurve_Add__Geom_BoundedCurve__
 B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_BSplineCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->BSplineCurve();
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -129,7 +129,7 @@ B3D_API void* b3d_GeomConvert_CompCurveToBSplineCurve_BSplineCurve(void* self, b
 B3D_API void b3d_GeomConvert_CompCurveToBSplineCurve_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomConvert_CompCurveToBSplineCurve*>(self)->Clear();
     return;

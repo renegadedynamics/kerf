@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_downcast(void* t) { return b3d_r
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_new__Geom_Curve__gp_Dir(Geom_Curve* C, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_SurfaceOfLinearExtrusion(occ::handle<Geom_Curve>(C), *V);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_new__Geom_Curve__gp_Dir(Geom_Cur
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -43,7 +43,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_HasEvalRepresentation(void* se
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->ClearEvalRepresentation();
     return;
@@ -54,7 +54,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_ClearEvalRepresentation(void* sel
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_SetDirection__gp_Dir(void* self, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->SetDirection(*V);
     return;
@@ -65,7 +65,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_SetDirection__gp_Dir(void* self, 
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_SetBasisCurve__Geom_Curve(void* self, Geom_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->SetBasisCurve(occ::handle<Geom_Curve>(C));
     return;
@@ -76,7 +76,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_SetBasisCurve__Geom_Curve(void* s
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->UReverse();
     return;
@@ -87,7 +87,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_UReverse(void* self, b3d_error** 
 B3D_API double b3d_Geom_SurfaceOfLinearExtrusion_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->UReversedParameter(U);
     return r;
@@ -99,7 +99,7 @@ B3D_API double b3d_Geom_SurfaceOfLinearExtrusion_UReversedParameter__double(void
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->VReverse();
     return;
@@ -110,7 +110,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_VReverse(void* self, b3d_error** 
 B3D_API double b3d_Geom_SurfaceOfLinearExtrusion_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->VReversedParameter(V);
     return r;
@@ -122,7 +122,7 @@ B3D_API double b3d_Geom_SurfaceOfLinearExtrusion_VReversedParameter__double(void
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -133,7 +133,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_Bounds__ref_double__ref_double__r
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -145,7 +145,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsUClosed(void* self, b3d_erro
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -157,7 +157,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsVClosed(void* self, b3d_erro
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -169,7 +169,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsCNu__int(void* self, int32_t
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -181,7 +181,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsCNv__int(void* self, int32_t
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -193,7 +193,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsUPeriodic(void* self, b3d_er
 B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -205,7 +205,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfLinearExtrusion_IsVPeriodic(void* self, b3d_er
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -217,7 +217,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_UIso__double(void* self, double 
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -229,7 +229,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_VIso__double(void* self, double 
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -241,7 +241,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_EvalD0__double__double(void* sel
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -253,7 +253,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_EvalDN__double__double__int__int
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->Transform(*T);
     return;
@@ -264,7 +264,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_Transform__gp_Trsf(void* self, co
 B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -275,7 +275,7 @@ B3D_API void b3d_Geom_SurfaceOfLinearExtrusion_TransformParameters__ref_double__
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -287,7 +287,7 @@ B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_ParametricTransformation__gp_Trs
 B3D_API void* b3d_Geom_SurfaceOfLinearExtrusion_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfLinearExtrusion*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

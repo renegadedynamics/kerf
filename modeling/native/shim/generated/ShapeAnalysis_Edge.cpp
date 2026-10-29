@@ -16,7 +16,7 @@ B3D_API void* b3d_ShapeAnalysis_Edge_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<ShapeAnalysis_Edge>)
   {
-    try { return new ShapeAnalysis_Edge(*static_cast<const ShapeAnalysis_Edge*>(p)); }
+    B3D_TRY { return new ShapeAnalysis_Edge(*static_cast<const ShapeAnalysis_Edge*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_ShapeAnalysis_Edge_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_Edge_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_Edge();
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_ShapeAnalysis_Edge_new(b3d_error** err)
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasCurve3d__TopoDS_Edge(void* self, const TopoDS_Edge* edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->HasCurve3d(*edge);
     return r ? 1 : 0;
@@ -51,7 +51,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasCurve3d__TopoDS_Edge(void* self, const
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsClosed3d__TopoDS_Edge(void* self, const TopoDS_Edge* edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->IsClosed3d(*edge);
     return r ? 1 : 0;
@@ -63,7 +63,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsClosed3d__TopoDS_Edge(void* self, const
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasPCurve__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->HasPCurve(*edge, *face);
     return r ? 1 : 0;
@@ -75,7 +75,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasPCurve__TopoDS_Edge__TopoDS_Face(void*
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasPCurve__TopoDS_Edge__Geom_Surface__TopLoc_Location(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->HasPCurve(*edge, occ::handle<Geom_Surface>(surface), *location);
     return r ? 1 : 0;
@@ -87,7 +87,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_HasPCurve__TopoDS_Edge__Geom_Surface__Top
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_BoundUV__TopoDS_Edge__TopoDS_Face__mut_gp_Pnt2d__mut_gp_Pnt2d(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, gp_Pnt2d* first, gp_Pnt2d* last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->BoundUV(*edge, *face, *first, *last);
     return r ? 1 : 0;
@@ -99,7 +99,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_BoundUV__TopoDS_Edge__TopoDS_Face__mut_gp
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_BoundUV__TopoDS_Edge__Geom_Surface__TopLoc_Location__mut_gp_Pnt2d__mut_gp_Pnt2d(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, gp_Pnt2d* first, gp_Pnt2d* last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->BoundUV(*edge, occ::handle<Geom_Surface>(surface), *location, *first, *last);
     return r ? 1 : 0;
@@ -111,7 +111,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_BoundUV__TopoDS_Edge__Geom_Surface__TopLo
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsSeam__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->IsSeam(*edge, *face);
     return r ? 1 : 0;
@@ -123,7 +123,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsSeam__TopoDS_Edge__TopoDS_Face(void* se
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsSeam__TopoDS_Edge__Geom_Surface__TopLoc_Location(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->IsSeam(*edge, occ::handle<Geom_Surface>(surface), *location);
     return r ? 1 : 0;
@@ -135,7 +135,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_IsSeam__TopoDS_Edge__Geom_Surface__TopLoc
 B3D_API void* b3d_ShapeAnalysis_Edge_FirstVertex__TopoDS_Edge(void* self, const TopoDS_Edge* edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->FirstVertex(*edge);
     return new TopoDS_Vertex(r);
@@ -147,7 +147,7 @@ B3D_API void* b3d_ShapeAnalysis_Edge_FirstVertex__TopoDS_Edge(void* self, const 
 B3D_API void* b3d_ShapeAnalysis_Edge_LastVertex__TopoDS_Edge(void* self, const TopoDS_Edge* edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->LastVertex(*edge);
     return new TopoDS_Vertex(r);
@@ -159,7 +159,7 @@ B3D_API void* b3d_ShapeAnalysis_Edge_LastVertex__TopoDS_Edge(void* self, const T
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__TopoDS_Face__bool__mut_gp_Pnt2d__mut_gp_Vec2d(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, uint8_t atEnd, gp_Pnt2d* pos, gp_Vec2d* tang, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->GetEndTangent2d(*edge, *face, atEnd != 0, *pos, *tang);
     return r ? 1 : 0;
@@ -171,7 +171,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__TopoDS_Face
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__TopoDS_Face__bool__mut_gp_Pnt2d__mut_gp_Vec2d__double(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, uint8_t atEnd, gp_Pnt2d* pos, gp_Vec2d* tang, double dparam, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->GetEndTangent2d(*edge, *face, atEnd != 0, *pos, *tang, dparam);
     return r ? 1 : 0;
@@ -183,7 +183,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__TopoDS_Face
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__Geom_Surface__TopLoc_Location__bool__mut_gp_Pnt2d__mut_gp_Vec2d(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, uint8_t atEnd, gp_Pnt2d* pos, gp_Vec2d* tang, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->GetEndTangent2d(*edge, occ::handle<Geom_Surface>(surface), *location, atEnd != 0, *pos, *tang);
     return r ? 1 : 0;
@@ -195,7 +195,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__Geom_Surfac
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__Geom_Surface__TopLoc_Location__bool__mut_gp_Pnt2d__mut_gp_Vec2d__double(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, uint8_t atEnd, gp_Pnt2d* pos, gp_Vec2d* tang, double dparam, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->GetEndTangent2d(*edge, occ::handle<Geom_Surface>(surface), *location, atEnd != 0, *pos, *tang, dparam);
     return r ? 1 : 0;
@@ -207,7 +207,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_GetEndTangent2d__TopoDS_Edge__Geom_Surfac
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge(void* self, const TopoDS_Edge* edge, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithCurve3d(*edge);
     return r ? 1 : 0;
@@ -219,7 +219,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge(voi
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge__double(void* self, const TopoDS_Edge* edge, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithCurve3d(*edge, preci);
     return r ? 1 : 0;
@@ -231,7 +231,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge__do
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge__double__int(void* self, const TopoDS_Edge* edge, double preci, int32_t vtx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithCurve3d(*edge, preci, vtx);
     return r ? 1 : 0;
@@ -243,7 +243,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithCurve3d__TopoDS_Edge__do
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, *face);
     return r ? 1 : 0;
@@ -255,7 +255,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Top
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__TopoDS_Face__double(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, *face, preci);
     return r ? 1 : 0;
@@ -267,7 +267,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Top
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__TopoDS_Face__double__int(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, double preci, int32_t vtx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, *face, preci, vtx);
     return r ? 1 : 0;
@@ -279,7 +279,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Top
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geom_Surface__TopLoc_Location(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, occ::handle<Geom_Surface>(surface), *location);
     return r ? 1 : 0;
@@ -291,7 +291,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geo
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geom_Surface__TopLoc_Location__double(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, occ::handle<Geom_Surface>(surface), *location, preci);
     return r ? 1 : 0;
@@ -303,7 +303,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geo
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geom_Surface__TopLoc_Location__double__int(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, double preci, int32_t vtx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVerticesWithPCurve(*edge, occ::handle<Geom_Surface>(surface), *location, preci, vtx);
     return r ? 1 : 0;
@@ -315,7 +315,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVerticesWithPCurve__TopoDS_Edge__Geo
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVertexTolerance__TopoDS_Edge__TopoDS_Face__ref_double__ref_double(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, double* toler1, double* toler2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVertexTolerance(*edge, *face, *toler1, *toler2);
     return r ? 1 : 0;
@@ -327,7 +327,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVertexTolerance__TopoDS_Edge__TopoDS
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVertexTolerance__TopoDS_Edge__ref_double__ref_double(void* self, const TopoDS_Edge* edge, double* toler1, double* toler2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckVertexTolerance(*edge, *toler1, *toler2);
     return r ? 1 : 0;
@@ -339,7 +339,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckVertexTolerance__TopoDS_Edge__ref_do
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckCurve3dWithPCurve__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* edge, const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckCurve3dWithPCurve(*edge, *face);
     return r ? 1 : 0;
@@ -351,7 +351,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckCurve3dWithPCurve__TopoDS_Edge__Topo
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckCurve3dWithPCurve__TopoDS_Edge__Geom_Surface__TopLoc_Location(void* self, const TopoDS_Edge* edge, Geom_Surface* surface, const TopLoc_Location* location, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckCurve3dWithPCurve(*edge, occ::handle<Geom_Surface>(surface), *location);
     return r ? 1 : 0;
@@ -363,7 +363,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckCurve3dWithPCurve__TopoDS_Edge__Geom
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_Status__ShapeExtend_Status(void* self, int32_t status, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->Status(static_cast<ShapeExtend_Status>(status));
     return r ? 1 : 0;
@@ -375,7 +375,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_Status__ShapeExtend_Status(void* self, in
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__ref_double(void* self, const TopoDS_Edge* edge, double* maxdev, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckSameParameter(*edge, *maxdev);
     return r ? 1 : 0;
@@ -387,7 +387,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__ref_doub
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__ref_double__int(void* self, const TopoDS_Edge* edge, double* maxdev, int32_t NbControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckSameParameter(*edge, *maxdev, NbControl);
     return r ? 1 : 0;
@@ -399,7 +399,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__ref_doub
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__TopoDS_Face__ref_double(void* self, const TopoDS_Edge* theEdge, const TopoDS_Face* theFace, double* theMaxdev, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckSameParameter(*theEdge, *theFace, *theMaxdev);
     return r ? 1 : 0;
@@ -411,7 +411,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__TopoDS_F
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__TopoDS_Face__ref_double__int(void* self, const TopoDS_Edge* theEdge, const TopoDS_Face* theFace, double* theMaxdev, int32_t theNbControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckSameParameter(*theEdge, *theFace, *theMaxdev, theNbControl);
     return r ? 1 : 0;
@@ -423,7 +423,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckSameParameter__TopoDS_Edge__TopoDS_F
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckPCurveRange__double__double__Geom2d_Curve(void* self, double theFirst, double theLast, Geom2d_Curve* thePC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckPCurveRange(theFirst, theLast, occ::handle<Geom2d_Curve>(thePC));
     return r ? 1 : 0;
@@ -435,7 +435,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckPCurveRange__double__double__Geom2d_
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckOverlapping__TopoDS_Edge__TopoDS_Edge__ref_double(void* self, const TopoDS_Edge* theEdge1, const TopoDS_Edge* theEdge2, double* theTolOverlap, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckOverlapping(*theEdge1, *theEdge2, *theTolOverlap);
     return r ? 1 : 0;
@@ -447,7 +447,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckOverlapping__TopoDS_Edge__TopoDS_Edg
 B3D_API uint8_t b3d_ShapeAnalysis_Edge_CheckOverlapping__TopoDS_Edge__TopoDS_Edge__ref_double__double(void* self, const TopoDS_Edge* theEdge1, const TopoDS_Edge* theEdge2, double* theTolOverlap, double theDomainDist, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Edge*>(self)->CheckOverlapping(*theEdge1, *theEdge2, *theTolOverlap, theDomainDist);
     return r ? 1 : 0;

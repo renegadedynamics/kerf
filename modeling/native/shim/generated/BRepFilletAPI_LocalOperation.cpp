@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepFilletAPI_LocalOperation_as_BRepBuilderAPI_Command(void* p
 B3D_API void b3d_BRepFilletAPI_LocalOperation_Add__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_LocalOperation*>(self)->Add(*E);
     return;
@@ -22,7 +22,7 @@ B3D_API void b3d_BRepFilletAPI_LocalOperation_Add__TopoDS_Edge(void* self, const
 B3D_API void b3d_BRepFilletAPI_LocalOperation_ResetContour__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_LocalOperation*>(self)->ResetContour(IC);
     return;
@@ -33,7 +33,7 @@ B3D_API void b3d_BRepFilletAPI_LocalOperation_ResetContour__int(void* self, int3
 B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_NbContours(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->NbContours();
     return r;
@@ -45,7 +45,7 @@ B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_NbContours(void* self, b3d_erro
 B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_Contour__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->Contour(*E);
     return r;
@@ -57,7 +57,7 @@ B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_Contour__TopoDS_Edge(void* self
 B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_NbEdges__int(void* self, int32_t I, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->NbEdges(I);
     return r;
@@ -69,7 +69,7 @@ B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_NbEdges__int(void* self, int32_
 B3D_API void* b3d_BRepFilletAPI_LocalOperation_Edge__int__int(void* self, int32_t I, int32_t J, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->Edge(I, J);
     return new TopoDS_Edge(r);
@@ -81,7 +81,7 @@ B3D_API void* b3d_BRepFilletAPI_LocalOperation_Edge__int__int(void* self, int32_
 B3D_API void b3d_BRepFilletAPI_LocalOperation_Remove__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_LocalOperation*>(self)->Remove(*E);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_BRepFilletAPI_LocalOperation_Remove__TopoDS_Edge(void* self, co
 B3D_API double b3d_BRepFilletAPI_LocalOperation_Length__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->Length(IC);
     return r;
@@ -104,7 +104,7 @@ B3D_API double b3d_BRepFilletAPI_LocalOperation_Length__int(void* self, int32_t 
 B3D_API void* b3d_BRepFilletAPI_LocalOperation_FirstVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->FirstVertex(IC);
     return new TopoDS_Vertex(r);
@@ -116,7 +116,7 @@ B3D_API void* b3d_BRepFilletAPI_LocalOperation_FirstVertex__int(void* self, int3
 B3D_API void* b3d_BRepFilletAPI_LocalOperation_LastVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->LastVertex(IC);
     return new TopoDS_Vertex(r);
@@ -128,7 +128,7 @@ B3D_API void* b3d_BRepFilletAPI_LocalOperation_LastVertex__int(void* self, int32
 B3D_API double b3d_BRepFilletAPI_LocalOperation_Abscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->Abscissa(IC, *V);
     return r;
@@ -140,7 +140,7 @@ B3D_API double b3d_BRepFilletAPI_LocalOperation_Abscissa__int__TopoDS_Vertex(voi
 B3D_API double b3d_BRepFilletAPI_LocalOperation_RelativeAbscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->RelativeAbscissa(IC, *V);
     return r;
@@ -152,7 +152,7 @@ B3D_API double b3d_BRepFilletAPI_LocalOperation_RelativeAbscissa__int__TopoDS_Ve
 B3D_API uint8_t b3d_BRepFilletAPI_LocalOperation_ClosedAndTangent__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->ClosedAndTangent(IC);
     return r ? 1 : 0;
@@ -164,7 +164,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_LocalOperation_ClosedAndTangent__int(void* sel
 B3D_API uint8_t b3d_BRepFilletAPI_LocalOperation_Closed__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->Closed(IC);
     return r ? 1 : 0;
@@ -176,7 +176,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_LocalOperation_Closed__int(void* self, int32_t
 B3D_API void b3d_BRepFilletAPI_LocalOperation_Reset(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_LocalOperation*>(self)->Reset();
     return;
@@ -187,7 +187,7 @@ B3D_API void b3d_BRepFilletAPI_LocalOperation_Reset(void* self, b3d_error** err)
 B3D_API void b3d_BRepFilletAPI_LocalOperation_Simulate__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_LocalOperation*>(self)->Simulate(IC);
     return;
@@ -198,7 +198,7 @@ B3D_API void b3d_BRepFilletAPI_LocalOperation_Simulate__int(void* self, int32_t 
 B3D_API int32_t b3d_BRepFilletAPI_LocalOperation_NbSurf__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_LocalOperation*>(self)->NbSurf(IC);
     return r;

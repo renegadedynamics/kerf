@@ -14,7 +14,7 @@ B3D_API void* b3d_Geom2d_CartesianPoint_downcast(void* t) { return b3d_retain(dy
 B3D_API void* b3d_Geom2d_CartesianPoint_new__gp_Pnt2d(const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_CartesianPoint(*P);
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_Geom2d_CartesianPoint_new__gp_Pnt2d(const gp_Pnt2d* P, b3d_err
 B3D_API void* b3d_Geom2d_CartesianPoint_new__double__double(double X, double Y, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_CartesianPoint(X, Y);
     return b3d_retain(r);
@@ -38,7 +38,7 @@ B3D_API void* b3d_Geom2d_CartesianPoint_new__double__double(double X, double Y, 
 B3D_API void b3d_Geom2d_CartesianPoint_SetCoord__double__double(void* self, double X, double Y, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->SetCoord(X, Y);
     return;
@@ -49,7 +49,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_SetCoord__double__double(void* self, doub
 B3D_API void b3d_Geom2d_CartesianPoint_SetPnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->SetPnt2d(*P);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_SetPnt2d__gp_Pnt2d(void* self, const gp_P
 B3D_API void b3d_Geom2d_CartesianPoint_SetX__double(void* self, double X, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->SetX(X);
     return;
@@ -71,7 +71,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_SetX__double(void* self, double X, b3d_er
 B3D_API void b3d_Geom2d_CartesianPoint_SetY__double(void* self, double Y, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->SetY(Y);
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_SetY__double(void* self, double Y, b3d_er
 B3D_API void b3d_Geom2d_CartesianPoint_Coord__ref_double__ref_double(void* self, double* X, double* Y, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->Coord(*X, *Y);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_Coord__ref_double__ref_double(void* self,
 B3D_API void* b3d_Geom2d_CartesianPoint_Pnt2d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_CartesianPoint*>(self)->Pnt2d();
     return new gp_Pnt2d(r);
@@ -105,7 +105,7 @@ B3D_API void* b3d_Geom2d_CartesianPoint_Pnt2d(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_CartesianPoint_X(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_CartesianPoint*>(self)->X();
     return r;
@@ -117,7 +117,7 @@ B3D_API double b3d_Geom2d_CartesianPoint_X(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_CartesianPoint_Y(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_CartesianPoint*>(self)->Y();
     return r;
@@ -129,7 +129,7 @@ B3D_API double b3d_Geom2d_CartesianPoint_Y(void* self, b3d_error** err)
 B3D_API void b3d_Geom2d_CartesianPoint_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_CartesianPoint*>(self)->Transform(*T);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_Geom2d_CartesianPoint_Transform__gp_Trsf2d(void* self, const gp
 B3D_API void* b3d_Geom2d_CartesianPoint_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_CartesianPoint*>(self)->Copy();
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());

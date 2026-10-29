@@ -8,7 +8,7 @@ B3D_API void* b3d_TopoDS_Vertex_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Vertex>)
   {
-    try { return new TopoDS_Vertex(*static_cast<const TopoDS_Vertex*>(p)); }
+    B3D_TRY { return new TopoDS_Vertex(*static_cast<const TopoDS_Vertex*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopoDS_Vertex_as_TopoDS_Shape(void* p) { return static_cast<To
 B3D_API void* b3d_TopoDS_Vertex_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Vertex();
     return r;

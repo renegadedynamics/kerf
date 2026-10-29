@@ -16,7 +16,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeFace>)
   {
-    try { return new BRepBuilderAPI_MakeFace(*static_cast<const BRepBuilderAPI_MakeFace*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeFace(*static_cast<const BRepBuilderAPI_MakeFace*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -29,7 +29,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_as_BRepBuilderAPI_Command(void* p) { r
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace();
     return r;
@@ -41,7 +41,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Face(const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*F);
     return r;
@@ -53,7 +53,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Face(const TopoDS_Face* F,
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln(const gp_Pln* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*P);
     return r;
@@ -65,7 +65,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln(const gp_Pln* P, b3d_error
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder(const gp_Cylinder* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C);
     return r;
@@ -77,7 +77,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder(const gp_Cylinder* C,
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone(const gp_Cone* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C);
     return r;
@@ -89,7 +89,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone(const gp_Cone* C, b3d_err
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere(const gp_Sphere* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*S);
     return r;
@@ -101,7 +101,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere(const gp_Sphere* S, b3d
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus(const gp_Torus* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C);
     return r;
@@ -113,7 +113,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus(const gp_Torus* C, b3d_e
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__double(Geom_Surface* S, double TolDegen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(occ::handle<Geom_Surface>(S), TolDegen);
     return r;
@@ -125,7 +125,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__double(Geom_Surface
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__double__double__double__double(const gp_Pln* P, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*P, UMin, UMax, VMin, VMax);
     return r;
@@ -137,7 +137,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__double__double__double__d
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__double__double__double__double(const gp_Cylinder* C, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, UMin, UMax, VMin, VMax);
     return r;
@@ -149,7 +149,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__double__double__doub
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__double__double__double__double(const gp_Cone* C, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, UMin, UMax, VMin, VMax);
     return r;
@@ -161,7 +161,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__double__double__double__
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__double__double__double__double(const gp_Sphere* S, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*S, UMin, UMax, VMin, VMax);
     return r;
@@ -173,7 +173,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__double__double__double
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__double__double__double__double(const gp_Torus* C, double UMin, double UMax, double VMin, double VMax, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, UMin, UMax, VMin, VMax);
     return r;
@@ -185,7 +185,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__double__double__double_
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__double__double__double__double__double(Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, double TolDegen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax, TolDegen);
     return r;
@@ -197,7 +197,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__double__double__dou
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Wire(const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*W);
     return r;
@@ -209,7 +209,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Wire(const TopoDS_Wire* W,
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Wire__bool(const TopoDS_Wire* W, uint8_t OnlyPlane, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*W, OnlyPlane != 0);
     return r;
@@ -221,7 +221,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Wire__bool(const TopoDS_Wi
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__TopoDS_Wire(const gp_Pln* P, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*P, *W);
     return r;
@@ -233,7 +233,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__TopoDS_Wire(const gp_Pln*
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__TopoDS_Wire__bool(const gp_Pln* P, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*P, *W, Inside != 0);
     return r;
@@ -245,7 +245,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Pln__TopoDS_Wire__bool(const g
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__TopoDS_Wire(const gp_Cylinder* C, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W);
     return r;
@@ -257,7 +257,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__TopoDS_Wire(const gp
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__TopoDS_Wire__bool(const gp_Cylinder* C, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W, Inside != 0);
     return r;
@@ -269,7 +269,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cylinder__TopoDS_Wire__bool(co
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__TopoDS_Wire(const gp_Cone* C, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W);
     return r;
@@ -281,7 +281,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__TopoDS_Wire(const gp_Con
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__TopoDS_Wire__bool(const gp_Cone* C, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W, Inside != 0);
     return r;
@@ -293,7 +293,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Cone__TopoDS_Wire__bool(const 
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__TopoDS_Wire(const gp_Sphere* S, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*S, *W);
     return r;
@@ -305,7 +305,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__TopoDS_Wire(const gp_S
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__TopoDS_Wire__bool(const gp_Sphere* S, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*S, *W, Inside != 0);
     return r;
@@ -317,7 +317,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Sphere__TopoDS_Wire__bool(cons
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__TopoDS_Wire(const gp_Torus* C, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W);
     return r;
@@ -329,7 +329,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__TopoDS_Wire(const gp_To
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__TopoDS_Wire__bool(const gp_Torus* C, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*C, *W, Inside != 0);
     return r;
@@ -341,7 +341,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__gp_Torus__TopoDS_Wire__bool(const
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__TopoDS_Wire(Geom_Surface* S, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(occ::handle<Geom_Surface>(S), *W);
     return r;
@@ -353,7 +353,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__TopoDS_Wire(Geom_Su
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__TopoDS_Wire__bool(Geom_Surface* S, const TopoDS_Wire* W, uint8_t Inside, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(occ::handle<Geom_Surface>(S), *W, Inside != 0);
     return r;
@@ -365,7 +365,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__Geom_Surface__TopoDS_Wire__bool(G
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Face__TopoDS_Wire(const TopoDS_Face* F, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakeFace(*F, *W);
     return r;
@@ -377,7 +377,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeFace_new__TopoDS_Face__TopoDS_Wire(const To
 B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__TopoDS_Face(void* self, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeFace*>(self)->Init(*F);
     return;
@@ -388,7 +388,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__TopoDS_Face(void* self, const Top
 B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__Geom_Surface__bool__double(void* self, Geom_Surface* S, uint8_t Bound, double TolDegen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeFace*>(self)->Init(occ::handle<Geom_Surface>(S), Bound != 0, TolDegen);
     return;
@@ -399,7 +399,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__Geom_Surface__bool__double(void* 
 B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__Geom_Surface__double__double__double__double__double(void* self, Geom_Surface* S, double UMin, double UMax, double VMin, double VMax, double TolDegen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeFace*>(self)->Init(occ::handle<Geom_Surface>(S), UMin, UMax, VMin, VMax, TolDegen);
     return;
@@ -410,7 +410,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeFace_Init__Geom_Surface__double__double__dou
 B3D_API void b3d_BRepBuilderAPI_MakeFace_Add__TopoDS_Wire(void* self, const TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeFace*>(self)->Add(*W);
     return;
@@ -421,7 +421,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeFace_Add__TopoDS_Wire(void* self, const Topo
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeFace_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeFace*>(self)->IsDone();
     return r ? 1 : 0;
@@ -433,7 +433,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakeFace_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepBuilderAPI_MakeFace_Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeFace*>(self)->Error();
     return static_cast<int32_t>(r);
@@ -445,7 +445,7 @@ B3D_API int32_t b3d_BRepBuilderAPI_MakeFace_Error(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeFace_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeFace*>(self)->Face();
     return new TopoDS_Face(r);

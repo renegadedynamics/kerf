@@ -17,7 +17,7 @@ B3D_API void* b3d_Geom_BezierCurve_downcast(void* t) { return b3d_retain(dynamic
 B3D_API void* b3d_Geom_BezierCurve_new__TColgp_Array1OfPnt(const NCollection_Array1<gp_Pnt>* CurvePoles, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BezierCurve(*CurvePoles);
     return b3d_retain(r);
@@ -29,7 +29,7 @@ B3D_API void* b3d_Geom_BezierCurve_new__TColgp_Array1OfPnt(const NCollection_Arr
 B3D_API void* b3d_Geom_BezierCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal(const NCollection_Array1<gp_Pnt>* CurvePoles, const NCollection_Array1<double>* PoleWeights, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BezierCurve(*CurvePoles, *PoleWeights);
     return b3d_retain(r);
@@ -41,7 +41,7 @@ B3D_API void* b3d_Geom_BezierCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal
 B3D_API uint8_t b3d_Geom_BezierCurve_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -53,7 +53,7 @@ B3D_API uint8_t b3d_Geom_BezierCurve_HasEvalRepresentation(void* self, b3d_error
 B3D_API void b3d_Geom_BezierCurve_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->ClearEvalRepresentation();
     return;
@@ -64,7 +64,7 @@ B3D_API void b3d_Geom_BezierCurve_ClearEvalRepresentation(void* self, b3d_error*
 B3D_API void b3d_Geom_BezierCurve_Increase__int(void* self, int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->Increase(Degree);
     return;
@@ -75,7 +75,7 @@ B3D_API void b3d_Geom_BezierCurve_Increase__int(void* self, int32_t Degree, b3d_
 B3D_API void b3d_Geom_BezierCurve_InsertPoleAfter__int__gp_Pnt(void* self, int32_t Index, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->InsertPoleAfter(Index, *P);
     return;
@@ -86,7 +86,7 @@ B3D_API void b3d_Geom_BezierCurve_InsertPoleAfter__int__gp_Pnt(void* self, int32
 B3D_API void b3d_Geom_BezierCurve_InsertPoleAfter__int__gp_Pnt__double(void* self, int32_t Index, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->InsertPoleAfter(Index, *P, Weight);
     return;
@@ -97,7 +97,7 @@ B3D_API void b3d_Geom_BezierCurve_InsertPoleAfter__int__gp_Pnt__double(void* sel
 B3D_API void b3d_Geom_BezierCurve_InsertPoleBefore__int__gp_Pnt(void* self, int32_t Index, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->InsertPoleBefore(Index, *P);
     return;
@@ -108,7 +108,7 @@ B3D_API void b3d_Geom_BezierCurve_InsertPoleBefore__int__gp_Pnt(void* self, int3
 B3D_API void b3d_Geom_BezierCurve_InsertPoleBefore__int__gp_Pnt__double(void* self, int32_t Index, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->InsertPoleBefore(Index, *P, Weight);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_Geom_BezierCurve_InsertPoleBefore__int__gp_Pnt__double(void* se
 B3D_API void b3d_Geom_BezierCurve_RemovePole__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->RemovePole(Index);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_Geom_BezierCurve_RemovePole__int(void* self, int32_t Index, b3d
 B3D_API void b3d_Geom_BezierCurve_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->Reverse();
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_Geom_BezierCurve_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierCurve_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->ReversedParameter(U);
     return r;
@@ -153,7 +153,7 @@ B3D_API double b3d_Geom_BezierCurve_ReversedParameter__double(void* self, double
 B3D_API void b3d_Geom_BezierCurve_Segment__double__double(void* self, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->Segment(U1, U2);
     return;
@@ -164,7 +164,7 @@ B3D_API void b3d_Geom_BezierCurve_Segment__double__double(void* self, double U1,
 B3D_API void b3d_Geom_BezierCurve_SetPole__int__gp_Pnt(void* self, int32_t Index, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->SetPole(Index, *P);
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_Geom_BezierCurve_SetPole__int__gp_Pnt(void* self, int32_t Index
 B3D_API void b3d_Geom_BezierCurve_SetPole__int__gp_Pnt__double(void* self, int32_t Index, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->SetPole(Index, *P, Weight);
     return;
@@ -186,7 +186,7 @@ B3D_API void b3d_Geom_BezierCurve_SetPole__int__gp_Pnt__double(void* self, int32
 B3D_API void b3d_Geom_BezierCurve_SetWeight__int__double(void* self, int32_t Index, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->SetWeight(Index, Weight);
     return;
@@ -197,7 +197,7 @@ B3D_API void b3d_Geom_BezierCurve_SetWeight__int__double(void* self, int32_t Ind
 B3D_API uint8_t b3d_Geom_BezierCurve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -209,7 +209,7 @@ B3D_API uint8_t b3d_Geom_BezierCurve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierCurve_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -221,7 +221,7 @@ B3D_API uint8_t b3d_Geom_BezierCurve_IsCN__int(void* self, int32_t N, b3d_error*
 B3D_API uint8_t b3d_Geom_BezierCurve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -233,7 +233,7 @@ B3D_API uint8_t b3d_Geom_BezierCurve_IsPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BezierCurve_IsRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->IsRational();
     return r ? 1 : 0;
@@ -245,7 +245,7 @@ B3D_API uint8_t b3d_Geom_BezierCurve_IsRational(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BezierCurve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -257,7 +257,7 @@ B3D_API int32_t b3d_Geom_BezierCurve_Continuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BezierCurve_Degree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Degree();
     return r;
@@ -269,7 +269,7 @@ B3D_API int32_t b3d_Geom_BezierCurve_Degree(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->EvalD0(U);
     return new gp_Pnt(r);
@@ -281,7 +281,7 @@ B3D_API void* b3d_Geom_BezierCurve_EvalD0__double(void* self, double U, b3d_erro
 B3D_API void* b3d_Geom_BezierCurve_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->EvalDN(U, N);
     return new gp_Vec(r);
@@ -293,7 +293,7 @@ B3D_API void* b3d_Geom_BezierCurve_EvalDN__double__int(void* self, double U, int
 B3D_API void* b3d_Geom_BezierCurve_StartPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->StartPoint();
     return new gp_Pnt(r);
@@ -305,7 +305,7 @@ B3D_API void* b3d_Geom_BezierCurve_StartPoint(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_EndPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->EndPoint();
     return new gp_Pnt(r);
@@ -317,7 +317,7 @@ B3D_API void* b3d_Geom_BezierCurve_EndPoint(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierCurve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->FirstParameter();
     return r;
@@ -329,7 +329,7 @@ B3D_API double b3d_Geom_BezierCurve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierCurve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->LastParameter();
     return r;
@@ -341,7 +341,7 @@ B3D_API double b3d_Geom_BezierCurve_LastParameter(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BezierCurve_NbPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->NbPoles();
     return r;
@@ -353,7 +353,7 @@ B3D_API int32_t b3d_Geom_BezierCurve_NbPoles(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_Pole__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Pole(Index);
     return new gp_Pnt(r);
@@ -365,7 +365,7 @@ B3D_API void* b3d_Geom_BezierCurve_Pole__int(void* self, int32_t Index, b3d_erro
 B3D_API void* b3d_Geom_BezierCurve_Poles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Poles();
     return new NCollection_Array1<gp_Pnt>(r);
@@ -377,7 +377,7 @@ B3D_API void* b3d_Geom_BezierCurve_Poles(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BezierCurve_Weight__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Weight(Index);
     return r;
@@ -389,7 +389,7 @@ B3D_API double b3d_Geom_BezierCurve_Weight__int(void* self, int32_t Index, b3d_e
 B3D_API void* b3d_Geom_BezierCurve_WeightsArray(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->WeightsArray();
     return new NCollection_Array1<double>(r);
@@ -401,7 +401,7 @@ B3D_API void* b3d_Geom_BezierCurve_WeightsArray(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BezierCurve_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->Transform(*T);
     return;
@@ -412,7 +412,7 @@ B3D_API void b3d_Geom_BezierCurve_Transform__gp_Trsf(void* self, const gp_Trsf* 
 B3D_API int32_t b3d_Geom_BezierCurve_MaxDegree(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Geom_BezierCurve::MaxDegree();
     return r;
@@ -424,7 +424,7 @@ B3D_API int32_t b3d_Geom_BezierCurve_MaxDegree(b3d_error** err)
 B3D_API void b3d_Geom_BezierCurve_Resolution__double__ref_double(void* self, double Tolerance3D, double* UTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BezierCurve*>(self)->Resolution(Tolerance3D, *UTolerance);
     return;
@@ -435,7 +435,7 @@ B3D_API void b3d_Geom_BezierCurve_Resolution__double__ref_double(void* self, dou
 B3D_API void* b3d_Geom_BezierCurve_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());
@@ -447,7 +447,7 @@ B3D_API void* b3d_Geom_BezierCurve_Copy(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_Knots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Knots();
     return new NCollection_Array1<double>(r);
@@ -459,7 +459,7 @@ B3D_API void* b3d_Geom_BezierCurve_Knots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_Multiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->Multiplicities();
     return new NCollection_Array1<int>(r);
@@ -471,7 +471,7 @@ B3D_API void* b3d_Geom_BezierCurve_Multiplicities(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BezierCurve_KnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BezierCurve*>(self)->KnotSequence();
     return new NCollection_Array1<double>(r);

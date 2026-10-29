@@ -8,7 +8,7 @@ B3D_API void* b3d_Quantity_Color_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Quantity_Color>)
   {
-    try { return new Quantity_Color(*static_cast<const Quantity_Color*>(p)); }
+    B3D_TRY { return new Quantity_Color(*static_cast<const Quantity_Color*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -19,7 +19,7 @@ B3D_API void* b3d_Quantity_Color_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Quantity_Color_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_Color();
     return r;
@@ -31,7 +31,7 @@ B3D_API void* b3d_Quantity_Color_new(b3d_error** err)
 B3D_API void* b3d_Quantity_Color_new__Quantity_NameOfColor(int32_t theName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_Color(static_cast<Quantity_NameOfColor>(theName));
     return r;
@@ -43,7 +43,7 @@ B3D_API void* b3d_Quantity_Color_new__Quantity_NameOfColor(int32_t theName, b3d_
 B3D_API void* b3d_Quantity_Color_new__double__double__double__Quantity_TypeOfColor(double theC1, double theC2, double theC3, int32_t theType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Quantity_Color(theC1, theC2, theC3, static_cast<Quantity_TypeOfColor>(theType));
     return r;
@@ -55,7 +55,7 @@ B3D_API void* b3d_Quantity_Color_new__double__double__double__Quantity_TypeOfCol
 B3D_API int32_t b3d_Quantity_Color_Name(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Name();
     return static_cast<int32_t>(r);
@@ -67,7 +67,7 @@ B3D_API int32_t b3d_Quantity_Color_Name(void* self, b3d_error** err)
 B3D_API void b3d_Quantity_Color_SetValues__Quantity_NameOfColor(void* self, int32_t theName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->SetValues(static_cast<Quantity_NameOfColor>(theName));
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_Quantity_Color_SetValues__Quantity_NameOfColor(void* self, int3
 B3D_API void b3d_Quantity_Color_Values__ref_double__ref_double__ref_double__Quantity_TypeOfColor(void* self, double* theC1, double* theC2, double* theC3, int32_t theType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->Values(*theC1, *theC2, *theC3, static_cast<Quantity_TypeOfColor>(theType));
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_Quantity_Color_Values__ref_double__ref_double__ref_double__Quan
 B3D_API void b3d_Quantity_Color_SetValues__double__double__double__Quantity_TypeOfColor(void* self, double theC1, double theC2, double theC3, int32_t theType, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->SetValues(theC1, theC2, theC3, static_cast<Quantity_TypeOfColor>(theType));
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_Quantity_Color_SetValues__double__double__double__Quantity_Type
 B3D_API double b3d_Quantity_Color_Red(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Red();
     return r;
@@ -112,7 +112,7 @@ B3D_API double b3d_Quantity_Color_Red(void* self, b3d_error** err)
 B3D_API double b3d_Quantity_Color_Green(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Green();
     return r;
@@ -124,7 +124,7 @@ B3D_API double b3d_Quantity_Color_Green(void* self, b3d_error** err)
 B3D_API double b3d_Quantity_Color_Blue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Blue();
     return r;
@@ -136,7 +136,7 @@ B3D_API double b3d_Quantity_Color_Blue(void* self, b3d_error** err)
 B3D_API double b3d_Quantity_Color_Hue(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Hue();
     return r;
@@ -148,7 +148,7 @@ B3D_API double b3d_Quantity_Color_Hue(void* self, b3d_error** err)
 B3D_API double b3d_Quantity_Color_Light(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Light();
     return r;
@@ -160,7 +160,7 @@ B3D_API double b3d_Quantity_Color_Light(void* self, b3d_error** err)
 B3D_API void b3d_Quantity_Color_ChangeIntensity__double(void* self, double theDelta, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->ChangeIntensity(theDelta);
     return;
@@ -171,7 +171,7 @@ B3D_API void b3d_Quantity_Color_ChangeIntensity__double(void* self, double theDe
 B3D_API double b3d_Quantity_Color_Saturation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Saturation();
     return r;
@@ -183,7 +183,7 @@ B3D_API double b3d_Quantity_Color_Saturation(void* self, b3d_error** err)
 B3D_API void b3d_Quantity_Color_ChangeContrast__double(void* self, double theDelta, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->ChangeContrast(theDelta);
     return;
@@ -194,7 +194,7 @@ B3D_API void b3d_Quantity_Color_ChangeContrast__double(void* self, double theDel
 B3D_API uint8_t b3d_Quantity_Color_IsDifferent__Quantity_Color(void* self, const Quantity_Color* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->IsDifferent(*theOther);
     return r ? 1 : 0;
@@ -206,7 +206,7 @@ B3D_API uint8_t b3d_Quantity_Color_IsDifferent__Quantity_Color(void* self, const
 B3D_API uint8_t b3d_Quantity_Color_IsEqual__Quantity_Color(void* self, const Quantity_Color* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->IsEqual(*theOther);
     return r ? 1 : 0;
@@ -218,7 +218,7 @@ B3D_API uint8_t b3d_Quantity_Color_IsEqual__Quantity_Color(void* self, const Qua
 B3D_API double b3d_Quantity_Color_Distance__Quantity_Color(void* self, const Quantity_Color* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->Distance(*theColor);
     return r;
@@ -230,7 +230,7 @@ B3D_API double b3d_Quantity_Color_Distance__Quantity_Color(void* self, const Qua
 B3D_API double b3d_Quantity_Color_SquareDistance__Quantity_Color(void* self, const Quantity_Color* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->SquareDistance(*theColor);
     return r;
@@ -242,7 +242,7 @@ B3D_API double b3d_Quantity_Color_SquareDistance__Quantity_Color(void* self, con
 B3D_API void b3d_Quantity_Color_Delta__Quantity_Color__ref_double__ref_double(void* self, const Quantity_Color* theColor, double* DC, double* DI, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Quantity_Color*>(self)->Delta(*theColor, *DC, *DI);
     return;
@@ -253,7 +253,7 @@ B3D_API void b3d_Quantity_Color_Delta__Quantity_Color__ref_double__ref_double(vo
 B3D_API double b3d_Quantity_Color_DeltaE2000__Quantity_Color(void* self, const Quantity_Color* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Quantity_Color*>(self)->DeltaE2000(*theOther);
     return r;
@@ -265,7 +265,7 @@ B3D_API double b3d_Quantity_Color_DeltaE2000__Quantity_Color(void* self, const Q
 B3D_API int32_t b3d_Quantity_Color_Name__double__double__double(double theR, double theG, double theB, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Name(theR, theG, theB);
     return static_cast<int32_t>(r);
@@ -277,7 +277,7 @@ B3D_API int32_t b3d_Quantity_Color_Name__double__double__double(double theR, dou
 B3D_API const char* b3d_Quantity_Color_StringName__Quantity_NameOfColor(int32_t theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::StringName(static_cast<Quantity_NameOfColor>(theColor));
     return r;
@@ -289,7 +289,7 @@ B3D_API const char* b3d_Quantity_Color_StringName__Quantity_NameOfColor(int32_t 
 B3D_API uint8_t b3d_Quantity_Color_ColorFromName__string__mut_Quantity_Color(const char* theColorNameString, Quantity_Color* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::ColorFromName(theColorNameString, *theColor);
     return r ? 1 : 0;
@@ -301,7 +301,7 @@ B3D_API uint8_t b3d_Quantity_Color_ColorFromName__string__mut_Quantity_Color(con
 B3D_API uint8_t b3d_Quantity_Color_ColorFromHex__string__mut_Quantity_Color(const char* theHexColorString, Quantity_Color* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::ColorFromHex(theHexColorString, *theColor);
     return r ? 1 : 0;
@@ -313,7 +313,7 @@ B3D_API uint8_t b3d_Quantity_Color_ColorFromHex__string__mut_Quantity_Color(cons
 B3D_API void b3d_Quantity_Color_Color2argb__Quantity_Color__ref_int(const Quantity_Color* theColor, int32_t* theARGB, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     Quantity_Color::Color2argb(*theColor, *theARGB);
     return;
@@ -324,7 +324,7 @@ B3D_API void b3d_Quantity_Color_Color2argb__Quantity_Color__ref_int(const Quanti
 B3D_API void b3d_Quantity_Color_Argb2color__int__mut_Quantity_Color(int32_t theARGB, Quantity_Color* theColor, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     Quantity_Color::Argb2color(theARGB, *theColor);
     return;
@@ -335,7 +335,7 @@ B3D_API void b3d_Quantity_Color_Argb2color__int__mut_Quantity_Color(int32_t theA
 B3D_API double b3d_Quantity_Color_Convert_LinearRGB_To_sRGB__double(double theLinearValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_LinearRGB_To_sRGB(theLinearValue);
     return r;
@@ -347,7 +347,7 @@ B3D_API double b3d_Quantity_Color_Convert_LinearRGB_To_sRGB__double(double theLi
 B3D_API float b3d_Quantity_Color_Convert_LinearRGB_To_sRGB__float(float theLinearValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_LinearRGB_To_sRGB(theLinearValue);
     return r;
@@ -359,7 +359,7 @@ B3D_API float b3d_Quantity_Color_Convert_LinearRGB_To_sRGB__float(float theLinea
 B3D_API double b3d_Quantity_Color_Convert_sRGB_To_LinearRGB__double(double thesRGBValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_sRGB_To_LinearRGB(thesRGBValue);
     return r;
@@ -371,7 +371,7 @@ B3D_API double b3d_Quantity_Color_Convert_sRGB_To_LinearRGB__double(double thesR
 B3D_API float b3d_Quantity_Color_Convert_sRGB_To_LinearRGB__float(float thesRGBValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_sRGB_To_LinearRGB(thesRGBValue);
     return r;
@@ -383,7 +383,7 @@ B3D_API float b3d_Quantity_Color_Convert_sRGB_To_LinearRGB__float(float thesRGBV
 B3D_API float b3d_Quantity_Color_Convert_LinearRGB_To_sRGB_approx22__float(float theLinearValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_LinearRGB_To_sRGB_approx22(theLinearValue);
     return r;
@@ -395,7 +395,7 @@ B3D_API float b3d_Quantity_Color_Convert_LinearRGB_To_sRGB_approx22__float(float
 B3D_API float b3d_Quantity_Color_Convert_sRGB_To_LinearRGB_approx22__float(float thesRGBValue, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Convert_sRGB_To_LinearRGB_approx22(thesRGBValue);
     return r;
@@ -407,7 +407,7 @@ B3D_API float b3d_Quantity_Color_Convert_sRGB_To_LinearRGB_approx22__float(float
 B3D_API void b3d_Quantity_Color_HlsRgb__double__double__double__ref_double__ref_double__ref_double(double theH, double theL, double theS, double* theR, double* theG, double* theB, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     Quantity_Color::HlsRgb(theH, theL, theS, *theR, *theG, *theB);
     return;
@@ -418,7 +418,7 @@ B3D_API void b3d_Quantity_Color_HlsRgb__double__double__double__ref_double__ref_
 B3D_API void b3d_Quantity_Color_RgbHls__double__double__double__ref_double__ref_double__ref_double(double theR, double theG, double theB, double* theH, double* theL, double* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     Quantity_Color::RgbHls(theR, theG, theB, *theH, *theL, *theS);
     return;
@@ -429,7 +429,7 @@ B3D_API void b3d_Quantity_Color_RgbHls__double__double__double__ref_double__ref_
 B3D_API double b3d_Quantity_Color_Epsilon(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Quantity_Color::Epsilon();
     return r;
@@ -441,7 +441,7 @@ B3D_API double b3d_Quantity_Color_Epsilon(b3d_error** err)
 B3D_API void b3d_Quantity_Color_SetEpsilon__double(double theEpsilon, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     Quantity_Color::SetEpsilon(theEpsilon);
     return;

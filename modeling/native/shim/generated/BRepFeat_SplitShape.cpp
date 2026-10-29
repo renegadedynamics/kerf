@@ -15,7 +15,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepFeat_SplitShape>)
   {
-    try { return new BRepFeat_SplitShape(*static_cast<const BRepFeat_SplitShape*>(p)); }
+    B3D_TRY { return new BRepFeat_SplitShape(*static_cast<const BRepFeat_SplitShape*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -28,7 +28,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_as_BRepBuilderAPI_Command(void* p) { retur
 B3D_API void* b3d_BRepFeat_SplitShape_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFeat_SplitShape();
     return r;
@@ -40,7 +40,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_new(b3d_error** err)
 B3D_API void* b3d_BRepFeat_SplitShape_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFeat_SplitShape(*S);
     return r;
@@ -52,7 +52,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_new__TopoDS_Shape(const TopoDS_Shape* S, b
 B3D_API uint8_t b3d_BRepFeat_SplitShape_Add__TopTools_SequenceOfShape(void* self, const NCollection_Sequence<TopoDS_Shape>* theEdges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->Add(*theEdges);
     return r ? 1 : 0;
@@ -64,7 +64,7 @@ B3D_API uint8_t b3d_BRepFeat_SplitShape_Add__TopTools_SequenceOfShape(void* self
 B3D_API void b3d_BRepFeat_SplitShape_Init__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Init(*S);
     return;
@@ -75,7 +75,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Init__TopoDS_Shape(void* self, const TopoDS
 B3D_API void b3d_BRepFeat_SplitShape_SetCheckInterior__bool(void* self, uint8_t ToCheckInterior, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->SetCheckInterior(ToCheckInterior != 0);
     return;
@@ -86,7 +86,7 @@ B3D_API void b3d_BRepFeat_SplitShape_SetCheckInterior__bool(void* self, uint8_t 
 B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Wire__TopoDS_Face(void* self, const TopoDS_Wire* W, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Add(*W, *F);
     return;
@@ -97,7 +97,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Wire__TopoDS_Face(void* self, c
 B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Add(*E, *F);
     return;
@@ -108,7 +108,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Edge__TopoDS_Face(void* self, c
 B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Compound__TopoDS_Face(void* self, const TopoDS_Compound* Comp, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Add(*Comp, *F);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Compound__TopoDS_Face(void* sel
 B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Edge__TopoDS_Edge(void* self, const TopoDS_Edge* E, const TopoDS_Edge* EOn, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Add(*E, *EOn);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Add__TopoDS_Edge__TopoDS_Edge(void* self, c
 B3D_API void* b3d_BRepFeat_SplitShape_DirectLeft(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->DirectLeft();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -142,7 +142,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_DirectLeft(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_SplitShape_Left(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->Left();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -154,7 +154,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_Left(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_SplitShape_Right(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->Right();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -166,7 +166,7 @@ B3D_API void* b3d_BRepFeat_SplitShape_Right(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_SplitShape_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_SplitShape*>(self)->Build();
     return;
@@ -177,7 +177,7 @@ B3D_API void b3d_BRepFeat_SplitShape_Build(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepFeat_SplitShape_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->IsDeleted(*S);
     return r ? 1 : 0;
@@ -189,7 +189,7 @@ B3D_API uint8_t b3d_BRepFeat_SplitShape_IsDeleted__TopoDS_Shape(void* self, cons
 B3D_API void* b3d_BRepFeat_SplitShape_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_SplitShape*>(self)->Modified(*F);
     return new NCollection_List<TopoDS_Shape>(r);

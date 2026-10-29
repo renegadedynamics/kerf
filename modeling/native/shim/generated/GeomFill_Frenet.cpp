@@ -14,7 +14,7 @@ B3D_API void* b3d_GeomFill_Frenet_downcast(void* t) { return b3d_retain(dynamic_
 B3D_API void* b3d_GeomFill_Frenet_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomFill_Frenet();
     return b3d_retain(r);
@@ -26,7 +26,7 @@ B3D_API void* b3d_GeomFill_Frenet_new(b3d_error** err)
 B3D_API void* b3d_GeomFill_Frenet_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->Copy();
     return b3d_retain(occ::handle<GeomFill_TrihedronLaw>(r).get());
@@ -38,7 +38,7 @@ B3D_API void* b3d_GeomFill_Frenet_Copy(void* self, b3d_error** err)
 B3D_API void b3d_GeomFill_Frenet_Init(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_Frenet*>(self)->Init();
     return;
@@ -49,7 +49,7 @@ B3D_API void b3d_GeomFill_Frenet_Init(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomFill_Frenet_SetCurve__Adaptor3d_Curve(void* self, Adaptor3d_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->SetCurve(occ::handle<Adaptor3d_Curve>(C));
     return r ? 1 : 0;
@@ -61,7 +61,7 @@ B3D_API uint8_t b3d_GeomFill_Frenet_SetCurve__Adaptor3d_Curve(void* self, Adapto
 B3D_API uint8_t b3d_GeomFill_Frenet_D0__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* Normal, gp_Vec* BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->D0(Param, *Tangent, *Normal, *BiNormal);
     return r ? 1 : 0;
@@ -73,7 +73,7 @@ B3D_API uint8_t b3d_GeomFill_Frenet_D0__double__mut_gp_Vec__mut_gp_Vec__mut_gp_V
 B3D_API uint8_t b3d_GeomFill_Frenet_D1__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* BiNormal, gp_Vec* DBiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->D1(Param, *Tangent, *DTangent, *Normal, *DNormal, *BiNormal, *DBiNormal);
     return r ? 1 : 0;
@@ -85,7 +85,7 @@ B3D_API uint8_t b3d_GeomFill_Frenet_D1__double__mut_gp_Vec__mut_gp_Vec__mut_gp_V
 B3D_API uint8_t b3d_GeomFill_Frenet_D2__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* D2Tangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* D2Normal, gp_Vec* BiNormal, gp_Vec* DBiNormal, gp_Vec* D2BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->D2(Param, *Tangent, *DTangent, *D2Tangent, *Normal, *DNormal, *D2Normal, *BiNormal, *DBiNormal, *D2BiNormal);
     return r ? 1 : 0;
@@ -97,7 +97,7 @@ B3D_API uint8_t b3d_GeomFill_Frenet_D2__double__mut_gp_Vec__mut_gp_Vec__mut_gp_V
 B3D_API int32_t b3d_GeomFill_Frenet_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -109,7 +109,7 @@ B3D_API int32_t b3d_GeomFill_Frenet_NbIntervals__GeomAbs_Shape(void* self, int32
 B3D_API void b3d_GeomFill_Frenet_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_Frenet*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_GeomFill_Frenet_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Sh
 B3D_API void b3d_GeomFill_Frenet_GetAverageLaw__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, gp_Vec* ATangent, gp_Vec* ANormal, gp_Vec* ABiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_Frenet*>(self)->GetAverageLaw(*ATangent, *ANormal, *ABiNormal);
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_GeomFill_Frenet_GetAverageLaw__mut_gp_Vec__mut_gp_Vec__mut_gp_V
 B3D_API uint8_t b3d_GeomFill_Frenet_IsConstant(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->IsConstant();
     return r ? 1 : 0;
@@ -143,7 +143,7 @@ B3D_API uint8_t b3d_GeomFill_Frenet_IsConstant(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomFill_Frenet_IsOnlyBy3dCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_Frenet*>(self)->IsOnlyBy3dCurve();
     return r ? 1 : 0;

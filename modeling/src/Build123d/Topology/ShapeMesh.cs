@@ -64,13 +64,24 @@ public sealed class ShapeMesh
     {
         if (shape.IsEmpty)
             return Empty;
-        var meshed = shape.Rewrapped(shape.MeshedCopy(tolerances.Linear, tolerances.Angular, tolerances.Relative));
+        using var doing = OcctContext.Doing("triangulate");
+        var copy = shape.MeshedCopy(tolerances.Linear, tolerances.Angular, tolerances.Relative);
         // The copy has the shape's structure, so its faces, edges and vertices come in the same order
-        var faces = meshed.Faces();
-        var edges = meshed.Edges();
-        var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
-        var buffers = Extras.ExtractMesh(meshed.TopoShape, [.. faces.Select(f => f.TopoShape)], [.. edges.Select(e => e.TopoShape)],
-                                         deflection, tolerances.Angular);
+        var meshed = shape.Placed(copy);
+        var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
+        var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
+        MeshBuffers buffers;
+        try
+        {
+            var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
+            buffers = Extras.ExtractMesh(copy, faces, edges, deflection, tolerances.Angular);
+        }
+        finally
+        {
+            // The copy's triangulation is all native memory, and nothing else holds it: freed now, not at finalisation
+            foreach (var handle in faces.Concat(edges).Append(copy))
+                handle.Dispose();
+        }
 
         var faceMeshes = new FaceMesh[faces.Count];
         for (int i = 0; i < faceMeshes.Length; i++)

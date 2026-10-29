@@ -8,7 +8,7 @@ B3D_API void* b3d_TopoDS_Solid_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Solid>)
   {
-    try { return new TopoDS_Solid(*static_cast<const TopoDS_Solid*>(p)); }
+    B3D_TRY { return new TopoDS_Solid(*static_cast<const TopoDS_Solid*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopoDS_Solid_as_TopoDS_Shape(void* p) { return static_cast<Top
 B3D_API void* b3d_TopoDS_Solid_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Solid();
     return r;

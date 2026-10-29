@@ -10,7 +10,7 @@ B3D_API void* b3d_ShapeFix_Root_downcast(void* t) { return b3d_retain(dynamic_ca
 B3D_API void* b3d_ShapeFix_Root_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Root();
     return b3d_retain(r);
@@ -22,7 +22,7 @@ B3D_API void* b3d_ShapeFix_Root_new(b3d_error** err)
 B3D_API void b3d_ShapeFix_Root_Set__ShapeFix_Root(void* self, ShapeFix_Root* Root, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Root*>(self)->Set(occ::handle<ShapeFix_Root>(Root));
     return;
@@ -33,7 +33,7 @@ B3D_API void b3d_ShapeFix_Root_Set__ShapeFix_Root(void* self, ShapeFix_Root* Roo
 B3D_API void b3d_ShapeFix_Root_SetPrecision__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Root*>(self)->SetPrecision(preci);
     return;
@@ -44,7 +44,7 @@ B3D_API void b3d_ShapeFix_Root_SetPrecision__double(void* self, double preci, b3
 B3D_API double b3d_ShapeFix_Root_Precision(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Root*>(self)->Precision();
     return r;
@@ -56,7 +56,7 @@ B3D_API double b3d_ShapeFix_Root_Precision(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Root_SetMinTolerance__double(void* self, double mintol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Root*>(self)->SetMinTolerance(mintol);
     return;
@@ -67,7 +67,7 @@ B3D_API void b3d_ShapeFix_Root_SetMinTolerance__double(void* self, double mintol
 B3D_API double b3d_ShapeFix_Root_MinTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Root*>(self)->MinTolerance();
     return r;
@@ -79,7 +79,7 @@ B3D_API double b3d_ShapeFix_Root_MinTolerance(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Root_SetMaxTolerance__double(void* self, double maxtol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Root*>(self)->SetMaxTolerance(maxtol);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_ShapeFix_Root_SetMaxTolerance__double(void* self, double maxtol
 B3D_API double b3d_ShapeFix_Root_MaxTolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Root*>(self)->MaxTolerance();
     return r;
@@ -102,7 +102,7 @@ B3D_API double b3d_ShapeFix_Root_MaxTolerance(void* self, b3d_error** err)
 B3D_API double b3d_ShapeFix_Root_LimitTolerance__double(void* self, double toler, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Root*>(self)->LimitTolerance(toler);
     return r;
@@ -114,7 +114,7 @@ B3D_API double b3d_ShapeFix_Root_LimitTolerance__double(void* self, double toler
 B3D_API uint8_t b3d_ShapeFix_Root_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeFix_Root*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -126,7 +126,7 @@ B3D_API uint8_t b3d_ShapeFix_Root_IsInstance__string(void* self, const char* the
 B3D_API uint8_t b3d_ShapeFix_Root_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeFix_Root*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -138,7 +138,7 @@ B3D_API uint8_t b3d_ShapeFix_Root_IsKind__string(void* self, const char* theType
 B3D_API int32_t b3d_ShapeFix_Root_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeFix_Root*>(self))->GetRefCount();
     return r;
@@ -150,7 +150,7 @@ B3D_API int32_t b3d_ShapeFix_Root_GetRefCount(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Root_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<ShapeFix_Root*>(self))->IncrementRefCounter();
     return;
@@ -161,7 +161,7 @@ B3D_API void b3d_ShapeFix_Root_IncrementRefCounter(void* self, b3d_error** err)
 B3D_API int32_t b3d_ShapeFix_Root_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<ShapeFix_Root*>(self))->DecrementRefCounter();
     return r;

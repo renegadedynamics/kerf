@@ -1,5 +1,6 @@
 #include "b3d_shim.h"
 
+#include <OSD.hxx>
 #include <Standard_Version.hxx>
 
 #include <new>
@@ -44,4 +45,32 @@ B3D_API void b3d_error_free(b3d_error* e)
 B3D_API const char* b3d_occt_version()
 {
   return OCC_VERSION_COMPLETE;
+}
+
+void b3d_install_thread_signals() noexcept
+{
+  try
+  {
+    // On Windows, a translator that turns a fault on this thread (an access violation, say) into a typed
+    // Standard_Failure: OCCT's algorithms catch those and recover, and the shim reports the rest as errors.
+    // Floating-point traps stay off, as .NET expects. On Linux and macOS OCCT's handlers are process-wide
+    // signal handlers, which would take over the runtime's own, so nothing is installed there.
+    OSD::SetThreadLocalSignal(OSD_SignalMode_Set, false);
+  }
+  catch (...)
+  {
+    // Without the translator, faults are still caught (the shim is built with /EHa), only untyped
+  }
+}
+
+//! Reads an int at `address`: a deliberate fault, for testing that faults come back as errors.
+B3D_API int32_t b3d_selftest_read(const volatile int32_t* address, b3d_error** err)
+{
+  *err = nullptr;
+  B3D_TRY
+  {
+    return *address;
+  }
+  B3D_CATCH(err)
+  return 0;
 }

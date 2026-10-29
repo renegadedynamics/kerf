@@ -13,7 +13,7 @@ B3D_API void* b3d_gp_Trsf2d_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Trsf2d>)
   {
-    try { return new gp_Trsf2d(*static_cast<const gp_Trsf2d*>(p)); }
+    B3D_TRY { return new gp_Trsf2d(*static_cast<const gp_Trsf2d*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_gp_Trsf2d_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Trsf2d();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_gp_Trsf2d_new(b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_new__gp_Trsf(const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Trsf2d(*theT);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_gp_Trsf2d_new__gp_Trsf(const gp_Trsf* theT, b3d_error** err)
 B3D_API void b3d_gp_Trsf2d_SetMirror__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetMirror(*theP);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_gp_Trsf2d_SetMirror__gp_Pnt2d(void* self, const gp_Pnt2d* theP,
 B3D_API void b3d_gp_Trsf2d_SetMirror__gp_Ax2d(void* self, const gp_Ax2d* theA, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetMirror(*theA);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_gp_Trsf2d_SetMirror__gp_Ax2d(void* self, const gp_Ax2d* theA, b
 B3D_API void b3d_gp_Trsf2d_SetRotation__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetRotation(*theP, theAng);
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_gp_Trsf2d_SetRotation__gp_Pnt2d__double(void* self, const gp_Pn
 B3D_API void b3d_gp_Trsf2d_SetScale__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetScale(*theP, theS);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_gp_Trsf2d_SetScale__gp_Pnt2d__double(void* self, const gp_Pnt2d
 B3D_API void b3d_gp_Trsf2d_SetTransformation__gp_Ax2d__gp_Ax2d(void* self, const gp_Ax2d* theFromSystem1, const gp_Ax2d* theToSystem2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetTransformation(*theFromSystem1, *theToSystem2);
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_gp_Trsf2d_SetTransformation__gp_Ax2d__gp_Ax2d(void* self, const
 B3D_API void b3d_gp_Trsf2d_SetTransformation__gp_Ax2d(void* self, const gp_Ax2d* theToSystem, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetTransformation(*theToSystem);
     return;
@@ -114,7 +114,7 @@ B3D_API void b3d_gp_Trsf2d_SetTransformation__gp_Ax2d(void* self, const gp_Ax2d*
 B3D_API void b3d_gp_Trsf2d_SetTranslation__gp_Vec2d(void* self, const gp_Vec2d* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetTranslation(*theV);
     return;
@@ -125,7 +125,7 @@ B3D_API void b3d_gp_Trsf2d_SetTranslation__gp_Vec2d(void* self, const gp_Vec2d* 
 B3D_API void b3d_gp_Trsf2d_SetTranslation__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* theP1, const gp_Pnt2d* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetTranslation(*theP1, *theP2);
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_gp_Trsf2d_SetTranslation__gp_Pnt2d__gp_Pnt2d(void* self, const 
 B3D_API void b3d_gp_Trsf2d_SetTranslationPart__gp_Vec2d(void* self, const gp_Vec2d* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetTranslationPart(*theV);
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_gp_Trsf2d_SetTranslationPart__gp_Vec2d(void* self, const gp_Vec
 B3D_API void b3d_gp_Trsf2d_SetScaleFactor__double(void* self, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetScaleFactor(theS);
     return;
@@ -158,7 +158,7 @@ B3D_API void b3d_gp_Trsf2d_SetScaleFactor__double(void* self, double theS, b3d_e
 B3D_API uint8_t b3d_gp_Trsf2d_IsNegative(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->IsNegative();
     return r ? 1 : 0;
@@ -170,7 +170,7 @@ B3D_API uint8_t b3d_gp_Trsf2d_IsNegative(void* self, b3d_error** err)
 B3D_API int32_t b3d_gp_Trsf2d_Form(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->Form();
     return static_cast<int32_t>(r);
@@ -182,7 +182,7 @@ B3D_API int32_t b3d_gp_Trsf2d_Form(void* self, b3d_error** err)
 B3D_API double b3d_gp_Trsf2d_ScaleFactor(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->ScaleFactor();
     return r;
@@ -194,7 +194,7 @@ B3D_API double b3d_gp_Trsf2d_ScaleFactor(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_TranslationPart(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->TranslationPart();
     return new gp_XY(r);
@@ -206,7 +206,7 @@ B3D_API void* b3d_gp_Trsf2d_TranslationPart(void* self, b3d_error** err)
 B3D_API double b3d_gp_Trsf2d_RotationPart(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->RotationPart();
     return r;
@@ -218,7 +218,7 @@ B3D_API double b3d_gp_Trsf2d_RotationPart(void* self, b3d_error** err)
 B3D_API double b3d_gp_Trsf2d_Value__int__int(void* self, int32_t theRow, int32_t theCol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->Value(theRow, theCol);
     return r;
@@ -230,7 +230,7 @@ B3D_API double b3d_gp_Trsf2d_Value__int__int(void* self, int32_t theRow, int32_t
 B3D_API void b3d_gp_Trsf2d_Invert(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->Invert();
     return;
@@ -241,7 +241,7 @@ B3D_API void b3d_gp_Trsf2d_Invert(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_Inverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->Inverted();
     return new gp_Trsf2d(r);
@@ -253,7 +253,7 @@ B3D_API void* b3d_gp_Trsf2d_Inverted(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_Multiplied__gp_Trsf2d(void* self, const gp_Trsf2d* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->Multiplied(*theT);
     return new gp_Trsf2d(r);
@@ -265,7 +265,7 @@ B3D_API void* b3d_gp_Trsf2d_Multiplied__gp_Trsf2d(void* self, const gp_Trsf2d* t
 B3D_API void b3d_gp_Trsf2d_Multiply__gp_Trsf2d(void* self, const gp_Trsf2d* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->Multiply(*theT);
     return;
@@ -276,7 +276,7 @@ B3D_API void b3d_gp_Trsf2d_Multiply__gp_Trsf2d(void* self, const gp_Trsf2d* theT
 B3D_API void b3d_gp_Trsf2d_PreMultiply__gp_Trsf2d(void* self, const gp_Trsf2d* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->PreMultiply(*theT);
     return;
@@ -287,7 +287,7 @@ B3D_API void b3d_gp_Trsf2d_PreMultiply__gp_Trsf2d(void* self, const gp_Trsf2d* t
 B3D_API void b3d_gp_Trsf2d_Power__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->Power(theN);
     return;
@@ -298,7 +298,7 @@ B3D_API void b3d_gp_Trsf2d_Power__int(void* self, int32_t theN, b3d_error** err)
 B3D_API void* b3d_gp_Trsf2d_Powered__int(void* self, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Trsf2d*>(self)->Powered(theN);
     return new gp_Trsf2d(r);
@@ -310,7 +310,7 @@ B3D_API void* b3d_gp_Trsf2d_Powered__int(void* self, int32_t theN, b3d_error** e
 B3D_API void b3d_gp_Trsf2d_Transforms__ref_double__ref_double(void* self, double* theX, double* theY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->Transforms(*theX, *theY);
     return;
@@ -321,7 +321,7 @@ B3D_API void b3d_gp_Trsf2d_Transforms__ref_double__ref_double(void* self, double
 B3D_API void b3d_gp_Trsf2d_Transforms__mut_gp_XY(void* self, gp_XY* theCoord, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->Transforms(*theCoord);
     return;
@@ -332,7 +332,7 @@ B3D_API void b3d_gp_Trsf2d_Transforms__mut_gp_XY(void* self, gp_XY* theCoord, b3
 B3D_API void b3d_gp_Trsf2d_SetValues__double__double__double__double__double__double(void* self, double a11, double a12, double a13, double a21, double a22, double a23, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Trsf2d*>(self)->SetValues(a11, a12, a13, a21, a22, a23);
     return;

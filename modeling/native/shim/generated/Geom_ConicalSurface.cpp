@@ -20,7 +20,7 @@ B3D_API void* b3d_Geom_ConicalSurface_downcast(void* t) { return b3d_retain(dyna
 B3D_API void* b3d_Geom_ConicalSurface_new__gp_Ax3__double__double(const gp_Ax3* A3, double Ang, double Radius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_ConicalSurface(*A3, Ang, Radius);
     return b3d_retain(r);
@@ -32,7 +32,7 @@ B3D_API void* b3d_Geom_ConicalSurface_new__gp_Ax3__double__double(const gp_Ax3* 
 B3D_API void* b3d_Geom_ConicalSurface_new__gp_Cone(const gp_Cone* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_ConicalSurface(*C);
     return b3d_retain(r);
@@ -44,7 +44,7 @@ B3D_API void* b3d_Geom_ConicalSurface_new__gp_Cone(const gp_Cone* C, b3d_error**
 B3D_API void b3d_Geom_ConicalSurface_SetCone__gp_Cone(void* self, const gp_Cone* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->SetCone(*C);
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_Geom_ConicalSurface_SetCone__gp_Cone(void* self, const gp_Cone*
 B3D_API void b3d_Geom_ConicalSurface_SetRadius__double(void* self, double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->SetRadius(R);
     return;
@@ -66,7 +66,7 @@ B3D_API void b3d_Geom_ConicalSurface_SetRadius__double(void* self, double R, b3d
 B3D_API void b3d_Geom_ConicalSurface_SetSemiAngle__double(void* self, double Ang, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->SetSemiAngle(Ang);
     return;
@@ -77,7 +77,7 @@ B3D_API void b3d_Geom_ConicalSurface_SetSemiAngle__double(void* self, double Ang
 B3D_API void* b3d_Geom_ConicalSurface_Cone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->Cone();
     return new gp_Cone(r);
@@ -89,7 +89,7 @@ B3D_API void* b3d_Geom_ConicalSurface_Cone(void* self, b3d_error** err)
 B3D_API double b3d_Geom_ConicalSurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->UReversedParameter(U);
     return r;
@@ -101,7 +101,7 @@ B3D_API double b3d_Geom_ConicalSurface_UReversedParameter__double(void* self, do
 B3D_API double b3d_Geom_ConicalSurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->VReversedParameter(V);
     return r;
@@ -113,7 +113,7 @@ B3D_API double b3d_Geom_ConicalSurface_VReversedParameter__double(void* self, do
 B3D_API void b3d_Geom_ConicalSurface_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->VReverse();
     return;
@@ -124,7 +124,7 @@ B3D_API void b3d_Geom_ConicalSurface_VReverse(void* self, b3d_error** err)
 B3D_API void b3d_Geom_ConicalSurface_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -135,7 +135,7 @@ B3D_API void b3d_Geom_ConicalSurface_TransformParameters__ref_double__ref_double
 B3D_API void* b3d_Geom_ConicalSurface_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -147,7 +147,7 @@ B3D_API void* b3d_Geom_ConicalSurface_ParametricTransformation__gp_Trsf(void* se
 B3D_API void* b3d_Geom_ConicalSurface_Apex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->Apex();
     return new gp_Pnt(r);
@@ -159,7 +159,7 @@ B3D_API void* b3d_Geom_ConicalSurface_Apex(void* self, b3d_error** err)
 B3D_API void b3d_Geom_ConicalSurface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -170,7 +170,7 @@ B3D_API void b3d_Geom_ConicalSurface_Bounds__ref_double__ref_double__ref_double_
 B3D_API void b3d_Geom_ConicalSurface_Coefficients__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double(void* self, double* A1, double* A2, double* A3, double* B1, double* B2, double* B3, double* C1, double* C2, double* C3, double* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->Coefficients(*A1, *A2, *A3, *B1, *B2, *B3, *C1, *C2, *C3, *D);
     return;
@@ -181,7 +181,7 @@ B3D_API void b3d_Geom_ConicalSurface_Coefficients__ref_double__ref_double__ref_d
 B3D_API double b3d_Geom_ConicalSurface_RefRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->RefRadius();
     return r;
@@ -193,7 +193,7 @@ B3D_API double b3d_Geom_ConicalSurface_RefRadius(void* self, b3d_error** err)
 B3D_API double b3d_Geom_ConicalSurface_SemiAngle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->SemiAngle();
     return r;
@@ -205,7 +205,7 @@ B3D_API double b3d_Geom_ConicalSurface_SemiAngle(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_ConicalSurface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -217,7 +217,7 @@ B3D_API uint8_t b3d_Geom_ConicalSurface_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_ConicalSurface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -229,7 +229,7 @@ B3D_API uint8_t b3d_Geom_ConicalSurface_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_ConicalSurface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -241,7 +241,7 @@ B3D_API uint8_t b3d_Geom_ConicalSurface_IsUPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_ConicalSurface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -253,7 +253,7 @@ B3D_API uint8_t b3d_Geom_ConicalSurface_IsVPeriodic(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_ConicalSurface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -265,7 +265,7 @@ B3D_API void* b3d_Geom_ConicalSurface_UIso__double(void* self, double U, b3d_err
 B3D_API void* b3d_Geom_ConicalSurface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -277,7 +277,7 @@ B3D_API void* b3d_Geom_ConicalSurface_VIso__double(void* self, double V, b3d_err
 B3D_API void* b3d_Geom_ConicalSurface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -289,7 +289,7 @@ B3D_API void* b3d_Geom_ConicalSurface_EvalD0__double__double(void* self, double 
 B3D_API void* b3d_Geom_ConicalSurface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -301,7 +301,7 @@ B3D_API void* b3d_Geom_ConicalSurface_EvalDN__double__double__int__int(void* sel
 B3D_API void b3d_Geom_ConicalSurface_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_ConicalSurface*>(self)->Transform(*T);
     return;
@@ -312,7 +312,7 @@ B3D_API void b3d_Geom_ConicalSurface_Transform__gp_Trsf(void* self, const gp_Trs
 B3D_API void* b3d_Geom_ConicalSurface_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_ConicalSurface*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakePrism>)
   {
-    try { return new BRepPrimAPI_MakePrism(*static_cast<const BRepPrimAPI_MakePrism*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakePrism(*static_cast<const BRepPrimAPI_MakePrism*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_as_BRepBuilderAPI_Command(void* p) { ret
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec(const TopoDS_Shape* S, const gp_Vec* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *V);
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec(const TopoDS_S
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec__bool(const TopoDS_Shape* S, const gp_Vec* V, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *V, Copy != 0);
     return r;
@@ -50,7 +50,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec__bool(const To
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec__bool__bool(const TopoDS_Shape* S, const gp_Vec* V, uint8_t Copy, uint8_t Canonize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *V, Copy != 0, Canonize != 0);
     return r;
@@ -62,7 +62,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Vec__bool__bool(co
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir(const TopoDS_Shape* S, const gp_Dir* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *D);
     return r;
@@ -74,7 +74,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir(const TopoDS_S
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool(const TopoDS_Shape* S, const gp_Dir* D, uint8_t Inf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *D, Inf != 0);
     return r;
@@ -86,7 +86,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool(const To
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool__bool(const TopoDS_Shape* S, const gp_Dir* D, uint8_t Inf, uint8_t Copy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *D, Inf != 0, Copy != 0);
     return r;
@@ -98,7 +98,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool__bool(co
 B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool__bool__bool(const TopoDS_Shape* S, const gp_Dir* D, uint8_t Inf, uint8_t Copy, uint8_t Canonize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakePrism(*S, *D, Inf != 0, Copy != 0, Canonize != 0);
     return r;
@@ -110,7 +110,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_new__TopoDS_Shape__gp_Dir__bool__bool__b
 B3D_API void b3d_BRepPrimAPI_MakePrism_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakePrism*>(self)->Build();
     return;
@@ -121,7 +121,7 @@ B3D_API void b3d_BRepPrimAPI_MakePrism_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakePrism_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->FirstShape();
     return new TopoDS_Shape(r);
@@ -133,7 +133,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_FirstShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakePrism_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->LastShape();
     return new TopoDS_Shape(r);
@@ -145,7 +145,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_LastShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakePrism_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -157,7 +157,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_Generated__TopoDS_Shape(void* self, cons
 B3D_API uint8_t b3d_BRepPrimAPI_MakePrism_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->IsDeleted(*S);
     return r ? 1 : 0;
@@ -169,7 +169,7 @@ B3D_API uint8_t b3d_BRepPrimAPI_MakePrism_IsDeleted__TopoDS_Shape(void* self, co
 B3D_API void* b3d_BRepPrimAPI_MakePrism_FirstShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->FirstShape(*theShape);
     return new TopoDS_Shape(r);
@@ -181,7 +181,7 @@ B3D_API void* b3d_BRepPrimAPI_MakePrism_FirstShape__TopoDS_Shape(void* self, con
 B3D_API void* b3d_BRepPrimAPI_MakePrism_LastShape__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakePrism*>(self)->LastShape(*theShape);
     return new TopoDS_Shape(r);

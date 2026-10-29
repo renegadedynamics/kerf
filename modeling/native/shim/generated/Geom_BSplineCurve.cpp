@@ -17,7 +17,7 @@ B3D_API void* b3d_Geom_BSplineCurve_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal__TColStd_Array1OfInteger__int(const NCollection_Array1<gp_Pnt>* Poles, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Multiplicities, int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineCurve(*Poles, *Knots, *Multiplicities, Degree);
     return b3d_retain(r);
@@ -29,7 +29,7 @@ B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfRea
 B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal__TColStd_Array1OfInteger__int__bool(const NCollection_Array1<gp_Pnt>* Poles, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Multiplicities, int32_t Degree, uint8_t Periodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineCurve(*Poles, *Knots, *Multiplicities, Degree, Periodic != 0);
     return b3d_retain(r);
@@ -41,7 +41,7 @@ B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfRea
 B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__int(const NCollection_Array1<gp_Pnt>* Poles, const NCollection_Array1<double>* Weights, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Multiplicities, int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineCurve(*Poles, *Weights, *Knots, *Multiplicities, Degree);
     return b3d_retain(r);
@@ -53,7 +53,7 @@ B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfRea
 B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__int__bool(const NCollection_Array1<gp_Pnt>* Poles, const NCollection_Array1<double>* Weights, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Multiplicities, int32_t Degree, uint8_t Periodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineCurve(*Poles, *Weights, *Knots, *Multiplicities, Degree, Periodic != 0);
     return b3d_retain(r);
@@ -65,7 +65,7 @@ B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfRea
 B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfReal__TColStd_Array1OfReal__TColStd_Array1OfInteger__int__bool__bool(const NCollection_Array1<gp_Pnt>* Poles, const NCollection_Array1<double>* Weights, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Multiplicities, int32_t Degree, uint8_t Periodic, uint8_t CheckRational, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_BSplineCurve(*Poles, *Weights, *Knots, *Multiplicities, Degree, Periodic != 0, CheckRational != 0);
     return b3d_retain(r);
@@ -77,7 +77,7 @@ B3D_API void* b3d_Geom_BSplineCurve_new__TColgp_Array1OfPnt__TColStd_Array1OfRea
 B3D_API uint8_t b3d_Geom_BSplineCurve_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -89,7 +89,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_HasEvalRepresentation(void* self, b3d_erro
 B3D_API void b3d_Geom_BSplineCurve_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->ClearEvalRepresentation();
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_Geom_BSplineCurve_ClearEvalRepresentation(void* self, b3d_error
 B3D_API void b3d_Geom_BSplineCurve_IncreaseDegree__int(void* self, int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->IncreaseDegree(Degree);
     return;
@@ -111,7 +111,7 @@ B3D_API void b3d_Geom_BSplineCurve_IncreaseDegree__int(void* self, int32_t Degre
 B3D_API void b3d_Geom_BSplineCurve_IncreaseMultiplicity__int__int(void* self, int32_t Index, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->IncreaseMultiplicity(Index, M);
     return;
@@ -122,7 +122,7 @@ B3D_API void b3d_Geom_BSplineCurve_IncreaseMultiplicity__int__int(void* self, in
 B3D_API void b3d_Geom_BSplineCurve_IncreaseMultiplicity__int__int__int(void* self, int32_t I1, int32_t I2, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->IncreaseMultiplicity(I1, I2, M);
     return;
@@ -133,7 +133,7 @@ B3D_API void b3d_Geom_BSplineCurve_IncreaseMultiplicity__int__int__int(void* sel
 B3D_API void b3d_Geom_BSplineCurve_IncrementMultiplicity__int__int__int(void* self, int32_t I1, int32_t I2, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->IncrementMultiplicity(I1, I2, M);
     return;
@@ -144,7 +144,7 @@ B3D_API void b3d_Geom_BSplineCurve_IncrementMultiplicity__int__int__int(void* se
 B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnot(U);
     return;
@@ -155,7 +155,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double(void* self, double U, b3d_
 B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int(void* self, double U, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnot(U, M);
     return;
@@ -166,7 +166,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int(void* self, double U,
 B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int__double(void* self, double U, int32_t M, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnot(U, M, ParametricTolerance);
     return;
@@ -177,7 +177,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int__double(void* self, d
 B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int__double__bool(void* self, double U, int32_t M, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnot(U, M, ParametricTolerance, Add != 0);
     return;
@@ -188,7 +188,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnot__double__int__double__bool(void* s
 B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnots(*Knots, *Mults);
     return;
@@ -199,7 +199,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Ar
 B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnots(*Knots, *Mults, ParametricTolerance);
     return;
@@ -210,7 +210,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Ar
 B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Array1OfInteger__double__bool(void* self, const NCollection_Array1<double>* Knots, const NCollection_Array1<int>* Mults, double ParametricTolerance, uint8_t Add, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->InsertKnots(*Knots, *Mults, ParametricTolerance, Add != 0);
     return;
@@ -221,7 +221,7 @@ B3D_API void b3d_Geom_BSplineCurve_InsertKnots__TColStd_Array1OfReal__TColStd_Ar
 B3D_API uint8_t b3d_Geom_BSplineCurve_RemoveKnot__int__int__double(void* self, int32_t Index, int32_t M, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->RemoveKnot(Index, M, Tolerance);
     return r ? 1 : 0;
@@ -233,7 +233,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_RemoveKnot__int__int__double(void* self, i
 B3D_API void b3d_Geom_BSplineCurve_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->Reverse();
     return;
@@ -244,7 +244,7 @@ B3D_API void b3d_Geom_BSplineCurve_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineCurve_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->ReversedParameter(U);
     return r;
@@ -256,7 +256,7 @@ B3D_API double b3d_Geom_BSplineCurve_ReversedParameter__double(void* self, doubl
 B3D_API void b3d_Geom_BSplineCurve_Segment__double__double(void* self, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->Segment(U1, U2);
     return;
@@ -267,7 +267,7 @@ B3D_API void b3d_Geom_BSplineCurve_Segment__double__double(void* self, double U1
 B3D_API void b3d_Geom_BSplineCurve_Segment__double__double__double(void* self, double U1, double U2, double theTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->Segment(U1, U2, theTolerance);
     return;
@@ -278,7 +278,7 @@ B3D_API void b3d_Geom_BSplineCurve_Segment__double__double__double(void* self, d
 B3D_API void b3d_Geom_BSplineCurve_SetKnot__int__double(void* self, int32_t Index, double K, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetKnot(Index, K);
     return;
@@ -289,7 +289,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetKnot__int__double(void* self, int32_t Inde
 B3D_API void b3d_Geom_BSplineCurve_SetKnots__TColStd_Array1OfReal(void* self, const NCollection_Array1<double>* K, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetKnots(*K);
     return;
@@ -300,7 +300,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetKnots__TColStd_Array1OfReal(void* self, co
 B3D_API void b3d_Geom_BSplineCurve_SetKnot__int__double__int(void* self, int32_t Index, double K, int32_t M, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetKnot(Index, K, M);
     return;
@@ -311,7 +311,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetKnot__int__double__int(void* self, int32_t
 B3D_API void b3d_Geom_BSplineCurve_PeriodicNormalization__ref_double(void* self, double* U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->PeriodicNormalization(*U);
     return;
@@ -322,7 +322,7 @@ B3D_API void b3d_Geom_BSplineCurve_PeriodicNormalization__ref_double(void* self,
 B3D_API void b3d_Geom_BSplineCurve_SetPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetPeriodic();
     return;
@@ -333,7 +333,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetPeriodic(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineCurve_SetOrigin__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetOrigin(Index);
     return;
@@ -344,7 +344,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetOrigin__int(void* self, int32_t Index, b3d
 B3D_API void b3d_Geom_BSplineCurve_SetOrigin__double__double(void* self, double U, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetOrigin(U, Tol);
     return;
@@ -355,7 +355,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetOrigin__double__double(void* self, double 
 B3D_API void b3d_Geom_BSplineCurve_SetNotPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetNotPeriodic();
     return;
@@ -366,7 +366,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetNotPeriodic(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineCurve_SetPole__int__gp_Pnt(void* self, int32_t Index, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetPole(Index, *P);
     return;
@@ -377,7 +377,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetPole__int__gp_Pnt(void* self, int32_t Inde
 B3D_API void b3d_Geom_BSplineCurve_SetPole__int__gp_Pnt__double(void* self, int32_t Index, const gp_Pnt* P, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetPole(Index, *P, Weight);
     return;
@@ -388,7 +388,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetPole__int__gp_Pnt__double(void* self, int3
 B3D_API void b3d_Geom_BSplineCurve_SetWeight__int__double(void* self, int32_t Index, double Weight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->SetWeight(Index, Weight);
     return;
@@ -399,7 +399,7 @@ B3D_API void b3d_Geom_BSplineCurve_SetWeight__int__double(void* self, int32_t In
 B3D_API void b3d_Geom_BSplineCurve_MovePoint__double__gp_Pnt__int__int__ref_int__ref_int(void* self, double U, const gp_Pnt* P, int32_t Index1, int32_t Index2, int32_t* FirstModifiedPole, int32_t* LastModifiedPole, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->MovePoint(U, *P, Index1, Index2, *FirstModifiedPole, *LastModifiedPole);
     return;
@@ -410,7 +410,7 @@ B3D_API void b3d_Geom_BSplineCurve_MovePoint__double__gp_Pnt__int__int__ref_int_
 B3D_API void b3d_Geom_BSplineCurve_MovePointAndTangent__double__gp_Pnt__gp_Vec__double__int__int__ref_int(void* self, double U, const gp_Pnt* P, const gp_Vec* Tangent, double Tolerance, int32_t StartingCondition, int32_t EndingCondition, int32_t* ErrorStatus, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->MovePointAndTangent(U, *P, *Tangent, Tolerance, StartingCondition, EndingCondition, *ErrorStatus);
     return;
@@ -421,7 +421,7 @@ B3D_API void b3d_Geom_BSplineCurve_MovePointAndTangent__double__gp_Pnt__gp_Vec__
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -433,7 +433,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_IsCN__int(void* self, int32_t N, b3d_error
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsG1__double__double__double(void* self, double theTf, double theTl, double theAngTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsG1(theTf, theTl, theAngTol);
     return r ? 1 : 0;
@@ -445,7 +445,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_IsG1__double__double__double(void* self, d
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -457,7 +457,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -469,7 +469,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_IsPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsRational();
     return r ? 1 : 0;
@@ -481,7 +481,7 @@ B3D_API uint8_t b3d_Geom_BSplineCurve_IsRational(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -493,7 +493,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_Continuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_Degree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Degree();
     return r;
@@ -505,7 +505,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_Degree(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineCurve_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->EvalD0(U);
     return new gp_Pnt(r);
@@ -517,7 +517,7 @@ B3D_API void* b3d_Geom_BSplineCurve_EvalD0__double(void* self, double U, b3d_err
 B3D_API void* b3d_Geom_BSplineCurve_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->EvalDN(U, N);
     return new gp_Vec(r);
@@ -529,7 +529,7 @@ B3D_API void* b3d_Geom_BSplineCurve_EvalDN__double__int(void* self, double U, in
 B3D_API void* b3d_Geom_BSplineCurve_LocalValue__double__int__int(void* self, double U, int32_t FromK1, int32_t ToK2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->LocalValue(U, FromK1, ToK2);
     return new gp_Pnt(r);
@@ -541,7 +541,7 @@ B3D_API void* b3d_Geom_BSplineCurve_LocalValue__double__int__int(void* self, dou
 B3D_API void b3d_Geom_BSplineCurve_LocalD0__double__int__int__mut_gp_Pnt(void* self, double U, int32_t FromK1, int32_t ToK2, gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocalD0(U, FromK1, ToK2, *P);
     return;
@@ -552,7 +552,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocalD0__double__int__int__mut_gp_Pnt(void* s
 B3D_API void b3d_Geom_BSplineCurve_LocalD1__double__int__int__mut_gp_Pnt__mut_gp_Vec(void* self, double U, int32_t FromK1, int32_t ToK2, gp_Pnt* P, gp_Vec* V1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocalD1(U, FromK1, ToK2, *P, *V1);
     return;
@@ -563,7 +563,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocalD1__double__int__int__mut_gp_Pnt__mut_gp
 B3D_API void b3d_Geom_BSplineCurve_LocalD2__double__int__int__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec(void* self, double U, int32_t FromK1, int32_t ToK2, gp_Pnt* P, gp_Vec* V1, gp_Vec* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocalD2(U, FromK1, ToK2, *P, *V1, *V2);
     return;
@@ -574,7 +574,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocalD2__double__int__int__mut_gp_Pnt__mut_gp
 B3D_API void b3d_Geom_BSplineCurve_LocalD3__double__int__int__mut_gp_Pnt__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double U, int32_t FromK1, int32_t ToK2, gp_Pnt* P, gp_Vec* V1, gp_Vec* V2, gp_Vec* V3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocalD3(U, FromK1, ToK2, *P, *V1, *V2, *V3);
     return;
@@ -585,7 +585,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocalD3__double__int__int__mut_gp_Pnt__mut_gp
 B3D_API void* b3d_Geom_BSplineCurve_LocalDN__double__int__int__int(void* self, double U, int32_t FromK1, int32_t ToK2, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->LocalDN(U, FromK1, ToK2, N);
     return new gp_Vec(r);
@@ -597,7 +597,7 @@ B3D_API void* b3d_Geom_BSplineCurve_LocalDN__double__int__int__int(void* self, d
 B3D_API void* b3d_Geom_BSplineCurve_EndPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->EndPoint();
     return new gp_Pnt(r);
@@ -609,7 +609,7 @@ B3D_API void* b3d_Geom_BSplineCurve_EndPoint(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_FirstUKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->FirstUKnotIndex();
     return r;
@@ -621,7 +621,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_FirstUKnotIndex(void* self, b3d_error** er
 B3D_API double b3d_Geom_BSplineCurve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->FirstParameter();
     return r;
@@ -633,7 +633,7 @@ B3D_API double b3d_Geom_BSplineCurve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineCurve_Knot__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Knot(Index);
     return r;
@@ -645,7 +645,7 @@ B3D_API double b3d_Geom_BSplineCurve_Knot__int(void* self, int32_t Index, b3d_er
 B3D_API void* b3d_Geom_BSplineCurve_Knots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Knots();
     return new NCollection_Array1<double>(r);
@@ -657,7 +657,7 @@ B3D_API void* b3d_Geom_BSplineCurve_Knots(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineCurve_KnotSequence(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->KnotSequence();
     return new NCollection_Array1<double>(r);
@@ -669,7 +669,7 @@ B3D_API void* b3d_Geom_BSplineCurve_KnotSequence(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_KnotDistribution(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->KnotDistribution();
     return static_cast<int32_t>(r);
@@ -681,7 +681,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_KnotDistribution(void* self, b3d_error** e
 B3D_API int32_t b3d_Geom_BSplineCurve_LastUKnotIndex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->LastUKnotIndex();
     return r;
@@ -693,7 +693,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_LastUKnotIndex(void* self, b3d_error** err
 B3D_API double b3d_Geom_BSplineCurve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->LastParameter();
     return r;
@@ -705,7 +705,7 @@ B3D_API double b3d_Geom_BSplineCurve_LastParameter(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineCurve_LocateU__double__double__ref_int__ref_int(void* self, double U, double ParametricTolerance, int32_t* I1, int32_t* I2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocateU(U, ParametricTolerance, *I1, *I2);
     return;
@@ -716,7 +716,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocateU__double__double__ref_int__ref_int(voi
 B3D_API void b3d_Geom_BSplineCurve_LocateU__double__double__ref_int__ref_int__bool(void* self, double U, double ParametricTolerance, int32_t* I1, int32_t* I2, uint8_t WithKnotRepetition, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->LocateU(U, ParametricTolerance, *I1, *I2, WithKnotRepetition != 0);
     return;
@@ -727,7 +727,7 @@ B3D_API void b3d_Geom_BSplineCurve_LocateU__double__double__ref_int__ref_int__bo
 B3D_API int32_t b3d_Geom_BSplineCurve_Multiplicity__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Multiplicity(Index);
     return r;
@@ -739,7 +739,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_Multiplicity__int(void* self, int32_t Inde
 B3D_API void* b3d_Geom_BSplineCurve_Multiplicities(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Multiplicities();
     return new NCollection_Array1<int>(r);
@@ -751,7 +751,7 @@ B3D_API void* b3d_Geom_BSplineCurve_Multiplicities(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_NbKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->NbKnots();
     return r;
@@ -763,7 +763,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_NbKnots(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_BSplineCurve_NbPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->NbPoles();
     return r;
@@ -775,7 +775,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_NbPoles(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineCurve_Pole__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Pole(Index);
     return new gp_Pnt(r);
@@ -787,7 +787,7 @@ B3D_API void* b3d_Geom_BSplineCurve_Pole__int(void* self, int32_t Index, b3d_err
 B3D_API void* b3d_Geom_BSplineCurve_Poles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Poles();
     return new NCollection_Array1<gp_Pnt>(r);
@@ -799,7 +799,7 @@ B3D_API void* b3d_Geom_BSplineCurve_Poles(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_BSplineCurve_StartPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->StartPoint();
     return new gp_Pnt(r);
@@ -811,7 +811,7 @@ B3D_API void* b3d_Geom_BSplineCurve_StartPoint(void* self, b3d_error** err)
 B3D_API double b3d_Geom_BSplineCurve_Weight__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Weight(Index);
     return r;
@@ -823,7 +823,7 @@ B3D_API double b3d_Geom_BSplineCurve_Weight__int(void* self, int32_t Index, b3d_
 B3D_API void* b3d_Geom_BSplineCurve_WeightsArray(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->WeightsArray();
     return new NCollection_Array1<double>(r);
@@ -835,7 +835,7 @@ B3D_API void* b3d_Geom_BSplineCurve_WeightsArray(void* self, b3d_error** err)
 B3D_API void b3d_Geom_BSplineCurve_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->Transform(*T);
     return;
@@ -846,7 +846,7 @@ B3D_API void b3d_Geom_BSplineCurve_Transform__gp_Trsf(void* self, const gp_Trsf*
 B3D_API int32_t b3d_Geom_BSplineCurve_MaxDegree(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = Geom_BSplineCurve::MaxDegree();
     return r;
@@ -858,7 +858,7 @@ B3D_API int32_t b3d_Geom_BSplineCurve_MaxDegree(b3d_error** err)
 B3D_API void b3d_Geom_BSplineCurve_Resolution__double__ref_double(void* self, double Tolerance3D, double* UTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_BSplineCurve*>(self)->Resolution(Tolerance3D, *UTolerance);
     return;
@@ -869,7 +869,7 @@ B3D_API void b3d_Geom_BSplineCurve_Resolution__double__ref_double(void* self, do
 B3D_API void* b3d_Geom_BSplineCurve_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());
@@ -881,7 +881,7 @@ B3D_API void* b3d_Geom_BSplineCurve_Copy(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_BSplineCurve_IsEqual__Geom_BSplineCurve__double(void* self, Geom_BSplineCurve* theOther, double thePreci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_BSplineCurve*>(self)->IsEqual(occ::handle<Geom_BSplineCurve>(theOther), thePreci);
     return r ? 1 : 0;

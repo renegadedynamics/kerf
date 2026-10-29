@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_as_BRepBuilderAPI_Command(void* p) { r
 B3D_API void b3d_BRepPrimAPI_MakeOneAxis_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepPrimAPI_MakeOneAxis*>(self)->Build();
     return;
@@ -23,7 +23,7 @@ B3D_API void b3d_BRepPrimAPI_MakeOneAxis_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeOneAxis*>(self)->Face();
     return new TopoDS_Face(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_Face(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_Shell(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeOneAxis*>(self)->Shell();
     return new TopoDS_Shell(r);
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_Shell(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeOneAxis_Solid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeOneAxis*>(self)->Solid();
     return new TopoDS_Solid(r);

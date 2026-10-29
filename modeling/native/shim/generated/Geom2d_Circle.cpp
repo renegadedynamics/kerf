@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom2d_Circle_downcast(void* t) { return b3d_retain(dynamic_ca
 B3D_API void* b3d_Geom2d_Circle_new__gp_Circ2d(const gp_Circ2d* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Circle(*C);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom2d_Circle_new__gp_Circ2d(const gp_Circ2d* C, b3d_error** e
 B3D_API void* b3d_Geom2d_Circle_new__gp_Ax2d__double(const gp_Ax2d* A, double Radius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Circle(*A, Radius);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom2d_Circle_new__gp_Ax2d__double(const gp_Ax2d* A, double Ra
 B3D_API void* b3d_Geom2d_Circle_new__gp_Ax2d__double__bool(const gp_Ax2d* A, double Radius, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Circle(*A, Radius, Sense != 0);
     return b3d_retain(r);
@@ -55,7 +55,7 @@ B3D_API void* b3d_Geom2d_Circle_new__gp_Ax2d__double__bool(const gp_Ax2d* A, dou
 B3D_API void* b3d_Geom2d_Circle_new__gp_Ax22d__double(const gp_Ax22d* A, double Radius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Circle(*A, Radius);
     return b3d_retain(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_Geom2d_Circle_new__gp_Ax22d__double(const gp_Ax22d* A, double 
 B3D_API void b3d_Geom2d_Circle_SetCirc2d__gp_Circ2d(void* self, const gp_Circ2d* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Circle*>(self)->SetCirc2d(*C);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_Geom2d_Circle_SetCirc2d__gp_Circ2d(void* self, const gp_Circ2d*
 B3D_API void b3d_Geom2d_Circle_SetRadius__double(void* self, double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Circle*>(self)->SetRadius(R);
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_Geom2d_Circle_SetRadius__double(void* self, double R, b3d_error
 B3D_API void* b3d_Geom2d_Circle_Circ2d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->Circ2d();
     return new gp_Circ2d(r);
@@ -101,7 +101,7 @@ B3D_API void* b3d_Geom2d_Circle_Circ2d(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Circle_Radius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->Radius();
     return r;
@@ -113,7 +113,7 @@ B3D_API double b3d_Geom2d_Circle_Radius(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Circle_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->ReversedParameter(U);
     return r;
@@ -125,7 +125,7 @@ B3D_API double b3d_Geom2d_Circle_ReversedParameter__double(void* self, double U,
 B3D_API double b3d_Geom2d_Circle_Eccentricity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->Eccentricity();
     return r;
@@ -137,7 +137,7 @@ B3D_API double b3d_Geom2d_Circle_Eccentricity(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Circle_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->FirstParameter();
     return r;
@@ -149,7 +149,7 @@ B3D_API double b3d_Geom2d_Circle_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Circle_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->LastParameter();
     return r;
@@ -161,7 +161,7 @@ B3D_API double b3d_Geom2d_Circle_LastParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Circle_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -173,7 +173,7 @@ B3D_API uint8_t b3d_Geom2d_Circle_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Circle_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -185,7 +185,7 @@ B3D_API uint8_t b3d_Geom2d_Circle_IsPeriodic(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Circle_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->EvalD0(U);
     return new gp_Pnt2d(r);
@@ -197,7 +197,7 @@ B3D_API void* b3d_Geom2d_Circle_EvalD0__double(void* self, double U, b3d_error**
 B3D_API void* b3d_Geom2d_Circle_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->EvalDN(U, N);
     return new gp_Vec2d(r);
@@ -209,7 +209,7 @@ B3D_API void* b3d_Geom2d_Circle_EvalDN__double__int(void* self, double U, int32_
 B3D_API void b3d_Geom2d_Circle_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Circle*>(self)->Transform(*T);
     return;
@@ -220,7 +220,7 @@ B3D_API void b3d_Geom2d_Circle_Transform__gp_Trsf2d(void* self, const gp_Trsf2d*
 B3D_API void* b3d_Geom2d_Circle_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Circle*>(self)->Copy();
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());

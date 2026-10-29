@@ -15,7 +15,7 @@ B3D_API void* b3d_BRepFill_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepFill>)
   {
-    try { return new BRepFill(*static_cast<const BRepFill*>(p)); }
+    B3D_TRY { return new BRepFill(*static_cast<const BRepFill*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -28,7 +28,7 @@ B3D_API void* b3d_BRepFill_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRepFill>)
   {
-    try { return new BRepFill(); }
+    B3D_TRY { return new BRepFill(); }
     B3D_CATCH(err)
   }
   else
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepFill_new(b3d_error** err)
 B3D_API void* b3d_BRepFill_Face__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* Edge1, const TopoDS_Edge* Edge2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepFill::Face(*Edge1, *Edge2);
     return new TopoDS_Face(r);
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepFill_Face__TopoDS_Edge__TopoDS_Edge(const TopoDS_Edge* Edg
 B3D_API void* b3d_BRepFill_Shell__TopoDS_Wire__TopoDS_Wire(const TopoDS_Wire* Wire1, const TopoDS_Wire* Wire2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepFill::Shell(*Wire1, *Wire2);
     return new TopoDS_Shell(r);
@@ -63,7 +63,7 @@ B3D_API void* b3d_BRepFill_Shell__TopoDS_Wire__TopoDS_Wire(const TopoDS_Wire* Wi
 B3D_API void b3d_BRepFill_Axe__TopoDS_Shape__TopoDS_Wire__mut_gp_Ax3__ref_bool__double(const TopoDS_Shape* Spine, const TopoDS_Wire* Profile, gp_Ax3* AxeProf, uint8_t* ProfOnSpine, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     bool ProfOnSpine_b = *ProfOnSpine != 0;
     BRepFill::Axe(*Spine, *Profile, *AxeProf, ProfOnSpine_b, Tol);
@@ -76,7 +76,7 @@ B3D_API void b3d_BRepFill_Axe__TopoDS_Shape__TopoDS_Wire__mut_gp_Ax3__ref_bool__
 B3D_API void b3d_BRepFill_ComputeACR__TopoDS_Wire__mut_TColStd_Array1OfReal(const TopoDS_Wire* wire, NCollection_Array1<double>* ACR, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepFill::ComputeACR(*wire, *ACR);
     return;
@@ -87,7 +87,7 @@ B3D_API void b3d_BRepFill_ComputeACR__TopoDS_Wire__mut_TColStd_Array1OfReal(cons
 B3D_API void* b3d_BRepFill_InsertACR__TopoDS_Wire__TColStd_Array1OfReal__double(const TopoDS_Wire* wire, const NCollection_Array1<double>* ACRcuts, double prec, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = BRepFill::InsertACR(*wire, *ACRcuts, prec);
     return new TopoDS_Wire(r);

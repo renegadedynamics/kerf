@@ -20,7 +20,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_downcast(void* t) { return b3d_retain(
 B3D_API void* b3d_Geom_CylindricalSurface_new__gp_Ax3__double(const gp_Ax3* A3, double Radius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_CylindricalSurface(*A3, Radius);
     return b3d_retain(r);
@@ -32,7 +32,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_new__gp_Ax3__double(const gp_Ax3* A3, 
 B3D_API void* b3d_Geom_CylindricalSurface_new__gp_Cylinder(const gp_Cylinder* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_CylindricalSurface(*C);
     return b3d_retain(r);
@@ -44,7 +44,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_new__gp_Cylinder(const gp_Cylinder* C,
 B3D_API void b3d_Geom_CylindricalSurface_SetCylinder__gp_Cylinder(void* self, const gp_Cylinder* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->SetCylinder(*C);
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_Geom_CylindricalSurface_SetCylinder__gp_Cylinder(void* self, co
 B3D_API void b3d_Geom_CylindricalSurface_SetRadius__double(void* self, double R, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->SetRadius(R);
     return;
@@ -66,7 +66,7 @@ B3D_API void b3d_Geom_CylindricalSurface_SetRadius__double(void* self, double R,
 B3D_API void* b3d_Geom_CylindricalSurface_Cylinder(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->Cylinder();
     return new gp_Cylinder(r);
@@ -78,7 +78,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_Cylinder(void* self, b3d_error** err)
 B3D_API double b3d_Geom_CylindricalSurface_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->UReversedParameter(U);
     return r;
@@ -90,7 +90,7 @@ B3D_API double b3d_Geom_CylindricalSurface_UReversedParameter__double(void* self
 B3D_API double b3d_Geom_CylindricalSurface_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->VReversedParameter(V);
     return r;
@@ -102,7 +102,7 @@ B3D_API double b3d_Geom_CylindricalSurface_VReversedParameter__double(void* self
 B3D_API void b3d_Geom_CylindricalSurface_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -113,7 +113,7 @@ B3D_API void b3d_Geom_CylindricalSurface_TransformParameters__ref_double__ref_do
 B3D_API void* b3d_Geom_CylindricalSurface_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -125,7 +125,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_ParametricTransformation__gp_Trsf(void
 B3D_API void b3d_Geom_CylindricalSurface_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_Geom_CylindricalSurface_Bounds__ref_double__ref_double__ref_dou
 B3D_API void b3d_Geom_CylindricalSurface_Coefficients__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double__ref_double(void* self, double* A1, double* A2, double* A3, double* B1, double* B2, double* B3, double* C1, double* C2, double* C3, double* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->Coefficients(*A1, *A2, *A3, *B1, *B2, *B3, *C1, *C2, *C3, *D);
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_Geom_CylindricalSurface_Coefficients__ref_double__ref_double__r
 B3D_API double b3d_Geom_CylindricalSurface_Radius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->Radius();
     return r;
@@ -159,7 +159,7 @@ B3D_API double b3d_Geom_CylindricalSurface_Radius(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_CylindricalSurface_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -171,7 +171,7 @@ B3D_API uint8_t b3d_Geom_CylindricalSurface_IsUClosed(void* self, b3d_error** er
 B3D_API uint8_t b3d_Geom_CylindricalSurface_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -183,7 +183,7 @@ B3D_API uint8_t b3d_Geom_CylindricalSurface_IsVClosed(void* self, b3d_error** er
 B3D_API uint8_t b3d_Geom_CylindricalSurface_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -195,7 +195,7 @@ B3D_API uint8_t b3d_Geom_CylindricalSurface_IsUPeriodic(void* self, b3d_error** 
 B3D_API uint8_t b3d_Geom_CylindricalSurface_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -207,7 +207,7 @@ B3D_API uint8_t b3d_Geom_CylindricalSurface_IsVPeriodic(void* self, b3d_error** 
 B3D_API void* b3d_Geom_CylindricalSurface_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -219,7 +219,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_UIso__double(void* self, double U, b3d
 B3D_API void* b3d_Geom_CylindricalSurface_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -231,7 +231,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_VIso__double(void* self, double V, b3d
 B3D_API void* b3d_Geom_CylindricalSurface_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -243,7 +243,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_EvalD0__double__double(void* self, dou
 B3D_API void* b3d_Geom_CylindricalSurface_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -255,7 +255,7 @@ B3D_API void* b3d_Geom_CylindricalSurface_EvalDN__double__double__int__int(void*
 B3D_API void b3d_Geom_CylindricalSurface_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_CylindricalSurface*>(self)->Transform(*T);
     return;
@@ -266,7 +266,7 @@ B3D_API void b3d_Geom_CylindricalSurface_Transform__gp_Trsf(void* self, const gp
 B3D_API void* b3d_Geom_CylindricalSurface_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_CylindricalSurface*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

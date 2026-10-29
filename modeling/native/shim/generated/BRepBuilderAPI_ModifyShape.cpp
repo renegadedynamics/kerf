@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepBuilderAPI_ModifyShape_copy(const void* p, b3d_error** err
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_ModifyShape>)
   {
-    try { return new BRepBuilderAPI_ModifyShape(*static_cast<const BRepBuilderAPI_ModifyShape*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_ModifyShape(*static_cast<const BRepBuilderAPI_ModifyShape*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepBuilderAPI_ModifyShape_as_BRepBuilderAPI_Command(void* p) 
 B3D_API void* b3d_BRepBuilderAPI_ModifyShape_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_ModifyShape*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepBuilderAPI_ModifyShape_Modified__TopoDS_Shape(void* self, 
 B3D_API void* b3d_BRepBuilderAPI_ModifyShape_ModifiedShape__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_ModifyShape*>(self)->ModifiedShape(*S);
     return new TopoDS_Shape(r);

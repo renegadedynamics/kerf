@@ -19,7 +19,7 @@ B3D_API void* b3d_Geom2d_Ellipse_downcast(void* t) { return b3d_retain(dynamic_c
 B3D_API void* b3d_Geom2d_Ellipse_new__gp_Elips2d(const gp_Elips2d* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Ellipse(*E);
     return b3d_retain(r);
@@ -31,7 +31,7 @@ B3D_API void* b3d_Geom2d_Ellipse_new__gp_Elips2d(const gp_Elips2d* E, b3d_error*
 B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax2d__double__double(const gp_Ax2d* MajorAxis, double MajorRadius, double MinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Ellipse(*MajorAxis, MajorRadius, MinorRadius);
     return b3d_retain(r);
@@ -43,7 +43,7 @@ B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax2d__double__double(const gp_Ax2d* Maj
 B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax2d__double__double__bool(const gp_Ax2d* MajorAxis, double MajorRadius, double MinorRadius, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Ellipse(*MajorAxis, MajorRadius, MinorRadius, Sense != 0);
     return b3d_retain(r);
@@ -55,7 +55,7 @@ B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax2d__double__double__bool(const gp_Ax2
 B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax22d__double__double(const gp_Ax22d* Axis, double MajorRadius, double MinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2d_Ellipse(*Axis, MajorRadius, MinorRadius);
     return b3d_retain(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_Geom2d_Ellipse_new__gp_Ax22d__double__double(const gp_Ax22d* A
 B3D_API void b3d_Geom2d_Ellipse_SetElips2d__gp_Elips2d(void* self, const gp_Elips2d* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Ellipse*>(self)->SetElips2d(*E);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_Geom2d_Ellipse_SetElips2d__gp_Elips2d(void* self, const gp_Elip
 B3D_API void b3d_Geom2d_Ellipse_SetMajorRadius__double(void* self, double MajorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Ellipse*>(self)->SetMajorRadius(MajorRadius);
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_Geom2d_Ellipse_SetMajorRadius__double(void* self, double MajorR
 B3D_API void b3d_Geom2d_Ellipse_SetMinorRadius__double(void* self, double MinorRadius, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Ellipse*>(self)->SetMinorRadius(MinorRadius);
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_Geom2d_Ellipse_SetMinorRadius__double(void* self, double MinorR
 B3D_API void* b3d_Geom2d_Ellipse_Elips2d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Elips2d();
     return new gp_Elips2d(r);
@@ -112,7 +112,7 @@ B3D_API void* b3d_Geom2d_Ellipse_Elips2d(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->ReversedParameter(U);
     return r;
@@ -124,7 +124,7 @@ B3D_API double b3d_Geom2d_Ellipse_ReversedParameter__double(void* self, double U
 B3D_API void* b3d_Geom2d_Ellipse_Directrix1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Directrix1();
     return new gp_Ax2d(r);
@@ -136,7 +136,7 @@ B3D_API void* b3d_Geom2d_Ellipse_Directrix1(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Ellipse_Directrix2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Directrix2();
     return new gp_Ax2d(r);
@@ -148,7 +148,7 @@ B3D_API void* b3d_Geom2d_Ellipse_Directrix2(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_Eccentricity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Eccentricity();
     return r;
@@ -160,7 +160,7 @@ B3D_API double b3d_Geom2d_Ellipse_Eccentricity(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_Focal(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Focal();
     return r;
@@ -172,7 +172,7 @@ B3D_API double b3d_Geom2d_Ellipse_Focal(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Ellipse_Focus1(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Focus1();
     return new gp_Pnt2d(r);
@@ -184,7 +184,7 @@ B3D_API void* b3d_Geom2d_Ellipse_Focus1(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Ellipse_Focus2(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Focus2();
     return new gp_Pnt2d(r);
@@ -196,7 +196,7 @@ B3D_API void* b3d_Geom2d_Ellipse_Focus2(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_MajorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->MajorRadius();
     return r;
@@ -208,7 +208,7 @@ B3D_API double b3d_Geom2d_Ellipse_MajorRadius(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_MinorRadius(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->MinorRadius();
     return r;
@@ -220,7 +220,7 @@ B3D_API double b3d_Geom2d_Ellipse_MinorRadius(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_Parameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Parameter();
     return r;
@@ -232,7 +232,7 @@ B3D_API double b3d_Geom2d_Ellipse_Parameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->FirstParameter();
     return r;
@@ -244,7 +244,7 @@ B3D_API double b3d_Geom2d_Ellipse_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Ellipse_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->LastParameter();
     return r;
@@ -256,7 +256,7 @@ B3D_API double b3d_Geom2d_Ellipse_LastParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Ellipse_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -268,7 +268,7 @@ B3D_API uint8_t b3d_Geom2d_Ellipse_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom2d_Ellipse_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -280,7 +280,7 @@ B3D_API uint8_t b3d_Geom2d_Ellipse_IsPeriodic(void* self, b3d_error** err)
 B3D_API void* b3d_Geom2d_Ellipse_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->EvalD0(U);
     return new gp_Pnt2d(r);
@@ -292,7 +292,7 @@ B3D_API void* b3d_Geom2d_Ellipse_EvalD0__double(void* self, double U, b3d_error*
 B3D_API void* b3d_Geom2d_Ellipse_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->EvalDN(U, N);
     return new gp_Vec2d(r);
@@ -304,7 +304,7 @@ B3D_API void* b3d_Geom2d_Ellipse_EvalDN__double__int(void* self, double U, int32
 B3D_API void b3d_Geom2d_Ellipse_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Ellipse*>(self)->Transform(*T);
     return;
@@ -315,7 +315,7 @@ B3D_API void b3d_Geom2d_Ellipse_Transform__gp_Trsf2d(void* self, const gp_Trsf2d
 B3D_API void* b3d_Geom2d_Ellipse_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Ellipse*>(self)->Copy();
     return b3d_retain(occ::handle<Geom2d_Geometry>(r).get());

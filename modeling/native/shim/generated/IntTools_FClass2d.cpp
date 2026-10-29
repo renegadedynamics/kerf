@@ -9,7 +9,7 @@ B3D_API void b3d_IntTools_FClass2d_delete(void* p) { delete static_cast<IntTools
 B3D_API void* b3d_IntTools_FClass2d_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntTools_FClass2d();
     return r;
@@ -21,7 +21,7 @@ B3D_API void* b3d_IntTools_FClass2d_new(b3d_error** err)
 B3D_API void* b3d_IntTools_FClass2d_new__TopoDS_Face__double(const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new IntTools_FClass2d(*F, Tol);
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_IntTools_FClass2d_new__TopoDS_Face__double(const TopoDS_Face* 
 B3D_API void b3d_IntTools_FClass2d_Init__TopoDS_Face__double(void* self, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<IntTools_FClass2d*>(self)->Init(*F, Tol);
     return;
@@ -44,7 +44,7 @@ B3D_API void b3d_IntTools_FClass2d_Init__TopoDS_Face__double(void* self, const T
 B3D_API int32_t b3d_IntTools_FClass2d_PerformInfinitePoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->PerformInfinitePoint();
     return static_cast<int32_t>(r);
@@ -56,7 +56,7 @@ B3D_API int32_t b3d_IntTools_FClass2d_PerformInfinitePoint(void* self, b3d_error
 B3D_API int32_t b3d_IntTools_FClass2d_Perform__gp_Pnt2d(void* self, const gp_Pnt2d* Puv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->Perform(*Puv);
     return static_cast<int32_t>(r);
@@ -68,7 +68,7 @@ B3D_API int32_t b3d_IntTools_FClass2d_Perform__gp_Pnt2d(void* self, const gp_Pnt
 B3D_API int32_t b3d_IntTools_FClass2d_Perform__gp_Pnt2d__bool(void* self, const gp_Pnt2d* Puv, uint8_t RecadreOnPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->Perform(*Puv, RecadreOnPeriodic != 0);
     return static_cast<int32_t>(r);
@@ -80,7 +80,7 @@ B3D_API int32_t b3d_IntTools_FClass2d_Perform__gp_Pnt2d__bool(void* self, const 
 B3D_API int32_t b3d_IntTools_FClass2d_TestOnRestriction__gp_Pnt2d__double(void* self, const gp_Pnt2d* Puv, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->TestOnRestriction(*Puv, Tol);
     return static_cast<int32_t>(r);
@@ -92,7 +92,7 @@ B3D_API int32_t b3d_IntTools_FClass2d_TestOnRestriction__gp_Pnt2d__double(void* 
 B3D_API int32_t b3d_IntTools_FClass2d_TestOnRestriction__gp_Pnt2d__double__bool(void* self, const gp_Pnt2d* Puv, double Tol, uint8_t RecadreOnPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->TestOnRestriction(*Puv, Tol, RecadreOnPeriodic != 0);
     return static_cast<int32_t>(r);
@@ -104,7 +104,7 @@ B3D_API int32_t b3d_IntTools_FClass2d_TestOnRestriction__gp_Pnt2d__double__bool(
 B3D_API uint8_t b3d_IntTools_FClass2d_IsHole(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<IntTools_FClass2d*>(self)->IsHole();
     return r ? 1 : 0;

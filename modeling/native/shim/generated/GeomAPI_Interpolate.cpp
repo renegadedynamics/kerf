@@ -13,7 +13,7 @@ B3D_API void* b3d_GeomAPI_Interpolate_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomAPI_Interpolate>)
   {
-    try { return new GeomAPI_Interpolate(*static_cast<const GeomAPI_Interpolate*>(p)); }
+    B3D_TRY { return new GeomAPI_Interpolate(*static_cast<const GeomAPI_Interpolate*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_GeomAPI_Interpolate_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GeomAPI_Interpolate_new__TColgp_HArray1OfPnt__bool__double(NCollection_HArray1<gp_Pnt>* Points, uint8_t PeriodicFlag, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_Interpolate(occ::handle<NCollection_HArray1<gp_Pnt>>(Points), PeriodicFlag != 0, Tolerance);
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_GeomAPI_Interpolate_new__TColgp_HArray1OfPnt__bool__double(NCo
 B3D_API void* b3d_GeomAPI_Interpolate_new__TColgp_HArray1OfPnt__TColStd_HArray1OfReal__bool__double(NCollection_HArray1<gp_Pnt>* Points, NCollection_HArray1<double>* Parameters, uint8_t PeriodicFlag, double Tolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAPI_Interpolate(occ::handle<NCollection_HArray1<gp_Pnt>>(Points), occ::handle<NCollection_HArray1<double>>(Parameters), PeriodicFlag != 0, Tolerance);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_GeomAPI_Interpolate_new__TColgp_HArray1OfPnt__TColStd_HArray1O
 B3D_API void b3d_GeomAPI_Interpolate_Load__gp_Vec__gp_Vec(void* self, const gp_Vec* InitialTangent, const gp_Vec* FinalTangent, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_Interpolate*>(self)->Load(*InitialTangent, *FinalTangent);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_GeomAPI_Interpolate_Load__gp_Vec__gp_Vec(void* self, const gp_V
 B3D_API void b3d_GeomAPI_Interpolate_Load__gp_Vec__gp_Vec__bool(void* self, const gp_Vec* InitialTangent, const gp_Vec* FinalTangent, uint8_t Scale, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_Interpolate*>(self)->Load(*InitialTangent, *FinalTangent, Scale != 0);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_GeomAPI_Interpolate_Load__gp_Vec__gp_Vec__bool(void* self, cons
 B3D_API void b3d_GeomAPI_Interpolate_Load__TColgp_Array1OfVec__TColStd_HArray1OfBoolean(void* self, const NCollection_Array1<gp_Vec>* Tangents, NCollection_HArray1<bool>* TangentFlags, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_Interpolate*>(self)->Load(*Tangents, occ::handle<NCollection_HArray1<bool>>(TangentFlags));
     return;
@@ -81,7 +81,7 @@ B3D_API void b3d_GeomAPI_Interpolate_Load__TColgp_Array1OfVec__TColStd_HArray1Of
 B3D_API void b3d_GeomAPI_Interpolate_Load__TColgp_Array1OfVec__TColStd_HArray1OfBoolean__bool(void* self, const NCollection_Array1<gp_Vec>* Tangents, NCollection_HArray1<bool>* TangentFlags, uint8_t Scale, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_Interpolate*>(self)->Load(*Tangents, occ::handle<NCollection_HArray1<bool>>(TangentFlags), Scale != 0);
     return;
@@ -92,7 +92,7 @@ B3D_API void b3d_GeomAPI_Interpolate_Load__TColgp_Array1OfVec__TColStd_HArray1Of
 B3D_API void b3d_GeomAPI_Interpolate_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAPI_Interpolate*>(self)->Perform();
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_GeomAPI_Interpolate_Perform(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAPI_Interpolate_Curve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_Interpolate*>(self)->Curve();
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -115,7 +115,7 @@ B3D_API void* b3d_GeomAPI_Interpolate_Curve(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomAPI_Interpolate_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAPI_Interpolate*>(self)->IsDone();
     return r ? 1 : 0;

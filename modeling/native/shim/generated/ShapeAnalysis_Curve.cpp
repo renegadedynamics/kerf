@@ -14,7 +14,7 @@ B3D_API void* b3d_ShapeAnalysis_Curve_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<ShapeAnalysis_Curve>)
   {
-    try { return new ShapeAnalysis_Curve(*static_cast<const ShapeAnalysis_Curve*>(p)); }
+    B3D_TRY { return new ShapeAnalysis_Curve(*static_cast<const ShapeAnalysis_Curve*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_ShapeAnalysis_Curve_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<ShapeAnalysis_Curve>)
   {
-    try { return new ShapeAnalysis_Curve(); }
+    B3D_TRY { return new ShapeAnalysis_Curve(); }
     B3D_CATCH(err)
   }
   else
@@ -38,7 +38,7 @@ B3D_API void* b3d_ShapeAnalysis_Curve_new(b3d_error** err)
 B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double(void* self, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param);
     return r;
@@ -50,7 +50,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_
 B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__bool(void* self, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, uint8_t AdjustToEnds, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param, AdjustToEnds != 0);
     return r;
@@ -62,7 +62,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_
 B3D_API double b3d_ShapeAnalysis_Curve_Project__tref_Adaptor3d_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double(void* self, Adaptor3d_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(*C3D, *P3D, preci, *proj, *param);
     return r;
@@ -74,7 +74,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__tref_Adaptor3d_Curve__gp_Pnt__do
 B3D_API double b3d_ShapeAnalysis_Curve_Project__tref_Adaptor3d_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__bool(void* self, Adaptor3d_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, uint8_t AdjustToEnds, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(*C3D, *P3D, preci, *proj, *param, AdjustToEnds != 0);
     return r;
@@ -86,7 +86,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__tref_Adaptor3d_Curve__gp_Pnt__do
 B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__double__double(void* self, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, double cf, double cl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param, cf, cl);
     return r;
@@ -98,7 +98,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_
 B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__double__double__bool(void* self, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, double cf, double cl, uint8_t AdjustToEnds, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->Project(occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param, cf, cl, AdjustToEnds != 0);
     return r;
@@ -110,7 +110,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_Project__Geom_Curve__gp_Pnt__double__mut_
 B3D_API double b3d_ShapeAnalysis_Curve_ProjectAct__tref_Adaptor3d_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double(void* self, Adaptor3d_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->ProjectAct(*C3D, *P3D, preci, *proj, *param);
     return r;
@@ -122,7 +122,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_ProjectAct__tref_Adaptor3d_Curve__gp_Pnt_
 B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__double__double(void* self, double paramPrev, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, double cf, double cl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->NextProject(paramPrev, occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param, cf, cl);
     return r;
@@ -134,7 +134,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__Geom_Curve__gp_Pnt__
 B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__Geom_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double__double__double__bool(void* self, double paramPrev, Geom_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, double cf, double cl, uint8_t AdjustToEnds, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->NextProject(paramPrev, occ::handle<Geom_Curve>(C3D), *P3D, preci, *proj, *param, cf, cl, AdjustToEnds != 0);
     return r;
@@ -146,7 +146,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__Geom_Curve__gp_Pnt__
 B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__tref_Adaptor3d_Curve__gp_Pnt__double__mut_gp_Pnt__ref_double(void* self, double paramPrev, Adaptor3d_Curve* C3D, const gp_Pnt* P3D, double preci, gp_Pnt* proj, double* param, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->NextProject(paramPrev, *C3D, *P3D, preci, *proj, *param);
     return r;
@@ -158,7 +158,7 @@ B3D_API double b3d_ShapeAnalysis_Curve_NextProject__double__tref_Adaptor3d_Curve
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_ValidateRange__Geom_Curve__ref_double__ref_double__double(void* self, Geom_Curve* Crv, double* First, double* Last, double prec, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->ValidateRange(occ::handle<Geom_Curve>(Crv), *First, *Last, prec);
     return r ? 1 : 0;
@@ -170,7 +170,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_ValidateRange__Geom_Curve__ref_double__r
 B3D_API int32_t b3d_ShapeAnalysis_Curve_SelectForwardSeam__Geom2d_Curve__Geom2d_Curve(void* self, Geom2d_Curve* C1, Geom2d_Curve* C2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_Curve*>(self)->SelectForwardSeam(occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2));
     return r;
@@ -182,7 +182,7 @@ B3D_API int32_t b3d_ShapeAnalysis_Curve_SelectForwardSeam__Geom2d_Curve__Geom2d_
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__TColgp_Array1OfPnt__mut_gp_XYZ(const NCollection_Array1<gp_Pnt>* pnts, gp_XYZ* Normal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPlanar(*pnts, *Normal);
     return r ? 1 : 0;
@@ -194,7 +194,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__TColgp_Array1OfPnt__mut_gp_XYZ
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__TColgp_Array1OfPnt__mut_gp_XYZ__double(const NCollection_Array1<gp_Pnt>* pnts, gp_XYZ* Normal, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPlanar(*pnts, *Normal, preci);
     return r ? 1 : 0;
@@ -206,7 +206,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__TColgp_Array1OfPnt__mut_gp_XYZ
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__Geom_Curve__mut_gp_XYZ(Geom_Curve* curve, gp_XYZ* Normal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPlanar(occ::handle<Geom_Curve>(curve), *Normal);
     return r ? 1 : 0;
@@ -218,7 +218,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__Geom_Curve__mut_gp_XYZ(Geom_Cu
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__Geom_Curve__mut_gp_XYZ__double(Geom_Curve* curve, gp_XYZ* Normal, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPlanar(occ::handle<Geom_Curve>(curve), *Normal, preci);
     return r ? 1 : 0;
@@ -230,7 +230,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPlanar__Geom_Curve__mut_gp_XYZ__double
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsClosed__Geom_Curve(Geom_Curve* curve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsClosed(occ::handle<Geom_Curve>(curve));
     return r ? 1 : 0;
@@ -242,7 +242,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsClosed__Geom_Curve(Geom_Curve* curve, 
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsClosed__Geom_Curve__double(Geom_Curve* curve, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsClosed(occ::handle<Geom_Curve>(curve), preci);
     return r ? 1 : 0;
@@ -254,7 +254,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsClosed__Geom_Curve__double(Geom_Curve*
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPeriodic__Geom_Curve(Geom_Curve* curve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPeriodic(occ::handle<Geom_Curve>(curve));
     return r ? 1 : 0;
@@ -266,7 +266,7 @@ B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPeriodic__Geom_Curve(Geom_Curve* curve
 B3D_API uint8_t b3d_ShapeAnalysis_Curve_IsPeriodic__Geom2d_Curve(Geom2d_Curve* curve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_Curve::IsPeriodic(occ::handle<Geom2d_Curve>(curve));
     return r ? 1 : 0;

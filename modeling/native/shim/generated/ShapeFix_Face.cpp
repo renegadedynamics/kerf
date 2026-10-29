@@ -16,7 +16,7 @@ B3D_API void* b3d_ShapeFix_Face_downcast(void* t) { return b3d_retain(dynamic_ca
 B3D_API void* b3d_ShapeFix_Face_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Face();
     return b3d_retain(r);
@@ -28,7 +28,7 @@ B3D_API void* b3d_ShapeFix_Face_new(b3d_error** err)
 B3D_API void* b3d_ShapeFix_Face_new__TopoDS_Face(const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Face(*face);
     return b3d_retain(r);
@@ -40,7 +40,7 @@ B3D_API void* b3d_ShapeFix_Face_new__TopoDS_Face(const TopoDS_Face* face, b3d_er
 B3D_API void b3d_ShapeFix_Face_ClearModes(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->ClearModes();
     return;
@@ -51,7 +51,7 @@ B3D_API void b3d_ShapeFix_Face_ClearModes(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Face_Init__TopoDS_Face(void* self, const TopoDS_Face* face, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Init(*face);
     return;
@@ -62,7 +62,7 @@ B3D_API void b3d_ShapeFix_Face_Init__TopoDS_Face(void* self, const TopoDS_Face* 
 B3D_API void b3d_ShapeFix_Face_Init__Geom_Surface__double(void* self, Geom_Surface* surf, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Init(occ::handle<Geom_Surface>(surf), preci);
     return;
@@ -73,7 +73,7 @@ B3D_API void b3d_ShapeFix_Face_Init__Geom_Surface__double(void* self, Geom_Surfa
 B3D_API void b3d_ShapeFix_Face_Init__Geom_Surface__double__bool(void* self, Geom_Surface* surf, double preci, uint8_t fwd, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Init(occ::handle<Geom_Surface>(surf), preci, fwd != 0);
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_ShapeFix_Face_Init__Geom_Surface__double__bool(void* self, Geom
 B3D_API void b3d_ShapeFix_Face_Init__ShapeAnalysis_Surface__double(void* self, ShapeAnalysis_Surface* surf, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Init(occ::handle<ShapeAnalysis_Surface>(surf), preci);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_ShapeFix_Face_Init__ShapeAnalysis_Surface__double(void* self, S
 B3D_API void b3d_ShapeFix_Face_Init__ShapeAnalysis_Surface__double__bool(void* self, ShapeAnalysis_Surface* surf, double preci, uint8_t fwd, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Init(occ::handle<ShapeAnalysis_Surface>(surf), preci, fwd != 0);
     return;
@@ -106,7 +106,7 @@ B3D_API void b3d_ShapeFix_Face_Init__ShapeAnalysis_Surface__double__bool(void* s
 B3D_API void b3d_ShapeFix_Face_SetPrecision__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->SetPrecision(preci);
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_ShapeFix_Face_SetPrecision__double(void* self, double preci, b3
 B3D_API void b3d_ShapeFix_Face_SetMinTolerance__double(void* self, double mintol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->SetMinTolerance(mintol);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_ShapeFix_Face_SetMinTolerance__double(void* self, double mintol
 B3D_API void b3d_ShapeFix_Face_SetMaxTolerance__double(void* self, double maxtol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->SetMaxTolerance(maxtol);
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_ShapeFix_Face_SetMaxTolerance__double(void* self, double maxtol
 B3D_API void* b3d_ShapeFix_Face_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->Face();
     return new TopoDS_Face(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_ShapeFix_Face_Face(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeFix_Face_Result(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->Result();
     return new TopoDS_Shape(r);
@@ -163,7 +163,7 @@ B3D_API void* b3d_ShapeFix_Face_Result(void* self, b3d_error** err)
 B3D_API void b3d_ShapeFix_Face_Add__TopoDS_Wire(void* self, const TopoDS_Wire* wire, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Face*>(self)->Add(*wire);
     return;
@@ -174,7 +174,7 @@ B3D_API void b3d_ShapeFix_Face_Add__TopoDS_Wire(void* self, const TopoDS_Wire* w
 B3D_API uint8_t b3d_ShapeFix_Face_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->Perform();
     return r ? 1 : 0;
@@ -186,7 +186,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_Perform(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeFix_Face_FixOrientation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixOrientation();
     return r ? 1 : 0;
@@ -198,7 +198,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixOrientation(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeFix_Face_FixAddNaturalBound(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixAddNaturalBound();
     return r ? 1 : 0;
@@ -210,7 +210,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixAddNaturalBound(void* self, b3d_error** err
 B3D_API uint8_t b3d_ShapeFix_Face_FixMissingSeam(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixMissingSeam();
     return r ? 1 : 0;
@@ -222,7 +222,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixMissingSeam(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeFix_Face_FixSmallAreaWire__bool(void* self, uint8_t theIsRemoveSmallFace, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixSmallAreaWire(theIsRemoveSmallFace != 0);
     return r ? 1 : 0;
@@ -234,7 +234,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixSmallAreaWire__bool(void* self, uint8_t the
 B3D_API uint8_t b3d_ShapeFix_Face_FixLoopWire__mut_TopTools_SequenceOfShape(void* self, NCollection_Sequence<TopoDS_Shape>* aResWires, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixLoopWire(*aResWires);
     return r ? 1 : 0;
@@ -246,7 +246,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixLoopWire__mut_TopTools_SequenceOfShape(void
 B3D_API uint8_t b3d_ShapeFix_Face_FixIntersectingWires(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixIntersectingWires();
     return r ? 1 : 0;
@@ -258,7 +258,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixIntersectingWires(void* self, b3d_error** e
 B3D_API uint8_t b3d_ShapeFix_Face_FixWiresTwoCoincEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixWiresTwoCoincEdges();
     return r ? 1 : 0;
@@ -270,7 +270,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixWiresTwoCoincEdges(void* self, b3d_error** 
 B3D_API uint8_t b3d_ShapeFix_Face_FixPeriodicDegenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->FixPeriodicDegenerated();
     return r ? 1 : 0;
@@ -282,7 +282,7 @@ B3D_API uint8_t b3d_ShapeFix_Face_FixPeriodicDegenerated(void* self, b3d_error**
 B3D_API uint8_t b3d_ShapeFix_Face_Status__ShapeExtend_Status(void* self, int32_t status, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Face*>(self)->Status(static_cast<ShapeExtend_Status>(status));
     return r ? 1 : 0;

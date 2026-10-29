@@ -13,7 +13,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<ShapeAnalysis_FreeBounds>)
   {
-    try { return new ShapeAnalysis_FreeBounds(*static_cast<const ShapeAnalysis_FreeBounds*>(p)); }
+    B3D_TRY { return new ShapeAnalysis_FreeBounds(*static_cast<const ShapeAnalysis_FreeBounds*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new(b3d_error** err)
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double(const TopoDS_Shape* shape, double toler, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, toler);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double(const TopoD
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double__bool(const TopoDS_Shape* shape, double toler, uint8_t splitclosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, toler, splitclosed != 0);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double__bool(const
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double__bool__bool(const TopoDS_Shape* shape, double toler, uint8_t splitclosed, uint8_t splitopen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, toler, splitclosed != 0, splitopen != 0);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__double__bool__bool
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape(const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape);
     return r;
@@ -84,7 +84,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape(const TopoDS_Shape*
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool(const TopoDS_Shape* shape, uint8_t splitclosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, splitclosed != 0);
     return r;
@@ -96,7 +96,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool(const TopoDS_
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool__bool(const TopoDS_Shape* shape, uint8_t splitclosed, uint8_t splitopen, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, splitclosed != 0, splitopen != 0);
     return r;
@@ -108,7 +108,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool__bool(const T
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool__bool__bool(const TopoDS_Shape* shape, uint8_t splitclosed, uint8_t splitopen, uint8_t checkinternaledges, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeAnalysis_FreeBounds(*shape, splitclosed != 0, splitopen != 0, checkinternaledges != 0);
     return r;
@@ -120,7 +120,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_new__TopoDS_Shape__bool__bool__bool(c
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_GetClosedWires(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_FreeBounds*>(self)->GetClosedWires();
     return new TopoDS_Compound(r);
@@ -132,7 +132,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_GetClosedWires(void* self, b3d_error*
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_GetOpenWires(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeAnalysis_FreeBounds*>(self)->GetOpenWires();
     return new TopoDS_Compound(r);
@@ -144,7 +144,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_GetOpenWires(void* self, b3d_error** 
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectEdgesToWires__TopTools_HSequenceOfShape__double__bool(NCollection_HSequence<TopoDS_Shape>* edges, double toler, uint8_t shared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_FreeBounds::ConnectEdgesToWires(occ::handle<NCollection_HSequence<TopoDS_Shape>>(edges), toler, shared != 0);
     return b3d_retain(occ::handle<NCollection_HSequence<TopoDS_Shape>>(r).get());
@@ -156,7 +156,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectEdgesToWires__TopTools_HSequen
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectWiresToWires__TopTools_HSequenceOfShape__double__bool(NCollection_HSequence<TopoDS_Shape>* iwires, double toler, uint8_t shared, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_FreeBounds::ConnectWiresToWires(occ::handle<NCollection_HSequence<TopoDS_Shape>>(iwires), toler, shared != 0);
     return b3d_retain(occ::handle<NCollection_HSequence<TopoDS_Shape>>(r).get());
@@ -168,7 +168,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectWiresToWires__TopTools_HSequen
 B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectWiresToWires__TopTools_HSequenceOfShape__double__bool__mut_TopTools_DataMapOfShapeShape(NCollection_HSequence<TopoDS_Shape>* iwires, double toler, uint8_t shared, NCollection_DataMap<TopoDS_Shape,TopoDS_Shape,TopTools_ShapeMapHasher>* vertices, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = ShapeAnalysis_FreeBounds::ConnectWiresToWires(occ::handle<NCollection_HSequence<TopoDS_Shape>>(iwires), toler, shared != 0, *vertices);
     return b3d_retain(occ::handle<NCollection_HSequence<TopoDS_Shape>>(r).get());
@@ -180,7 +180,7 @@ B3D_API void* b3d_ShapeAnalysis_FreeBounds_ConnectWiresToWires__TopTools_HSequen
 B3D_API void b3d_ShapeAnalysis_FreeBounds_DispatchWires__TopTools_HSequenceOfShape__mut_TopoDS_Compound__mut_TopoDS_Compound(NCollection_HSequence<TopoDS_Shape>* wires, TopoDS_Compound* closed, TopoDS_Compound* open, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     ShapeAnalysis_FreeBounds::DispatchWires(occ::handle<NCollection_HSequence<TopoDS_Shape>>(wires), *closed, *open);
     return;

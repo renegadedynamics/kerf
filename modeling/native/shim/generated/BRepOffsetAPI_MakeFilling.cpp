@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepOffsetAPI_MakeFilling>)
   {
-    try { return new BRepOffsetAPI_MakeFilling(*static_cast<const BRepOffsetAPI_MakeFilling*>(p)); }
+    B3D_TRY { return new BRepOffsetAPI_MakeFilling(*static_cast<const BRepOffsetAPI_MakeFilling*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -26,7 +26,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_as_BRepBuilderAPI_Command(void* p) {
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling();
     return r;
@@ -38,7 +38,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new(b3d_error** err)
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int(int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree);
     return r;
@@ -50,7 +50,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int(int32_t Degree, b3d_error**
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int(int32_t Degree, int32_t NbPtsOnCur, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur);
     return r;
@@ -62,7 +62,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int(int32_t Degree, int32_
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter);
     return r;
@@ -74,7 +74,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int(int32_t Degree, i
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0);
     return r;
@@ -86,7 +86,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool(int32_t Deg
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d);
     return r;
@@ -98,7 +98,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double(int
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__double(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, double Tol3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d, Tol3d);
     return r;
@@ -110,7 +110,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__do
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__double__double(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, double Tol3d, double TolAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d, Tol3d, TolAng);
     return r;
@@ -122,7 +122,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__do
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__double__double__double(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, double Tol3d, double TolAng, double TolCurv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d, Tol3d, TolAng, TolCurv);
     return r;
@@ -134,7 +134,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__do
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__double__double__double__int(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, double Tol3d, double TolAng, double TolCurv, int32_t MaxDeg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d, Tol3d, TolAng, TolCurv, MaxDeg);
     return r;
@@ -146,7 +146,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__do
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__double__double__double__int__int(int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, double Tol2d, double Tol3d, double TolAng, double TolCurv, int32_t MaxDeg, int32_t MaxSegments, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepOffsetAPI_MakeFilling(Degree, NbPtsOnCur, NbIter, Anisotropie != 0, Tol2d, Tol3d, TolAng, TolCurv, MaxDeg, MaxSegments);
     return r;
@@ -158,7 +158,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_new__int__int__int__bool__double__do
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetConstrParam();
     return;
@@ -169,7 +169,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam(void* self, b3d_error*
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double(void* self, double Tol2d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetConstrParam(Tol2d);
     return;
@@ -180,7 +180,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double(void* self, do
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double(void* self, double Tol2d, double Tol3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetConstrParam(Tol2d, Tol3d);
     return;
@@ -191,7 +191,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double(void* 
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double__double(void* self, double Tol2d, double Tol3d, double TolAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetConstrParam(Tol2d, Tol3d, TolAng);
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double__doubl
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double__double__double(void* self, double Tol2d, double Tol3d, double TolAng, double TolCurv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetConstrParam(Tol2d, Tol3d, TolAng, TolCurv);
     return;
@@ -213,7 +213,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetConstrParam__double__double__doubl
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetResolParam();
     return;
@@ -224,7 +224,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam(void* self, b3d_error**
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int(void* self, int32_t Degree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetResolParam(Degree);
     return;
@@ -235,7 +235,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int(void* self, int32_
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int(void* self, int32_t Degree, int32_t NbPtsOnCur, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetResolParam(Degree, NbPtsOnCur);
     return;
@@ -246,7 +246,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int(void* self, i
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int__int(void* self, int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetResolParam(Degree, NbPtsOnCur, NbIter);
     return;
@@ -257,7 +257,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int__int(void* se
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int__int__bool(void* self, int32_t Degree, int32_t NbPtsOnCur, int32_t NbIter, uint8_t Anisotropie, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetResolParam(Degree, NbPtsOnCur, NbIter, Anisotropie != 0);
     return;
@@ -268,7 +268,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetResolParam__int__int__int__bool(vo
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetApproxParam();
     return;
@@ -279,7 +279,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam(void* self, b3d_error*
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam__int(void* self, int32_t MaxDeg, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetApproxParam(MaxDeg);
     return;
@@ -290,7 +290,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam__int(void* self, int32
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam__int__int(void* self, int32_t MaxDeg, int32_t MaxSegments, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->SetApproxParam(MaxDeg, MaxSegments);
     return;
@@ -301,7 +301,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_SetApproxParam__int__int(void* self, 
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_LoadInitSurface__TopoDS_Face(void* self, const TopoDS_Face* Surf, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->LoadInitSurface(*Surf);
     return;
@@ -312,7 +312,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_LoadInitSurface__TopoDS_Face(void* se
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__GeomAbs_Shape(void* self, const TopoDS_Edge* Constr, int32_t Order, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Constr, static_cast<GeomAbs_Shape>(Order));
     return r;
@@ -324,7 +324,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__GeomAbs_Shape(vo
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__GeomAbs_Shape__bool(void* self, const TopoDS_Edge* Constr, int32_t Order, uint8_t IsBound, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Constr, static_cast<GeomAbs_Shape>(Order), IsBound != 0);
     return r;
@@ -336,7 +336,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__GeomAbs_Shape__b
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__TopoDS_Face__GeomAbs_Shape(void* self, const TopoDS_Edge* Constr, const TopoDS_Face* Support, int32_t Order, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Constr, *Support, static_cast<GeomAbs_Shape>(Order));
     return r;
@@ -348,7 +348,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__TopoDS_Face__Geo
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__TopoDS_Face__GeomAbs_Shape__bool(void* self, const TopoDS_Edge* Constr, const TopoDS_Face* Support, int32_t Order, uint8_t IsBound, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Constr, *Support, static_cast<GeomAbs_Shape>(Order), IsBound != 0);
     return r;
@@ -360,7 +360,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Edge__TopoDS_Face__Geo
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Face__GeomAbs_Shape(void* self, const TopoDS_Face* Support, int32_t Order, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Support, static_cast<GeomAbs_Shape>(Order));
     return r;
@@ -372,7 +372,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__TopoDS_Face__GeomAbs_Shape(vo
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__gp_Pnt(void* self, const gp_Pnt* Point, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(*Point);
     return r;
@@ -384,7 +384,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__gp_Pnt(void* self, const gp_P
 B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__double__double__TopoDS_Face__GeomAbs_Shape(void* self, double U, double V, const TopoDS_Face* Support, int32_t Order, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Add(U, V, *Support, static_cast<GeomAbs_Shape>(Order));
     return r;
@@ -396,7 +396,7 @@ B3D_API int32_t b3d_BRepOffsetAPI_MakeFilling_Add__double__double__TopoDS_Face__
 B3D_API void b3d_BRepOffsetAPI_MakeFilling_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepOffsetAPI_MakeFilling*>(self)->Build();
     return;
@@ -407,7 +407,7 @@ B3D_API void b3d_BRepOffsetAPI_MakeFilling_Build(void* self, b3d_error** err)
 B3D_API uint8_t b3d_BRepOffsetAPI_MakeFilling_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->IsDone();
     return r ? 1 : 0;
@@ -419,7 +419,7 @@ B3D_API uint8_t b3d_BRepOffsetAPI_MakeFilling_IsDone(void* self, b3d_error** err
 B3D_API void* b3d_BRepOffsetAPI_MakeFilling_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -431,7 +431,7 @@ B3D_API void* b3d_BRepOffsetAPI_MakeFilling_Generated__TopoDS_Shape(void* self, 
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G0Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G0Error();
     return r;
@@ -443,7 +443,7 @@ B3D_API double b3d_BRepOffsetAPI_MakeFilling_G0Error(void* self, b3d_error** err
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G1Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G1Error();
     return r;
@@ -455,7 +455,7 @@ B3D_API double b3d_BRepOffsetAPI_MakeFilling_G1Error(void* self, b3d_error** err
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G2Error(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G2Error();
     return r;
@@ -467,7 +467,7 @@ B3D_API double b3d_BRepOffsetAPI_MakeFilling_G2Error(void* self, b3d_error** err
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G0Error__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G0Error(Index);
     return r;
@@ -479,7 +479,7 @@ B3D_API double b3d_BRepOffsetAPI_MakeFilling_G0Error__int(void* self, int32_t In
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G1Error__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G1Error(Index);
     return r;
@@ -491,7 +491,7 @@ B3D_API double b3d_BRepOffsetAPI_MakeFilling_G1Error__int(void* self, int32_t In
 B3D_API double b3d_BRepOffsetAPI_MakeFilling_G2Error__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepOffsetAPI_MakeFilling*>(self)->G2Error(Index);
     return r;

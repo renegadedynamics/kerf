@@ -9,7 +9,7 @@ B3D_API void* b3d_TopoDS_Shape_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Shape>)
   {
-    try { return new TopoDS_Shape(*static_cast<const TopoDS_Shape*>(p)); }
+    B3D_TRY { return new TopoDS_Shape(*static_cast<const TopoDS_Shape*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopoDS_Shape_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TopoDS_Shape_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Shape();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_TopoDS_Shape_new(b3d_error** err)
 B3D_API uint8_t b3d_TopoDS_Shape_IsNull(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->IsNull();
     return r ? 1 : 0;
@@ -44,7 +44,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_IsNull(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Nullify(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Nullify();
     return;
@@ -55,7 +55,7 @@ B3D_API void b3d_TopoDS_Shape_Nullify(void* self, b3d_error** err)
 B3D_API void* b3d_TopoDS_Shape_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Location();
     return new TopLoc_Location(r);
@@ -67,7 +67,7 @@ B3D_API void* b3d_TopoDS_Shape_Location(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Location__TopLoc_Location(void* self, const TopLoc_Location* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Location(*theLoc);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_TopoDS_Shape_Location__TopLoc_Location(void* self, const TopLoc
 B3D_API void b3d_TopoDS_Shape_Location__TopLoc_Location__bool(void* self, const TopLoc_Location* theLoc, uint8_t theRaiseExc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Location(*theLoc, theRaiseExc != 0);
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_TopoDS_Shape_Location__TopLoc_Location__bool(void* self, const 
 B3D_API void* b3d_TopoDS_Shape_Located__TopLoc_Location(void* self, const TopLoc_Location* theLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Located(*theLoc);
     return new TopoDS_Shape(r);
@@ -101,7 +101,7 @@ B3D_API void* b3d_TopoDS_Shape_Located__TopLoc_Location(void* self, const TopLoc
 B3D_API void* b3d_TopoDS_Shape_Located__TopLoc_Location__bool(void* self, const TopLoc_Location* theLoc, uint8_t theRaiseExc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Located(*theLoc, theRaiseExc != 0);
     return new TopoDS_Shape(r);
@@ -113,7 +113,7 @@ B3D_API void* b3d_TopoDS_Shape_Located__TopLoc_Location__bool(void* self, const 
 B3D_API int32_t b3d_TopoDS_Shape_Orientation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Orientation();
     return static_cast<int32_t>(r);
@@ -125,7 +125,7 @@ B3D_API int32_t b3d_TopoDS_Shape_Orientation(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Orientation__TopAbs_Orientation(void* self, int32_t theOrient, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Orientation(static_cast<TopAbs_Orientation>(theOrient));
     return;
@@ -136,7 +136,7 @@ B3D_API void b3d_TopoDS_Shape_Orientation__TopAbs_Orientation(void* self, int32_
 B3D_API void* b3d_TopoDS_Shape_Oriented__TopAbs_Orientation(void* self, int32_t theOrient, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Oriented(static_cast<TopAbs_Orientation>(theOrient));
     return new TopoDS_Shape(r);
@@ -148,7 +148,7 @@ B3D_API void* b3d_TopoDS_Shape_Oriented__TopAbs_Orientation(void* self, int32_t 
 B3D_API int32_t b3d_TopoDS_Shape_ShapeType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->ShapeType();
     return static_cast<int32_t>(r);
@@ -160,7 +160,7 @@ B3D_API int32_t b3d_TopoDS_Shape_ShapeType(void* self, b3d_error** err)
 B3D_API uint8_t b3d_TopoDS_Shape_Free(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Free();
     return r ? 1 : 0;
@@ -172,7 +172,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Free(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Free__bool(void* self, uint8_t theIsFree, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Free(theIsFree != 0);
     return;
@@ -183,7 +183,7 @@ B3D_API void b3d_TopoDS_Shape_Free__bool(void* self, uint8_t theIsFree, b3d_erro
 B3D_API uint8_t b3d_TopoDS_Shape_Locked(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Locked();
     return r ? 1 : 0;
@@ -195,7 +195,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Locked(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Locked__bool(void* self, uint8_t theIsLocked, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Locked(theIsLocked != 0);
     return;
@@ -206,7 +206,7 @@ B3D_API void b3d_TopoDS_Shape_Locked__bool(void* self, uint8_t theIsLocked, b3d_
 B3D_API uint8_t b3d_TopoDS_Shape_Modified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Modified();
     return r ? 1 : 0;
@@ -218,7 +218,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Modified(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Modified__bool(void* self, uint8_t theIsModified, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Modified(theIsModified != 0);
     return;
@@ -229,7 +229,7 @@ B3D_API void b3d_TopoDS_Shape_Modified__bool(void* self, uint8_t theIsModified, 
 B3D_API uint8_t b3d_TopoDS_Shape_Checked(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Checked();
     return r ? 1 : 0;
@@ -241,7 +241,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Checked(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Checked__bool(void* self, uint8_t theIsChecked, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Checked(theIsChecked != 0);
     return;
@@ -252,7 +252,7 @@ B3D_API void b3d_TopoDS_Shape_Checked__bool(void* self, uint8_t theIsChecked, b3
 B3D_API uint8_t b3d_TopoDS_Shape_Orientable(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Orientable();
     return r ? 1 : 0;
@@ -264,7 +264,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Orientable(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Orientable__bool(void* self, uint8_t theIsOrientable, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Orientable(theIsOrientable != 0);
     return;
@@ -275,7 +275,7 @@ B3D_API void b3d_TopoDS_Shape_Orientable__bool(void* self, uint8_t theIsOrientab
 B3D_API uint8_t b3d_TopoDS_Shape_Closed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Closed();
     return r ? 1 : 0;
@@ -287,7 +287,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Closed(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Closed__bool(void* self, uint8_t theIsClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Closed(theIsClosed != 0);
     return;
@@ -298,7 +298,7 @@ B3D_API void b3d_TopoDS_Shape_Closed__bool(void* self, uint8_t theIsClosed, b3d_
 B3D_API uint8_t b3d_TopoDS_Shape_Infinite(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Infinite();
     return r ? 1 : 0;
@@ -310,7 +310,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Infinite(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Infinite__bool(void* self, uint8_t theIsInfinite, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Infinite(theIsInfinite != 0);
     return;
@@ -321,7 +321,7 @@ B3D_API void b3d_TopoDS_Shape_Infinite__bool(void* self, uint8_t theIsInfinite, 
 B3D_API uint8_t b3d_TopoDS_Shape_Convex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Convex();
     return r ? 1 : 0;
@@ -333,7 +333,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_Convex(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Convex__bool(void* self, uint8_t theIsConvex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Convex(theIsConvex != 0);
     return;
@@ -344,7 +344,7 @@ B3D_API void b3d_TopoDS_Shape_Convex__bool(void* self, uint8_t theIsConvex, b3d_
 B3D_API void b3d_TopoDS_Shape_Move__TopLoc_Location(void* self, const TopLoc_Location* thePosition, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Move(*thePosition);
     return;
@@ -355,7 +355,7 @@ B3D_API void b3d_TopoDS_Shape_Move__TopLoc_Location(void* self, const TopLoc_Loc
 B3D_API void b3d_TopoDS_Shape_Move__TopLoc_Location__bool(void* self, const TopLoc_Location* thePosition, uint8_t theRaiseExc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Move(*thePosition, theRaiseExc != 0);
     return;
@@ -366,7 +366,7 @@ B3D_API void b3d_TopoDS_Shape_Move__TopLoc_Location__bool(void* self, const TopL
 B3D_API void* b3d_TopoDS_Shape_Moved__TopLoc_Location(void* self, const TopLoc_Location* thePosition, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Moved(*thePosition);
     return new TopoDS_Shape(r);
@@ -378,7 +378,7 @@ B3D_API void* b3d_TopoDS_Shape_Moved__TopLoc_Location(void* self, const TopLoc_L
 B3D_API void* b3d_TopoDS_Shape_Moved__TopLoc_Location__bool(void* self, const TopLoc_Location* thePosition, uint8_t theRaiseExc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Moved(*thePosition, theRaiseExc != 0);
     return new TopoDS_Shape(r);
@@ -390,7 +390,7 @@ B3D_API void* b3d_TopoDS_Shape_Moved__TopLoc_Location__bool(void* self, const To
 B3D_API void b3d_TopoDS_Shape_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Reverse();
     return;
@@ -401,7 +401,7 @@ B3D_API void b3d_TopoDS_Shape_Reverse(void* self, b3d_error** err)
 B3D_API void* b3d_TopoDS_Shape_Reversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Reversed();
     return new TopoDS_Shape(r);
@@ -413,7 +413,7 @@ B3D_API void* b3d_TopoDS_Shape_Reversed(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Complement(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Complement();
     return;
@@ -424,7 +424,7 @@ B3D_API void b3d_TopoDS_Shape_Complement(void* self, b3d_error** err)
 B3D_API void* b3d_TopoDS_Shape_Complemented(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Complemented();
     return new TopoDS_Shape(r);
@@ -436,7 +436,7 @@ B3D_API void* b3d_TopoDS_Shape_Complemented(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Shape_Compose__TopAbs_Orientation(void* self, int32_t theOrient, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->Compose(static_cast<TopAbs_Orientation>(theOrient));
     return;
@@ -447,7 +447,7 @@ B3D_API void b3d_TopoDS_Shape_Compose__TopAbs_Orientation(void* self, int32_t th
 B3D_API void* b3d_TopoDS_Shape_Composed__TopAbs_Orientation(void* self, int32_t theOrient, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->Composed(static_cast<TopAbs_Orientation>(theOrient));
     return new TopoDS_Shape(r);
@@ -459,7 +459,7 @@ B3D_API void* b3d_TopoDS_Shape_Composed__TopAbs_Orientation(void* self, int32_t 
 B3D_API int32_t b3d_TopoDS_Shape_NbChildren(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->NbChildren();
     return r;
@@ -471,7 +471,7 @@ B3D_API int32_t b3d_TopoDS_Shape_NbChildren(void* self, b3d_error** err)
 B3D_API uint8_t b3d_TopoDS_Shape_IsPartner__TopoDS_Shape(void* self, const TopoDS_Shape* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->IsPartner(*theOther);
     return r ? 1 : 0;
@@ -483,7 +483,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_IsPartner__TopoDS_Shape(void* self, const TopoD
 B3D_API uint8_t b3d_TopoDS_Shape_IsSame__TopoDS_Shape(void* self, const TopoDS_Shape* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->IsSame(*theOther);
     return r ? 1 : 0;
@@ -495,7 +495,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_IsSame__TopoDS_Shape(void* self, const TopoDS_S
 B3D_API uint8_t b3d_TopoDS_Shape_IsEqual__TopoDS_Shape(void* self, const TopoDS_Shape* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->IsEqual(*theOther);
     return r ? 1 : 0;
@@ -507,7 +507,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_IsEqual__TopoDS_Shape(void* self, const TopoDS_
 B3D_API uint8_t b3d_TopoDS_Shape_IsNotEqual__TopoDS_Shape(void* self, const TopoDS_Shape* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->IsNotEqual(*theOther);
     return r ? 1 : 0;
@@ -519,7 +519,7 @@ B3D_API uint8_t b3d_TopoDS_Shape_IsNotEqual__TopoDS_Shape(void* self, const Topo
 B3D_API void b3d_TopoDS_Shape_EmptyCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Shape*>(self)->EmptyCopy();
     return;
@@ -530,7 +530,7 @@ B3D_API void b3d_TopoDS_Shape_EmptyCopy(void* self, b3d_error** err)
 B3D_API void* b3d_TopoDS_Shape_EmptyCopied(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Shape*>(self)->EmptyCopied();
     return new TopoDS_Shape(r);

@@ -18,7 +18,7 @@ B3D_API void* b3d_BRep_Builder_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRep_Builder>)
   {
-    try { return new BRep_Builder(*static_cast<const BRep_Builder*>(p)); }
+    B3D_TRY { return new BRep_Builder(*static_cast<const BRep_Builder*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -32,7 +32,7 @@ B3D_API void* b3d_BRep_Builder_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRep_Builder>)
   {
-    try { return new BRep_Builder(); }
+    B3D_TRY { return new BRep_Builder(); }
     B3D_CATCH(err)
   }
   else
@@ -43,7 +43,7 @@ B3D_API void* b3d_BRep_Builder_new(b3d_error** err)
 B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face(void* self, TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeFace(*F);
     return;
@@ -54,7 +54,7 @@ B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face(void* self, TopoDS_Face*
 B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Geom_Surface__double(void* self, TopoDS_Face* F, Geom_Surface* S, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeFace(*F, occ::handle<Geom_Surface>(S), Tol);
     return;
@@ -65,7 +65,7 @@ B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Geom_Surface__double(vo
 B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Geom_Surface__TopLoc_Location__double(void* self, TopoDS_Face* F, Geom_Surface* S, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeFace(*F, occ::handle<Geom_Surface>(S), *L, Tol);
     return;
@@ -76,7 +76,7 @@ B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Geom_Surface__TopLoc_Lo
 B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Poly_Triangulation(void* self, TopoDS_Face* theFace, Poly_Triangulation* theTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeFace(*theFace, occ::handle<Poly_Triangulation>(theTriangulation));
     return;
@@ -87,7 +87,7 @@ B3D_API void b3d_BRep_Builder_MakeFace__mut_TopoDS_Face__Poly_Triangulation(void
 B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Geom_Surface__TopLoc_Location__double(void* self, const TopoDS_Face* F, Geom_Surface* S, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateFace(*F, occ::handle<Geom_Surface>(S), *L, Tol);
     return;
@@ -98,7 +98,7 @@ B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Geom_Surface__TopLoc_Loca
 B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Poly_Triangulation(void* self, const TopoDS_Face* theFace, Poly_Triangulation* theTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateFace(*theFace, occ::handle<Poly_Triangulation>(theTriangulation));
     return;
@@ -109,7 +109,7 @@ B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Poly_Triangulation(void* 
 B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Poly_Triangulation__bool(void* self, const TopoDS_Face* theFace, Poly_Triangulation* theTriangulation, uint8_t theToReset, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateFace(*theFace, occ::handle<Poly_Triangulation>(theTriangulation), theToReset != 0);
     return;
@@ -120,7 +120,7 @@ B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__Poly_Triangulation__bool(
 B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__double(void* self, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateFace(*F, Tol);
     return;
@@ -131,7 +131,7 @@ B3D_API void b3d_BRep_Builder_UpdateFace__TopoDS_Face__double(void* self, const 
 B3D_API void b3d_BRep_Builder_NaturalRestriction__TopoDS_Face__bool(void* self, const TopoDS_Face* F, uint8_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->NaturalRestriction(*F, N != 0);
     return;
@@ -142,7 +142,7 @@ B3D_API void b3d_BRep_Builder_NaturalRestriction__TopoDS_Face__bool(void* self, 
 B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge(void* self, TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeEdge(*E);
     return;
@@ -153,7 +153,7 @@ B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge(void* self, TopoDS_Edge*
 B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge__Geom_Curve__double(void* self, TopoDS_Edge* E, Geom_Curve* C, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeEdge(*E, occ::handle<Geom_Curve>(C), Tol);
     return;
@@ -164,7 +164,7 @@ B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge__Geom_Curve__double(void
 B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge__Geom_Curve__TopLoc_Location__double(void* self, TopoDS_Edge* E, Geom_Curve* C, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeEdge(*E, occ::handle<Geom_Curve>(C), *L, Tol);
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_BRep_Builder_MakeEdge__mut_TopoDS_Edge__Geom_Curve__TopLoc_Loca
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom_Curve__double(void* self, const TopoDS_Edge* E, Geom_Curve* C, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom_Curve>(C), Tol);
     return;
@@ -186,7 +186,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom_Curve__double(void* 
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom_Curve__TopLoc_Location__double(void* self, const TopoDS_Edge* E, Geom_Curve* C, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom_Curve>(C), *L, Tol);
     return;
@@ -197,7 +197,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom_Curve__TopLoc_Locati
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__TopoDS_Face__double(void* self, const TopoDS_Edge* E, Geom2d_Curve* C, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C), *F, Tol);
     return;
@@ -208,7 +208,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__TopoDS_Face
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curve__TopoDS_Face__double(void* self, const TopoDS_Edge* E, Geom2d_Curve* C1, Geom2d_Curve* C2, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2), *F, Tol);
     return;
@@ -219,7 +219,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curv
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom_Surface__TopLoc_Location__double(void* self, const TopoDS_Edge* E, Geom2d_Curve* C, Geom_Surface* S, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *L, Tol);
     return;
@@ -230,7 +230,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom_Surfac
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom_Surface__TopLoc_Location__double__gp_Pnt2d__gp_Pnt2d(void* self, const TopoDS_Edge* E, Geom2d_Curve* C, Geom_Surface* S, const TopLoc_Location* L, double Tol, const gp_Pnt2d* Pf, const gp_Pnt2d* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C), occ::handle<Geom_Surface>(S), *L, Tol, *Pf, *Pl);
     return;
@@ -241,7 +241,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom_Surfac
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curve__Geom_Surface__TopLoc_Location__double(void* self, const TopoDS_Edge* E, Geom2d_Curve* C1, Geom2d_Curve* C2, Geom_Surface* S, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2), occ::handle<Geom_Surface>(S), *L, Tol);
     return;
@@ -252,7 +252,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curv
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curve__Geom_Surface__TopLoc_Location__double__gp_Pnt2d__gp_Pnt2d(void* self, const TopoDS_Edge* E, Geom2d_Curve* C1, Geom2d_Curve* C2, Geom_Surface* S, const TopLoc_Location* L, double Tol, const gp_Pnt2d* Pf, const gp_Pnt2d* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, occ::handle<Geom2d_Curve>(C1), occ::handle<Geom2d_Curve>(C2), occ::handle<Geom_Surface>(S), *L, Tol, *Pf, *Pl);
     return;
@@ -263,7 +263,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__Geom2d_Curve__Geom2d_Curv
 B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__double(void* self, const TopoDS_Edge* E, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateEdge(*E, Tol);
     return;
@@ -274,7 +274,7 @@ B3D_API void b3d_BRep_Builder_UpdateEdge__TopoDS_Edge__double(void* self, const 
 B3D_API void b3d_BRep_Builder_Continuity__TopoDS_Edge__TopoDS_Face__TopoDS_Face__GeomAbs_Shape(void* self, const TopoDS_Edge* E, const TopoDS_Face* F1, const TopoDS_Face* F2, int32_t C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Continuity(*E, *F1, *F2, static_cast<GeomAbs_Shape>(C));
     return;
@@ -285,7 +285,7 @@ B3D_API void b3d_BRep_Builder_Continuity__TopoDS_Edge__TopoDS_Face__TopoDS_Face_
 B3D_API void b3d_BRep_Builder_Continuity__TopoDS_Edge__Geom_Surface__Geom_Surface__TopLoc_Location__TopLoc_Location__GeomAbs_Shape(void* self, const TopoDS_Edge* E, Geom_Surface* S1, Geom_Surface* S2, const TopLoc_Location* L1, const TopLoc_Location* L2, int32_t C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Continuity(*E, occ::handle<Geom_Surface>(S1), occ::handle<Geom_Surface>(S2), *L1, *L2, static_cast<GeomAbs_Shape>(C));
     return;
@@ -296,7 +296,7 @@ B3D_API void b3d_BRep_Builder_Continuity__TopoDS_Edge__Geom_Surface__Geom_Surfac
 B3D_API void b3d_BRep_Builder_SameParameter__TopoDS_Edge__bool(void* self, const TopoDS_Edge* E, uint8_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->SameParameter(*E, S != 0);
     return;
@@ -307,7 +307,7 @@ B3D_API void b3d_BRep_Builder_SameParameter__TopoDS_Edge__bool(void* self, const
 B3D_API void b3d_BRep_Builder_SameRange__TopoDS_Edge__bool(void* self, const TopoDS_Edge* E, uint8_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->SameRange(*E, S != 0);
     return;
@@ -318,7 +318,7 @@ B3D_API void b3d_BRep_Builder_SameRange__TopoDS_Edge__bool(void* self, const Top
 B3D_API void b3d_BRep_Builder_Degenerated__TopoDS_Edge__bool(void* self, const TopoDS_Edge* E, uint8_t D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Degenerated(*E, D != 0);
     return;
@@ -329,7 +329,7 @@ B3D_API void b3d_BRep_Builder_Degenerated__TopoDS_Edge__bool(void* self, const T
 B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__double__double(void* self, const TopoDS_Edge* E, double First, double Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Range(*E, First, Last);
     return;
@@ -340,7 +340,7 @@ B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__double__double(void* self, con
 B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__double__double__bool(void* self, const TopoDS_Edge* E, double First, double Last, uint8_t Only3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Range(*E, First, Last, Only3d != 0);
     return;
@@ -351,7 +351,7 @@ B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__double__double__bool(void* sel
 B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__Geom_Surface__TopLoc_Location__double__double(void* self, const TopoDS_Edge* E, Geom_Surface* S, const TopLoc_Location* L, double First, double Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Range(*E, occ::handle<Geom_Surface>(S), *L, First, Last);
     return;
@@ -362,7 +362,7 @@ B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__Geom_Surface__TopLoc_Location_
 B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__TopoDS_Face__double__double(void* self, const TopoDS_Edge* E, const TopoDS_Face* F, double First, double Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Range(*E, *F, First, Last);
     return;
@@ -373,7 +373,7 @@ B3D_API void b3d_BRep_Builder_Range__TopoDS_Edge__TopoDS_Face__double__double(vo
 B3D_API void b3d_BRep_Builder_Transfert__TopoDS_Edge__TopoDS_Edge(void* self, const TopoDS_Edge* Ein, const TopoDS_Edge* Eout, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Transfert(*Ein, *Eout);
     return;
@@ -384,7 +384,7 @@ B3D_API void b3d_BRep_Builder_Transfert__TopoDS_Edge__TopoDS_Edge(void* self, co
 B3D_API void b3d_BRep_Builder_MakeVertex__mut_TopoDS_Vertex(void* self, TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeVertex(*V);
     return;
@@ -395,7 +395,7 @@ B3D_API void b3d_BRep_Builder_MakeVertex__mut_TopoDS_Vertex(void* self, TopoDS_V
 B3D_API void b3d_BRep_Builder_MakeVertex__mut_TopoDS_Vertex__gp_Pnt__double(void* self, TopoDS_Vertex* V, const gp_Pnt* P, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->MakeVertex(*V, *P, Tol);
     return;
@@ -406,7 +406,7 @@ B3D_API void b3d_BRep_Builder_MakeVertex__mut_TopoDS_Vertex__gp_Pnt__double(void
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__gp_Pnt__double(void* self, const TopoDS_Vertex* V, const gp_Pnt* P, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*V, *P, Tol);
     return;
@@ -417,7 +417,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__gp_Pnt__double(void* 
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__double(void* self, const TopoDS_Vertex* V, double P, const TopoDS_Edge* E, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*V, P, *E, Tol);
     return;
@@ -428,7 +428,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__TopoDS_Face__double(void* self, const TopoDS_Vertex* V, double P, const TopoDS_Edge* E, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*V, P, *E, *F, Tol);
     return;
@@ -439,7 +439,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__Geom_Surface__TopLoc_Location__double(void* self, const TopoDS_Vertex* V, double P, const TopoDS_Edge* E, Geom_Surface* S, const TopLoc_Location* L, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*V, P, *E, occ::handle<Geom_Surface>(S), *L, Tol);
     return;
@@ -450,7 +450,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__TopoDS_Edge__
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__double__TopoDS_Face__double(void* self, const TopoDS_Vertex* Ve, double U, double V, const TopoDS_Face* F, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*Ve, U, V, *F, Tol);
     return;
@@ -461,7 +461,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double__double__TopoD
 B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double(void* self, const TopoDS_Vertex* V, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->UpdateVertex(*V, Tol);
     return;
@@ -472,7 +472,7 @@ B3D_API void b3d_BRep_Builder_UpdateVertex__TopoDS_Vertex__double(void* self, co
 B3D_API void b3d_BRep_Builder_Transfert__TopoDS_Edge__TopoDS_Edge__TopoDS_Vertex__TopoDS_Vertex(void* self, const TopoDS_Edge* Ein, const TopoDS_Edge* Eout, const TopoDS_Vertex* Vin, const TopoDS_Vertex* Vout, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRep_Builder*>(self)->Transfert(*Ein, *Eout, *Vin, *Vout);
     return;

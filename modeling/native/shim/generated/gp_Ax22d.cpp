@@ -13,7 +13,7 @@ B3D_API void* b3d_gp_Ax22d_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Ax22d>)
   {
-    try { return new gp_Ax22d(*static_cast<const gp_Ax22d*>(p)); }
+    B3D_TRY { return new gp_Ax22d(*static_cast<const gp_Ax22d*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_gp_Ax22d_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_gp_Ax22d_new(b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d__gp_Dir2d(const gp_Pnt2d* theP, const gp_Dir2d* theVx, const gp_Dir2d* theVy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d(*theP, *theVx, *theVy);
     return r;
@@ -48,7 +48,7 @@ B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d__gp_Dir2d(const gp_Pnt2d* the
 B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d(const gp_Pnt2d* theP, const gp_Dir2d* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d(*theP, *theV);
     return r;
@@ -60,7 +60,7 @@ B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d(const gp_Pnt2d* theP, const g
 B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d__bool(const gp_Pnt2d* theP, const gp_Dir2d* theV, uint8_t theIsSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d(*theP, *theV, theIsSense != 0);
     return r;
@@ -72,7 +72,7 @@ B3D_API void* b3d_gp_Ax22d_new__gp_Pnt2d__gp_Dir2d__bool(const gp_Pnt2d* theP, c
 B3D_API void* b3d_gp_Ax22d_new__gp_Ax2d(const gp_Ax2d* theA, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d(*theA);
     return r;
@@ -84,7 +84,7 @@ B3D_API void* b3d_gp_Ax22d_new__gp_Ax2d(const gp_Ax2d* theA, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_new__gp_Ax2d__bool(const gp_Ax2d* theA, uint8_t theIsSense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Ax22d(*theA, theIsSense != 0);
     return r;
@@ -96,7 +96,7 @@ B3D_API void* b3d_gp_Ax22d_new__gp_Ax2d__bool(const gp_Ax2d* theA, uint8_t theIs
 B3D_API void b3d_gp_Ax22d_SetAxis__gp_Ax22d(void* self, const gp_Ax22d* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetAxis(*theA1);
     return;
@@ -107,7 +107,7 @@ B3D_API void b3d_gp_Ax22d_SetAxis__gp_Ax22d(void* self, const gp_Ax22d* theA1, b
 B3D_API void b3d_gp_Ax22d_SetXAxis__gp_Ax2d(void* self, const gp_Ax2d* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetXAxis(*theA1);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_gp_Ax22d_SetXAxis__gp_Ax2d(void* self, const gp_Ax2d* theA1, b3
 B3D_API void b3d_gp_Ax22d_SetYAxis__gp_Ax2d(void* self, const gp_Ax2d* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetYAxis(*theA1);
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_gp_Ax22d_SetYAxis__gp_Ax2d(void* self, const gp_Ax2d* theA1, b3
 B3D_API void b3d_gp_Ax22d_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetLocation(*theP);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_gp_Ax22d_SetLocation__gp_Pnt2d(void* self, const gp_Pnt2d* theP
 B3D_API void b3d_gp_Ax22d_SetXDirection__gp_Dir2d(void* self, const gp_Dir2d* theVx, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetXDirection(*theVx);
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_gp_Ax22d_SetXDirection__gp_Dir2d(void* self, const gp_Dir2d* th
 B3D_API void b3d_gp_Ax22d_SetYDirection__gp_Dir2d(void* self, const gp_Dir2d* theVy, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->SetYDirection(*theVy);
     return;
@@ -162,7 +162,7 @@ B3D_API void b3d_gp_Ax22d_SetYDirection__gp_Dir2d(void* self, const gp_Dir2d* th
 B3D_API void* b3d_gp_Ax22d_XAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->XAxis();
     return new gp_Ax2d(r);
@@ -174,7 +174,7 @@ B3D_API void* b3d_gp_Ax22d_XAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_YAxis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->YAxis();
     return new gp_Ax2d(r);
@@ -186,7 +186,7 @@ B3D_API void* b3d_gp_Ax22d_YAxis(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Location();
     return new gp_Pnt2d(r);
@@ -198,7 +198,7 @@ B3D_API void* b3d_gp_Ax22d_Location(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_XDirection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->XDirection();
     return new gp_Dir2d(r);
@@ -210,7 +210,7 @@ B3D_API void* b3d_gp_Ax22d_XDirection(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Ax22d_YDirection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->YDirection();
     return new gp_Dir2d(r);
@@ -222,7 +222,7 @@ B3D_API void* b3d_gp_Ax22d_YDirection(void* self, b3d_error** err)
 B3D_API void b3d_gp_Ax22d_Mirror__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Mirror(*theP);
     return;
@@ -233,7 +233,7 @@ B3D_API void b3d_gp_Ax22d_Mirror__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d
 B3D_API void* b3d_gp_Ax22d_Mirrored__gp_Pnt2d(void* self, const gp_Pnt2d* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Mirrored(*theP);
     return new gp_Ax22d(r);
@@ -245,7 +245,7 @@ B3D_API void* b3d_gp_Ax22d_Mirrored__gp_Pnt2d(void* self, const gp_Pnt2d* theP, 
 B3D_API void b3d_gp_Ax22d_Mirror__gp_Ax2d(void* self, const gp_Ax2d* theA, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Mirror(*theA);
     return;
@@ -256,7 +256,7 @@ B3D_API void b3d_gp_Ax22d_Mirror__gp_Ax2d(void* self, const gp_Ax2d* theA, b3d_e
 B3D_API void* b3d_gp_Ax22d_Mirrored__gp_Ax2d(void* self, const gp_Ax2d* theA, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Mirrored(*theA);
     return new gp_Ax22d(r);
@@ -268,7 +268,7 @@ B3D_API void* b3d_gp_Ax22d_Mirrored__gp_Ax2d(void* self, const gp_Ax2d* theA, b3
 B3D_API void b3d_gp_Ax22d_Rotate__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Rotate(*theP, theAng);
     return;
@@ -279,7 +279,7 @@ B3D_API void b3d_gp_Ax22d_Rotate__gp_Pnt2d__double(void* self, const gp_Pnt2d* t
 B3D_API void* b3d_gp_Ax22d_Rotated__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Rotated(*theP, theAng);
     return new gp_Ax22d(r);
@@ -291,7 +291,7 @@ B3D_API void* b3d_gp_Ax22d_Rotated__gp_Pnt2d__double(void* self, const gp_Pnt2d*
 B3D_API void b3d_gp_Ax22d_Scale__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Scale(*theP, theS);
     return;
@@ -302,7 +302,7 @@ B3D_API void b3d_gp_Ax22d_Scale__gp_Pnt2d__double(void* self, const gp_Pnt2d* th
 B3D_API void* b3d_gp_Ax22d_Scaled__gp_Pnt2d__double(void* self, const gp_Pnt2d* theP, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Scaled(*theP, theS);
     return new gp_Ax22d(r);
@@ -314,7 +314,7 @@ B3D_API void* b3d_gp_Ax22d_Scaled__gp_Pnt2d__double(void* self, const gp_Pnt2d* 
 B3D_API void b3d_gp_Ax22d_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Transform(*theT);
     return;
@@ -325,7 +325,7 @@ B3D_API void b3d_gp_Ax22d_Transform__gp_Trsf2d(void* self, const gp_Trsf2d* theT
 B3D_API void* b3d_gp_Ax22d_Transformed__gp_Trsf2d(void* self, const gp_Trsf2d* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Transformed(*theT);
     return new gp_Ax22d(r);
@@ -337,7 +337,7 @@ B3D_API void* b3d_gp_Ax22d_Transformed__gp_Trsf2d(void* self, const gp_Trsf2d* t
 B3D_API void b3d_gp_Ax22d_Translate__gp_Vec2d(void* self, const gp_Vec2d* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Translate(*theV);
     return;
@@ -348,7 +348,7 @@ B3D_API void b3d_gp_Ax22d_Translate__gp_Vec2d(void* self, const gp_Vec2d* theV, 
 B3D_API void* b3d_gp_Ax22d_Translated__gp_Vec2d(void* self, const gp_Vec2d* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Translated(*theV);
     return new gp_Ax22d(r);
@@ -360,7 +360,7 @@ B3D_API void* b3d_gp_Ax22d_Translated__gp_Vec2d(void* self, const gp_Vec2d* theV
 B3D_API void b3d_gp_Ax22d_Translate__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* theP1, const gp_Pnt2d* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Ax22d*>(self)->Translate(*theP1, *theP2);
     return;
@@ -371,7 +371,7 @@ B3D_API void b3d_gp_Ax22d_Translate__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt
 B3D_API void* b3d_gp_Ax22d_Translated__gp_Pnt2d__gp_Pnt2d(void* self, const gp_Pnt2d* theP1, const gp_Pnt2d* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Ax22d*>(self)->Translated(*theP1, *theP2);
     return new gp_Ax22d(r);

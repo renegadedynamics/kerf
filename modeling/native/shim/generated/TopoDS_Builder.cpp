@@ -14,7 +14,7 @@ B3D_API void* b3d_TopoDS_Builder_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Builder>)
   {
-    try { return new TopoDS_Builder(*static_cast<const TopoDS_Builder*>(p)); }
+    B3D_TRY { return new TopoDS_Builder(*static_cast<const TopoDS_Builder*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_TopoDS_Builder_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<TopoDS_Builder>)
   {
-    try { return new TopoDS_Builder(); }
+    B3D_TRY { return new TopoDS_Builder(); }
     B3D_CATCH(err)
   }
   else
@@ -38,7 +38,7 @@ B3D_API void* b3d_TopoDS_Builder_new(b3d_error** err)
 B3D_API void b3d_TopoDS_Builder_MakeWire__mut_TopoDS_Wire(void* self, TopoDS_Wire* W, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->MakeWire(*W);
     return;
@@ -49,7 +49,7 @@ B3D_API void b3d_TopoDS_Builder_MakeWire__mut_TopoDS_Wire(void* self, TopoDS_Wir
 B3D_API void b3d_TopoDS_Builder_MakeShell__mut_TopoDS_Shell(void* self, TopoDS_Shell* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->MakeShell(*S);
     return;
@@ -60,7 +60,7 @@ B3D_API void b3d_TopoDS_Builder_MakeShell__mut_TopoDS_Shell(void* self, TopoDS_S
 B3D_API void b3d_TopoDS_Builder_MakeSolid__mut_TopoDS_Solid(void* self, TopoDS_Solid* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->MakeSolid(*S);
     return;
@@ -71,7 +71,7 @@ B3D_API void b3d_TopoDS_Builder_MakeSolid__mut_TopoDS_Solid(void* self, TopoDS_S
 B3D_API void b3d_TopoDS_Builder_MakeCompSolid__mut_TopoDS_CompSolid(void* self, TopoDS_CompSolid* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->MakeCompSolid(*C);
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_TopoDS_Builder_MakeCompSolid__mut_TopoDS_CompSolid(void* self, 
 B3D_API void b3d_TopoDS_Builder_MakeCompound__mut_TopoDS_Compound(void* self, TopoDS_Compound* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->MakeCompound(*C);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_TopoDS_Builder_MakeCompound__mut_TopoDS_Compound(void* self, To
 B3D_API void b3d_TopoDS_Builder_Add__mut_TopoDS_Shape__TopoDS_Shape(void* self, TopoDS_Shape* S, const TopoDS_Shape* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->Add(*S, *C);
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_TopoDS_Builder_Add__mut_TopoDS_Shape__TopoDS_Shape(void* self, 
 B3D_API void b3d_TopoDS_Builder_Remove__mut_TopoDS_Shape__TopoDS_Shape(void* self, TopoDS_Shape* S, const TopoDS_Shape* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Builder*>(self)->Remove(*S, *C);
     return;

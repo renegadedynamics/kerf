@@ -9,7 +9,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepPrimAPI_MakeTorus>)
   {
-    try { return new BRepPrimAPI_MakeTorus(*static_cast<const BRepPrimAPI_MakeTorus*>(p)); }
+    B3D_TRY { return new BRepPrimAPI_MakeTorus(*static_cast<const BRepPrimAPI_MakeTorus*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -23,7 +23,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_as_BRepBuilderAPI_Command(void* p) { ret
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double(double R1, double R2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(R1, R2);
     return r;
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double(double R1, double R2
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double(double R1, double R2, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(R1, R2, angle);
     return r;
@@ -47,7 +47,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double(double R1, d
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double__double(double R1, double R2, double angle1, double angle2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(R1, R2, angle1, angle2);
     return r;
@@ -59,7 +59,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double__double(doub
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double__double__double(double R1, double R2, double angle1, double angle2, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(R1, R2, angle1, angle2, angle);
     return r;
@@ -71,7 +71,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__double__double__double__double__dou
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double(const gp_Ax2* Axes, double R1, double R2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(*Axes, R1, R2);
     return r;
@@ -83,7 +83,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double(const gp_Ax2
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double__double(const gp_Ax2* Axes, double R1, double R2, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(*Axes, R1, R2, angle);
     return r;
@@ -95,7 +95,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double__double(cons
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double__double__double(const gp_Ax2* Axes, double R1, double R2, double angle1, double angle2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(*Axes, R1, R2, angle1, angle2);
     return r;
@@ -107,7 +107,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double__double__dou
 B3D_API void* b3d_BRepPrimAPI_MakeTorus_new__gp_Ax2__double__double__double__double__double(const gp_Ax2* Axes, double R1, double R2, double angle1, double angle2, double angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepPrimAPI_MakeTorus(*Axes, R1, R2, angle1, angle2, angle);
     return r;

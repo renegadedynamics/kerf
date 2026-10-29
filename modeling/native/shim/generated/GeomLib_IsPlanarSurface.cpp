@@ -10,7 +10,7 @@ B3D_API void* b3d_GeomLib_IsPlanarSurface_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GeomLib_IsPlanarSurface>)
   {
-    try { return new GeomLib_IsPlanarSurface(*static_cast<const GeomLib_IsPlanarSurface*>(p)); }
+    B3D_TRY { return new GeomLib_IsPlanarSurface(*static_cast<const GeomLib_IsPlanarSurface*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -21,7 +21,7 @@ B3D_API void* b3d_GeomLib_IsPlanarSurface_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GeomLib_IsPlanarSurface_new__Geom_Surface(Geom_Surface* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomLib_IsPlanarSurface(occ::handle<Geom_Surface>(S));
     return r;
@@ -33,7 +33,7 @@ B3D_API void* b3d_GeomLib_IsPlanarSurface_new__Geom_Surface(Geom_Surface* S, b3d
 B3D_API void* b3d_GeomLib_IsPlanarSurface_new__Geom_Surface__double(Geom_Surface* S, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomLib_IsPlanarSurface(occ::handle<Geom_Surface>(S), Tol);
     return r;
@@ -45,7 +45,7 @@ B3D_API void* b3d_GeomLib_IsPlanarSurface_new__Geom_Surface__double(Geom_Surface
 B3D_API uint8_t b3d_GeomLib_IsPlanarSurface_IsPlanar(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomLib_IsPlanarSurface*>(self)->IsPlanar();
     return r ? 1 : 0;
@@ -57,7 +57,7 @@ B3D_API uint8_t b3d_GeomLib_IsPlanarSurface_IsPlanar(void* self, b3d_error** err
 B3D_API void* b3d_GeomLib_IsPlanarSurface_Plan(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomLib_IsPlanarSurface*>(self)->Plan();
     return new gp_Pln(r);

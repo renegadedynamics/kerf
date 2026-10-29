@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepBndLib_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBndLib>)
   {
-    try { return new BRepBndLib(*static_cast<const BRepBndLib*>(p)); }
+    B3D_TRY { return new BRepBndLib(*static_cast<const BRepBndLib*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepBndLib_new(b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_default_constructible_v<BRepBndLib>)
   {
-    try { return new BRepBndLib(); }
+    B3D_TRY { return new BRepBndLib(); }
     B3D_CATCH(err)
   }
   else
@@ -35,7 +35,7 @@ B3D_API void* b3d_BRepBndLib_new(b3d_error** err)
 B3D_API void b3d_BRepBndLib_Add__TopoDS_Shape__mut_Bnd_Box(const TopoDS_Shape* S, Bnd_Box* B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::Add(*S, *B);
     return;
@@ -46,7 +46,7 @@ B3D_API void b3d_BRepBndLib_Add__TopoDS_Shape__mut_Bnd_Box(const TopoDS_Shape* S
 B3D_API void b3d_BRepBndLib_Add__TopoDS_Shape__mut_Bnd_Box__bool(const TopoDS_Shape* S, Bnd_Box* B, uint8_t useTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::Add(*S, *B, useTriangulation != 0);
     return;
@@ -57,7 +57,7 @@ B3D_API void b3d_BRepBndLib_Add__TopoDS_Shape__mut_Bnd_Box__bool(const TopoDS_Sh
 B3D_API void b3d_BRepBndLib_AddClose__TopoDS_Shape__mut_Bnd_Box(const TopoDS_Shape* S, Bnd_Box* B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddClose(*S, *B);
     return;
@@ -68,7 +68,7 @@ B3D_API void b3d_BRepBndLib_AddClose__TopoDS_Shape__mut_Bnd_Box(const TopoDS_Sha
 B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box(const TopoDS_Shape* S, Bnd_Box* B, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOptimal(*S, *B);
     return;
@@ -79,7 +79,7 @@ B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box(const TopoDS_S
 B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box__bool(const TopoDS_Shape* S, Bnd_Box* B, uint8_t useTriangulation, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOptimal(*S, *B, useTriangulation != 0);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box__bool(const To
 B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box__bool__bool(const TopoDS_Shape* S, Bnd_Box* B, uint8_t useTriangulation, uint8_t useShapeTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOptimal(*S, *B, useTriangulation != 0, useShapeTolerance != 0);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_BRepBndLib_AddOptimal__TopoDS_Shape__mut_Bnd_Box__bool__bool(co
 B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB(const TopoDS_Shape* theS, Bnd_OBB* theOBB, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOBB(*theS, *theOBB);
     return;
@@ -112,7 +112,7 @@ B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB(const TopoDS_Shape
 B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB__bool(const TopoDS_Shape* theS, Bnd_OBB* theOBB, uint8_t theIsTriangulationUsed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOBB(*theS, *theOBB, theIsTriangulationUsed != 0);
     return;
@@ -123,7 +123,7 @@ B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB__bool(const TopoDS
 B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB__bool__bool(const TopoDS_Shape* theS, Bnd_OBB* theOBB, uint8_t theIsTriangulationUsed, uint8_t theIsOptimal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOBB(*theS, *theOBB, theIsTriangulationUsed != 0, theIsOptimal != 0);
     return;
@@ -134,7 +134,7 @@ B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB__bool__bool(const 
 B3D_API void b3d_BRepBndLib_AddOBB__TopoDS_Shape__mut_Bnd_OBB__bool__bool__bool(const TopoDS_Shape* theS, Bnd_OBB* theOBB, uint8_t theIsTriangulationUsed, uint8_t theIsOptimal, uint8_t theIsShapeToleranceUsed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     BRepBndLib::AddOBB(*theS, *theOBB, theIsTriangulationUsed != 0, theIsOptimal != 0, theIsShapeToleranceUsed != 0);
     return;

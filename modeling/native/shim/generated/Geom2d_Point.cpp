@@ -11,7 +11,7 @@ B3D_API void* b3d_Geom2d_Point_downcast(void* t) { return b3d_retain(dynamic_cas
 B3D_API void b3d_Geom2d_Point_Coord__ref_double__ref_double(void* self, double* X, double* Y, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom2d_Point*>(self)->Coord(*X, *Y);
     return;
@@ -22,7 +22,7 @@ B3D_API void b3d_Geom2d_Point_Coord__ref_double__ref_double(void* self, double* 
 B3D_API void* b3d_Geom2d_Point_Pnt2d(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Point*>(self)->Pnt2d();
     return new gp_Pnt2d(r);
@@ -34,7 +34,7 @@ B3D_API void* b3d_Geom2d_Point_Pnt2d(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Point_X(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Point*>(self)->X();
     return r;
@@ -46,7 +46,7 @@ B3D_API double b3d_Geom2d_Point_X(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Point_Y(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Point*>(self)->Y();
     return r;
@@ -58,7 +58,7 @@ B3D_API double b3d_Geom2d_Point_Y(void* self, b3d_error** err)
 B3D_API double b3d_Geom2d_Point_Distance__Geom2d_Point(void* self, Geom2d_Point* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Point*>(self)->Distance(occ::handle<Geom2d_Point>(Other));
     return r;
@@ -70,7 +70,7 @@ B3D_API double b3d_Geom2d_Point_Distance__Geom2d_Point(void* self, Geom2d_Point*
 B3D_API double b3d_Geom2d_Point_SquareDistance__Geom2d_Point(void* self, Geom2d_Point* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2d_Point*>(self)->SquareDistance(occ::handle<Geom2d_Point>(Other));
     return r;

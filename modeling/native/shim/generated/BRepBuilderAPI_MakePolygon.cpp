@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_copy(const void* p, b3d_error** err
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakePolygon>)
   {
-    try { return new BRepBuilderAPI_MakePolygon(*static_cast<const BRepBuilderAPI_MakePolygon*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakePolygon(*static_cast<const BRepBuilderAPI_MakePolygon*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_as_BRepBuilderAPI_Command(void* p) 
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new(b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*P1, *P2);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt(const gp_Pnt* P
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, const gp_Pnt* P3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*P1, *P2, *P3);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt(const g
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__bool(const gp_Pnt* P1, const gp_Pnt* P2, const gp_Pnt* P3, uint8_t Close, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*P1, *P2, *P3, Close != 0);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__bool(c
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__gp_Pnt(const gp_Pnt* P1, const gp_Pnt* P2, const gp_Pnt* P3, const gp_Pnt* P4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*P1, *P2, *P3, *P4);
     return r;
@@ -85,7 +85,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__gp_Pnt
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__gp_Pnt__bool(const gp_Pnt* P1, const gp_Pnt* P2, const gp_Pnt* P3, const gp_Pnt* P4, uint8_t Close, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*P1, *P2, *P3, *P4, Close != 0);
     return r;
@@ -97,7 +97,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__gp_Pnt__gp_Pnt__gp_Pnt__gp_Pnt
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*V1, *V2);
     return r;
@@ -109,7 +109,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex(c
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, const TopoDS_Vertex* V3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*V1, *V2, *V3);
     return r;
@@ -121,7 +121,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex__bool(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, const TopoDS_Vertex* V3, uint8_t Close, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*V1, *V2, *V3, Close != 0);
     return r;
@@ -133,7 +133,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, const TopoDS_Vertex* V3, const TopoDS_Vertex* V4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*V1, *V2, *V3, *V4);
     return r;
@@ -145,7 +145,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex__TopoDS_Vertex__bool(const TopoDS_Vertex* V1, const TopoDS_Vertex* V2, const TopoDS_Vertex* V3, const TopoDS_Vertex* V4, uint8_t Close, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepBuilderAPI_MakePolygon(*V1, *V2, *V3, *V4, Close != 0);
     return r;
@@ -157,7 +157,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_new__TopoDS_Vertex__TopoDS_Vertex__
 B3D_API void b3d_BRepBuilderAPI_MakePolygon_Add__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakePolygon*>(self)->Add(*P);
     return;
@@ -168,7 +168,7 @@ B3D_API void b3d_BRepBuilderAPI_MakePolygon_Add__gp_Pnt(void* self, const gp_Pnt
 B3D_API void b3d_BRepBuilderAPI_MakePolygon_Add__TopoDS_Vertex(void* self, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakePolygon*>(self)->Add(*V);
     return;
@@ -179,7 +179,7 @@ B3D_API void b3d_BRepBuilderAPI_MakePolygon_Add__TopoDS_Vertex(void* self, const
 B3D_API uint8_t b3d_BRepBuilderAPI_MakePolygon_Added(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->Added();
     return r ? 1 : 0;
@@ -191,7 +191,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakePolygon_Added(void* self, b3d_error** err
 B3D_API void b3d_BRepBuilderAPI_MakePolygon_Close(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakePolygon*>(self)->Close();
     return;
@@ -202,7 +202,7 @@ B3D_API void b3d_BRepBuilderAPI_MakePolygon_Close(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_FirstVertex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->FirstVertex();
     return new TopoDS_Vertex(r);
@@ -214,7 +214,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_FirstVertex(void* self, b3d_error**
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_LastVertex(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->LastVertex();
     return new TopoDS_Vertex(r);
@@ -226,7 +226,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_LastVertex(void* self, b3d_error** 
 B3D_API uint8_t b3d_BRepBuilderAPI_MakePolygon_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->IsDone();
     return r ? 1 : 0;
@@ -238,7 +238,7 @@ B3D_API uint8_t b3d_BRepBuilderAPI_MakePolygon_IsDone(void* self, b3d_error** er
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_Edge(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->Edge();
     return new TopoDS_Edge(r);
@@ -250,7 +250,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakePolygon_Edge(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakePolygon_Wire(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakePolygon*>(self)->Wire();
     return new TopoDS_Wire(r);

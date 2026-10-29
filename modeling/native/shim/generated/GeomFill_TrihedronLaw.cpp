@@ -13,7 +13,7 @@ B3D_API void* b3d_GeomFill_TrihedronLaw_downcast(void* t) { return b3d_retain(dy
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_SetCurve__Adaptor3d_Curve(void* self, Adaptor3d_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->SetCurve(occ::handle<Adaptor3d_Curve>(C));
     return r ? 1 : 0;
@@ -25,7 +25,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_SetCurve__Adaptor3d_Curve(void* self, 
 B3D_API void* b3d_GeomFill_TrihedronLaw_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->Copy();
     return b3d_retain(occ::handle<GeomFill_TrihedronLaw>(r).get());
@@ -37,7 +37,7 @@ B3D_API void* b3d_GeomFill_TrihedronLaw_Copy(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomFill_TrihedronLaw_ErrorStatus(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->ErrorStatus();
     return static_cast<int32_t>(r);
@@ -49,7 +49,7 @@ B3D_API int32_t b3d_GeomFill_TrihedronLaw_ErrorStatus(void* self, b3d_error** er
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D0__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* Normal, gp_Vec* BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->D0(Param, *Tangent, *Normal, *BiNormal);
     return r ? 1 : 0;
@@ -61,7 +61,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D0__double__mut_gp_Vec__mut_gp_Vec__mu
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D1__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* BiNormal, gp_Vec* DBiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->D1(Param, *Tangent, *DTangent, *Normal, *DNormal, *BiNormal, *DBiNormal);
     return r ? 1 : 0;
@@ -73,7 +73,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D1__double__mut_gp_Vec__mut_gp_Vec__mu
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D2__double__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, double Param, gp_Vec* Tangent, gp_Vec* DTangent, gp_Vec* D2Tangent, gp_Vec* Normal, gp_Vec* DNormal, gp_Vec* D2Normal, gp_Vec* BiNormal, gp_Vec* DBiNormal, gp_Vec* D2BiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->D2(Param, *Tangent, *DTangent, *D2Tangent, *Normal, *DNormal, *D2Normal, *BiNormal, *DBiNormal, *D2BiNormal);
     return r ? 1 : 0;
@@ -85,7 +85,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_D2__double__mut_gp_Vec__mut_gp_Vec__mu
 B3D_API int32_t b3d_GeomFill_TrihedronLaw_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -97,7 +97,7 @@ B3D_API int32_t b3d_GeomFill_TrihedronLaw_NbIntervals__GeomAbs_Shape(void* self,
 B3D_API void b3d_GeomFill_TrihedronLaw_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_TrihedronLaw*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -108,7 +108,7 @@ B3D_API void b3d_GeomFill_TrihedronLaw_Intervals__mut_TColStd_Array1OfReal__Geom
 B3D_API void b3d_GeomFill_TrihedronLaw_SetInterval__double__double(void* self, double First, double Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_TrihedronLaw*>(self)->SetInterval(First, Last);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_GeomFill_TrihedronLaw_SetInterval__double__double(void* self, d
 B3D_API void b3d_GeomFill_TrihedronLaw_GetInterval__ref_double__ref_double(void* self, double* First, double* Last, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_TrihedronLaw*>(self)->GetInterval(*First, *Last);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_GeomFill_TrihedronLaw_GetInterval__ref_double__ref_double(void*
 B3D_API void b3d_GeomFill_TrihedronLaw_GetAverageLaw__mut_gp_Vec__mut_gp_Vec__mut_gp_Vec(void* self, gp_Vec* ATangent, gp_Vec* ANormal, gp_Vec* ABiNormal, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomFill_TrihedronLaw*>(self)->GetAverageLaw(*ATangent, *ANormal, *ABiNormal);
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_GeomFill_TrihedronLaw_GetAverageLaw__mut_gp_Vec__mut_gp_Vec__mu
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsConstant(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->IsConstant();
     return r ? 1 : 0;
@@ -153,7 +153,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsConstant(void* self, b3d_error** err
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsOnlyBy3dCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomFill_TrihedronLaw*>(self)->IsOnlyBy3dCurve();
     return r ? 1 : 0;
@@ -165,7 +165,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsOnlyBy3dCurve(void* self, b3d_error*
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsInstance__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<GeomFill_TrihedronLaw*>(self))->IsInstance(theTypeName);
     return r ? 1 : 0;
@@ -177,7 +177,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsInstance__string(void* self, const c
 B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsKind__string(void* self, const char* theTypeName, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<GeomFill_TrihedronLaw*>(self))->IsKind(theTypeName);
     return r ? 1 : 0;
@@ -189,7 +189,7 @@ B3D_API uint8_t b3d_GeomFill_TrihedronLaw_IsKind__string(void* self, const char*
 B3D_API int32_t b3d_GeomFill_TrihedronLaw_GetRefCount(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<GeomFill_TrihedronLaw*>(self))->GetRefCount();
     return r;
@@ -201,7 +201,7 @@ B3D_API int32_t b3d_GeomFill_TrihedronLaw_GetRefCount(void* self, b3d_error** er
 B3D_API void b3d_GeomFill_TrihedronLaw_IncrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Standard_Transient*>(static_cast<GeomFill_TrihedronLaw*>(self))->IncrementRefCounter();
     return;
@@ -212,7 +212,7 @@ B3D_API void b3d_GeomFill_TrihedronLaw_IncrementRefCounter(void* self, b3d_error
 B3D_API int32_t b3d_GeomFill_TrihedronLaw_DecrementRefCounter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Standard_Transient*>(static_cast<GeomFill_TrihedronLaw*>(self))->DecrementRefCounter();
     return r;

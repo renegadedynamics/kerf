@@ -8,7 +8,7 @@ B3D_API void* b3d_Poly_Triangle_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Poly_Triangle>)
   {
-    try { return new Poly_Triangle(*static_cast<const Poly_Triangle*>(p)); }
+    B3D_TRY { return new Poly_Triangle(*static_cast<const Poly_Triangle*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -19,7 +19,7 @@ B3D_API void* b3d_Poly_Triangle_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Poly_Triangle_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangle();
     return r;
@@ -31,7 +31,7 @@ B3D_API void* b3d_Poly_Triangle_new(b3d_error** err)
 B3D_API void* b3d_Poly_Triangle_new__int__int__int(int32_t theN1, int32_t theN2, int32_t theN3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Poly_Triangle(theN1, theN2, theN3);
     return r;
@@ -43,7 +43,7 @@ B3D_API void* b3d_Poly_Triangle_new__int__int__int(int32_t theN1, int32_t theN2,
 B3D_API void b3d_Poly_Triangle_Set__int__int__int(void* self, int32_t theN1, int32_t theN2, int32_t theN3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangle*>(self)->Set(theN1, theN2, theN3);
     return;
@@ -54,7 +54,7 @@ B3D_API void b3d_Poly_Triangle_Set__int__int__int(void* self, int32_t theN1, int
 B3D_API void b3d_Poly_Triangle_Set__int__int(void* self, int32_t theIndex, int32_t theNode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangle*>(self)->Set(theIndex, theNode);
     return;
@@ -65,7 +65,7 @@ B3D_API void b3d_Poly_Triangle_Set__int__int(void* self, int32_t theIndex, int32
 B3D_API void b3d_Poly_Triangle_Get__ref_int__ref_int__ref_int(void* self, int32_t* theN1, int32_t* theN2, int32_t* theN3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Poly_Triangle*>(self)->Get(*theN1, *theN2, *theN3);
     return;
@@ -76,7 +76,7 @@ B3D_API void b3d_Poly_Triangle_Get__ref_int__ref_int__ref_int(void* self, int32_
 B3D_API int32_t b3d_Poly_Triangle_Value__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Poly_Triangle*>(self)->Value(theIndex);
     return r;

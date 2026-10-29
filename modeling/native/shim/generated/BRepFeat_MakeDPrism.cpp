@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepFeat_MakeDPrism>)
   {
-    try { return new BRepFeat_MakeDPrism(*static_cast<const BRepFeat_MakeDPrism*>(p)); }
+    B3D_TRY { return new BRepFeat_MakeDPrism(*static_cast<const BRepFeat_MakeDPrism*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_as_BRepBuilderAPI_Command(void* p) { retur
 B3D_API void* b3d_BRepFeat_MakeDPrism_new__TopoDS_Shape__TopoDS_Face__TopoDS_Face__double__int__bool(const TopoDS_Shape* Sbase, const TopoDS_Face* Pbase, const TopoDS_Face* Skface, double Angle, int32_t Fuse, uint8_t Modify, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFeat_MakeDPrism(*Sbase, *Pbase, *Skface, Angle, Fuse, Modify != 0);
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_new__TopoDS_Shape__TopoDS_Face__TopoDS_Fac
 B3D_API void* b3d_BRepFeat_MakeDPrism_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFeat_MakeDPrism();
     return r;
@@ -51,7 +51,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_new(b3d_error** err)
 B3D_API void b3d_BRepFeat_MakeDPrism_Init__TopoDS_Shape__TopoDS_Face__TopoDS_Face__double__int__bool(void* self, const TopoDS_Shape* Sbase, const TopoDS_Face* Pbase, const TopoDS_Face* Skface, double Angle, int32_t Fuse, uint8_t Modify, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->Init(*Sbase, *Pbase, *Skface, Angle, Fuse, Modify != 0);
     return;
@@ -62,7 +62,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_Init__TopoDS_Shape__TopoDS_Face__TopoDS_Fac
 B3D_API void b3d_BRepFeat_MakeDPrism_Add__TopoDS_Edge__TopoDS_Face(void* self, const TopoDS_Edge* E, const TopoDS_Face* OnFace, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->Add(*E, *OnFace);
     return;
@@ -73,7 +73,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_Add__TopoDS_Edge__TopoDS_Face(void* self, c
 B3D_API void b3d_BRepFeat_MakeDPrism_Perform__double(void* self, double Height, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->Perform(Height);
     return;
@@ -84,7 +84,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_Perform__double(void* self, double Height, 
 B3D_API void b3d_BRepFeat_MakeDPrism_Perform__TopoDS_Shape(void* self, const TopoDS_Shape* Until, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->Perform(*Until);
     return;
@@ -95,7 +95,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_Perform__TopoDS_Shape(void* self, const Top
 B3D_API void b3d_BRepFeat_MakeDPrism_Perform__TopoDS_Shape__TopoDS_Shape(void* self, const TopoDS_Shape* From, const TopoDS_Shape* Until, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->Perform(*From, *Until);
     return;
@@ -106,7 +106,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_Perform__TopoDS_Shape__TopoDS_Shape(void* s
 B3D_API void b3d_BRepFeat_MakeDPrism_PerformUntilEnd(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->PerformUntilEnd();
     return;
@@ -117,7 +117,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_PerformUntilEnd(void* self, b3d_error** err
 B3D_API void b3d_BRepFeat_MakeDPrism_PerformFromEnd__TopoDS_Shape(void* self, const TopoDS_Shape* FUntil, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->PerformFromEnd(*FUntil);
     return;
@@ -128,7 +128,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_PerformFromEnd__TopoDS_Shape(void* self, co
 B3D_API void b3d_BRepFeat_MakeDPrism_PerformThruAll(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->PerformThruAll();
     return;
@@ -139,7 +139,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_PerformThruAll(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_MakeDPrism_PerformUntilHeight__TopoDS_Shape__double(void* self, const TopoDS_Shape* Until, double Height, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->PerformUntilHeight(*Until, Height);
     return;
@@ -150,7 +150,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_PerformUntilHeight__TopoDS_Shape__double(vo
 B3D_API void* b3d_BRepFeat_MakeDPrism_BarycCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_MakeDPrism*>(self)->BarycCurve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -162,7 +162,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_BarycCurve(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_MakeDPrism_BossEdges__int(void* self, int32_t sig, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_MakeDPrism*>(self)->BossEdges(sig);
     return;
@@ -173,7 +173,7 @@ B3D_API void b3d_BRepFeat_MakeDPrism_BossEdges__int(void* self, int32_t sig, b3d
 B3D_API void* b3d_BRepFeat_MakeDPrism_TopEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_MakeDPrism*>(self)->TopEdges();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -185,7 +185,7 @@ B3D_API void* b3d_BRepFeat_MakeDPrism_TopEdges(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_MakeDPrism_LatEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_MakeDPrism*>(self)->LatEdges();
     return new NCollection_List<TopoDS_Shape>(r);

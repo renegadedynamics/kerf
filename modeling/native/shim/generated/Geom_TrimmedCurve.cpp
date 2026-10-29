@@ -17,7 +17,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double(Geom_Curve* C, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_TrimmedCurve(occ::handle<Geom_Curve>(C), U1, U2);
     return b3d_retain(r);
@@ -29,7 +29,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double(Geom_Curve* 
 B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double__bool(Geom_Curve* C, double U1, double U2, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_TrimmedCurve(occ::handle<Geom_Curve>(C), U1, U2, Sense != 0);
     return b3d_retain(r);
@@ -41,7 +41,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double__bool(Geom_C
 B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double__bool__bool(Geom_Curve* C, double U1, double U2, uint8_t Sense, uint8_t theAdjustPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_TrimmedCurve(occ::handle<Geom_Curve>(C), U1, U2, Sense != 0, theAdjustPeriodic != 0);
     return b3d_retain(r);
@@ -53,7 +53,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_new__Geom_Curve__double__double__bool__bool(
 B3D_API void b3d_Geom_TrimmedCurve_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_TrimmedCurve*>(self)->Reverse();
     return;
@@ -64,7 +64,7 @@ B3D_API void b3d_Geom_TrimmedCurve_Reverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_TrimmedCurve_ReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->ReversedParameter(U);
     return r;
@@ -76,7 +76,7 @@ B3D_API double b3d_Geom_TrimmedCurve_ReversedParameter__double(void* self, doubl
 B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double(void* self, double U1, double U2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_TrimmedCurve*>(self)->SetTrim(U1, U2);
     return;
@@ -87,7 +87,7 @@ B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double(void* self, double U1
 B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double__bool(void* self, double U1, double U2, uint8_t Sense, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_TrimmedCurve*>(self)->SetTrim(U1, U2, Sense != 0);
     return;
@@ -98,7 +98,7 @@ B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double__bool(void* self, dou
 B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double__bool__bool(void* self, double U1, double U2, uint8_t Sense, uint8_t theAdjustPeriodic, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_TrimmedCurve*>(self)->SetTrim(U1, U2, Sense != 0, theAdjustPeriodic != 0);
     return;
@@ -109,7 +109,7 @@ B3D_API void b3d_Geom_TrimmedCurve_SetTrim__double__double__bool__bool(void* sel
 B3D_API void* b3d_Geom_TrimmedCurve_BasisCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->BasisCurve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -121,7 +121,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_BasisCurve(void* self, b3d_error** err)
 B3D_API int32_t b3d_Geom_TrimmedCurve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -133,7 +133,7 @@ B3D_API int32_t b3d_Geom_TrimmedCurve_Continuity(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_TrimmedCurve_IsCN__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->IsCN(N);
     return r ? 1 : 0;
@@ -145,7 +145,7 @@ B3D_API uint8_t b3d_Geom_TrimmedCurve_IsCN__int(void* self, int32_t N, b3d_error
 B3D_API void* b3d_Geom_TrimmedCurve_EndPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->EndPoint();
     return new gp_Pnt(r);
@@ -157,7 +157,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_EndPoint(void* self, b3d_error** err)
 B3D_API double b3d_Geom_TrimmedCurve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->FirstParameter();
     return r;
@@ -169,7 +169,7 @@ B3D_API double b3d_Geom_TrimmedCurve_FirstParameter(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_TrimmedCurve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -181,7 +181,7 @@ B3D_API uint8_t b3d_Geom_TrimmedCurve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_TrimmedCurve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -193,7 +193,7 @@ B3D_API uint8_t b3d_Geom_TrimmedCurve_IsPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_Geom_TrimmedCurve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->Period();
     return r;
@@ -205,7 +205,7 @@ B3D_API double b3d_Geom_TrimmedCurve_Period(void* self, b3d_error** err)
 B3D_API double b3d_Geom_TrimmedCurve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->LastParameter();
     return r;
@@ -217,7 +217,7 @@ B3D_API double b3d_Geom_TrimmedCurve_LastParameter(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_TrimmedCurve_StartPoint(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->StartPoint();
     return new gp_Pnt(r);
@@ -229,7 +229,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_StartPoint(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_TrimmedCurve_EvalD0__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->EvalD0(U);
     return new gp_Pnt(r);
@@ -241,7 +241,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_EvalD0__double(void* self, double U, b3d_err
 B3D_API void* b3d_Geom_TrimmedCurve_EvalDN__double__int(void* self, double U, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->EvalDN(U, N);
     return new gp_Vec(r);
@@ -253,7 +253,7 @@ B3D_API void* b3d_Geom_TrimmedCurve_EvalDN__double__int(void* self, double U, in
 B3D_API void b3d_Geom_TrimmedCurve_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_TrimmedCurve*>(self)->Transform(*T);
     return;
@@ -264,7 +264,7 @@ B3D_API void b3d_Geom_TrimmedCurve_Transform__gp_Trsf(void* self, const gp_Trsf*
 B3D_API double b3d_Geom_TrimmedCurve_TransformedParameter__double__gp_Trsf(void* self, double U, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->TransformedParameter(U, *T);
     return r;
@@ -276,7 +276,7 @@ B3D_API double b3d_Geom_TrimmedCurve_TransformedParameter__double__gp_Trsf(void*
 B3D_API double b3d_Geom_TrimmedCurve_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->ParametricTransformation(*T);
     return r;
@@ -288,7 +288,7 @@ B3D_API double b3d_Geom_TrimmedCurve_ParametricTransformation__gp_Trsf(void* sel
 B3D_API void* b3d_Geom_TrimmedCurve_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_TrimmedCurve*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

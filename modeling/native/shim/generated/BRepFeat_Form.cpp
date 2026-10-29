@@ -12,7 +12,7 @@ B3D_API void* b3d_BRepFeat_Form_as_BRepBuilderAPI_Command(void* p) { return stat
 B3D_API void* b3d_BRepFeat_Form_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->Modified(*F);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepFeat_Form_Modified__TopoDS_Shape(void* self, const TopoDS_
 B3D_API void* b3d_BRepFeat_Form_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepFeat_Form_Generated__TopoDS_Shape(void* self, const TopoDS
 B3D_API uint8_t b3d_BRepFeat_Form_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->IsDeleted(*S);
     return r ? 1 : 0;
@@ -48,7 +48,7 @@ B3D_API uint8_t b3d_BRepFeat_Form_IsDeleted__TopoDS_Shape(void* self, const Topo
 B3D_API void* b3d_BRepFeat_Form_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->FirstShape();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -60,7 +60,7 @@ B3D_API void* b3d_BRepFeat_Form_FirstShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_Form_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->LastShape();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -72,7 +72,7 @@ B3D_API void* b3d_BRepFeat_Form_LastShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_Form_NewEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->NewEdges();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -84,7 +84,7 @@ B3D_API void* b3d_BRepFeat_Form_NewEdges(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_Form_TgtEdges(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->TgtEdges();
     return new NCollection_List<TopoDS_Shape>(r);
@@ -96,7 +96,7 @@ B3D_API void* b3d_BRepFeat_Form_TgtEdges(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_BasisShapeValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->BasisShapeValid();
     return;
@@ -107,7 +107,7 @@ B3D_API void b3d_BRepFeat_Form_BasisShapeValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_GeneratedShapeValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->GeneratedShapeValid();
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_BRepFeat_Form_GeneratedShapeValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_ShapeFromValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->ShapeFromValid();
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_BRepFeat_Form_ShapeFromValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_ShapeUntilValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->ShapeUntilValid();
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_BRepFeat_Form_ShapeUntilValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_GluedFacesValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->GluedFacesValid();
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_BRepFeat_Form_GluedFacesValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_SketchFaceValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->SketchFaceValid();
     return;
@@ -162,7 +162,7 @@ B3D_API void b3d_BRepFeat_Form_SketchFaceValid(void* self, b3d_error** err)
 B3D_API void b3d_BRepFeat_Form_PerfSelectionValid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFeat_Form*>(self)->PerfSelectionValid();
     return;
@@ -173,7 +173,7 @@ B3D_API void b3d_BRepFeat_Form_PerfSelectionValid(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFeat_Form_BarycCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->BarycCurve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -185,7 +185,7 @@ B3D_API void* b3d_BRepFeat_Form_BarycCurve(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepFeat_Form_CurrentStatusError(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFeat_Form*>(self)->CurrentStatusError();
     return static_cast<int32_t>(r);

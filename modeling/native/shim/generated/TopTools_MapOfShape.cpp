@@ -9,7 +9,7 @@ B3D_API void b3d_TopTools_MapOfShape_delete(void* p) { delete static_cast<NColle
 B3D_API void* b3d_TopTools_MapOfShape_copy(const void* p, b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>(*static_cast<const NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(p)); }
+  B3D_TRY { return new NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>(*static_cast<const NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(p)); }
   B3D_CATCH(err)
   return {};
 }
@@ -17,7 +17,7 @@ B3D_API void* b3d_TopTools_MapOfShape_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TopTools_MapOfShape_new0(b3d_error** err)
 {
   *err = nullptr;
-  try { return new NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>(); }
+  B3D_TRY { return new NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>(); }
   B3D_CATCH(err)
   return {};
 }
@@ -25,7 +25,7 @@ B3D_API void* b3d_TopTools_MapOfShape_new0(b3d_error** err)
 B3D_API int32_t b3d_TopTools_MapOfShape_Extent(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return s.Extent(); }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return s.Extent(); }
   B3D_CATCH(err)
   return {};
 }
@@ -33,7 +33,7 @@ B3D_API int32_t b3d_TopTools_MapOfShape_Extent(void* self, b3d_error** err)
 B3D_API uint8_t b3d_TopTools_MapOfShape_Add(void* self, const TopoDS_Shape* key, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Add(*key)) ? 1 : 0; }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Add(*key)) ? 1 : 0; }
   B3D_CATCH(err)
   return {};
 }
@@ -41,7 +41,7 @@ B3D_API uint8_t b3d_TopTools_MapOfShape_Add(void* self, const TopoDS_Shape* key,
 B3D_API uint8_t b3d_TopTools_MapOfShape_Contains(void* self, const TopoDS_Shape* key, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Contains(*key)) ? 1 : 0; }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Contains(*key)) ? 1 : 0; }
   B3D_CATCH(err)
   return {};
 }
@@ -49,7 +49,7 @@ B3D_API uint8_t b3d_TopTools_MapOfShape_Contains(void* self, const TopoDS_Shape*
 B3D_API uint8_t b3d_TopTools_MapOfShape_Remove(void* self, const TopoDS_Shape* key, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Remove(*key)) ? 1 : 0; }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return (s.Remove(*key)) ? 1 : 0; }
   B3D_CATCH(err)
   return {};
 }
@@ -57,14 +57,14 @@ B3D_API uint8_t b3d_TopTools_MapOfShape_Remove(void* self, const TopoDS_Shape* k
 B3D_API void b3d_TopTools_MapOfShape_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); s.Clear(); }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); s.Clear(); }
   B3D_CATCH(err)
 }
 
 B3D_API int32_t b3d_TopTools_MapOfShape_Count(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return s.Extent(); }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); return s.Extent(); }
   B3D_CATCH(err)
   return {};
 }
@@ -72,6 +72,6 @@ B3D_API int32_t b3d_TopTools_MapOfShape_Count(void* self, b3d_error** err)
 B3D_API void b3d_TopTools_MapOfShape_Fill(void* self, void** out, b3d_error** err)
 {
   *err = nullptr;
-  try { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); int n = 0; for (NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>::Iterator it(s); it.More(); it.Next()) { auto&& x = it.Key(); out[n++] = new TopoDS_Shape(x); } }
+  B3D_TRY { NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>& s = *static_cast<NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>*>(self); int n = 0; for (NCollection_Map<TopoDS_Shape,TopTools_ShapeMapHasher>::Iterator it(s); it.More(); it.Next()) { auto&& x = it.Key(); out[n++] = new TopoDS_Shape(x); } }
   B3D_CATCH(err)
 }

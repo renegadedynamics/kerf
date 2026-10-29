@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSweep_as_BRepBuilderAPI_Command(void* p) { ret
 B3D_API void* b3d_BRepPrimAPI_MakeSweep_FirstShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeSweep*>(self)->FirstShape();
     return new TopoDS_Shape(r);
@@ -22,7 +22,7 @@ B3D_API void* b3d_BRepPrimAPI_MakeSweep_FirstShape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepPrimAPI_MakeSweep_LastShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepPrimAPI_MakeSweep*>(self)->LastShape();
     return new TopoDS_Shape(r);

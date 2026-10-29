@@ -27,6 +27,26 @@ struct b3d_error;
 
 b3d_error* b3d_make_error(const char* type, const char* message) noexcept;
 
+//! Installs OCCT's signal handling on the calling thread (see b3d_shim.cpp).
+void b3d_install_thread_signals() noexcept;
+
+//! Once per thread, before the thread's first OCCT call: OCCT's handling is per thread, and the host's threads
+//! (a thread pool, say) are created before and without the shim.
+inline void b3d_enter() noexcept
+{
+  static thread_local bool installed = false;
+  if (!installed)
+  {
+    installed = true;
+    b3d_install_thread_signals();
+  }
+}
+
+//! Opens the try block of a shim function, whose B3D_CATCH turns any failure into the error out-parameter.
+#define B3D_TRY                                                                                    \
+  b3d_enter();                                                                                     \
+  try
+
 #define B3D_CATCH(err)                                                                             \
   catch (const Standard_Failure& e)                                                                \
   {                                                                                                \

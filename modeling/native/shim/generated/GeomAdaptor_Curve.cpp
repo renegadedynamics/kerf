@@ -23,7 +23,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_downcast(void* t) { return b3d_retain(dynami
 B3D_API void* b3d_GeomAdaptor_Curve_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAdaptor_Curve();
     return b3d_retain(r);
@@ -35,7 +35,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_new(b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_new__Geom_Curve(Geom_Curve* theCurve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAdaptor_Curve(occ::handle<Geom_Curve>(theCurve));
     return b3d_retain(r);
@@ -47,7 +47,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_new__Geom_Curve(Geom_Curve* theCurve, b3d_er
 B3D_API void* b3d_GeomAdaptor_Curve_new__Geom_Curve__double__double(Geom_Curve* theCurve, double theUFirst, double theULast, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GeomAdaptor_Curve(occ::handle<Geom_Curve>(theCurve), theUFirst, theULast);
     return b3d_retain(r);
@@ -59,7 +59,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_new__Geom_Curve__double__double(Geom_Curve* 
 B3D_API void* b3d_GeomAdaptor_Curve_ShallowCopy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->ShallowCopy();
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -71,7 +71,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_ShallowCopy(void* self, b3d_error** err)
 B3D_API void b3d_GeomAdaptor_Curve_Reset(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_Curve*>(self)->Reset();
     return;
@@ -82,7 +82,7 @@ B3D_API void b3d_GeomAdaptor_Curve_Reset(void* self, b3d_error** err)
 B3D_API void b3d_GeomAdaptor_Curve_Load__Geom_Curve(void* self, Geom_Curve* theCurve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_Curve*>(self)->Load(occ::handle<Geom_Curve>(theCurve));
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_GeomAdaptor_Curve_Load__Geom_Curve(void* self, Geom_Curve* theC
 B3D_API void b3d_GeomAdaptor_Curve_Load__Geom_Curve__double__double(void* self, Geom_Curve* theCurve, double theUFirst, double theULast, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_Curve*>(self)->Load(occ::handle<Geom_Curve>(theCurve), theUFirst, theULast);
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_GeomAdaptor_Curve_Load__Geom_Curve__double__double(void* self, 
 B3D_API void* b3d_GeomAdaptor_Curve_Curve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Curve();
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -116,7 +116,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Curve(void* self, b3d_error** err)
 B3D_API double b3d_GeomAdaptor_Curve_FirstParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->FirstParameter();
     return r;
@@ -128,7 +128,7 @@ B3D_API double b3d_GeomAdaptor_Curve_FirstParameter(void* self, b3d_error** err)
 B3D_API double b3d_GeomAdaptor_Curve_LastParameter(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->LastParameter();
     return r;
@@ -140,7 +140,7 @@ B3D_API double b3d_GeomAdaptor_Curve_LastParameter(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomAdaptor_Curve_Continuity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Continuity();
     return static_cast<int32_t>(r);
@@ -152,7 +152,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_Continuity(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomAdaptor_Curve_NbIntervals__GeomAbs_Shape(void* self, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->NbIntervals(static_cast<GeomAbs_Shape>(S));
     return r;
@@ -164,7 +164,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_NbIntervals__GeomAbs_Shape(void* self, int
 B3D_API void b3d_GeomAdaptor_Curve_Intervals__mut_TColStd_Array1OfReal__GeomAbs_Shape(void* self, NCollection_Array1<double>* T, int32_t S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GeomAdaptor_Curve*>(self)->Intervals(*T, static_cast<GeomAbs_Shape>(S));
     return;
@@ -175,7 +175,7 @@ B3D_API void b3d_GeomAdaptor_Curve_Intervals__mut_TColStd_Array1OfReal__GeomAbs_
 B3D_API void* b3d_GeomAdaptor_Curve_Trim__double__double__double(void* self, double First, double Last, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Trim(First, Last, Tol);
     return b3d_retain(occ::handle<Adaptor3d_Curve>(r).get());
@@ -187,7 +187,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Trim__double__double__double(void* self, dou
 B3D_API uint8_t b3d_GeomAdaptor_Curve_IsClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->IsClosed();
     return r ? 1 : 0;
@@ -199,7 +199,7 @@ B3D_API uint8_t b3d_GeomAdaptor_Curve_IsClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomAdaptor_Curve_IsPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->IsPeriodic();
     return r ? 1 : 0;
@@ -211,7 +211,7 @@ B3D_API uint8_t b3d_GeomAdaptor_Curve_IsPeriodic(void* self, b3d_error** err)
 B3D_API double b3d_GeomAdaptor_Curve_Period(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Period();
     return r;
@@ -223,7 +223,7 @@ B3D_API double b3d_GeomAdaptor_Curve_Period(void* self, b3d_error** err)
 B3D_API double b3d_GeomAdaptor_Curve_Resolution__double(void* self, double R3d, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Resolution(R3d);
     return r;
@@ -235,7 +235,7 @@ B3D_API double b3d_GeomAdaptor_Curve_Resolution__double(void* self, double R3d, 
 B3D_API int32_t b3d_GeomAdaptor_Curve_GetType(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->GetType();
     return static_cast<int32_t>(r);
@@ -247,7 +247,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_GetType(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Line(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Line();
     return new gp_Lin(r);
@@ -259,7 +259,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Line(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Circle(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Circle();
     return new gp_Circ(r);
@@ -271,7 +271,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Circle(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Ellipse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Ellipse();
     return new gp_Elips(r);
@@ -283,7 +283,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Ellipse(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Hyperbola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Hyperbola();
     return new gp_Hypr(r);
@@ -295,7 +295,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Hyperbola(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Parabola(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Parabola();
     return new gp_Parab(r);
@@ -307,7 +307,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Parabola(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomAdaptor_Curve_Degree(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Degree();
     return r;
@@ -319,7 +319,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_Degree(void* self, b3d_error** err)
 B3D_API uint8_t b3d_GeomAdaptor_Curve_IsRational(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->IsRational();
     return r ? 1 : 0;
@@ -331,7 +331,7 @@ B3D_API uint8_t b3d_GeomAdaptor_Curve_IsRational(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomAdaptor_Curve_NbPoles(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->NbPoles();
     return r;
@@ -343,7 +343,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_NbPoles(void* self, b3d_error** err)
 B3D_API int32_t b3d_GeomAdaptor_Curve_NbKnots(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->NbKnots();
     return r;
@@ -355,7 +355,7 @@ B3D_API int32_t b3d_GeomAdaptor_Curve_NbKnots(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_Bezier(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->Bezier();
     return b3d_retain(occ::handle<Geom_BezierCurve>(r).get());
@@ -367,7 +367,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_Bezier(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_BSpline(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->BSpline();
     return b3d_retain(occ::handle<Geom_BSplineCurve>(r).get());
@@ -379,7 +379,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_BSpline(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_OffsetCurve(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->OffsetCurve();
     return b3d_retain(occ::handle<Geom_OffsetCurve>(r).get());
@@ -391,7 +391,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_OffsetCurve(void* self, b3d_error** err)
 B3D_API void* b3d_GeomAdaptor_Curve_EvalD0__double(void* self, double theU, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->EvalD0(theU);
     return new gp_Pnt(r);
@@ -403,7 +403,7 @@ B3D_API void* b3d_GeomAdaptor_Curve_EvalD0__double(void* self, double theU, b3d_
 B3D_API void* b3d_GeomAdaptor_Curve_EvalDN__double__int(void* self, double theU, int32_t theN, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GeomAdaptor_Curve*>(self)->EvalDN(theU, theN);
     return new gp_Vec(r);

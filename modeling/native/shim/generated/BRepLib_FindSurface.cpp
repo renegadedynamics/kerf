@@ -11,7 +11,7 @@ B3D_API void* b3d_BRepLib_FindSurface_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepLib_FindSurface>)
   {
-    try { return new BRepLib_FindSurface(*static_cast<const BRepLib_FindSurface*>(p)); }
+    B3D_TRY { return new BRepLib_FindSurface(*static_cast<const BRepLib_FindSurface*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_BRepLib_FindSurface_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepLib_FindSurface_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLib_FindSurface();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_BRepLib_FindSurface_new(b3d_error** err)
 B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLib_FindSurface(*S);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape(const TopoDS_Shape* S, b
 B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double(const TopoDS_Shape* S, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLib_FindSurface(*S, Tol);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double(const TopoDS_Sha
 B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double__bool(const TopoDS_Shape* S, double Tol, uint8_t OnlyPlane, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLib_FindSurface(*S, Tol, OnlyPlane != 0);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double__bool(const Topo
 B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double__bool__bool(const TopoDS_Shape* S, double Tol, uint8_t OnlyPlane, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepLib_FindSurface(*S, Tol, OnlyPlane != 0, OnlyClosed != 0);
     return r;
@@ -82,7 +82,7 @@ B3D_API void* b3d_BRepLib_FindSurface_new__TopoDS_Shape__double__bool__bool(cons
 B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLib_FindSurface*>(self)->Init(*S);
     return;
@@ -93,7 +93,7 @@ B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape(void* self, const TopoDS
 B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double(void* self, const TopoDS_Shape* S, double Tol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLib_FindSurface*>(self)->Init(*S, Tol);
     return;
@@ -104,7 +104,7 @@ B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double(void* self, cons
 B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double__bool(void* self, const TopoDS_Shape* S, double Tol, uint8_t OnlyPlane, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLib_FindSurface*>(self)->Init(*S, Tol, OnlyPlane != 0);
     return;
@@ -115,7 +115,7 @@ B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double__bool(void* self
 B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double__bool__bool(void* self, const TopoDS_Shape* S, double Tol, uint8_t OnlyPlane, uint8_t OnlyClosed, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepLib_FindSurface*>(self)->Init(*S, Tol, OnlyPlane != 0, OnlyClosed != 0);
     return;
@@ -126,7 +126,7 @@ B3D_API void b3d_BRepLib_FindSurface_Init__TopoDS_Shape__double__bool__bool(void
 B3D_API uint8_t b3d_BRepLib_FindSurface_Found(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->Found();
     return r ? 1 : 0;
@@ -138,7 +138,7 @@ B3D_API uint8_t b3d_BRepLib_FindSurface_Found(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLib_FindSurface_Surface(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->Surface();
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -150,7 +150,7 @@ B3D_API void* b3d_BRepLib_FindSurface_Surface(void* self, b3d_error** err)
 B3D_API double b3d_BRepLib_FindSurface_Tolerance(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->Tolerance();
     return r;
@@ -162,7 +162,7 @@ B3D_API double b3d_BRepLib_FindSurface_Tolerance(void* self, b3d_error** err)
 B3D_API double b3d_BRepLib_FindSurface_ToleranceReached(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->ToleranceReached();
     return r;
@@ -174,7 +174,7 @@ B3D_API double b3d_BRepLib_FindSurface_ToleranceReached(void* self, b3d_error** 
 B3D_API uint8_t b3d_BRepLib_FindSurface_Existed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->Existed();
     return r ? 1 : 0;
@@ -186,7 +186,7 @@ B3D_API uint8_t b3d_BRepLib_FindSurface_Existed(void* self, b3d_error** err)
 B3D_API void* b3d_BRepLib_FindSurface_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepLib_FindSurface*>(self)->Location();
     return new TopLoc_Location(r);

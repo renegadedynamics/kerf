@@ -12,7 +12,7 @@ B3D_API void* b3d_BOPAlgo_BuilderShape_as_BOPAlgo_Options(void* p) { return stat
 B3D_API void* b3d_BOPAlgo_BuilderShape_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -24,7 +24,7 @@ B3D_API void* b3d_BOPAlgo_BuilderShape_Shape(void* self, b3d_error** err)
 B3D_API void* b3d_BOPAlgo_BuilderShape_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->Modified(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -36,7 +36,7 @@ B3D_API void* b3d_BOPAlgo_BuilderShape_Modified__TopoDS_Shape(void* self, const 
 B3D_API void* b3d_BOPAlgo_BuilderShape_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->Generated(*theS);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -48,7 +48,7 @@ B3D_API void* b3d_BOPAlgo_BuilderShape_Generated__TopoDS_Shape(void* self, const
 B3D_API uint8_t b3d_BOPAlgo_BuilderShape_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->IsDeleted(*theS);
     return r ? 1 : 0;
@@ -60,7 +60,7 @@ B3D_API uint8_t b3d_BOPAlgo_BuilderShape_IsDeleted__TopoDS_Shape(void* self, con
 B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasModified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->HasModified();
     return r ? 1 : 0;
@@ -72,7 +72,7 @@ B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasModified(void* self, b3d_error** err
 B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasGenerated(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->HasGenerated();
     return r ? 1 : 0;
@@ -84,7 +84,7 @@ B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasGenerated(void* self, b3d_error** er
 B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasDeleted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->HasDeleted();
     return r ? 1 : 0;
@@ -96,7 +96,7 @@ B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasDeleted(void* self, b3d_error** err)
 B3D_API void* b3d_BOPAlgo_BuilderShape_History(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->History();
     return b3d_retain(occ::handle<BRepTools_History>(r).get());
@@ -108,7 +108,7 @@ B3D_API void* b3d_BOPAlgo_BuilderShape_History(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_BuilderShape_SetToFillHistory__bool(void* self, uint8_t theHistFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_BuilderShape*>(self)->SetToFillHistory(theHistFlag != 0);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_BOPAlgo_BuilderShape_SetToFillHistory__bool(void* self, uint8_t
 B3D_API uint8_t b3d_BOPAlgo_BuilderShape_HasHistory(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_BuilderShape*>(self)->HasHistory();
     return r ? 1 : 0;

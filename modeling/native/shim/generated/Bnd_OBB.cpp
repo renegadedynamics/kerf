@@ -14,7 +14,7 @@ B3D_API void* b3d_Bnd_OBB_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Bnd_OBB>)
   {
-    try { return new Bnd_OBB(*static_cast<const Bnd_OBB*>(p)); }
+    B3D_TRY { return new Bnd_OBB(*static_cast<const Bnd_OBB*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_Bnd_OBB_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Bnd_OBB();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_Bnd_OBB_new(b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_new__gp_Pnt__gp_Dir__gp_Dir__gp_Dir__double__double__double(const gp_Pnt* theCenter, const gp_Dir* theXDirection, const gp_Dir* theYDirection, const gp_Dir* theZDirection, double theHXSize, double theHYSize, double theHZSize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Bnd_OBB(*theCenter, *theXDirection, *theYDirection, *theZDirection, theHXSize, theHYSize, theHZSize);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_Bnd_OBB_new__gp_Pnt__gp_Dir__gp_Dir__gp_Dir__double__double__d
 B3D_API void* b3d_Bnd_OBB_new__Bnd_Box(const Bnd_Box* theBox, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Bnd_OBB(*theBox);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_Bnd_OBB_new__Bnd_Box(const Bnd_Box* theBox, b3d_error** err)
 B3D_API void b3d_Bnd_OBB_ReBuild__TColgp_Array1OfPnt(void* self, const NCollection_Array1<gp_Pnt>* theListOfPoints, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->ReBuild(*theListOfPoints);
     return;
@@ -72,7 +72,7 @@ B3D_API void b3d_Bnd_OBB_ReBuild__TColgp_Array1OfPnt(void* self, const NCollecti
 B3D_API void b3d_Bnd_OBB_SetCenter__gp_Pnt(void* self, const gp_Pnt* theCenter, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetCenter(*theCenter);
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_Bnd_OBB_SetCenter__gp_Pnt(void* self, const gp_Pnt* theCenter, 
 B3D_API void b3d_Bnd_OBB_SetXComponent__gp_Dir__double(void* self, const gp_Dir* theXDirection, double theHXSize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetXComponent(*theXDirection, theHXSize);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_Bnd_OBB_SetXComponent__gp_Dir__double(void* self, const gp_Dir*
 B3D_API void b3d_Bnd_OBB_SetYComponent__gp_Dir__double(void* self, const gp_Dir* theYDirection, double theHYSize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetYComponent(*theYDirection, theHYSize);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_Bnd_OBB_SetYComponent__gp_Dir__double(void* self, const gp_Dir*
 B3D_API void b3d_Bnd_OBB_SetZComponent__gp_Dir__double(void* self, const gp_Dir* theZDirection, double theHZSize, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetZComponent(*theZDirection, theHZSize);
     return;
@@ -116,7 +116,7 @@ B3D_API void b3d_Bnd_OBB_SetZComponent__gp_Dir__double(void* self, const gp_Dir*
 B3D_API void* b3d_Bnd_OBB_Position(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->Position();
     return new gp_Ax3(r);
@@ -128,7 +128,7 @@ B3D_API void* b3d_Bnd_OBB_Position(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_Center(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->Center();
     return new gp_XYZ(r);
@@ -140,7 +140,7 @@ B3D_API void* b3d_Bnd_OBB_Center(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_XDirection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->XDirection();
     return new gp_XYZ(r);
@@ -152,7 +152,7 @@ B3D_API void* b3d_Bnd_OBB_XDirection(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_YDirection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->YDirection();
     return new gp_XYZ(r);
@@ -164,7 +164,7 @@ B3D_API void* b3d_Bnd_OBB_YDirection(void* self, b3d_error** err)
 B3D_API void* b3d_Bnd_OBB_ZDirection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->ZDirection();
     return new gp_XYZ(r);
@@ -176,7 +176,7 @@ B3D_API void* b3d_Bnd_OBB_ZDirection(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_OBB_XHSize(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->XHSize();
     return r;
@@ -188,7 +188,7 @@ B3D_API double b3d_Bnd_OBB_XHSize(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_OBB_YHSize(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->YHSize();
     return r;
@@ -200,7 +200,7 @@ B3D_API double b3d_Bnd_OBB_YHSize(void* self, b3d_error** err)
 B3D_API double b3d_Bnd_OBB_ZHSize(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->ZHSize();
     return r;
@@ -212,7 +212,7 @@ B3D_API double b3d_Bnd_OBB_ZHSize(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_OBB_IsVoid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->IsVoid();
     return r ? 1 : 0;
@@ -224,7 +224,7 @@ B3D_API uint8_t b3d_Bnd_OBB_IsVoid(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_OBB_SetVoid(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetVoid();
     return;
@@ -235,7 +235,7 @@ B3D_API void b3d_Bnd_OBB_SetVoid(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_OBB_SetAABox__bool(void* self, uint8_t theFlag, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->SetAABox(theFlag != 0);
     return;
@@ -246,7 +246,7 @@ B3D_API void b3d_Bnd_OBB_SetAABox__bool(void* self, uint8_t theFlag, b3d_error**
 B3D_API uint8_t b3d_Bnd_OBB_IsAABox(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->IsAABox();
     return r ? 1 : 0;
@@ -258,7 +258,7 @@ B3D_API uint8_t b3d_Bnd_OBB_IsAABox(void* self, b3d_error** err)
 B3D_API void b3d_Bnd_OBB_Enlarge__double(void* self, double theGapAdd, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->Enlarge(theGapAdd);
     return;
@@ -269,7 +269,7 @@ B3D_API void b3d_Bnd_OBB_Enlarge__double(void* self, double theGapAdd, b3d_error
 B3D_API double b3d_Bnd_OBB_SquareExtent(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->SquareExtent();
     return r;
@@ -281,7 +281,7 @@ B3D_API double b3d_Bnd_OBB_SquareExtent(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Bnd_OBB_IsOut__Bnd_OBB(void* self, const Bnd_OBB* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->IsOut(*theOther);
     return r ? 1 : 0;
@@ -293,7 +293,7 @@ B3D_API uint8_t b3d_Bnd_OBB_IsOut__Bnd_OBB(void* self, const Bnd_OBB* theOther, 
 B3D_API uint8_t b3d_Bnd_OBB_IsOut__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->IsOut(*theP);
     return r ? 1 : 0;
@@ -305,7 +305,7 @@ B3D_API uint8_t b3d_Bnd_OBB_IsOut__gp_Pnt(void* self, const gp_Pnt* theP, b3d_er
 B3D_API uint8_t b3d_Bnd_OBB_Contains__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->Contains(*theP);
     return r ? 1 : 0;
@@ -317,7 +317,7 @@ B3D_API uint8_t b3d_Bnd_OBB_Contains__gp_Pnt(void* self, const gp_Pnt* theP, b3d
 B3D_API uint8_t b3d_Bnd_OBB_Intersects__Bnd_OBB(void* self, const Bnd_OBB* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->Intersects(*theOther);
     return r ? 1 : 0;
@@ -329,7 +329,7 @@ B3D_API uint8_t b3d_Bnd_OBB_Intersects__Bnd_OBB(void* self, const Bnd_OBB* theOt
 B3D_API uint8_t b3d_Bnd_OBB_IsCompletelyInside__Bnd_OBB(void* self, const Bnd_OBB* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Bnd_OBB*>(self)->IsCompletelyInside(*theOther);
     return r ? 1 : 0;
@@ -341,7 +341,7 @@ B3D_API uint8_t b3d_Bnd_OBB_IsCompletelyInside__Bnd_OBB(void* self, const Bnd_OB
 B3D_API void b3d_Bnd_OBB_Add__Bnd_OBB(void* self, const Bnd_OBB* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->Add(*theOther);
     return;
@@ -352,7 +352,7 @@ B3D_API void b3d_Bnd_OBB_Add__Bnd_OBB(void* self, const Bnd_OBB* theOther, b3d_e
 B3D_API void b3d_Bnd_OBB_Add__gp_Pnt(void* self, const gp_Pnt* theP, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Bnd_OBB*>(self)->Add(*theP);
     return;

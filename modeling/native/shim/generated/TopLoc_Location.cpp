@@ -9,7 +9,7 @@ B3D_API void* b3d_TopLoc_Location_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopLoc_Location>)
   {
-    try { return new TopLoc_Location(*static_cast<const TopLoc_Location*>(p)); }
+    B3D_TRY { return new TopLoc_Location(*static_cast<const TopLoc_Location*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopLoc_Location_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopLoc_Location();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_TopLoc_Location_new(b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_new__gp_Trsf(const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopLoc_Location(*T);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_TopLoc_Location_new__gp_Trsf(const gp_Trsf* T, b3d_error** err
 B3D_API uint8_t b3d_TopLoc_Location_IsIdentity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->IsIdentity();
     return r ? 1 : 0;
@@ -56,7 +56,7 @@ B3D_API uint8_t b3d_TopLoc_Location_IsIdentity(void* self, b3d_error** err)
 B3D_API void b3d_TopLoc_Location_Identity(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopLoc_Location*>(self)->Identity();
     return;
@@ -67,7 +67,7 @@ B3D_API void b3d_TopLoc_Location_Identity(void* self, b3d_error** err)
 B3D_API int32_t b3d_TopLoc_Location_FirstPower(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->FirstPower();
     return r;
@@ -79,7 +79,7 @@ B3D_API int32_t b3d_TopLoc_Location_FirstPower(void* self, b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_NextLocation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->NextLocation();
     return new TopLoc_Location(r);
@@ -91,7 +91,7 @@ B3D_API void* b3d_TopLoc_Location_NextLocation(void* self, b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_Transformation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Transformation();
     return new gp_Trsf(r);
@@ -103,7 +103,7 @@ B3D_API void* b3d_TopLoc_Location_Transformation(void* self, b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_Inverted(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Inverted();
     return new TopLoc_Location(r);
@@ -115,7 +115,7 @@ B3D_API void* b3d_TopLoc_Location_Inverted(void* self, b3d_error** err)
 B3D_API void* b3d_TopLoc_Location_Multiplied__TopLoc_Location(void* self, const TopLoc_Location* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Multiplied(*Other);
     return new TopLoc_Location(r);
@@ -127,7 +127,7 @@ B3D_API void* b3d_TopLoc_Location_Multiplied__TopLoc_Location(void* self, const 
 B3D_API void* b3d_TopLoc_Location_Divided__TopLoc_Location(void* self, const TopLoc_Location* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Divided(*Other);
     return new TopLoc_Location(r);
@@ -139,7 +139,7 @@ B3D_API void* b3d_TopLoc_Location_Divided__TopLoc_Location(void* self, const Top
 B3D_API void* b3d_TopLoc_Location_Predivided__TopLoc_Location(void* self, const TopLoc_Location* Other, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Predivided(*Other);
     return new TopLoc_Location(r);
@@ -151,7 +151,7 @@ B3D_API void* b3d_TopLoc_Location_Predivided__TopLoc_Location(void* self, const 
 B3D_API void* b3d_TopLoc_Location_Powered__int(void* self, int32_t pwr, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->Powered(pwr);
     return new TopLoc_Location(r);
@@ -163,7 +163,7 @@ B3D_API void* b3d_TopLoc_Location_Powered__int(void* self, int32_t pwr, b3d_erro
 B3D_API uint64_t b3d_TopLoc_Location_HashCode(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->HashCode();
     return r;
@@ -175,7 +175,7 @@ B3D_API uint64_t b3d_TopLoc_Location_HashCode(void* self, b3d_error** err)
 B3D_API uint8_t b3d_TopLoc_Location_IsEqual__TopLoc_Location(void* self, const TopLoc_Location* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->IsEqual(*theOther);
     return r ? 1 : 0;
@@ -187,7 +187,7 @@ B3D_API uint8_t b3d_TopLoc_Location_IsEqual__TopLoc_Location(void* self, const T
 B3D_API uint8_t b3d_TopLoc_Location_IsDifferent__TopLoc_Location(void* self, const TopLoc_Location* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopLoc_Location*>(self)->IsDifferent(*theOther);
     return r ? 1 : 0;
@@ -199,7 +199,7 @@ B3D_API uint8_t b3d_TopLoc_Location_IsDifferent__TopLoc_Location(void* self, con
 B3D_API void b3d_TopLoc_Location_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopLoc_Location*>(self)->Clear();
     return;
@@ -210,7 +210,7 @@ B3D_API void b3d_TopLoc_Location_Clear(void* self, b3d_error** err)
 B3D_API double b3d_TopLoc_Location_ScalePrec(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = TopLoc_Location::ScalePrec();
     return r;

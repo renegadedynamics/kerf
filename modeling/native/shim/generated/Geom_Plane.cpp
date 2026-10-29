@@ -21,7 +21,7 @@ B3D_API void* b3d_Geom_Plane_downcast(void* t) { return b3d_retain(dynamic_cast<
 B3D_API void* b3d_Geom_Plane_new__gp_Ax3(const gp_Ax3* A3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Plane(*A3);
     return b3d_retain(r);
@@ -33,7 +33,7 @@ B3D_API void* b3d_Geom_Plane_new__gp_Ax3(const gp_Ax3* A3, b3d_error** err)
 B3D_API void* b3d_Geom_Plane_new__gp_Pln(const gp_Pln* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Plane(*Pl);
     return b3d_retain(r);
@@ -45,7 +45,7 @@ B3D_API void* b3d_Geom_Plane_new__gp_Pln(const gp_Pln* Pl, b3d_error** err)
 B3D_API void* b3d_Geom_Plane_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Plane(*P, *V);
     return b3d_retain(r);
@@ -57,7 +57,7 @@ B3D_API void* b3d_Geom_Plane_new__gp_Pnt__gp_Dir(const gp_Pnt* P, const gp_Dir* 
 B3D_API void* b3d_Geom_Plane_new__double__double__double__double(double A, double B, double C, double D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_Plane(A, B, C, D);
     return b3d_retain(r);
@@ -69,7 +69,7 @@ B3D_API void* b3d_Geom_Plane_new__double__double__double__double(double A, doubl
 B3D_API void b3d_Geom_Plane_SetPln__gp_Pln(void* self, const gp_Pln* Pl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->SetPln(*Pl);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_Geom_Plane_SetPln__gp_Pln(void* self, const gp_Pln* Pl, b3d_err
 B3D_API void* b3d_Geom_Plane_Pln(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->Pln();
     return new gp_Pln(r);
@@ -92,7 +92,7 @@ B3D_API void* b3d_Geom_Plane_Pln(void* self, b3d_error** err)
 B3D_API void b3d_Geom_Plane_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->UReverse();
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_Geom_Plane_UReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Plane_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->UReversedParameter(U);
     return r;
@@ -115,7 +115,7 @@ B3D_API double b3d_Geom_Plane_UReversedParameter__double(void* self, double U, b
 B3D_API void b3d_Geom_Plane_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->VReverse();
     return;
@@ -126,7 +126,7 @@ B3D_API void b3d_Geom_Plane_VReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_Plane_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->VReversedParameter(V);
     return r;
@@ -138,7 +138,7 @@ B3D_API double b3d_Geom_Plane_VReversedParameter__double(void* self, double V, b
 B3D_API void b3d_Geom_Plane_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -149,7 +149,7 @@ B3D_API void b3d_Geom_Plane_TransformParameters__ref_double__ref_double__gp_Trsf
 B3D_API void* b3d_Geom_Plane_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -161,7 +161,7 @@ B3D_API void* b3d_Geom_Plane_ParametricTransformation__gp_Trsf(void* self, const
 B3D_API void b3d_Geom_Plane_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -172,7 +172,7 @@ B3D_API void b3d_Geom_Plane_Bounds__ref_double__ref_double__ref_double__ref_doub
 B3D_API void b3d_Geom_Plane_Coefficients__ref_double__ref_double__ref_double__ref_double(void* self, double* A, double* B, double* C, double* D, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->Coefficients(*A, *B, *C, *D);
     return;
@@ -183,7 +183,7 @@ B3D_API void b3d_Geom_Plane_Coefficients__ref_double__ref_double__ref_double__re
 B3D_API uint8_t b3d_Geom_Plane_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -195,7 +195,7 @@ B3D_API uint8_t b3d_Geom_Plane_IsUClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Plane_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -207,7 +207,7 @@ B3D_API uint8_t b3d_Geom_Plane_IsVClosed(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Plane_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -219,7 +219,7 @@ B3D_API uint8_t b3d_Geom_Plane_IsUPeriodic(void* self, b3d_error** err)
 B3D_API uint8_t b3d_Geom_Plane_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -231,7 +231,7 @@ B3D_API uint8_t b3d_Geom_Plane_IsVPeriodic(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_Plane_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -243,7 +243,7 @@ B3D_API void* b3d_Geom_Plane_UIso__double(void* self, double U, b3d_error** err)
 B3D_API void* b3d_Geom_Plane_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -255,7 +255,7 @@ B3D_API void* b3d_Geom_Plane_VIso__double(void* self, double V, b3d_error** err)
 B3D_API void* b3d_Geom_Plane_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -267,7 +267,7 @@ B3D_API void* b3d_Geom_Plane_EvalD0__double__double(void* self, double U, double
 B3D_API void* b3d_Geom_Plane_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -279,7 +279,7 @@ B3D_API void* b3d_Geom_Plane_EvalDN__double__double__int__int(void* self, double
 B3D_API void b3d_Geom_Plane_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_Plane*>(self)->Transform(*T);
     return;
@@ -290,7 +290,7 @@ B3D_API void b3d_Geom_Plane_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d
 B3D_API void* b3d_Geom_Plane_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_Plane*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

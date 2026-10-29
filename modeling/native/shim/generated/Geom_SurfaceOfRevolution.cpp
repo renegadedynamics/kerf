@@ -21,7 +21,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_downcast(void* t) { return b3d_retain
 B3D_API void* b3d_Geom_SurfaceOfRevolution_new__Geom_Curve__gp_Ax1(Geom_Curve* C, const gp_Ax1* A1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom_SurfaceOfRevolution(occ::handle<Geom_Curve>(C), *A1);
     return b3d_retain(r);
@@ -33,7 +33,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_new__Geom_Curve__gp_Ax1(Geom_Curve* C
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_HasEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->HasEvalRepresentation();
     return r ? 1 : 0;
@@ -45,7 +45,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_HasEvalRepresentation(void* self, b
 B3D_API void b3d_Geom_SurfaceOfRevolution_ClearEvalRepresentation(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->ClearEvalRepresentation();
     return;
@@ -56,7 +56,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_ClearEvalRepresentation(void* self, b3
 B3D_API void b3d_Geom_SurfaceOfRevolution_SetAxis__gp_Ax1(void* self, const gp_Ax1* A1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->SetAxis(*A1);
     return;
@@ -67,7 +67,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_SetAxis__gp_Ax1(void* self, const gp_A
 B3D_API void b3d_Geom_SurfaceOfRevolution_SetDirection__gp_Dir(void* self, const gp_Dir* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->SetDirection(*V);
     return;
@@ -78,7 +78,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_SetDirection__gp_Dir(void* self, const
 B3D_API void b3d_Geom_SurfaceOfRevolution_SetBasisCurve__Geom_Curve(void* self, Geom_Curve* C, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->SetBasisCurve(occ::handle<Geom_Curve>(C));
     return;
@@ -89,7 +89,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_SetBasisCurve__Geom_Curve(void* self, 
 B3D_API void b3d_Geom_SurfaceOfRevolution_SetLocation__gp_Pnt(void* self, const gp_Pnt* P, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->SetLocation(*P);
     return;
@@ -100,7 +100,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_SetLocation__gp_Pnt(void* self, const 
 B3D_API void* b3d_Geom_SurfaceOfRevolution_Axis(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->Axis();
     return new gp_Ax1(r);
@@ -112,7 +112,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_Axis(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_SurfaceOfRevolution_Location(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->Location();
     return new gp_Pnt(r);
@@ -124,7 +124,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_Location(void* self, b3d_error** err)
 B3D_API void* b3d_Geom_SurfaceOfRevolution_ReferencePlane(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->ReferencePlane();
     return new gp_Ax2(r);
@@ -136,7 +136,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_ReferencePlane(void* self, b3d_error*
 B3D_API void b3d_Geom_SurfaceOfRevolution_UReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->UReverse();
     return;
@@ -147,7 +147,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_UReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_SurfaceOfRevolution_UReversedParameter__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->UReversedParameter(U);
     return r;
@@ -159,7 +159,7 @@ B3D_API double b3d_Geom_SurfaceOfRevolution_UReversedParameter__double(void* sel
 B3D_API void b3d_Geom_SurfaceOfRevolution_VReverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->VReverse();
     return;
@@ -170,7 +170,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_VReverse(void* self, b3d_error** err)
 B3D_API double b3d_Geom_SurfaceOfRevolution_VReversedParameter__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->VReversedParameter(V);
     return r;
@@ -182,7 +182,7 @@ B3D_API double b3d_Geom_SurfaceOfRevolution_VReversedParameter__double(void* sel
 B3D_API void b3d_Geom_SurfaceOfRevolution_TransformParameters__ref_double__ref_double__gp_Trsf(void* self, double* U, double* V, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->TransformParameters(*U, *V, *T);
     return;
@@ -193,7 +193,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_TransformParameters__ref_double__ref_d
 B3D_API void* b3d_Geom_SurfaceOfRevolution_ParametricTransformation__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->ParametricTransformation(*T);
     return new gp_GTrsf2d(r);
@@ -205,7 +205,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_ParametricTransformation__gp_Trsf(voi
 B3D_API void b3d_Geom_SurfaceOfRevolution_Bounds__ref_double__ref_double__ref_double__ref_double(void* self, double* U1, double* U2, double* V1, double* V2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->Bounds(*U1, *U2, *V1, *V2);
     return;
@@ -216,7 +216,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_Bounds__ref_double__ref_double__ref_do
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsUClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsUClosed();
     return r ? 1 : 0;
@@ -228,7 +228,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsUClosed(void* self, b3d_error** e
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsVClosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsVClosed();
     return r ? 1 : 0;
@@ -240,7 +240,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsVClosed(void* self, b3d_error** e
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsCNu__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsCNu(N);
     return r ? 1 : 0;
@@ -252,7 +252,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsCNu__int(void* self, int32_t N, b
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsCNv__int(void* self, int32_t N, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsCNv(N);
     return r ? 1 : 0;
@@ -264,7 +264,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsCNv__int(void* self, int32_t N, b
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsUPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsUPeriodic();
     return r ? 1 : 0;
@@ -276,7 +276,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsUPeriodic(void* self, b3d_error**
 B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsVPeriodic(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->IsVPeriodic();
     return r ? 1 : 0;
@@ -288,7 +288,7 @@ B3D_API uint8_t b3d_Geom_SurfaceOfRevolution_IsVPeriodic(void* self, b3d_error**
 B3D_API void* b3d_Geom_SurfaceOfRevolution_UIso__double(void* self, double U, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->UIso(U);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -300,7 +300,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_UIso__double(void* self, double U, b3
 B3D_API void* b3d_Geom_SurfaceOfRevolution_VIso__double(void* self, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->VIso(V);
     return b3d_retain(occ::handle<Geom_Curve>(r).get());
@@ -312,7 +312,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_VIso__double(void* self, double V, b3
 B3D_API void* b3d_Geom_SurfaceOfRevolution_EvalD0__double__double(void* self, double U, double V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->EvalD0(U, V);
     return new gp_Pnt(r);
@@ -324,7 +324,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_EvalD0__double__double(void* self, do
 B3D_API void* b3d_Geom_SurfaceOfRevolution_EvalDN__double__double__int__int(void* self, double U, double V, int32_t Nu, int32_t Nv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->EvalDN(U, V, Nu, Nv);
     return new gp_Vec(r);
@@ -336,7 +336,7 @@ B3D_API void* b3d_Geom_SurfaceOfRevolution_EvalDN__double__double__int__int(void
 B3D_API void b3d_Geom_SurfaceOfRevolution_Transform__gp_Trsf(void* self, const gp_Trsf* T, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<Geom_SurfaceOfRevolution*>(self)->Transform(*T);
     return;
@@ -347,7 +347,7 @@ B3D_API void b3d_Geom_SurfaceOfRevolution_Transform__gp_Trsf(void* self, const g
 B3D_API void* b3d_Geom_SurfaceOfRevolution_Copy(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom_SurfaceOfRevolution*>(self)->Copy();
     return b3d_retain(occ::handle<Geom_Geometry>(r).get());

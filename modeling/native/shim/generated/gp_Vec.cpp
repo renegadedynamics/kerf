@@ -14,7 +14,7 @@ B3D_API void* b3d_gp_Vec_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<gp_Vec>)
   {
-    try { return new gp_Vec(*static_cast<const gp_Vec*>(p)); }
+    B3D_TRY { return new gp_Vec(*static_cast<const gp_Vec*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_gp_Vec_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_gp_Vec_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Vec();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_gp_Vec_new(b3d_error** err)
 B3D_API void* b3d_gp_Vec_new__gp_Dir(const gp_Dir* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Vec(*theV);
     return r;
@@ -49,7 +49,7 @@ B3D_API void* b3d_gp_Vec_new__gp_Dir(const gp_Dir* theV, b3d_error** err)
 B3D_API void* b3d_gp_Vec_new__gp_XYZ(const gp_XYZ* theCoord, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Vec(*theCoord);
     return r;
@@ -61,7 +61,7 @@ B3D_API void* b3d_gp_Vec_new__gp_XYZ(const gp_XYZ* theCoord, b3d_error** err)
 B3D_API void* b3d_gp_Vec_new__double__double__double(double theXv, double theYv, double theZv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Vec(theXv, theYv, theZv);
     return r;
@@ -73,7 +73,7 @@ B3D_API void* b3d_gp_Vec_new__double__double__double(double theXv, double theYv,
 B3D_API void* b3d_gp_Vec_new__gp_Pnt__gp_Pnt(const gp_Pnt* theP1, const gp_Pnt* theP2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new gp_Vec(*theP1, *theP2);
     return r;
@@ -85,7 +85,7 @@ B3D_API void* b3d_gp_Vec_new__gp_Pnt__gp_Pnt(const gp_Pnt* theP1, const gp_Pnt* 
 B3D_API void b3d_gp_Vec_SetCoord__int__double(void* self, int32_t theIndex, double theXi, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetCoord(theIndex, theXi);
     return;
@@ -96,7 +96,7 @@ B3D_API void b3d_gp_Vec_SetCoord__int__double(void* self, int32_t theIndex, doub
 B3D_API void b3d_gp_Vec_SetCoord__double__double__double(void* self, double theXv, double theYv, double theZv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetCoord(theXv, theYv, theZv);
     return;
@@ -107,7 +107,7 @@ B3D_API void b3d_gp_Vec_SetCoord__double__double__double(void* self, double theX
 B3D_API void b3d_gp_Vec_SetX__double(void* self, double theX, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetX(theX);
     return;
@@ -118,7 +118,7 @@ B3D_API void b3d_gp_Vec_SetX__double(void* self, double theX, b3d_error** err)
 B3D_API void b3d_gp_Vec_SetY__double(void* self, double theY, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetY(theY);
     return;
@@ -129,7 +129,7 @@ B3D_API void b3d_gp_Vec_SetY__double(void* self, double theY, b3d_error** err)
 B3D_API void b3d_gp_Vec_SetZ__double(void* self, double theZ, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetZ(theZ);
     return;
@@ -140,7 +140,7 @@ B3D_API void b3d_gp_Vec_SetZ__double(void* self, double theZ, b3d_error** err)
 B3D_API void b3d_gp_Vec_SetXYZ__gp_XYZ(void* self, const gp_XYZ* theCoord, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetXYZ(*theCoord);
     return;
@@ -151,7 +151,7 @@ B3D_API void b3d_gp_Vec_SetXYZ__gp_XYZ(void* self, const gp_XYZ* theCoord, b3d_e
 B3D_API double b3d_gp_Vec_Coord__int(void* self, int32_t theIndex, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Coord(theIndex);
     return r;
@@ -163,7 +163,7 @@ B3D_API double b3d_gp_Vec_Coord__int(void* self, int32_t theIndex, b3d_error** e
 B3D_API void b3d_gp_Vec_Coord__ref_double__ref_double__ref_double(void* self, double* theXv, double* theYv, double* theZv, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Coord(*theXv, *theYv, *theZv);
     return;
@@ -174,7 +174,7 @@ B3D_API void b3d_gp_Vec_Coord__ref_double__ref_double__ref_double(void* self, do
 B3D_API double b3d_gp_Vec_X(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->X();
     return r;
@@ -186,7 +186,7 @@ B3D_API double b3d_gp_Vec_X(void* self, b3d_error** err)
 B3D_API double b3d_gp_Vec_Y(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Y();
     return r;
@@ -198,7 +198,7 @@ B3D_API double b3d_gp_Vec_Y(void* self, b3d_error** err)
 B3D_API double b3d_gp_Vec_Z(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Z();
     return r;
@@ -210,7 +210,7 @@ B3D_API double b3d_gp_Vec_Z(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Vec_XYZ(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->XYZ();
     return new gp_XYZ(r);
@@ -222,7 +222,7 @@ B3D_API void* b3d_gp_Vec_XYZ(void* self, b3d_error** err)
 B3D_API uint8_t b3d_gp_Vec_IsEqual__gp_Vec__double__double(void* self, const gp_Vec* theOther, double theLinearTolerance, double theAngularTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->IsEqual(*theOther, theLinearTolerance, theAngularTolerance);
     return r ? 1 : 0;
@@ -234,7 +234,7 @@ B3D_API uint8_t b3d_gp_Vec_IsEqual__gp_Vec__double__double(void* self, const gp_
 B3D_API uint8_t b3d_gp_Vec_IsNormal__gp_Vec__double(void* self, const gp_Vec* theOther, double theAngularTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->IsNormal(*theOther, theAngularTolerance);
     return r ? 1 : 0;
@@ -246,7 +246,7 @@ B3D_API uint8_t b3d_gp_Vec_IsNormal__gp_Vec__double(void* self, const gp_Vec* th
 B3D_API uint8_t b3d_gp_Vec_IsOpposite__gp_Vec__double(void* self, const gp_Vec* theOther, double theAngularTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->IsOpposite(*theOther, theAngularTolerance);
     return r ? 1 : 0;
@@ -258,7 +258,7 @@ B3D_API uint8_t b3d_gp_Vec_IsOpposite__gp_Vec__double(void* self, const gp_Vec* 
 B3D_API uint8_t b3d_gp_Vec_IsParallel__gp_Vec__double(void* self, const gp_Vec* theOther, double theAngularTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->IsParallel(*theOther, theAngularTolerance);
     return r ? 1 : 0;
@@ -270,7 +270,7 @@ B3D_API uint8_t b3d_gp_Vec_IsParallel__gp_Vec__double(void* self, const gp_Vec* 
 B3D_API double b3d_gp_Vec_Angle__gp_Vec(void* self, const gp_Vec* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Angle(*theOther);
     return r;
@@ -282,7 +282,7 @@ B3D_API double b3d_gp_Vec_Angle__gp_Vec(void* self, const gp_Vec* theOther, b3d_
 B3D_API double b3d_gp_Vec_AngleWithRef__gp_Vec__gp_Vec(void* self, const gp_Vec* theOther, const gp_Vec* theVRef, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->AngleWithRef(*theOther, *theVRef);
     return r;
@@ -294,7 +294,7 @@ B3D_API double b3d_gp_Vec_AngleWithRef__gp_Vec__gp_Vec(void* self, const gp_Vec*
 B3D_API double b3d_gp_Vec_Magnitude(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Magnitude();
     return r;
@@ -306,7 +306,7 @@ B3D_API double b3d_gp_Vec_Magnitude(void* self, b3d_error** err)
 B3D_API double b3d_gp_Vec_SquareMagnitude(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->SquareMagnitude();
     return r;
@@ -318,7 +318,7 @@ B3D_API double b3d_gp_Vec_SquareMagnitude(void* self, b3d_error** err)
 B3D_API void b3d_gp_Vec_Add__gp_Vec(void* self, const gp_Vec* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Add(*theOther);
     return;
@@ -329,7 +329,7 @@ B3D_API void b3d_gp_Vec_Add__gp_Vec(void* self, const gp_Vec* theOther, b3d_erro
 B3D_API void* b3d_gp_Vec_Added__gp_Vec(void* self, const gp_Vec* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Added(*theOther);
     return new gp_Vec(r);
@@ -341,7 +341,7 @@ B3D_API void* b3d_gp_Vec_Added__gp_Vec(void* self, const gp_Vec* theOther, b3d_e
 B3D_API void b3d_gp_Vec_Subtract__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Subtract(*theRight);
     return;
@@ -352,7 +352,7 @@ B3D_API void b3d_gp_Vec_Subtract__gp_Vec(void* self, const gp_Vec* theRight, b3d
 B3D_API void* b3d_gp_Vec_Subtracted__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Subtracted(*theRight);
     return new gp_Vec(r);
@@ -364,7 +364,7 @@ B3D_API void* b3d_gp_Vec_Subtracted__gp_Vec(void* self, const gp_Vec* theRight, 
 B3D_API void b3d_gp_Vec_Multiply__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Multiply(theScalar);
     return;
@@ -375,7 +375,7 @@ B3D_API void b3d_gp_Vec_Multiply__double(void* self, double theScalar, b3d_error
 B3D_API void* b3d_gp_Vec_Multiplied__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Multiplied(theScalar);
     return new gp_Vec(r);
@@ -387,7 +387,7 @@ B3D_API void* b3d_gp_Vec_Multiplied__double(void* self, double theScalar, b3d_er
 B3D_API void b3d_gp_Vec_Divide__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Divide(theScalar);
     return;
@@ -398,7 +398,7 @@ B3D_API void b3d_gp_Vec_Divide__double(void* self, double theScalar, b3d_error**
 B3D_API void* b3d_gp_Vec_Divided__double(void* self, double theScalar, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Divided(theScalar);
     return new gp_Vec(r);
@@ -410,7 +410,7 @@ B3D_API void* b3d_gp_Vec_Divided__double(void* self, double theScalar, b3d_error
 B3D_API void b3d_gp_Vec_Cross__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Cross(*theRight);
     return;
@@ -421,7 +421,7 @@ B3D_API void b3d_gp_Vec_Cross__gp_Vec(void* self, const gp_Vec* theRight, b3d_er
 B3D_API void* b3d_gp_Vec_Crossed__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Crossed(*theRight);
     return new gp_Vec(r);
@@ -433,7 +433,7 @@ B3D_API void* b3d_gp_Vec_Crossed__gp_Vec(void* self, const gp_Vec* theRight, b3d
 B3D_API double b3d_gp_Vec_CrossMagnitude__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->CrossMagnitude(*theRight);
     return r;
@@ -445,7 +445,7 @@ B3D_API double b3d_gp_Vec_CrossMagnitude__gp_Vec(void* self, const gp_Vec* theRi
 B3D_API double b3d_gp_Vec_CrossSquareMagnitude__gp_Vec(void* self, const gp_Vec* theRight, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->CrossSquareMagnitude(*theRight);
     return r;
@@ -457,7 +457,7 @@ B3D_API double b3d_gp_Vec_CrossSquareMagnitude__gp_Vec(void* self, const gp_Vec*
 B3D_API void b3d_gp_Vec_CrossCross__gp_Vec__gp_Vec(void* self, const gp_Vec* theV1, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->CrossCross(*theV1, *theV2);
     return;
@@ -468,7 +468,7 @@ B3D_API void b3d_gp_Vec_CrossCross__gp_Vec__gp_Vec(void* self, const gp_Vec* the
 B3D_API void* b3d_gp_Vec_CrossCrossed__gp_Vec__gp_Vec(void* self, const gp_Vec* theV1, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->CrossCrossed(*theV1, *theV2);
     return new gp_Vec(r);
@@ -480,7 +480,7 @@ B3D_API void* b3d_gp_Vec_CrossCrossed__gp_Vec__gp_Vec(void* self, const gp_Vec* 
 B3D_API double b3d_gp_Vec_Dot__gp_Vec(void* self, const gp_Vec* theOther, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Dot(*theOther);
     return r;
@@ -492,7 +492,7 @@ B3D_API double b3d_gp_Vec_Dot__gp_Vec(void* self, const gp_Vec* theOther, b3d_er
 B3D_API double b3d_gp_Vec_DotCross__gp_Vec__gp_Vec(void* self, const gp_Vec* theV1, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->DotCross(*theV1, *theV2);
     return r;
@@ -504,7 +504,7 @@ B3D_API double b3d_gp_Vec_DotCross__gp_Vec__gp_Vec(void* self, const gp_Vec* the
 B3D_API void b3d_gp_Vec_Normalize(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Normalize();
     return;
@@ -515,7 +515,7 @@ B3D_API void b3d_gp_Vec_Normalize(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Vec_Normalized(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Normalized();
     return new gp_Vec(r);
@@ -527,7 +527,7 @@ B3D_API void* b3d_gp_Vec_Normalized(void* self, b3d_error** err)
 B3D_API void b3d_gp_Vec_Reverse(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Reverse();
     return;
@@ -538,7 +538,7 @@ B3D_API void b3d_gp_Vec_Reverse(void* self, b3d_error** err)
 B3D_API void* b3d_gp_Vec_Reversed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Reversed();
     return new gp_Vec(r);
@@ -550,7 +550,7 @@ B3D_API void* b3d_gp_Vec_Reversed(void* self, b3d_error** err)
 B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__double__gp_Vec__gp_Vec(void* self, double theA1, const gp_Vec* theV1, double theA2, const gp_Vec* theV2, double theA3, const gp_Vec* theV3, const gp_Vec* theV4, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(theA1, *theV1, theA2, *theV2, theA3, *theV3, *theV4);
     return;
@@ -561,7 +561,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__double__g
 B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__double__gp_Vec(void* self, double theA1, const gp_Vec* theV1, double theA2, const gp_Vec* theV2, double theA3, const gp_Vec* theV3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(theA1, *theV1, theA2, *theV2, theA3, *theV3);
     return;
@@ -572,7 +572,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__double__g
 B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__gp_Vec(void* self, double theA1, const gp_Vec* theV1, double theA2, const gp_Vec* theV2, const gp_Vec* theV3, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(theA1, *theV1, theA2, *theV2, *theV3);
     return;
@@ -583,7 +583,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec__gp_Vec(vo
 B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec(void* self, double theA1, const gp_Vec* theV1, double theA2, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(theA1, *theV1, theA2, *theV2);
     return;
@@ -594,7 +594,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__double__gp_Vec(void* self
 B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__gp_Vec(void* self, double theA1, const gp_Vec* theV1, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(theA1, *theV1, *theV2);
     return;
@@ -605,7 +605,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__double__gp_Vec__gp_Vec(void* self, double
 B3D_API void b3d_gp_Vec_SetLinearForm__gp_Vec__gp_Vec(void* self, const gp_Vec* theV1, const gp_Vec* theV2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->SetLinearForm(*theV1, *theV2);
     return;
@@ -616,7 +616,7 @@ B3D_API void b3d_gp_Vec_SetLinearForm__gp_Vec__gp_Vec(void* self, const gp_Vec* 
 B3D_API void b3d_gp_Vec_Mirror__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Mirror(*theV);
     return;
@@ -627,7 +627,7 @@ B3D_API void b3d_gp_Vec_Mirror__gp_Vec(void* self, const gp_Vec* theV, b3d_error
 B3D_API void* b3d_gp_Vec_Mirrored__gp_Vec(void* self, const gp_Vec* theV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Mirrored(*theV);
     return new gp_Vec(r);
@@ -639,7 +639,7 @@ B3D_API void* b3d_gp_Vec_Mirrored__gp_Vec(void* self, const gp_Vec* theV, b3d_er
 B3D_API void b3d_gp_Vec_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Mirror(*theA1);
     return;
@@ -650,7 +650,7 @@ B3D_API void b3d_gp_Vec_Mirror__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_erro
 B3D_API void* b3d_gp_Vec_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Mirrored(*theA1);
     return new gp_Vec(r);
@@ -662,7 +662,7 @@ B3D_API void* b3d_gp_Vec_Mirrored__gp_Ax1(void* self, const gp_Ax1* theA1, b3d_e
 B3D_API void b3d_gp_Vec_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Mirror(*theA2);
     return;
@@ -673,7 +673,7 @@ B3D_API void b3d_gp_Vec_Mirror__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_erro
 B3D_API void* b3d_gp_Vec_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Mirrored(*theA2);
     return new gp_Vec(r);
@@ -685,7 +685,7 @@ B3D_API void* b3d_gp_Vec_Mirrored__gp_Ax2(void* self, const gp_Ax2* theA2, b3d_e
 B3D_API void b3d_gp_Vec_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Rotate(*theA1, theAng);
     return;
@@ -696,7 +696,7 @@ B3D_API void b3d_gp_Vec_Rotate__gp_Ax1__double(void* self, const gp_Ax1* theA1, 
 B3D_API void* b3d_gp_Vec_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1, double theAng, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Rotated(*theA1, theAng);
     return new gp_Vec(r);
@@ -708,7 +708,7 @@ B3D_API void* b3d_gp_Vec_Rotated__gp_Ax1__double(void* self, const gp_Ax1* theA1
 B3D_API void b3d_gp_Vec_Scale__double(void* self, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Scale(theS);
     return;
@@ -719,7 +719,7 @@ B3D_API void b3d_gp_Vec_Scale__double(void* self, double theS, b3d_error** err)
 B3D_API void* b3d_gp_Vec_Scaled__double(void* self, double theS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Scaled(theS);
     return new gp_Vec(r);
@@ -731,7 +731,7 @@ B3D_API void* b3d_gp_Vec_Scaled__double(void* self, double theS, b3d_error** err
 B3D_API void b3d_gp_Vec_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<gp_Vec*>(self)->Transform(*theT);
     return;
@@ -742,7 +742,7 @@ B3D_API void b3d_gp_Vec_Transform__gp_Trsf(void* self, const gp_Trsf* theT, b3d_
 B3D_API void* b3d_gp_Vec_Transformed__gp_Trsf(void* self, const gp_Trsf* theT, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<gp_Vec*>(self)->Transformed(*theT);
     return new gp_Vec(r);

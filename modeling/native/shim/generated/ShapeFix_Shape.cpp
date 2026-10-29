@@ -13,7 +13,7 @@ B3D_API void* b3d_ShapeFix_Shape_downcast(void* t) { return b3d_retain(dynamic_c
 B3D_API void* b3d_ShapeFix_Shape_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Shape();
     return b3d_retain(r);
@@ -25,7 +25,7 @@ B3D_API void* b3d_ShapeFix_Shape_new(b3d_error** err)
 B3D_API void* b3d_ShapeFix_Shape_new__TopoDS_Shape(const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new ShapeFix_Shape(*shape);
     return b3d_retain(r);
@@ -37,7 +37,7 @@ B3D_API void* b3d_ShapeFix_Shape_new__TopoDS_Shape(const TopoDS_Shape* shape, b3
 B3D_API void b3d_ShapeFix_Shape_Init__TopoDS_Shape(void* self, const TopoDS_Shape* shape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Shape*>(self)->Init(*shape);
     return;
@@ -48,7 +48,7 @@ B3D_API void b3d_ShapeFix_Shape_Init__TopoDS_Shape(void* self, const TopoDS_Shap
 B3D_API uint8_t b3d_ShapeFix_Shape_Perform(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Shape*>(self)->Perform();
     return r ? 1 : 0;
@@ -60,7 +60,7 @@ B3D_API uint8_t b3d_ShapeFix_Shape_Perform(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeFix_Shape_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Shape*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -72,7 +72,7 @@ B3D_API void* b3d_ShapeFix_Shape_Shape(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeFix_Shape_FixSolidTool(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Shape*>(self)->FixSolidTool();
     return b3d_retain(occ::handle<ShapeFix_Solid>(r).get());
@@ -84,7 +84,7 @@ B3D_API void* b3d_ShapeFix_Shape_FixSolidTool(void* self, b3d_error** err)
 B3D_API void* b3d_ShapeFix_Shape_FixFaceTool(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Shape*>(self)->FixFaceTool();
     return b3d_retain(occ::handle<ShapeFix_Face>(r).get());
@@ -96,7 +96,7 @@ B3D_API void* b3d_ShapeFix_Shape_FixFaceTool(void* self, b3d_error** err)
 B3D_API uint8_t b3d_ShapeFix_Shape_Status__ShapeExtend_Status(void* self, int32_t status, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<ShapeFix_Shape*>(self)->Status(static_cast<ShapeExtend_Status>(status));
     return r ? 1 : 0;
@@ -108,7 +108,7 @@ B3D_API uint8_t b3d_ShapeFix_Shape_Status__ShapeExtend_Status(void* self, int32_
 B3D_API void b3d_ShapeFix_Shape_SetPrecision__double(void* self, double preci, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Shape*>(self)->SetPrecision(preci);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_ShapeFix_Shape_SetPrecision__double(void* self, double preci, b
 B3D_API void b3d_ShapeFix_Shape_SetMinTolerance__double(void* self, double mintol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Shape*>(self)->SetMinTolerance(mintol);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_ShapeFix_Shape_SetMinTolerance__double(void* self, double minto
 B3D_API void b3d_ShapeFix_Shape_SetMaxTolerance__double(void* self, double maxtol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<ShapeFix_Shape*>(self)->SetMaxTolerance(maxtol);
     return;

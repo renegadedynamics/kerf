@@ -9,7 +9,7 @@ B3D_API void* b3d_Geom2dGcc_QualifiedCurve_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<Geom2dGcc_QualifiedCurve>)
   {
-    try { return new Geom2dGcc_QualifiedCurve(*static_cast<const Geom2dGcc_QualifiedCurve*>(p)); }
+    B3D_TRY { return new Geom2dGcc_QualifiedCurve(*static_cast<const Geom2dGcc_QualifiedCurve*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_Geom2dGcc_QualifiedCurve_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_Geom2dGcc_QualifiedCurve_new__tref_Geom2dAdaptor_Curve__GccEnt_Position(Geom2dAdaptor_Curve* Curve, int32_t Qualifier, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new Geom2dGcc_QualifiedCurve(*Curve, static_cast<GccEnt_Position>(Qualifier));
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_Geom2dGcc_QualifiedCurve_new__tref_Geom2dAdaptor_Curve__GccEnt
 B3D_API int32_t b3d_Geom2dGcc_QualifiedCurve_Qualifier(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_QualifiedCurve*>(self)->Qualifier();
     return static_cast<int32_t>(r);
@@ -44,7 +44,7 @@ B3D_API int32_t b3d_Geom2dGcc_QualifiedCurve_Qualifier(void* self, b3d_error** e
 B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsUnqualified(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_QualifiedCurve*>(self)->IsUnqualified();
     return r ? 1 : 0;
@@ -56,7 +56,7 @@ B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsUnqualified(void* self, b3d_error
 B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsEnclosing(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_QualifiedCurve*>(self)->IsEnclosing();
     return r ? 1 : 0;
@@ -68,7 +68,7 @@ B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsEnclosing(void* self, b3d_error**
 B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsEnclosed(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_QualifiedCurve*>(self)->IsEnclosed();
     return r ? 1 : 0;
@@ -80,7 +80,7 @@ B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsEnclosed(void* self, b3d_error** 
 B3D_API uint8_t b3d_Geom2dGcc_QualifiedCurve_IsOutside(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<Geom2dGcc_QualifiedCurve*>(self)->IsOutside();
     return r ? 1 : 0;

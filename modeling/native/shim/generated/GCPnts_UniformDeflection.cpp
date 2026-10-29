@@ -11,7 +11,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<GCPnts_UniformDeflection>)
   {
-    try { return new GCPnts_UniformDeflection(*static_cast<const GCPnts_UniformDeflection*>(p)); }
+    B3D_TRY { return new GCPnts_UniformDeflection(*static_cast<const GCPnts_UniformDeflection*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_GCPnts_UniformDeflection_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection();
     return r;
@@ -34,7 +34,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new(b3d_error** err)
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double(Adaptor3d_Curve* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection);
     return r;
@@ -46,7 +46,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double(Ada
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__bool(Adaptor3d_Curve* theC, double theDeflection, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theWithControl != 0);
     return r;
@@ -58,7 +58,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__bo
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double(Adaptor2d_Curve2d* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection);
     return r;
@@ -70,7 +70,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double(A
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__bool(Adaptor2d_Curve2d* theC, double theDeflection, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theWithControl != 0);
     return r;
@@ -82,7 +82,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__double__double(Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theU1, theU2);
     return r;
@@ -94,7 +94,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__do
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__double__double__bool(Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theU1, theU2, theWithControl != 0);
     return r;
@@ -106,7 +106,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor3d_Curve__double__do
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__double__double(Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theU1, theU2);
     return r;
@@ -118,7 +118,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__
 B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__double__double__bool(Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new GCPnts_UniformDeflection(*theC, theDeflection, theU1, theU2, theWithControl != 0);
     return r;
@@ -130,7 +130,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_new__tref_Adaptor2d_Curve2d__double__
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__double(void* self, Adaptor3d_Curve* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection);
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__doub
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__double__bool(void* self, Adaptor3d_Curve* theC, double theDeflection, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theWithControl != 0);
     return;
@@ -152,7 +152,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__doub
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double(void* self, Adaptor2d_Curve2d* theC, double theDeflection, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection);
     return;
@@ -163,7 +163,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__do
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__bool(void* self, Adaptor2d_Curve2d* theC, double theDeflection, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theWithControl != 0);
     return;
@@ -174,7 +174,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__do
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__double__double__double(void* self, Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2);
     return;
@@ -185,7 +185,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__doub
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__double__double__double__bool(void* self, Adaptor3d_Curve* theC, double theDeflection, double theU1, double theU2, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2, theWithControl != 0);
     return;
@@ -196,7 +196,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor3d_Curve__doub
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__double__double(void* self, Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2);
     return;
@@ -207,7 +207,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__do
 B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__double__double__double__bool(void* self, Adaptor2d_Curve2d* theC, double theDeflection, double theU1, double theU2, uint8_t theWithControl, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<GCPnts_UniformDeflection*>(self)->Initialize(*theC, theDeflection, theU1, theU2, theWithControl != 0);
     return;
@@ -218,7 +218,7 @@ B3D_API void b3d_GCPnts_UniformDeflection_Initialize__tref_Adaptor2d_Curve2d__do
 B3D_API uint8_t b3d_GCPnts_UniformDeflection_IsDone(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_UniformDeflection*>(self)->IsDone();
     return r ? 1 : 0;
@@ -230,7 +230,7 @@ B3D_API uint8_t b3d_GCPnts_UniformDeflection_IsDone(void* self, b3d_error** err)
 B3D_API int32_t b3d_GCPnts_UniformDeflection_NbPoints(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_UniformDeflection*>(self)->NbPoints();
     return r;
@@ -242,7 +242,7 @@ B3D_API int32_t b3d_GCPnts_UniformDeflection_NbPoints(void* self, b3d_error** er
 B3D_API double b3d_GCPnts_UniformDeflection_Parameter__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_UniformDeflection*>(self)->Parameter(Index);
     return r;
@@ -254,7 +254,7 @@ B3D_API double b3d_GCPnts_UniformDeflection_Parameter__int(void* self, int32_t I
 B3D_API void* b3d_GCPnts_UniformDeflection_Value__int(void* self, int32_t Index, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_UniformDeflection*>(self)->Value(Index);
     return new gp_Pnt(r);
@@ -266,7 +266,7 @@ B3D_API void* b3d_GCPnts_UniformDeflection_Value__int(void* self, int32_t Index,
 B3D_API double b3d_GCPnts_UniformDeflection_Deflection(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<GCPnts_UniformDeflection*>(self)->Deflection();
     return r;

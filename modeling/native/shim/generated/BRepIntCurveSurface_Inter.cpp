@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepIntCurveSurface_Inter_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepIntCurveSurface_Inter>)
   {
-    try { return new BRepIntCurveSurface_Inter(*static_cast<const BRepIntCurveSurface_Inter*>(p)); }
+    B3D_TRY { return new BRepIntCurveSurface_Inter(*static_cast<const BRepIntCurveSurface_Inter*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -24,7 +24,7 @@ B3D_API void* b3d_BRepIntCurveSurface_Inter_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_BRepIntCurveSurface_Inter_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepIntCurveSurface_Inter();
     return r;
@@ -36,7 +36,7 @@ B3D_API void* b3d_BRepIntCurveSurface_Inter_new(b3d_error** err)
 B3D_API void b3d_BRepIntCurveSurface_Inter_Init__TopoDS_Shape__tref_GeomAdaptor_Curve__double(void* self, const TopoDS_Shape* theShape, GeomAdaptor_Curve* theCurve, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepIntCurveSurface_Inter*>(self)->Init(*theShape, *theCurve, theTol);
     return;
@@ -47,7 +47,7 @@ B3D_API void b3d_BRepIntCurveSurface_Inter_Init__TopoDS_Shape__tref_GeomAdaptor_
 B3D_API void b3d_BRepIntCurveSurface_Inter_Init__TopoDS_Shape__gp_Lin__double(void* self, const TopoDS_Shape* theShape, const gp_Lin* theLine, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepIntCurveSurface_Inter*>(self)->Init(*theShape, *theLine, theTol);
     return;
@@ -58,7 +58,7 @@ B3D_API void b3d_BRepIntCurveSurface_Inter_Init__TopoDS_Shape__gp_Lin__double(vo
 B3D_API void b3d_BRepIntCurveSurface_Inter_Load__TopoDS_Shape__double(void* self, const TopoDS_Shape* theShape, double theTol, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepIntCurveSurface_Inter*>(self)->Load(*theShape, theTol);
     return;
@@ -69,7 +69,7 @@ B3D_API void b3d_BRepIntCurveSurface_Inter_Load__TopoDS_Shape__double(void* self
 B3D_API void b3d_BRepIntCurveSurface_Inter_Init__tref_GeomAdaptor_Curve(void* self, GeomAdaptor_Curve* theCurve, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepIntCurveSurface_Inter*>(self)->Init(*theCurve);
     return;
@@ -80,7 +80,7 @@ B3D_API void b3d_BRepIntCurveSurface_Inter_Init__tref_GeomAdaptor_Curve(void* se
 B3D_API uint8_t b3d_BRepIntCurveSurface_Inter_More(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->More();
     return r ? 1 : 0;
@@ -92,7 +92,7 @@ B3D_API uint8_t b3d_BRepIntCurveSurface_Inter_More(void* self, b3d_error** err)
 B3D_API void b3d_BRepIntCurveSurface_Inter_Next(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepIntCurveSurface_Inter*>(self)->Next();
     return;
@@ -103,7 +103,7 @@ B3D_API void b3d_BRepIntCurveSurface_Inter_Next(void* self, b3d_error** err)
 B3D_API void* b3d_BRepIntCurveSurface_Inter_Pnt(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->Pnt();
     return new gp_Pnt(r);
@@ -115,7 +115,7 @@ B3D_API void* b3d_BRepIntCurveSurface_Inter_Pnt(void* self, b3d_error** err)
 B3D_API double b3d_BRepIntCurveSurface_Inter_U(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->U();
     return r;
@@ -127,7 +127,7 @@ B3D_API double b3d_BRepIntCurveSurface_Inter_U(void* self, b3d_error** err)
 B3D_API double b3d_BRepIntCurveSurface_Inter_V(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->V();
     return r;
@@ -139,7 +139,7 @@ B3D_API double b3d_BRepIntCurveSurface_Inter_V(void* self, b3d_error** err)
 B3D_API double b3d_BRepIntCurveSurface_Inter_W(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->W();
     return r;
@@ -151,7 +151,7 @@ B3D_API double b3d_BRepIntCurveSurface_Inter_W(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepIntCurveSurface_Inter_State(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->State();
     return static_cast<int32_t>(r);
@@ -163,7 +163,7 @@ B3D_API int32_t b3d_BRepIntCurveSurface_Inter_State(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepIntCurveSurface_Inter_Transition(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->Transition();
     return static_cast<int32_t>(r);
@@ -175,7 +175,7 @@ B3D_API int32_t b3d_BRepIntCurveSurface_Inter_Transition(void* self, b3d_error**
 B3D_API void* b3d_BRepIntCurveSurface_Inter_Face(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepIntCurveSurface_Inter*>(self)->Face();
     return new TopoDS_Face(r);

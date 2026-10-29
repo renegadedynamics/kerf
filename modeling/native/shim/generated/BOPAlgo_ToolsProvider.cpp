@@ -10,7 +10,7 @@ B3D_API void* b3d_BOPAlgo_ToolsProvider_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BOPAlgo_ToolsProvider>)
   {
-    try { return new BOPAlgo_ToolsProvider(*static_cast<const BOPAlgo_ToolsProvider*>(p)); }
+    B3D_TRY { return new BOPAlgo_ToolsProvider(*static_cast<const BOPAlgo_ToolsProvider*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -25,7 +25,7 @@ B3D_API void* b3d_BOPAlgo_ToolsProvider_as_BOPAlgo_Options(void* p) { return sta
 B3D_API void* b3d_BOPAlgo_ToolsProvider_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BOPAlgo_ToolsProvider();
     return r;
@@ -37,7 +37,7 @@ B3D_API void* b3d_BOPAlgo_ToolsProvider_new(b3d_error** err)
 B3D_API void b3d_BOPAlgo_ToolsProvider_Clear(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_ToolsProvider*>(self)->Clear();
     return;
@@ -48,7 +48,7 @@ B3D_API void b3d_BOPAlgo_ToolsProvider_Clear(void* self, b3d_error** err)
 B3D_API void b3d_BOPAlgo_ToolsProvider_AddTool__TopoDS_Shape(void* self, const TopoDS_Shape* theShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_ToolsProvider*>(self)->AddTool(*theShape);
     return;
@@ -59,7 +59,7 @@ B3D_API void b3d_BOPAlgo_ToolsProvider_AddTool__TopoDS_Shape(void* self, const T
 B3D_API void b3d_BOPAlgo_ToolsProvider_SetTools__TopTools_ListOfShape(void* self, const NCollection_List<TopoDS_Shape>* theShapes, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BOPAlgo_ToolsProvider*>(self)->SetTools(*theShapes);
     return;
@@ -70,7 +70,7 @@ B3D_API void b3d_BOPAlgo_ToolsProvider_SetTools__TopTools_ListOfShape(void* self
 B3D_API void* b3d_BOPAlgo_ToolsProvider_Tools(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BOPAlgo_ToolsProvider*>(self)->Tools();
     return new NCollection_List<TopoDS_Shape>(r);

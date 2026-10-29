@@ -9,7 +9,7 @@ B3D_API void* b3d_TopoDS_Iterator_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<TopoDS_Iterator>)
   {
-    try { return new TopoDS_Iterator(*static_cast<const TopoDS_Iterator*>(p)); }
+    B3D_TRY { return new TopoDS_Iterator(*static_cast<const TopoDS_Iterator*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -20,7 +20,7 @@ B3D_API void* b3d_TopoDS_Iterator_copy(const void* p, b3d_error** err)
 B3D_API void* b3d_TopoDS_Iterator_new(b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Iterator();
     return r;
@@ -32,7 +32,7 @@ B3D_API void* b3d_TopoDS_Iterator_new(b3d_error** err)
 B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Iterator(*S);
     return r;
@@ -44,7 +44,7 @@ B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_e
 B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape__bool(const TopoDS_Shape* S, uint8_t cumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Iterator(*S, cumOri != 0);
     return r;
@@ -56,7 +56,7 @@ B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape__bool(const TopoDS_Shape* S,
 B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape__bool__bool(const TopoDS_Shape* S, uint8_t cumOri, uint8_t cumLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new TopoDS_Iterator(*S, cumOri != 0, cumLoc != 0);
     return r;
@@ -68,7 +68,7 @@ B3D_API void* b3d_TopoDS_Iterator_new__TopoDS_Shape__bool__bool(const TopoDS_Sha
 B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Iterator*>(self)->Initialize(*S);
     return;
@@ -79,7 +79,7 @@ B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape(void* self, const Topo
 B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape__bool(void* self, const TopoDS_Shape* S, uint8_t cumOri, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Iterator*>(self)->Initialize(*S, cumOri != 0);
     return;
@@ -90,7 +90,7 @@ B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape__bool(void* self, cons
 B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape__bool__bool(void* self, const TopoDS_Shape* S, uint8_t cumOri, uint8_t cumLoc, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Iterator*>(self)->Initialize(*S, cumOri != 0, cumLoc != 0);
     return;
@@ -101,7 +101,7 @@ B3D_API void b3d_TopoDS_Iterator_Initialize__TopoDS_Shape__bool__bool(void* self
 B3D_API uint8_t b3d_TopoDS_Iterator_More(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Iterator*>(self)->More();
     return r ? 1 : 0;
@@ -113,7 +113,7 @@ B3D_API uint8_t b3d_TopoDS_Iterator_More(void* self, b3d_error** err)
 B3D_API void b3d_TopoDS_Iterator_Next(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<TopoDS_Iterator*>(self)->Next();
     return;
@@ -124,7 +124,7 @@ B3D_API void b3d_TopoDS_Iterator_Next(void* self, b3d_error** err)
 B3D_API void* b3d_TopoDS_Iterator_Value(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<TopoDS_Iterator*>(self)->Value();
     return new TopoDS_Shape(r);

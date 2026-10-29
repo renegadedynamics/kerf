@@ -15,7 +15,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepFilletAPI_MakeFillet>)
   {
-    try { return new BRepFilletAPI_MakeFillet(*static_cast<const BRepFilletAPI_MakeFillet*>(p)); }
+    B3D_TRY { return new BRepFilletAPI_MakeFillet(*static_cast<const BRepFilletAPI_MakeFillet*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -29,7 +29,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFilletAPI_MakeFillet(*S);
     return r;
@@ -41,7 +41,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_new__TopoDS_Shape(const TopoDS_Shape*
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_new__TopoDS_Shape__ChFi3d_FilletShape(const TopoDS_Shape* S, int32_t FShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFilletAPI_MakeFillet(*S, static_cast<ChFi3d_FilletShape>(FShape));
     return r;
@@ -53,7 +53,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_new__TopoDS_Shape__ChFi3d_FilletShape
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetParams__double__double__double__double__double__double(void* self, double Tang, double Tesp, double T2d, double TApp3d, double TolApp2d, double Fleche, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetParams(Tang, Tesp, T2d, TApp3d, TolApp2d, Fleche);
     return;
@@ -64,7 +64,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetParams__double__double__double__dou
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetContinuity__GeomAbs_Shape__double(void* self, int32_t InternalContinuity, double AngularTolerance, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetContinuity(static_cast<GeomAbs_Shape>(InternalContinuity), AngularTolerance);
     return;
@@ -75,7 +75,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetContinuity__GeomAbs_Shape__double(v
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Add(*E);
     return;
@@ -86,7 +86,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__TopoDS_Edge(void* self, const Top
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__double__TopoDS_Edge(void* self, double Radius, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Add(Radius, *E);
     return;
@@ -97,7 +97,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__double__TopoDS_Edge(void* self, d
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__double__double__TopoDS_Edge(void* self, double R1, double R2, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Add(R1, R2, *E);
     return;
@@ -108,7 +108,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__double__double__TopoDS_Edge(void*
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__TColgp_Array1OfPnt2d__TopoDS_Edge(void* self, const NCollection_Array1<gp_Pnt2d>* UandR, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Add(*UandR, *E);
     return;
@@ -119,7 +119,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Add__TColgp_Array1OfPnt2d__TopoDS_Edge
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__int(void* self, double Radius, int32_t IC, int32_t IinC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetRadius(Radius, IC, IinC);
     return;
@@ -130,7 +130,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__int(void* self
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__double__int__int(void* self, double R1, double R2, int32_t IC, int32_t IinC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetRadius(R1, R2, IC, IinC);
     return;
@@ -141,7 +141,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__double__int__int(vo
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__TColgp_Array1OfPnt2d__int__int(void* self, const NCollection_Array1<gp_Pnt2d>* UandR, int32_t IC, int32_t IinC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetRadius(*UandR, IC, IinC);
     return;
@@ -152,7 +152,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__TColgp_Array1OfPnt2d__int__
 B3D_API void b3d_BRepFilletAPI_MakeFillet_ResetContour__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->ResetContour(IC);
     return;
@@ -163,7 +163,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_ResetContour__int(void* self, int32_t 
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsConstant__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->IsConstant(IC);
     return r ? 1 : 0;
@@ -175,7 +175,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsConstant__int(void* self, int32_t
 B3D_API double b3d_BRepFilletAPI_MakeFillet_Radius__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Radius(IC);
     return r;
@@ -187,7 +187,7 @@ B3D_API double b3d_BRepFilletAPI_MakeFillet_Radius__int(void* self, int32_t IC, 
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsConstant__int__TopoDS_Edge(void* self, int32_t IC, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->IsConstant(IC, *E);
     return r ? 1 : 0;
@@ -199,7 +199,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsConstant__int__TopoDS_Edge(void* 
 B3D_API double b3d_BRepFilletAPI_MakeFillet_Radius__int__TopoDS_Edge(void* self, int32_t IC, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Radius(IC, *E);
     return r;
@@ -211,7 +211,7 @@ B3D_API double b3d_BRepFilletAPI_MakeFillet_Radius__int__TopoDS_Edge(void* self,
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__TopoDS_Edge(void* self, double Radius, int32_t IC, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetRadius(Radius, IC, *E);
     return;
@@ -222,7 +222,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__TopoDS_Edge(vo
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__TopoDS_Vertex(void* self, double Radius, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetRadius(Radius, IC, *V);
     return;
@@ -233,7 +233,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetRadius__double__int__TopoDS_Vertex(
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_GetBounds__int__TopoDS_Edge__ref_double__ref_double(void* self, int32_t IC, const TopoDS_Edge* E, double* F, double* L, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->GetBounds(IC, *E, *F, *L);
     return r ? 1 : 0;
@@ -245,7 +245,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_GetBounds__int__TopoDS_Edge__ref_do
 B3D_API void b3d_BRepFilletAPI_MakeFillet_SetFilletShape__ChFi3d_FilletShape(void* self, int32_t FShape, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->SetFilletShape(static_cast<ChFi3d_FilletShape>(FShape));
     return;
@@ -256,7 +256,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_SetFilletShape__ChFi3d_FilletShape(voi
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_GetFilletShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->GetFilletShape();
     return static_cast<int32_t>(r);
@@ -268,7 +268,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_GetFilletShape(void* self, b3d_erro
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbContours(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbContours();
     return r;
@@ -280,7 +280,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbContours(void* self, b3d_error** 
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_Contour__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Contour(*E);
     return r;
@@ -292,7 +292,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_Contour__TopoDS_Edge(void* self, co
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbEdges__int(void* self, int32_t I, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbEdges(I);
     return r;
@@ -304,7 +304,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbEdges__int(void* self, int32_t I,
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_Edge__int__int(void* self, int32_t I, int32_t J, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Edge(I, J);
     return new TopoDS_Edge(r);
@@ -316,7 +316,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_Edge__int__int(void* self, int32_t I,
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Remove__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Remove(*E);
     return;
@@ -327,7 +327,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Remove__TopoDS_Edge(void* self, const 
 B3D_API double b3d_BRepFilletAPI_MakeFillet_Length__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Length(IC);
     return r;
@@ -339,7 +339,7 @@ B3D_API double b3d_BRepFilletAPI_MakeFillet_Length__int(void* self, int32_t IC, 
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_FirstVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->FirstVertex(IC);
     return new TopoDS_Vertex(r);
@@ -351,7 +351,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_FirstVertex__int(void* self, int32_t 
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_LastVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->LastVertex(IC);
     return new TopoDS_Vertex(r);
@@ -363,7 +363,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_LastVertex__int(void* self, int32_t I
 B3D_API double b3d_BRepFilletAPI_MakeFillet_Abscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Abscissa(IC, *V);
     return r;
@@ -375,7 +375,7 @@ B3D_API double b3d_BRepFilletAPI_MakeFillet_Abscissa__int__TopoDS_Vertex(void* s
 B3D_API double b3d_BRepFilletAPI_MakeFillet_RelativeAbscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->RelativeAbscissa(IC, *V);
     return r;
@@ -387,7 +387,7 @@ B3D_API double b3d_BRepFilletAPI_MakeFillet_RelativeAbscissa__int__TopoDS_Vertex
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_ClosedAndTangent__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->ClosedAndTangent(IC);
     return r ? 1 : 0;
@@ -399,7 +399,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_ClosedAndTangent__int(void* self, i
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_Closed__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Closed(IC);
     return r ? 1 : 0;
@@ -411,7 +411,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_Closed__int(void* self, int32_t IC,
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Build();
     return;
@@ -422,7 +422,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Build(void* self, b3d_error** err)
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Reset(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Reset();
     return;
@@ -433,7 +433,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Reset(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* EorV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Generated(*EorV);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -445,7 +445,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_Generated__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->Modified(*F);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -457,7 +457,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_Modified__TopoDS_Shape(void* self, co
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->IsDeleted(*F);
     return r ? 1 : 0;
@@ -469,7 +469,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_IsDeleted__TopoDS_Shape(void* self,
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbSurfaces(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbSurfaces();
     return r;
@@ -481,7 +481,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbSurfaces(void* self, b3d_error** 
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_NewFaces__int(void* self, int32_t I, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NewFaces(I);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -493,7 +493,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_NewFaces__int(void* self, int32_t I, 
 B3D_API void b3d_BRepFilletAPI_MakeFillet_Simulate__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeFillet*>(self)->Simulate(IC);
     return;
@@ -504,7 +504,7 @@ B3D_API void b3d_BRepFilletAPI_MakeFillet_Simulate__int(void* self, int32_t IC, 
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbSurf__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbSurf(IC);
     return r;
@@ -516,7 +516,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbSurf__int(void* self, int32_t IC,
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbFaultyContours(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbFaultyContours();
     return r;
@@ -528,7 +528,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbFaultyContours(void* self, b3d_er
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_FaultyContour__int(void* self, int32_t I, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->FaultyContour(I);
     return r;
@@ -540,7 +540,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_FaultyContour__int(void* self, int3
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbComputedSurfaces__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbComputedSurfaces(IC);
     return r;
@@ -552,7 +552,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbComputedSurfaces__int(void* self,
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_ComputedSurface__int__int(void* self, int32_t IC, int32_t IS, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->ComputedSurface(IC, IS);
     return b3d_retain(occ::handle<Geom_Surface>(r).get());
@@ -564,7 +564,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_ComputedSurface__int__int(void* self,
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbFaultyVertices(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->NbFaultyVertices();
     return r;
@@ -576,7 +576,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_NbFaultyVertices(void* self, b3d_er
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_FaultyVertex__int(void* self, int32_t IV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->FaultyVertex(IV);
     return new TopoDS_Vertex(r);
@@ -588,7 +588,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_FaultyVertex__int(void* self, int32_t
 B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_HasResult(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->HasResult();
     return r ? 1 : 0;
@@ -600,7 +600,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeFillet_HasResult(void* self, b3d_error** e
 B3D_API void* b3d_BRepFilletAPI_MakeFillet_BadShape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->BadShape();
     return new TopoDS_Shape(r);
@@ -612,7 +612,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeFillet_BadShape(void* self, b3d_error** err)
 B3D_API int32_t b3d_BRepFilletAPI_MakeFillet_StripeStatus__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeFillet*>(self)->StripeStatus(IC);
     return static_cast<int32_t>(r);

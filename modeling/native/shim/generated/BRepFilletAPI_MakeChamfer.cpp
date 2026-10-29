@@ -13,7 +13,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepFilletAPI_MakeChamfer>)
   {
-    try { return new BRepFilletAPI_MakeChamfer(*static_cast<const BRepFilletAPI_MakeChamfer*>(p)); }
+    B3D_TRY { return new BRepFilletAPI_MakeChamfer(*static_cast<const BRepFilletAPI_MakeChamfer*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -27,7 +27,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_as_BRepBuilderAPI_Command(void* p) {
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_new__TopoDS_Shape(const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = new BRepFilletAPI_MakeChamfer(*S);
     return r;
@@ -39,7 +39,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_new__TopoDS_Shape(const TopoDS_Shape
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Add(*E);
     return;
@@ -50,7 +50,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__TopoDS_Edge(void* self, const To
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__double__TopoDS_Edge(void* self, double Dis, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Add(Dis, *E);
     return;
@@ -61,7 +61,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__double__TopoDS_Edge(void* self, 
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDist__double__int__TopoDS_Face(void* self, double Dis, int32_t IC, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->SetDist(Dis, IC, *F);
     return;
@@ -72,7 +72,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDist__double__int__TopoDS_Face(voi
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_GetDist__int__ref_double(void* self, int32_t IC, double* Dis, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->GetDist(IC, *Dis);
     return;
@@ -83,7 +83,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_GetDist__int__ref_double(void* self, 
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__double__double__TopoDS_Edge__TopoDS_Face(void* self, double Dis1, double Dis2, const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Add(Dis1, Dis2, *E, *F);
     return;
@@ -94,7 +94,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Add__double__double__TopoDS_Edge__Top
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDists__double__double__int__TopoDS_Face(void* self, double Dis1, double Dis2, int32_t IC, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->SetDists(Dis1, Dis2, IC, *F);
     return;
@@ -105,7 +105,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDists__double__double__int__TopoDS
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Dists__int__ref_double__ref_double(void* self, int32_t IC, double* Dis1, double* Dis2, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Dists(IC, *Dis1, *Dis2);
     return;
@@ -116,7 +116,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Dists__int__ref_double__ref_double(vo
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_AddDA__double__double__TopoDS_Edge__TopoDS_Face(void* self, double Dis, double Angle, const TopoDS_Edge* E, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->AddDA(Dis, Angle, *E, *F);
     return;
@@ -127,7 +127,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_AddDA__double__double__TopoDS_Edge__T
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDistAngle__double__double__int__TopoDS_Face(void* self, double Dis, double Angle, int32_t IC, const TopoDS_Face* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->SetDistAngle(Dis, Angle, IC, *F);
     return;
@@ -138,7 +138,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetDistAngle__double__double__int__To
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_GetDistAngle__int__ref_double__ref_double(void* self, int32_t IC, double* Dis, double* Angle, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->GetDistAngle(IC, *Dis, *Angle);
     return;
@@ -149,7 +149,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_GetDistAngle__int__ref_double__ref_do
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetMode__ChFiDS_ChamfMode(void* self, int32_t theMode, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->SetMode(static_cast<ChFiDS_ChamfMode>(theMode));
     return;
@@ -160,7 +160,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_SetMode__ChFiDS_ChamfMode(void* self,
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsSymetric__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->IsSymetric(IC);
     return r ? 1 : 0;
@@ -172,7 +172,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsSymetric__int(void* self, int32_
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsTwoDistances__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->IsTwoDistances(IC);
     return r ? 1 : 0;
@@ -184,7 +184,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsTwoDistances__int(void* self, in
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsDistanceAngle__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->IsDistanceAngle(IC);
     return r ? 1 : 0;
@@ -196,7 +196,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsDistanceAngle__int(void* self, i
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_ResetContour__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->ResetContour(IC);
     return;
@@ -207,7 +207,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_ResetContour__int(void* self, int32_t
 B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_NbContours(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->NbContours();
     return r;
@@ -219,7 +219,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_NbContours(void* self, b3d_error**
 B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_Contour__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Contour(*E);
     return r;
@@ -231,7 +231,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_Contour__TopoDS_Edge(void* self, c
 B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_NbEdges__int(void* self, int32_t I, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->NbEdges(I);
     return r;
@@ -243,7 +243,7 @@ B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_NbEdges__int(void* self, int32_t I
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Edge__int__int(void* self, int32_t I, int32_t J, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Edge(I, J);
     return new TopoDS_Edge(r);
@@ -255,7 +255,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Edge__int__int(void* self, int32_t I
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Remove__TopoDS_Edge(void* self, const TopoDS_Edge* E, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Remove(*E);
     return;
@@ -266,7 +266,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Remove__TopoDS_Edge(void* self, const
 B3D_API double b3d_BRepFilletAPI_MakeChamfer_Length__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Length(IC);
     return r;
@@ -278,7 +278,7 @@ B3D_API double b3d_BRepFilletAPI_MakeChamfer_Length__int(void* self, int32_t IC,
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_FirstVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->FirstVertex(IC);
     return new TopoDS_Vertex(r);
@@ -290,7 +290,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_FirstVertex__int(void* self, int32_t
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_LastVertex__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->LastVertex(IC);
     return new TopoDS_Vertex(r);
@@ -302,7 +302,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_LastVertex__int(void* self, int32_t 
 B3D_API double b3d_BRepFilletAPI_MakeChamfer_Abscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Abscissa(IC, *V);
     return r;
@@ -314,7 +314,7 @@ B3D_API double b3d_BRepFilletAPI_MakeChamfer_Abscissa__int__TopoDS_Vertex(void* 
 B3D_API double b3d_BRepFilletAPI_MakeChamfer_RelativeAbscissa__int__TopoDS_Vertex(void* self, int32_t IC, const TopoDS_Vertex* V, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->RelativeAbscissa(IC, *V);
     return r;
@@ -326,7 +326,7 @@ B3D_API double b3d_BRepFilletAPI_MakeChamfer_RelativeAbscissa__int__TopoDS_Verte
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_ClosedAndTangent__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->ClosedAndTangent(IC);
     return r ? 1 : 0;
@@ -338,7 +338,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_ClosedAndTangent__int(void* self, 
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_Closed__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Closed(IC);
     return r ? 1 : 0;
@@ -350,7 +350,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_Closed__int(void* self, int32_t IC
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Build();
     return;
@@ -361,7 +361,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Build(void* self, b3d_error** err)
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Reset(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Reset();
     return;
@@ -372,7 +372,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Reset(void* self, b3d_error** err)
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* EorV, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Generated(*EorV);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -384,7 +384,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Generated__TopoDS_Shape(void* self, 
 B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->Modified(*F);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -396,7 +396,7 @@ B3D_API void* b3d_BRepFilletAPI_MakeChamfer_Modified__TopoDS_Shape(void* self, c
 B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* F, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->IsDeleted(*F);
     return r ? 1 : 0;
@@ -408,7 +408,7 @@ B3D_API uint8_t b3d_BRepFilletAPI_MakeChamfer_IsDeleted__TopoDS_Shape(void* self
 B3D_API void b3d_BRepFilletAPI_MakeChamfer_Simulate__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepFilletAPI_MakeChamfer*>(self)->Simulate(IC);
     return;
@@ -419,7 +419,7 @@ B3D_API void b3d_BRepFilletAPI_MakeChamfer_Simulate__int(void* self, int32_t IC,
 B3D_API int32_t b3d_BRepFilletAPI_MakeChamfer_NbSurf__int(void* self, int32_t IC, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepFilletAPI_MakeChamfer*>(self)->NbSurf(IC);
     return r;

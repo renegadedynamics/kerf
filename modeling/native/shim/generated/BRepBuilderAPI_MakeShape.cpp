@@ -10,7 +10,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShape_copy(const void* p, b3d_error** err)
   *err = nullptr;
   if constexpr (std::is_copy_constructible_v<BRepBuilderAPI_MakeShape>)
   {
-    try { return new BRepBuilderAPI_MakeShape(*static_cast<const BRepBuilderAPI_MakeShape*>(p)); }
+    B3D_TRY { return new BRepBuilderAPI_MakeShape(*static_cast<const BRepBuilderAPI_MakeShape*>(p)); }
     B3D_CATCH(err)
   }
   else
@@ -22,7 +22,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShape_as_BRepBuilderAPI_Command(void* p) { 
 B3D_API void b3d_BRepBuilderAPI_MakeShape_Build(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     static_cast<BRepBuilderAPI_MakeShape*>(self)->Build();
     return;
@@ -33,7 +33,7 @@ B3D_API void b3d_BRepBuilderAPI_MakeShape_Build(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeShape_Shape(void* self, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShape*>(self)->Shape();
     return new TopoDS_Shape(r);
@@ -45,7 +45,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShape_Shape(void* self, b3d_error** err)
 B3D_API void* b3d_BRepBuilderAPI_MakeShape_Generated__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShape*>(self)->Generated(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -57,7 +57,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShape_Generated__TopoDS_Shape(void* self, c
 B3D_API void* b3d_BRepBuilderAPI_MakeShape_Modified__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShape*>(self)->Modified(*S);
     return new NCollection_List<TopoDS_Shape>(r);
@@ -69,7 +69,7 @@ B3D_API void* b3d_BRepBuilderAPI_MakeShape_Modified__TopoDS_Shape(void* self, co
 B3D_API uint8_t b3d_BRepBuilderAPI_MakeShape_IsDeleted__TopoDS_Shape(void* self, const TopoDS_Shape* S, b3d_error** err)
 {
   *err = nullptr;
-  try
+  B3D_TRY
   {
     auto&& r = static_cast<BRepBuilderAPI_MakeShape*>(self)->IsDeleted(*S);
     return r ? 1 : 0;
