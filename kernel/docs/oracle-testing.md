@@ -32,6 +32,11 @@ angles), and say why.
 
 ## Things to know
 
+- Build the inputs on both sides from the same raw values through the same constructors. `Oracle.ToNative(gp_Dir)`
+  and `ToNative(gp_Ax3)` hand native OCCT the port's normalised values, which the native constructors normalise
+  (and orthogonalise) again: the inputs can then differ in the last bit, and so does everything computed from them.
+  The Geom tests' `GeomOracleInputs` builds directions, axes and transformations that way; with it, even rotations
+  (sin, cos) compare bit-identical.
 - OCCT's release builds compile most argument checks out (`No_Exception`), and the port always checks. Keep oracle
   inputs valid; test invalid inputs in the unit tests instead.
 - Native results differ from the port's in the last bits mostly where transcendental functions are involved

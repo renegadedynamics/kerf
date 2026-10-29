@@ -75,6 +75,8 @@ broken down by package.
 | ModelingData | TKG2d | 30 / 102 | 3,925 / 23,488 | 16.7 |
 | ModelingData | TKG3d | 66 / 237 | 9,124 / 70,301 | 13.0 |
 | ModelingData | TKGeomBase | 64 / 720 | 13,341 / 317,408 | 4.2 |
+| ModelingData | TKG3d | 75 / 237 | 20,692 / 70,301 | 29.4 |
+| ModelingData | TKGeomBase | 0 / 720 | 0 / 317,408 | 0.0 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -83,6 +85,7 @@ broken down by package.
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
 | **All** |  | 628 | 178,030 / 2,897,781 | 6.1 |
+| **All** |  | 573 | 176,257 / 2,897,781 | 6.1 |
 
 ## TKMath
 
@@ -150,6 +153,8 @@ broken down by package.
 | Adaptor3d | 8 / 16 | 1,374 / 7,038 | 19.5 |
 | AdvApprox | 14 / 14 | 2,320 / 2,320 | 100.0 |
 | Geom | 36 / 84 | 3,830 / 30,530 | 12.5 |
+| AdvApprox | 0 / 14 | 0 / 2,320 | 0.0 |
+| Geom | 59 / 84 | 17,718 / 30,530 | 58.0 |
 | GeomAdaptor | 0 / 14 | 0 / 7,175 | 0.0 |
 | GeomEval | 3 / 25 | 1,182 / 9,820 | 12.0 |
 | GeomGridEval | 0 / 43 | 0 / 10,200 | 0.0 |
