@@ -14,7 +14,7 @@ namespace OcctNet.DrawLite;
 /// </summary>
 /// <remarks>
 /// The t-commands run BRepBuilderAPI_Transform and tcopy BRepBuilderAPI_Copy, one framework per command as Draw does.
-/// ShapeAnalysis (phase 7) isn't ported: ShapeAnalysis_ShapeTolerance is ported here as a private helper.
+/// tolerance runs ShapeAnalysis_ShapeTolerance (unit 6H1).
 /// </remarks>
 internal static class BRepTestCommands
 {
@@ -630,208 +630,6 @@ internal static class BRepTestCommands
     // -------------------------------------------------------------------------------------------------------------
     // tolerance (SWDRAW_ShapeAnalysis.cxx) over ShapeAnalysis_ShapeTolerance
 
-    /// <summary>ShapeAnalysis_ShapeTolerance (TKShHealing, phase 7), ported for the tolerance command.</summary>
-    private sealed class ShapeTolerance
-    {
-        private int myNbTol;
-        private readonly double[] myTols = new double[3];
-
-        private static void AddTol(double tol, ref int nbt, ref double cmin, ref double cmoy, ref double cmax)
-        {
-            nbt++;
-            if (nbt == 1)
-            {
-                cmin = cmoy = cmax = tol;
-            }
-            else
-            {
-                if (cmin > tol)
-                {
-                    cmin = tol;
-                }
-
-                if (cmax < tol)
-                {
-                    cmax = tol;
-                }
-
-                // #76 rln 11.03.99 S4135: average without weights (mult = 1)
-                cmoy += tol;
-            }
-        }
-
-        public void InitTolerance()
-        {
-            myNbTol = 0;
-            myTols[1] = 0;
-        }
-
-        public void AddTolerance(in TopoDS_Shape shape, TopAbs_ShapeEnum type = TopAbs_SHAPE)
-        {
-            int nbt = 0;
-            double cmin = 0, cmoy = 0, cmax = 0;
-            if (type is TopAbs_FACE or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_FACE); ex.More(); ex.Next())
-                {
-                    AddTol(BRep_Tool.Tolerance(TopoDS.Face(ex.Current())), ref nbt, ref cmin, ref cmoy, ref cmax);
-                }
-            }
-
-            if (type is TopAbs_EDGE or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_EDGE); ex.More(); ex.Next())
-                {
-                    AddTol(BRep_Tool.Tolerance(TopoDS.Edge(ex.Current())), ref nbt, ref cmin, ref cmoy, ref cmax);
-                }
-            }
-
-            if (type is TopAbs_VERTEX or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_VERTEX); ex.More(); ex.Next())
-                {
-                    AddTol(BRep_Tool.Tolerance(TopoDS.Vertex(ex.Current())), ref nbt, ref cmin, ref cmoy, ref cmax);
-                }
-            }
-
-            if (nbt == 0)
-            {
-                return;
-            }
-
-            if (myNbTol == 0 || myTols[0] > cmin)
-            {
-                myTols[0] = cmin;
-            }
-
-            if (myNbTol == 0 || myTols[2] < cmax)
-            {
-                myTols[2] = cmax;
-            }
-
-            myTols[1] += cmoy;
-            myNbTol += nbt;
-        }
-
-        public double GlobalTolerance(int mode)
-        {
-            double result = 0;
-            if (myNbTol != 0)
-            {
-                if (mode < 0)
-                {
-                    result = myTols[0];
-                }
-                else if (mode == 0)
-                {
-                    result = myTols[0] == myTols[2] ? myTols[0] : myTols[1] / myNbTol;
-                }
-                else
-                {
-                    result = myTols[2];
-                }
-            }
-
-            return result;
-        }
-
-        public List<TopoDS_Shape> InTolerance(in TopoDS_Shape shape, double valmin, double valmax, TopAbs_ShapeEnum type)
-        {
-            bool over = valmax < valmin; // no upper bound
-            var sl = new List<TopoDS_Shape>();
-            if (type is TopAbs_FACE or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_FACE); ex.More(); ex.Next())
-                {
-                    double tol = BRep_Tool.Tolerance(TopoDS.Face(ex.Current()));
-                    if (tol >= valmin && (over || tol <= valmax))
-                    {
-                        sl.Add(ex.Current());
-                    }
-                }
-            }
-
-            if (type is TopAbs_EDGE or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_EDGE); ex.More(); ex.Next())
-                {
-                    double tol = BRep_Tool.Tolerance(TopoDS.Edge(ex.Current()));
-                    if (tol >= valmin && (over || tol <= valmax))
-                    {
-                        sl.Add(ex.Current());
-                    }
-                }
-            }
-
-            if (type is TopAbs_VERTEX or TopAbs_SHAPE)
-            {
-                for (var ex = new TopExp_Explorer(shape, TopAbs_VERTEX); ex.More(); ex.Next())
-                {
-                    double tol = BRep_Tool.Tolerance(TopoDS.Vertex(ex.Current()));
-                    // OCCT bug: "tol >= valmax" for vertices, where faces and edges test "tol <= valmax" (occt-issues.md)
-                    if (tol >= valmin && (over || tol >= valmax))
-                    {
-                        sl.Add(ex.Current());
-                    }
-                }
-            }
-
-            if (type == TopAbs_SHELL)
-            {
-                // the shells, with their faces that are in the range
-                var mapface = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                for (var ex = new TopExp_Explorer(shape, TopAbs_SHELL); ex.More(); ex.Next())
-                {
-                    bool iashell = false;
-                    TopoDS_Shape ash = ex.Current();
-                    for (var face = new TopExp_Explorer(ash, TopAbs_FACE); face.More(); face.Next())
-                    {
-                        mapface.Add(face.Current());
-                        List<TopoDS_Shape> fc = InTolerance(face.Current(), valmin, valmax, type);
-                        if (fc.Count > 0)
-                        {
-                            sl.AddRange(fc);
-                            iashell = true;
-                        }
-                    }
-
-                    if (iashell)
-                    {
-                        sl.Add(ash);
-                    }
-                }
-
-                // the faces (free or in shells)
-                for (var ex = new TopExp_Explorer(shape, TopAbs_FACE); ex.More(); ex.Next())
-                {
-                    bool iaface = false;
-                    if (mapface.Contains(ex.Current()))
-                    {
-                        continue;
-                    }
-
-                    double tol = BRep_Tool.Tolerance(TopoDS.Face(ex.Current()));
-                    if (tol >= valmin && (over || tol <= valmax))
-                    {
-                        iaface = true;
-                    }
-                    else if (InTolerance(ex.Current(), valmin, valmax, TopAbs_EDGE).Count > 0
-                             || InTolerance(ex.Current(), valmin, valmax, TopAbs_VERTEX).Count > 0)
-                    {
-                        iaface = true;
-                    }
-
-                    if (iaface)
-                    {
-                        sl.Add(ex.Current());
-                    }
-                }
-            }
-
-            return sl;
-        }
-    }
-
     private static int Tolerance(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         int argc = argv.Count;
@@ -852,7 +650,7 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        var sat = new ShapeTolerance();
+        var sat = new ShapeAnalysis_ShapeTolerance();
         if (argc == 2)
         {
             void Line(string theLabel, TopAbs_ShapeEnum theType)
@@ -908,8 +706,8 @@ internal static class BRepTestCommands
             tol2 = theDI.Atof(argv[nextarg + 1]);
         }
 
-        List<TopoDS_Shape> list = sat.InTolerance(Shape, tol1, tol2, type);
-        int nb = list.Count;
+        NCollection_HSequence<TopoDS_Shape> list = sat.InTolerance(Shape, tol1, tol2, type);
+        int nb = list.Length();
         di.Append(type switch
         {
             TopAbs_VERTEX => "Analysing Vertices gives ",
@@ -944,7 +742,7 @@ internal static class BRepTestCommands
         di.Append("\n");
         for (int i = 1; i <= nb; i++)
         {
-            theDI.SetShape("tol_" + i.ToString(CultureInfo.InvariantCulture), list[i - 1]);
+            theDI.SetShape("tol_" + i.ToString(CultureInfo.InvariantCulture), list.Value(i));
         }
 
         return 0;
