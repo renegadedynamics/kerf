@@ -2536,3 +2536,163 @@ OCCTNET0002. Numbers from 3101 are renumbered on merge.
         OriEdgeInFace, continuity, Range(E, F), UVBounds of faces, wires and edges, OuterWire, DetectClosedness,
         Parameters(V, F), placed surfaces and BRepAdaptor_Surface: 754,725 values, all bit-identical. The in-place
         statics on unfrozen twins: 50,140 values, all bit-identical.
+
+## Phase 3: unit 3C, BRep I/O
+
+TopTools_ShapeSet and TopTools_LocationSet; BRepTools_ShapeSet; BRepTools' Read, Write and Dump (BRepTools.IO.cs, a
+partial of BRepTools) and TopTools.Dump (TopTools.Dump.cs); all of BinTools (BinTools.cxx's statics, FormatVersion,
+ObjectType, IStream, OStream, LocationSet, CurveSet, Curve2dSet, SurfaceSet, ShapeSetBase, ShapeSet, ShapeReader,
+ShapeWriter); Storage_StreamFormatError; the untrusted-input checks of [phase3-design.md](phase3-design.md),
+section 7, in these readers and in GeomTools'. Numbers from 3301 are renumbered on merge.
+
+3301. **Text streams as GeomTools' (decision 225).** `Standard_OStream&`/`Standard_IStream&` are `TextWriter`/
+      `TextReader` with `Standard_Stream`'s state, one reader passed through the locations, the GeomTools sets, the
+      polygons, the triangulations and the shapes. Three C idioms of the readers got helpers in `Standard_Stream`:
+      `IS >> buffer` into OCCT's `char buffer[255]` is `ReadWord(IS, char[])` (the word and a null at the start of
+      the buffer, the rest left as it was, so OCCT's reads of `buffer[0..6]` after a short or failed word see what
+      C++ sees); `IS.getline(buf, n, '\n')` is `GetLine` (C++'s rules: the delimiter extracted and not stored,
+      `n - 1` characters then a non-delimiter sets fail, nothing extracted sets fail, a null always stored); `atoi`
+      is `Atoi` (checked against ucrtbase.dll, clamped on overflow as Microsoft's runtime does), with `Strlen` and
+      `CString`. TopTools_ShapeSet and TopTools_LocationSet set the precision to 15 and restore it, as OCCT does
+      (not on a user break, as OCCT). `OS.imbue(std::locale::classic())` is nothing: the port always writes and reads
+      the C locale.
+3302. **Line ends and files.** Everything writes `'\n'`. Native OCCT 8 opens the file of `BRepTools::Write` in binary
+      mode, so its files are LF on Windows too, and the port's file overloads write the same bytes:
+      `DBRep_DrawableShape\n` then the stream text (the oracle compares files byte for byte). The file overloads use
+      a `StreamWriter` (UTF-8 without a byte-order mark; the text is ASCII) and a Latin-1 `StreamReader`; a file
+      that can't be opened gives `false`, as OCCT's null stream does (OCCT's `OSD_FileSystem` arguments are left out,
+      decision 69). Reading treats CR as white space; the version line has its CR removed as OCCT does.
+3303. **Public API.** TopTools_ShapeSet, TopTools_LocationSet and BRepTools_ShapeSet are public working-object
+      classes with OCCT's public methods (as the GeomTools sets, decision 227). The hooks that create or change the
+      unfrozen shapes being read are `internal virtual`: `ReadGeometry(T, IS, ref S)`, `AddShapes(ref S1, in S2)`,
+      `Check(T, ref S)`; the others (`AddGeometry`, `WriteGeometry`, `ReadGeometry(IS)`, `DumpGeometry`, `Write`,
+      `Read`, `Dump`, `Clear`) are `public virtual`. `BRep_Builder` being internal, `BRepTools.Read` has public
+      overloads without OCCT's builder argument and internal ones with it, and the builder constructor of
+      BRepTools_ShapeSet is internal. OCCT's `Read(TopoDS_Shape&, IS)` is `Read(out TopoDS_Shape, TextReader)`;
+      `DumpExtent(TCollection_AsciiString&)` is `DumpExtent(ref string)`; `FormatNb()`/`SetFormatNb(int)` keep
+      OCCT's `int`; `THE_ASCII_VERSIONS` (a mutable array) is internal. Added: `TopTools_LocationSet.NbLocations()`,
+      and the constants `TopTools_ShapeSet.MaxShapeNesting`, `TopTools_LocationSet.MaxLocationItems` and
+      `GeomTools.MaxGeometryNesting` (decision 3307).
+3304. **Reading freezes; writing doesn't write** (design 4.2, decision 3A's FreezeGraph). `TopTools_ShapeSet.Read`
+      freezes every shape it created in a `finally`, so a set that stopped on an error hands out only frozen shapes
+      too; `Read(out S, IS)` returns frozen shapes; the GeomTools sets freeze their geometry (decision 227) and
+      `BRep_Builder` freezes the triangulations and polygons it attaches; ones a file lists but no shape uses stay in
+      the set, unfrozen, and are never handed out. As in OCCT, adding each sub-shape to its parent clears its Free
+      flag (the children aren't frozen yet), so a file read and written again has OCCT's bytes; open question 1
+      (Free on frozen shapes) doesn't arise for files read. Writing only reads the shapes.
+3305. **The Locked bit isn't in any file.** Design 4.3 said the text and binary writers write the raw Locked bit;
+      they write the seven flags Free to Convex only (as do BinTools' writers). Only `TopTools_ShapeSet::Dump`
+      prints Locked, and the port prints the stored bit (`LockedFlag()`), so a frozen shape that wasn't locked
+      dumps 0, as native OCCT dumps it. phase3-design.md is corrected.
+3306. **Dump.** OCCT prints each TShape's address; the port prints `RuntimeHelpers.GetHashCode` in the same sixteen
+      upper-case hexadecimal digits. Everything else is OCCT's text, null shapes included ("Null shape", then
+      "Shape : 0, EXTERNAL", as OCCT goes on).
+3307. **Untrusted input in the text readers** (design 7), each marked `// OCCT.NET: untrusted input`, throwing
+      `Storage_StreamFormatError` (new in Foundation, `Storage`, a `Standard_Failure` as OCCT's):
+      - *Counts* (locations, curves, 2D curves, surfaces, poles and knots of Bezier and B-spline curves and surfaces,
+        3D polygons and their nodes, polygons on triangulations and their nodes, triangulations, their nodes and
+        triangles, shapes) are checked before OCCT allocates or loops: not negative where OCCT would allocate, and at
+        most what the input could hold at a minimum number of characters per item. The input's length is
+        `Standard_Stream.InputLength`: the length given to `SetInputLength`, the length of a `StreamReader`'s seekable
+        stream (a character takes at least a byte), or `UnknownInputLength` (2^28) for other readers. Negative loop
+        counts that OCCT treats as zero still are.
+      - *Failed streams*: where OCCT loops for ever or for as long as a count says on a stream that has failed (the
+        location chain `while (l1 != 0)`, a vertex's and an edge's representation lists, a shape's sub-shape list, and
+        the polygon and triangulation loops, which allocate again on each pass with the count of the last), the
+        reader throws once the stream has failed. Valid files never fail there, so they read exactly as in OCCT.
+      - *Words* longer than OCCT's `char[255]` (254 characters and the null) are an error; GeomTools' section headers
+        now read the same way (they read unbounded words before).
+      - *References* to shapes not read yet, locations not in the set and (for a face of a triangulation only)
+        triangulations not in the set are errors where OCCT reads outside its maps.
+      - *Nesting*: shapes deeper than `TopTools_ShapeSet.MaxShapeNesting` (1,000; a vertex is 1), computed per shape
+        as it is read; trimmed, offset and swept geometry deeper than `GeomTools.MaxGeometryNesting` (64; a thread-static
+        counter in `ReadCurve`, `ReadCurve2d` and `ReadSurface`); complex locations of more than
+        `TopTools_LocationSet.MaxLocationItems` (1,000) items, counting a power of a location of several items as
+        that many (TopLoc_Location's `Powered` and `Multiplied` recurse once per item); an elementary location to
+        any power is one item. GeomTools' `catch (Standard_Failure)` blocks let `Storage_StreamFormatError` through,
+        so an unsafe file stops the read instead of becoming a null entry.
+      - *Stray .NET exceptions* that stand for OCCT's undefined behaviour (null, index, cast, argument, arithmetic,
+        invalid operation, key not found) are rethrown as `Storage_StreamFormatError` by `TopTools_ShapeSet.Read` and
+        `BRepTools.Read`; OCCT's own exceptions (`TopoDS_UnCompatibleShapes` for a sub-shape of the wrong type,
+        `gp_Trsf::SetValues`' `Standard_ConstructionError`, which OCCT's release build compiles out) pass through as
+        the `Standard_Failure`s they are.
+      - *Writing*: `TopTools_ShapeSet.Add` recurses once per level; it calls
+        `RuntimeHelpers.EnsureSufficientExecutionStack()`, so a shape built nested too deeply for the stack throws
+        `InsufficientExecutionStackException` instead of ending the process (100,000 nested compounds are tested).
+      - Not checked, in either format: the node indices of triangles and of polygons on triangulations. A bad index
+        reads, and a consumer gets an `IndexOutOfRangeException` from the mesh later, not memory corruption.
+      The caps are the same values in BinTools (decision 3310), declared per package.
+3308. **Null handles in BRepTools_ShapeSet's maps.** The maps of polygons and triangulations compare by reference
+      (OCCT's handle maps). A polygon on a surface without its polygon goes in as GeomTools' null key (2D polygons are
+      never written); an edge's polygon on a triangulation with a null polygon or triangulation throws
+      `Standard_NullObject` when added, where OCCT adds the null key and crashes writing it (occt-issues.md).
+3309. **BinTools (written in a forked worktree, reviewed and merged).**
+      - Streams are `System.IO.Stream`, little-endian through `BinaryPrimitives` (OCCT's `DO_INVERSE` swaps on
+        big-endian hosts only, so files are little-endian); the text parts (the header, `IS >> int`, `getline`)
+        follow C++ extraction; the character after a formatted integer is pushed back (a seek on a seekable stream,
+        a per-stream byte in a `ConditionalWeakTable` otherwise).
+      - `BinTools_OStream`'s `operator<<` overloads are C# shift operators; `BinTools_IStream`'s `>>` are `Read*`
+        methods; its `operator bool` is always true, since the port throws instead of failing.
+      - Reading past the end throws `Storage_StreamFormatError` everywhere (OCCT throws
+        `Storage_StreamTypeMismatchError` from typed reads, carries on from byte reads, and reads `GetBool` at the end
+        as true). OCCT's `catch` blocks keep wrapping into `Standard_Failure` with OCCT's "EXCEPTION in ..." message
+        but let `Storage_StreamFormatError` through.
+      - The sets hash handles by reference; the 2D curve and surface sets hold the null handle once through a
+        sentinel (decision 227); writing it throws where OCCT dereferences it.
+      - Readers freeze: the sets' geometry when stored, `ShapeSet.Read`'s shapes in a `finally`,
+        `ShapeReader.Read`'s result. The writers write OCCT's seven flags.
+      - `BinTools_ShapeSet` reads and writes versions 1 to 4 (`BinTools::Read`/`Write` always use it; version 4
+        adds triangulation normals). Its vertex reader of versions 1, 2 and 4 steps back with `tellg`/`seekg`, so
+        `BinTools.Read` copies a stream that can't seek into memory first; called directly on such a stream the set
+        throws `Standard_ProgramError`. `ShapeReader` (OCCT's position-referencing format, used by OCAF) requires a
+        seekable stream. Writers don't seek.
+      - Internal: `ShapeSet.ReadShape`, `ReadFlagsAndSubs` and `AddShapes` (they create unfrozen shapes),
+        `THE_ASCII_VERSIONS`, the stream helpers; `ShapeWriter.WriteShape` is private (private virtual in OCCT).
+3310. **Untrusted input in BinTools**, marked as in 3307: every typed read and `get()` throws at the end of the
+      stream; counts are checked against `Stream.Length - Position` at a minimum byte size per item (a stream that
+      can't seek: `BinTools.NonSeekableLimit`, 256 MiB, only reached when the sets are used directly); a missing or
+      overflowing formatted integer throws; words of 255 characters or more are errors (an overlong header line
+      fails as C++'s getline does: "not this version", nothing read); shape, location, curve, 2D curve, surface,
+      polygon and triangulation indices are checked, orientation bytes must be 0 to 3; nesting:
+      `BinTools.MaxGeometryNesting` 64, `MaxShapeNesting` 1,000 (per shape in ShapeSet; one depth for shapes,
+      locations and reference chains in ShapeReader), `MaxLocationItems` 1,000 as in 3307; ShapeReader's references
+      must point after the start of the stream, `GoTo` can't pass the end, and a shape or location that refers to
+      itself while being read is rejected; the recursive readers also check the stack
+      (`TryEnsureSufficientExecutionStack`), the writers call `EnsureSufficientExecutionStack`, and the geometry parts
+      of `WriteShape`/`ReadShape` are separate methods to keep the recursive frames small.
+3311. **For Bento: bytes in and out.** Write with `BRepTools.Write(shape, writer)` (or the versioned overload) into a
+      `StringWriter`, or a `StreamWriter` over a `MemoryStream` (ASCII or UTF-8 without a byte-order mark): the
+      bytes are native OCCT's `BRepTools::Write` to a stream. Read from a `StreamReader` over a `MemoryStream` (the
+      length is then known, so counts are bounded by it), or from a `StringReader` after
+      `Standard_Stream.SetInputLength(reader, text.Length)`; an unannounced reader is assumed to hold up to 2^28
+      characters. The binary format (`BinTools.Write`/`Read` on a `Stream`) is smaller and exact (no 15- or
+      17-digit rounding) but has no native oracle (open question 4). Every shape read is frozen; every failure is a
+      `Standard_Failure`, and input that can't be read safely a `Storage_StreamFormatError`.
+3312. **Tests.**
+      - Unit (OcctNet.ModelingData.Tests/BRepTools, Foundation.Tests/Standard): the exact text of a vertex, an edge
+        and a set of elementary and complex locations (from OCCT's source); round trips of eleven shapes covering
+        every representation (BinTestShapes) in the three versions with and without triangles and normals, byte for
+        byte (version 1 from the second write: reading it computes UV points and sets Checked); structure, freezing
+        of shapes, representations, geometry and meshes; the Free flags of read sub-shapes; version 2's UV points and
+        version 1's computed ones; triangulation and normal flags; files (Draw's header, CRLF input, missing files and
+        directories); text that isn't a set; the set API, DumpExtent and both Dumps; precision restored; the 37
+        data/occ files through the binary format and back, word for word (reals within four units of the last place);
+        `Standard_Stream`'s atoi (against ucrtbase), C buffers, getline and count checks.
+      - Untrusted text input: targeted cases for every check of 3307 (counts in every section, words, geometry,
+        shape and location nesting, lists that end with the input, missing references, the stack); every truncation
+        of 13 written shapes plus 100 random truncations of each of the 32 smaller data/occ files (31,136 reads), and
+        27,920 random mutations (characters, deletions, inserted numbers, repeated and removed runs) of the same
+        samples, each on a 1 MB stack under a time limit: every read ends in a frozen shape or a `Standard_Failure`.
+      - BinTools (43 tests): format bytes by hand from OCCT's source, round trips through ShapeSet (versions 1 to 4)
+        and ShapeReader/ShapeWriter, 990 random curves and surfaces, untrusted cases, every truncation of seven
+        samples (more than 10,000 reads) and 21,000 random mutations.
+      - Oracle (OcctNet.Oracle.Tests/BRepTools), in all eight combinations of version, triangles and normals: 96
+        random native shapes (boxes, cylinders, spheres, cones, tori, wedges, prisms, revolutions, fuses, cuts,
+        commons, fillets, lofts; placed and meshed at random), F1/F2: 768 files, 9.2 MB, all byte-identical (F1 = F2
+        in 70); 60 twin scenes built call for call on both sides (a third with triangulations): the port writes
+        exactly native OCCT's file, 480 files, 1.7 MB; the port's own files (of 48 shapes it read and 24 it built)
+        read by native OCCT and by the port write the same bytes: 576 files, 5.4 MB (the second write equals the
+        first in 256). Corpus: the 37 `.brep` files of data/occ, 37 byte-identical to native F2 (22.3 MB; F1 = F2 in
+        28), and its 5 `.rle` files; OCCT's test dataset: 2,327 of its 2,369 `.brep`/`.rle` files byte-identical
+        (99.0 MB; F1 = F2 in 2,133); the other 42 are Draw geometry files (`DrawTrSurf_...`) and raw geometry, which
+        native OCCT doesn't read as shapes and neither does the port.
