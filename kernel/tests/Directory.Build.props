@@ -11,5 +11,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <Using Include="Xunit" />
     <Using Include="Occt" />
+    <Using Include="Occt.math_VectorBase&lt;double&gt;" Alias="math_Vector" />
+    <Using Include="Occt.math_VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
   </ItemGroup>
 </Project>

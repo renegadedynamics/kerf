@@ -8,6 +8,9 @@
   <ItemGroup Condition="'$(IsOcctPort)' == 'true'">
     <!-- OCCT's free functions (RealSmall(), Square(), IsOdd(), the Raise_if checks) are called unqualified, as in C++ -->
     <Using Include="Occt.Standard" Static="true" />
+    <!-- OCCT's typedefs math_Vector and math_IntegerVector: using aliases of math_VectorBase<T> -->
+    <Using Include="Occt.math_VectorBase&lt;double&gt;" Alias="math_Vector" />
+    <Using Include="Occt.math_VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
     <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
     <ProjectReference Include="$(MSBuildThisFileDirectory)OcctNet.Analyzers/OcctNet.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

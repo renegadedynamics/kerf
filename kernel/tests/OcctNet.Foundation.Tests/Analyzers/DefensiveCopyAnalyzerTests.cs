@@ -56,6 +56,14 @@ public class DefensiveCopyAnalyzerTests
         => Assert.Single(Analyze("", extraStruct: "public struct Q { private P p; public readonly void M() { p.Move(1); } }"));
 
     [Fact]
+    public void Treats_inline_array_elements_as_part_of_their_struct()
+    {
+        const string Buffer = "[System.Runtime.CompilerServices.InlineArray(3)] public struct Three { private P e; }";
+        Assert.Empty(Analyze("", extraStruct: Buffer + " public struct S { private Three b; public void M() { b[1].Move(1); } }"));
+        Assert.Single(Analyze("", extraStruct: Buffer + " public struct S { private Three b; public readonly void M() { b[1].Move(1); } }"));
+    }
+
+    [Fact]
     public void Allows_a_readonly_field_in_its_own_constructor()
         => Assert.Empty(Analyze("", extraStruct: "public sealed class C { private readonly P p; public C() { p.Move(1); } }"));
 

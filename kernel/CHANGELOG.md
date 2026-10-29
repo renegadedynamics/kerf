@@ -19,3 +19,28 @@ Phase 0: groundwork, ported from OCCT V8_0_1 (b8f597c6).
 - Tests: OCCT's gp GTests ported; oracle tests against native OCCT; Draw-lite, which parses all 17,237 cases
   of OCCT's Draw test corpus and lists the commands they need.
 - `tools/port-status.cs` writes `docs/port-status.md`.
+
+Phase 1 (part): bounding boxes and bounding volume hierarchies.
+
+- `OcctNet.Foundation`: NCollection_Vec2/3/4 and NCollection_Mat3/4 (generic structs), NCollection_LinearVector;
+  the Bnd package (Bnd_Box, Bnd_Box2d, Bnd_B2d/f, Bnd_B3d/f, Bnd_OBB, Bnd_Range, Bnd_Sphere, Bnd_BoundSortBox,
+  Bnd_Tools); the BVH package (boxes, trees, binned/linear/sweep-plane/spatial-median builders, sorters,
+  traversals, box sets, triangulations, distance fields), generic over the element and vector type.
+- Tests: the Bnd, BVH and NCollection_Vec4 GTests; oracle tests of Bnd_Box and Bnd_OBB against native OCCT.
+
+Phase 1 (part): meshes.
+
+- `OcctNet.Foundation`: the Poly package (Poly_Triangulation with run-time single or double precision nodes and
+  span access for bulk reads, Poly_Triangle, polygons in 2D, 3D and on triangulations, Poly_Connect,
+  Poly_MergeNodesTool, Poly_CoherentTriangulation, Poly_MakeLoops, Poly's reading, writing and intersection
+  tools); NCollection_AliasedArray, NCollection_PackedMapOfInteger, NCollection_Primes.
+- Tests: unit tests of the Poly package (OCCT has no Poly GTests); oracle tests of Poly_Triangulation and
+  Poly_Triangle against native OCCT.
+
+Phase 1 (part): B-spline surfaces and conversions.
+
+- `OcctNet.Foundation`: the BSplSLib package (B-spline and Bezier surface evaluation, knot insertion and removal,
+  degree elevation, interpolation, BSplSLib_Cache); the Convert package (conics and quadrics to B-splines,
+  composite Bezier curves and polynomial curves and grids to B-splines). Converters return copies of their results.
+- Tests: the BSplSLib and Convert GTests; oracle tests of BSplCLib, BSplSLib, BSplSLib_Cache and Convert against
+  native OCCT, all bit-identical.

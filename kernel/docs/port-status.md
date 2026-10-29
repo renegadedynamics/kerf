@@ -55,8 +55,8 @@ broken down by package.
 | Draw | TKXSDRAWSTEP | 0 / 2 | 0 / 1,243 | 0.0 |
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
-| FoundationClasses | TKMath | 77 / 435 | 20,458 / 137,575 | 14.9 |
-| FoundationClasses | TKernel | 4 / 470 | 978 / 132,410 | 0.7 |
+| FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
+| FoundationClasses | TKernel | 32 / 470 | 14,224 / 132,410 | 10.7 |
 | ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
 | ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -82,33 +82,33 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 83 | 21,436 / 2,897,781 | 0.7 |
+| **All** |  | 468 | 151,640 / 2,897,781 | 5.2 |
 
 ## TKMath
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| BSplCLib | 0 / 14 | 0 / 13,424 | 0.0 |
-| BSplSLib | 0 / 7 | 0 / 5,977 | 0.0 |
-| BVH | 0 / 39 | 0 / 6,325 | 0.0 |
-| Bnd | 0 / 15 | 0 / 7,106 | 0.0 |
-| CSLib | 0 / 8 | 0 / 1,570 | 0.0 |
-| Convert | 0 / 33 | 0 / 5,313 | 0.0 |
-| ElCLib | 0 / 3 | 0 / 2,441 | 0.0 |
-| ElSLib | 0 / 3 | 0 / 2,862 | 0.0 |
-| GeomAbs | 0 / 6 | 0 / 217 | 0.0 |
-| MathInteg | 0 / 5 | 0 / 1,743 | 0.0 |
-| MathLin | 0 / 7 | 0 / 2,330 | 0.0 |
-| MathOpt | 0 / 8 | 0 / 4,318 | 0.0 |
-| MathPoly | 0 / 4 | 0 / 1,055 | 0.0 |
-| MathRoot | 0 / 8 | 0 / 2,959 | 0.0 |
-| MathSys | 0 / 6 | 0 / 2,220 | 0.0 |
-| MathUtils | 0 / 16 | 0 / 4,930 | 0.0 |
-| PLib | 0 / 8 | 0 / 18,160 | 0.0 |
-| Poly | 0 / 34 | 0 / 7,867 | 0.0 |
-| TopLoc | 0 / 12 | 0 / 1,032 | 0.0 |
+| BSplCLib | 14 / 14 | 13,424 / 13,424 | 100.0 |
+| BSplSLib | 7 / 7 | 5,977 / 5,977 | 100.0 |
+| BVH | 38 / 39 | 6,166 / 6,325 | 97.5 |
+| Bnd | 15 / 15 | 7,106 / 7,106 | 100.0 |
+| CSLib | 8 / 8 | 1,570 / 1,570 | 100.0 |
+| Convert | 33 / 33 | 5,313 / 5,313 | 100.0 |
+| ElCLib | 3 / 3 | 2,441 / 2,441 | 100.0 |
+| ElSLib | 3 / 3 | 2,862 / 2,862 | 100.0 |
+| GeomAbs | 6 / 6 | 217 / 217 | 100.0 |
+| MathInteg | 5 / 5 | 1,743 / 1,743 | 100.0 |
+| MathLin | 7 / 7 | 2,330 / 2,330 | 100.0 |
+| MathOpt | 8 / 8 | 4,318 / 4,318 | 100.0 |
+| MathPoly | 4 / 4 | 1,055 / 1,055 | 100.0 |
+| MathRoot | 8 / 8 | 2,959 / 2,959 | 100.0 |
+| MathSys | 6 / 6 | 2,220 / 2,220 | 100.0 |
+| MathUtils | 16 / 16 | 4,930 / 4,930 | 100.0 |
+| PLib | 8 / 8 | 18,160 / 18,160 | 100.0 |
+| Poly | 34 / 34 | 7,867 / 7,867 | 100.0 |
+| TopLoc | 12 / 12 | 1,032 / 1,032 | 100.0 |
 | gp | 77 / 77 | 20,458 / 20,458 | 100.0 |
-| math | 0 / 122 | 0 / 25,268 | 0.0 |
+| math | 122 / 122 | 25,268 / 25,268 | 100.0 |
 
 ## TKernel
 
@@ -116,14 +116,14 @@ broken down by package.
 |---|---:|---:|---:|
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
-| Message | 0 / 50 | 0 / 7,261 | 0.0 |
-| NCollection | 0 / 81 | 0 / 26,993 | 0.0 |
+| Message | 3 / 50 | 897 / 7,261 | 12.4 |
+| NCollection | 24 / 81 | 12,204 / 26,993 | 45.2 |
 | OSD | 0 / 94 | 0 / 19,678 | 0.0 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
 | Quantity | 0 / 14 | 0 / 6,917 | 0.0 |
 | Resource | 0 / 15 | 0 / 28,170 | 0.0 |
-| Standard | 3 / 93 | 604 / 17,960 | 3.4 |
+| Standard | 4 / 93 | 749 / 17,960 | 4.2 |
 | StdFail | 0 / 5 | 0 / 170 | 0.0 |
 | Storage | 0 / 38 | 0 / 3,922 | 0.0 |
 | TColStd | 0 / 2 | 0 / 84 | 0.0 |

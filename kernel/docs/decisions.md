@@ -32,3 +32,393 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
     from scratch for the modelling algorithms.
 14. **Coefficient arrays of gp quadrics** (`gp_Pln::Coefficients` and friends) use `out` parameters, and
     `gp_Torus::Coefficients` a `Span<double>` of 35 indexed from 0 (OCCT fills a 1-based `NCollection_Array1`).
+
+## Phase 1 (28 October 2026, overnight)
+
+15. **NCollection is reimplemented, not ported line for line**: OCCT's API (bounds, Value/ChangeValue, More/Next
+    iterators, 1-based sequences and indexed maps) over .NET arrays, lists and dictionaries. OCCT's own
+    implementation is allocator and memory plumbing that .NET does differently. Behaviour that ported code can see
+    is kept: element default construction, the last key moving into a removed index of an indexed map, buffer
+    views sharing storage.
+16. **NCollection containers are classes**, so C++ copies must be written as copies (`new(b)`, `Assign`). Rejected
+    alternative: structs, which would still alias their storage and hide the problem. The rule is in
+    translation-rules.md section 9; a review step checks by-value uses.
+17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient,
+    since C# has single inheritance and arrays are references already.
+18. **The unordered maps don't keep OCCT's iteration order.** Ported code whose output depends on that order is
+    noted where found.
+19. **Raw array pointers become spans** (`double*`/`double&` plus pointer arithmetic → `Span<double>`).
+20. **Progress is OCCT's API on .NET types**: `Message_ProgressIndicator(CancellationToken, IProgress<double>)`.
+    This is how Bento will cancel long operations. Simplification: a range handed out by `Next()` and never closed
+    isn't counted, where OCCT counts it on destruction.
+21. **Low-level packages keep OCCT's mutable parameter types** (NCollection arrays, spans): BSplCLib, PLib and math
+    are tools for ported code. Immutability applies to values callers hold (gp now, Geom and TopoDS later).
+22. **Trimming**: default construction uses `Activator.CreateInstance<T>()`, with the trimming warning suppressed on
+    the grounds that OCCT.NET's value types keep their constructors. Revisit if Bento publishes with full trimming.
+23. **TKMath is verified by OCCT's GTests, not the oracle.** build123d.NET's native bindings expose only Bnd_Box,
+    Bnd_OBB, TopLoc_Location and two Poly classes from TKMath, and widening them means changing and rebuilding
+    that repository. Those classes get oracle tests now; the rest of TKMath gets oracle coverage indirectly through
+    Geom, GeomAPI and BRep, which build123d.NET does bind, from phase 2.
+24. **Parallel porting uses git worktrees made by hand** (in the session's scratch directory), one branch per
+    package group off the phase branch, merged back with `--no-ff`. The harness's own worktree isolation refused
+    this repository's path (a drive-letter case mismatch) and left three locked worktrees in `.claude/worktrees`,
+    which are ignored and can be removed with `git worktree remove --force`.
+
+## Phase 1: ElCLib, ElSLib, GeomAbs, TopLoc (28 October 2026)
+
+25. **ElCLib and ElSLib output parameters are `out`**, and where OCCT fills an output with `SetXYZ`/`SetX`/... the
+    port assigns a new value built from the same expressions in the same order, so results are unchanged.
+    `ElCLib::AdjustPeriodic`'s U1 and U2 are read and written, so `ref`.
+26. **TopLoc_Location is a struct** holding one reference to a shared, immutable list of nodes, exactly OCCT's
+    layout. It has value semantics in OCCT (copied freely, embedded in every TopoDS_Shape), costs no allocation for
+    the identity, and `default(TopLoc_Location)` is a valid identity, as OCCT's default constructor. A class would
+    add an allocation and a null that OCCT doesn't have. TopLoc_SListOfItemLocation and TopLoc_ItemLocation are
+    structs for the same reason; the list node and TopLoc_Datum3D are Standard_Transient classes, as in OCCT.
+27. **TopLoc_Location equality is OCCT's `IsEqual`**: datums compared by reference, then powers, so `Equals`,
+    `==` and `GetHashCode` agree with OCCT's maps of locations and shapes. Two locations built from equal
+    transformations are different, as in OCCT. `HashCode()` keeps OCCT's structure (0 for the identity, then each
+    datum and power folded in from a fixed seed) but returns an `int` from `System.HashCode` over the datums'
+    `RuntimeHelpers.GetHashCode`, where OCCT MurmurHashes their addresses into a `size_t`; both are
+    process-specific. The deprecated aliases TopLoc_MapOfLocation and TopLoc_IndexedMapOfLocation are written out
+    as `NCollection_Map<TopLoc_Location>` and `NCollection_IndexedMap<TopLoc_Location>`.
+28. **`operator gp_Trsf()` of TopLoc_Location is an explicit conversion**, and the non-explicit
+    `TopLoc_Location(const gp_Trsf&)` is written out, as for gp's implicit conversions.
+29. **ShallowDump keeps a TextWriter overload**; the object's address becomes its runtime hash code and C++'s default
+    six-digit stream formatting becomes "G6".
+
+## Phase 1: the math package (28 October 2026)
+
+30. **`math_Vector` and `math_IntegerVector` are global using aliases** of the generic class
+    `math_VectorBase<T>` (`where T : struct, INumber<T>`), as they are `using` aliases in OCCT. The aliases are declared once in
+    `src/Directory.Build.props` and `tests/Directory.Build.props` (every port and test project references
+    OcctNet.Foundation; the analyzer project is excluded). Rejected: subclasses, whose inherited operators would return the base type.
+31. **`math_Vector`, `math_Matrix` and `math_DoubleTab` copy explicitly.** C++ copy construction is `new(x)`;
+    C++ assignment, including move assignment from a temporary, is `Initialized(x)` (`Assign` for
+    math_DoubleTab), which copies values, keeps the bounds and throws if the sizes differ, as OCCT does. The
+    compound operators (`+=`, `-=`, `*=`, `/=`) are C# 14 instance compound operators, so they change the
+    object in place as in C++. Moves are reference transfers, so the GTests' checks on moved-from objects are
+    dropped. OCCT's inline buffers for small vectors and matrices are not reproduced.
+32. **Function interfaces are abstract classes with `out` results**: `bool Value(double X, out double F)`,
+    `bool Values(math_Vector X, out double F, math_Vector G)`. Vectors and matrices are passed as references
+    and filled in place. An implementation that fails must still assign its `out` values, where C++ may leave
+    them unchanged; the ported algorithms that rely on an unchanged value (`math_KronrodSingleIntegration`'s
+    error, `math_GlobOptMin::computeLocalExtremum`) use `ref` internally.
+33. **A `const math_Vector&` returned from a field returns the object itself**, documented "shared: don't
+    modify", rather than a copy: these are low-level tools (decision 21) and copying would cost every caller.
+34. **`Dump(Standard_OStream&)` is `Dump(TextWriter)`**, and `ToString()` returns what it writes, for every math
+    class with a Dump.
+35. **math_Recipes' free functions** (`LU_Decompose`, `SVD_Decompose`, `Jacobi`, ...) are static methods of a
+    static class `math_Recipes`, imported with `using static Occt.math_Recipes;`.
+36. **NCollection_CellFilter** takes its inspector as a type parameter constrained to
+    `INCollection_CellFilter_Inspector<TTarget, TPoint>` (static abstract `Coord`, static virtual `Dimension`
+    and `IsEqual`), in place of OCCT's duck-typed template parameter.
+
+## Draw-lite: the Tcl core (29 October 2026)
+
+37. **Draw-lite runs OCCT's own DrawResources scripts** (StandardCommands, Geometry, TestCommands, CheckCommands,
+    Vector.tcl) rather than reimplementing the check commands in C#. `checkprops`, `checknbshapes`, `checkreal` and
+    the rest then behave exactly as in OCCT, on top of a few C++ primitives (nbshapes, sprops/lprops/vprops,
+    checkshape, tolerance, isdraw/dtyp/dname, ...) to be written as the geometry is ported.
+38. **Script writes never touch the disk**: `open ... w`, `file mkdir/delete/copy` go to an in-memory overlay that
+    later reads see. Integers are 64-bit (Tcl switches to bignums; Draw-lite to doubles). Regular expressions run on
+    .NET's engine with Tcl's syntax translated; .NET takes the first matching alternative where Tcl takes the
+    longest. Only the global namespace exists. `checkview` stays a no-op.
+39. **Each top-level evaluation runs on a thread with a 256 MB stack**, because debug builds overflowed the default
+    stack at about 270 nested procedure calls; the procedure-depth limit stays at Tcl's 1000. A `Deadline` stops a
+    runaway script and can't be caught by the script.
+
+## Phase 1: Bnd, BVH and the NCollection vectors (29 October 2026)
+
+40. **NCollection_Vec2/3/4 and NCollection_Mat3/4 are generic structs** (`where T : unmanaged, INumber<T>`) over
+    `[InlineArray]` storage, so `v[i]` and `myMat[i]` read as in the C++. They follow the value-type rules: the
+    non-const `x()` and `operator[]` become an indexer with an internal setter and an internal `ChangeData()` span;
+    `GetData()` becomes `CopyTo`; converting constructors become static `From<TOther>`. Mat3/Mat4 default to the
+    identity (`new()`), `default` is zero. OCCT's float/double specialisation of `Vec3`/`Vec4 /= scalar`
+    (multiply by the inverse) is kept. `Mat3.Inverted(ref, out)` takes `ref` because OCCT leaves the output
+    untouched for a singular matrix.
+41. **BVH is generic over the element type and the vector type**, `BVH_Box<T, TVec>` with `TVec` one of the
+    NCollection vectors, instead of OCCT's `BVH_Box<T, N>`: C# has no integer type parameters, and the vector type
+    fixes the dimension. The vectors implement `INCollection_Vec<T, TSelf>` (static abstract `Length`, `Create`,
+    operators, component access); generic code writes a component through an internal `Unsafe` helper. The JIT
+    specialises every instantiation, so there is no interface dispatch in the inner loops. Rejected: concrete
+    classes per (T, N), six copies of every builder. `BVH_Box<double, 3>` is spelled
+    `BVH_Box<double, NCollection_Vec3<double>>`; the tests have global aliases for OCCT's typedefs (`BVH_Vec3d`).
+    N = 1, declared but never instantiated by OCCT, is not ported.
+42. **BVH template specialisations and int template arguments**: the binary tree is `BVH_Tree<T, TVec>` and the quad
+    tree `BVH_QuadTree<T, TVec>` (OCCT's arity tags dropped); `Child<K>(n)` is `Child(K, n)`; the binned builder's
+    `Bins` is its constructor's last argument; `BVH_Transform<T, N>` exists only for N = 4, so it is
+    `BVH_Transform<T>`; the 3D-only `BVH_Box::Transform`/`Transformed` are extension methods. OCCT's
+    `BVHSetType = void` is a generic overload without the set type (`BVH_Traverse<T, TVec, TMetric>`), and
+    `Select()` finds the tree of a `BVH_PrimitiveSet` or `BVH_Geometry` set by type. `RejectNode` returns its
+    metric through `out`.
+43. **BVH_Set is an interface**, because `BVH_PrimitiveSet` is both a set and a `BVH_Object` (OCCT's multiple
+    inheritance); its default `Box()` is the static `BVH_Set.Box(set)`.
+44. **BVH's classes keep OCCT's public mutators** (trees, sets, builders), like math and BSplCLib (decision 21): they
+    are tools for ported code, and users extend them (custom sets, traversals). Only the value types (`BVH_Box`,
+    `BVH_Ray`, the vectors) follow the internal-mutator rule.
+45. **std::partition and std::sort.** The radix sorter's `std::partition` is ported as Microsoft's implementation,
+    so the linear builder (used by `Bnd_OBB`) orders primitives as native OCCT does on Windows. `BVH_QuickSorter`
+    uses .NET's span sort instead of `std::sort`: both are unstable introsorts, but primitives with equal centroids
+    may end up in a different order, and trees built by the sweep-plane builder may differ.
+46. **OSD_Parallel → Parallel.For/ForEach** with OCCT's sequential flag; `OSD_Thread` → `Thread`;
+    `std::mutex` → `Lock`; atomics → `Interlocked`/`Volatile`.
+47. **NCollection_LinearVector** is reimplemented over an array (decision 15), API subset only (no move operations,
+    iterators as `AsSpan()`); its 912-line GTest is not ported yet.
+48. **Bnd_B2/Bnd_B3 are ported once per instantiation** (`Bnd_B2d`/`Bnd_B2f`, `Bnd_B3d`/`Bnd_B3f`), the float files
+    generated from the double ones by a file-level `using RealType`, to keep C++'s float/double promotions exactly.
+    C++ `std::optional` returns become nullable structs, and multi-value returns `readonly record struct`s
+    (`Bnd_Box.Limits`, `Bnd_Range.Bounds`, `Bnd_OBB.HalfSizes`) for structured bindings.
+49. **Twins for Bnd's bare `Set` and `Add` methods**: `Bnd_Box.FromPoint`, `Bnd_Box.Void()`, `Bnd_OBB.FromPoints`,
+    `Bnd_OBB.Void()` (static factories), and `Added`, `Enlarged`, `Opened*`, `Updated`, `Limited`, ... Methods whose
+    output OCCT leaves untouched in some cases take `ref` rather than `out` (`Bnd_Range.GetMin/GetMax/GetBounds`).
+## Phase 1: MathUtils and the new maths packages (29 October 2026)
+
+OCCT 8's header-only packages MathUtils, MathLin, MathPoly, MathRoot, MathInteg, MathOpt and MathSys: C++
+namespaces of function templates over duck-typed functors, returning result structs.
+
+50. **A C++ namespace is a `public static partial class`** (`MathRoot.Brent(...)`), one C# file per header. Each
+     file's `using namespace MathUtils;` is `using static Occt.MathUtils;`. Nested namespaces (`detail`,
+     `Internal`) are nested `internal static partial class`es. Names that C++ code reaches through another
+     namespace's `using` (`MathRoot::ScalarResult`) are written with their own class (`MathUtils.ScalarResult`).
+     Where Standard and MathUtils both have a function (`IsEqual`, `Sign`), ported code qualifies `MathUtils.`.
+51. **Functor templates are generic methods constrained on interfaces**, one interface per member set the C++
+     body calls: `MathUtils.IScalarFunction` (`Value(double, out double)`), `IScalarFunctionWithDerivative`
+     (`Values`; independent of `IScalarFunction`, since some solvers call only `Values`), `IVectorFunction`,
+     `IVectorFunctionWithGradient`, `IVectorFunctionWithHessian`, `ISystemFunction` (`Value(x, F)`), and
+     package-local ones (`MathSys.IFunctionSet[WithDerivatives]`, `MathSys.INewton2D/3D/4DFunction`,
+     `MathInteg.ISetFunction`, MathRoot's adapter interfaces). A C++ `operator()` is a method `Invoke`. Why: a
+     struct functor gets code specialised by the JIT with the call inlined, as a C++ template instantiation; a
+     class still works through the interface. Rejected: delegates (an indirect call per evaluation, and
+     `Func<>` can't have `out` parameters). Functors are passed by value, where C++ passes `Function&`: a
+     functor whose evaluation changes its own state must be a class. The interfaces use `out` results, as in
+     decision 32.
+52. **The lambda wrappers (`MakeScalar`, `MakeVector`, `MakeSystem`, ...) hold delegates** of package-defined
+     delegate types with C++'s signatures (`bool ScalarLambdaFunction(double, out double)`), so a C# lambda reads
+     `MathUtils.MakeScalar((x, out y) => { y = x * x - 2.0; return true; })`. The library functors
+     (`Polynomial`, `Rosenbrock`, `Sum<F, G>`, ...) are sealed classes; they copy the vectors and matrices they
+     are given, as C++ does. Functor classes local to a C++ function template are private generic classes or
+     structs of the package.
+53. **Configurations and options are classes**: `Config`, `BoundedConfig : Config`, `NDimConfig : Config`,
+     `PSOConfig : NDimConfig`, `GlobalConfig`, `IntegConfig`, `KronrodConfig`, `LMConfig`, `NewtonOptions`,
+     `MinBracketOptions`, ..., with public fields as in C++ and a copy constructor. C++ passes derived
+     configurations as `const Config&`; C# structs can't derive. A C++ copy is written `new(theConfig)`; a
+     default argument `const Config& theConfig = Config()` is `Config? theConfig = null` and
+     `theConfig ??= new Config();`. Rejected: structs with duplicated fields and conversion operators to the
+     base (slicing), which don't scale to three levels.
+54. **Result structs (`ScalarResult`, `PolyResult`, `VectorResult`, `IntegResult`, `NewtonResultN2`, ...) are
+     structs with public fields**, as the C++ aggregates. `std::optional<double>` is `double?`,
+     `std::optional<math_Vector>` a nullable reference, `size_t` is `int`. Their C++ default status is
+     NotConverged, so they have an explicit parameterless constructor and ported code writes `new()`;
+     `default(T)` has status OK. `explicit operator bool` is kept, and `operator true`/`false` make
+     `if (aResult)` work as in C++. They have no `Equals`/`ToString`: they are transient solver outputs holding
+     references. `MathUtils.Domain1D`/`Domain2D`, which are values, get the value-type members of section 3 of
+     the rules but keep C++'s public fields. Results that hold containers (`MathRoot.MultipleResult`,
+     `AllRootsResult`, `MathOpt.PSOSeedParticle`) share them when copied, where C++ copies them; ported helpers
+     that change them take them `ref`.
+55. **`std::array<T, N>` is `std_array2/3/4<T>`** (new file `Standard/std_array.cs`): `[InlineArray]` structs,
+     copied as a whole, indexed from 0 with a range check, with `a[i][j]` working on nested arrays and
+     `std_arrayN<T>.Of(...)` for brace initialisation. Not OCCT API, but OCCT 8 uses `std::array` widely.
+     Larger one-off sizes are package-local inline arrays (`MathPoly.RootArray<T>` of 20, a 5-element row in
+     MathSys).
+56. **Templates over an integer (`NewtonResultN<N>`, `NewtonBoundsN<N>`)** are ported per instantiation OCCT
+     uses: `NewtonResultN2`, `N3`, `N4`. The 2D/3D/4D functors take `ref std_arrayN<double> theF` and
+     `ref std_arrayN<std_arrayN<double>> theJ`, so their bodies read as the C++ (`theJ[0][1] = ...`).
+57. **Output parameters** are `out` when every path writes them, and `ref` when C++ may return without writing
+     them, so the caller's value survives as in C++ (`MathUtils.CentralDifference`'s derivative,
+     `BrentAlongCoordinate`'s `theFx`, MathSys's small solvers). Writes through `*aResult.Value` into an optional
+     go through a temporary.
+58. **`MathUtils.RandomGenerator` is a class**: its only purpose is its changing state, which a struct would lose
+     to defensive copies. `MathOpt.PSOStats` is a class too (C++ fills it through an optional pointer), with
+     `Assign`.
+59. **`std::complex<double>` is `System.Numerics.Complex`** (same principal branches; division may differ in
+     the last bits). `std::sort` is `Span.Sort` (not stable, like std::sort). `goto` is kept where OCCT uses it.
+60. **Tests**: one xUnit class per GTest suite (a suite spread over two files is a `partial class`). C++
+     `rand()` in the MathLin tests is the MSVC runtime's generator. The MathLin_EigenSearch random test uses a
+     faithful `std::mt19937` but simple mappings in place of `std::uniform_*_distribution` (whose output differs
+     between C++ libraries), so its random matrices differ from OCCT's; no check depends on the values.
+
+## Phase 1: Poly (29 October 2026)
+
+61. **Poly_ArrayOfNodes and Poly_ArrayOfUVNodes keep OCCT's run-time precision** through a port of
+     `NCollection_AliasedArray` that holds a .NET array of the element type (`gp_Pnt[]` or
+     `NCollection_Vec3<float>[]`, `gp_Pnt2d[]` or `NCollection_Vec2<float>[]`, chosen by the stride) plus a byte
+     offset, and reads it through typed references (`Unsafe.As`, `MemoryMarshal`). Rejected: a `byte[]` buffer
+     (MapNodeArray couldn't share it as a `gp_Pnt` array) and two typed arrays in one class (OCCT's stride-based
+     API wouldn't carry over). The "wrapping" constructors take an array and a start index and share it, as OCCT's
+     share memory; `Move` leaves the moved-from array referring to the storage, as in OCCT.
+62. **Bulk reads for Bento** (additions on Poly_Triangulation): `NodeCoordinates()`/`NodeCoordinatesF()` (x, y, z
+     per node, without copying, in the stored precision; the other precision throws `Standard_TypeMismatch`),
+     `CopyNodeCoordinatesTo(Span<double>)`/`(Span<float>)` (either precision), `TriangleIndices()` (three 1-based
+     indices per triangle), `TriangleSpan()`, `UVNodeCoordinates()`/`UVNodeCoordinatesF()`, `NormalComponents()`.
+     The spans are valid until the arrays are resized. Poly_Triangle is exactly three `int`s so the triangle
+     array casts to indices.
+63. **Poly_Triangulation and the polygon classes keep public mutators**: they are mutable mesh containers filled
+     by the mesher (decision 21). Their mutators are to become internal (or to throw once frozen) when
+     triangulations are attached to shapes. Poly_Triangle follows the value-type rules: `Set` and `ChangeValue` are
+     internal, the twins are the constructor (for `Set(n1, n2, n3)`) and `WithNode`.
+64. **Poly_CoherentNode, Poly_CoherentTriangle and Poly_CoherentLink are classes**, not structs, although OCCT uses
+     them by value: the coherent triangulation stores pointers to its triangles and links (neighbours, per-node ring
+     lists) and compares addresses, so they need identity. C++ assignments of them (`theTriangle =
+     Poly_CoherentTriangle(...)`) are an internal `Assign`. Poly_CoherentNode holds a gp_XYZ instead of deriving from
+     it. Allocator arguments are dropped. The triangulation's iterators, like OCCT's, don't visit elements appended
+     during the iteration.
+65. **Poly_Connect, Poly_MakeLoops and Poly_MergeNodesTool are classes** (algorithms; OCCT's first two are used by
+     value). Poly_MakeLoops' helpers are abstract classes; `OnAddLink`, called only by OCCT's debug builds, is
+     never called. `Poly_MakeLoops.Link` is a struct with public fields as in OCCT, public `Reverse`/`Nullify`, and
+     OCCT's unordered `operator==` as `Equals`/`==` (the equality its maps use).
+66. **Poly_MergeNodesTool's node map is ported with OCCT's buckets**: NCollection_BaseMap's bucket counts
+     (`NCollection_Primes`, added), resizing and rehash order, the DJB2 hash of the float position with MSVC's
+     signed `char`, and the cell hash. When several merged nodes could match a new one, the first found depends on
+     the bucket chains, so this keeps OCCT's choice. The element map, whose order doesn't matter, is an
+     `NCollection_Map`.
+67. **`NCollection_PackedMapOfInteger`** (OCCT's `NCollection_PackedMap<int>`, alias `TColStd_PackedMapOfInteger`)
+     is ported with its buckets and iteration order, because Poly_MakeLoops takes its next start link from that
+     order. 32-bit instantiation and set operations only (no boolean operations between maps).
+68. **Poly's streams**: `Write`/`Dump` take a `TextWriter` and format numbers as a default C++ stream does (`%g`
+     with six digits: .NET's "G6" with a lowercase exponent; `inf`, `nan`), `std::setw` as padding, so files are
+     OCCT's byte for byte. `Read*` take a `TextReader` and follow C++ extraction: a failed read gives 0 and fails
+     every later read. `Poly::PolygonProperties`, a template on the container, has overloads for
+     NCollection_Array1 and NCollection_Sequence (the instantiations OCCT uses). `Poly::Intersect` and
+     `IntersectTriLine` take their outputs by `ref` (unchanged on a miss).
+69. **Left out of Poly_Triangulation**: the `OSD_FileSystem` argument of the deferred-loading methods (the methods
+     are kept, without it), `DumpJson`, the `size_t` overloads of the node arrays. `MapNormalArray` returns a copy:
+     a .NET float array can't alias an array of vectors. The cached range is a `StrongBox<Bnd_Box>` behind a `Lock`
+     (OCCT: an atomic pointer and a shared mutex). Poly_MeshPurpose is a `[Flags]` enum over `uint`.
+70. **`NCollection_IndexedMap.Substitute`** was added (Poly_MakeLoops replaces keys in place). Known difference left
+     as is: OCCT's `NCollection_Array1::Resize(lower, upper)` throws for an empty range, the port's doesn't, so
+     `Poly_Triangulation.ResizeTriangles(0)` succeeds in the port where OCCT throws.
+71. **`NCollection_Array1.Resize` follows OCCT exactly**: resizing to bounds rejects an empty range
+    (`Standard_RangeError`), resizing to a size allows zero. The first version allowed an empty range for both; the
+    Poly port found the difference (OCCT's `Poly_Triangulation::ResizeTriangles(0)` throws).
+## Phase 1: PLib, BSplCLib, CSLib (28-29 October 2026)
+
+72. **Array starts become spans by use, not by C++ constness.** A `double&`/`double*`/`const double&` that is the
+     start of an array is a `ReadOnlySpan<double>` when the function only reads through it (OCCT often omits
+     `const`) and a `Span<double>` when it writes; a scalar `double&`/`int&` is `out` (`ref` when read first).
+     Optional array pointers (`const NCollection_Array1<double>*`) are nullable NCollection arrays, and
+     `PLib::NoWeights()`, `NoWeights2()`, `BSplCLib::NoWeights()`, `NoMults()` return null. Callers write
+     `A.AsSpan()` / `A.AsSpan(i)` for `A(A.Lower())` / `A(i)`, and `MemoryMarshal.Cast<gp_Pnt, double>(...)` where
+     OCCT casts an array of points to `double*`. Spans may alias, as OCCT's pointers do (`PLib::RationalDerivatives`
+     is documented to accept the same array twice).
+73. **`ExtrapMode` of the flat and gp `BSplCLib::Eval` is a `ReadOnlySpan<int>` of two modes**, not `ref int`:
+     OCCT's `int&` is read as a two-element array (start and end). A C++ caller's `int mode[2]` becomes
+     `stackalloc int[2]` or a collection expression.
+74. **`NCollection_LocalArray` and C stack arrays become `stackalloc`** up to OCCT's own buffer size (128 doubles
+     by default, or the template's N), and a heap array above it, never inside a loop. Stack memory is zeroed in
+     .NET where OCCT's is not; nothing ported reads it before writing, except the OCCT bug in `BSplCLib::Eval`
+     (occt-issues.md), where the port's zeros give the apparently intended result.
+75. **BSplCLib_CurveComputation.pxx is ported once, generically**: methods
+     `<Point, Vector, Traits> where Traits : struct, IBSplCLib_CurveTraits<Point, Vector>`, the interface's static
+     abstract members carrying OCCT's traits operations and the calls the template resolves by overload (PLib's
+     SetPoles/GetPoles, SetCoord, ...), implemented by `BSplCLib_CurveTraits3d` and `BSplCLib_CurveTraits2d`. The
+     JIT specialises value-type generics, so this costs what the C++ template does. BSplCLib_1 (2D) and
+     BSplCLib_3 (3D) keep OCCT's thin public wrappers. Single points written through `(double*)&aPoint` are
+     computed in a stack buffer and built from it.
+76. **PLib's polynomial evaluation specialises dimensions 1 to 4**, where OCCT's templates specialise 1 to 15:
+     a type parameter with a static abstract constant lets the JIT keep the accumulators in registers. Higher
+     dimensions run the general loops. The arithmetic is OCCT's, operation for operation.
+77. **Constant tables are `ReadOnlySpan<double>` properties over RVA data** (the Jacobi tables, generated from
+     OCCT's .pxx with every literal copied as written; the Bezier flat knots; the unit weights). `FlatBezierKnots`
+     returns a `ReadOnlySpan<double>`: a caller needing an array writes `NCollection_Array1<double>.From(...)`,
+     which copies. `UnitWeights(n)` returns, as OCCT, a non-owning view of a shared array of ones up to 2049
+     elements (shared: don't modify), and a new array above; `UnitWeightsData()` is a `ReadOnlySpan<double>`.
+78. **Small heap allocations remain where OCCT puts a math_Matrix on a stack buffer**: the flat `BSplCLib::Eval`
+     allocates its (exactly sized) B-spline basis matrix per call (184 bytes for a cubic), `BuildBSpMatrix` its
+     27 × 27 buffer and `Interpolate` its band matrix, because `math_Matrix` owns a `double[]`. The B-spline and
+     Bezier evaluators (D0 to DN, Bohm, de Boor), PLib's evaluators and BSplCLib_Cache's evaluation allocate
+     nothing; the Bezier evaluators share read-only per-degree knot arrays for that.
+79. **BSplCLib_Cache is a Standard_Transient class whose `BuildCache` is internal** (a mutator); `IsCacheValid`
+     and the evaluators are public. Its coefficients live in an `NCollection_Array2<double>` allocated once in
+     the constructor, where OCCT wraps a 128-double member buffer anew in each `BuildCache`.
+     **BSplCLib_CacheParams is a sealed class** (non-copyable in OCCT): its constant members are readonly fields,
+     and the span state is properties with internal setters.
+80. **PLib_JacobiPolynomial and PLib_HermitJacobi are sealed, immutable classes**: in V8_0_1 they are plain
+     classes with only const members, used by value, and a struct's `default` would be invalid. Their
+     `D0123` has an internal span overload so that PLib_HermitJacobi keeps OCCT's stack buffers.
+81. **`CSLib::Normal`'s `theNormal` is `ref gp_Dir`**: OCCT leaves it unchanged when the status says no normal
+     was computed. CSLib_Class2d is a sealed class (movable, not copyable in OCCT); its template constructor
+     over the container type is one private `init` taking the bounds and an accessor.
+82. **`out` parameters are always assigned**: `BSplCLib::PrepareInsertKnots` sets NbPoles and NbKnots to 0 when
+     it returns false, where OCCT leaves them unchanged. Parameters named `Epsilon` in BSplCLib.hxx and
+     `Tolerance` in BSplCLib.cxx take the .cxx name where `Epsilon` would hide `Standard.Epsilon()`.
+83. **BSplCLib_EvaluatorFunction is an abstract class** with
+     `Evaluate(int, ReadOnlySpan<double> theStartEnd, double, out double theResult, out int theErrorCode)`;
+     its `operator()` is left out.
+84. **BSplCLib is checked against native OCCT although decision 23 expected it only through Geom.** A throwaway
+     harness (scratch, not committed: the oracle test project is not on this branch) drove build123d.NET's
+     `Geom_BSplineCurve`, `Geom2d_BSplineCurve` and `Geom_BezierCurve` and the port's BSplCLib with the same
+     inputs: D0, DN (orders 1-4), LocalD3, Resolution, InsertKnots, RemoveKnot, Unperiodize, MovePoint,
+     IncreaseDegree (non-periodic, and 2D) and Bezier D0-D3 were bit-identical on 1,100 random curves (about
+     200,000 values). MovePointAndTangent was identical except three degree-1 cases, where its 2 × 2 system is
+     nearly singular. The harness should become oracle tests when that project reaches this code (done:
+     decision 91, which also explains the degree-1 differences).
+     BSplCLib_ConsistencyTests (OCCT.NET's own) checks the operations against each other on random curves.
+
+## Phase 1: BSplSLib and Convert (29 October 2026)
+
+85. **BSplSLib follows BSplCLib's conventions** (decisions 72-83): optional weights and multiplicities are
+     nullable NCollection arrays (`BSplSLib.NoWeights()` is null), outputs are `out`, `Displ` is `in`, array starts
+     are spans by use (`RationalDerivative(..., ReadOnlySpan<double> HDerivatives, Span<double> RDerivatives, ...)`).
+     `(double*)&Poles(i, j)` is a private helper slicing `MemoryMarshal.Cast<gp_Pnt, double>(Poles.AsSpan())` at
+     the element's linear offset; fixed C arrays (`local_poles_array[3][3][3]`) are flat stack spans indexed
+     `i * 9 + j * 3 + k`; results written through `(double*)&aVec` are computed in spans and built with
+     `new gp_Vec(...)`. `BSplSLib.UnitWeights` returns, as OCCT, a non-owning view over `BSplCLib.UnitWeights` up to
+     2,049 weights (shared: don't modify) and a new array above. The 2D-array `CachePoles(i, j).SetX/SetY/SetZ`
+     writes are a `new gp_Pnt` from the same products.
+86. **BSplSLib's evaluation buffers are stack buffers sized by the degrees.** OCCT's `BSplSLib_DataContainer` is a
+     2,852-double stack struct sized for degree 25. The port keeps it as a private `ref struct` of four spans,
+     stackalloc'd in each evaluator (D0-D3, DN, the homogeneous forms, BuildCache) at 4(UDegree+1)(VDegree+1) poles,
+     2·max(UDegree, VDegree) knots twice and 48 derivatives, after the degree check. It is a C stack array, so
+     decision 74 allows stack use up to OCCT's size (21.6 KB at degree 25); sizing by the degrees zeroes only what is
+     used (68 doubles for a bicubic), and evaluation allocates nothing. Rejected: a [ThreadStatic] buffer (hidden
+     state, not reentrant). NCollection_LocalArray buffers (Iso, RationalDerivative, the cache evaluators,
+     BSplSLib_Cache) follow decision 74: stackalloc up to 128 doubles, heap above.
+87. **BSplSLib_Cache is BSplCLib_Cache's twin** (decision 79): a Standard_Transient class embedding two
+     `BSplCLib_CacheParams`, an `NCollection_Array2<double>` of coefficients allocated once in the constructor (OCCT:
+     an `NCollection_HArray2`), an internal `BuildCache` (a mutator) and public `IsCacheValid`, D0-D2 and
+     D0Local-D2Local. OCCT's `const int&`/`const double&` parameters are by value. Its evaluation allocates nothing
+     unless the smaller degree exceeds 9 (13 non-rational), where the derivatives' work array leaves
+     NCollection_LocalArray's stack buffer in OCCT too.
+88. **Convert's batch accessors return copies.** `Poles()`, `Weights()`, `Knots()`, `Multiplicities()`,
+     `UKnots()`, ... return a new NCollection array where OCCT returns a const reference to a field, so a
+     converter's result can't be changed through them. Every OCCT consumer (GeomConvert's BSplineCurveBuilder and
+     BSplineSurfaceBuilder, Geom2dConvert, GeomConvert_CompBezierSurfacesToBSplineSurface, AdvApprox, AppDef,
+     GeomFill) copies them into a new curve or surface anyway, and ported Geom code keeps passing NCollection arrays
+     to the Geom constructors. Rejected: PackedList (the Geom constructors take NCollection arrays, so every caller
+     would convert back) and returning the field (callers could change the converter, and two calls would share
+     storage). The cost is one allocation per accessor call. The per-index accessors OCCT deprecates (`Pole(i)`,
+     `Weight(i)`, ...) stay, without `[Obsolete]`, documented as deprecated.
+89. **Convert classes are classes, built in their constructors**, with OCCT's hierarchy; base classes have
+     protected constructors and protected fields with OCCT's names. The array outputs of the protected
+     `BuildCosAndSin` (and of `GridPolynomialToPoles.BuildArray`), which OCCT reassigns through references, are
+     `out`; the handle forms take `out NCollection_HArray1<...>` (`ref ...?` for the deprecated
+     `CompPolynomialToPoles.Poles/Knots/Multiplicities(handle&)`, which OCCT leaves unchanged when not done).
+     `Convert_ElementarySurfaceToBSplineSurface::Finalize` is `FinalizeArrays`, since `Finalize()` is .NET's
+     finaliser. `Convert_CosAndSinEvalFunction` is a delegate with a `Span<double>` result;
+     `BuildPolynomialCosAndSin` (not exported by OCCT) is internal. The builders
+     (`Convert_CompBezierCurves(2d)ToBSplineCurve(2d)`: `AddCurve`, `Perform`) keep public mutators (decision 21);
+     `AddCurve` copies its argument as C++ appends a copy.
+90. **Convert_CompBezierCurvesToBSplineCurveBase is generic over a public traits struct**
+     (`<PointType, VecType, Traits>`, `Convert_CompBezierCurvesTraits3d/2d` implementing
+     `IConvert_CompBezierCurvesTraits`), as BSplCLib_CurveComputation (decision 75). The traits are public because a
+     public class can't derive from a generic base over an internal type. `if constexpr (std::is_same_v<PointType,
+     gp_Pnt>)` is `Traits.Is3d`, a constant the JIT folds. `NCollection_Array2.ResizeWithTrim` was added (OCCT API,
+     used by Convert's FinalizeArrays): 2D-preserving copy, no reallocation when the dimensions don't change, empty
+     range rejected. Known difference left as is: the port's `NCollection_Array2.Resize(..., copy: true)` keeps the
+     2D layout, where OCCT V8_0_1's copies elements in linear order (different when the column count changes).
+91. **BSplCLib, BSplSLib (with BSplSLib_Cache) and Convert are oracle-tested** (`tests/OcctNet.Oracle.Tests/
+     {BSplCLib,BSplSLib,Convert}`), beyond what decision 23 expected. Native entry points, each mirrored exactly in
+     the test: Geom_BSplineCurve/Geom2d_BSplineCurve/Geom_BezierCurve for BSplCLib (from decision 84's harness);
+     Geom_BSplineSurface and Geom_BezierSurface for BSplSLib (OCCT 8 evaluates them through BSplSLib directly, not
+     the cache); GeomAdaptor_Surface for BSplSLib_Cache (its evaluators rebuild one cache when IsCacheValid fails,
+     and the test drives the port's cache with the same parameter sequence); GeomConvert/Geom2dConvert
+     `CurveToBSplineCurve` and `GeomConvert::SurfaceToBSplineSurface` for Convert, redoing GeomConvert's
+     post-processing in the test (2D poles lifted by `gp_Trsf.Transformation(Position, XOY)`, `SetPeriodic` for
+     whole conics, the mirror of a left-handed `gp_Ax22d`). Every compared value is bit-identical, about 5.3 million
+     in all, sin/cos/sqrt in Convert included. Left out: long RationalC1 arcs (GeomConvert joins two halves with
+     the unported GeomConvert_CompCurveToBSplineCurve), periodic IncreaseDegree (broken in OCCT), inputs OCCT's
+     release build doesn't check (a singular MovePointAndTangent system, MovePoint windows away from the point,
+     repeated knots in InsertKnots with Add false; occt-issues.md). Decision 84's degree-1 MovePointAndTangent
+     differences came from the harness, which built the deltas with `EvalDN` where Geom uses `Geom_Curve::D1`; the
+     two differ in the last bit and the nearly singular system magnified it. BSplCLib_Cache, BSplSLib.Iso,
+     CacheD0-D2 and FunctionMultiply have no native entry point in the bindings and are covered by unit tests only.
