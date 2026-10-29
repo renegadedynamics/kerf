@@ -11,7 +11,7 @@ namespace Occt;
 /// OCCT's type aliases <c>GeomGridEval::CurveD1</c> ... <c>SurfD3</c> are the result structs of Geom_Curve and
 /// Geom_Surface; the port writes <see cref="Geom_Curve.ResD1"/> ... <see cref="Geom_Surface.ResD3"/> directly.
 /// <see cref="ICurveEvaluator"/> and <see cref="ISurfaceEvaluator"/> are additions (decision 2302): every
-/// evaluator implements one, so <see cref="GeomGridEval_Curve"/> and GeomGridEval_Surface dispatch
+/// evaluator implements one, so <see cref="GeomGridEval_Curve"/> and <see cref="GeomGridEval_Surface"/> dispatch
 /// through them where OCCT visits a <c>std::variant</c>, and ported templates over "a grid evaluator"
 /// (ExtremaPC_GridEvaluator::BuildGrid) can take a constrained type parameter.
 /// </remarks>
