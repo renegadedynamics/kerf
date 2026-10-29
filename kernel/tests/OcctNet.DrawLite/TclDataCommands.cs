@@ -84,6 +84,7 @@ internal static class TclDataCommands
                 for (int i = 0; i < aPairs.Count; i += 2)
                 {
                     aVar.Array[aPairs[i]] = aPairs[i + 1];
+                    aVar.ElementDrawables?.Remove(aPairs[i]);
                 }
 
                 return "";
@@ -105,6 +106,7 @@ internal static class TclDataCommands
                     foreach (string aKey in anArray.Keys.Where(k => TclGlob.Match(a[3], k)).ToList())
                     {
                         anArray.Remove(aKey);
+                        theInterpreter.FindVar(aName, false)?.ElementDrawables?.Remove(aKey);
                     }
                 }
 

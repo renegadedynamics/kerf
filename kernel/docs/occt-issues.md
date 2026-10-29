@@ -374,3 +374,13 @@ they hang, overflow the stack or read outside memory and would take the test hos
 | `BRepTopAdaptor_FClass2d::BRepTopAdaptor_FClass2d` (BRepTopAdaptor_FClass2d.cxx) | Returns from the constructor when an edge has no pcurve on the face | The classifier keeps the polygons of the wires before it, and the UV box as far as it got: points are classified against part of the face. By reading |
 | `BRepTopAdaptor_FClass2d::BRepTopAdaptor_FClass2d`, a wire of fewer than 4 sample points | Reads `SeqPnt2d(1)` and `SeqPnt2d(2)` whatever the number of points (out of range with `No_Standard_OutOfRange`) | Undefined in OCCT for a wire that gives fewer than two points (all its edges shorter than 1e-9 in parameter but one, or 3D-degenerate); the port throws Standard_OutOfRange. By reading |
 | `TopClass_FaceClassifier.pxx` with `BRepClass_FaceExplorer::CurrentEdge` | One `BRepClass_Edge` is reused for all the edges, and `BRepClass_Edge::SetNextEdge` returns without writing when the edge's last vertex has no single other edge (a closed edge, three edges at a vertex) | That edge keeps the previous edge's next edge, which `BRepClass_Intersector`'s CheckSkip (vertex tolerance above the gap tolerance) then uses as its neighbour. Kept (the port's `ITopClass_FaceExplorer.CurrentEdge` takes the edge by `ref`, decision 390). By reading |
+
+## Phase 3: unit 3L1, Draw-lite shapes
+
+Found while porting Draw's commands (Draw-lite reproduces them, so the corpus sees OCCT's behaviour).
+
+| Where | What | Effect |
+|---|---|---|
+| `tcopy` (BRepTest_BasicCommands.cxx) | The pairs loop reads `a[i + iFirst]` and `a[i + iFirst + 1]` with `i` the pair number, where `2 * i` was meant | `tcopy a b c d` copies a to b, then b to c; d is never set. Pinned by `DrawShapeCommandsTests.Tcopy_copies_the_shapes` |
+| `ShapeAnalysis_ShapeTolerance::InTolerance` (ShapeAnalysis_ShapeTolerance.cxx) | Vertices are kept when `tol >= valmax` where faces and edges test `tol <= valmax` | `tolerance shape [mode] min max` lists every vertex over the upper bound among the shapes "below" or "between", and none under it (each vertex once per edge that holds it). Pinned by `DrawShapeCommandsTests.Tolerance_and_maxtolerance` |
+| `nexplode` (DBRep.cxx) | Sizes its arrays as the number of distinct sub-shapes minus one, assuming the shape itself is in the map and not of the type | `nexplode` of an edge into edges (or a face into faces, a vertex into vertices) writes past the array: Standard_OutOfRange in a build with range checks |

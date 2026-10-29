@@ -3473,3 +3473,99 @@ OcctNet.ModelingAlgorithms (decision 280). Numbers from 3701 are renumbered on m
         (the 3D overload projects with Extrema_ExtPS on the face's UV box), `BRepClass3d_SolidClassifier` and
         `BRepBndLib.Add`/`AddOptimal`; its ExtPF and friends use `BRepTopAdaptor_FClass2d`. Geom2dHatch, when ported,
         implements `ITopClass_FaceExplorer.CurrentEdge` by `ref` (3702).
+
+## Phase 3: unit 3L1, Draw-lite shapes
+
+Draw's variables and shape commands in Draw-lite (tests/OcctNet.DrawLite): Draw_VariableCommands' bsave, brestore,
+isdraw, isprot, dtyp, dval, dname, dump, copy, renamevar, dset, protect, unprotect, autodisplay and the numeric
+functions; DBRep's isos, hlr, vori, vconn, triangles, polygons, discretisation, compound, add, explode, nexplode, exwire,
+emptycopy, orientation, treverse, complement, invert, nbshapes, numshapes, countshapes, setflags, purgemmgt, writebrep,
+readbrep, binsave, binrestore; BRepTest's reset, tmove, ttranslate, trotate, tmirror, tscale (and the b and f forms),
+tcopy, maxtolerance, purgeloc, checkloc, lprops, sprops, vprops, vpropsgk; SWDRAW's tolerance. `restore`, `save`,
+`datadir` and `whatis` are DrawResources procedures that now run. Numbers from 3501 are renumbered on merge.
+
+404. **A drawable lives on its Tcl variable.** Draw keeps drawables in a map and binds each to the Tcl variable of its
+      name through a trace, which drops it when the variable is written or unset (Draw_VariableCommands.cxx: Draw::Set,
+      Draw::Get, tracevar). Draw-lite's `TclVar` holds the drawable itself (`Drawable`, and `ElementDrawables` for
+      array elements), so Draw::Set and Draw::Get resolve names in the current frame exactly as Tcl_SetVar and
+      Tcl_VarTraceInfo do: a procedure's explode results are local, `upvar` and `global` share them (the
+      DrawResources' `restore` procedure binds its `upvar`ed `n`), and a frame's drawables go with it.
+      - As in Draw, the variable's value is the name Draw::Set was given (after `restore f.brep a`, `$a` is `n`), and
+        `dname` prints that name.
+      - Writing a variable drops its drawable; writing a protected one fails with Tcl's trace message
+        ("can't set "pi": variable is protected"); unsetting a protected one leaves it, as Draw's trace sets it again.
+      - Draw::VariableCommands' protected numbers `pi`, `pinf` and `minf` exist; its viewer objects `axes`, `axes2d`
+        and `grid` don't (no viewer).
+      - Public API: `DrawInterpreter.SetDrawable`/`GetDrawable` (Draw::Set/Get), `SetShape`/`GetShape` (DBRep::Set/Get,
+        with the typed form and its message), `SetNumber`/`TryGetNumber`, `Atof`/`Atoi`/`ParseReal`. `DrawDrawable` has
+        OCCT's textual methods (Whatis, Dump, Save, Copy) and the type name Draw writes; its kinds are `DrawShape`,
+        `DrawNumber` and `DrawGeometry` (DrawTrSurf's curves, 2D curves, surfaces with their B-spline and Bezier type
+        names, points, polygons and triangulations).
+405. **Commands are written as OCCT writes them.** `DrawCxx.Add` registers `int f(DrawInterpreter, DrawResult di,
+      args)`: `di` is the Tcl result Draw_Interpretor builds (`<<` of an int is `%d`, of a real `%.17g`; AppendElement
+      quotes and separates as Tcl_AppendElement); a non-zero return is a Tcl error whose message is the result so far;
+      a `Standard_Failure` becomes "An exception was caught Type: message" (Standard_Failure::Print; without a message,
+      the type alone), as CommandCmd reports it. `std::cout`, `Message::SendFail` and `SendWarning` write lines to the
+      interpreter's output. Streams' formats are C++'s: precision 6 and `setw` (`Standard_Stream.FormatReal`), and
+      `std::scientific` (`DrawFormat.Scientific`, at least two exponent digits). Draw-lite now references
+      OcctNet.ModelingData and OcctNet.ModelingAlgorithms.
+406. **Draw::Atof is ported**: `+ - * /`, parentheses, numbers, Draw numbers by name, and calls `f(a,b)` of commands
+      (their result read as a real), with Draw's messages; `ParseReal` reports text left over. Every numeric argument
+      of the ported commands goes through it, as in Draw (`trotate s 0 0 0 0 0 1 pi/2*180/pi` works).
+407. **Shapes are frozen when bound** (decision 272): `SetShape` freezes the graph. Commands that change a shape in
+      place in OCCT bind a new shape instead:
+      - `add what where`: OCCT's TopoDS_Builder::Add changes the TShape of `where`. The port first refuses a `where`
+        that isn't free (TopoDS_FrozenShape, as OCCT), then builds a new TShape (`EmptyCopied`, the flags of `where`,
+        its children, then `what`) at the location and orientation of `where`, and binds it.
+      - `setflags`: OCCT sets the flags on the shape and on every vertex, edge and face it reaches. The port sets them
+        on a structural copy (`BRepTools.CopyForWrite`: new TShapes, shared geometry) and binds the copy.
+      - The consequence: another variable that holds the old shape, or a sub-shape of it, still sees the old TShape,
+        where in OCCT it would see the change. `emptycopy`, `invert`, `orientation`, `treverse`, `complement`,
+        `compound` and the transformations already make new shapes in OCCT and are ported as they are (with the
+        `Closed` copy of `invert`).
+408. **BRepBuilderAPI_Transform and BRepBuilderAPI_Copy are mirrored** (unit 3K ports them): the t-commands run
+      `BRepBuilderAPI_Transform::Perform` as written, the modifier with BRepTools_TrsfModification for `-copy`, a
+      negative or a scaling transformation (with `-copymesh`), else `Moved`; `tcopy` runs `BRepBuilderAPI_Copy::Perform`
+      (the modifier with BRepTools_CopyModification; a null shape throws Standard_NullObject as DoModif does). The b
+      forms, `reset` and `tmove` use `Located` or `Moved` with the scale checked, the f forms without, and catch
+      Standard_DomainError with Draw's warning. When 3K lands, the commands call the makers.
+409. **`tolerance` ports ShapeAnalysis_ShapeTolerance privately** (TKShHealing is phase 7): InitTolerance,
+      AddTolerance, GlobalTolerance and InTolerance as OCCT (its vertex test included, occt-issues.md). The command
+      should call the package once it is ported.
+410. **Files.** Draw's file commands read the overlay first, then the disk, and write to the overlay only
+      (decision 38), a character per byte (`TclFileSystem.TryReadBytes`, `WriteBytes`), so `binsave` and a later
+      `binrestore` in the same script work, and `read [open ...]` sees the text.
+      - `brestore` reads the type word and calls the factory of that name (Draw_Drawable3D::Restore):
+        `DBRep_DrawableShape` (a BRepTools_ShapeSet, then the shape), `Draw_Number`, and DrawTrSurf's types over
+        GeomTools' `ReadCurve`, `ReadCurve2d`, `ReadSurface` and Poly's readers; otherwise it reads a shape from the
+        start, as Draw does (.rle files). A DrawTrSurf file whose geometry fails to read is "cannot restore" (Draw
+        binds a drawable with a null geometry).
+      - `bsave` writes Draw's layout: the type name, the drawable's Save, then a newline and `0` and an empty line, at
+        precision 15. A shape's Save is BRepTools::Write's text; a number's is `%.15e` in 30 columns, a point's
+        `%.15e`. Polygons and triangulations are written by Poly::Write at precision 15 but not in std::scientific, so
+        their files read back the same values but aren't DRAWEXE's bytes.
+      - `writebrep` and `binsave` write BRepTools' or BinTools' bytes (with Draw's header line for text); `readbrep`
+        probes the first 255 bytes as OCCT does (a shorter file fails).
+      - The port's TopTools_ShapeSet writes its console messages ("File was not written with this version of the
+        topology") to the process console, not to the interpreter's output.
+411. **Display settings without a viewer.** `isos`, `discretisation` and `hlr` keep the values of DBRep_Params and
+      print them as Draw does; per-shape settings aren't kept (`isos name` prints the default count). `triangles`,
+      `polygons`, `vconn` and `purgemmgt` do nothing; `vori` prints Draw's colour legend. The props commands don't
+      display the axes of inertia.
+412. **The corpus run.** `DrawCorpus.RunAndCheck` runs a case as `_run_test` does (an error ends it with "Tcl
+      Exception: ..."), with DRAWEXE's environment (CASROOT, CSF_OCCTResourcePath, CSF_OCCTDataPath, CSF_TestDataPath
+      to OCCT's data and the test dataset, an empty writable image directory in the overlay) and a time limit, then
+      judges its log with OCCT's own `_check_log` (parse.rules, TODO and REQUIRED, "TEST COMPLETED").
+413. **Tests.**
+      - Draw-lite (22 tests, DrawShapeCommandsTests): each command's text against Draw's source on data/occ files and
+        test-data DrawTrSurf files, errors and messages, frames and traces, Atof, the overlay round trips in every
+        format, OCCT's check procedures (checknbshapes, checkprops, checkmaxtol) on the commands, and the OCCT issues
+        of this unit.
+      - Oracle (DrawLiteShapesOracleTests): on all 42 data/occ files (37 .brep, 5 .rle) restore, nbshapes and
+        nbshapes -t (against TopTools_ShapeSet::Add's TShapes and TopExp::MapShapes natively), explode of every type,
+        lprops, sprops and vprops with checkprops' epsilon and without, in `-full` mode, and tolerance; checknbshapes,
+        checkprops and checkmaxtol pass with the native values: 630 command checks, 4,620 values, all bit-identical.
+        ttranslate, trotate, tscale, tmirror (with and without -copy) and tcopy (with and without geometry) on 10 of
+        them against BRepBuilderAPI_Transform and BRepBuilderAPI_Copy: 100 shapes, 4,800 values, all bit-identical.
+      - Corpus: runnable cases 15 before, 23 after (4 and 8 OK; the rest stop on commands that their sourced scripts
+        use, or on data files the dataset lacks). checkshape (3L2) is the gate: 349 cases miss only it.

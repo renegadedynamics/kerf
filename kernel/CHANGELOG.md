@@ -208,3 +208,15 @@ Phase 3 (part): classification and boxes.
   known-answer tests of every package; oracle tests of BRepClass3d_SolidClassifier, BRepIntCurveSurface_Inter and
   every BRepBndLib form against native OCCT on random boxes, cylinders (also as surfaces of extrusion and
   revolution), holed faces, natural and B-spline faces, compounds and meshed shapes, all bit-identical.
+Phase 3 (part): Draw-lite shape commands.
+
+- Draw-lite (tests, not packaged): Draw variables held by Tcl variables (`DrawInterpreter.SetDrawable`, `GetShape`,
+  Draw::Atof), and Draw's shape commands with Draw's output: `brestore`/`restore`, `bsave`, `readbrep`, `writebrep`,
+  `binsave`, `binrestore` (shapes, numbers, DrawTrSurf geometry files), `isdraw`, `dtyp`, `dname`, `whatis`, `copy`,
+  `renamevar`, `dump`, `dset`, `dval`, `nbshapes`, `numshapes`, `explode`, `nexplode`, `exwire`, `compound`, `add`,
+  `emptycopy`, `orientation`, `treverse`, `complement`, `invert`, `tolerance`, `maxtolerance`, `lprops`, `sprops`,
+  `vprops`, `vpropsgk`, `purgeloc`, `checkloc`, `setflags`, `ttranslate`, `trotate`, `tmove`, `reset`, `tscale`,
+  `tmirror`, `tcopy`, and the display settings without a viewer. OCCT's `checknbshapes`, `checkprops` and
+  `checkmaxtol` run on them. `DrawCorpus.RunAndCheck` runs a corpus case and judges its log with OCCT's `_check_log`.
+- Tests: every command's text against Draw's source; oracle tests of the commands on OCCT's 42 data/occ files and of
+  the transformation and copy commands against BRepBuilderAPI_Transform and BRepBuilderAPI_Copy, all bit-identical.
