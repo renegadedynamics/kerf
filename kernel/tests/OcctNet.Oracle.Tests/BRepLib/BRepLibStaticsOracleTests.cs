@@ -531,6 +531,109 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         Assert.Equal(myCompared, myIdentical);
     }
 
+    private static string MaskFree(string theText) => System.Text.RegularExpressions.Regex.Replace(theText, "(?m)^[01]([01]{6})$", "x$1");
+
+    /// <summary>
+    /// The functional twins on frozen port scenes against the in-place statics on the native twins: the twin's result
+    /// must be native OCCT's changed shape (compared with the Free column masked, since the twin's result shares the
+    /// input's frozen sub-shapes where nothing changed, design 4.4), and the port's input unchanged.
+    /// </summary>
+    [Fact]
+    public void Twins_answer_as_the_native_in_place_statics()
+    {
+        var anOracle = new Oracle(output, 20261030);
+        int aCompared = 0, anIdentical = 0, aMasked = 0, aKeptEdges = 0, anEdges = 0, aThrown = 0;
+        var aDifferences = new List<string>();
+        for (int aScene = 0; aScene < Scenes; aScene++)
+        {
+            SceneSpec aSpec = NewScene(anOracle);
+            for (int anOp = 0; anOp <= 4; anOp++)
+            {
+                Twin aT = Build(aSpec);
+                aT.PFace.TShape()!.FreezeGraph();
+                string aBefore = PortText(aT.PFace);
+                double aTol = Math.Pow(10, anOracle.Real(-7, -3));
+                bool aFlag = anOracle.Bool();
+                string aWhat = $"scene {aScene} ({aSpec.Kind}) twin {anOp}";
+                TopoDS_Shape aResult;
+                try
+                {
+                    switch (anOp)
+                    {
+                        case 0:
+                            N.BRepLib.SameParameter(aT.NFace, aTol, aFlag);
+                            aResult = BRepLib.SameParametered(aT.PFace, aTol, aFlag);
+                            break;
+                        case 1:
+                            N.BRepLib.UpdateTolerances(aT.NFace, aFlag);
+                            aResult = BRepLib.TolerancesUpdated(aT.PFace, aFlag);
+                            break;
+                        case 2:
+                            N.BRepLib.UpdateInnerTolerances(aT.NFace);
+                            aResult = BRepLib.InnerTolerancesUpdated(aT.PFace);
+                            break;
+                        case 3:
+                        {
+                            var aCont = (GeomAbs_Shape)(2 * anOracle.Int(0, 2));
+                            int aMaxDeg = anOracle.Int(6, 14);
+                            int aMaxSeg = anOracle.Bool() ? 0 : anOracle.Int(30, 50);
+                            bool aNOk = N.BRepLib.BuildCurves3d(aT.NFace, aTol, (N.GeomAbs_Shape)(int)aCont, aMaxDeg, aMaxSeg);
+                            aResult = BRepLib.Curves3dBuilt(aT.PFace, aTol, out bool anOk, aCont, aMaxDeg, aMaxSeg);
+                            CompareValue(aWhat, aNOk, anOk);
+                            break;
+                        }
+                        default:
+                            N.BRepLib.EncodeRegularity(aT.NFace, aTol);
+                            aResult = BRepLib.RegularityEncoded(aT.PFace, aTol);
+                            break;
+                    }
+                }
+                catch (N.OcctException)
+                {
+                    aThrown++;
+                    continue;
+                }
+
+                Assert.Equal(aBefore, PortText(aT.PFace));
+                Assert.True(aResult.TShape()!.IsFrozen());
+                for (var anExp = new TopExp_Explorer(aT.PFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+                {
+                    anEdges++;
+                    for (var anExp2 = new TopExp_Explorer(aResult, TopAbs_ShapeEnum.TopAbs_EDGE); anExp2.More(); anExp2.Next())
+                    {
+                        if (anExp2.Current().IsSame(anExp.Current()))
+                        {
+                            aKeptEdges++;
+                            break;
+                        }
+                    }
+                }
+                string aN = NativeText(aT.NFace), aP = PortText(aResult);
+                aCompared++;
+                if (aN == aP)
+                {
+                    anIdentical++;
+                }
+                else if (MaskFree(aN) == MaskFree(aP))
+                {
+                    aMasked++;
+                }
+                else if (aDifferences.Count < 4)
+                {
+                    aDifferences.Add($"{aWhat}:\n--- native\n{aN}\n--- port\n{aP}");
+                }
+            }
+        }
+
+        output.WriteLine($"twins: {aCompared} results, {anIdentical} byte-identical, {aMasked} equal with the Free column masked; "
+                         + $"{aKeptEdges} of {anEdges} input edges kept as they were; {aThrown} native calls threw (skipped)");
+        foreach (string aD in aDifferences)
+        {
+            output.WriteLine(aD);
+        }
+        Assert.Equal(aCompared, anIdentical + aMasked);
+    }
+
     [Fact]
     public void OrientClosedSolid_answers_as_native_OCCT()
     {

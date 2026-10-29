@@ -119,6 +119,38 @@ public class BRepLibMeshTests
     }
 
     [Fact]
+    public void DeflectionUpdated_and_NormalConsistencyEnsured_are_the_statics_on_a_copy()
+    {
+        TopoDS_Solid aBox = MeshedBox(0.3);
+        ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
+        TopoDS_Shape aResult = BRepLib.DeflectionUpdated(aBox, out BRepTools_History aH);
+        Assert.True(aResult.TShape()!.IsFrozen());
+        foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
+        {
+            TopoDS_Face aNewF = TopoDS.Face(Assert.Single(aH.Modified(aF)));
+            Assert.Equal(0.0, Triangulation(aNewF).Deflection());
+        }
+        // the vertices are the box's own; every edge changed (its polygons refer to the copies)
+        var aVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(aResult, TopAbs_VERTEX, aVertices);
+        for (var anExp = new TopExp_Explorer(aBox, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        {
+            Assert.True(aVertices.Contains(anExp.Current()));
+        }
+
+        TopoDS_Shape aNormals = BRepLib.NormalConsistencyEnsured(aBox, out bool isCorrected);
+        Assert.True(isCorrected);
+        foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aNormals))
+        {
+            Assert.True(Triangulation(aF).HasNormals());
+        }
+        // normals present: nothing to do, and the result is the input itself
+        Assert.True(BRepLib.NormalConsistencyEnsured(aNormals, out isCorrected).IsEqual(aNormals));
+        Assert.False(isCorrected);
+        aBefore.AssertUnchanged(aBox);
+    }
+
+    [Fact]
     public void UpdateDeflection_measures_a_mesh_off_its_surface()
     {
         var aB = new BRep_Builder();

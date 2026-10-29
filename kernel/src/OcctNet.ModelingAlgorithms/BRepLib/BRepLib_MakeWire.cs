@@ -557,11 +557,11 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
         TE.Modified(true);
     }
 
-    // OCCT.NET: frozen. Replaces the wire built so far by a copy for write (design 4.6) and maps the maker's state
+    // OCCT.NET: frozen. Replaces the wire built so far by an exact copy for write (design 4.6) and maps the maker's state
     // (the wire's vertices, VF, VL, the last edge and vertex) onto the copy, recording the copy in the history.
     private void copyForWrite()
     {
-        TopoDS_Shape aCopy = BRepTools.CopyForWrite(myShape, out BRepTools_History aHistory);
+        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(myShape, out BRepTools_History aHistory);
         for (int i = 1; i <= myVertices.Extent(); i++)
         {
             myVertices.Substitute(i, imageOf(aHistory, myVertices.FindKey(i)));

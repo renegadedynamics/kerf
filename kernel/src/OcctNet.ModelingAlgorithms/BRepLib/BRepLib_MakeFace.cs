@@ -193,7 +193,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         if (hasFrozenSubShape(aW))
         {
             aWOriginal = aW;
-            aW = TopoDS.Wire(BRepTools.CopyForWrite(aW, out _));
+            aW = TopoDS.Wire(BRepTools.ExactCopyForWrite(aW, out _));
         }
 
         Add(aW);

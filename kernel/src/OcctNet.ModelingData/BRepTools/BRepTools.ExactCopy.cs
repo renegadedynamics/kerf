@@ -1,13 +1,153 @@
-// OCCT.NET: the second half of a copy for write (docs/phase3-design.md, section 4.6): after an in-place operation
-// on a copy, the parts it didn't change go back to being the original's own TShapes. Not a port of an OCCT file.
+// OCCT.NET: an exact copy for write, and the second half of a copy for write (docs/phase3-design.md, section 4.6):
+// after an in-place operation on a copy, the parts it didn't change go back to being the original's own TShapes.
+// Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using System.Runtime.CompilerServices;
 
 namespace Occt;
 
 public static partial class BRepTools
 {
     /// <summary>
-    /// The copy <paramref name="theCopy"/> of <paramref name="theOriginal"/> (made by <see cref="CopyForWrite"/> and
+    /// An exact structural copy of the shape for ported code that must write into it: each TShape copied once, with
+    /// its flags (but Locked; Free cleared on children, as adding them clears it), its children at the same locations and orientations, and its BRep data (points,
+    /// tolerances, edge flags, every curve and point representation, a face's surface, natural restriction and list of
+    /// triangulations with the active one) in new representations sharing the frozen curves, surfaces, polygons and
+    /// triangulations. Unlike <see cref="CopyForWrite"/> (BRepTools_Modifier with BRepTools_CopyModification, as
+    /// BRepBuilderAPI_Copy), nothing is recomputed: pcurves keep their own ranges, planar faces get no stored pcurves,
+    /// vertices keep their representations, edges keep their polygons on surfaces. So an in-place operation on the copy
+    /// sees what it would see on the original, and <see cref="KeepUnchanged"/> can give back the original's own
+    /// sub-shapes wherever it changed nothing. <paramref name="theHistory"/> records each vertex, edge, face and solid as
+    /// modified into its copy. The copy is unfrozen.
+    /// </summary>
+    internal static TopoDS_Shape ExactCopyForWrite(in TopoDS_Shape theShape, out BRepTools_History theHistory)
+    {
+        theHistory = new BRepTools_History();
+        if (theShape.IsNull())
+        {
+            return new TopoDS_Shape();
+        }
+
+        var aCopies = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        TopoDS_Shape aCopy = theShape;
+        aCopy.TShape(exactCopy(theShape.TShape()!, aCopies));
+        recordImages(theShape, aCopies, theHistory);
+        return aCopy;
+    }
+
+    // Records each sub-shape of the shape (as placed in it) whose TShape has another image as modified into the image,
+    // at the same place, as CopyForWrite's history does.
+    private static void recordImages(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theImages,
+                                     BRepTools_History theHistory)
+    {
+        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(theShape, aMap);
+        for (int i = 1; i <= aMap.Extent(); i++)
+        {
+            TopoDS_Shape aS = aMap[i];
+            if (BRepTools_History.IsSupportedType(aS) && theImages.TryGetValue(aS.TShape()!, out TopoDS_TShape? anImage)
+                && !ReferenceEquals(anImage, aS.TShape()))
+            {
+                TopoDS_Shape aNew = aS;
+                aNew.TShape(anImage);
+                theHistory.AddModified(aS, aNew);
+            }
+        }
+    }
+
+    private static TopoDS_TShape exactCopy(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies)
+    {
+        if (theCopies.TryGetValue(theTShape, out TopoDS_TShape? aDone))
+        {
+            return aDone;
+        }
+
+        // children first (an iterative walk isn't needed: shapes nest a few levels deep, and a compound nesting is
+        // bounded by the stack check)
+        RuntimeHelpers.EnsureSufficientExecutionStack();
+        TopoDS_TShape aCopy;
+        switch (theTShape)
+        {
+            case BRep_TVertex aV:
+            {
+                var aNewV = new BRep_TVertex();
+                aNewV.Pnt(aV.Pnt());
+                aNewV.Tolerance(aV.Tolerance());
+                NCollection_List<BRep_PointRepresentation> aPoints = aNewV.ChangePoints();
+                for (var anIt = new NCollection_List<BRep_PointRepresentation>.Iterator(aV.Points()); anIt.More(); anIt.Next())
+                {
+                    BRep_PointRepresentation aPR = anIt.Value();
+                    if (aPR.IsPointOnCurve())
+                    {
+                        aPoints.Append(new BRep_PointOnCurve(aPR.Parameter(), aPR.Curve(), aPR.Location()));
+                    }
+                    else if (aPR.IsPointOnCurveOnSurface())
+                    {
+                        aPoints.Append(new BRep_PointOnCurveOnSurface(aPR.Parameter(), aPR.PCurve(), aPR.Surface(), aPR.Location()));
+                    }
+                    else if (aPR.IsPointOnSurface())
+                    {
+                        aPoints.Append(new BRep_PointOnSurface(aPR.Parameter(), aPR.Parameter2(), aPR.Surface(), aPR.Location()));
+                    }
+                }
+                aCopy = aNewV;
+                break;
+            }
+            case BRep_TEdge anE:
+            {
+                var aNewE = new BRep_TEdge();
+                aNewE.Tolerance(anE.Tolerance());
+                aNewE.SameParameter(anE.SameParameter());
+                aNewE.SameRange(anE.SameRange());
+                aNewE.Degenerated(anE.Degenerated());
+                NCollection_List<BRep_CurveRepresentation> aCurves = aNewE.ChangeCurves();
+                for (var anIt = new NCollection_List<BRep_CurveRepresentation>.Iterator(anE.Curves()); anIt.More(); anIt.Next())
+                {
+                    aCurves.Append(anIt.Value().Copy());
+                }
+                aCopy = aNewE;
+                break;
+            }
+            case BRep_TFace aF:
+            {
+                var aNewF = (BRep_TFace)aF.EmptyCopy();
+                aNewF.NaturalRestriction(aF.NaturalRestriction());
+                if (aF.NbTriangulations() > 0)
+                {
+                    aNewF.Triangulations(new NCollection_List<Poly_Triangulation>(aF.Triangulations()), aF.ActiveTriangulation());
+                }
+                aCopy = aNewF;
+                break;
+            }
+            default:
+                aCopy = theTShape.EmptyCopy();
+                break;
+        }
+
+        for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(theTShape.myShapes); anIt.More(); anIt.Next())
+        {
+            TopoDS_Shape aChild = anIt.Value();
+            TopoDS_TShape aChildCopy = exactCopy(aChild.TShape()!, theCopies);
+            aChildCopy.Free(false); // as TopoDS_Builder::Add clears it (a frozen original keeps its own, design 4.4)
+            aChild.TShape(aChildCopy);
+            aCopy.myShapes.Append(aChild);
+        }
+
+        aCopy.Free(theTShape.Free());
+        aCopy.Modified(theTShape.Modified());
+        aCopy.Checked(theTShape.Checked());
+        aCopy.Orientable(theTShape.Orientable());
+        aCopy.Closed(theTShape.Closed());
+        aCopy.Infinite(theTShape.Infinite());
+        aCopy.Convex(theTShape.Convex());
+
+        theCopies[theTShape] = aCopy;
+        return aCopy;
+    }
+
+    /// <summary>
+    /// The copy <paramref name="theCopy"/> of <paramref name="theOriginal"/> (made by <see cref="ExactCopyForWrite"/> and
     /// then changed in place) with each sub-shape that the change left equal to its original replaced by that
     /// original: so an operation that changes nothing gives back the original itself, and one that changes a few
     /// edges shares everything else with it, as the in-place operation would. <paramref name="theHistory"/> records
@@ -37,17 +177,7 @@ public static partial class BRepTools
         var aResults = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
         TopoDS_TShape aResult = keepUnchanged(theOriginal.TShape()!, theCopy.TShape()!, aResults, theIgnoreToleranceGuard);
 
-        foreach (KeyValuePair<TopoDS_TShape, TopoDS_TShape> aPair in aResults)
-        {
-            if (!ReferenceEquals(aPair.Key, aPair.Value))
-            {
-                var anOld = new TopoDS_Shape(aPair.Key, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD);
-                if (BRepTools_History.IsSupportedType(anOld))
-                {
-                    theHistory.AddModified(anOld, new TopoDS_Shape(aPair.Value, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD));
-                }
-            }
-        }
+        recordImages(theOriginal, aResults, theHistory);
 
         TopoDS_Shape aShape = theCopy;
         aShape.TShape(aResult);
