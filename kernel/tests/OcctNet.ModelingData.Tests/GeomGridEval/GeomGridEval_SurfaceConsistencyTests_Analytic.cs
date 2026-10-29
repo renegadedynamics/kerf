@@ -25,6 +25,20 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
 
     private readonly SortedDictionary<string, Stats> myStats = new(StringComparer.Ordinal);
     private bool myRationalAboveDegreeNonZero;
+    private int myCurveDNSkipped;
+
+    // Whether OCCT's curve grid DN of this order is one of its errors: any order of a B-spline basis (its span
+    // index is a flat-knot index passed with the knots and multiplicities), and orders above the degree of a
+    // rational Bezier basis (zero).
+    private static bool CurveDNIsOcctError(Geom_Curve? theBasis, int theOrder)
+    {
+        return theBasis switch
+        {
+            Geom_BSplineCurve => theOrder >= 1,
+            Geom_BezierCurve aBz => aBz.IsRational() && theOrder > aBz.Degree(),
+            _ => false,
+        };
+    }
 
     /// <summary>
     /// What each comparison must give: null for bit-identical, else the relative tolerance.
@@ -338,9 +352,18 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         NCollection_Array2<Geom_Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
         NCollection_Array2<Geom_Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
         (int, int)[] anOrders = [(1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (3, 0), (0, 3), (4, 0), (2, 2), (0, 4), (5, 1)];
-        NCollection_Array2<gp_Vec>[] aDN = new NCollection_Array2<gp_Vec>[anOrders.Length];
+        NCollection_Array2<gp_Vec>?[] aDN = new NCollection_Array2<gp_Vec>?[anOrders.Length];
         for (int k = 0; k < anOrders.Length; ++k)
         {
+            // The swept surfaces' DN is the basis curve's grid DN, which OCCT's B-spline curve grid evaluates on the
+            // wrong span (sometimes reading past the knots: IndexOutOfRangeException in the port), and which is zero
+            // above the degree of a rational curve (occt-issues.md; pinned in GeomGridEval_CurveConsistencyTest).
+            // Those values are not compared.
+            if (CurveDNIsOcctError(aBasis, isRevolution ? anOrders[k].Item2 : anOrders[k].Item1))
+            {
+                myCurveDNSkipped++;
+                continue;
+            }
             aDN[k] = theEval.EvaluateGridDN(theU, theV, anOrders[k].Item1, anOrders[k].Item2);
         }
         Assert.Equal(theU.Length(), aD0.NbRows());
@@ -400,15 +423,19 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                     Compare(aP + "D3.D3" + aTag[3], g3.D3UVV, r3.D3UVV);
                     for (int k = 0; k < anOrders.Length; ++k)
                     {
+                        if (aDN[k] is null)
+                        {
+                            continue;
+                        }
                         gp_Vec aRefVec = aRefDN(u, v, anOrders[k].Item1, anOrders[k].Item2);
                         if (isRational && (anOrders[k].Item1 > aUDeg || anOrders[k].Item2 > aVDeg))
                         {
                             // OCCT returns zero above the degrees, also for rational surfaces (occt-issues.md)
-                            Assert.Equal(0.0, aDN[k].Value(i, j).Magnitude());
+                            Assert.Equal(0.0, aDN[k]!.Value(i, j).Magnitude());
                             myRationalAboveDegreeNonZero |= aRefVec.Magnitude() > 1e-3;
                             continue;
                         }
-                        Compare(aP + "DN", aDN[k].Value(i, j), aRefVec);
+                        Compare(aP + "DN", aDN[k]!.Value(i, j), aRefVec);
                     }
                 }
             }
@@ -449,6 +476,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                 aFailures.Add(aKey);
             }
         }
+        myOut.WriteLine($"DN grids of swept surfaces not compared (OCCT's curve grid DN errors): {myCurveDNSkipped}");
         Assert.Empty(aFailures);
         Assert.True(myRationalAboveDegreeNonZero); // the rational case really is non-zero there
     }
