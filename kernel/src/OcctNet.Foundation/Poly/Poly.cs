@@ -724,21 +724,8 @@ public static class Poly
 
     private static string Int(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
-    internal static string Real(double theValue)
-    {
-        if (double.IsNaN(theValue))
-        {
-            return double.IsNegative(theValue) ? "-nan(ind)" : "nan";
-        }
-
-        if (double.IsInfinity(theValue))
-        {
-            return theValue > 0 ? "inf" : "-inf";
-        }
-
-        // .NET's "G6" switches to exponents where %g does and writes at least two exponent digits, as %g does
-        return theValue.ToString("G6", CultureInfo.InvariantCulture).Replace('E', 'e');
-    }
+    // %g with six digits, as Microsoft's C runtime writes it (ties rounded away from zero; see Standard_Stream)
+    internal static string Real(double theValue) => Standard_Stream.FormatReal(theValue, 6);
 
     private static string Setw(int theWidth, string theText) => theText.PadLeft(theWidth);
 

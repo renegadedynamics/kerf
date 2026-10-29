@@ -3,6 +3,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.ModelingData\OcctNet.ModelingData.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.Analyzers\OcctNet.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctSourceDir</_Parameter1>
+      <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
