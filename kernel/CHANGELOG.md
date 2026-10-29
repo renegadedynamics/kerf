@@ -142,3 +142,14 @@ Phase 2 (part): GeomLib and Approx.
 - Tests: the GeomLib_CheckCurveOnSurface GTest; unit tests of every class; oracle tests of GeomLib_IsPlanarSurface,
   and, through BRepLib and BRepTools, of Approx_SameParameter, GeomLib::BuildCurve3d, GeomLib::SameRange and
   GeomLib_CheckCurveOnSurface against native OCCT, all bit-identical.
+
+Phase 2 (part): projection.
+
+- `OcctNet.ModelingData`: the rest of ProjLib (`ProjLib_ProjectedCurve`, `ProjLib_CompProjectedCurve`,
+  `ProjLib_ComputeApprox`, `ProjLib_ComputeApproxOnPolarSurface`, `ProjLib_ProjectOnPlane`,
+  `ProjLib_ProjectOnSurface`, `ProjLib_PrjFunc`, `ProjLib_PrjResolve`, `ProjLib.MakePCurveOfType`) and GeomProjLib:
+  the 2D curves of 3D curves on surfaces (pcurves), normal projections on surfaces and projections on planes. The
+  curves a projection keeps are frozen when handed out; GeomProjLib returns curves the caller owns.
+- Tests: the ProjLib_ComputeApproxOnPolarSurface GTest; unit tests of every class; oracle tests of
+  ProjLib_ProjectedCurve, ProjLib_ProjectOnPlane and GeomProjLib::ProjectOnPlane through GeomAPI::To2d and
+  BRep_Tool::CurveOnSurface against native OCCT, all bit-identical.
