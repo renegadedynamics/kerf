@@ -36,6 +36,12 @@ internal static class DrawBuiltins
         BOPTestClassifyCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
         GeomliteTestCommands.Register(theInterpreter);
+        BRepTestExtremaCommands.Register(theInterpreter);
+        BRepTestCurveCommands.Register(theInterpreter);
+        BRepTestSurfaceCommands.Register(theInterpreter);
+        BRepTestModifyCommands.Register(theInterpreter);
+        GeometryTestCommands.Register(theInterpreter);
+        DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

@@ -19,16 +19,6 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class GeomliteTestCommands
 {
-    /// <summary>The commands this file registers.</summary>
-    public static readonly string[] Names =
-    [
-        "line", "circle", "ellipse", "parabola", "hyperbola", "beziercurve", "bsplinecurve", "pbsplinecurve",
-        "2dbeziercurve", "2dbsplinecurve", "2dpbsplinecurve", "reverse", "segment", "setorigin", "cvalue", "2dcvalue",
-        "coord", "plane", "cone", "cylinder", "sphere", "torus", "beziersurf", "bsplinesurf", "upbsplinesurf",
-        "vpbsplinesurf", "uvpbsplinesurf", "extsurf", "revsurf", "offset", "trim", "trimu", "trimv", "ureverse",
-        "vreverse", "uiso", "viso", "svalue", "sderivative", "parameters", "bounds",
-    ];
-
     public static void Register(DrawInterpreter theInterpreter)
     {
         foreach (string aName in new[] { "line", "circle", "ellipse", "parabola", "hyperbola" })
@@ -77,6 +67,7 @@ internal static class GeomliteTestCommands
         DrawCxx.Add(theInterpreter, "sderivative", Derivative);
         DrawCxx.Add(theInterpreter, "parameters", Parameters);
         DrawCxx.Add(theInterpreter, "bounds", Bounds);
+        DrawCxx.Add(theInterpreter, "length", Length);
     }
 
     // a[i], or an empty word past the end (OCCT reads Tcl's null argv[argc] there)
@@ -1295,6 +1286,41 @@ internal static class GeomliteTestCommands
             theDI.SetNumber(a[5], V2);
         }
 
+        return 0;
+    }
+
+    private static int Length(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 2)
+        {
+            return 1;
+        }
+
+        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Geom2d_Curve? GC2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        double Tol = Precision.Confusion(), L;
+        if (n == 3)
+        {
+            Tol = theDI.Atof(a[2]);
+        }
+
+        if (GC is not null)
+        {
+            L = GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(GC), Tol);
+        }
+        else if (GC2d is not null)
+        {
+            L = GCPnts_AbscissaPoint.Length(new Geom2dAdaptor_Curve(GC2d), Tol);
+        }
+        else
+        {
+            // OCCT: no space before "is"
+            di.Append(a[1]).Append("is not a curve\n");
+            return 1;
+        }
+
+        di.Append("The length ").Append(a[1]).Append(" is ").Append(L).Append("\n");
         return 0;
     }
 }
