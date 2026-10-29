@@ -169,8 +169,9 @@ public class DrawCheckCommandsTests
         Error(i, "bounding f -obb -save a b c d e g");
         Assert.Equal("Error: Option -save works only with axes-aligned boxes\n", anOutput.ToString());
 
-        // what needs unported code says so
-        Assert.Equal("bounding -shape (BRepPrimAPI_MakeBox, unit 3M) is not ported yet\n", Error(i, "bounding f -shape b"));
+        // -shape makes the box as a solid (unit 3M); what needs unported code says so
+        i.Eval("bounding f -shape b");
+        Assert.StartsWith("b is a shape SOLID", i.Eval("whatis b"));
         Assert.Equal("bounding -dumpJson (Bnd_Box::DumpJson) is not ported yet\n", Error(i, "bounding f -dumpJson"));
     }
 

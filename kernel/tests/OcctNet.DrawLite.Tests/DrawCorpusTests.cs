@@ -83,6 +83,21 @@ public class DrawCorpusTests(ITestOutputHelper output)
         theInterpreter.DoLog = false;
     }
 
+    /// <summary>The Draw commands unit 3M added (the primitives and sweeps; bounding's -shape now makes its box).</summary>
+    internal static readonly string[] Unit3MCommands =
+    [
+        "box", "wedge", "pcylinder", "pcone", "psphere", "ptorus", "halfspace", "prism", "revol",
+    ];
+
+    /// <summary>Draw-lite before unit 3M: without its commands.</summary>
+    internal static void Before3M(DrawInterpreter theInterpreter)
+    {
+        foreach (string aCommand in Unit3MCommands)
+        {
+            theInterpreter.Eval($"rename {aCommand} {{}}");
+        }
+    }
+
     private static readonly System.Text.RegularExpressions.Regex s_failure =
         new(@"\b(?:[Ee]xception|[Ee][Rr][Rr][Oo][Rr]|[Ff][Aa][Ii][Ll](?:[0-9]|[Ee][Dd]|[Uu][Rr][Ee]))\b|could not be found");
 
@@ -92,7 +107,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
     /// <summary>
     /// Runs every case whose commands are all implemented, as OCCT's harness does, and judges each log with OCCT's
-    /// own _check_log; reports the cases runnable before and after unit 3L2a, the statuses, and what blocks the rest.
+    /// own _check_log; reports the cases runnable before and after unit 3M, the statuses, and what blocks the rest.
     /// </summary>
     [Fact]
     public void Runnable_cases_run_and_OCCTs_log_check_judges_them()
@@ -103,13 +118,13 @@ public class DrawCorpusTests(ITestOutputHelper output)
         anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
         var aBefore = new DrawInterpreter();
         aBefore.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        Before3L2a(aBefore);
+        Before3M(aBefore);
 
         List<DrawTestCase> aCases = aCorpus.Cases().ToList();
         var aScans = aCases.AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
         List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        output.WriteLine($"{aCases.Count} cases; runnable before 3L2a: {aRunnableBefore.Count}, now: {aRunnable.Count}");
+        output.WriteLine($"{aCases.Count} cases; runnable before 3M: {aRunnableBefore.Count}, now: {aRunnable.Count}");
 
         List<DrawCaseRun> Run(List<DrawTestCase> theCases, Action<DrawInterpreter>? theSetup)
             => theCases.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
@@ -124,7 +139,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
                                                                         .Select(g => $"{g.Key} {g.Count()}")));
         }
 
-        Statuses("before 3L2a", Run(aRunnableBefore, Before3L2a));
+        Statuses("before 3M", Run(aRunnableBefore, Before3M));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
 

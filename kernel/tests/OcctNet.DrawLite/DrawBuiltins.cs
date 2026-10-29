@@ -34,6 +34,8 @@ internal static class DrawBuiltins
         BRepTestCheckCommands.Register(theInterpreter);
         BRepTestBoundingCommands.Register(theInterpreter);
         BOPTestClassifyCommands.Register(theInterpreter);
+        BRepTestPrimitiveCommands.Register(theInterpreter);
+        BRepTestSweepCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops

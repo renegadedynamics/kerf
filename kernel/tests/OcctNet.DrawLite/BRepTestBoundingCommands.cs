@@ -9,8 +9,8 @@ namespace OcctNet.DrawLite;
 /// BndLib) and getcoords.
 /// </summary>
 /// <remarks>
-/// <c>bounding -shape</c> makes its box with BRepPrimAPI_MakeBox (unit 3M) and <c>-dumpJson</c> needs Bnd_Box's and
-/// Bnd_OBB's DumpJson, which aren't ported: both fail with a message saying so. Draw_Box (the drawn box) is left out.
+/// <c>bounding -shape</c> makes its box with BRepPrimAPI_MakeBox; <c>-dumpJson</c> needs Bnd_Box's and
+/// Bnd_OBB's DumpJson, which aren't ported: it fails with a message saying so. Draw_Box (the drawn box) is left out.
 /// </remarks>
 internal static class BRepTestBoundingCommands
 {
@@ -298,10 +298,7 @@ internal static class BRepTestBoundingCommands
         return 0;
     }
 
-    /// <summary>
-    /// ConvertBndToShape: a null shape for a void box; otherwise OCCT makes the box with BRepPrimAPI_MakeBox, which
-    /// isn't ported yet (unit 3M).
-    /// </summary>
+    /// <summary>ConvertBndToShape: the box as a solid (BRepPrimAPI_MakeBox on the box's axes), or a null shape for a void box.</summary>
     private static int ConvertBndToShape(DrawInterpreter theDI, DrawResult theResult, in Bnd_OBB theBox, string theName)
     {
         if (theBox.IsVoid())
@@ -310,7 +307,15 @@ internal static class BRepTestBoundingCommands
             return 0;
         }
 
-        return NotPorted(theResult, "-shape (BRepPrimAPI_MakeBox, unit 3M)");
+        gp_Pnt aBaryCenter = new(theBox.Center());
+        gp_XYZ aXDir = theBox.XDirection(), aYDir = theBox.YDirection(), aZDir = theBox.ZDirection();
+        double aHalfX = theBox.XHSize(), aHalfY = theBox.YHSize(), aHalfZ = theBox.ZHSize();
+
+        gp_Ax2 anAxes = new(aBaryCenter, new gp_Dir(aZDir), new gp_Dir(aXDir));
+        anAxes.SetLocation(new gp_Pnt(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
+        TopoDS_Solid aBox = new BRepPrimAPI_MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
+        theDI.SetShape(theName, aBox);
+        return 0;
     }
 
     private static int NotPorted(DrawResult theResult, string theWhat)
