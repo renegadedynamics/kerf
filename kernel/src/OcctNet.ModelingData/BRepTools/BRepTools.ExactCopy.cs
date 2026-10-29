@@ -21,15 +21,24 @@ public static partial class BRepTools
     /// sub-shapes wherever it changed nothing. <paramref name="theHistory"/> records each vertex, edge, face and solid as
     /// modified into its copy. The copy is unfrozen.
     /// </summary>
-    internal static TopoDS_Shape ExactCopyForWrite(in TopoDS_Shape theShape, out BRepTools_History theHistory)
+    internal static TopoDS_Shape ExactCopyForWrite(in TopoDS_Shape theShape, out BRepTools_History theHistory) =>
+        ExactCopyForWrite(theShape, out theHistory, out _);
+
+    /// <summary>
+    /// <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/>, with the copy of each TShape of the
+    /// shape in <paramref name="theCopies"/> (by reference), for <see cref="KeepUnchangedIn"/>.
+    /// </summary>
+    internal static TopoDS_Shape ExactCopyForWrite(in TopoDS_Shape theShape, out BRepTools_History theHistory,
+                                                   out Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies)
     {
         theHistory = new BRepTools_History();
+        var aCopies = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        theCopies = aCopies;
         if (theShape.IsNull())
         {
             return new TopoDS_Shape();
         }
 
-        var aCopies = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
         TopoDS_Shape aCopy = theShape;
         aCopy.TShape(exactCopy(theShape.TShape()!, aCopies));
         recordImages(theShape, aCopies, theHistory);
@@ -147,7 +156,7 @@ public static partial class BRepTools
     }
 
     /// <summary>
-    /// The copy <paramref name="theCopy"/> of <paramref name="theOriginal"/> (made by <see cref="ExactCopyForWrite"/> and
+    /// The copy <paramref name="theCopy"/> of <paramref name="theOriginal"/> (made by <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/> and
     /// then changed in place) with each sub-shape that the change left equal to its original replaced by that
     /// original: so an operation that changes nothing gives back the original itself, and one that changes a few
     /// edges shares everything else with it, as the in-place operation would. <paramref name="theHistory"/> records
@@ -427,6 +436,92 @@ public static partial class BRepTools
                        && ReferenceEquals(theA.Triangulation(), theB.Triangulation());
             default:
                 return false;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="KeepUnchanged"/> for an operation that, working on the copy <paramref name="theCopy"/> of
+    /// <paramref name="theOriginal"/> (made by <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History, out Dictionary{TopoDS_TShape, TopoDS_TShape})"/>
+    /// with the copies <paramref name="theCopies"/>), built a new shape <paramref name="theResult"/> holding the copy's
+    /// sub-shapes, as an in-place sweep holds its profile's: each copy the operation left equal to its original is
+    /// replaced by that original in the result's unfrozen graph too (and <paramref name="theResult"/> itself if it is
+    /// one). The returned map gives, for each copied TShape, the TShape that stands for it now (the original or the
+    /// copy); <paramref name="theHistory"/> records the original's sub-shapes whose result is another TShape.
+    /// </summary>
+    internal static Dictionary<TopoDS_TShape, TopoDS_TShape> KeepUnchangedIn(in TopoDS_Shape theOriginal, in TopoDS_Shape theCopy,
+                                                                          Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies,
+                                                                          ref TopoDS_Shape theResult,
+                                                                          out BRepTools_History theHistory)
+    {
+        theHistory = new BRepTools_History();
+        var aFinal = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        if (theOriginal.IsNull() || theCopy.IsNull())
+        {
+            return aFinal;
+        }
+
+        var aResults = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        keepUnchanged(theOriginal.TShape()!, theCopy.TShape()!, aResults, false);
+        recordImages(theOriginal, aResults, theHistory);
+
+        var aReplaced = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        foreach (KeyValuePair<TopoDS_TShape, TopoDS_TShape> anOC in theCopies)
+        {
+            TopoDS_TShape aNow = aResults.TryGetValue(anOC.Key, out TopoDS_TShape? aKept) ? aKept : anOC.Value;
+            aFinal[anOC.Value] = aNow;
+            if (!ReferenceEquals(aNow, anOC.Value))
+            {
+                aReplaced[anOC.Value] = aNow;
+            }
+        }
+
+        if (!theResult.IsNull() && aReplaced.Count != 0)
+        {
+            var aVisited = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+            substituteTShapes(theResult.TShape()!, aReplaced, aVisited);
+            if (aReplaced.TryGetValue(theResult.TShape()!, out TopoDS_TShape? aTop))
+            {
+                theResult.TShape(aTop);
+            }
+        }
+        return aFinal;
+    }
+
+    // Replaces, in the unfrozen TShapes reachable from theTShape, each child whose TShape is a key of the map by the
+    // map's value, keeping its place, location and orientation. Frozen TShapes (inputs) are left as they are.
+    private static void substituteTShapes(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap,
+                                          HashSet<TopoDS_TShape> theVisited)
+    {
+        if (theTShape.IsFrozen() || !theVisited.Add(theTShape))
+        {
+            return;
+        }
+
+        RuntimeHelpers.EnsureSufficientExecutionStack();
+        var aChildren = new List<TopoDS_Shape>();
+        bool isChanged = false;
+        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theTShape.myShapes); anIt.More(); anIt.Next())
+        {
+            TopoDS_Shape aChild = anIt.Value();
+            if (theMap.TryGetValue(aChild.TShape()!, out TopoDS_TShape? aNew))
+            {
+                aChild.TShape(aNew);
+                isChanged = true;
+            }
+            else
+            {
+                substituteTShapes(aChild.TShape()!, theMap, theVisited);
+            }
+            aChildren.Add(aChild);
+        }
+
+        if (isChanged)
+        {
+            theTShape.myShapes.Clear();
+            foreach (TopoDS_Shape aChild in aChildren)
+            {
+                theTShape.myShapes.Append(aChild);
+            }
         }
     }
 }

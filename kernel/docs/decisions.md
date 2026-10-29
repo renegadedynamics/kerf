@@ -4179,3 +4179,135 @@ NurbsConvert, Collect, FindPlane, the enums and BRepBuilderAPI.cxx's statics), i
         (3M). `bclassify` (BOPTest_LowCommands.cxx) is BRepClass3d_SolidClassifier (3G). Draw's `gtransform` and
         `nurbsconvert` (BRepTest_BasicCommands.cxx) can now run BRepBuilderAPI_GTransform and NurbsConvert. The GTests'
         `TODO(3J)` checks can be restored once BRepCheck_Analyzer merges.
+
+## Phase 3: unit 3M, primitives
+
+TKPrim in OcctNet.ModelingAlgorithms (decision 280; phase3-plan.md's 3M row asks for no other assembly): BRepPrim
+(Builder, Direction, GWedge, Wedge, OneAxis, Revolution, Cylinder, Cone, Sphere, Torus, FaceBuilder), BRepPrimAPI
+(MakeBox, MakeWedge, MakeOneAxis, MakeCylinder, MakeCone, MakeSphere, MakeTorus, MakeRevolution, MakeHalfSpace,
+MakeSweep, MakePrism, MakeRevol), BRepSweep (Builder, Tool, Iterator, NumLinearRegularSweep, Trsf, Translation,
+Rotation, Prism, Revol), Sweep (NumShape, NumShapeTool, NumShapeIterator) and BRepPreviewAPI_MakeBox; and Draw-lite's
+primitive and sweep commands. BRepSweep with MakeSweep, MakePrism and MakeRevol, the GTest swaps and Draw-lite were
+written in forked worktrees, reviewed and merged. Numbers from 3201 are renumbered on merge.
+
+465. **BRepPrim, BRepSweep and Sweep are internal; the makers are public.** OCCT's BRepPrim and BRepSweep algorithms
+      hand out the shapes they are still building (BRepPrim_GWedge::Face, BRepPrim_OneAxis::LateralFace, BRepSweep's
+      Shape(S)) and, without copy, write into the generating shape, so callers go through BRepPrimAPI and
+      BRepPreviewAPI. The makers' accessors of their algorithm (`Wedge()`, `Cylinder()`, `Cone()`, `Sphere()`,
+      `Torus()`, `Revolution()`, `Prism()`, `Revol()`, and OCCT's `void* OneAxis()`, here an `internal abstract
+      BRepPrim_OneAxis OneAxis()`) are internal; BRepPrim_Direction is an internal enum. BRepPrim_Builder is a class
+      over a BRep_Builder (OCCT holds both by value); its `TopoDS_Shape&` arguments that it only writes through are `in`
+      (the TShape is shared) and its Make methods take `ref`. OCCT's arrays of shapes are filled with `new()` shapes
+      (`BRepPrim_GWedge.NewArray`). Sweep_NumShape is a struct (`new Sweep_NumShape()` is OCCT's TopAbs_SHAPE dummy);
+      the iterator and tool are classes. BRepSweep_Builder makes typed shapes in a local and assigns them to OCCT's
+      `TopoDS_Shape&` argument. BRepSweep_Rotation.SplitShell reads `BRepTools_Quilt.InternalShells()`.
+466. **Publication** (design 4.2, decisions 454 and 464). The makers derive from BRepBuilderAPI_MakeShape and override
+      `Build` (public), and `InternalGenerated` and `IsDeleted` where OCCT overrides Generated and IsDeleted.
+      - `Shape()`, `Shell()`, `Solid()`, `Face()` (the one-axis lateral face), the box's six faces, `FirstShape()`,
+        `LastShape()`, `FirstShape(S)`, `LastShape(S)`, MakeHalfSpace's `Solid()` and MakeRevol's `Degenerated()` freeze
+        what they return; each has an internal twin (`InternalShell`, `InternalSolid`, `InternalFace`,
+        `InternalFirstShape`, ..., `InternalDegenerated`) for ported code. OCCT's conversion operators are explicit
+        operators calling the freezing forms.
+      - Where OCCT remakes the solid in `myShape` (`B.MakeSolid(TopoDS::Solid(myShape))`), the port makes it in a new
+        variable (decision 414). So, as in OCCT, each `Solid()` (and each `Build()` of the one-axis makers and
+        MakeWedge) makes a new solid TShape around the same shell; a published shell is added frozen. MakeBox's
+        `Shell()` stores the shell as the result, as OCCT: `Shape()` after `Shell()` is the shell.
+      - BRepPrimAPI_MakeOneAxis's constructor is `private protected` (its `OneAxis()` is internal, so it can't be
+        derived outside the assembly anyway); so is BRepPrimAPI_MakeSweep's, over internal abstract
+        `InternalFirstShape`/`InternalLastShape` (OCCT's pure virtuals).
+      - BRepPreviewAPI_MakeBox builds its vertex, edge and face with the BRepBuilderAPI makers' internal accessors and
+        publishes the result through `Shape()`.
+467. **A box's face is handed out once every face is built** (`// OCCT.NET`). OCCT's `BottomFace()` and the other
+      five return the wedge's face as built so far: its edges get their pcurves on the neighbouring faces later, in
+      place, when the shell (or another face) is built. A published face is frozen, so the port builds the whole shell
+      first (for a degenerated, flat box, which has no shell, all six faces) and then freezes the face. The face handed
+      out is the one OCCT's face becomes once the box is built; asked for before anything else, its BRep text has the
+      pcurves of every face and Free = 0 (it is in the shell), where native OCCT's has only its own pcurves and Free = 1
+      at that moment (the oracle compares native faces
+      after they are all built, in the port's order). The one-axis makers need nothing: OCCT's `Face()` builds the
+      whole primitive first.
+468. **Frozen generating shapes are copied for write** (design 4.6, decisions 416/417). OCCT's sweeps without copy
+      share the profile's sub-shapes and write into them: pcurves on the new faces, vertex parameters, continuities,
+      `BRepLib::BuildCurves3d` in MakePrism's and MakeRevol's `check`, and MakeRevol's UpdateInnerTolerances.
+      - When the profile's graph holds a frozen TShape, MakePrism and MakeRevol sweep `BRepTools.ExactCopyForWrite`
+        of it (a new overload also returns the original-to-copy map). After Build,
+        `BRepTools.KeepUnchangedIn(original, copy, copies, ref result, out history)` (internal, OcctNet.ModelingData)
+        gives back each copy left unchanged as the original, also inside the unfrozen result graph, and returns the map
+        from each copied TShape to the TShape that now stands for it.
+      - `Generated`, `IsDeleted`, `FirstShape(S)` and `LastShape(S)` map the caller's sub-shape to its copy before
+        asking BRepSweep, and the results back.
+      - So the result has native OCCT's structure (BRep text equal to native's with the Free column masked, open
+        question 1) and shares with the profile everything the sweep didn't change: a polygon face's prism shares all
+        the face's edges and vertices (planar walls store no pcurves); curved walls get changed copies of the edges.
+        The caller's profile is never written. An unfrozen profile from ported code is swept in place, as in OCCT.
+      - With Copy = true, BRepSweep copies the profile, as OCCT, and the result shares nothing with it.
+469. **BRepSweep_NumLinearRegularSweep.Shape writes Closed only when it changes** (`// OCCT.NET: frozen`). OCCT sets the
+      flag on the result's wires and shells on every call, FirstShape and LastShape after publication included, which
+      threw Standard_ImmutableObject on a published result.
+470. **MakeRevol's degenerated edges.** OCCT iterates an NCollection_DataMap of faces in the hash order of TShape
+      addresses, which decides which face keeps the original degenerated edge and which get copies; the port iterates
+      in binding order (decision 18). The oracle saw no difference. When KeepUnchangedIn gives back an original
+      profile edge that is itself degenerated, `Degenerated()` still names the copy (the histories are mapped back).
+471. **MakeHalfSpace shares the caller's face or shell**: the face goes into a new shell, the shell (reversed toward
+      the matter if needed) into a new solid; nothing of the caller's is written, so it needs no copy. The caller's face or shell
+      keeps the Free flag it was frozen with (design 4.4): 1 for a face made alone, where native OCCT clears it. Its extrema use BRepExtrema_DistShapeShape on a local vertex
+      read with `BRepBuilderAPI_MakeVertex.InternalVertex()`.
+472. **Smaller choices.** BRepPrimAPI_MakeRevolution passes GeomProjLib's projection of the meridian on, null when it
+      fails, as OCCT does (BRepPrim_Revolution then dereferences it). BRepPrim_Cone's infinite-cone constructor on axes
+      leaves OCCT's uninitialised radius at 0. BRepPrim_GWedge copies the vertices shared by a degenerated top in pairs,
+      a partner not built yet as a null vertex marked built, as OCCT.
+473. **Draw-lite.** BRepTest_PrimitiveCommands' `box` (plain, origin and size, `-min`, `-max`, `-size`, `-dir`,
+      `-xdir`, `-preview`), `wedge` (4, 7, 13 and 16 numbers), `pcylinder`, `pcone`, `psphere`, `ptorus`, and
+      BRepTest_TopologyCommands' `halfspace`, in BRepTestPrimitiveCommands.cs; BRepTest_SweepCommands' `prism` (copy,
+      infinite, semi-infinite) and `revol` (copy, "Revol not done") in BRepTestSweepCommands.cs; both registered in
+      DrawBuiltins. Each binds the maker's freezing accessor; a wrong word count returns 1 with no message, as Draw.
+      `[plane(ax2)]` is a bound DrawTrSurf plane. Draw records prism and revol history for `savehistory`, which
+      Draw-lite lacks. `pipe` and the other sweep commands (`evolved`, `pruled`, `gener`, `thrusections`, the `*sweep`
+      commands, `geompipe`, `middlepath`) wait for TKOffset. `bounding -shape` is OCCT's ConvertBndToShape:
+      BRepPrimAPI_MakeBox on the (oriented) box's axes, moved to its corner; a void box binds a null shape. Tests that
+      needed an unknown command now use `bcut`.
+474. **Tests.**
+      - Ported GTests: TKPrim's seven (BRepPrimAPI_MakeBox 6, MakeCone 6, MakeCylinder 5, MakePrism 1, MakeSphere 5,
+        MakeTorus 15, MakeWedge 5), the torus's known limitations (equal heights give an invalid shape) included. The
+        phase 3 GTests that used stand-ins now run on the real makers as OCCT's do: BRepBuilderAPI Copy (5) and
+        Transform (5), BRepClass3d_SolidClassifier (5), BRepGProp (6), BRep_Tool, TopExp, TopoDS_Iterator (3); newly
+        ported: BRepTools_Test (2 parallel reads), Bnd_BoundSortBox's BUC60729 and Bnd_OBB's OCC30704 (in
+        ModelingAlgorithms.Tests, since Foundation.Tests has no topology). BRepGProp's OCC49_CutShapeHasNoSymmetryAxis
+        waits for BRepAlgoAPI_Cut.
+      - Unit tests: primitives (33: box forms with negative sizes, Init, faces complete and shared, Solid and Shell
+        results, flat boxes; wedges as prismatoids with box, segment and point tops; cylinders, cones (apexes, errors),
+        sphere zones and wedges, tori whole, partial and as ring segments, revolutions of a line and an arc;
+        half-spaces on a face and on a shell, the caller's face unchanged; the preview box) and sweeps (17: prisms of
+        every shape type, finite and infinite, canonized or not; revolutions whole, partial, negative, touching or
+        crossing the axis; histories; frozen profiles unchanged and shared); Draw-lite (7).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepPrimAPI`) against native OCCT through BRep text:
+        - the primitive makers (`BRepPrimAPIPrimitivesOracleTests`) on 700 random cases over every constructor (boxes
+          with negative and flat sizes, wedges with ordinary, negative and degenerated tops, partial cylinders and
+          cones, apexes and invalid cones, sphere zones and wedges with negative angles, tori with crossing, inverted
+          and equal heights, half-spaces on faces and shells of boxes, cylinders and spheres) on placements native
+          gp_Ax2 holds to the bit: 3,007 files (shapes, shells, solids, faces), 2,823 byte-identical and 184 equal with
+          the Free column masked, 54 throws on both sides. The 184 are the box's BottomFace and TopFace asked for before
+          anything else (3203): the port's face is already in the shell (Free = 0), native OCCT's not yet. The
+          half-spaces' input faces and shells come from solids, so they are byte-identical;
+        - MakePrism: 474 files, 352 byte-identical and 122 equal with the Free column masked, 22,409 history values
+          (IsDeleted, Generated, FirstShape(S), LastShape(S) of every profile sub-shape, as indices and orientations in
+          the result) equal; MakeRevol: 443 files, 412 byte-identical and 31 masked, 26 invalid on both sides, 21,141
+          history values equal (profiles: vertices, lines, arcs, open and closed polygons, polygon faces, faces with
+          holes, disks, cylinder patches, shells, compounds, triangles with an edge on the axis; Copy and Canonize
+          drawn);
+        - Draw-lite (`DrawLitePrimitivesOracleTests`): the commands on random numbers against the native makers, 1,063
+          shapes, all byte-identical.
+      - Corpus (`DrawCorpusTests`, `Unit3MCommands`, before and after): runnable 380 → 395, OK 13 → 28, BAD 1 → 1
+        (lowalgos/classifier/bug538, OCCT's own TODO), FAILED 15 → 15, IMPROVEMENT 1 → 1, SKIPPED 350 → 350. The 15
+        FAILED cases stop on commands Draw-lite lacks inside sourced or conditional code (`bcut` 3, `vertex` 2,
+        `circle` 2, `polyline` 2, `vglinfo` 2, `line`, `blend`, `NewDocument`, `getsourcefile`); none on a port bug.
+        Most of the 2,868 `box` and 1,031 `pcylinder` cases need another command too: `bcut` (329 cases miss only it),
+        `thrusections` 248, `blend` 234, `bfuse` 185, `bcommon` 182, `bsection` 150.
+475. **For later units.**
+      - Booleans, fillets, offsets (phases 5 to 7): the GTests of TKBO, TKBool, TKFillet, TKOffset, TKShHealing and
+        TKMesh build their inputs with BRepPrimAPI and can be ported as they are; `bcut`, `bfuse`, `bcommon` and
+        `blend` are the corpus's next gates.
+      - Sweeps of frozen inputs (pipes, evolved, lofts): `ExactCopyForWrite` with the copy map, the operation, then
+        `KeepUnchangedIn`, with the histories mapped through the copy, as MakePrism and MakeRevol do.
+      - A maker that hands out pieces of a result it is still completing (as BRepPrim_GWedge's faces) builds the whole
+        before freezing a piece (3203).

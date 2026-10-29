@@ -7,12 +7,11 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's TopExp GTests, on <see cref="TestShapes.Box"/> (frozen) in place of BRepPrimAPI_MakeBox (unit 3M): the same
-/// topology, 6 faces, 12 edges and 8 vertices.
+/// OCCT's TopExp GTests, on BRepPrimAPI_MakeBox's (frozen) box: 6 faces, 12 edges and 8 vertices.
 /// </summary>
 public class TopExpTests
 {
-    private static TopoDS_Shape MakeBox() => TestShapes.Frozen(TestShapes.Box(10.0, 20.0, 30.0));
+    private static TopoDS_Shape MakeBox() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
     [Fact]
     public void MapShapes_Faces()

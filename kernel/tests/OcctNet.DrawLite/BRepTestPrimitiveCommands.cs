@@ -1,0 +1,524 @@
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Occt;
+using static Occt.TopAbs_ShapeEnum;
+
+namespace OcctNet.DrawLite;
+
+/// <summary>
+/// BRepTest's primitive commands (BRepTest_PrimitiveCommands.cxx): box (with -min, -max, -size, -dir, -xdir and
+/// -preview), wedge, pcylinder, pcone, psphere and ptorus; and BRepTest_TopologyCommands' halfspace.
+/// </summary>
+/// <remarks>
+/// Each makes its shape with the BRepPrimAPI maker Draw uses, through the maker's freezing accessor (the conversion
+/// operator OCCT calls), and binds it. A command given the wrong number of words returns 1 with no message, as Draw.
+/// <c>[plane(ax2)]</c> is a DrawTrSurf plane (DrawTrSurf::Get down-cast to Geom_Plane); a word that isn't one reads
+/// as a number.
+/// </remarks>
+internal static class BRepTestPrimitiveCommands
+{
+    public static void Register(DrawInterpreter theInterpreter)
+    {
+        DrawCxx.Add(theInterpreter, "box", Box);
+        DrawCxx.Add(theInterpreter, "wedge", Wedge);
+        DrawCxx.Add(theInterpreter, "pcylinder", Cylinder);
+        DrawCxx.Add(theInterpreter, "pcone", Cone);
+        DrawCxx.Add(theInterpreter, "psphere", Sphere);
+        DrawCxx.Add(theInterpreter, "ptorus", Torus);
+        DrawCxx.Add(theInterpreter, "halfspace", HalfSpace);
+    }
+
+    private const double DegToRad = Math.PI / 180.0;
+
+    /// <summary>DrawTrSurf::Get(name) down-cast to Geom_Plane: the plane bound to the name, or null.</summary>
+    internal static Geom_Plane? GetPlane(DrawInterpreter theDI, string theName)
+        => theDI.GetDrawable(theName) is DrawGeometry { Geometry: Geom_Plane aPlane } ? aPlane : null;
+
+    // OCCT dereferences a null plane in these forms (pcone, psphere, ptorus with the most words); a .NET null
+    // dereference stands for the access violation
+    private static Geom_Plane NonNull(Geom_Plane? P) => P ?? throw new NullReferenceException("DrawTrSurf::Get: not a plane");
+
+    private static int Box(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        gp_Pnt anOrigin = new();
+        gp_XYZ aParams = new();
+        gp_Dir aDir = new();
+        gp_Dir aXDir = new();
+        bool isMinMax = false;
+        bool isPreview = false;
+        bool isAxis = false;
+
+        for (int anArgIter = 2; anArgIter < n; ++anArgIter)
+        {
+            string anArgCase = a[anArgIter].ToLowerInvariant();
+            if (anArgCase == "-min" && anArgIter + 3 <= n)
+            {
+                anOrigin.SetX(theDI.Atof(a[anArgIter + 1]));
+                anOrigin.SetY(theDI.Atof(a[anArgIter + 2]));
+                anOrigin.SetZ(theDI.Atof(a[anArgIter + 3]));
+                anArgIter += 3;
+            }
+            else if (anArgCase == "-max" && anArgIter + 3 <= n)
+            {
+                aParams.SetX(theDI.Atof(a[anArgIter + 1]));
+                aParams.SetY(theDI.Atof(a[anArgIter + 2]));
+                aParams.SetZ(theDI.Atof(a[anArgIter + 3]));
+                isMinMax = true;
+                anArgIter += 3;
+            }
+            else if (anArgCase == "-size" && anArgIter + 3 <= n)
+            {
+                aParams.SetX(theDI.Atof(a[anArgIter + 1]));
+                aParams.SetY(theDI.Atof(a[anArgIter + 2]));
+                aParams.SetZ(theDI.Atof(a[anArgIter + 3]));
+                isMinMax = false;
+                anArgIter += 3;
+            }
+            else if (anArgCase == "-dir" && anArgIter + 3 <= n)
+            {
+                double aX = theDI.Atof(a[anArgIter + 1]);
+                double anY = theDI.Atof(a[anArgIter + 2]);
+                double aZ = theDI.Atof(a[anArgIter + 3]);
+                aDir.SetCoord(aX, anY, aZ);
+                isAxis = true;
+                anArgIter += 3;
+            }
+            else if (anArgCase == "-xdir" && anArgIter + 3 <= n)
+            {
+                double aX = theDI.Atof(a[anArgIter + 1]);
+                double anY = theDI.Atof(a[anArgIter + 2]);
+                double aZ = theDI.Atof(a[anArgIter + 3]);
+                aXDir.SetCoord(aX, anY, aZ);
+                isAxis = true;
+                anArgIter += 3;
+            }
+            else if (anArgCase == "-preview")
+            {
+                isPreview = true;
+            }
+            else if (anArgIter + 5 < n || anArgIter + 2 < n)
+            {
+                int aCountReal = 0;
+                int anIter = anArgIter;
+                while (anIter < n && theDI.ParseReal(a[anIter], out _))
+                {
+                    anIter++;
+                    aCountReal++;
+                }
+
+                if (aCountReal == 6)
+                {
+                    anOrigin.SetX(theDI.Atof(a[anArgIter]));
+                    anOrigin.SetY(theDI.Atof(a[anArgIter + 1]));
+                    anOrigin.SetZ(theDI.Atof(a[anArgIter + 2]));
+                    aParams.SetX(theDI.Atof(a[anArgIter + 3]));
+                    aParams.SetY(theDI.Atof(a[anArgIter + 4]));
+                    aParams.SetZ(theDI.Atof(a[anArgIter + 5]));
+                    anArgIter += 5;
+                }
+                else if (aCountReal == 3)
+                {
+                    aParams.SetX(theDI.Atof(a[anArgIter]));
+                    aParams.SetY(theDI.Atof(a[anArgIter + 1]));
+                    aParams.SetZ(theDI.Atof(a[anArgIter + 2]));
+                    anArgIter += 2;
+                }
+                else
+                {
+                    theDI.Output.WriteLine("Syntax error");
+                    return 1;
+                }
+            }
+        }
+
+        if (isPreview)
+        {
+            TopoDS_Shape S;
+            var aPreview = new BRepPreviewAPI_MakeBox();
+            if (isMinMax)
+            {
+                aPreview.Init(anOrigin, new gp_Pnt(aParams));
+            }
+            else if (!isMinMax && !isAxis)
+            {
+                aPreview.Init(anOrigin, aParams.X(), aParams.Y(), aParams.Z());
+            }
+            else if (isAxis)
+            {
+                var anAxis = new gp_Ax2(anOrigin, aDir, aXDir);
+                aPreview.Init(anAxis, aParams.X(), aParams.Y(), aParams.Z());
+            }
+            else
+            {
+                aPreview.Init(aParams.X(), aParams.Y(), aParams.Z());
+            }
+
+            S = aPreview.Shape();
+            theDI.SetShape(a[1], S);
+        }
+        else
+        {
+            TopoDS_Solid S;
+            if (isMinMax)
+            {
+                S = new BRepPrimAPI_MakeBox(anOrigin, new gp_Pnt(aParams)).Solid();
+            }
+            else if (!isMinMax && !isAxis)
+            {
+                S = new BRepPrimAPI_MakeBox(anOrigin, aParams.X(), aParams.Y(), aParams.Z()).Solid();
+            }
+            else if (isAxis)
+            {
+                var anAxis = new gp_Ax2(anOrigin, aDir, aXDir);
+                S = new BRepPrimAPI_MakeBox(anAxis, aParams.X(), aParams.Y(), aParams.Z()).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeBox(aParams.X(), aParams.Y(), aParams.Z()).Solid();
+            }
+
+            theDI.SetShape(a[1], S);
+        }
+
+        return 0;
+    }
+
+    private static int Wedge(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        TopoDS_Solid S;
+
+        if (n == 15 || n == 18)
+        {
+            var LocalP = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var LocalN = new gp_Dir(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
+            var LocalVx = new gp_Dir(theDI.Atof(a[8]), theDI.Atof(a[9]), theDI.Atof(a[10]));
+            var Axis = new gp_Ax2(LocalP, LocalN, LocalVx);
+            if (n == 15)
+            {
+                S = new BRepPrimAPI_MakeWedge(Axis, theDI.Atof(a[11]), theDI.Atof(a[12]), theDI.Atof(a[13]), theDI.Atof(a[14])).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeWedge(Axis,
+                                              theDI.Atof(a[11]),
+                                              theDI.Atof(a[12]),
+                                              theDI.Atof(a[13]),
+                                              theDI.Atof(a[14]),
+                                              theDI.Atof(a[15]),
+                                              theDI.Atof(a[16]),
+                                              theDI.Atof(a[17])).Solid();
+            }
+        }
+        else if (n == 6)
+        {
+            S = new BRepPrimAPI_MakeWedge(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
+        }
+        else if (n == 9)
+        {
+            S = new BRepPrimAPI_MakeWedge(theDI.Atof(a[2]),
+                                          theDI.Atof(a[3]),
+                                          theDI.Atof(a[4]),
+                                          theDI.Atof(a[5]),
+                                          theDI.Atof(a[6]),
+                                          theDI.Atof(a[7]),
+                                          theDI.Atof(a[8])).Solid();
+        }
+        else
+        {
+            return 1;
+        }
+
+        theDI.SetShape(a[1], S);
+        return 0;
+    }
+
+    private static int Cylinder(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        TopoDS_Solid S;
+        Geom_Plane? P = GetPlane(theDI, a[2]);
+
+        if (n == 4)
+        {
+            S = new BRepPrimAPI_MakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
+        }
+        else if (n == 5)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+            }
+        }
+        else if (n == 6)
+        {
+            if (P is null)
+            {
+                return 1;
+            }
+
+            S = new BRepPrimAPI_MakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
+        }
+        else
+        {
+            return 1;
+        }
+
+        theDI.SetShape(a[1], S);
+        return 0;
+    }
+
+    private static int Cone(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        TopoDS_Solid S;
+        Geom_Plane? P = GetPlane(theDI, a[2]);
+
+        if (n == 5)
+        {
+            S = new BRepPrimAPI_MakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+        }
+        else if (n == 6)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeCone(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
+            }
+        }
+        else if (n == 7)
+        {
+            S = new BRepPrimAPI_MakeCone(NonNull(P).Pln().Position().Ax2(),
+                                         theDI.Atof(a[3]),
+                                         theDI.Atof(a[4]),
+                                         theDI.Atof(a[5]),
+                                         theDI.Atof(a[6]) * DegToRad).Solid();
+        }
+        else
+        {
+            return 1;
+        }
+
+        theDI.SetShape(a[1], S);
+        return 0;
+    }
+
+    private static int Sphere(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        TopoDS_Solid S;
+        Geom_Plane? P = GetPlane(theDI, a[2]);
+
+        if (n == 3)
+        {
+            S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2])).Solid();
+        }
+        else if (n == 4)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3])).Solid();
+            }
+        }
+        else if (n == 5)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad, theDI.Atof(a[4]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+            }
+        }
+        else if (n == 6)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]),
+                                               theDI.Atof(a[3]) * DegToRad,
+                                               theDI.Atof(a[4]) * DegToRad,
+                                               theDI.Atof(a[5]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(),
+                                               theDI.Atof(a[3]),
+                                               theDI.Atof(a[4]) * DegToRad,
+                                               theDI.Atof(a[5]) * DegToRad).Solid();
+            }
+        }
+        else if (n == 7)
+        {
+            S = new BRepPrimAPI_MakeSphere(NonNull(P).Pln().Position().Ax2(),
+                                           theDI.Atof(a[3]),
+                                           theDI.Atof(a[4]) * DegToRad,
+                                           theDI.Atof(a[5]) * DegToRad,
+                                           theDI.Atof(a[6]) * DegToRad).Solid();
+        }
+        else
+        {
+            return 1;
+        }
+
+        theDI.SetShape(a[1], S);
+        return 0;
+    }
+
+    private static int Torus(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        TopoDS_Solid S;
+        Geom_Plane? P = GetPlane(theDI, a[2]);
+
+        if (n == 4)
+        {
+            S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
+        }
+        else if (n == 5)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+            }
+        }
+        else if (n == 6)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]),
+                                              theDI.Atof(a[3]),
+                                              theDI.Atof(a[4]) * DegToRad,
+                                              theDI.Atof(a[5]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(),
+                                              theDI.Atof(a[3]),
+                                              theDI.Atof(a[4]),
+                                              theDI.Atof(a[5]) * DegToRad).Solid();
+            }
+        }
+        else if (n == 7)
+        {
+            if (P is null)
+            {
+                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]),
+                                              theDI.Atof(a[3]),
+                                              theDI.Atof(a[4]) * DegToRad,
+                                              theDI.Atof(a[5]) * DegToRad,
+                                              theDI.Atof(a[6]) * DegToRad).Solid();
+            }
+            else
+            {
+                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(),
+                                              theDI.Atof(a[3]),
+                                              theDI.Atof(a[4]),
+                                              theDI.Atof(a[5]) * DegToRad,
+                                              theDI.Atof(a[6]) * DegToRad).Solid();
+            }
+        }
+        else if (n == 8)
+        {
+            S = new BRepPrimAPI_MakeTorus(NonNull(P).Pln().Position().Ax2(),
+                                          theDI.Atof(a[3]),
+                                          theDI.Atof(a[4]),
+                                          theDI.Atof(a[5]) * DegToRad,
+                                          theDI.Atof(a[6]) * DegToRad,
+                                          theDI.Atof(a[7]) * DegToRad).Solid();
+        }
+        else
+        {
+            return 1;
+        }
+
+        theDI.SetShape(a[1], S);
+        return 0;
+    }
+
+    // BRepTest_TopologyCommands.cxx
+    private static int HalfSpace(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 6)
+        {
+            return 1;
+        }
+
+        // The point on the side of the matter.
+        var RefPnt = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+
+        TopoDS_Shape Face = theDI.GetShape(a[2], TopAbs_FACE);
+        if (Face.IsNull())
+        {
+            TopoDS_Shape Shell = theDI.GetShape(a[2], TopAbs_SHELL);
+            if (Shell.IsNull())
+            {
+                di.Append(a[2]).Append(" must be a face or a shell\n");
+                return 1;
+            }
+
+            var Half = new BRepPrimAPI_MakeHalfSpace(TopoDS.Shell(Shell), RefPnt);
+            if (Half.IsDone())
+            {
+                theDI.SetShape(a[1], Half.Solid());
+            }
+            else
+            {
+                di.Append(" HalfSpace NotDone\n");
+                return 1;
+            }
+        }
+        else
+        {
+            var Half = new BRepPrimAPI_MakeHalfSpace(TopoDS.Face(Face), RefPnt);
+            if (Half.IsDone())
+            {
+                theDI.SetShape(a[1], Half.Solid());
+            }
+            else
+            {
+                di.Append(" HalfSpace NotDone\n");
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+}

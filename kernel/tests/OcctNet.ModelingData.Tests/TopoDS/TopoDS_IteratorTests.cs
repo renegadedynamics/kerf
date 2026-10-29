@@ -6,8 +6,8 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's TopoDS_Iterator GTests, with BRepBuilderAPI_MakeVertex and MakeEdge (whose results are frozen).
-/// BRepPrimAPI_MakeBox (unit 3M) is replaced by <see cref="TestShapes.Box"/>, frozen as the maker's result will be.
+/// OCCT's TopoDS_Iterator GTests, with BRepBuilderAPI_MakeVertex and MakeEdge and BRepPrimAPI_MakeBox (whose results
+/// are frozen).
 /// </summary>
 public class TopoDS_IteratorTests
 {
@@ -15,7 +15,7 @@ public class TopoDS_IteratorTests
 
     private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
-    private static TopoDS_Shape MakeBox(double dx, double dy, double dz) => TestShapes.Frozen(TestShapes.Box(dx, dy, dz));
+    private static TopoDS_Shape MakeBox(double dx, double dy, double dz) => new BRepPrimAPI_MakeBox(dx, dy, dz).Shape();
 
     [Fact]
     public void OCC30708_1_InitializeWithNullShape()
