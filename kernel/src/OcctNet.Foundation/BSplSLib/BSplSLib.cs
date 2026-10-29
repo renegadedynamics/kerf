@@ -76,7 +76,7 @@ public static partial class BSplSLib
         return MemoryMarshal.Cast<gp_Pnt, double>(theArray.AsSpan()).Slice(anOffset * 3);
     }
 
-    // OCCT's `(double*)&Weights(theRow, theCol)`.
+    // Stands for OCCT's `(double*)&Weights(theRow, theCol)`.
     private static ReadOnlySpan<double> valuesFrom(NCollection_Array2<double> theArray, int theRow, int theCol)
     {
         int anOffset = (theRow - theArray.LowerRow()) * theArray.RowLength() + (theCol - theArray.LowerCol());
@@ -3466,6 +3466,8 @@ public static partial class BSplSLib
 
         // find a ukk2 if symmetry
         ukk2 = ukk1;
+        // OCCT: when [UFirstIndex, ULastIndex] holds none of the poles acting at U, ukk1 stays 0 and the basis
+        // matrix is read out of range below (unchecked in OCCT's release build; the port throws Standard_OutOfRange)
         if ((ukk1 + 1) <= ULastIndex)
         {
             if (Math.Abs(UBSplineBasis[1, ukk1 - UFirstNonZeroBsplineIndex + 2] - maxValue) < 1.0e-10)
@@ -3503,6 +3505,7 @@ public static partial class BSplSLib
 
         // find a vkk2 if symmetry
         vkk2 = vkk1;
+        // OCCT: the same for V (see ukk1 above)
         if ((vkk1 + 1) <= VLastIndex)
         {
             if (Math.Abs(VBSplineBasis[1, vkk1 - VFirstNonZeroBsplineIndex + 2] - maxValue) < 1.0e-10)

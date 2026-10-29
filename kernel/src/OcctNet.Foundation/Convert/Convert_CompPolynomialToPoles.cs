@@ -196,7 +196,7 @@ public class Convert_CompPolynomialToPoles
         myFlatKnots = new NCollection_Array1<double>(1, num_flat_knots);
         BSplCLib.KnotSequence(myKnots, myMults, myDegree, false, myFlatKnots);
 
-        // OCCT uses stack buffers of 128 elements when they are large enough
+        // Where OCCT uses stack buffers of 128 elements (when large enough), the port allocates
         NCollection_Array1<double> parameters = new(1, num_poles);
         BSplCLib.BuildSchoenbergPoints(myDegree, myFlatKnots, parameters);
         myPoles = new NCollection_Array2<double>(1, num_poles, 1, Dimension);

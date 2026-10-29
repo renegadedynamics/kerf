@@ -36,3 +36,10 @@ angles), and say why.
   inputs valid; test invalid inputs in the unit tests instead.
 - Native results differ from the port's in the last bits mostly where transcendental functions are involved
   (`acos`, `asin`, `sin`, `cos`): MSVC's maths library and .NET's don't always round the same way.
+- When native OCCT computes an input itself (a Geom method that evaluates the curve first, like
+  MovePointAndTangent's `Geom_Curve::D1`), build the port's input with the same native call: `EvalDN` and `D1` can
+  differ in the last bit, and an ill-conditioned step magnifies it.
+- Mirror the native call path exactly: read the Geom (or adaptor) source to see which BSplCLib/BSplSLib function it
+  calls with which arguments (flat knots or knots with multiplicities, located span, periodic normalisation, the
+  rationality flags it derives), and call the port the same way. Done that way, the B-spline packages are
+  bit-identical.

@@ -107,8 +107,8 @@ internal static class Convert_PolynomialCosAndSin
 
         trim_min = 1.0e0 - trim_max;
         //
-        // OCCT wraps the same two-element buffers in the old and the new knots and multiplicities, so Trimming
-        // writes its result over its input; these views share storage in the same way.
+        // As in OCCT, which wraps the same two-element buffers in the old and the new knots and multiplicities, so
+        // Trimming writes its result over its input; these views share storage in the same way.
         NCollection_Array1<double> knot_array = NCollection_Array1<double>.From([0.0e0, 1.0e0], 0);
         NCollection_Array1<int> mults_array = NCollection_Array1<int>.From([degree + 1, degree + 1], 0);
 

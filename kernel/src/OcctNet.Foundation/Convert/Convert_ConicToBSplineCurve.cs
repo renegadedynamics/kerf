@@ -350,7 +350,7 @@ public class Convert_ConicToBSplineCurve
         Convert_CosAndSinEvalFunction? EvaluatorPtr = null;
 
         tgt_theta_flag = 0;
-        // OCCT leaves Degree unchanged for a parameterisation outside the enumeration
+        // Always assigned (decision 82), where OCCT leaves Degree unchanged for a parameterisation outside the enumeration
         Degree = 0;
 
         switch (Parameterisation)

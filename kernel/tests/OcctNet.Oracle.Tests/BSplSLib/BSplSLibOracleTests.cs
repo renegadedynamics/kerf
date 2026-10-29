@@ -702,5 +702,142 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
 
         anOracle.Report("BSplSLib on Bezier surfaces: D0, DN");
     }
+
+    /// <summary>
+    /// A parameter for the cache tests: inside the domain (GeomAdaptor_Surface evaluates exactly on its bounds through
+    /// LocalD1/LocalD2 instead of the cache), on an inner knot a third of the time, and shifted by a period of a
+    /// periodic surface now and then.
+    /// </summary>
+    private static double CacheParam(Oracle theOracle, NCollection_Array1<double> theKnots, bool thePeriodic)
+    {
+        double aFirst = theKnots[theKnots.Lower()], aLast = theKnots[theKnots.Upper()];
+        double aU = theKnots.Length() > 2 && theOracle.Int(0, 2) == 0
+                      ? theKnots[theOracle.Int(theKnots.Lower() + 1, theKnots.Upper() - 1)]
+                      : theOracle.Real(aFirst, aLast);
+        if (aU == aFirst || aU == aLast)
+        {
+            aU = 0.5 * (aFirst + aLast);
+        }
+
+        return thePeriodic && theOracle.Int(0, 4) == 0 ? aU + (aLast - aFirst) * theOracle.Int(-2, 2) : aU;
+    }
+
+    [Fact]
+    public void Cache_evaluation_through_GeomAdaptor()
+    {
+        // GeomAdaptor_Surface evaluates B-spline and Bezier surfaces through BSplSLib_Cache (GeomAdaptor_Surface.cxx,
+        // RebuildCache, EvalD0/D1/D2): one cache per adaptor, rebuilt when IsCacheValid says the span changed. The
+        // port's cache follows the same sequence of parameters, so it changes span exactly when native does.
+        var anOracle = new Oracle(output);
+        for (int i = 0; i < Cases; i++)
+        {
+            var S = new Surface(anOracle);
+            using N.Geom_BSplineSurface aNative = S.ToNative();
+            using var anAdaptor = new N.GeomAdaptor_Surface(aNative);
+            Rationality R = RationalityOf(aNative, S);
+            BSplSLib_Cache? aCache = null;
+            for (int j = 0; j < 40; j++)
+            {
+                double aU = CacheParam(anOracle, S.UKnots, S.UPeriodic), aV = CacheParam(anOracle, S.VKnots, S.VPeriodic);
+                if (aCache is null || !aCache.IsCacheValid(aU, aV))
+                {
+                    aCache ??= new BSplSLib_Cache(S.UDegree, S.UPeriodic, S.UFlatKnots, S.VDegree, S.VPeriodic, S.VFlatKnots,
+                                                  R.Weights);
+                    aCache.BuildCache(aU, aV, S.UFlatKnots, S.VFlatKnots, S.Poles, R.Weights);
+                }
+
+                switch (j % 3)
+                {
+                    case 0:
+                        {
+                            aCache.D0(aU, aV, out gp_Pnt aP);
+                            using N.gp_Pnt aNP = anAdaptor.EvalD0(aU, aV);
+                            anOracle.Same(aNP, aP, "Cache D0");
+                            break;
+                        }
+                    case 1:
+                        {
+                            aCache.D1(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                            using var aNP = new N.gp_Pnt(0, 0, 0);
+                            using var aNDU = new N.gp_Vec(0, 0, 0);
+                            using var aNDV = new N.gp_Vec(0, 0, 0);
+                            anAdaptor.D1(aU, aV, aNP, aNDU, aNDV);
+                            anOracle.Same(aNP, aP, "Cache D1 P");
+                            anOracle.Same(aNDU, aDU, "Cache D1 U");
+                            anOracle.Same(aNDV, aDV, "Cache D1 V");
+                            break;
+                        }
+                    default:
+                        {
+                            aCache.D2(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV, out gp_Vec aDUU, out gp_Vec aDVV,
+                                      out gp_Vec aDUV);
+                            using var aNP = new N.gp_Pnt(0, 0, 0);
+                            using var aNDU = new N.gp_Vec(0, 0, 0);
+                            using var aNDV = new N.gp_Vec(0, 0, 0);
+                            using var aNDUU = new N.gp_Vec(0, 0, 0);
+                            using var aNDVV = new N.gp_Vec(0, 0, 0);
+                            using var aNDUV = new N.gp_Vec(0, 0, 0);
+                            anAdaptor.D2(aU, aV, aNP, aNDU, aNDV, aNDUU, aNDVV, aNDUV);
+                            anOracle.Same(aNP, aP, "Cache D2 P");
+                            anOracle.Same(aNDU, aDU, "Cache D2 U");
+                            anOracle.Same(aNDV, aDV, "Cache D2 V");
+                            anOracle.Same(aNDUU, aDUU, "Cache D2 UU");
+                            anOracle.Same(aNDVV, aDVV, "Cache D2 VV");
+                            anOracle.Same(aNDUV, aDUV, "Cache D2 UV");
+                            break;
+                        }
+                }
+            }
+        }
+
+        // Bezier surfaces: the cache is built once, on flat Bezier knots, and never rebuilt
+        for (int i = 0; i < CasesBezier; i++)
+        {
+            int aUDegree = anOracle.Int(1, 12), aVDegree = anOracle.Int(1, 12);
+            bool isRational = anOracle.Int(0, 1) == 1;
+            var aPoles = new NCollection_Array2<gp_Pnt>(1, aUDegree + 1, 1, aVDegree + 1);
+            var aWeights = new NCollection_Array2<double>(1, aUDegree + 1, 1, aVDegree + 1);
+            for (int r = 1; r <= aUDegree + 1; r++)
+            {
+                for (int c = 1; c <= aVDegree + 1; c++)
+                {
+                    aPoles[r, c] = new gp_Pnt(anOracle.Real(0, 1), anOracle.Real(0, 1), anOracle.Real(0, 1));
+                    aWeights[r, c] = isRational ? anOracle.Real(0.5, 1.5) : 1.0;
+                }
+            }
+
+            using N.TColgp_Array2OfPnt aNPoles = Oracle.ToNative(aPoles);
+            using N.TColStd_Array2OfReal aNWeights = Oracle.ToNative(aWeights);
+            using N.Geom_BezierSurface aNative = isRational ? new N.Geom_BezierSurface(aNPoles, aNWeights) : new N.Geom_BezierSurface(aNPoles);
+            using var anAdaptor = new N.GeomAdaptor_Surface(aNative);
+            NCollection_Array2<double>? aW = aNative.IsURational() || aNative.IsVRational() ? aWeights : null;
+            NCollection_Array1<double> aFlatKnotsU = NCollection_Array1<double>.From(Occt.BSplCLib.FlatBezierKnots(aUDegree));
+            NCollection_Array1<double> aFlatKnotsV = NCollection_Array1<double>.From(Occt.BSplCLib.FlatBezierKnots(aVDegree));
+            BSplSLib_Cache? aCache = null;
+            for (int j = 0; j < 30; j++)
+            {
+                double aU = anOracle.Real(0, 1), aV = anOracle.Real(0, 1);
+                if (aCache is null)
+                {
+                    aCache = new BSplSLib_Cache(aUDegree, false, aFlatKnotsU, aVDegree, false, aFlatKnotsV, aW);
+                    aCache.BuildCache(aU, aV, aFlatKnotsU, aFlatKnotsV, aPoles, aW);
+                }
+
+                aCache.D1(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                using var aNP = new N.gp_Pnt(0, 0, 0);
+                using var aNDU = new N.gp_Vec(0, 0, 0);
+                using var aNDV = new N.gp_Vec(0, 0, 0);
+                anAdaptor.D1(aU, aV, aNP, aNDU, aNDV);
+                anOracle.Same(aNP, aP, "Bezier cache D1 P");
+                anOracle.Same(aNDU, aDU, "Bezier cache D1 U");
+                anOracle.Same(aNDV, aDV, "Bezier cache D1 V");
+                aCache.D0(aU, aV, out gp_Pnt aP0);
+                using N.gp_Pnt aNP0 = anAdaptor.EvalD0(aU, aV);
+                anOracle.Same(aNP0, aP0, "Bezier cache D0");
+            }
+        }
+
+        anOracle.Report("BSplSLib_Cache through GeomAdaptor_Surface: D0, D1, D2");
+    }
 }
 #endif
