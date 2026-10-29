@@ -347,3 +347,18 @@ Phase 4 (part): mesh foundations and data model (unit 4A).
   tests of the data model, the parameters, the shape tools and the copy for write; an oracle of GeomTool and Deflection
   against native OCCT's free-edge polygons (300 edges, 6,126 points, every count equal, values within 5e-15 through
   BRep text).
+
+Phase 4 (part): the discrete model and edge discretisation (unit 4C).
+
+- `OcctNet.ModelingAlgorithms`: BRepMesh_ShapeVisitor and BRepMesh_ModelBuilder (the discrete model of a shape, each
+  face's wires ordered by ShapeAnalysis_Wire, the outer one first), BRepMesh_CurveTessellator and
+  BRepMesh_EdgeTessellationExtractor, BRepMesh_EdgeDiscret (edges tessellated, or read back from polygons that fit),
+  BRepMesh_FaceChecker and BRepMesh_ModelHealer (gaps closed, self-intersecting edges refined), BRepMesh_ModelPreProcessor
+  (meshes reused or outdated, cone seams split) and BRepMesh_ModelPostProcessor (polygons, deflections and parameters
+  stored); BRepMesh_ConeRangeSplitter, which the pre-processor uses. Their parallel loops give the serial result bit for
+  bit; they write into a shape only through BRepMesh_ShapeTool, and never into a frozen one (the mesher copies first).
+- Tests: unit tests of the model (faces, wires, edges, pcurves and orientations on primitives and data/occ shapes), the
+  edges' polygons (reused from meshes the shapes carry, outdated ones removed from a copy), the healer, the cone seams,
+  the post-processor through BRepMesh_IncrementalMesh with a stub face mesher, and parallel against serial; an oracle
+  against native BRepMesh_IncrementalMesh's edge polygons on data/occ, random primitives and re-meshed shapes: every
+  polygon has the port's points, 47,851 inner nodes bit for bit, parameters within the 15 digits of BRep text.

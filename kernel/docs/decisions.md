@@ -4787,3 +4787,95 @@ Numbers from 4101 are placeholders, renumbered on merge. Plan decisions are cite
       BRepMesh_GeomTool is a sealed working class, its `double (&)[2]` a `Span<double>` and `IntSegSeg`'s point `ref`
       (written only on some paths). `BRepMesh_ShapeTool.AddInFace` takes the triangulation by value (OCCT passes the
       handle by reference without changing it).
+
+## Phase 4: unit 4C, model and edges
+
+The discrete model and the edges' discretisation, in OcctNet.ModelingAlgorithms/BRepMesh: BRepMesh_ShapeVisitor,
+ModelBuilder, CurveTessellator, EdgeTessellationExtractor, EdgeDiscret, FaceChecker, ModelHealer, ModelPreProcessor,
+ModelPostProcessor, and BRepMesh_ConeRangeSplitter. Numbers from 4501 are placeholders, renumbered on merge; merged
+decisions are cited by their real numbers.
+
+4501. **Placement.** The nine classes are public, as OCCT's: working objects (decision 21) deriving from IMeshTools'
+      bases. **BRepMesh_ConeRangeSplitter comes with 4C**, not 4D: ModelPreProcessor's seam amplifier takes its steps.
+      4D's other range splitters derive from BRepMesh_DefaultRangeSplitter beside it. The anonymous-namespace functors
+      (EdgeAmplifier, SegmentsFiller, BndBox2dTreeSelector, TriangulationConsistency, SeamEdgeAmplifier,
+      PolygonCommitter, DeflectionEstimator) are private nested classes whose `Process` method is the functor, passed to
+      `OSD_Parallel.For`/`ForEach` as a method group with OCCT's sequential flag, including the post-processor's forced
+      `true` (decision 487). The pre-processor's `splitCurve` template is two overloads (3D curve, pcurve).
+4502. **References OCCT keeps.**
+      - CurveTessellator and FaceChecker hold `const IMeshTools_Parameters&`; the port copies the struct, which the
+        caller doesn't change while they live (the healer passes its own copy, MinSize set to Precision::Confusion).
+      - FaceChecker's `Segment` keeps the pcurve's two points by value, not as `gp_Pnt2d*`: the checker only reads them
+        and nothing writes the pcurves while it runs.
+      - ModelHealer's `gp_Pnt2d*` into pcurves is a private `PntRef` (the pcurve and the point's index): equal when OCCT's
+        pointers are (a one-point pcurve's first and last points are the same point), written through
+        `GetPoint(index)`. A `ref` from `GetPoint` is never held across an insertion (decision 527).
+      - BRepMesh_ModelBuilder starts `aMaxSize` at 0 where OCCT leaves it uninitialised (the box is never void there).
+4503. **The parallel audit (decision 490, phase4-plan 2.2).** No loop body of 4C evaluates an adaptor another body
+      evaluates, so no shallow copies are needed.
+      - EdgeDiscret's edges and the healer's amplified edges: each body writes only its discrete edge (flags,
+        deflections, 3D curve, all its pcurves). CurveTessellator, EdgeTessellationExtractor and
+        BRepMesh_EdgeParameterProvider each build their own BRepAdaptor_Curve (and its surface), as does
+        CheckAndUpdateFlags. Faces are only read (an outer wire's edge count).
+      - The healer's faces: each body writes the points of the pcurves on its face (each discrete pcurve belongs to one
+        face), the face's and its wires' statuses and deflections, and its own slot of the map from faces to
+        intersecting edges. All keys are bound before the loop; the body's `ChangeFind` is a lookup through
+        `CollectionsMarshal`, which writes no map structure. FaceChecker's nested wire loop writes one slot per wire.
+      - The pre-processor's faces: a body writes its face's status and deflection, and the seam edge of its cone (its 3D
+        curve and its two pcurves on that face). The face's shared `BRepAdaptor_Surface` (IMeshData_Face) is evaluated
+        only by that face's body (the cone test and BRepMesh_ConeRangeSplitter).
+      - The post-processor's faces: BRepLib.UpdateDeflection writes the face's own unfrozen triangulation; all faces
+        share one immutable Poly_TriangulationParameters, as OCCT does.
+      - **Address order.** The healer's face map and its edge and face sets iterate in insertion order where OCCT's
+        iterate by address; every body is independent of the others, and FaceChecker's result is a set, so the order
+        can't change the result. No occt-issues entry.
+      - Tested: every data/occ file under 600 KB, the primitives and built faces, two parameter sets: the parallel model
+        (twice, and under `ForceSerialScope`) dumps bit for bit as the serial one.
+4504. **Exceptions.** Per-edge (EdgeDiscret) and per-face (ModelHealer) catches use
+      `IMeshTools_ModelAlgo.IsCaughtFailure` (decision 529). EdgeTessellationExtractor dereferences a missing polygon
+      as OCCT does: a NullReferenceException, caught where OCCT's access violation would be.
+4505. **Writing into shapes** (decisions 488, 489).
+      - ShapeVisitor, ModelBuilder, EdgeDiscret, FaceChecker and ModelHealer only read the shape; ShapeVisitor's
+        `BRepTools.Update(face)` does nothing on a frozen face. On a frozen shape whose meshes fit, the whole chain
+        reuses them and writes nothing (unit test).
+      - ModelPreProcessor removes outdated triangulations and polygons, and ModelPostProcessor stores the new ones, only
+        through BRepMesh_ShapeTool's non-freezing attach. On a frozen (or locked) input they throw
+        Standard_ImmutableObject or TopoDS_LockedShape, which no mesher catch swallows: the caller meshes
+        `BRepTools.ExactCopyForWrite` of it, as BRepMesh_IncrementalMesh does.
+      - The post-processor calls the internal `BRepLib.UpdateDeflection(face)` and `Poly_Triangulation.Parameters` on
+        the mesher's own unfrozen triangulation, in place (no copy). Faces marked Reused (and Failure) are skipped, so a
+        reused, frozen triangulation is never written.
+      - Polygons on triangulations no face holds (stale ones in some data/occ files) stay, as in OCCT: the pre-processor
+        removes the polygons on the outdated faces' triangulations only.
+4506. **Tests.**
+      - Unit (`tests/OcctNet.ModelingAlgorithms.Tests/BRepMesh/BRepMeshModelTests.cs`, 21 tests, with `BRepMeshModelKit`:
+        the chain as BRepMesh_Context runs it, a stub fan face mesher, a bit-exact model dump): the box's faces, wires,
+        edges, pcurves and orientations, ordered wires; seams and degenerated edges; outer wire first; free edges and
+        the max size; empty shape; frozen inputs only read; data/occ models with all their edges; straight and circular
+        edges (sagitta within half the deflection); polygons on triangulation read back and their faces reused, without
+        writes; outdated meshes removed from a copy, the frozen input throwing; the healer's gap fix, the amplification
+        of two intersecting polygons (a hole 0.01 from a disk's rim) and the failure of a bow tie; OCCT's missed
+        crossing along reversed edges; cone seams split; the post-processor through BRepMesh_IncrementalMesh (frozen
+        polygons and triangulations with deflection and parameters; re-meshing with the same parameters gives back the
+        result itself, a finer deflection replaces the meshes); the seam polygons' order; parallel against serial.
+      - OCCT's healer examples aren't available: OCC428.brep (bugs/moddata_2/bug428) and the `mesh standard C7` data
+        (shading_025.brep) are missing from the public dataset. The healer is tested on built faces instead.
+      - Oracle (`tests/OcctNet.Oracle.Tests/BRepMesh/BRepMeshEdgeDiscretOracleTests.cs`): native
+        BRepMesh_IncrementalMesh's edge polygons are the model's discrete pcurves and curves after EdgeDiscret,
+        ModelHealer and ModelPreProcessor (4D's face algorithms only number the boundary points), so 4C's model is
+        compared now, on native F1 and F2 (decision 494): data/occ files under 1 MB and 60 random primitives, each at a
+        relative 0.05 and an absolute 0.4% of its size; and 8 data/occ files meshed natively, then again coarser, equal
+        and finer. Every polygon on triangulation (9,041) and every 3D polygon (5,658) has the port's point count,
+        parameters within 5e-15 (BRep text's 15 digits) and the edge's deflection; the inner nodes are bit for bit the
+        native triangulation's, read through the binding (the port's points moved as AddInFace moves them): 47,851
+        nodes. The faces the port reuses keep their meshes natively (1,905 pcurves). Edge ends aren't compared node for
+        node: 4D's face mesher merges them in UV with the first node registered there.
+4507. **For unit 4D.**
+      - BRepMesh_Context chains 4C's tools: BRepMesh_ModelBuilder, EdgeDiscret, ModelHealer, ModelPreProcessor, the
+        face discretiser, then ModelPostProcessor; BRepMesh_IncrementalMesh's `newDefaultContext` returns it.
+      - The face algorithms register the pcurves' points (BaseMeshAlgo::initDataStructure sets `GetIndex`) and must not
+        hold a `ref` from GetPoint or GetIndex across an insertion. They mesh only faces that are neither Reused nor
+        Failure; the post-processor skips those.
+      - BRepMesh_ConeRangeSplitter is ported: its `GetSplitSteps` returns `(first, second)` with an `out` step count.
+      - The oracle milestone can extend `BRepMeshEdgeDiscretOracleTests`: the same F1 and F2 pairs, comparing whole
+        triangulations through the binding; the boundary's nodes and parameters already agree.
