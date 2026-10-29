@@ -402,15 +402,15 @@ public class Geom2d_BezierCurve_Test
     public void WeightsArray_NonRational_ReturnsUnitWeights()
     {
         Assert.False(myOriginalCurve.IsRational());
-        // The array itself is reached through the internal WeightsArrayRef() (decision 131)
-        NCollection_Array1<double> aWeights = myOriginalCurve.WeightsArrayRef();
+        // The array itself is reached through the internal InternalWeightsArray() (decision 131)
+        NCollection_Array1<double> aWeights = myOriginalCurve.InternalWeightsArray();
         Assert.Equal(myOriginalCurve.NbPoles(), aWeights.Length());
         Assert.False(aWeights.IsDeletable());
         for (int i = 1; i <= aWeights.Length(); ++i)
         {
             Assert.Equal(1.0, aWeights[i]);
         }
-        Assert.Same(aWeights, myOriginalCurve.WeightsArrayRef());
+        Assert.Same(aWeights, myOriginalCurve.InternalWeightsArray());
     }
 
     [Fact]
@@ -419,12 +419,12 @@ public class Geom2d_BezierCurve_Test
         Geom2d_BezierCurve aRational = new Geom2d_BezierCurve(Poles3(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 1), new gp_Pnt2d(2, 0)),
                                                               Weights3(1.0, 2.0, 1.0));
         Assert.True(aRational.IsRational());
-        NCollection_Array1<double> aWeights = aRational.WeightsArrayRef();
+        NCollection_Array1<double> aWeights = aRational.InternalWeightsArray();
         Assert.Equal(3, aWeights.Length());
         Assert.True(aWeights.IsDeletable());
         Assert.Equal(1.0, aWeights[1]);
         Assert.Equal(2.0, aWeights[2]);
         Assert.Equal(1.0, aWeights[3]);
-        Assert.Same(aWeights, aRational.WeightsArrayRef());
+        Assert.Same(aWeights, aRational.InternalWeightsArray());
     }
 }

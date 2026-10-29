@@ -33,37 +33,6 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
     private static gp_XYZ FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
-    private static N.TColgp_Array1OfPnt ToNative(NCollection_Array1<gp_Pnt> theA)
-    {
-        var aN = new N.TColgp_Array1OfPnt(theA.Lower(), theA.Upper());
-        for (int i = theA.Lower(); i <= theA.Upper(); i++)
-        {
-            using var aP = Oracle.ToNative(theA[i]);
-            aN.SetValue(i, aP);
-        }
-        return aN;
-    }
-
-    private static N.TColStd_Array1OfReal ToNative(NCollection_Array1<double> theA)
-    {
-        var aN = new N.TColStd_Array1OfReal(theA.Lower(), theA.Upper());
-        for (int i = theA.Lower(); i <= theA.Upper(); i++)
-        {
-            aN.SetValue(i, theA[i]);
-        }
-        return aN;
-    }
-
-    private static N.TColStd_Array1OfInteger ToNative(NCollection_Array1<int> theA)
-    {
-        var aN = new N.TColStd_Array1OfInteger(theA.Lower(), theA.Upper());
-        for (int i = theA.Lower(); i <= theA.Upper(); i++)
-        {
-            aN.SetValue(i, theA[i]);
-        }
-        return aN;
-    }
-
     private static Exception? Catch(Action theAction)
     {
         try
@@ -332,18 +301,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             ? new Geom_BSplineCurve(Poles, Knots, Mults, Degree, Periodic)
             : new Geom_BSplineCurve(Poles, Weights, Knots, Mults, Degree, Periodic);
 
-        public N.Geom_BSplineCurve Native()
-        {
-            using var aP = ToNative(Poles);
-            using var aK = ToNative(Knots);
-            using var aM = ToNative(Mults);
-            if (Weights is null)
-            {
-                return new N.Geom_BSplineCurve(aP, aK, aM, Degree, Periodic);
-            }
-            using var aW = ToNative(Weights);
-            return new N.Geom_BSplineCurve(aP, aW, aK, aM, Degree, Periodic);
-        }
+        public N.Geom_BSplineCurve Native() => Oracle.ToNativeCurve(Poles, Weights, Knots, Mults, Degree, Periodic);
     }
 
     /// <summary>
@@ -409,7 +367,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             aPoles[i] = theO.Pnt();
         }
-        using var aNPoles = ToNative(aPoles);
+        using var aNPoles = Oracle.ToNative(aPoles);
         if (theO.Int(0, 1) == 0)
         {
             return (new N.Geom_BezierCurve(aNPoles), new Geom_BezierCurve(aPoles));
@@ -419,7 +377,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             aWeights[i] = theO.Real(0.5, 2);
         }
-        using var aNWeights = ToNative(aWeights);
+        using var aNWeights = Oracle.ToNative(aWeights);
         return (new N.Geom_BezierCurve(aNPoles, aNWeights), new Geom_BezierCurve(aPoles, aWeights));
     }
 
@@ -931,8 +889,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         var aK = NCollection_Array1<double>.From([Math.Min(u1, u2), Math.Max(u1, u2)]);
                         var aM = NCollection_Array1<int>.From([anOracle.Int(1, aDeg), anOracle.Int(1, aDeg)]);
                         bool anAdd = anOracle.Int(0, 1) == 0;
-                        using var aNK = ToNative(aK);
-                        using var aNM = ToNative(aM);
+                        using var aNK = Oracle.ToNative(aK);
+                        using var aNM = Oracle.ToNative(aM);
                         aWhat = $"InsertKnots(.., {anAdd})";
                         aNE = Catch(() => aN.InsertKnots(aNK, aNM, 0.0, anAdd));
                         aPE = Catch(() => aNext = aP.KnotsInserted(aK, aM, 0.0, anAdd));
@@ -1247,7 +1205,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             double a = anOracle.Real(1, 10), h = anOracle.Real(1, 10);
             var aPoles = NCollection_Array1<gp_Pnt>.From([new gp_Pnt(0, 0, 0), new gp_Pnt(a, h, 0), new gp_Pnt(0, h, 0), new gp_Pnt(a, 0, 0)]);
-            using var aNPoles = ToNative(aPoles);
+            using var aNPoles = Oracle.ToNative(aPoles);
             using var aNB = new N.Geom_BezierCurve(aNPoles);
             var aPB = new Geom_BezierCurve(aPoles);
             gp_Dir aDir = new(0, 0, 1);

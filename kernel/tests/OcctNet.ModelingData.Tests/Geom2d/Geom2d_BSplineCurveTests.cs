@@ -417,8 +417,8 @@ public class Geom2d_BSplineCurve_Test
     public void WeightsArray_NonRational_ReturnsUnitWeights()
     {
         Assert.False(myOriginalCurve.IsRational());
-        // The array itself is reached through the internal WeightsArrayRef() (decision 131)
-        NCollection_Array1<double> aWeights = myOriginalCurve.WeightsArrayRef();
+        // The array itself is reached through the internal InternalWeightsArray() (decision 131)
+        NCollection_Array1<double> aWeights = myOriginalCurve.InternalWeightsArray();
         Assert.Equal(myOriginalCurve.NbPoles(), aWeights.Length());
         Assert.False(aWeights.IsDeletable());
         for (int i = 1; i <= aWeights.Length(); ++i)
@@ -426,7 +426,7 @@ public class Geom2d_BSplineCurve_Test
             Assert.Equal(1.0, aWeights[i]);
         }
         // Verify that the reference is stable
-        Assert.Same(aWeights, myOriginalCurve.WeightsArrayRef());
+        Assert.Same(aWeights, myOriginalCurve.InternalWeightsArray());
     }
 
     [Fact]
@@ -445,7 +445,7 @@ public class Geom2d_BSplineCurve_Test
         aWeightsIn[4] = 1.0;
         Geom2d_BSplineCurve aRational = new Geom2d_BSplineCurve(aPoles, aWeightsIn, Knots01(), Mults(4, 4), 3);
         Assert.True(aRational.IsRational());
-        NCollection_Array1<double> aWeights = aRational.WeightsArrayRef();
+        NCollection_Array1<double> aWeights = aRational.InternalWeightsArray();
         Assert.Equal(4, aWeights.Length());
         Assert.True(aWeights.IsDeletable());
         Assert.Equal(1.0, aWeights[1]);
@@ -453,6 +453,6 @@ public class Geom2d_BSplineCurve_Test
         Assert.Equal(3.0, aWeights[3]);
         Assert.Equal(1.0, aWeights[4]);
         // Verify that the reference is stable
-        Assert.Same(aWeights, aRational.WeightsArrayRef());
+        Assert.Same(aWeights, aRational.InternalWeightsArray());
     }
 }

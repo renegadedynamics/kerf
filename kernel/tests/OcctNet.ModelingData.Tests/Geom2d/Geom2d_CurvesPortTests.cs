@@ -366,14 +366,14 @@ public class Geom2d_CurvesPortTest
     {
         Geom2d_BSplineCurve aCurve = RationalBSpline();
 
-        Assert.Equal(aCurve.PolesRef().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
-        Assert.Equal(aCurve.KnotsRef().AsSpan().ToArray(), aCurve.Knots().AsSpan().ToArray());
-        Assert.Equal(aCurve.MultiplicitiesRef().AsSpan().ToArray(), aCurve.Multiplicities().AsSpan().ToArray());
-        Assert.Equal(aCurve.KnotSequenceRef().AsSpan().ToArray(), aCurve.KnotSequence().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalKnots().AsSpan().ToArray(), aCurve.Knots().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalMultiplicities().AsSpan().ToArray(), aCurve.Multiplicities().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalKnotSequence().AsSpan().ToArray(), aCurve.KnotSequence().AsSpan().ToArray());
         PackedList<double>? aWeights = aCurve.Weights();
         Assert.NotNull(aWeights);
-        Assert.Equal(aCurve.WeightsRef()!.AsSpan().ToArray(), aWeights.AsSpan().ToArray());
-        Assert.Equal(aCurve.WeightsArrayRef().AsSpan().ToArray(), aCurve.WeightsArray().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalWeights()!.AsSpan().ToArray(), aWeights.AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalWeightsArray().AsSpan().ToArray(), aCurve.WeightsArray().AsSpan().ToArray());
 
         // A later internal change doesn't reach a list handed out before it
         PackedList<gp_Pnt2d> aPoles = aCurve.Poles();
@@ -387,7 +387,7 @@ public class Geom2d_CurvesPortTest
         // Non-rational: Weights() is null, WeightsArray() is ones
         Geom2d_BSplineCurve aPlain = CubicBSpline();
         Assert.Null(aPlain.Weights());
-        Assert.Null(aPlain.WeightsRef());
+        Assert.Null(aPlain.InternalWeights());
         Assert.All(aPlain.WeightsArray().AsSpan().ToArray(), w => Assert.Equal(1.0, w));
         Assert.Equal(aPlain.NbPoles(), aPlain.WeightsArray().Count);
     }
@@ -397,7 +397,7 @@ public class Geom2d_CurvesPortTest
     {
         Geom2d_BezierCurve aCurve = new Geom2d_BezierCurve(Arr(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 1), new gp_Pnt2d(2, 0)),
                                                            Arr(1.0, 2.0, 1.0));
-        Assert.Equal(aCurve.PolesRef().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
         Assert.Equal(new[] { 0.0, 1.0 }, aCurve.Knots().AsSpan().ToArray());
         Assert.Equal(new[] { 3, 3 }, aCurve.Multiplicities().AsSpan().ToArray());
         Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, aCurve.KnotSequence().AsSpan().ToArray());
@@ -480,10 +480,10 @@ public class Geom2d_CurvesPortTest
         NCollection_Array1<double> aKnots = Arr(0.0, 1.0, 2.0, 3.0, 4.0);
         NCollection_Array1<int> aMults = Arr(4, 2, 2, 2, 2);
         Geom2d_BSplineCurve aCurve = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
-        Assert.Equal(BSplCLib.NbPoles(3, false, aCurve.MultiplicitiesRef()), aCurve.NbPoles());
+        Assert.Equal(BSplCLib.NbPoles(3, false, aCurve.InternalMultiplicities()), aCurve.NbPoles());
 
         aCurve.IncreaseDegree(4);
-        int anExpected = BSplCLib.NbPoles(aCurve.Degree(), false, aCurve.MultiplicitiesRef());
+        int anExpected = BSplCLib.NbPoles(aCurve.Degree(), false, aCurve.InternalMultiplicities());
         myOutput.WriteLine($"after IncreaseDegree(4): {aCurve.NbPoles()} poles, multiplicities "
                            + $"[{string.Join(", ", aCurve.Multiplicities())}] need {anExpected}");
         // OCCT: the pole count doesn't match the multiplicities

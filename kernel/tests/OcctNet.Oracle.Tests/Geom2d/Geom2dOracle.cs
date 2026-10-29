@@ -203,43 +203,13 @@ internal static class Geom2dOracle
                                              theSpec.Degree, theSpec.Periodic);
     }
 
-    public static N.TColStd_Array1OfReal ToNative(ReadOnlySpan<double> theValues)
-    {
-        var anArr = new N.TColStd_Array1OfReal(1, theValues.Length);
-        for (int i = 0; i < theValues.Length; i++)
-        {
-            anArr.SetValue(i + 1, theValues[i]);
-        }
-        return anArr;
-    }
-
-    public static N.TColStd_Array1OfInteger ToNative(ReadOnlySpan<int> theValues)
-    {
-        var anArr = new N.TColStd_Array1OfInteger(1, theValues.Length);
-        for (int i = 0; i < theValues.Length; i++)
-        {
-            anArr.SetValue(i + 1, theValues[i]);
-        }
-        return anArr;
-    }
-
-    public static N.Geom2d_BSplineCurve ToNative(BSplineSpec theSpec)
-    {
-        using var aPoles = new N.TColgp_Array1OfPnt2d(1, theSpec.Poles.Length);
-        for (int i = 0; i < theSpec.Poles.Length; i++)
-        {
-            using var aP = Oracle.ToNative(theSpec.Poles[i]);
-            aPoles.SetValue(i + 1, aP);
-        }
-        using var aKnots = ToNative(theSpec.Knots);
-        using var aMults = ToNative(theSpec.Mults);
-        if (theSpec.Weights is null)
-        {
-            return new N.Geom2d_BSplineCurve(aPoles, aKnots, aMults, theSpec.Degree, theSpec.Periodic);
-        }
-        using var aWeights = ToNative(theSpec.Weights);
-        return new N.Geom2d_BSplineCurve(aPoles, aWeights, aKnots, aMults, theSpec.Degree, theSpec.Periodic);
-    }
+    public static N.Geom2d_BSplineCurve ToNative(BSplineSpec theSpec) =>
+        Oracle.ToNativeCurve(NCollection_Array1<gp_Pnt2d>.From(theSpec.Poles),
+                             theSpec.Weights is null ? null : NCollection_Array1<double>.From(theSpec.Weights),
+                             NCollection_Array1<double>.From(theSpec.Knots),
+                             NCollection_Array1<int>.From(theSpec.Mults),
+                             theSpec.Degree,
+                             theSpec.Periodic);
 
     /// <summary>Compares the whole definition: degree, flags, poles, weights, knots, multiplicities, flat knots.</summary>
     public static void SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, Geom2d_BSplineCurve thePort, string theWhat)
@@ -286,7 +256,7 @@ internal static class Geom2dOracle
         {
             PackedList<double> aSeq = thePort.KnotSequence();
             theOracle.Same(aNSeq.Length(), aSeq.Count, $"{theWhat} KnotSequence length");
-            theOracle.Same(aNSeq.Lower(), thePort.KnotSequenceRef().Lower(), $"{theWhat} KnotSequence lower");
+            theOracle.Same(aNSeq.Lower(), thePort.InternalKnotSequence().Lower(), $"{theWhat} KnotSequence lower");
             for (int i = 0; i < aSeq.Count; i++)
             {
                 theOracle.Same(aNSeq.Value(aNSeq.Lower() + i), aSeq[i], $"{theWhat} KnotSequence({i})");

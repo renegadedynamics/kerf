@@ -15,7 +15,8 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// The evaluation representation (<see cref="HasEvalRepresentation"/>) is set by <see cref="WithEvalRepresentation"/>,
-/// which stores a copy of the descriptor.
+/// which stores a copy of the descriptor. <see cref="BasisCurve"/> returns the stored basis curve frozen, as OCCT
+/// returns its handle; this curve's internal mutators then copy the basis curve before changing it (decision 127).
 /// </remarks>
 public class Geom_OffsetCurve : Geom_Curve
 {
@@ -75,11 +76,21 @@ public class Geom_OffsetCurve : Geom_Curve
         SetBasisCurve(theCurve, isTheNotCheckC0);
     }
 
+    // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
+    private void ownBasisCurve()
+    {
+        if (basisCurve.IsFrozen())
+        {
+            basisCurve = (Geom_Curve)basisCurve.Copy();
+        }
+    }
+
     /// <summary>Reverses the basis curve and the sign of the offset.</summary>
     protected internal sealed override void Reverse()
     {
         CheckMutable();
         ClearEvalRepresentation();
+        ownBasisCurve();
         basisCurve.Reverse();
         offsetValue = -offsetValue;
     }
@@ -182,11 +193,12 @@ public class Geom_OffsetCurve : Geom_Curve
         }
     }
 
-    /// <summary>
-    /// The basis curve, not a copy, as in OCCT. Callers can't change it (its mutators are internal); code inside
-    /// OCCT.NET that changes it changes this offset curve.
-    /// </summary>
-    public Geom_Curve BasisCurve() => basisCurve;
+    /// <summary>The basis curve, frozen (it is shared with this offset curve; decision 127).</summary>
+    public Geom_Curve BasisCurve()
+    {
+        basisCurve.Freeze();
+        return basisCurve;
+    }
 
     /// <summary>The continuity of the basis curve lowered by one (C1 gives C0, G1 and G2 are kept).</summary>
     public sealed override GeomAbs_Shape Continuity()
@@ -398,6 +410,7 @@ public class Geom_OffsetCurve : Geom_Curve
     {
         CheckMutable();
         ClearEvalRepresentation();
+        ownBasisCurve();
         basisCurve.Transform(T);
         direction.Transform(T);
         offsetValue *= T.ScaleFactor();
@@ -442,6 +455,14 @@ public class Geom_OffsetCurve : Geom_Curve
         GeomEval_RepUtils.ValidateCurveDesc(theDesc, this);
         Geom_OffsetCurve aCopy = (Geom_OffsetCurve)Copy();
         aCopy.SetEvalRepresentation(GeomEval_RepUtils.CloneCurveDesc(theDesc));
+        return aCopy;
+    }
+
+    /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
+    public Geom_OffsetCurve WithoutEvalRepresentation()
+    {
+        Geom_OffsetCurve aCopy = (Geom_OffsetCurve)Copy();
+        aCopy.ClearEvalRepresentation();
         return aCopy;
     }
 }

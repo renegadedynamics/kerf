@@ -11,6 +11,10 @@ namespace Occt;
 /// basis curve (a trimmed basis is replaced by its own basis). The derivatives have the orientation of the
 /// basis curve.
 /// </summary>
+/// <remarks>
+/// <see cref="BasisCurve"/> returns the stored copy frozen, as OCCT returns its handle; this curve's internal
+/// mutators then copy the basis curve again before changing it (decision 127).
+/// </remarks>
 public class Geom_TrimmedCurve : Geom_BoundedCurve
 {
     private Geom_Curve basisCurve;
@@ -31,7 +35,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
         Geom_TrimmedCurve? T = C as Geom_TrimmedCurve;
         if (T is not null)
         {
-            basisCurve = (Geom_Curve)T.BasisCurve().Copy();
+            basisCurve = (Geom_Curve)T.basisCurve.Copy(); // OCCT.NET: the field, so that T's basis curve isn't frozen
         }
         else
         {
@@ -47,6 +51,15 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
         return Tc;
     }
 
+    // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
+    private void ownBasisCurve()
+    {
+        if (basisCurve.IsFrozen())
+        {
+            basisCurve = (Geom_Curve)basisCurve.Copy();
+        }
+    }
+
     /// <summary>
     /// Reverses the orientation: the basis curve is reversed and the trim parameters are recomputed
     /// (1 - U2 and 1 - U1 for a basis on [0, 1]).
@@ -54,6 +67,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     protected internal sealed override void Reverse()
     {
         CheckMutable();
+        ownBasisCurve();
         double U1 = basisCurve.ReversedParameter(uTrim2);
         double U2 = basisCurve.ReversedParameter(uTrim1);
         basisCurve.Reverse();
@@ -161,11 +175,12 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
 
     public sealed override GeomAbs_Shape Continuity() => basisCurve.Continuity();
 
-    /// <summary>
-    /// The basis curve, not a copy, as in OCCT. Callers can't change it (its mutators are internal); code inside
-    /// OCCT.NET that changes it changes this trimmed curve.
-    /// </summary>
-    public Geom_Curve BasisCurve() => basisCurve;
+    /// <summary>The basis curve, frozen (it is shared with this trimmed curve; decision 127).</summary>
+    public Geom_Curve BasisCurve()
+    {
+        basisCurve.Freeze();
+        return basisCurve;
+    }
 
     public sealed override gp_Pnt EvalD0(double U) => basisCurve.EvalD0(U);
 
@@ -196,6 +211,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     protected internal sealed override void Transform(in gp_Trsf T)
     {
         CheckMutable();
+        ownBasisCurve();
         basisCurve.Transform(T);
         double U1 = basisCurve.TransformedParameter(uTrim1, T);
         double U2 = basisCurve.TransformedParameter(uTrim2, T);

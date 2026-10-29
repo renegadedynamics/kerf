@@ -35,7 +35,7 @@ public class Geom_BezierCurve : Geom_BoundedCurve
     private bool myRational = false;
     private bool myClosed = false;
     private double myMaxDerivInv = 0.0;
-    private volatile bool myMaxDerivInvOk = false;
+    private bool myMaxDerivInvOk = false;
 
     /// <summary>True if an evaluation representation is attached.</summary>
     public bool HasEvalRepresentation() => myEvalRep is not null;
@@ -681,8 +681,10 @@ public class Geom_BezierCurve : Geom_BoundedCurve
     /// <remarks>Non-const in OCCT, because it caches a value; not a mutator, so it works on a frozen curve.</remarks>
     public void Resolution(double Tolerance3D, out double UTolerance)
     {
-        if (!myMaxDerivInvOk)
+        // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
+        if (!Volatile.Read(ref myMaxDerivInvOk))
         {
+            double aMaxDerivInv;
             int aDeg = myPoles.Length() - 1;
             BSplCLib.Resolution(myPoles,
                                 InternalWeights(),
@@ -690,8 +692,9 @@ public class Geom_BezierCurve : Geom_BoundedCurve
                                 InternalKnotSequence(),
                                 aDeg,
                                 1.0,
-                                out myMaxDerivInv);
-            myMaxDerivInvOk = true;
+                                out aMaxDerivInv);
+            myMaxDerivInv = aMaxDerivInv;
+            Volatile.Write(ref myMaxDerivInvOk, true);
         }
         UTolerance = Tolerance3D * myMaxDerivInv;
     }
@@ -881,6 +884,14 @@ public class Geom_BezierCurve : Geom_BoundedCurve
         GeomEval_RepUtils.ValidateCurveDesc(theDesc, this);
         Geom_BezierCurve aCopy = (Geom_BezierCurve)Copy();
         aCopy.SetEvalRepresentation(GeomEval_RepUtils.CloneCurveDesc(theDesc));
+        return aCopy;
+    }
+
+    /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
+    public Geom_BezierCurve WithoutEvalRepresentation()
+    {
+        Geom_BezierCurve aCopy = (Geom_BezierCurve)Copy();
+        aCopy.ClearEvalRepresentation();
         return aCopy;
     }
 }

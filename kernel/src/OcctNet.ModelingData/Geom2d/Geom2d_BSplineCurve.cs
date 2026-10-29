@@ -18,7 +18,7 @@ namespace Occt;
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
 /// <see cref="PackedList{T}"/> copies (<see cref="Poles()"/>, <see cref="Knots()"/>, ...), and gives ported code
-/// the arrays themselves through internal <c>...Ref()</c> accessors, which must not be modified (decision 131).
+/// the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified (decision 131).
 /// The arrays are indexed from 1.
 /// </para>
 /// <para>
@@ -271,7 +271,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                 Degree,
                                 myPeriodic,
                                 myPoles,
-                                WeightsRef(),
+                                InternalWeights(),
                                 myKnots,
                                 myMults,
                                 npoles,
@@ -390,7 +390,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         BSplCLib.InsertKnots(myDeg,
                              myPeriodic,
                              myPoles,
-                             WeightsRef(),
+                             InternalWeights(),
                              myKnots,
                              myMults,
                              Knots,
@@ -461,7 +461,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                  myDeg,
                                  myPeriodic,
                                  myPoles,
-                                 WeightsRef(),
+                                 InternalWeights(),
                                  myKnots,
                                  myMults,
                                  npoles,
@@ -723,12 +723,15 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// <summary>FirstParameter() + LastParameter() - U.</summary>
     public sealed override double ReversedParameter(double U) => (FirstParameter() + LastParameter() - U);
 
+    // Precision::PConfusion() as a constant, for the default argument of Segment.
+    private const double Precision_PConfusion = 1.0e-7 * 0.01;
+
     /// <summary>
     /// Keeps the part of the curve between U1 and U2 (knots within theTolerance are merged). A periodic curve
     /// becomes non-periodic; U2 - U1 may not exceed its period.
     /// </summary>
     /// <exception cref="Standard_DomainError">U2 &lt; U1, or U2 - U1 exceeds the period of a periodic curve.</exception>
-    internal void Segment(double aU1, double aU2, double theTolerance = 1.0e-9)
+    internal void Segment(double aU1, double aU2, double theTolerance = Precision_PConfusion)
     {
         CheckMutable();
         if (aU2 < aU1)
@@ -1163,7 +1166,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                  myMults,
                                  myKnots,
                                  myPoles,
-                                 WeightsRef(),
+                                 InternalWeights(),
                                  nmults,
                                  nknots,
                                  npoles,
@@ -1280,7 +1283,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                            Index2,
                            myDeg,
                            myPoles,
-                           WeightsRef(),
+                           InternalWeights(),
                            myFlatKnots,
                            out FirstModifiedPole,
                            out LastmodifiedPole,
@@ -1331,7 +1334,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                      StartingCondition,
                                      EndingCondition,
                                      myPoles,
-                                     WeightsRef(),
+                                     InternalWeights(),
                                      myFlatKnots,
                                      new_poles,
                                      out ErrorStatus);
@@ -1534,7 +1537,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             aSpanIndex--;
         }
 
-        BSplCLib.D0(aNewU, aSpanIndex, myDeg, myPeriodic, myPoles, WeightsRef(), myKnots, myMults, out P);
+        BSplCLib.D0(aNewU, aSpanIndex, myDeg, myPeriodic, myPoles, InternalWeights(), myKnots, myMults, out P);
         return P;
     }
 
@@ -1559,7 +1562,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myKnots,
                     myMults,
                     out aResult.Point,
@@ -1588,7 +1591,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myKnots,
                     myMults,
                     out aResult.Point,
@@ -1618,7 +1621,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myKnots,
                     myMults,
                     out aResult.Point,
@@ -1641,7 +1644,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         gp_Vec2d V;
-        BSplCLib.DN(U, N, 0, myDeg, myPeriodic, myPoles, WeightsRef(), myFlatKnots, BSplCLib.NoMults(), out V);
+        BSplCLib.DN(U, N, 0, myDeg, myPeriodic, myPoles, InternalWeights(), myFlatKnots, BSplCLib.NoMults(), out V);
         return V;
     }
 
@@ -1701,7 +1704,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<double> Knots() => myKnots.ToPackedList();
 
     /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<double> KnotsRef() => myKnots;
+    internal NCollection_Array1<double> InternalKnots() => myKnots;
 
     /// <summary>Copies the flat knots of K's index range into K.</summary>
     /// <exception cref="Standard_DomainError">K's range is outside the flat knots' range.</exception>
@@ -1719,7 +1722,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<double> KnotSequence() => myFlatKnots.ToPackedList();
 
     /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<double> KnotSequenceRef() => myFlatKnots;
+    internal NCollection_Array1<double> InternalKnotSequence() => myFlatKnots;
 
     /// <summary>The index of the knot giving LastParameter() (NbKnots() for a periodic curve).</summary>
     public int LastUKnotIndex()
@@ -1762,7 +1765,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myFlatKnots,
                     BSplCLib.NoMults(),
                     out P);
@@ -1784,7 +1787,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myFlatKnots,
                     BSplCLib.NoMults(),
                     out P,
@@ -1807,7 +1810,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myFlatKnots,
                     BSplCLib.NoMults(),
                     out P,
@@ -1837,7 +1840,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myFlatKnots,
                     BSplCLib.NoMults(),
                     out P,
@@ -1866,7 +1869,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myDeg,
                     myPeriodic,
                     myPoles,
-                    WeightsRef(),
+                    InternalWeights(),
                     myFlatKnots,
                     BSplCLib.NoMults(),
                     out V);
@@ -1895,7 +1898,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<int> Multiplicities() => myMults.ToPackedList();
 
     /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<int> MultiplicitiesRef() => myMults;
+    internal NCollection_Array1<int> InternalMultiplicities() => myMults;
 
     /// <summary>The number of knots.</summary>
     public int NbKnots() => myKnots.Length();
@@ -1923,7 +1926,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<gp_Pnt2d> Poles() => myPoles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<gp_Pnt2d> PolesRef() => myPoles;
+    internal NCollection_Array1<gp_Pnt2d> InternalPoles() => myPoles;
 
     /// <summary>The first pole if the first knot has multiplicity Degree() + 1, the point at FirstParameter() otherwise.</summary>
     public sealed override gp_Pnt2d StartPoint()
@@ -1978,7 +1981,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<double>? Weights() => IsRational() ? myWeights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
-    internal NCollection_Array1<double>? WeightsRef()
+    internal NCollection_Array1<double>? InternalWeights()
     {
         if (IsRational())
         {
@@ -1991,7 +1994,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public PackedList<double> WeightsArray() => myWeights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
-    internal NCollection_Array1<double> WeightsArrayRef() => myWeights;
+    internal NCollection_Array1<double> InternalWeightsArray() => myWeights;
 
     /// <summary>True if the weights are not all equal.</summary>
     public bool IsRational() => myRational;
@@ -2104,7 +2107,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             else
             {
                 BSplCLib.Resolution(myPoles,
-                                    WeightsRef(),
+                                    InternalWeights(),
                                     myPoles.Length(),
                                     myFlatKnots,
                                     myDeg,
@@ -2202,7 +2205,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy limited to [U1, U2] (see Segment).</summary>
-    public Geom2d_BSplineCurve Segmented(double U1, double U2, double theTolerance = 1.0e-9)
+    public Geom2d_BSplineCurve Segmented(double U1, double U2, double theTolerance = Precision_PConfusion)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);
         aCopy.Segment(U1, U2, theTolerance);
