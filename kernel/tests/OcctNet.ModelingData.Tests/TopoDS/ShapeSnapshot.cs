@@ -121,6 +121,26 @@ internal sealed class ShapeSnapshot
 
     private static string Loc(in TopLoc_Location theLoc) => theLoc.IsIdentity() ? "I" : theLoc.Transformation().ToString();
 
+    /// <summary>
+    /// Asserts that another shape graph has this one's values: the same structure, flags (apart from the frozen state),
+    /// tolerances, ranges and locations, and the same curves, surfaces and meshes by identity, though its TShapes and
+    /// representations are other objects.
+    /// </summary>
+    public void AssertSameValues(ShapeSnapshot theOther)
+    {
+        static string WithoutFrozen(string theText) => System.Text.RegularExpressions.Regex.Replace(theText, @" frozen=\w+", "");
+        static bool IsGeometry(object? theObject) => theObject is null or Geom_Geometry or Geom2d_Geometry or Poly_Triangulation
+                                                         or Poly_Polygon3D or Poly_Polygon2D or Poly_PolygonOnTriangulation;
+        Assert.Equal(WithoutFrozen(myText), WithoutFrozen(theOther.myText));
+        List<object?> aMine = myObjects.Where(IsGeometry).ToList();
+        List<object?> aTheirs = theOther.myObjects.Where(IsGeometry).ToList();
+        Assert.Equal(aMine.Count, aTheirs.Count);
+        for (int i = 0; i < aMine.Count; i++)
+        {
+            Assert.Same(aMine[i], aTheirs[i]);
+        }
+    }
+
     /// <summary>Asserts that the shape graph is as recorded.</summary>
     public void AssertUnchanged(in TopoDS_Shape theShape)
     {
