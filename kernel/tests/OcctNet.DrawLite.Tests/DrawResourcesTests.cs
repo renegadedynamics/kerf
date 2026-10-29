@@ -71,7 +71,7 @@ public class DrawResourcesTests(ITestOutputHelper output)
             Error: Area = 10.5 is not equal to expected 10
             Check of p OK: value = (1 2 3), expected = (1 2 3.00001)
 
-            """, anOutput.ToString());
+            """.ReplaceLineEndings("\n"), anOutput.ToString());
     }
 
     [Fact]
