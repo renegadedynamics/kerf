@@ -4885,14 +4885,18 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// An array of <paramref name="theNbElems"/> weights equal to 1, indexed from 1. OCCT returns a non-owning view
-    /// of a shared static array for up to <see cref="MaxUnitWeightsSize"/> elements; the port always returns a new
-    /// array, so that a caller writing into it can't corrupt the shared values. For read-only use without
-    /// allocation, see <see cref="UnitWeightsData"/>.
+    /// An array of <paramref name="theNbElems"/> weights equal to 1, indexed from 1. Up to
+    /// <see cref="MaxUnitWeightsSize"/> elements it is a non-owning view of a shared static array (no allocation),
+    /// as in OCCT: shared, don't modify. Above that it is a new array.
     /// </summary>
     public static NCollection_Array1<double> UnitWeights(int theNbElems)
     {
-        // Allocate fresh array.
+        if (theNbElems <= MaxUnitWeightsSize())
+        {
+            // Non-owning view over global static array (zero allocation).
+            return new NCollection_Array1<double>(THE_UNIT_WEIGHTS, 0, 1, theNbElems);
+        }
+        // Rare: allocate fresh array.
         NCollection_Array1<double> aResult = new(1, theNbElems);
         aResult.Init(1.0);
         return aResult;

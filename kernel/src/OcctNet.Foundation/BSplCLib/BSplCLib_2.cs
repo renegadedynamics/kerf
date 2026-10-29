@@ -707,7 +707,7 @@ public static partial class BSplCLib
                     Eval(U,
                          periodic_flag,
                          derivative_request,
-                         ref extrap_mode[0],
+                         extrap_mode,
                          Degree,
                          FlatKnots,
                          dimension,
@@ -719,7 +719,7 @@ public static partial class BSplCLib
                     Eval(U,
                          periodic_flag,
                          derivative_request,
-                         ref extrap_mode[0],
+                         extrap_mode,
                          Degree,
                          FlatKnots,
                          dimension,
@@ -738,9 +738,9 @@ public static partial class BSplCLib
                 }
                 else
                 {
-                    Eval(U, false, 1, ref extrap_mode[0], Degree, FlatKnots, 1, first_function.AsSpan(), results.Slice(0, 2));
+                    Eval(U, false, 1, extrap_mode, Degree, FlatKnots, 1, first_function.AsSpan(), results.Slice(0, 2));
 
-                    Eval(U, false, 1, ref extrap_mode[0], Degree, FlatKnots, 1, second_function.AsSpan(), results.Slice(2, 2));
+                    Eval(U, false, 1, extrap_mode, Degree, FlatKnots, 1, second_function.AsSpan(), results.Slice(2, 2));
                 }
                 gp_Mat2d a_matrix = new();
 
@@ -822,7 +822,10 @@ public static partial class BSplCLib
             aParameters[aNumNewPoles] = aStartEnd[1];
         }
 
-        int anExtrapMode = BSplineDegree;
+        // OCCT passes a single int where Eval reads two extrapolation modes (ExtrapMode[1] is read past it, from
+        // uninitialised stack memory, but only when a parameter lies beyond the last knot); the port passes the
+        // degree for both ends
+        ReadOnlySpan<int> anExtrapMode = [BSplineDegree, BSplineDegree];
         int anIndex = 0;
         for (int i = 1; i <= aNumNewPoles; i++)
         {
@@ -837,7 +840,7 @@ public static partial class BSplCLib
             Eval(aParameters[i],
                  false,
                  0,
-                 ref anExtrapMode,
+                 anExtrapMode,
                  BSplineDegree,
                  BSplineFlatKnots,
                  PolesDimension,
@@ -889,7 +892,10 @@ public static partial class BSplCLib
         Span<double> anArrayOfNewPoles = aNewPolesArray.AsSpan();
         BuildSchoenbergPoints(NewDegree, FlatKnots, aParameters);
 
-        int anExtrapMode = BSplineDegree;
+        // OCCT passes a single int where Eval reads two extrapolation modes (ExtrapMode[1] is read past it, from
+        // uninitialised stack memory, but only when a parameter lies beyond the last knot); the port passes the
+        // degree for both ends
+        ReadOnlySpan<int> anExtrapMode = [BSplineDegree, BSplineDegree];
         int anIndex = 0;
         for (int i = 1; i <= aNumNewPoles; i++)
         {
@@ -904,7 +910,7 @@ public static partial class BSplCLib
             Eval(aResult,
                  false,
                  0,
-                 ref anExtrapMode,
+                 anExtrapMode,
                  BSplineDegree,
                  BSplineFlatKnots,
                  PolesDimension,
