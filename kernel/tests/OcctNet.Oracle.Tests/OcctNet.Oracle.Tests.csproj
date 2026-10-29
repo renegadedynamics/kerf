@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.ModelingData\OcctNet.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
     <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
