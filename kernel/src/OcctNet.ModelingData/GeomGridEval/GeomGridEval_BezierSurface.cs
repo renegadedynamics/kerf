@@ -280,6 +280,8 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
 
         // For Bezier surfaces, derivatives become zero when order exceeds degree in that direction
+        // OCCT: not for a rational surface, whose derivatives of every order are non-zero in general; the grid
+        // returns zero where Geom_BezierSurface::DN (BSplSLib::DN) does not (occt-issues.md).
         int aUDegree = myGeom.UDegree();
         int aVDegree = myGeom.VDegree();
         if (theNU > aUDegree || theNV > aVDegree)
