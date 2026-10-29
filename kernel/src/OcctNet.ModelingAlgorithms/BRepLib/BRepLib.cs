@@ -560,6 +560,8 @@ public static partial class BRepLib
                     var an_adaptor_surface_ptr = new GeomAdaptor_Surface(surface_ptr!);
                     var a_curve_on_surface = new Adaptor3d_CurveOnSurface(an_adaptor_curve2d_ptr, an_adaptor_surface_ptr);
 
+                    // OCCT: an edge without 3D curve flagged SameParameter is measured against geom_reference_curve, which
+                    // was never loaded; OCCT dereferences its null curve, the port throws a NullReferenceException.
                     if (BRep_Tool.SameParameter(AnEdge))
                     {
 
