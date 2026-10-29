@@ -111,7 +111,7 @@ public class TopClassTests
 
         public bool RejectEdge(in gp_Lin2d L, double Par) => false;
 
-        public void CurrentEdge(out TestEdge E, out TopAbs_Orientation Or)
+        public void CurrentEdge(ref TestEdge E, out TopAbs_Orientation Or)
         {
             E = theWires[myWire][myEdge];
             Or = TopAbs_FORWARD;

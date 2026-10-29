@@ -44,10 +44,12 @@ internal interface ITopClass_FaceExplorer<TheEdge>
     bool RejectEdge(in gp_Lin2d L, double Par);
 
     /// <summary>
-    /// The current edge and its orientation. The edge is <c>out</c>: if TheEdge is a class, each call must return
-    /// a new object, since the classifier keeps the closest one.
+    /// Writes the current edge into <paramref name="E"/>, with its orientation. The edge is <c>ref</c>, as OCCT's
+    /// <c>TheEdge&amp;</c>: the classifier passes the same variable for every edge, so what an explorer leaves
+    /// unwritten carries over from the previous edge (BRepClass_FaceExplorer's next edge does). If TheEdge is a
+    /// class, each call must give a new object, since the classifier keeps the closest one.
     /// </summary>
-    void CurrentEdge(out TheEdge E, out TopAbs_Orientation Or);
+    void CurrentEdge(ref TheEdge E, out TopAbs_Orientation Or);
 }
 
 /// <summary>
@@ -99,6 +101,7 @@ internal static class TopClass_FaceClassifier
                                                                     double theTol)
         where TheFaceExplorer : ITopClass_FaceExplorer<TheEdge>
         where FClass2d : ITopClass_FClass2d<TheEdge>
+        where TheEdge : new()
     {
         gp_Pnt2d aPoint = theP;
         bool aResOfPointCheck = false;
@@ -117,7 +120,8 @@ internal static class TopClass_FaceClassifier
         gp_Lin2d aLine;
         double aParam;
         bool aIsValidSegment = theFexp.Segment(aPoint, out aLine, out aParam);
-        TheEdge anEdge;
+        // OCCT default-constructs one edge for the whole classification (see ITopClass_FaceExplorer.CurrentEdge)
+        TheEdge anEdge = new();
         TopAbs_Orientation anEdgeOri;
         int aClosestInd;
         IntRes2d_IntersectionPoint aPInter;
@@ -146,7 +150,7 @@ internal static class TopClass_FaceClassifier
                         if (!aIsEReject)
                         {
                             // Test this edge.
-                            theFexp.CurrentEdge(out anEdge, out anEdgeOri);
+                            theFexp.CurrentEdge(ref anEdge, out anEdgeOri);
 
                             if (anEdgeOri == TopAbs_FORWARD || anEdgeOri == TopAbs_REVERSED)
                             {
