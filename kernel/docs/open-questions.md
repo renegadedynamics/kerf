@@ -42,6 +42,13 @@ The numbers in brackets are the plan's (section 7).
     `b3d_mesh_extract` goes into OcctNet.ModelingAlgorithms as a public helper (an addition, not a port), checked
     float for float against the native shim. Whether build123d.NET's viewer switches to it in phase 4 (through BRep
     text) or in phase 9 is yours to decide.
+    *Evidence (unit 4W, decisions 4801–4806):* OcctNet.MeshExtraction.Extract gives build123d.NET's MeshBuffers
+    layout and order; its buffers are float-identical to the native shim's on every compared face and edge (native's
+    mesh read back as BRep: 1,738 faces, 9,724 edges; mesh and extract end to end on data/occ, the mesh group's 82
+    files and native shapes with fillets, Booleans, mirrored and reversed parts and free edges: 1,448 faces, 6,509
+    edges; unmeshed edges by GCPnts: 4,786). Extraction is about 2% of mesh-and-extract. On the desktop the port's
+    serial mesh-and-extract is 0.9–1.5× native's, its parallel one 1.4–4.5× (allocation-bound, decision 4806); BRep
+    text read by the port costs 2–35 ms on typical models.
 13. **A native oracle for the mesher's parameters** (plan 3). build123d.NET binds only BRepMesh_IncrementalMesh's
     five-argument constructor. *Provisional:* the oracle uses that constructor, and the other parameters (MinSize,
     interior deflections, surface-deflection control, Delabella) are checked by the corpus and the GTests. Options:
@@ -52,6 +59,20 @@ The numbers in brackets are the plan's (section 7).
       single-threaded, trimmed), timed with AOT too where the workload is installed;
     - targets: the port within 2× native serial on the desktop; a typical model meshed and extracted in under
       100 ms on the desktop and under 2 s in the browser.
+
+    *Evidence (unit 4W, decisions 4805–4809):*
+    - The sample builds with the SDK alone, as Bento.Web does (no workload is installed, so AOT is not measured).
+      Trimmed, the OcctNet assemblies are 2.39 MB (1.08 MB Brotli); rooted, 5.80 MB (2.14 MB).
+    - Browser (interpreter, headless Chrome): typical models mesh and extract in 0.24–0.7 s warm; 223–324-face models
+      in 1.9–3.7 s; a single 30k-node B-spline face in 8.8 s. 8–19× the desktop JIT. terrain.brep runs out of memory
+      (5.6 GB of heap on the desktop too). 92.5% of faces and every edge bit-identical to win-x64; the rest are
+      tori, spheres, planes bounded by circles and cylinders' normals (transcendental functions).
+    - Desktop: serial within 2× native (0.9–1.5×; one huge face 2–2.7×); parallel 1.4–4.5× native, because the
+      port allocates 12–260 MB per mesh and workstation GC serialises the threads (server GC recovers most of it).
+      Typical models: 13–65 ms serial, 7–44 ms parallel, under 100 ms; Motor-c (223 faces, 26k nodes) 155–209 ms.
+    - Options: a follow-up that pools NCollection_CellFilter's nodes and BRepMesh's per-face structures (results
+      unchanged); server GC or a larger gen0 budget in Bento's host; a lower 2 s ambition or a coarser default
+      deflection in the browser.
 15. **Meshing a frozen shape through OCCT's class** (plan 5). *Provisional:*
     `new BRepMesh_IncrementalMesh(frozenShape, ...)` meshes an exact copy, and `Shape()` returns the frozen meshed
     result, sharing what meshing left unchanged; a functional `Meshed` twin as well. Alternative: throw on frozen

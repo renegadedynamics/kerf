@@ -565,3 +565,14 @@ Native BRepMesh_IncrementalMesh (Watson) itself showed no bug in the oracle: eve
 |---|---|---|
 | `BRepMesh_DelabellaMeshAlgoFactory::GetAlgo`, `default:` (BRepMesh_DelabellaMeshAlgoFactory.cxx) | Surfaces of extrusion, offset and other surfaces fall to the default branch, which uses `BRepMesh_NURBSRangeSplitter` (the Watson factory gives extrusions BRepMesh_ExtrusionRangeSplitter). Its `getUndefinedIntervalNb` asks the surface for `NbVPoles()`, and `GeomAdaptor_Surface::NbVPoles` throws Standard_NoSuchObject for a surface of extrusion | With `-algo 1` (Delabella) a face on a surface of extrusion is left without a mesh: BRepMesh_BaseMeshAlgo's `catch (Standard_Failure)` swallows the exception without setting a status, so GetStatusFlags() is 0. By reading OCCT's code; the port does the same. Pinned by `Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does_ReproducesOcctError` |
 | `BRepMesh_BaseMeshAlgo::Perform` (a property) | A failure caught while a face is meshed leaves the face without a triangulation and without a status; only FaceDiscret's own catch sets IMeshData_Failure | A face can be silently unmeshed (see the row above). Kept |
+
+## Phase 4: unit 4W, viewer extraction, benchmarks and WebAssembly
+
+No OCCT bug found. The extraction calls BRep_Tool, BRepLib_ToolTriangulatedShape::ComputeNormals,
+BRepAdaptor_Surface/Curve and GCPnts_TangentialDeflection as build123d.NET's native shim does, and its buffers are
+float-identical to native's on every compared face and edge.
+
+| Where | What | Effect |
+|---|---|---|
+| build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 4802), with the same values |
+| BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |

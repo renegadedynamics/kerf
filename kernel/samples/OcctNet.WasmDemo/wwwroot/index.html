@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCCT.NET in WebAssembly</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #f4f4f2; color: #222; display: flex; flex-direction: column; height: 100vh; }
+  header { padding: 8px 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  #view { flex: 1; min-height: 0; width: 100%; display: block; background: #fff; }
+  #status { font-family: ui-monospace, monospace; white-space: pre-wrap; padding: 6px 12px; max-height: 30vh; overflow: auto; }
+</style>
+</head>
+<body>
+<header>
+  <strong>OCCT.NET, meshed in the browser</strong>
+  <select id="files"><option>loading...</option></select>
+  <input type="file" id="pick" accept=".brep">
+  <label>deflection % of diagonal <input id="percent" type="number" value="0.1" step="0.05" min="0.01" style="width:5em"></label>
+</header>
+<canvas id="view"></canvas>
+<div id="status">Starting the .NET runtime...</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
