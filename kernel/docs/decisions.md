@@ -171,3 +171,68 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 49. **Twins for Bnd's bare `Set` and `Add` methods**: `Bnd_Box.FromPoint`, `Bnd_Box.Void()`, `Bnd_OBB.FromPoints`,
     `Bnd_OBB.Void()` (static factories), and `Added`, `Enlarged`, `Opened*`, `Updated`, `Limited`, ... Methods whose
     output OCCT leaves untouched in some cases take `ref` rather than `out` (`Bnd_Range.GetMin/GetMax/GetBounds`).
+## Phase 1: MathUtils and the new maths packages (29 October 2026)
+
+OCCT 8's header-only packages MathUtils, MathLin, MathPoly, MathRoot, MathInteg, MathOpt and MathSys: C++
+namespaces of function templates over duck-typed functors, returning result structs.
+
+50. **A C++ namespace is a `public static partial class`** (`MathRoot.Brent(...)`), one C# file per header. Each
+     file's `using namespace MathUtils;` is `using static Occt.MathUtils;`. Nested namespaces (`detail`,
+     `Internal`) are nested `internal static partial class`es. Names that C++ code reaches through another
+     namespace's `using` (`MathRoot::ScalarResult`) are written with their own class (`MathUtils.ScalarResult`).
+     Where Standard and MathUtils both have a function (`IsEqual`, `Sign`), ported code qualifies `MathUtils.`.
+51. **Functor templates are generic methods constrained on interfaces**, one interface per member set the C++
+     body calls: `MathUtils.IScalarFunction` (`Value(double, out double)`), `IScalarFunctionWithDerivative`
+     (`Values`; independent of `IScalarFunction`, since some solvers call only `Values`), `IVectorFunction`,
+     `IVectorFunctionWithGradient`, `IVectorFunctionWithHessian`, `ISystemFunction` (`Value(x, F)`), and
+     package-local ones (`MathSys.IFunctionSet[WithDerivatives]`, `MathSys.INewton2D/3D/4DFunction`,
+     `MathInteg.ISetFunction`, MathRoot's adapter interfaces). A C++ `operator()` is a method `Invoke`. Why: a
+     struct functor gets code specialised by the JIT with the call inlined, as a C++ template instantiation; a
+     class still works through the interface. Rejected: delegates (an indirect call per evaluation, and
+     `Func<>` can't have `out` parameters). Functors are passed by value, where C++ passes `Function&`: a
+     functor whose evaluation changes its own state must be a class. The interfaces use `out` results, as in
+     decision 32.
+52. **The lambda wrappers (`MakeScalar`, `MakeVector`, `MakeSystem`, ...) hold delegates** of package-defined
+     delegate types with C++'s signatures (`bool ScalarLambdaFunction(double, out double)`), so a C# lambda reads
+     `MathUtils.MakeScalar((x, out y) => { y = x * x - 2.0; return true; })`. The library functors
+     (`Polynomial`, `Rosenbrock`, `Sum<F, G>`, ...) are sealed classes; they copy the vectors and matrices they
+     are given, as C++ does. Functor classes local to a C++ function template are private generic classes or
+     structs of the package.
+53. **Configurations and options are classes**: `Config`, `BoundedConfig : Config`, `NDimConfig : Config`,
+     `PSOConfig : NDimConfig`, `GlobalConfig`, `IntegConfig`, `KronrodConfig`, `LMConfig`, `NewtonOptions`,
+     `MinBracketOptions`, ..., with public fields as in C++ and a copy constructor. C++ passes derived
+     configurations as `const Config&`; C# structs can't derive. A C++ copy is written `new(theConfig)`; a
+     default argument `const Config& theConfig = Config()` is `Config? theConfig = null` and
+     `theConfig ??= new Config();`. Rejected: structs with duplicated fields and conversion operators to the
+     base (slicing), which don't scale to three levels.
+54. **Result structs (`ScalarResult`, `PolyResult`, `VectorResult`, `IntegResult`, `NewtonResultN2`, ...) are
+     structs with public fields**, as the C++ aggregates. `std::optional<double>` is `double?`,
+     `std::optional<math_Vector>` a nullable reference, `size_t` is `int`. Their C++ default status is
+     NotConverged, so they have an explicit parameterless constructor and ported code writes `new()`;
+     `default(T)` has status OK. `explicit operator bool` is kept, and `operator true`/`false` make
+     `if (aResult)` work as in C++. They have no `Equals`/`ToString`: they are transient solver outputs holding
+     references. `MathUtils.Domain1D`/`Domain2D`, which are values, get the value-type members of section 3 of
+     the rules but keep C++'s public fields. Results that hold containers (`MathRoot.MultipleResult`,
+     `AllRootsResult`, `MathOpt.PSOSeedParticle`) share them when copied, where C++ copies them; ported helpers
+     that change them take them `ref`.
+55. **`std::array<T, N>` is `std_array2/3/4<T>`** (new file `Standard/std_array.cs`): `[InlineArray]` structs,
+     copied as a whole, indexed from 0 with a range check, with `a[i][j]` working on nested arrays and
+     `std_arrayN<T>.Of(...)` for brace initialisation. Not OCCT API, but OCCT 8 uses `std::array` widely.
+     Larger one-off sizes are package-local inline arrays (`MathPoly.RootArray<T>` of 20, a 5-element row in
+     MathSys).
+56. **Templates over an integer (`NewtonResultN<N>`, `NewtonBoundsN<N>`)** are ported per instantiation OCCT
+     uses: `NewtonResultN2`, `N3`, `N4`. The 2D/3D/4D functors take `ref std_arrayN<double> theF` and
+     `ref std_arrayN<std_arrayN<double>> theJ`, so their bodies read as the C++ (`theJ[0][1] = ...`).
+57. **Output parameters** are `out` when every path writes them, and `ref` when C++ may return without writing
+     them, so the caller's value survives as in C++ (`MathUtils.CentralDifference`'s derivative,
+     `BrentAlongCoordinate`'s `theFx`, MathSys's small solvers). Writes through `*aResult.Value` into an optional
+     go through a temporary.
+58. **`MathUtils.RandomGenerator` is a class**: its only purpose is its changing state, which a struct would lose
+     to defensive copies. `MathOpt.PSOStats` is a class too (C++ fills it through an optional pointer), with
+     `Assign`.
+59. **`std::complex<double>` is `System.Numerics.Complex`** (same principal branches; division may differ in
+     the last bits). `std::sort` is `Span.Sort` (not stable, like std::sort). `goto` is kept where OCCT uses it.
+60. **Tests**: one xUnit class per GTest suite (a suite spread over two files is a `partial class`). C++
+     `rand()` in the MathLin tests is the MSVC runtime's generator. The MathLin_EigenSearch random test uses a
+     faithful `std::mt19937` but simple mappings in place of `std::uniform_*_distribution` (whose output differs
+     between C++ libraries), so its random matrices differ from OCCT's; no check depends on the values.
