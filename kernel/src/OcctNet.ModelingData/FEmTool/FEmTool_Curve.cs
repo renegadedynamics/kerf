@@ -267,9 +267,25 @@ public class FEmTool_Curve : Standard_Transient
 
         // Parameter normalization: S [-1, 1]
         S = (2 * U - USum) * Denom;
-        PLib.NoDerivativeEvalPolynomial(S, deg - 2, myDimension, (deg - 2) * myDimension,
-                                        myDsecn.AsSpan(1 + (myIndex - 1) * (myBase.WorkDegree() - 1) * myDimension),
-                                        Vec.AsSpan(Vec.Lower()));
+        if (deg < 2)
+        {
+            // OCCT: an element of degree 1 (ReduceDegree allows it at C0) has no second-derivative coefficients, and
+            // OCCT evaluates a polynomial of degree -1, whose value is the Dimension coefficients just before the
+            // element's block. For a later element they are the last coefficients of the previous element's block,
+            // which the port reads as OCCT does; for the first element they lie before the array (uninitialised
+            // memory in OCCT), and the port uses zeros (occt-issues.md, decision 1606).
+            int aTop = 1 + (myIndex - 1) * (myBase.WorkDegree() - 1) * myDimension - myDimension;
+            for (i = 0; i < myDimension; i++)
+            {
+                Vec[Vec.Lower() + i] = aTop >= 1 ? myDsecn[aTop + i] : 0.0;
+            }
+        }
+        else
+        {
+            PLib.NoDerivativeEvalPolynomial(S, deg - 2, myDimension, (deg - 2) * myDimension,
+                                            myDsecn.AsSpan(1 + (myIndex - 1) * (myBase.WorkDegree() - 1) * myDimension),
+                                            Vec.AsSpan(Vec.Lower()));
+        }
 
         S = 4 * Denom * Denom;
         for (i = Vec.Lower(); i <= Vec.Upper(); i++)
