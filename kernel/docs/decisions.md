@@ -601,3 +601,51 @@ that call it (phase2-plan.md).
      mmresol_ (OCCT crashes below 101 dimensions and nothing calls it), mmposui_ (index structures; tested on a
      known profile) and mmgaus1_ (a callback). The committed tests check known values, some from that native run,
      and the generated tables against the .pxx.
+## Phase 2: unit 1G, elementary analytics (29 October 2026)
+
+IntAna2d, gce and the elementary Extrema classes (ExtElC, ExtElC2d, ExtPElC, ExtPElC2d, ExtPElS, ExtElSS, POnCurv,
+POnCurv2d, POnSurf).
+
+117. **What becomes a struct and what a class.**
+      - Values used by copy are structs under the value-type rules: IntAna2d_IntPoint, IntAna2d_Conic,
+        Extrema_POnCurv, Extrema_POnCurv2d, Extrema_POnSurf. Their setters (`SetValue`, `SetValues`, `SetParameters`)
+        are internal; since each rebuilds the whole value, the constructors are their public twins. IntAna2d_IntPoint's
+        `SetValue` is virtual in OCCT, but nothing derives from it. `new IntAna2d_IntPoint()` and
+        `new Extrema_POnSurf()` have OCCT's non-zero defaults (RealLast, Precision::Infinite); `default` is zeros.
+      - The algorithms are classes with OCCT's public `Perform` (working objects, decision 21):
+        IntAna2d_AnaIntersection and the Extrema_Ext* classes. Extrema_ExtElC and Extrema_ExtElC2d have no Perform
+        in OCCT and are computed by their constructors only. Their fixed C++ arrays are .NET arrays allocated with the
+        object (`myPoint[6][2]` is `Extrema_POnCurv[6, 2]`); the small local arrays of the C++ functions are
+        `stackalloc` or span collection expressions. Results are returned by value; `Points(N, P1&, P2&)` and
+        `Extrema_POnSurf::Parameter` take `out`.
+      - gce: `gce_Root` is a class with OCCT's protected `TheError`, and each gce_Make* a sealed class deriving from
+        it, computed by its constructor. The transformation makers (MakeMirror, MakeRotation, MakeScale,
+        MakeTranslation and their 2D twins) don't derive from it, as in OCCT. `Value()` and `Operator()` are kept;
+        OCCT's implicit `operator gp_Lin()` (and the others) is an explicit conversion, as decision 28 did for
+        TopLoc_Location. `Value()` throws StdFail_NotDone on a failed construction, where OCCT's release build
+        returns the default object (decision 9).
+118. **gce statuses that OCCT leaves unset.** `gce_MakeCirc(P1, P2, P3)` returns without setting `TheError` when
+      the three points coincide or the computed center falls on P1 (both build a circle of radius 0), and
+      `gce_MakeCirc2d(P1, P2, P3)` when the points are distinct but collinear (parallel bisectors). The status is
+      then uninitialised memory in C++. The port's starts as gce_Done, a .NET field's default: that is what the
+      zero-radius circles are meant to be, but for gce_MakeCirc2d it would report success with a default circle, so
+      the port sets gce_IntersectionError there (marked `// OCCT`). Revisit if the oracle shows what native callers
+      actually get.
+119. **`gce_MakeCirc(Center, Plane, Radius)` reads the inner construction's circle directly** instead of calling
+      `C.Value()`, which with a negative radius throws in OCCT's debug builds and in the port (decision 9) but
+      returns the default circle in OCCT's release build. The construction then reports gce_NegativeRadius, as
+      native OCCT does.
+120. **File-private helpers.** IntAna2d_Outils.hxx/.cxx is an internal static class `IntAna2d_Outils`, imported
+      with `using static`, holding the free functions and `MyDirectPolynomialRoots` as a nested class.
+      Extrema_ExtElC.cxx's static `RefineDir` and its local class `ExtremaExtElC_TrigonometricRoots` (a copy of
+      IntAna_IntQuadQuad's, which unit 2F will port separately) are private members of Extrema_ExtElC.
+      `IntAna2d_AnaIntersection.empt` is set but never read in OCCT; it is kept, with CS0414 suppressed on that
+      field only.
+121. **Oracle coverage through native callers.** build123d.NET binds gce_MakeLin, IntAna2d_AnaIntersection,
+      IntAna2d_IntPoint and Extrema_POnCurv, which are compared directly. Three more classes are compared through
+      native classes that call them with known arguments: Extrema_ExtPElC through Extrema_ExtPC on lines, circles
+      and ellipses (which passes analytic curves to ExtPElC with Precision::Confusion() and keeps its results in
+      order), Extrema_ExtPElC2d through Geom2dAPI_ProjectPointOnCurve, and gce_MakeCirc(P1, P2, P3) with
+      Extrema_ExtElC between two lines through GC_MakeArcOfCircle. Random directions handed to native OCCT are
+      first `Oracle.Settled` (normalised until the port's normalisation leaves them unchanged), and the port's and
+      native axis systems are built from the same inputs, so that differences come from the code under test.
