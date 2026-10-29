@@ -386,3 +386,36 @@ public class IntStart_SearchInsideTests
         Assert.Same(aFunc, anInt.Function());
     }
 }
+
+/// <summary>IntPatch_HInterTool's sampling of surfaces and arcs.</summary>
+public class IntPatch_HInterToolTests
+{
+    [Fact]
+    public void Sample_points_follow_OCCT_s_grid_and_its_perturbations()
+    {
+        // A cylinder on u in [0, 2π], v in [0, 3]: 10 samples in u, 15 in v, so a grid of 5 x 8 interior points.
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 1), 0, 2 * Math.PI, 0, 3);
+        IntPatch_HInterTool aTool = new();
+        Assert.Equal(6 * 8, aTool.NbSamplePoints(aCyl));
+        double du = 2 * Math.PI / 6, dv = 3.0 / 9;
+
+        aTool.SamplePoint(aCyl, 1, out double u, out double v); // NU = NV = 0: no perturbation
+        Assert.Equal((du, dv), (u, v));
+        aTool.SamplePoint(aCyl, 2, out u, out v); // NU = 1, NV = 0: perturbation 1, dv scaled by 1.001 then 0.999 (OCCT)
+        Assert.Equal(2 * du, u);
+        Assert.Equal(dv * 1.001 * 0.999, v);
+        aTool.SamplePoint(aCyl, 3, out u, out v); // perturbation 2: both scaled by 1.001
+        Assert.Equal(du * 1.001 * 3, u);
+        Assert.Equal(dv * 1.001, v);
+
+        // A plane has a 2 x 2 grid only: the five fixed points.
+        GeomAdaptor_Surface aPln = new(new Geom_Plane(new gp_Pln()), 0, 10, 0, 10);
+        Assert.Equal(4, aTool.NbSamplePoints(aPln));
+        aTool.SamplePoint(aPln, 1, out u, out v);
+        Assert.Equal((0.24 * 10, 0.26 * 10), (u, v));
+
+        Assert.Equal(2, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(), new gp_Dir2d(1, 0)))));
+        Assert.Equal(10, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Circle(new gp_Ax2d(), 1))));
+        Assert.Equal(2, IntPatch_HCurve2dTool.NbSamples(new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(), new gp_Dir2d(1, 0))), 0, 1));
+    }
+}

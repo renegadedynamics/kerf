@@ -192,7 +192,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
             {
                 case 1:
                     dv *= 1.001;
-                    dv *= 0.999;
+                    dv *= 0.999; // OCCT: scales dv twice (presumably du *= 1.001 was meant): dv * 0.999999
                     break;
                 case 2:
                     du *= 1.001;
