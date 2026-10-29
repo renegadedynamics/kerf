@@ -10,10 +10,6 @@ namespace Occt;
 /// <summary>
 /// Projection of elementary 3D points and curves on elementary surfaces, giving their parametric (2D) form.
 /// </summary>
-/// <remarks>
-/// A partial class: <c>MakePCurveOfType</c>, which needs ProjLib_ProjectedCurve, is ported with it (phase 2,
-/// unit 6A).
-/// </remarks>
 public static partial class ProjLib
 {
     public static gp_Pnt2d Project(in gp_Pln Pl, in gp_Pnt P)
@@ -121,6 +117,40 @@ public static partial class ProjLib
     {
         ProjLib_Torus Proj = new(To, Ci);
         return Proj.Line();
+    }
+
+    /// <summary>
+    /// Makes the 2D curve of a projection's result type: a new line or conic, or the projection's B-spline curve
+    /// itself (frozen, shared with <paramref name="PC"/>, as OCCT shares the handle).
+    /// </summary>
+    /// <exception cref="Standard_NotImplemented">The result is a Bezier curve or another curve.</exception>
+    public static void MakePCurveOfType(ProjLib_ProjectedCurve PC, out Geom2d_Curve C2D)
+    {
+        switch (PC.GetType())
+        {
+            case GeomAbs_CurveType.GeomAbs_Line:
+                C2D = new Geom2d_Line(PC.Line());
+                break;
+            case GeomAbs_CurveType.GeomAbs_Circle:
+                C2D = new Geom2d_Circle(PC.Circle());
+                break;
+            case GeomAbs_CurveType.GeomAbs_Ellipse:
+                C2D = new Geom2d_Ellipse(PC.Ellipse());
+                break;
+            case GeomAbs_CurveType.GeomAbs_Parabola:
+                C2D = new Geom2d_Parabola(PC.Parabola());
+                break;
+            case GeomAbs_CurveType.GeomAbs_Hyperbola:
+                C2D = new Geom2d_Hyperbola(PC.Hyperbola());
+                break;
+            case GeomAbs_CurveType.GeomAbs_BSplineCurve:
+                C2D = PC.BSpline();
+                break;
+            case GeomAbs_CurveType.GeomAbs_BezierCurve:
+            case GeomAbs_CurveType.GeomAbs_OtherCurve:
+            default:
+                throw new Standard_NotImplemented("ProjLib::MakePCurveOfType");
+        }
     }
 
     /// <summary>

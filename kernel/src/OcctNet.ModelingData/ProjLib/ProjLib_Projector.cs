@@ -192,14 +192,49 @@ public class ProjLib_Projector
         myBezier = C;
     }
 
-    /// <summary>The Bezier curve set by <see cref="SetBezier"/> (shared, as in OCCT).</summary>
-    public Geom2d_BezierCurve? Bezier() => myBezier;
+    /// <summary>The Bezier curve set by <see cref="SetBezier"/>, frozen when handed out (unit 6A): the same object
+    /// at each call, shared as in OCCT.</summary>
+    public Geom2d_BezierCurve? Bezier()
+    {
+        myBezier?.Freeze();
+        return myBezier;
+    }
+
+    /// <summary>The stored Bezier curve, unfrozen, for ported code that is still building it.</summary>
+    internal Geom2d_BezierCurve? InternalBezier() => myBezier;
 
     public void SetBSpline(Geom2d_BSplineCurve? C)
     {
         myBSpline = C;
     }
 
-    /// <summary>The B-spline curve set by <see cref="SetBSpline"/> (shared, as in OCCT).</summary>
-    public Geom2d_BSplineCurve? BSpline() => myBSpline;
+    /// <summary>The B-spline curve set by <see cref="SetBSpline"/>, frozen when handed out (unit 6A): the same object
+    /// at each call, shared as in OCCT.</summary>
+    public Geom2d_BSplineCurve? BSpline()
+    {
+        myBSpline?.Freeze();
+        return myBSpline;
+    }
+
+    /// <summary>The stored B-spline curve, unfrozen, for ported code that is still building it
+    /// (ProjLib_ProjectedCurve translates it into the surface's period).</summary>
+    internal Geom2d_BSplineCurve? InternalBSpline() => myBSpline;
+
+    /// <summary>
+    /// C++'s implicit copy assignment (<c>myResult = P;</c>, slicing a subclass to a ProjLib_Projector): copies the
+    /// fields, sharing the Bezier and B-spline curves as OCCT shares the handles.
+    /// </summary>
+    internal void Assign(ProjLib_Projector theOther)
+    {
+        myType = theOther.myType;
+        myLin = theOther.myLin;
+        myCirc = theOther.myCirc;
+        myElips = theOther.myElips;
+        myHypr = theOther.myHypr;
+        myParab = theOther.myParab;
+        myBSpline = theOther.myBSpline;
+        myBezier = theOther.myBezier;
+        myIsPeriodic = theOther.myIsPeriodic;
+        isDone = theOther.isDone;
+    }
 }
