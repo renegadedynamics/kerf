@@ -94,6 +94,37 @@ public static class GeomTools
     }
 
     /// <summary>
+    /// The deepest nesting of trimmed, offset and swept geometry the readers accept (a trimmed curve of a line is 2):
+    /// reading recurses once per level.
+    /// </summary>
+    public const int MaxGeometryNesting = 64;
+
+    [ThreadStatic]
+    private static int theNesting;
+
+    /// <summary>
+    /// Enters one level of nested geometry, for the readers; disposing the result leaves it.
+    /// </summary>
+    /// <exception cref="Storage_StreamFormatError">The geometry is nested more than <see cref="MaxGeometryNesting"/>
+    /// deep.</exception>
+    internal static NestingLevel Nesting()
+    {
+        // OCCT.NET: untrusted input
+        if (theNesting >= MaxGeometryNesting)
+        {
+            throw new Storage_StreamFormatError("GeomTools: geometry nested more than " + MaxGeometryNesting + " deep");
+        }
+
+        theNesting++;
+        return new NestingLevel();
+    }
+
+    internal readonly ref struct NestingLevel
+    {
+        public void Dispose() => theNesting--;
+    }
+
+    /// <summary>
     /// Reads a real: the next word, at most 31 characters, converted with <see cref="Standard_Stream.Strtod(string)"/>
     /// (its longest numeric prefix). 0 at the end of the text or when there is no number.
     /// </summary>

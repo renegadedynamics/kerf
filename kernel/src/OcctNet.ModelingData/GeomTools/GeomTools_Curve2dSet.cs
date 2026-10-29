@@ -758,6 +758,9 @@ public class GeomTools_Curve2dSet
         int i = 0, degree = 0;
         Standard_Stream.Read(IS, ref degree);
 
+        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
+        // characters, a knot 4)
+        Standard_Stream.CheckCount(IS, Math.Max(degree + 1L, 0), 4, "Bezier poles");
         var poles = new NCollection_Array1<gp_Pnt2d>(1, degree + 1);
         var weights = new NCollection_Array1<double>(1, degree + 1);
 
@@ -790,6 +793,10 @@ public class GeomTools_Curve2dSet
         Standard_Stream.Read(IS, ref nbpoles);
         Standard_Stream.Read(IS, ref nbknots);
 
+        // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
+        // characters, a knot 4)
+        Standard_Stream.CheckCount(IS, Math.Max(nbpoles, 0), 4, "B-spline poles");
+        Standard_Stream.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
         var poles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
         var weights = new NCollection_Array1<double>(1, nbpoles);
 
@@ -846,6 +853,8 @@ public class GeomTools_Curve2dSet
         int ctype = 0;
 
         Geom2d_Curve? C = null;
+        // OCCT.NET: untrusted input: trimmed, offset and swept geometry recurse; the nesting is capped
+        using var aNesting = GeomTools.Nesting();
         try
         {
             Standard_Stream.Read(IS, ref ctype);
@@ -896,7 +905,7 @@ public class GeomTools_Curve2dSet
                     break;
             }
         }
-        catch (Standard_Failure)
+        catch (Standard_Failure anException) when (anException is not Storage_StreamFormatError)
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_Curve2dSet::ReadCurve2d(..)!!!"
         }
@@ -915,8 +924,10 @@ public class GeomTools_Curve2dSet
     /// </summary>
     public void Read(TextReader IS, Message_ProgressRange theProgress = default)
     {
-        string? buffer = Standard_Stream.ReadWord(IS);
-        if (buffer != "Curve2ds")
+        // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
+        char[] buffer = new char[255];
+        bool isRead = Standard_Stream.ReadWord(IS, buffer);
+        if (!isRead || Standard_Stream.CString(buffer) != "Curve2ds")
         {
             Console.Out.Write("Not a Curve2d table" + "\n");
             return;
@@ -925,6 +936,8 @@ public class GeomTools_Curve2dSet
         // OCCT's nbcurve is uninitialised if the count can't be read
         int i, nbcurve = 0;
         Standard_Stream.Read(IS, ref nbcurve);
+        // OCCT.NET: untrusted input: an object takes at least 2 characters
+        Standard_Stream.CheckCount(IS, Math.Max(nbcurve, 0), 2, "2D curves");
         using var aPS = new Message_ProgressScope(theProgress, "2D Curves", nbcurve);
         for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
         {
