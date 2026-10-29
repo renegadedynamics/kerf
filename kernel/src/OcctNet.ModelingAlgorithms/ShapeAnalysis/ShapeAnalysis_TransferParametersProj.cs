@@ -173,7 +173,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         else
         {
             gp_Pnt p1 = myAC3d.Value(Param).Transformed(myLocation.Transformation());
-            projDev   = sac.Project(myCurve, p1, myPrecision, out _, out ppar, First, Last, false);
+            projDev   = sac.Project(myCurve!, p1, myPrecision, out _, out ppar, First, Last, false);
             linDev    = p1.Distance(myCurve!.Value(linPar));
         }
 
@@ -655,7 +655,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         if (!hasRepr || (Math.Abs(f1 - f2) > Occt.Precision.PConfusion() || Math.Abs(l1 - l2) > Occt.Precision.PConfusion()))
         {
             ShapeAnalysis_Curve sae   = new ShapeAnalysis_Curve();
-            double              adist = sae.Project(C2, apv, Occt.Precision.Confusion(), out _, out apar);
+            double              adist = sae.Project(C2!, apv, Occt.Precision.Confusion(), out _, out apar);
             if (aTol < adist)
             {
                 aTol = adist;

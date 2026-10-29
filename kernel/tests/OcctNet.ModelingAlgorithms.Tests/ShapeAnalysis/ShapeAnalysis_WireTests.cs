@@ -166,6 +166,9 @@ public class ShapeAnalysis_WireTests
     [Fact]
     public void CheckOrder_SeamAndDegeneratedFaces_2dAsBRepMesh()
     {
+        // The primitives' lateral wires are top (reversed), seam at u = 2pi, bottom, seam at u = 0 (reversed): chained
+        // in 3D through the seam's vertices, but in 2D the chain from the top edge goes to the seam at u = 0 first. So
+        // OCCT's order is 1, 4, 3, 2: the edges reversed in sequence, only shifted (status 3, DONE5), nothing to reverse.
         TopoDS_Face[] aFaces =
         [
             new BRepPrimAPI_MakeCylinder(2, 5).Face(),
@@ -178,9 +181,19 @@ public class ShapeAnalysis_WireTests
             var aWD = new ShapeExtend_WireData(aW, true, false);
             var aSAW = new ShapeAnalysis_Wire(aWD, aFace, Precision.Confusion());
             var anOrder = new ShapeAnalysis_WireOrder();
-            Assert.False(aSAW.CheckOrder(anOrder, true, false));
-            Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+            Assert.True(aSAW.CheckOrder(anOrder, true, false));
+            Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
+            Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+            Assert.False(aSAW.LastCheckStatus(ShapeExtend_FAIL));
             Assert.Equal(aWD.NbEdges(), anOrder.NbEdges());
+            Assert.Equal([1, 4, 3, 2], Order(anOrder, 4));
+
+            // in 3D too: the top edge is closed, and the seam leaving its vertex (edge 4) is preferred to the one
+            // arriving there (edge 2)
+            anOrder = new ShapeAnalysis_WireOrder();
+            Assert.True(aSAW.CheckOrder(anOrder, true, true));
+            Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
+            Assert.Equal([1, 4, 3, 2], Order(anOrder, 4));
         }
     }
 

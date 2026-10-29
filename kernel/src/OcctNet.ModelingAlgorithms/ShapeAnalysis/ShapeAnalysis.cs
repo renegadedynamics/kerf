@@ -242,7 +242,7 @@ public static class ShapeAnalysis
                 continue;
             }
 
-            sac.FillBndBox(c2d, f, l, 20, true, ref B);
+            sac.FillBndBox(c2d!, f, l, 20, true, ref B);
         }
 
         B.Get(out UMin, out VMin, out UMax, out VMax);

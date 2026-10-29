@@ -110,16 +110,33 @@ public class ShapeAnalysis_TransferParametersProjTests
         Assert.ThrowsAny<Exception>(() => aTool.TransferRange(aNew, 0.25, 0.75, false));
     }
 
+    /// <summary>An unfrozen straight edge from (0, 0, 0) to (4, 0, 0), built with BRep_Builder.</summary>
+    private static TopoDS_Edge LineEdge()
+    {
+        var aB = new BRep_Builder();
+        TopoDS_Vertex aV1 = new(), aV2 = new();
+        aB.MakeVertex(ref aV1, new gp_Pnt(0, 0, 0), Tol);
+        aB.MakeVertex(ref aV2, new gp_Pnt(4, 0, 0), Tol);
+        TopoDS_Edge anE = new();
+        aB.MakeEdge(ref anE, new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), Tol);
+        aB.Add(anE, aV1.Oriented(TopAbs_FORWARD));
+        aB.Add(anE, aV2.Oriented(TopAbs_REVERSED));
+        aB.Range(anE, 0.0, 4.0);
+        return anE;
+    }
+
     [Fact]
     public void CopyNMVertex_CopiesAnInternalVertexFrozen()
     {
         var aB = new BRep_Builder();
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0)).Edge();
-        TopoDS_Edge aTo = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0)).Edge();
+        TopoDS_Edge anE = LineEdge();
+        TopoDS_Edge aTo = LineEdge();
         TopoDS_Vertex aV = new();
         aB.MakeVertex(ref aV, new gp_Pnt(1, 0, 0), Tol);
         aB.UpdateVertex(aV, 1.0, anE, Tol);
         TopoDS_Vertex anInternal = TopoDS.Vertex(aV.Oriented(TopAbs_INTERNAL));
+        anE.TShape()!.FreezeGraph();
+        aV.TShape()!.FreezeGraph();
 
         TopoDS_Vertex aCopy = ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE);
         Assert.False(aCopy.IsNull());
@@ -131,5 +148,9 @@ public class ShapeAnalysis_TransferParametersProjTests
 
         // a FORWARD vertex isn't copied
         Assert.True(ShapeAnalysis_TransferParametersProj.CopyNMVertex(aV, aTo, anE).IsNull());
+
+        // the target edge must be writable: BRep_Builder.UpdateVertex refuses a locked (frozen) edge, as OCCT does
+        aTo.TShape()!.FreezeGraph();
+        Assert.Throws<TopoDS_LockedShape>(() => ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE));
     }
 }

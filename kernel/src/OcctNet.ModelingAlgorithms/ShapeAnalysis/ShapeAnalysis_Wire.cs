@@ -1182,7 +1182,7 @@ public class ShapeAnalysis_Wire : Standard_Transient
         // added by rln 18/12/97 CSR# CTS18544 entity 13638
         // the situation when degenerated edge already exists but flag is not set
         //(i.e. the parametric space is closed)
-        GeomAdaptor_Surface Ads = mySurf.Adaptor3d();
+        GeomAdaptor_Surface Ads = mySurf.Adaptor3d()!;
         double              max = Max(Ads.UResolution(myPrecision), Ads.VResolution(myPrecision));
         if (p2d1.Distance(p2d2) /*Abs (par1 - par2)*/ <= max + gp.Resolution())
         {
@@ -1272,7 +1272,7 @@ public class ShapeAnalysis_Wire : Standard_Transient
         gp_Pnt2d p1 = C1!.Value(ul1);
         gp_Pnt2d p2 = C2!.Value(uf2);
         myMin2d = myMax2d = p1.Distance(p2);
-        GeomAdaptor_Surface SA = mySurf.Adaptor3d();
+        GeomAdaptor_Surface SA = mySurf.Adaptor3d()!;
         if (myMin2d > (Max(SA.UResolution(myPrecision), SA.VResolution(myPrecision)) + Occt.Precision.PConfusion()))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
@@ -1349,7 +1349,7 @@ public class ShapeAnalysis_Wire : Standard_Transient
         }
 
         gp_Pnt2d aP2d = Crv2d.Value(param);
-        return surf.Adaptor3d().Value(aP2d.X(), aP2d.Y());
+        return surf.Adaptor3d()!.Value(aP2d.X(), aP2d.Y());
     }
 
     /// <summary>
@@ -1596,7 +1596,7 @@ public class ShapeAnalysis_Wire : Standard_Transient
                 gp_Pnt2d end1 = Crv1!.Value(isForward1 ? b1 : a1);
                 gp_Pnt2d end2 = Crv2!.Value(isForward2 ? a2 : b2);
                 //: l0 test like in BRepCheck
-                GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d();
+                GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d()!;
                 double              tol2d = 2 * Max(Ads.UResolution(tol), Ads.VResolution(tol));
                 isLacking                 = (end1.SquareDistance(end2) >= tol2d * tol2d) ? 1 : 0;
             }
@@ -1847,7 +1847,7 @@ public class ShapeAnalysis_Wire : Standard_Transient
         // test like in BRepCheck
         double tol = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
         tol        = (Tolerance > gp.Resolution() && Tolerance < tol ? Tolerance : tol);
-        GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d();
+        GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d()!;
         double              tol2d = 2 * Max(Ads.UResolution(tol), Ads.VResolution(tol));
         if ( // tol2d < gp::Resolution() || //#2 smh 26.03.99 S4163 Zero divide
             myMax2d < tol2d * tol2d)
@@ -1894,11 +1894,11 @@ public class ShapeAnalysis_Wire : Standard_Transient
         TopoDS_Wire wire;
         if (APIMake)
         {
-            wire = myWire!.WireAPIMake();
+            wire = myWire!.InternalWireAPIMake();
         }
         else
         {
-            wire = myWire!.Wire();
+            wire = myWire!.InternalWire();
         }
 
         TopoDS_Shape sh   = myFace.EmptyCopied(); // szv#4:S4163:12Mar99 SGI warns
@@ -2661,8 +2661,8 @@ public class ShapeAnalysis_Wire : Standard_Transient
             new BRep_Builder().MakeVertex(ref aSplitV, aCs[aEI]!.Value(aParams[aEI]), Occt.Precision.Confusion());
             TopoDS_Edge[] aEParts2 =
             [
-                new ShapeBuild_Edge().CopyReplaceVertices(aFE, new TopoDS_Vertex(), TopoDS.Vertex(aSplitV.Oriented(TopAbs_REVERSED))),
-                new ShapeBuild_Edge().CopyReplaceVertices(aFE, aSplitV, new TopoDS_Vertex()),
+                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, new TopoDS_Vertex(), TopoDS.Vertex(aSplitV.Oriented(TopAbs_REVERSED))),
+                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, aSplitV, new TopoDS_Vertex()),
             ];
             new ShapeBuild_Edge().CopyPCurves(aEParts2[0], aFE);
             new ShapeBuild_Edge().CopyPCurves(aEParts2[1], aFE);
