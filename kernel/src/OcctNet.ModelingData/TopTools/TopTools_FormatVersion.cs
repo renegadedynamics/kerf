@@ -1,0 +1,33 @@
+// Port of: src/ModelingData/TKBRep/TopTools/TopTools_FormatVersion.hxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace Occt;
+
+/// <summary>The versions of the TopTools (text BRep) format.</summary>
+/// <remarks>
+/// An unscoped enum in C++; ported code imports it with <c>using static Occt.TopTools_FormatVersion;</c>. OCCT's
+/// anonymous enum of bounds is <see cref="TopTools_FormatVersionBounds"/>.
+/// </remarks>
+public enum TopTools_FormatVersion
+{
+    /// <summary>Doesn't write the UV points of curves on surfaces; reading calls Check(). The default version.</summary>
+    TopTools_FormatVersion_VERSION_1 = 1,
+
+    /// <summary>Stores the UV points of curves on surfaces; reading recognises the format from its version string.</summary>
+    TopTools_FormatVersion_VERSION_2 = 2,
+
+    /// <summary>Stores per-vertex normals of triangulation-only faces, which have no geometry to restore them from.</summary>
+    TopTools_FormatVersion_VERSION_3 = 3,
+
+    /// <summary>The current version.</summary>
+    TopTools_FormatVersion_CURRENT = TopTools_FormatVersion_VERSION_3,
+}
+
+/// <summary>The lowest and highest supported <see cref="TopTools_FormatVersion"/> (OCCT's anonymous enum).</summary>
+public static class TopTools_FormatVersionBounds
+{
+    public const TopTools_FormatVersion TopTools_FormatVersion_LOWER = TopTools_FormatVersion.TopTools_FormatVersion_VERSION_1;
+
+    public const TopTools_FormatVersion TopTools_FormatVersion_UPPER = TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3;
+}

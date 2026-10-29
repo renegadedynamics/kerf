@@ -2397,3 +2397,142 @@ GeomConvert_SurfToAnaSurf. With unit 2C, all of Approx.
       pcurve itself; SameParameter's C0 B-spline pcurve branch needs `GeomConvert.C0BSplineToC1BSplineCurve` and
       Approx_CurvilinearParameter; the oracle tests' port sides (`ComputeTol`, `evaluateMaxSegment`) become BRepLib's
       own code then.
+## Phase 3: unit 3A, topology core
+
+TopoDS (the shape structs and their generated subtypes, the TShapes, Builder, Iterator, HShape, exceptions), TopExp,
+TopTools (package, ShapeMapHasher, FormatVersion), BRep (TVertex, TEdge, TFace, every representation, Builder, Tool),
+BRepTools.cxx's statics except Read, Write and Dump, BRepAdaptor_Surface; the freezing infrastructure of
+[phase3-design.md](phase3-design.md), `CheckMutable` in Poly, `TopoDS_Builder.MakeCompound` and analyzer rule
+OCCTNET0002. Numbers from 3101 are renumbered on merge.
+
+304. **The shape structs as designed (270, 271).** `TopoDS_Shape` holds `TopoDS_TShape? myTShape`, a
+      `TopLoc_Location` and the orientation. The members between the `<generated-members>` markers of
+      TopoDS_Shape.cs are copied verbatim into the eight subtypes by `tools/gen-topods-subtypes.cs` (`--check` reports
+      stale files; a unit test compares the members by reflection), so they keep OCCT's types: `Reversed()` of an edge
+      returns a `TopoDS_Shape`, as in C++. Each subtype adds its constructors, `IEquatable<itself>`, `==`, `!=` and the
+      implicit conversion to TopoDS_Shape, which goes through an internal field constructor; `TopoDS.Edge(S)` and the
+      others check the type and build the subtype the same way. Only `TopoDS.AsShapeRef(ref e)` reinterprets
+      (`Unsafe.As`), for ported code that passes a subtype variable to a non-const `TopoDS_Shape&`.
+      - `GetHashCode` is `RuntimeHelpers.GetHashCode(TShape)`, combined (`HashCode.Combine`) with the location's
+        `HashCode()` when that isn't 0, as OCCT's `std::hash` combines the address with the location's hash.
+      - A query that needs the TShape (`ShapeType`, the flag getters) on a null shape throws `Standard_NullObject`;
+        OCCT dereferences a null handle. `ToString()` is the type and orientation ("EDGE FORWARD") or "NULL".
+      - Boxed shapes compare across the nine types (`TopoDS_Shape.EqualsObject`).
+305. **Flags.** TopoDS_TShape's setters are internal and start with `CheckMutable()`; `Locked()` is the stored bit or
+      `IsFrozen()`, and the internal `LockedFlag()` is the stored bit, for the file writers (unit 3C). The shape's
+      flag setters are `internal readonly`: they change the shared TShape, not the value, so OCCTNET0001 doesn't
+      flag them on a read-only copy (OCCT's are callable on a `const` shape too, through the handle). The TShape
+      constructors set OCCT's initial flags (Free, Modified, Orientable; TCompound and TSolid not orientable; TVertex
+      closed and convex). `BitLayout` is a public nested enum, as OCCT's.
+306. **`EmptyCopy` and `EmptyCopied` of a shape are internal** (the design listed `EmptyCopied` among the public
+      `-ed` forms). They create an unfrozen TShape, and the rule of design 4.2 is that nothing a caller can reach is
+      unfrozen; a caller couldn't fill the empty shape anyway, since TopoDS_Builder is internal. Ported code uses them
+      as OCCT does. `TopoDS_TShape.EmptyCopy()` stays public: like Geom's `Copy()` it returns a new unfrozen object, but
+      a caller can't attach it to a shape (`TShape(t)` is internal). phase3-design.md, section 2, is updated.
+307. **Builder signatures.** The Make methods take the shape by `ref` (C++ `T&`; BRep_Builder's MakeFace and MakeEdge
+      read it first and throw `TopoDS_LockedShape` if it holds a locked shape, so a variable holding a frozen shape
+      can't be remade in place, as in OCCT for locked ones): ported code writes
+      `TopoDS_Wire W = new(); B.MakeWire(ref W);`. Add, Remove and the Update methods change only the TShape and take
+      the shape by `in`. `TopoDS_Builder` is a public class with an internal constructor and internal members, so that
+      its public static `MakeCompound(params TopoDS_Shape[])` and `MakeCompound(IEnumerable<TopoDS_Shape>)` are
+      reachable; `BRep_Builder` is an internal sealed class. MakeCompound throws `Standard_NullObject` for a null
+      shape, and freezes the compound (with any unfrozen child an internal caller passes).
+308. **FreezeGraph** is iterative (100,000 nested compounds are tested) and keeps a set of the TShapes on its stack,
+      so a cycle made with `Free(true)` can't loop. `FreezeRepresentations()` is `internal virtual` (the walk is
+      internal to ModelingData); BRep_TVertex, BRep_TEdge and BRep_TFace freeze their representations, surface and
+      triangulations.
+309. **The Active bit of a frozen triangulation is left unchanged.** OCCT's BRep_TFace marks its active
+      triangulation with `Poly_MeshPurpose_Active` and clears the bit of the one it replaces, so changing the active
+      triangulation of one face writes into a triangulation another face may share (copies share meshes,
+      `BRepTools_CopyModification(copyMesh = false)`). The port sets or clears the bit only on an unfrozen
+      triangulation, before freezing it on attachment; a frozen one keeps its purpose. Nothing in OCCT 8 reads the
+      bit except `BRep_TFace::Triangulation(purpose)` asked for Active itself, and it isn't written to files.
+310. **Representation and TShape lists are internal, with read-only twins.** `BRep_TEdge.Curves()`,
+      `BRep_TVertex.Points()`, `BRep_TFace.Triangulations()` and `BRep_Tool.Triangulations()` return the shapes' own
+      `NCollection_List`, a mutable class, so they are internal (ported code reads them as OCCT does); `ChangeCurves()`
+      and `ChangePoints()` also check that the TShape isn't frozen. Callers get new read-only lists:
+      `CurveRepresentations()`, `PointRepresentations()` and `TriangulationList()` (`IBentoList`). Ported reads of
+      `ChangeCurves()` that only read (`BRep_Tool::Continuity`, `MaxContinuity`) use `Curves()`.
+311. **Representations.** Their queries are public; their setters (`Location(L)`, `SetRange`, `First(F)`,
+      `PCurve(C)`, `Curve3D(C)`, `SetUVPoints`, `Continuity(C)`, the polygon setters, `Parameter(P)`, ...) are internal
+      (`internal virtual` where OCCT's are virtual) and start with `CheckMutable()`; `Update()` is internal.
+      Constructors and setters freeze the curves, surfaces, triangulations and polygons they take (design 4.1).
+      `Copy()` returns an unfrozen representation sharing the frozen geometry. BRep_CurveOnSurface takes a non-null
+      pcurve (OCCT dereferences it).
+312. **Writes in queries and cache completions on frozen shapes** (design 4.4), each marked `// OCCT.NET: frozen`:
+      - `BRepTools.Update(Face)` returns at once on a frozen face;
+      - `BRep_Tool.Range(E, S, L, ...)` sets the edge's Modified flag (OCCT does, in a query: occt-issues.md) only if
+        the edge isn't frozen;
+      - `TopoDS_Builder.Add` clears the component's Free flag only if it isn't frozen;
+      - Add and Remove check the parent's child list with `CheckMutable()` after OCCT's own Free check, so a frozen
+        parent that is free throws `Standard_ImmutableObject`, one that isn't throws OCCT's `TopoDS_FrozenShape`.
+313. **Outputs.** BRep_Tool's and TopExp's outputs are `out` where OCCT always assigns them;
+      `CurveOnSurface(E, C, S, L, f, l, Index)` takes `ref` (OCCT leaves them unchanged when Index < 1) and
+      `TopExp.CommonVertex` takes `ref` (unchanged when there is none). OCCT's `bool* theIsStored = nullptr` is an
+      overload with `out bool`. `BRep_Tool.Parameter(V, E, out double)` sets 0 when it returns false (OCCT leaves the
+      value unchanged).
+314. **BRepTools.** A `partial` static class: unit 3C adds Read, Write and Dump. The queries are public: UVBounds,
+      AddUVBounds (a `ref Bnd_Box2d`), OuterWire, Compare, Map3DEdges, IsReallyClosed, DetectClosedness,
+      OriEdgeInFace, Triangulation, CheckLocations. The statics that change their shape are internal until unit 3B
+      gives them functional twins (design 4.6): Update, UpdateFaceUVPoints, Clean, CleanGeometry,
+      RemoveUnusedPCurves, LoadTriangulation, LoadAllTriangulations, UnloadTriangulation, UnloadAllTriangulations,
+      ActivateTriangulation, RemoveInternals (by `in`: only TShapes change) and EvalAndUpdateTol; so is
+      `BRep_Tool.SetUVPoints`. They throw on frozen shapes, as BRep_Builder does. OCCT's `OSD_FileSystem` arguments
+      are left out (decision 69). RemoveUnusedPCurves' map of surface handles is an `NCollection_Map<object>` by
+      reference, with a sentinel for the null handle (as decision 227). An oracle test runs Update, Triangulation,
+      Clean, CleanGeometry and RemoveInternals on unfrozen twin shapes against native OCCT.
+315. **Stubs until phase 2's last units merge.** `BRep_Tool.CurveOnPlane` does OCCT's checks and returns null where
+      OCCT does, then throws `Standard_NotImplemented` where it would project (`// TODO(6A)`: GeomProjLib,
+      ProjLib_ProjectedCurve), so `CurveOnSurface` throws for an edge without a pcurve on a plane;
+      `BRepTools.EvalAndUpdateTol` throws (`// TODO(5A)`: GeomLib_CheckCurveOnSurface). Two BRep_Tool GTests that
+      project are skipped until then.
+316. **Poly's mutators throw once frozen** (design 4.1, the follow-up of decision 63). `CheckMutable()` starts:
+      Poly_Triangulation's `Deflection(d)`, `Parameters(p)`, `Clear`, `SetNode`, `SetUVNode`, `SetTriangle`,
+      `SetNormal`, `SetNormals`, `SetMeshPurpose`, `SetDoublePrecision`, `ResizeNodes`, `ResizeTriangles`,
+      `AddUVNodes`, `RemoveUVNodes`, `AddNormals`, `RemoveNormals`, `ComputeNormals`, `ChangeTriangles`,
+      `ChangeTriangle`, `LoadDeferredData`, `UnloadDeferredData`; Poly_Polygon3D's `Deflection(d)`, `ChangeNodes`,
+      `ChangeParameters`; Poly_Polygon2D's `Deflection(d)`, `ChangeNodes`; Poly_PolygonOnTriangulation's
+      `Deflection(d)`, `ChangeNodeArray`, `SetNode`, `SetParameter`, `ChangeParameterArray`, `SetParameters`,
+      `ChangeNodes`, `ChangeParameters`. They stay public (decision 63). The cached range (`SetCachedMinMax`,
+      `UpdateCachedMinMax`) is a cache of the frozen nodes, published under its lock (decision 69), so it stays
+      writable. Known gap: the getters that hand out internal arrays (`Nodes()`, `Parameters()`, `InternalNodes()`,
+      `InternalTriangles()`, the deprecated `Triangles()`, decision 62's spans) can't check; ported code must not
+      write through them, as OCCT's `const` promises.
+317. **Analyzer rule OCCTNET0002** (`ShapeMapComparerAnalyzer`, an error) reports a creation of `NCollection_Map`,
+      `NCollection_IndexedMap`, `NCollection_DataMap`, `NCollection_IndexedDataMap`, `HashSet` or `Dictionary` (or a
+      class derived from one) keyed by TopoDS_Shape or a subtype, unless an `IEqualityComparer` argument is passed
+      explicitly and isn't the literal `null`. The NCollection maps' copy constructors are allowed (they keep the
+      source's comparer); `HashSet`'s and `Dictionary`'s aren't (they take the default). Collection expressions of
+      those types are reported (they can't take a comparer). LINQ's `ToHashSet`/`ToDictionary` aren't checked. Its
+      tests are in OcctNet.Foundation.Tests/Analyzers with the OCCTNET0001 tests.
+318. **Left out or deferred.** TopoDS_AlertWithShape and TopoDS_AlertAttribute wait for Message's alerts and reports,
+      which aren't ported. `DumpJson`, the `std::hash` specialisations and the range-for support of TopoDS_Iterator and
+      TopExp_Explorer are left out (rules, section 6). TopoDS_Iterator and TopExp_Explorer are sealed classes, where
+      OCCT's are used by value; the explorer reuses the iterators it pops. `TopTools::Dump` comes with
+      TopTools_ShapeSet (3C); `TopTools::Dummy` is ported. TopTools_FormatVersion's anonymous enum of bounds is the
+      static class `TopTools_FormatVersionBounds`. TopoDS_HShape is a working object (public setter); its
+      `ChangeShape()` is internal.
+319. **BRepAdaptor_Surface.ShallowCopy** gives the copy its own shallow copy of the transformed adaptor, as
+      GeomAdaptor_TransformedSurface's does; that field became `private protected`.
+320. **Tests.**
+      - Ported GTests: TopoDS_TShape (8), TopoDS_Edge (1), TopoDS_Builder (19), TopoDS_Iterator (17), TopExp (9),
+        BRep_Tool (13, of which 2 skipped until 6A). Their makers (BRepBuilderAPI_MakeVertex, MakeEdge,
+        BRepPrimAPI_MakeBox: units 3K and 3M) are replaced by `TestShapes`, built with BRep_Builder with the same
+        topology and frozen as the makers' results will be. TopoDS_Edge's BUC60828 sets a flag on an unfrozen edge,
+        as ported code continuing on a maker's result will. BRepTools' two GTests read and write files with
+        BRepGProp (units 3C, 3H) and wait.
+      - Unit tests of every freezing rule of design 4.1 to 4.5 (FreezingTests), of the shape structs' value
+        semantics (TopoDS_ShapeTests), and of BRep_Tool, BRep_Builder, BRepTools and BRepAdaptor_Surface beyond the
+        GTests.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/TopoDS`): `TwinShapes` builds shapes with native and ported
+        BRep_Builder call for call from the same raw numbers: boxes, cylinder faces with seams and located curves and
+        surfaces, faces with holes on random planes, compounds sharing a box and a face at several locations and
+        orientations, placed and reversed at random. On 60 scenes: exploration (every type, with and without a type
+        to avoid, depths), flags, IsPartner, IsSame, IsEqual and `==` between every two sub-shapes (and the hash's
+        agreement with IsSame), TopTools_ShapeMapHasher maps against TopTools_IndexedMapOfShape, MapShapes with the
+        four cumulation modes, MapShapesAndAncestors and UniqueAncestors, wire and edge vertices, CommonVertex,
+        IsClosed, Map3DEdges, MaxTolerance, vertex points and tolerances, edge ranges, curves, locations and placed
+        values, Parameter(V, E) and (V, E, F), pcurves and their values, UVPoints, IsClosed(E, F), IsReallyClosed,
+        OriEdgeInFace, continuity, Range(E, F), UVBounds of faces, wires and edges, OuterWire, DetectClosedness,
+        Parameters(V, F), placed surfaces and BRepAdaptor_Surface: 754,725 values, all bit-identical. The in-place
+        statics on unfrozen twins: 50,140 values, all bit-identical.
