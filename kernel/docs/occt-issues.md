@@ -525,3 +525,13 @@ All are reproduced and pinned by unit tests.
 | `Message_Msg::Get` (Message_Msg.cxx) | Replaces the unfilled placeholders but keeps their positions | A second `Get` garbles the text ("a %s b" → "a UNKNOWN b" → "a UNKNOWNKNOWN b"); `SendStatusMessages` calls `Get` on a stored custom message, so sending it twice garbles it. Kept; unit test |
 | `Message_Msg::Set` (Message_Msg.cxx) | After "%%", reads the next characters as a format | "100%% done" gets a placeholder "% d": `Arg(7)` gives "100 7one". Kept; unit test |
 | `NCollection_MapAlgo::Differ` (NCollection_MapAlgo.hxx; a property, not a bug) | Reports a change by comparing the counts before and after | Swapping one key for another returns false. Kept; unit test |
+
+## Phase 4: unit 4C, model and edges
+
+Found while porting BRepMesh's model building, edge discretisation, healer and pre- and post-processors. Reproduced in
+the port, each marked `// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepMesh_FaceChecker`'s selector, `Accept` (BRepMesh_FaceChecker.cxx) | When a wire is checked against itself, a crossing is kept only if the loop it closes has an area; the area sums the cross products of each segment's second point, in the order of each pcurve's parameter, not the wire's | Along reversed edges the second points are the wire's first ones: a bow tie bounded by reversed edges measures zero area, its crossing is taken for a tangency, and the face is meshed with a self-intersecting wire (the same bow tie with forward edges fails with SelfIntersectingWire). Pinned by `Face_checker_misses_a_crossing_of_reversed_edges_as_OCCT_does` |
+| `BRepMesh_ModelPostProcessor`'s PolygonCommitter, `commitPolygons` (BRepMesh_ModelPostProcessor.cxx) | Stores a seam's first discrete pcurve on the face as the polygon of the forward edge and the last as the reversed edge's, whatever their orientations | The model's pcurves follow the wire order of ShapeAnalysis_Wire::CheckOrder. On BRepPrimAPI's cylinder (top, seam reversed at u = 0, bottom, seam forward at u = 2pi) `BRep_Tool::PolygonOnTriangulation` of the forward seam gives the nodes at u = 0, the reversed seam's side. Same 3D points; the UV side is swapped. Pinned by `Seam_polygons_are_stored_in_the_model_order_as_OCCT_does`; the oracle compares native polygons in this order |
