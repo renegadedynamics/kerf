@@ -77,6 +77,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `edge.trim(a, b)` with floats or points | `Trim(a, b)`: each a `CurvePosition`, from a `double`, a `Vector` or a `Vertex` |
 | `ShapeList.first`, `.last` | `First`, `Last` |
 | `filter_by(lambda)`, `sort_by(Edge.length)`, `group_by(...)` | `FilterBy(Func)`, `SortBy(e => e.Length)`, `GroupBy(...)`; `GroupByConvexity()` for the enum |
+| `filter_by(Edge.is_closed)`, `sort_by(Edge.length)`, `group_by(Face.area)` (a `property`) | also by name: `FilterBy("IsClosed")`, `SortBy("Length")`, `GroupBy("Area")`; build123d's snake_case names work too |
 | `list > Axis.Z`, `list | GeomType.LINE`, `list >> Axis.Z` | The same operators |
 | `compound.get_type(Solid)` | `ElementsOfType<Solid>()` |
 | `Compound(children=[…])` | `Compound.Assembly([…])`; children hold no parent link |
@@ -86,7 +87,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `topo_explore_connected_edges`, `edges_to_wires`, … | `OneD.ConnectedEdges`, `OneD.EdgesToWires`, …; `Vertex.CommonVertex` |
 | `topo_distance_to(shapes)` | `TopologyUtils.TopoDistanceTo(shapes)`, a `Func<Shape, double>` |
 | `show_topology("Face")` | `ShowTopology(ShapeType.Face)` |
-| `filter_by_value(Edge.length, 3)` | `FilterByValue(e => e.Length, 3)` |
+| `filter_by_value(Edge.length, 3)` | `FilterByValue(e => e.Length, 3)`, `FilterByValue("Length", 3)` or `FilterByValue(SortBy.Length, 3)`; an enum value may be its name (`FilterByValue("GeomType", "Plane")`) |
 | `ShapeHistory.merge` (in place) | `Merge` returns a new record |
 | `shape.mesh(tol)` (in place) | `Meshed(tol)` returns a meshed copy; `Tessellate` meshes a copy too |
 | (ocp-tessellate, for viewers) | `Triangulate(…)` returns a `ShapeMesh` (faces, edges and vertices in the shape's order); `TriangulateTree()` a `MeshNode` tree for assemblies |

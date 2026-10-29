@@ -193,6 +193,29 @@ change every shape sharing it, and race between threads. So:
   - Meshing or fusing a shape read from corrupted data can still run for a very long time, which is
     left to cancellation (4.7).
 
+#### Selectors
+
+- **Plain values throughout.** Every selector has an overload that takes values rather than a delegate:
+  axes, planes, enums and numbers, as before. build123d's `property` arguments are taken by name:
+  `FilterBy("IsClosed")`, `FilterByValue("Radius", 5)`, `SortBy("Length")` and `GroupBy("Area")`.
+  - A name matches a public property of the shape's own class, or a method whose parameters are all
+    optional. Case and underscores are ignored, so build123d's `is_closed` works.
+  - Lookups are cached per class and name.
+  - `Shape` carries `DynamicallyAccessedMembers`, so trimming keeps what a name can reach.
+  - An enum compared by `FilterByValue` may be given by its name.
+- **`Selector`** is a selection as a value: faces, edges or vertices, then steps.
+  - The steps are `FilterByGeomType`, `FilterByAxis`, `GroupByAxis(axis, index)` and
+    `GroupByMeasure(measure, index)`, where a negative index counts from the end.
+  - It applies to any shape, prints as C# or Python, and compares by value.
+- **`Selector.For(shape, picked)`** finds selectors for a face, edge or vertex picked in a viewer.
+  - It does a breadth-first search over sets holding the pick, at most three steps deep. Each step's
+    effect comes from keys measured once per candidate, and only steps that keep the pick are tried.
+  - Fewest steps come first, then the most robust: end groups along the model's axes, then filters,
+    then the smallest or largest of a measure, then inner groups.
+  - A selector that holds a shorter one is dropped.
+  - Every result is applied to the shape before it is returned, so the search's model of the
+    selectors can't give a wrong answer. It takes milliseconds for a part of a few hundred faces.
+
 #### Objects
 
 - **Objects are shapes.** `Box` is a `Part`, `Circle` a `Sketch`, `Line` an `Edge`, `Polyline` a `Wire`,

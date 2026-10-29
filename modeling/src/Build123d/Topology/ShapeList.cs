@@ -258,6 +258,18 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     /// <summary>The shapes of a convexity relative to the shape each was selected from.</summary>
     public ShapeList<T> FilterBy(Convexity convexity, bool reverse = false) => FilterBy(s => s.Convexity == convexity, reverse);
 
+    /// <summary>
+    /// The shapes for which a true-or-false property, named by a string, holds: <c>FilterBy("IsClosed")</c> for
+    /// build123d's <c>filter_by(Edge.is_closed)</c> (see <see cref="ShapeProperty"/> for how names match).
+    /// </summary>
+    /// <exception cref="ArgumentException">A shape has no such property, or it isn't true or false.</exception>
+    public ShapeList<T> FilterBy(string property, bool reverse = false) => FilterBy(s => ShapeProperty.Get(s, property) switch
+    {
+        bool b => b,
+        var other => throw new ArgumentException(
+            $"{s.GetType().Name}.{property} is {other?.GetType().Name ?? "null"}, not true or false: use FilterByValue", nameof(property)),
+    }, reverse);
+
     private static bool IsParallelTo(Shape shape, Axis axis, double tolerance)
     {
         Axis shapeAxis;
@@ -348,6 +360,22 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         _ => null,
     };
 
+    /// <summary>
+    /// The shapes whose property, named by a string, is <paramref name="value"/>: <c>FilterByValue("Radius", 5)</c>
+    /// for build123d's <c>filter_by_value(Face.radius, 5)</c>. Numbers match within <paramref name="tolerance"/>; an
+    /// enum matches its value or its name (<c>FilterByValue("GeomType", "Plane")</c>); a missing (null) measure never
+    /// matches.
+    /// </summary>
+    /// <exception cref="ArgumentException">A shape has no such property.</exception>
+    public ShapeList<T> FilterByValue(string measure, object? value, double tolerance = Constants.Tolerance, bool reverse = false) =>
+        new(this.Where(o => ShapeProperty.Matches(ShapeProperty.Get(o, measure), value, tolerance) != reverse));
+
+    /// <summary>The shapes whose length, radius, area, volume or distance from the origin is <paramref name="value"/>.</summary>
+    public ShapeList<T> FilterByValue(SortBy measure, double value, double tolerance = Constants.Tolerance, bool reverse = false) =>
+        measure == Build123d.SortBy.Radius
+            ? new ShapeList<T>(this.Where(Measures.HasRadius)).FilterByValue(o => (double?)Measures.RadiusOrNull(o), value, tolerance, reverse)
+            : FilterByValue(o => Measures.Of(o, measure), value, tolerance, reverse);
+
     // ---- Sorting ----
 
     /// <summary>The shapes sorted by a key.</summary>
@@ -389,6 +417,18 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     /// <summary>The shapes sorted by their minimal distance to a point.</summary>
     public ShapeList<T> SortByDistance(Vector other, bool reverse = false) => SortBy(o => o.DistanceTo(other), reverse);
 
+    /// <summary>
+    /// The shapes sorted by a property named by a string: <c>SortBy("Length")</c> for build123d's
+    /// <c>sort_by(Edge.length)</c>. Values compare as Python's do; a missing (null) one sorts first.
+    /// </summary>
+    /// <exception cref="ArgumentException">A shape has no such property.</exception>
+    public ShapeList<T> SortBy(string property, bool reverse = false)
+    {
+        var keyed = this.Select(o => (Key: ShapeProperty.Get(o, property), Shape: o)).ToList();
+        var order = PyComparer<object?>.Instance;
+        return new((reverse ? keyed.OrderByDescending(k => k.Key, order) : keyed.OrderBy(k => k.Key, order)).Select(k => k.Shape));
+    }
+
     // ---- Grouping ----
 
     /// <summary>
@@ -429,6 +469,14 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
 
     /// <summary>The shapes grouped by their convexity, in the enum's order.</summary>
     public GroupBy<T, Convexity> GroupByConvexity(bool reverse = false) => new(o => o.Convexity, this, reverse);
+
+    /// <summary>
+    /// The shapes grouped by a property named by a string: <c>GroupBy("Area")</c> for build123d's
+    /// <c>group_by(Face.area)</c>. A numeric key is rounded to <paramref name="tolDigits"/> places.
+    /// </summary>
+    /// <exception cref="ArgumentException">A shape has no such property.</exception>
+    public GroupBy<T, object?> GroupBy(string property, bool reverse = false, int tolDigits = 6) =>
+        new(o => ShapeProperty.Key(o, property, tolDigits), this, reverse);
 
     /// <inheritdoc/>
     public override string ToString() => "[" + string.Join(", ", this) + "]";
@@ -544,6 +592,35 @@ internal static class Measures
     };
 
     internal static bool HasRadius(Shape s) => s is Shape1D or Face;
+
+    /// <summary>A shape's length, radius, area, volume or distance from the origin, as sorting and grouping take it.</summary>
+    internal static double Of(Shape o, SortBy measure) => measure switch
+    {
+        SortBy.Length => Length(o),
+        SortBy.Radius => Radius(o),
+        SortBy.Distance => o.Center().Length,
+        SortBy.Area => o.Area,
+        SortBy.Volume => o.Volume,
+        _ => throw new ArgumentOutOfRangeException(nameof(measure)),
+    };
+
+    /// <summary>The radius, or null where the shape hasn't one (a line, a plane).</summary>
+    internal static double? RadiusOrNull(Shape s)
+    {
+        try
+        {
+            return s switch
+            {
+                Shape1D one => one.Radius,
+                Face face => face.Radius,
+                _ => null,
+            };
+        }
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or Occt.OcctException or NotImplementedException)
+        {
+            return null;
+        }
+    }
 
     internal static double Radius(Shape s) => s switch
     {
