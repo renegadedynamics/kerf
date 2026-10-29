@@ -520,6 +520,28 @@ public class GeomLibTests
         Assert.Same(aSurf, aKept);
     }
 
+    [Fact]
+    public void CancelDenominatorDerivative_Untreatable_LeftReparametrised_OCCT()
+    {
+        // A non-rational surface can't be treated, but OCCT has already reparametrised its U knots to [0, 1] and
+        // doesn't restore them (occt-issues.md). The caller's surface is unchanged in the port.
+        NCollection_Array2<gp_Pnt> aPoles = new(1, 4, 1, 2);
+        for (int i = 1; i <= 4; i++)
+        {
+            aPoles[i, 1] = new gp_Pnt(i, 0, 0);
+            aPoles[i, 2] = new gp_Pnt(i, 1, 0.1 * i);
+        }
+        NCollection_Array1<int> aUMults = NCollection_Array1<int>.From([4, 4]);
+        NCollection_Array1<int> aVMults = NCollection_Array1<int>.From([2, 2]);
+        Geom_BSplineSurface aSurf = new(aPoles, Reals(2, 5), Reals(0, 1), aUMults, aVMults, 3, 1);
+        Geom_BSplineSurface aRes = aSurf;
+        GeomLib.CancelDenominatorDerivative(ref aRes, true, false);
+        Assert.Equal(0.0, aRes.UKnot(1));
+        Assert.Equal(1.0, aRes.UKnot(2));
+        Assert.True(aRes.Value(1.0, 0.5).IsEqual(aSurf.Value(5.0, 0.5), 1e-12));
+        Assert.Equal(2.0, aSurf.UKnot(1));
+    }
+
     private static double Denominator(Geom_BSplineSurface theS, double theU, double theV)
     {
         NCollection_Array2<double> aW = theS.WeightsArray();

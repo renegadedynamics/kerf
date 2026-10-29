@@ -2406,8 +2406,8 @@ public static partial class GeomLib
         NCollection_Array1<double> BCurveWeights = new(1, BSurf.NbUPoles());
         NCollection_Array1<gp_Pnt> BCurvePoles = new(1, BSurf.NbUPoles());
 
-        // OCCT // When the surface can't be treated, it is left reparametrised to [0, 1] (the knots are restored only
-        // after FunctionMultiply).
+        // OCCT: when the surface can't be treated, it is left reparametrised to [0, 1]: the knots are restored only
+        // after FunctionMultiply (occt-issues.md).
         if (CanBeTreated(BSurf))
         {
             NCollection_Array1<double> BCurveKnots = BSurf.InternalUKnots();
