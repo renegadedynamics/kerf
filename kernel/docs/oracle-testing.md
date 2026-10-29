@@ -43,3 +43,6 @@ angles), and say why.
   calls with which arguments (flat knots or knots with multiplicities, located span, periodic normalisation, the
   rationality flags it derives), and call the port the same way. Done that way, the B-spline packages are
   bit-identical.
+- Build native axes and directions from the same raw components as the port's, rather than converting the port's
+  normalised `gp_Dir` with `Oracle.ToNative`: native OCCT normalises the unit direction again, which can change its
+  last bit (GProp's oracle tests saw it on about 700 values).

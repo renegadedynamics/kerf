@@ -72,9 +72,9 @@ broken down by package.
 | ModelingAlgorithms | TKTopAlgo | 0 / 340 | 0 / 84,336 | 0.0 |
 | ModelingAlgorithms | TKXMesh | 0 / 2 | 0 / 100 | 0.0 |
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
-| ModelingData | TKG2d | 0 / 102 | 0 / 23,488 | 0.0 |
-| ModelingData | TKG3d | 0 / 237 | 0 / 70,301 | 0.0 |
-| ModelingData | TKGeomBase | 0 / 720 | 0 / 317,408 | 0.0 |
+| ModelingData | TKG2d | 30 / 102 | 3,925 / 23,488 | 16.7 |
+| ModelingData | TKG3d | 66 / 237 | 9,124 / 70,301 | 13.0 |
+| ModelingData | TKGeomBase | 64 / 720 | 13,341 / 317,408 | 4.2 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 468 | 151,640 / 2,897,781 | 5.2 |
+| **All** |  | 628 | 178,030 / 2,897,781 | 6.1 |
 
 ## TKMath
 
@@ -131,4 +131,60 @@ broken down by package.
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
+
+## TKG2d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor2d | 4 / 6 | 926 / 1,720 | 53.8 |
+| Geom2d | 24 / 44 | 2,450 / 11,019 | 22.2 |
+| Geom2dAdaptor | 0 / 4 | 0 / 1,826 | 0.0 |
+| Geom2dEval | 2 / 14 | 549 / 4,405 | 12.5 |
+| Geom2dGridEval | 0 / 20 | 0 / 3,491 | 0.0 |
+| Geom2dHash | 0 / 14 | 0 / 1,027 | 0.0 |
+
+## TKG3d
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Adaptor3d | 8 / 16 | 1,374 / 7,038 | 19.5 |
+| AdvApprox | 14 / 14 | 2,320 / 2,320 | 100.0 |
+| Geom | 36 / 84 | 3,830 / 30,530 | 12.5 |
+| GeomAdaptor | 0 / 14 | 0 / 7,175 | 0.0 |
+| GeomEval | 3 / 25 | 1,182 / 9,820 | 12.0 |
+| GeomGridEval | 0 / 43 | 0 / 10,200 | 0.0 |
+| GeomHash | 0 / 36 | 0 / 2,800 | 0.0 |
+| TopAbs | 5 / 5 | 418 / 418 | 100.0 |
+
+## TKGeomBase
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| AdvApp2Var | 0 / 35 | 0 / 51,697 | 0.0 |
+| AppCont | 0 / 9 | 0 / 125,352 | 0.0 |
+| AppDef | 10 / 60 | 1,120 / 10,573 | 10.6 |
+| AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
+| Approx | 0 / 28 | 0 / 10,308 | 0.0 |
+| BndLib | 0 / 8 | 0 / 2,537 | 0.0 |
+| CPnts | 0 / 13 | 0 / 1,665 | 0.0 |
+| Extrema | 0 / 104 | 0 / 22,613 | 0.0 |
+| ExtremaPC | 0 / 18 | 0 / 3,990 | 0.0 |
+| FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
+| GC | 0 / 65 | 0 / 5,462 | 0.0 |
+| GCE2d | 0 / 15 | 0 / 432 | 0.0 |
+| GCPnts | 0 / 19 | 0 / 5,022 | 0.0 |
+| GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
+| Geom2dConvert | 0 / 14 | 0 / 4,160 | 0.0 |
+| GeomBndLib | 0 / 65 | 0 / 9,343 | 0.0 |
+| GeomConvert | 0 / 33 | 0 / 9,390 | 0.0 |
+| GeomLProp | 0 / 10 | 0 / 2,214 | 0.0 |
+| GeomLib | 0 / 28 | 0 / 7,033 | 0.0 |
+| GeomProjLib | 0 / 2 | 0 / 491 | 0.0 |
+| GeomTools | 0 / 11 | 0 / 3,846 | 0.0 |
+| Hermit | 0 / 2 | 0 / 1,280 | 0.0 |
+| IntAna | 0 / 20 | 0 / 7,605 | 0.0 |
+| IntAna2d | 0 / 18 | 0 / 1,971 | 0.0 |
+| LProp | 0 / 9 | 0 / 843 | 0.0 |
+| ProjLib | 0 / 32 | 0 / 12,847 | 0.0 |
+| gce | 0 / 48 | 0 / 4,513 | 0.0 |
 

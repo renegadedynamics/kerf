@@ -44,3 +44,13 @@ Phase 1 (part): B-spline surfaces and conversions.
   composite Bezier curves and polynomial curves and grids to B-splines). Converters return copies of their results.
 - Tests: the BSplSLib and Convert GTests; oracle tests of BSplCLib, BSplSLib, BSplSLib_Cache and Convert against
   native OCCT, all bit-identical.
+
+Phase 2 (part): approximation leaves.
+
+- `OcctNet.ModelingData`: AdvApprox (approximation of a function by B-splines, with cutting strategies); FEmTool
+  (finite elements for AppDef's variational approximation); GProp (global properties of points, curves, surfaces
+  and solids, principal properties, point-cloud equations); AppParCurves (MultiPoint, MultiCurve, MultiBSpCurve, and
+  its least-squares, constraint and gradient algorithms as generic classes over a MultiLine and its tool,
+  `IAppParCurves_LineTool<MultiLine>`).
+- Tests: the GProp GTests; unit tests of AdvApprox, FEmTool and AppParCurves on known approximations; oracle tests
+  of GProp_GProps and GProp_PrincipalProps against native OCCT (through BRepGProp), all bit-identical.
