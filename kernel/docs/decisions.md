@@ -2238,3 +2238,129 @@ unit 3F), TopTrans and TopClass, in the new assembly OcctNet.ModelingAlgorithms.
         `ITopClass_FClass2d<BRepClass_Edge>`, holding its fields and a TopTrans_CurveTransition as
         `tests/OcctNet.ModelingAlgorithms.Tests/TopClass/TopClassTests.cs` does. If BRepClass_Edge is a class,
         `CurrentEdge` must give a new edge each time, since the face classifier keeps the closest one.
+
+## Phase 3: unit 3E, 2D curve intersection
+
+IntCurve (with its .gxx files as generics), Geom2dInt, and Geom2dAPI's ProjectPointOnCurve, ExtremaCurveCurve and
+InterCurveCurve, in OcctNet.ModelingAlgorithms.
+
+3501. **IntCurve's conic/curve and curve/curve generics are generic classes** (decision 202's approach):
+      `IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, TheMyImpParTool>`,
+      `IntCurve_UserIntConicCurveGen<...>` (same parameters) and
+      `IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool>`, all `: IntRes2d_Intersection`.
+      - `TheMyImpParTool` is a type parameter because OCCT writes that function by hand per instantiation
+        (Geom2dInt, HLRBRep); it is constrained as decision 284's `IIntImpParGen_MyImpParTool` over
+        `IntCurve_IConicTool`.
+      - The bodies name the generic classes they use directly: `IntImpParGen_Intersector<IntCurve_IConicTool, ...>`
+        for OCCT's IntCurve_TheIntersector, `IntCurve_IntConicCurveGen<...>` for the `intconicurv` fields and
+        `IntCurve_IntPolyPolyGen<...>` (decision 3506) for `intcurvcurv`. OCCT's by-value fields are readonly
+        objects allocated with the algorithm.
+      - OCCT's instantiations are sealed subclasses forwarding OCCT's constructors: Geom2dInt_GInter,
+        Geom2dInt_IntConicCurveOfGInter, Geom2dInt_TheIntConicCurveOfGInter and (decision 284)
+        Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter and IntCurve_IntImpConicParConic. Their curve parameters
+        are plain `Adaptor2d_Curve2d` references; the inherited generic methods take `in TheCurve`.
+      - The long, regular bodies of IntCurve_UserIntConicCurveGen.gxx and IntCurve_IntCurveCurveGen.gxx (the type
+        switches) were converted by a scratch script (`::` to `.`, `this->`, `const T&` to `in T`, `out` on
+        GetInterval, `new()` locals) and checked by hand; C# needs a `break` after the last `default:` block where
+        C++ falls off the end of the switch.
+      Rejected: one class per instantiation (HLRBRep instantiates the same files over its own curves).
+3502. **`IIntCurve_CurveTool<TheCurve>`** (new, IntCurve) is OCCT's TheCurveTool macro: the static abstract members
+      the IntCurve generics call (GetType, Line ... Hyperbola, D0, D1, First/LastParameter, NbSamples(C),
+      NbIntervals, Intervals, GetInterval with `out` bounds), extending `IIntImpParGen_ParTool<TheCurve>` (Value, D2,
+      EpsX, NbSamples(C, U0, U1)). Geom2dInt_Geom2dCurveTool implements it as a stateless `readonly struct` (also
+      D3, DN, EpsX(C, Eps) and Degree, as plain statics); so do IntCurve_PConicTool, IntCurve_ProjectOnPConicTool and
+      Geom2dInt_TheProjPCurOfGInter for their interfaces (as AppDef_MyLineTool, decision 202). OCCT's
+      `IS_C2_COMPOSITE` is 0: intervals of C1 continuity.
+3503. **Geom2dInt's Extrema instantiations reuse Extrema's.** Geom2dInt_TheLocateExtPCOfTheProjPCurOfGInter and
+      Geom2dInt_PCLocFOfTheLocateExtPCOfTheProjPCurOfGInter are Extrema_GenLocateExtPC and Extrema_GFuncExtPC over
+      Geom2dInt_Geom2dCurveTool, whose members they call (D0, D1, D2, DN, GetType, First/LastParameter) forward to
+      the adaptor exactly as Extrema_Curve2dTool's do: they are Extrema_LocEPCOfLocateExtPC2d and
+      Extrema_PCFOfEPCOfExtPC2d (decision 219), which Geom2dInt_TheProjPCurOfGInter uses; their headers are in its
+      `Port of:` lines. Extrema_GCurveLocator (left by decision 222) is ported for this instantiation as the static
+      class Geom2dInt_TheCurveLocatorOfTheProjPCurOfGInter (`Locate` with an `out Extrema_POnCurv2d`); HLRBRep will
+      need its own.
+3504. **IntCurve's conic tools.**
+      - IntCurve_IConicTool and IntCurve_PConic are structs, copied as OCCT copies them, without equality (working
+        tools, as decision 54's result structs). IConicTool has an explicit parameterless constructor, to which the
+        others chain, so its transformation is the identity for a line as in C++ (`default` is all zeros). PConic's
+        `SetEpsX`/`SetAccuracy` are internal, with `WithEpsX`/`WithAccuracy`. OCCT's parameter macros (Elips_a,
+        Line_a, Circle_r, Parab_2p, ...) are written as the fields `prm1`/`prm2`/`prm3` they expand to.
+      - The MyImpParTool classes keep the implicit tool by value as OCCT does; OCCT's `void*` to the parametric
+        curve is a copy of the PConic (a struct the intersection never changes) or the adaptor reference.
+      - Where OCCT's `default:` branches print an error and leave `out` arguments unwritten, the port writes zeros
+        (decision 32). IntCurve_PConicTool::D2 on a line never writes the normal (OCCT clears the tangent instead);
+        the port writes (0, 0), which is what OCCT's callers hold in their default-constructed vectors.
+3505. **IntCurve_IntConicConic is a sealed partial class in two files**, IntCurve_IntConicConic.cs (.hxx, .lxx,
+      .cxx) and IntCurve_IntConicConic_1.cs (_1.cxx: line/line, line/circle, circle/circle, line/ellipse), with
+      OCCT's 15 constructors and Perform overloads, conics and domains `in`; only OCCT's argument orders exist (no
+      circle/line: callers swap and use `SetReversedParameters`, as in C++). The file-level helpers are private
+      statics; the unused globals `Affichage`/`AffichageGraph` are left out. The _Tool header is the internal static
+      class `IntCurve_IntConicConic_Tool` (`using static`) with `PIpPI`, `Determine_Transition_LC`,
+      `NormalizeOnCircleDomain` and the nested structs `Interval` and `PeriodicInterval` (C++ copies them by value).
+      Their default constructors give a null interval, so arrays of them are filled with `new()` explicitly.
+      `PeriodicInterval.FirstIntersection`/`SecondIntersection` take the other interval by `ref`: OCCT shifts it by
+      periods in place and later calls see the shift. Arguments OCCT may leave unwritten are `ref` (decision 57):
+      DomainIntersection's positions, LineLineGeometricIntersection's U1/U2/SinDemiAngle, computeIntPoint's point;
+      the tangents given to Determine_Transition_LC are `ref` because it normalises Tan1. `std::nextafter(2π, 0)` is
+      `Math.BitDecrement`.
+3506. **IntCurve's parametric/parametric generics are generic classes**: `IntCurve_Polygon2dGen<TheCurve,
+      TheCurveTool> : Intf_Polygon2d` (filling `myBox`; `Closed(bool)` overloads the base's `Closed()`),
+      `IntCurve_DistBetweenPCurvesGen<TheCurve, TheCurveTool> : math_FunctionSetWithDerivatives`,
+      `IntCurve_ExactIntersectionPoint<TheCurve, TheCurveTool>` and `IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool,
+      TheProjPCur>`, with the Geom2dInt sealed subclasses Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter,
+      Geom2dInt_TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter,
+      Geom2dInt_ExactIntersectionPointOfTheIntPCurvePCurveOfGInter and Geom2dInt_TheIntPCurvePCurveOfGInter. OCCT's
+      `void*` curve pointers are curve fields (the caller's adaptors, as OCCT keeps them).
+      `ExactIntersectionPoint.Perform` takes the segment indices and parameters by `ref` (it moves them along the
+      polygons); `Roots` returns by `out`. The `NCollection_Handle` polygons are plain references and the `new int[]`
+      filter arrays of the self-intersection .NET arrays. OCCT's file-static `GetIntersection` and `HeadOrEndPoint`
+      are private statics, and its four copies of the PosSegment block one helper, `AddPosSegment`. The polygon's
+      `Dump` (debug output) and the stdout message of `ApproxParamOnCurve` are left out. The never-read `done` flag
+      of ExactIntersectionPoint is kept, with CS0414 suppressed on that field only (as decision 221).
+3507. **Geom2dAPI's three algorithms** are classes with OCCT's API (decision 117).
+      - Geom2dAPI_InterCurveCurve keeps copies of the curves, as OCCT does, for `Segment`, which returns the two
+        trimmed curves through `out`. OCCT's assignment of a new Geom2dInt_GInter to its field is a new object;
+        `Intersector()` returns that object (OCCT's `const&`). Null curves raise Standard_NullObject as in OCCT.
+      - Geom2dAPI_ProjectPointOnCurve and Geom2dAPI_ExtremaCurveCurve keep the Extrema_ExtPC2d/ExtCC2d they build
+        (OCCT copies it into its field; decision 224) and the Geom2dAdaptor_Curve fields it refers to; `Extrema()`
+        returns it. ExtremaCurveCurve is computed by its constructor (readonly fields).
+      - OCCT's implicit conversion operators (`operator int()`, `operator double()`, `operator gp_Pnt2d()`) are
+        explicit C# operators: they can throw (StdFail_NotDone), which an implicit conversion shouldn't.
+      - `Parameter(Index, U)`, `Points`, `Parameters`, `NearestPoints` and `LowerDistanceParameters` return through
+        `out`.
+3508. **Tests.**
+      - Unit (`tests/OcctNet.ModelingAlgorithms.Tests`, 92 new, 159 in all): OCCT's GTests of
+        Geom2dAPI_InterCurveCurve (TKGeomAlgo's three and TKG2d's OCC24889; IntCurve has none); known answers for
+        every conic pair of IntCurve_IntConicConic with bounded, unbounded, arc and closed domains, tangency, misses,
+        coincident lines and circles and reversed parameters, IntImpConicParConic, IConicTool's distance and gradient
+        (finite differences) and the PConic tools (43); the polygon intersection on polylines, Bezier and B-spline
+        curves and trimmed circles: crossings, end contacts, tangency, overlaps (segments), self-intersection of a
+        loop (exact t = 1/2 ∓ √60/20), the polygon, DistBetweenPCurves (finite differences) and
+        ExactIntersectionPoint (27); Geom2dAPI: line/circle, tangency, circle/circle (secant, identical: a segment),
+        ellipse/segment, polyline and cubic crossings, a self-crossing polyline, overlaps, misses, projections and
+        extrema (22). Tangent circles touch along a short arc inside the tolerance, so OCCT reports a tiny segment
+        whose ends are crossings; at circle parameter 0 the closed domain cuts it in two. The tests pin this.
+      - Oracle (`tests/OcctNet.Oracle.Tests/Geom2dAPI/Geom2dAPIOracleTests.cs`): native Geom2dAPI_InterCurveCurve
+        and Geom2dAPI_ProjectPointOnCurve against the port's on random lines, segments, circles, arcs, ellipses,
+        elliptic arcs and B-splines (rational, periodic, C0 breaks; whole or trimmed), built from the same raw numbers.
+        Second curves are independent, through a point of the first, tangent to it there (lines and circles), or the
+        first one again (whole or trimmed: overlaps); tolerances 1e-4 to 1e-9. The bindings expose only NbPoints,
+        Point and NbSegments of InterCurveCurve, so parameters are compared through the points.
+        - Two curves, 1,500 pairs (4,732 points, 424 segments, 562 kinds of pairs): 13,945 of 13,964 values
+          bit-identical; the 19 others (up to 5.1e-15) are all line/circle points, which go through `atan2`, `cos`
+          and `sin` (MSVC's and .NET's maths libraries).
+        - Self-intersections, 400 curves (518 points, 137 segments): 2,236 of 2,236 bit-identical.
+        - Geom2dAPI_ProjectPointOnCurve (the port's class, reused through Init), 1,800 projections with 2,853
+          solutions: 21,176 of 21,176 values bit-identical.
+        Geom2dAPI_ExtremaCurveCurve is not bound natively (unit tests only; its Extrema_ExtCC2d has decision 223's
+        coverage). Native Geom2d binds no Bezier, parabola, hyperbola or offset curve: those paths are unit-tested.
+3509. **For later units.**
+      - 3G (BRepClass): BRepClass_Intersector derives from Geom2dInt_IntConicCurveOfGInter in OCCT and calls its
+        Perform with a gp_Lin2d and an adaptor of the edge's pcurve; it must also implement
+        `ITopClass_Intersector<BRepClass_Edge>` (decision 288). The intersections keep references to the adaptors
+        only during Perform; results are IntRes2d values.
+      - 3J (BRepCheck): BRepCheck_Wire's self-intersection check uses Geom2dInt_GInter on Geom2dAdaptor_Curves of
+        the pcurves with explicit domains, and reads IntRes2d points and segments (values);
+        `Geom2dInt_GInter.ComputeDomain` is public.
+      - HLRBRep (later): instantiate the IntCurve generics over HLRBRep_CurveTool with a struct implementing
+        `IIntCurve_CurveTool`, its own MyImpParTool class and a curve locator (decision 3503).
