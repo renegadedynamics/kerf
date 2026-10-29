@@ -4486,3 +4486,91 @@ merge.
 4012. **Delabella keeps its MIT licence notice.** `delabella.cpp` is third-party code inside OCCT (GUMIX, Marcin
       Sokalski, 2018). Its C# port keeps the MIT notice at the top, beside OCCT's provenance, and the notice goes in
       a THIRD-PARTY-NOTICES file.
+
+## Phase 4: unit 4L1, Draw-lite mesh readers
+
+The Draw commands that read the meshes shapes already carry, in Draw-lite (tests/OcctNet.DrawLite), in two new files
+registered in DrawBuiltins: DBRep's `tclean`; MeshTest.cxx's `trinfo` (with `-lods`), `triepoints`, `trmergenodes` and
+`correctnormals`; MeshTest_PluginCommands.cxx's `triarea`, `tricheck` (MeshTest_CheckTopology, ported as
+`MeshTestCheckTopology`) and `mpparallel`. DrawResources' `checktrinfo` now runs over `trinfo`. DrawCorpus reads the
+grids that have a `cases.list`. Numbers from 4301 are placeholders, renumbered on merge.
+
+4301. **DrawCorpus reads `cases.list`** (decision 4011), as TestCommands.tcl's `test` does: a grid with a cases.list
+      takes its cases from the directory the file's first line names, relative to the grid (mesh/standard_incmesh
+      reads mesh/data/standard), and runs them between its own and its group's begin and end scripts. The scan and
+      the runs now see mesh (699 cases), heal's split and surface-to-revolution grids (2,259), chamfer (279), opengl,
+      opengles2, opengles3 and xml: 21,068 cases where there were 17,237. `DrawCorpus.ReadCaseLists = false` gives the
+      former set, `IsListed` tells a case of those grids. `IndirectCalls` now also covers procedures of a grid's begin
+      script: chamfer/begin's `compute_chamf` runs its command from a string (`catch "$chamf_str"`), so the scan
+      counted the 279 chamfer cases runnable without `chamf`; they now miss it.
+4302. **The mesh readers are written as OCCT writes them**, over DrawCxx (decision 405): `di <<` builds the result
+      (reals at `%.17g`: "Maximal deflection 1.6000000007999999"), `std::cout` and Message::SendFail write to the
+      output (triarea's "face N has no triangulation", mpparallel's line, trinfo's usage). tricheck draws its faulty
+      links, nodes and triangles with `DrawTrSurf::Set(".", ...)`, which only displays them; Draw-lite has no viewer,
+      so they aren't made. trinfo `-lods` names a triangulation's type by its .NET type name (`Poly_Triangulation`,
+      as Standard_Type::Name). tclean's `PrintHelp` (no arguments, or only flags) gives an empty error message:
+      Draw-lite has no help texts, and OCCT's `Tcl_Eval("help ...")` replaces the result anyway.
+4303. **The in-place commands run on a copy of the graph** (decision 480): `tclean` copies one compound of all its
+      shapes (shared sub-shapes stay shared), cleans it with BRepTools::Clean or CleanGeometry and binds each name to
+      its copy; `trmergenodes` without `-oneFace` binds its copy only when a face's triangulation was replaced, and
+      `correctnormals` only when EnsureNormalConsistency corrected something. As before, other variables that hold
+      sub-shapes of the shape keep the old TShapes (`explode` before `tclean` sees the meshes; in DRAWEXE it doesn't);
+      decision 4010 rebinds them through the history in 4L2. The port's EnsureNormalConsistency attaches corrected
+      copies of the frozen triangulations with BRep_Builder::UpdateFace, which marks the faces modified and
+      unchecked, where OCCT writes into the attached triangulations and leaves the flags: correctnormals gives the
+      faces their flags back, so the shape writes OCCT's text (the oracle found the Checked flag differing first).
+4304. **Orders that follow addresses in OCCT** (decision 18): `triepoints` numbers the edges in TopExp_Explorer's
+      order, where OCCT iterates an NCollection_Map of shapes; `tricheck` lists the links of "Not connected mesh
+      inside face" in the order they were first met, where OCCT iterates an NCollection_Map of BRepMesh_Edge. The
+      names and counts are OCCT's.
+4305. **mpparallel keeps its flag per interpreter**: BRepMesh_IncrementalMesh's parallel default isn't ported yet, and
+      parallel corpus runs must not share it. Unit 4L2 makes the command set BRepMesh_IncrementalMesh's static
+      (decision 4007).
+4306. **Tests.**
+      - Draw-lite (DrawMeshCommandsTests, 10 tests): each command's text and errors on data/occ's solid.brep,
+        Room.brep and CrankArm.brep, checktrinfo, tricheck's small triangles, faces without triangulation and free
+        links (Room's triangulations merged into one face by `trmergenodes -oneFace`), the copies tclean,
+        trmergenodes and correctnormals bind, the command log and Draw_Files. DrawCorpusTests: the cases.list grids.
+      - Oracle (DrawLiteMeshOracleTests): 525 shapes, data/occ's files with their triangulations and meshed natively
+        (BRepTools::Clean, BRepMesh_IncrementalMesh at a relative deflection of 0.05) and the dataset's 459 .brep files
+        under 400 KB that carry triangulations, read by both sides from native OCCT's copy: trinfo's faces, empty
+        faces, triangles, nodes and maximal deflection; triarea's two areas with and without an epsilon; tricheck's
+        faces without triangulation, free nodes and small triangles (computed from the native triangulations): 5,769
+        values, all bit-identical. correctnormals' verdict and tclean against EnsureNormalConsistency and
+        BRepTools::Clean: 974 BRep texts (with normals for correctnormals), all byte-identical. 38 shapes fail on both
+        sides: triangles that name nodes out of range in dataset files (Standard_OutOfRange) and EnsureNormalConsistency's
+        null polygon (an access violation natively, occt-issues.md). 38 shapes have free links, cross-face errors or
+        asynchronous edges by tricheck (not compared: no native binding of MeshTest_CheckTopology). 458 s.
+      - Corpus: see decision 4307.
+4307. **The corpus** (`DrawCorpusTests`, before and after 4L1, `Unit4L1Commands`, `Before4L1`).
+      - Grids: 21,068 cases where the former scan saw 17,237; the 3,831 cases of the cases.list grids have no
+        runnable case yet. Before the `compute_chamf` entry (decision 4301) the scan counted chamfer's 279 cases
+        runnable: 261 FAILED on `chamf` ("invalid command name") and 18 SKIPPED; they now miss `chamf`. What the
+        listed grids miss: heal's split and conversion grids `DT_SplitAngle`, `DT_ShapeDivide` and `statshape`,
+        `DT_ShapeConvertRev` and `expshape` (phase 7); mesh `incmesh`, and in branches its .brep cases don't take,
+        `stepread` and `tpcompound` (STEP data) and `vglinfo` (the shading grids); chamfer `chamf`; opengl and
+        xml the viewer and OCAF commands.
+      - Runnable cases 734 before 4L1, 961 after (all in the former grids). Before: 347 OK, 7 BAD, 1 IMPROVEMENT,
+        364 SKIPPED, 15 FAILED. After: 452 OK, 12 BAD (5 new, OCCT's own TODOs: bugs/fclasses/bug63,
+        bugs/moddata_1/buc60755, bugs/moddata_2/bug22910_1, bug592, bug889), 1 IMPROVEMENT, 468 SKIPPED (data files
+        the public dataset lacks), 28 FAILED: the 15 of before (13 demo/samples and v3d cases on later commands,
+        lowalgos/extss/bug29712_44, an OCCT test bug), 12 that mesh through the viewer (`vdisplay` and
+        `vsetdispmode 1`, which Draw-lite ignores, then `checktrinfo` or `tricheck` find no triangles:
+        bugs/heal/bug26716, bugs/mesh/bug28719 and bug31258, bugs/moddata_1/bug16, bugs/moddata_2/bug258_1, bug258_2
+        and bug6412, bugs/moddata_3/bug26359, v3d/bugs/bug19_2, bug22304, bug364 and bug4894; decision 4010's
+        `vdisplay` meshing, unit 4L2), and bugs/fclasses/bug1281, which tests `pload ALL`'s plugin loading (a no-op
+        in Draw-lite). No failure on a port bug of this unit.
+      - A Draw-lite bug the new cases found: `dgetenv` of a variable that isn't set failed ("Environment variable
+        ... is not set"); Draw's returns an empty result (getenv). Fixed; bugs/demo/bug23671 is OK.
+      - The cases that miss one command: DT_SplitAngle 800, bcut 432, thrusections 362, bfuse 316, chamf 285,
+        blend 284, bcommon 269, bsection 165, fixshape 146, incmesh 85, prj 76.
+4308. **For unit 4L2.**
+      - `incmesh` goes beside these commands (MeshTestCommands), binds its meshed copy as tclean does, and rebinds the
+        variables that share sub-shapes (decision 4010); `mpparallel` then sets BRepMesh_IncrementalMesh's parallel
+        default instead of its per-interpreter flag.
+      - The mesh group's 699 cases also need, for the scan to count them runnable, `stepread` and `tpcompound` (a
+        branch for STEP files only) and `vglinfo` (shading grids): an ignored `vglinfo` and a scan that knows the
+        branch, or the STEP commands (phase 8). 83 of the 233 data files are in the public dataset.
+      - The 12 viewer-meshed cases above pass when `vdisplay` meshes as AIS does.
+      - tricheck and triarea are validated against native OCCT; the mesh end script's `area difference`,
+        `Free links`, `Cross face errors` and `Free nodes` checks then judge 4L2's meshes.

@@ -44,6 +44,7 @@ internal static class DrawBuiltins
         BRepTestModifyCommands.Register(theInterpreter);
         GeometryTestCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
+        MeshTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
@@ -62,9 +63,17 @@ internal static class DrawBuiltins
 
             return "";
         });
-        theInterpreter.Register("dgetenv", static (i, a) => a.Count == 2
-                                                               ? i.TryGetVariable("::env", a[1], out string aValue) ? aValue : throw new DrawException($"Environment variable {a[1]} is not set")
-                                                               : throw TclControlCommands.Usage("dgetenv name"));
+        // dgetenv name: the variable's value, empty when it isn't set (Draw_VariableCommands.cxx: getenv)
+        theInterpreter.Register("dgetenv", static (i, a) =>
+        {
+            if (a.Count < 2)
+            {
+                i.Output.WriteLine($"Use: {a[0]} {{varname}}");
+                throw new DrawException("");
+            }
+
+            return i.TryGetVariable("::env", a[1], out string aValue) ? aValue : "";
+        });
         theInterpreter.Register("dsetenv", static (i, a) =>
         {
             if (a.Count == 3)
