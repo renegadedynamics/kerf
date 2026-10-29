@@ -257,6 +257,8 @@ public class Geom_OffsetSurface : Geom_Surface
     protected internal sealed override void UReverse()
     {
         CheckMutable();
+        // OCCT: UReverse, VReverse and Transform drop the equivalent-surface representation without recomputing it
+        // (SetOffsetValue and SetBasisSurface do recompute it): see occt-issues.md.
         ClearEvalRepresentation();
         ownBasisSurface();
         basisSurf.UReverse();
