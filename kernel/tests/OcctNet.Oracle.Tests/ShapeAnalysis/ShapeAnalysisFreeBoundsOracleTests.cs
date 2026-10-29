@@ -36,7 +36,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-safb-").FullName;
     private int myFileNumber;
     private readonly List<string> myDifferences = [];
-    private int myCompared, myIdentical, myFreeMasked;
+    private int myCompared, myIdentical, myFreeMasked, myExceptions;
 
     public void Dispose()
     {
@@ -155,6 +155,48 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         return aC;
     }
 
+    private static T? Try<T>(Func<T> theFunc, out string? theError) where T : class
+    {
+        try
+        {
+            theError = null;
+            return theFunc();
+        }
+        catch (N.OcctException anException)
+        {
+            // "Standard_NullObject: message": the OCCT type
+            string aMessage = anException.Message;
+            int aColon = aMessage.IndexOf(':');
+            theError = aColon > 0 ? aMessage[..aColon] : aMessage;
+            return null;
+        }
+        catch (Standard_Failure anException)
+        {
+            theError = anException.GetType().Name;
+            return null;
+        }
+    }
+
+    // True (the comparison done) if either side threw: both must have thrown the same OCCT exception.
+    private bool Failed(string? theNError, string? thePError, string theWhat)
+    {
+        if (theNError is null && thePError is null)
+        {
+            return false;
+        }
+        myCompared++;
+        if (theNError == thePError)
+        {
+            myIdentical++;
+            myExceptions++;
+        }
+        else
+        {
+            myDifferences.Add($"{theWhat}: {theNError ?? "no exception"} natively, {thePError ?? "no exception"} in the port");
+        }
+        return true;
+    }
+
     private void Compare(N.TopoDS_Shape theShape, string theWhat)
     {
         if (Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
@@ -168,9 +210,13 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             string w = $"{theWhat}, Shell (internal {anInternal})";
             using var aNSas = new N.ShapeAnalysis_Shell();
             var aPSas = new ShapeAnalysis_Shell();
-            bool aNRes = aNSas.CheckOrientedShells(aNS, true, anInternal);
-            bool aPRes = aPSas.CheckOrientedShells(aPS, true, anInternal);
-            SameValue(B(aNRes), B(aPRes), w + ", result");
+            object? aNRes = Try<object>(() => aNSas.CheckOrientedShells(aNS, true, anInternal), out string? aNErr);
+            object? aPRes = Try<object>(() => aPSas.CheckOrientedShells(aPS, true, anInternal), out string? aPErr);
+            if (Failed(aNErr, aPErr, w))
+            {
+                continue;
+            }
+            SameValue(B((bool)aNRes!), B((bool)aPRes!), w + ", result");
             SameValue(B(aNSas.HasBadEdges()), B(aPSas.HasBadEdges()), w + ", HasBadEdges");
             SameValue(B(aNSas.HasFreeEdges()), B(aPSas.HasFreeEdges()), w + ", HasFreeEdges");
             SameValue(B(aNSas.HasConnectedEdges()), B(aPSas.HasConnectedEdges()), w + ", HasConnectedEdges");
@@ -191,10 +237,14 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                 {
                     aPSeq.Append(anExp.Current());
                 }
-                N.TopTools_HSequenceOfShape? aNW = N.ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aNSeq, 1e-4, false);
-                NCollection_HSequence<TopoDS_Shape> aPW = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false);
-                SameValue(aNW!.Length(), aPW.Length(), w + ", ConnectEdgesToWires count");
-                for (int i = 1; i <= Math.Min(aNW.Length(), aPW.Length()); i++)
+                N.TopTools_HSequenceOfShape? aNW = Try(() => N.ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aNSeq, 1e-4, false)!, out aNErr);
+                NCollection_HSequence<TopoDS_Shape>? aPW = Try(() => ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false), out aPErr);
+                if (Failed(aNErr, aPErr, w + ", ConnectEdgesToWires"))
+                {
+                    continue;
+                }
+                SameValue(aNW!.Length(), aPW!.Length(), w + ", ConnectEdgesToWires count");
+                for (int i = 1; i <= Math.Min(aNW.Length(), aPW!.Length()); i++)
                 {
                     SameShape(aNW.Value(i), aPW.Value(i), w + $", ConnectEdgesToWires wire {i}");
                     SameValue(B(aNW.Value(i).Closed()), B(aPW.Value(i).Closed()), w + $", ConnectEdgesToWires wire {i} closed");
@@ -211,14 +261,37 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         foreach ((bool aSplitClosed, bool aSplitOpen) in new[] { (false, true), (false, false), (true, false), (true, true) })
         {
             string w = $"{theWhat}, FreeBounds ({aSplitClosed}, {aSplitOpen})";
-            using var aNFb = new N.ShapeAnalysis_FreeBounds(aNS, aSplitClosed, aSplitOpen);
-            var aPFb = new ShapeAnalysis_FreeBounds(aPS, aSplitClosed, aSplitOpen);
-            SameShape(aNFb.GetClosedWires(), aPFb.GetClosedWires(), w + ", closed wires");
+            using N.ShapeAnalysis_FreeBounds? aNFb = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, aSplitClosed, aSplitOpen), out string? aNErr);
+            ShapeAnalysis_FreeBounds? aPFb = Try(() => new ShapeAnalysis_FreeBounds(aPS, aSplitClosed, aSplitOpen), out string? aPErr);
+            if (Failed(aNErr, aPErr, w))
+            {
+                continue;
+            }
+            SameShape(aNFb!.GetClosedWires(), aPFb!.GetClosedWires(), w + ", closed wires");
             SameShape(aNFb.GetOpenWires(), aPFb.GetOpenWires(), w + ", open wires");
         }
-        using var aNFbI = new N.ShapeAnalysis_FreeBounds(aNS, false, true, true);
-        var aPFbI = new ShapeAnalysis_FreeBounds(aPS, false, true, true);
-        SameShape(aNFbI.GetClosedWires(), aPFbI.GetClosedWires(), theWhat + ", FreeBounds (internal edges), closed wires");
+#if OCCTNET_SEWING // TODO(6S): the tolerance form sews; remove the condition when 6S merges
+        // the tolerance form: the free edges sewing leaves, connected by distance
+        foreach (double aTol in new[] { 1e-6, 1e-2 })
+        {
+            string w = $"{theWhat}, FreeBounds (tolerance {aTol})";
+            using N.ShapeAnalysis_FreeBounds? aNFb = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, aTol, false, true), out string? aNErr);
+            ShapeAnalysis_FreeBounds? aPFb = Try(() => new ShapeAnalysis_FreeBounds(aPS, aTol, false, true), out string? aPErr);
+            if (Failed(aNErr, aPErr, w))
+            {
+                continue;
+            }
+            SameShape(aNFb!.GetClosedWires(), aPFb!.GetClosedWires(), w + ", closed wires");
+            SameShape(aNFb.GetOpenWires(), aPFb.GetOpenWires(), w + ", open wires");
+        }
+#endif
+        using N.ShapeAnalysis_FreeBounds? aNFbI = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, false, true, true), out string? aNErrI);
+        ShapeAnalysis_FreeBounds? aPFbI = Try(() => new ShapeAnalysis_FreeBounds(aPS, false, true, true), out string? aPErrI);
+        if (Failed(aNErrI, aPErrI, theWhat + ", FreeBounds (internal edges)"))
+        {
+            return;
+        }
+        SameShape(aNFbI!.GetClosedWires(), aPFbI!.GetClosedWires(), theWhat + ", FreeBounds (internal edges), closed wires");
         SameShape(aNFbI.GetOpenWires(), aPFbI.GetOpenWires(), theWhat + ", FreeBounds (internal edges), open wires");
     }
 
@@ -230,7 +303,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
 
     private void Report(string theWhat)
     {
-        output.WriteLine($"{theWhat}: {myIdentical}/{myCompared} values and shapes identical ({myFreeMasked} with the Free column masked), "
+        output.WriteLine($"{theWhat}: {myIdentical}/{myCompared} values and shapes identical ({myFreeMasked} with the Free column masked, {myExceptions} the same exception on both sides), "
                          + $"{myDifferences.Count} different");
         foreach (string aD in myDifferences.Take(40))
         {

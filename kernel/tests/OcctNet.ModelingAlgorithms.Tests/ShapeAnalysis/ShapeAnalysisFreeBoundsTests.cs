@@ -229,7 +229,7 @@ public class ShapeAnalysisFreeBoundsTests
 
         var aData = new ShapeAnalysis_FreeBoundData(aW);
         aProps.CheckNotches(aData);
-        Assert.Equal(1, aData.NbNotches()); // the notch at the far end; the closing one turns less than 0.95 pi
+        Assert.Equal(2, aData.NbNotches()); // at the far end, and from the last edge back to the first (OCCT wraps round)
         Assert.Equal(aDist0, aData.NotchWidth(1));
         Assert.Equal(aData.NotchWidth(1), aData.NotchWidth(aData.Notch(1)));
         aData.Clear();
