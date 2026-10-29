@@ -28,6 +28,15 @@ public sealed class NCollection_PackedMapOfInteger
         private uint myMask;
         private uint myData;
 
+        public PackedMapNode(uint theMask, uint theData, PackedMapNode? thePtr)
+        {
+            myNext = thePtr;
+            myMask = theMask;
+            myData = theData;
+        }
+
+        public uint Mask() => myMask;
+
         public PackedMapNode(int theValue, PackedMapNode? thePtr)
         {
             myNext = thePtr;
@@ -238,6 +247,33 @@ public sealed class NCollection_PackedMapOfInteger
 
         myNbBuckets = aNewBuck;
         myData1 = aNewData;
+    }
+
+    /// <summary>Makes this map a copy of <paramref name="theOther"/>, node by node, as OCCT's <c>Assign</c>.</summary>
+    public NCollection_PackedMapOfInteger Assign(NCollection_PackedMapOfInteger theOther)
+    {
+        if (!ReferenceEquals(this, theOther))
+        {
+            Clear();
+            if (!theOther.IsEmpty())
+            {
+                ReSize(theOther.myNbPackedMapNodes);
+                long nBucketsSrc = theOther.myNbBuckets;
+                long nBuckets = myNbBuckets;
+                for (long i = 0; i <= nBucketsSrc; ++i)
+                {
+                    for (PackedMapNode? p = theOther.myData1![i]; p is not null;)
+                    {
+                        long aHashCode = p.HashCode(nBuckets);
+                        myData1![aHashCode] = new PackedMapNode(p.Mask(), p.Data(), myData1[aHashCode]);
+                        ++myNbPackedMapNodes;
+                        p = p.Next();
+                    }
+                }
+            }
+            myExtent = theOther.myExtent;
+        }
+        return this;
     }
 
     public void Clear()

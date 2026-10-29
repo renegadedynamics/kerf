@@ -224,6 +224,43 @@ public class BRepExtremaTests
         aSnap2.AssertUnchanged(aBox2);
     }
 
+    /// <summary>
+    /// The loops moved onto OSD_Parallel (decision 4002): a multi-threaded run done by the serial fallback (no threads,
+    /// as in WebAssembly) gives the single-threaded run's solutions, in the same order.
+    /// </summary>
+    [Fact]
+    public void SerialFallback_GivesTheSingleThreadSolutions()
+    {
+        TopoDS_Shape aBox1 = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
+        TopoDS_Shape aBox2 = TestShapes.Frozen(TestShapes.Box(1, 1, 1)).Moved(new TopLoc_Location(
+            new gp_Trsf().WithTranslation(new gp_Vec(3, 0.5, 1))));
+        TopoDS_Shape aBox3 = TestShapes.Frozen(TestShapes.Box(2, 2, 2)).Moved(new TopLoc_Location(
+            new gp_Trsf().WithTranslation(new gp_Vec(-1, -1, 4))));
+        TopoDS_Shape aCompound = TopoDS_Builder.MakeCompound(aBox2, aBox3);
+        foreach ((TopoDS_Shape aS1, TopoDS_Shape aS2) in new[] { (aBox1, aBox2), (aBox1, aCompound), (aCompound, aBox1) })
+        {
+            var aSingle = new BRepExtrema_DistShapeShape(aS1, aS2);
+            var aFallback = new BRepExtrema_DistShapeShape();
+            aFallback.SetMultiThread(true);
+            aFallback.LoadS1(aS1);
+            aFallback.LoadS2(aS2);
+            using (OSD_Parallel.ForceSerialScope())
+            {
+                Assert.True(aFallback.Perform());
+            }
+
+            Assert.Equal(aSingle.Value(), aFallback.Value());
+            Assert.Equal(aSingle.NbSolution(), aFallback.NbSolution());
+            for (int i = 1; i <= aSingle.NbSolution(); i++)
+            {
+                Assert.Equal(aSingle.PointOnShape1(i), aFallback.PointOnShape1(i));
+                Assert.Equal(aSingle.PointOnShape2(i), aFallback.PointOnShape2(i));
+                Assert.True(aSingle.SupportOnShape1(i).IsEqual(aFallback.SupportOnShape1(i)));
+                Assert.True(aSingle.SupportOnShape2(i).IsEqual(aFallback.SupportOnShape2(i)));
+            }
+        }
+    }
+
     [Fact]
     public void LocatedShapes()
     {

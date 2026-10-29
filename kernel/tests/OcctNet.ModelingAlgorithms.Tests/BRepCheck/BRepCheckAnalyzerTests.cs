@@ -171,7 +171,7 @@ public class BRepCheckAnalyzerTests
         return aText.ToString();
     }
 
-    /// <summary>The serial analysis, checked against the parallel one status by status.</summary>
+    /// <summary>The serial analysis, checked against the parallel one and its serial fallback, status by status.</summary>
     private static BRepCheck_Analyzer Analyze(in TopoDS_Shape theShape, bool theGeomControls = true, bool theIsExact = false,
                                               bool theMayFail = false)
     {
@@ -182,6 +182,12 @@ public class BRepCheckAnalyzerTests
         string aDump = Dump(aSerial, theShape);
         Assert.Equal(aDump, Dump(aParallel, theShape));
         Assert.Equal(aSerial.IsValid(), aParallel.IsValid());
+        // and the parallel analysis run by OSD_Parallel's serial fallback (no threads, as in WebAssembly)
+        using (OSD_Parallel.ForceSerialScope())
+        {
+            var aFallback = new BRepCheck_Analyzer(theShape, theGeomControls, true, theIsExact);
+            Assert.Equal(aDump, Dump(aFallback, theShape));
+        }
         if (!theMayFail)
         {
             Assert.DoesNotContain(nameof(BRepCheck_CheckFail), aDump);

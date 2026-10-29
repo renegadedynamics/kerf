@@ -119,17 +119,7 @@ public class BVH_DistanceField<T, TVec>
         aVoxelSize[2] = (aCornerMax[2] - aCornerMin[2]) / T.CreateTruncating(myDimensionZ);
 
         // OSD_Parallel::For(0, myDimensionZ, BVH_ParallelDistanceFieldBuilder, !IsParallel())
-        if (IsParallel())
-        {
-            Parallel.For(0, myDimensionZ, theIndex => BuildSlices(theGeometry, theIndex, theIndex + 1));
-        }
-        else
-        {
-            for (int theIndex = 0; theIndex < myDimensionZ; ++theIndex)
-            {
-                BuildSlices(theGeometry, theIndex, theIndex + 1);
-            }
-        }
+        OSD_Parallel.For(0, myDimensionZ, theIndex => BuildSlices(theGeometry, theIndex, theIndex + 1), !IsParallel());
 
         return true;
     }
