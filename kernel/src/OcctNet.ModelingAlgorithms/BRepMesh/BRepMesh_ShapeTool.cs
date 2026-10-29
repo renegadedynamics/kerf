@@ -246,8 +246,9 @@ public static class BRepMesh_ShapeTool
                              out double theLastParam,
                              bool isConsiderOrientation = false)
     {
-        return shapeAnalysisEdgePCurve(theEdge, theFace, out thePCurve, out theFirstParam, out theLastParam,
-                                       isConsiderOrientation);
+        ShapeAnalysis_Edge aSAEdge = new();
+        return aSAEdge.PCurve(theEdge, theFace, out thePCurve, out theFirstParam, out theLastParam,
+                              isConsiderOrientation);
     }
 
     /// <summary>The 3D curve of the edge, located, and its range (ShapeAnalysis_Edge::Curve3d).</summary>
@@ -257,8 +258,8 @@ public static class BRepMesh_ShapeTool
                              out double theLastParam,
                              bool isConsiderOrientation = false)
     {
-        return shapeAnalysisEdgeCurve3d(theEdge, out theCurve, out theFirstParam, out theLastParam,
-                                        isConsiderOrientation);
+        ShapeAnalysis_Edge aSAEdge = new();
+        return aSAEdge.Curve3d(theEdge, out theCurve, out theFirstParam, out theLastParam, isConsiderOrientation);
     }
 
     // Returns maximum tolerance of face element of the specified type (OCCT's template over the shape type and the
@@ -279,52 +280,5 @@ public static class BRepMesh_ShapeTool
         }
 
         return aMaxTolerance;
-    }
-
-    // ShapeAnalysis_Edge::PCurve (TKShHealing, unit 4S) as BRepMesh calls it: a stateless copy of its two bodies, so
-    // that this unit doesn't wait for 4S. Replace both helpers by `new ShapeAnalysis_Edge().PCurve(...)` and
-    // `.Curve3d(...)` once 4S is merged (decision 524).
-    private static bool shapeAnalysisEdgePCurve(in TopoDS_Edge edge,
-                                                in TopoDS_Face face,
-                                                out Geom2d_Curve? C2d,
-                                                out double cf,
-                                                out double cl,
-                                                bool orient)
-    {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
-        C2d = BRep_Tool.CurveOnSurface(edge, S, L, out cf, out cl);
-        if (orient && edge.Orientation() == TopAbs_REVERSED)
-        {
-            double tmp = cf;
-            cf = cl;
-            cl = tmp;
-        }
-        return C2d is not null;
-    }
-
-    // ShapeAnalysis_Edge::Curve3d (see above).
-    private static bool shapeAnalysisEdgeCurve3d(in TopoDS_Edge edge,
-                                                 out Geom_Curve? C3d,
-                                                 out double cf,
-                                                 out double cl,
-                                                 bool orient)
-    {
-        C3d = BRep_Tool.Curve(edge, out TopLoc_Location L, out cf, out cl);
-        if (C3d is not null && !L.IsIdentity())
-        {
-            C3d = (Geom_Curve)C3d.Transformed(L.Transformation());
-            cf = C3d.TransformedParameter(cf, L.Transformation());
-            cl = C3d.TransformedParameter(cl, L.Transformation());
-        }
-        if (orient)
-        {
-            if (edge.Orientation() == TopAbs_REVERSED)
-            {
-                double tmp = cf;
-                cf = cl;
-                cl = tmp;
-            }
-        }
-        return C3d is not null;
     }
 }

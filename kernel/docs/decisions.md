@@ -4744,7 +4744,7 @@ Numbers from 4101 are placeholders, renumbered on merge. Plan decisions are cite
 524. **BRepMesh_ShapeTool::Range without ShapeAnalysis.** OCCT calls `ShapeAnalysis_Edge::PCurve` and `Curve3d`
       (unit 4S). So that 4A doesn't wait for 4S, ShapeTool holds private copies of those two bodies
       (`shapeAnalysisEdgePCurve`, `shapeAnalysisEdgeCurve3d`), to be replaced by `new ShapeAnalysis_Edge()` calls once
-      4S is merged.
+      4S is merged. *Resolved after 4S merged:* Range calls `ShapeAnalysis_Edge` as OCCT does; the copies are gone.
 525. **The mesher's non-freezing attach (decision 488).** `BRep_Builder.UpdateFaceUnfrozen` and three
       `UpdateEdgeUnfrozen` forms (3D polygon; polygon on triangulation; a seam's pair) are internal forms of
       UpdateFace/UpdateEdge that don't freeze the triangulation or polygons they attach (the representations'
