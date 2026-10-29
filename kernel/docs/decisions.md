@@ -710,3 +710,69 @@ Geom_BSplineCurve_1.cxx), OffsetCurve and Geom_OffsetCurveUtils.pxx.
      between a port axis and its native copy, which `Oracle.ToNative(gp_Ax2)` rebuilds, is multiplied by 1e200);
      (c) `MovePointAndTangent` is not tried on degree 1 curves, whose 2 × 2 system is singular: native OCCT
      inverts it without a check, the port throws (decisions 9 and 84).
+
+## Phase 2: unit 2F, quadric intersections (29 October 2026)
+
+IntAna (Quadric, ResultType, Int3Pln, IntLinTorus, IntConicQuad, QuadQuadGeo, IntQuadQuad, Curve), Extrema_ExtElCS,
+and the elementary ProjLib: ProjLib.cxx's `Project` overloads and `IsAnaSurf`, ProjLib_Projector, Plane, Cylinder,
+Cone, Sphere and Torus.
+
+1401. **Algorithms and working objects are classes.** IntAna_Int3Pln, IntLinTorus, IntConicQuad, QuadQuadGeo,
+      IntQuadQuad and Extrema_ExtElCS are algorithm classes with OCCT's public `Perform` (decision 117); results are
+      returned by value and their fixed C++ arrays are .NET arrays allocated with the object. IntAna_Quadric is a
+      sealed working class with public `SetQuadric` (it holds a list, and nothing copies it by value): `Coefficients`
+      takes `out`, `NewCoefficients` `ref` (it transforms the values passed, not the quadric's own, as OCCT does), and
+      `SpecialPoints()` returns a `PackedList<gp_Pnt>` copy, ported code reading the stored list through the internal
+      `InternalSpecialPoints()` (decision 122's naming). As in OCCT, `SetQuadric` with a cone or a sphere appends to
+      the special points without clearing them. Where C++ converts a gp quadric to an IntAna_Quadric implicitly
+      (IntConicQuad's conic/plane overloads, Extrema_ExtElCS's line/sphere), the port writes `new IntAna_Quadric(...)`.
+1402. **IntAna_Curve is a value type.** OCCT copies it: IntQuadQuad's fixed array `TheCurve[12]`, `Curve(i)` returning
+      a const reference, and IntPatch's lines keeping copies. The setters (`SetCylinderQuadValues`,
+      `SetConeQuadValues`, `SetIsFirstOpen`, `SetIsLastOpen`, `SetDomain`) are internal, with public twins
+      `WithCylinderQuadValues`, `WithConeQuadValues`, `WithIsFirstOpen`, `WithIsLastOpen` and `WithDomain`. `Value`
+      and `D1u` are non-const in OCCT but change nothing, so they are `readonly`; `D1u` returns its point and vector as
+      `out` (a zero vector when it returns false, where OCCT leaves the caller's unchanged). `FindParameter` appends to
+      a caller's `NCollection_List<double>`, as in OCCT. `new IntAna_Curve()` is OCCT's empty curve (type
+      GeomAbs_OtherSurface); `default` is all zeros (GeomAbs_Plane). `IntAna_IntQuadQuad.Curve(i)` returns a copy, and
+      its array is filled with `new IntAna_Curve()`.
+1403. **IntAna_IntQuadQuad's file-local classes.** `TrigonometricRoots` is a private nested class: IntAna's own copy,
+      which differs from Extrema_ExtElC's (decision 120): it fails on any inaccurate root instead of dropping it, and
+      has no retry with zeroed coefficients. `MyTrigonometricFunction` is a private readonly struct (its unused
+      `Derivative` kept). The template `AddSpecialPoints<gpSmth>` is one private method over `gp_Cylinder`, the only
+      instantiation OCCT makes. `HasNextCurve`/`NextCurve` and the `Previous` pair take `out bool theOpposite`;
+      `Parameters` is a no-op with `ref` arguments, as OCCT's only prints "not yet implemented"; the debug `DumpCurve`
+      is left out.
+1404. **IntAna_QuadQuadGeo and IntAna_IntConicQuad call each other** (QuadQuadGeo refines plane/plane origins and
+      intersects planes with cylinders and cones through IntConicQuad; IntConicQuad's circle/plane Perform uses
+      QuadQuadGeo), and were ported together. The non-default constructors chain to the default one (`: this()`),
+      which sets OCCT's member initialisers and calls `InitTolerances`, as each C++ constructor does. QuadQuadGeo's
+      local class AxeOperator is a private nested class, and DirToAx2, EstimDist and RefineDir are private static
+      methods; the function-local `static double EllipseLimit` and `HyperbolaLimit` are `const` locals; fixed local
+      arrays are spans. QuadQuadGeo has no `IsParallel` (OCCT has none).
+1405. **ProjLib.** The static class is `public static partial class ProjLib`; `MakePCurveOfType` joins it with
+      ProjLib_ProjectedCurve (unit 6A). `IsAnaSurf` takes an `Adaptor3d_Surface`. ProjLib_Projector and its
+      subclasses are working classes (decision 21) with OCCT's public `Init`, `Project`, `SetType`, `SetPeriodic`,
+      `SetBezier`, `SetBSpline`, `Done`, `UFrame`, `VFrame` and `SetInBounds`, and OCCT's protected fields. The
+      `Project` overloads are virtual as in OCCT, and the subclasses' constructors call them, which dispatches to the
+      subclass in C# as in C++. `GetType()` hides `object.GetType` (decision 98). `Bezier()` and `BSpline()` return the
+      stored curves, shared as in OCCT (unit 6A, which fills them, decides whether to freeze them). A line normal to a
+      plane makes `ProjLib_Plane` throw Standard_ConstructionError from gp_Dir2d, where OCCT's release build returns a
+      line with a NaN direction (decision 9).
+1406. **Oracle coverage through native callers** (decision 121's approach):
+      - IntAna_QuadQuadGeo through GeomAPI_IntSS for plane/plane, plane/cylinder, plane/sphere and sphere/sphere
+        (IntPatch_ImpImpIntersection calls it with Tolang 1e-8 and the IntSS tolerance; the lines and conics GeomInt
+        builds are compared; native AdjustToSeam turns plane/sphere circles, so their X axes aren't compared): 8,099
+        of 8,136 values bit-identical, the rest within 1.7e-15.
+      - IntAna_IntConicQuad (lines, circles, ellipses, parabolas and hyperbolas against planes, cylinders, cones and
+        spheres) and IntAna_IntLinTorus through GeomAPI_IntCS, whose IntCurveSurface_HInter calls them with known
+        tolerances and keeps each point's IntAna parameters (put in the period, bounded by the surface). Every point
+        count matches. The conic/plane cases are 10,919 of 12,804 values bit-identical (within 1.1e-13), IntLinTorus
+        2,815 of 3,468 (within 3.4e-14). Against quadrics the parameters are roots of math_DirectPolynomialRoots and
+        differ by up to 6e-11 relative (32,384 of 52,410 bit-identical), so those tests compare at 1e-9. The
+        line/quadric code is OCCT's line for line, so the differences come from the polynomial solver (cos, acos,
+        cbrt) or from the axis systems rebuilt natively; math_DirectPolynomialRoots has no oracle of its own yet.
+      - ProjLib_Plane through GeomAPI::To2d (ProjLib_ProjectedCurve on a plane): 7,010 of 9,300 values
+        bit-identical, within 8.9e-16 (gp_Ax22d renormalises the directions).
+      - No native path reaches IntAna_IntQuadQuad, IntAna_Int3Pln, Extrema_ExtElCS or the other ProjLib projectors
+        directly (IntPatch, Extrema_ExtCS and ProjLib_ProjectedCurve on quadrics add their own processing). They have
+        property tests: points on both surfaces, parameters mapped back through ElCLib and ElSLib.

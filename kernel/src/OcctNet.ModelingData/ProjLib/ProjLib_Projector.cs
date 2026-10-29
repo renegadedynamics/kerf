@@ -32,7 +32,7 @@ public class ProjLib_Projector
     {
         myIsPeriodic = false;
         isDone = false;
-        myType = GeomAbs_BSplineCurve;
+        myType = GeomAbs_BSplineCurve; // OCCT: documented as OtherCurve
     }
 
     public bool IsDone() => isDone;

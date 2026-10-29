@@ -117,7 +117,7 @@ public class IntAna_IntQuadQuad
     {
         private readonly double[] Roots = new double[4];
         private readonly bool done;
-        private readonly int NbRoots; // uninitialised in OCCT when MTFR fails or has infinite roots
+        private readonly int NbRoots; // OCCT: uninitialised when MTFR fails or has infinite roots (0 here)
         private readonly bool infinite_roots;
 
         public TrigonometricRoots(double CC,
@@ -1100,7 +1100,7 @@ public class IntAna_IntQuadQuad
         {
             TheCurve[c1].Domain(out DInfC1, out DSupC1);
 
-            // As OCCT: the loop stops at c2 == c1, so only the curves before c1 are compared with it
+            // OCCT: the loop stops at c2 == c1, so only the curves before c1 are compared with it
             for (c2 = 0; (c2 < NbCurves) && (c2 != c1); c2++)
             {
                 NotLastOpenC2 = !TheCurve[c2].IsLastOpen();

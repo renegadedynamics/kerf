@@ -84,6 +84,8 @@ public class ProjLib_Cone : ProjLib_Projector
 
     public override void Project(in gp_Circ C)
     {
+        // OCCT: the type is set before the check below, so a circle not normal to the axis leaves a "Line" result
+        // that is not done, and Line() returns the default line instead of throwing
         myType = GeomAbs_Line;
 
         gp_Ax3 ConePos = myCone.Position();

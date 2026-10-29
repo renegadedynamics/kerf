@@ -154,9 +154,9 @@ public class IntAna_QuadQuadGeo
             }
         }
 
-        // The C++ leaves the outputs unset when the axes are parallel (D == 0); the port sets them to 0 first.
         public void Distance(out double dist, out double Param1, out double Param2)
         {
+            // OCCT: leaves the outputs unset when the axes are parallel (D == 0); 0 here
             dist = 0.0;
             Param1 = 0.0;
             Param2 = 0.0;
