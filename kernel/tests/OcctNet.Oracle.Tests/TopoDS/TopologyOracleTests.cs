@@ -51,7 +51,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
     // Scenes
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> RandomScene(Oracle theOracle, int theScene)
+    internal static Twin<N.TopoDS_Shape, TopoDS_Shape> RandomScene(Oracle theOracle, int theScene)
     {
         var aTwins = new TwinShapes();
         switch (theScene % 4)
@@ -98,7 +98,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A rigid location (a rotation, a translation or both) built from the same raw numbers on both sides.</summary>
-    private static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
+    internal static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
     {
         var aNT = new N.gp_Trsf();
         var aT = new gp_Trsf();
@@ -237,7 +237,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
     // Comparisons
 
-    private static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape,
+    internal static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape,
                                                                     TopAbs_ShapeEnum theType,
                                                                     TopAbs_ShapeEnum theAvoid = TopAbs_SHAPE)
     {

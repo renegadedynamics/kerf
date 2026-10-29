@@ -113,7 +113,16 @@ public class Geom2dAdaptor_Curve : Adaptor2d_Curve2d
     public override Adaptor2d_Curve2d ShallowCopy()
     {
         Geom2dAdaptor_Curve aCopy = new Geom2dAdaptor_Curve();
+        ShallowCopyTo(aCopy);
+        return aCopy;
+    }
 
+    /// <summary>
+    /// Copies the curve, its range and its evaluation data (without caches) into <paramref name="aCopy"/>: the body of
+    /// <see cref="ShallowCopy"/>, shared with BRepAdaptor_Curve2d's (OCCT copies the fields there by hand).
+    /// </summary>
+    private protected void ShallowCopyTo(Geom2dAdaptor_Curve aCopy)
+    {
         aCopy.myCurve = myCurve;
         aCopy.myTypeCurve = myTypeCurve;
         aCopy.myFirst = myFirst;
@@ -151,8 +160,6 @@ public class Geom2dAdaptor_Curve : Adaptor2d_Curve2d
             // Elementary curve types (gp_Lin2d, gp_Circ2d, etc.) are value types (boxed: immutable here)
             aCopy.myCurveData = myCurveData;
         }
-
-        return aCopy;
     }
 
     // Computes the Continuity of a BSplineCurve between the parameters U1 and U2
