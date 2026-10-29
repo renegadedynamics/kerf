@@ -3784,3 +3784,115 @@ worktrees, reviewed and merged. Numbers from 3401 are renumbered on merge.
         `BRepLib_MakeFace.IsDegenerated` is public static.
       - Later in-place algorithms (ShapeFix, offsets, sweeps): `ExactCopyForWrite`, then the operation, then
         `KeepUnchanged` is the pattern that keeps OCCT's results and the input's identity.
+## Phase 3: unit 3J, BRepCheck
+
+BRepCheck_Analyzer, BRepCheck_Vertex, Edge, Wire, Face and Solid, and `BRepCheck.SelfIntersection` (left by 3H,
+decision 368), in OcctNet.ModelingAlgorithms (decision 280). BRepCheck_Wire was ported in a forked worktree and
+reviewed and merged, as were the oracle tests. Numbers from 3451 are renumbered on merge.
+
+429. **The checks are public working objects with OCCT's API** (decision 21). `BRepCheck_Analyzer` is a public
+      class; Vertex, Edge, Wire, Face and Solid are public classes deriving from BRepCheck_Result (decision 366), with
+      OCCT's public methods (`GeometricControls`, `SetExactMethod`, `SetStatus`, `Tolerance`,
+      `CheckPolygonOnTriangulation`, `IntersectWires`, `ClassifyWires`, `OrientationOfWires`, `SetUnorientable`,
+      `IsUnorientable`, `Closed`, `Closed2d`, `Orientation`, `SelfIntersect`). The status lists they return are their
+      own (366). `Analyzer.Result(sub)` returns `BRepCheck_Result?`: null for compounds and compsolids, as OCCT's null
+      handle; a shape that isn't a sub-shape throws `Standard_NoSuchObject`.
+430. **The analyzer's map compares shapes with IsEqual, as OCCT's** (`NCollection_IndexedDataMap<TopoDS_Shape, ...>`
+      declared without a hasher, whose default compares with `operator==`). A sub-shape met in two orientations (a
+      seam edge, a vertex that ends one edge and starts the next) has one result per orientation; the face task skips
+      shapes already seen with IsSame, so only the first orientation met gets the face as a context, and `ValidSub`
+      stops at the other (occt-issues.md). `Result(sub)` and `IsValid(sub)` look up by IsEqual: callers pass the
+      sub-shape as explored from the checked shape (TopExp_Explorer and TopoDS_Iterator compose orientations as the
+      analyzer's `Put` does). The oracle found this: an IsSame map (as BRepCheck_Result's own, 366) disagreed with
+      native OCCT on a fused sphere. The other maps follow their OCCT declarations: BRepCheck_Face's
+      DataMapOfShapeBox2d and BRepCheck_Wire's EMap compare with IsEqual (`EqualityComparer<TopoDS_Shape>.Default`),
+      the rest use TopTools_ShapeMapHasher.
+431. **Parallel mode.** `Perform` cuts the map into OCCT's chunks (ten tasks per logical processor, at least ten
+      shapes each; `Environment.ProcessorCount` is OSD_ThreadPool's default thread count) and runs them with
+      `Parallel.For`, or in a loop when the flag is off (OSD_Parallel's `isSequential`); an AggregateException is
+      unwrapped to its first inner exception. Chunks past the last shape are empty arrays, as OCCT's
+      default-constructed ones (a null array was a port bug the oracle found on three data/occ files). Locks are taken
+      only when the result is parallel (366); `BRepCheck_Result.myMutex` is `protected internal` because OCCT makes the
+      analyzer's functor a friend. **BRepCheck_Edge evaluates a shallow copy of its reference adaptor per
+      `InContext` call in parallel mode**: OCCT shares one adaptor, whose evaluation cache isn't thread-safe, between
+      the threads that check the edge in its faces (occt-issues.md); a copy evaluates the same curve, so the statuses
+      don't change. The port's parallel run gives the serial run's statuses list for list, on every sub-shape and in
+      every context, in all the unit and oracle tests. Two things may differ between runs: the order of the contexts
+      (the context iterator follows insertion order, decision 366), and, when several checks fail with exceptions,
+      the order in which CheckFail is appended to a shared list.
+432. **Exceptions.** OCCT catches `Standard_Failure` around each check, with OCC_CATCH_SIGNALS turning access
+      violations into failures, and records `BRepCheck_CheckFail`. The analyzer catches `Standard_Failure` and the
+      .NET exceptions that stand for those signals: NullReferenceException, InvalidCastException,
+      IndexOutOfRangeException and DivideByZeroException. Where OCCT down-casts a handle and dereferences the null
+      result, the port throws `Standard_NullObject` (BRepCheck_Edge's projection on a plane when the reference curve is
+      a curve on a surface: CheckFail, pinned by a test). Exceptions from the checks run by the constructors (each
+      result's `Minimum`, called by `Put`) leave the analyzer's constructor, as in OCCT.
+433. **The checked shape is only read.** The topology the checks build is their own, unfrozen and never handed out:
+      BRepCheck_Face's `ClassifyWires` classifies each wire in an `EmptyCopied` face (sharing the frozen surface)
+      built with the internal BRep_Builder; BRepCheck_Solid's `Minimum` puts each closed shell in a solid of its own
+      with TopoDS_Builder, to classify it (BRepCheck_Shell already did, 367). Every test runs on frozen shapes (a write
+      would throw `Standard_ImmutableObject`, a Standard_Failure, and show as CheckFail; the tests check there is
+      none), and a test compares the BRep text before and after.
+434. **Smaller choices.**
+      - `BRepCheck_Wire.SelfIntersect(F, ref E1, ref E2, Update)` and `BRepCheck.SelfIntersection(W, F, ref E1,
+        ref E2)` take the edges by `ref`: OCCT leaves them unwritten when nothing intersects, and E2 when an edge
+        intersects itself (decision 57).
+      - BRepCheck_Face's map of wires gives each wire its own empty list (OCCT binds a copy of one list).
+        `OrientationOfWires` reads the keys in the map's order; `ClassifyWires` has made sure at most one wire
+        contains others, so the order doesn't matter. Where OCCT reads the key of an exhausted iterator ("No control
+        on More()"), the port throws `Standard_NoSuchObject`.
+      - BRepCheck_Solid's `BRepCheck_ToolSolid` is a private nested class holding the classifier itself (OCCT's
+        BRepCheck_HSC is a handle around it), in a `List` (OCCT's NCollection_DynamicArray of values filled with
+        fresh copies).
+      - `CheckPolygonOnTriangulation` reads the edge's `Curves()` (OCCT takes `ChangeCurves()` and only reads it).
+      - BRepCheck_Edge's reference adaptor is an `Adaptor3d_Curve` (a GeomAdaptor_Curve or an
+        Adaptor3d_CurveOnSurface, as OCCT's handle); `Tolerance` keeps its representations in an array of adaptors.
+      - BRepCheck_Wire's `IsDistanceIn2DTolerance` drops OCCT's debug-only `PrintWarnings`; its array of domains is
+        filled with `new()`; `SetStatus` takes no lock, as OCCT's (nothing parallel calls it).
+435. **Tests.**
+      - Ported GTests: BRepCheck_Face (4). BRepBuilderAPI's makers (unit 3K) are replaced by BRep_Builder shapes with
+        the same topology (segments sharing vertices, circles on one vertex, an infinite line without vertices, a
+        plane face without pcurves), frozen before they are checked.
+      - Known-answer tests (31, on frozen shapes; each analysis runs serial and parallel and is compared status by
+        status): BRepCheck_Wire (15: valid, holed and seam wires, empty, disconnected, open, redundant, badly oriented,
+        figure-8 with the intersecting edges, no pcurve, not closed in 2D, not in the shape, concurrent InContext);
+        the analyzer (16: boxes, located, reversed and in compounds; holed, seam and void shapes; null shapes and
+        unknown sub-shapes; vertices off their edges; bad ranges, degenerated, SameRange and SameParameter flags, no
+        3D curve (CheckFail on a plane, as OCCT); pcurves off their curves, with the exact method and without
+        geometric controls; missing pcurves on a cylinder; free and multiconnected edges; open, self-intersecting,
+        crossing, separate, outside, repeated and badly oriented wires; a face without surface; reversed, missing and
+        repeated faces; solids with two shells, shared faces, stray and internal vertices, internal shells and a void
+        outside; the shape unchanged).
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepCheck/BRepCheckAnalyzerOracleTests.cs`). Native OCCT binds only
+        `BRepCheck_Analyzer` and `IsValid`, so the comparison is per sub-shape: native writes each shape as BRep text,
+        both sides read it, and native `IsValid(sub)` is compared with the port's for every sub-shape (TopExp
+        MapShapes order) with geometric controls on and off; native parallel equals native serial, and the port's
+        parallel run equals its serial run status for status (native parallel runs that differ from native serial are
+        reported, not failed: OCCT's parallel mode isn't deterministic, occt-issues.md). All agree:
+        - 120 random native shapes (boxes, cylinders, spheres, cones, tori, wedges, prisms, revolutions, fuses, cuts,
+          commons, fillets, lofts; placed and meshed at random): 8,060 of 8,060 verdicts;
+        - nine edge and vertex breaks applied natively on private copies of 36 shapes (vertex moved, 3D curve
+          shifted, pcurve shifted, pcurve removed, SameParameter or SameRange cleared, Degenerated set, range
+          reversed, and a valid control with a larger tolerance): 21,448 of 21,448;
+        - 21 kinds of face and solid scenes, 16 each, placed or reversed (valid squares and holes, open wires, holes
+          oriented as the outer wire, figure-8s, crossing wires, two outer wires, holes outside, nested holes; valid
+          solids and voids, reversed, missing and repeated faces, reversed shells, two disjoint shells, nested shells,
+          stray, internal vertices and edges, only internal shells): 21,184 of 21,184;
+        - the 37 `.brep` files of data/occ (36 valid natively): 47,438 of 47,438;
+        - OCCT's test dataset: 2,320 of its 2,369 files (2,137 valid natively, 323 invalid analyses), 297,988 of
+          297,988 verdicts in 85 s; left out: 42 files that aren't shapes, 5 over 2 MB and 2 assemblies of more than
+          200,000 sub-shape occurrences (one of 3.2 million that native OCCT doesn't finish in 30 s).
+        Statuses themselves (which status, in which context) aren't bound natively: they are covered by the
+        known-answer tests and the parallel-serial comparison.
+436. **For later units.**
+      - 3L2 (`checkshape`): the Draw command needs `BRepCheck_Analyzer(S, !top, parallel, exact)`, `IsValid()`,
+        `Result(sub)` for the sub-shapes met with TopExp_Explorer and TopoDS_Iterator from the checked shape (present
+        in the map with that orientation, 3452), each result's `Status()` and context iterator (`InitContextIterator`,
+        `MoreShapeInContext`, `ContextualShape`, `StatusOnShape`, `NextShapeInContext`), and `BRepCheck.Print(status,
+        TextWriter)`, which writes OCCT's names. Its own map (`theMap`) uses TopTools_ShapeMapHasher. The contextual
+        dump takes the one context IsSame the parent (a result has at most one per IsSame shape), so the order of the
+        contexts doesn't change the output, and `-parallel` prints what serial does. `-short` prints only "This shape
+        has faulty shapes". An exception out of the analyzer's constructor is printed as "checkshape exception : " and
+        its message, which is the port's text, not OCCT's `what()`. `computetolerance` uses `BRepCheck_Edge.Tolerance`.
+      - 3K and later: the GTests of BRepBuilderAPI and the algorithms that check their results with
+        BRepCheck_Analyzer can be ported as their makers come.

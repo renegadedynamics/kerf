@@ -28,7 +28,8 @@ public abstract class BRepCheck_Result : Standard_Transient
         new(TopTools_ShapeMapHasher.Instance);
 
     /// <summary>OCCT's <c>std::mutex myMutex</c>, taken when <see cref="IsParallel"/>.</summary>
-    protected readonly Lock myMutex = new();
+    /// <remarks>Internal as well: OCCT makes BRepCheck_ParallelAnalyzer a friend.</remarks>
+    protected internal readonly Lock myMutex = new();
 
     // OCCT's map iterator: a snapshot of the map taken by InitContextIterator
     private KeyValuePair<TopoDS_Shape, NCollection_List<BRepCheck_Status>>[] myIterItems = [];
