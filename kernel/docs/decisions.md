@@ -491,3 +491,51 @@ Geom2dEval, ported first so that the concrete classes can be ported in parallel 
      CurveOnSurface and CurvlinFunc go with GeomLib; the elementary Extrema and ProjLib classes come early. The
      generated tables of AppCont and AdvApp2Var (148,000 lines) are produced by a generator script, as the PLib
      Jacobi tables were (decision 77).
+
+## Phase 2: unit 1C, Geom surfaces
+
+1110. **Geom_BSplineSurface and Geom_BezierSurface return their arrays as immutable values.** The one-dimensional
+      arrays (`UKnots()`, `VKnots()`, `UMultiplicities()`, `VMultiplicities()`, `UKnotSequence()`, `VKnotSequence()`)
+      are `PackedList<T>`s, as unit 1A's Geom_BSplineCurve returns its knots (index 0 is OCCT's index 1). The
+      two-dimensional ones (`Poles()`, `Weights()`, `WeightsArray()`) are new copies of the `NCollection_Array2`,
+      since PackedList has one dimension, and by decision 88's reasoning: ported code passes them back to the Geom
+      constructors. `Weights()` is null unless the surface is rational in U or V (OCCT 8's pointer). OCCT's
+      deprecated fill forms (`Poles(NCollection_Array2&)`, `UKnots(NCollection_Array1&)`, ...) stay public and
+      copy into the caller's array. Ported code uses internal accessors returning the stored arrays without copy
+      (`InternalPoles()`, `InternalWeights()` (null when non-rational), `InternalWeightsArray()`, `InternalUKnots()`,
+      `InternalUMultiplicities()`, `InternalUKnotSequence()` and the V ones). Geom_BezierSurface's knots,
+      multiplicities and flat knots are, as in OCCT, static arrays shared per degree (`Internal*`), copied into a
+      PackedList for callers.
+1111. **Twins of the surface mutators.** Every `SetFoo` has `WithFoo` (`WithPole`, `WithPoleRow/Col`, `WithWeight`,
+      `WithWeightRow/Col`, `WithUKnot(s)`, `WithVKnot(s)`, `WithUPeriodic`, `WithUNotPeriodic`, `WithUOrigin`,
+      the V ones, `WithEvalRepresentation`), returning the concrete class. The other mutators take OCCT's past
+      participle: `ExchangedUV`, `DegreeIncreased` (B-spline) and `Increased` (Bezier, OCCT's `Increase`),
+      `UKnotsInserted`, `UKnotInserted`, `UKnotRemoved` (null when OCCT's `RemoveUKnot` returns false),
+      `UMultiplicityIncreased`, `UMultiplicityIncremented`, `Segmented`, `CheckedAndSegmented`, `PointMoved` (with
+      OCCT's out indices), `PoleColInsertedAfter/Before`, `PoleRowInsertedAfter/Before`, `PoleColRemoved`,
+      `PoleRowRemoved`, and the V forms. `UReversed`, `VReversed` and `Transformed` come from the bases.
+      `Resolution` caches its result, as OCCT's non-const method does; it is public and works on a frozen surface
+      (the cache is not part of the value: computed into locals, then published before the volatile flag).
+      OCCT's protected helpers stay protected (`segment` and Geom_BezierSurface's `init`, both with
+      `CheckMutable`; `updateUKnots`/`updateVKnots`, which only recompute derived fields). The copy constructors
+      are public, as in OCCT.
+1112. **The iso-curves of the B-spline and Bezier surfaces wait for unit 1A.** `UIso` and `VIso` (and the
+      B-spline `UIso(U, CheckRational)`, `VIso(V, CheckRational)`) compute the iso-curve's poles with BSplSLib::Iso
+      as OCCT does, then throw `Standard_NotImplemented`, with OCCT's Geom_BSplineCurve/Geom_BezierCurve
+      construction in a `// TODO(1A)` comment. Geom_BSplineSurface's `IsUClosed`/`IsVClosed`, which OCCT computes
+      as `UIso(U1)->IsEqual(UIso(U2), Precision::Confusion())`, can't wait: a private `IsoCurvesEqual` does what
+      that does on the iso-curves' data (Geom_BSplineCurve's constructor checks: CheckCurveData, weights above
+      gp::Resolution(), rationality; then IsEqual on poles and weights, the knots, multiplicities and degree being
+      shared). The oracle tests find it identical to OCCT, throwing included. Replace both with OCCT's code once
+      the curves are merged.
+1113. **Geom_BSplineSurface and Geom_BezierSurface are oracle-tested** (`tests/OcctNet.Oracle.Tests/Geom`): random
+      surfaces (B-spline: degrees 1 to 5, every periodicity, rational in U, V or both, some closed; Bezier: degrees 1
+      to 8), every field and D0-D3, DN, local evaluation, LocateU/V, Resolution, PeriodicNormalization and the
+      reversed parameters, before and after random edits (B-spline: 20 kinds, from knot insertion and removal to
+      Segment, periodicity, origin, ExchangeUV, MovePoint, reverses and Transform; Bezier: 14). 8.35 million values;
+      every one is bit-identical except after rotations and mirrors, where the trigonometry of gp_Trsf (MSVC's
+      against .NET's) differs in the last bits (largest relative difference 2.1e-13; with translations only, 100%).
+      Left out, because OCCT's release build reads out of range there (occt-issues.md): MovePoint on periodic
+      surfaces or with a window away from the point, RemoveUKnot/RemoveVKnot of the end knots of a periodic
+      direction, CheckAndSegment over the whole range of a periodic direction, and periodic IncreaseDegree
+      (decision 91).
