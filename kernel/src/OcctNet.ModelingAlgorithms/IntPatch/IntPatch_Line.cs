@@ -10,8 +10,8 @@ using static Occt.IntSurf_TypeTrans;
 namespace Occt;
 
 /// <summary>
-/// An intersection line between two surfaces: geometric (a line or a conic, <c>IntPatch_GLine</c>), analytic
-/// (<c>IntPatch_ALine</c>), a set of points from a walking algorithm (<see cref="IntPatch_WLine"/>) or a
+/// An intersection line between two surfaces: geometric (a line or a conic, <see cref="IntPatch_GLine"/>), analytic
+/// (<see cref="IntPatch_ALine"/>), a set of points from a walking algorithm (<see cref="IntPatch_WLine"/>) or a
 /// restriction (<see cref="IntPatch_RLine"/>); with the transitions of the line on each surface and its isoparametric
 /// flags.
 /// </summary>
