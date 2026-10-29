@@ -24,7 +24,7 @@ public sealed class BRepTopAdaptor_FClass2d
     private readonly NCollection_Sequence<int> TabOrien = new();
     private double Toluv;
     private TopoDS_Face Face;
-    // OCCT sets the period of the surface in U1..U2, V1..V2 and never reads it (as decision 221's fields)
+    // The period of the surface, set in U1..U2, V1..V2 and never read (as decision 221's fields)
 #pragma warning disable CS0414
     private double U1;
     private double V1;
@@ -142,7 +142,8 @@ public sealed class BRepTopAdaptor_FClass2d
                     double pfbid, plbid;
                     if (BRep_Tool.CurveOnSurface(edge, Face, out pfbid, out plbid) is null)
                     {
-                        // OCCT returns here, leaving the rest of the classifier as it is
+                        // OCCT returns here, leaving the classifier half built: the wires explored so far, Umin..Vmax as far as
+                        // they got and U1..V2 at 0 (occt-issues.md)
                         return;
                     }
 
@@ -470,6 +471,8 @@ public sealed class BRepTopAdaptor_FClass2d
                     anIsBadWire = true;
                     TabOrien.Append(-1);
                     var xPClass = new NCollection_Array1<gp_Pnt2d>(1, 2);
+                    // OCCT reads the first two points even when the wire gave fewer (out of range with
+                    // No_Standard_OutOfRange); the port throws Standard_OutOfRange (occt-issues.md)
                     xPClass[1] = SeqPnt2d[1];
                     xPClass[2] = SeqPnt2d[2];
                     TabClass.Append(new CSLib_Class2d(xPClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));

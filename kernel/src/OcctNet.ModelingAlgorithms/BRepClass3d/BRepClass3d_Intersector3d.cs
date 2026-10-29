@@ -53,7 +53,7 @@ public class BRepClass3d_Intersector3d
         var classifier2d = new BRepClass_FaceClassifier();
 
         var geomline = new Geom_Line(L);
-        // OCCT builds adaptors and copies them into handles: one adaptor of each here
+        // C++ builds adaptors and copies them into handles: one adaptor of each here
         var LL = new GeomAdaptor_Curve(geomline);
 
         surface.Initialize(Face, true);

@@ -423,7 +423,7 @@ public static partial class BRepBndLib
                                           double Tol,
                                           out bool isNaturalRestriction)
     {
-        // OCCT leaves umin..vmax unset on a face that isn't a natural restriction and has no pcurve; the port
+        // C++ leaves umin..vmax unset on a face that isn't a natural restriction and has no pcurve; the port
         // starts them at 0 (decision 32)
         umin = umax = vmin = vmax = 0.0;
         TopoDS_Face F = FF;
@@ -476,13 +476,13 @@ public static partial class BRepBndLib
                 double u = aP.X(), v = aP.Y();
                 if (isUperiodic)
                 {
-                    // OCCT discards the result of ElCLib::InPeriod (it returns the value), so u is unchanged
+                    // OCCT discards the result of ElCLib::InPeriod (it returns the value), so u is unchanged (occt-issues.md)
                     _ = ElCLib.InPeriod(u, umin, umax);
                 }
 
                 if (isVperiodic)
                 {
-                    // OCCT discards the result of ElCLib::InPeriod (it returns the value), so v is unchanged
+                    // OCCT discards the result of ElCLib::InPeriod (it returns the value), so v is unchanged (occt-issues.md)
                     _ = ElCLib.InPeriod(v, vmin, vmax);
                 }
 

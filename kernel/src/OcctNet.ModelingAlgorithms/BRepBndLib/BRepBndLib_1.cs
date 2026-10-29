@@ -344,7 +344,7 @@ public static partial class BRepBndLib
         // Transform the shape to the local coordinate system
         gp_Trsf aTrsf = new();
 
-        // OCCT converts the axes of inertia (gp_Vec) to gp_Dir implicitly
+        // C++ converts the axes of inertia (gp_Vec) to gp_Dir implicitly
         int anIdx1 = IsWCS(new gp_Dir(aGCommon.PrincipalProperties().FirstAxisOfInertia()));
         int anIdx2 = IsWCS(new gp_Dir(aGCommon.PrincipalProperties().SecondAxisOfInertia()));
 
@@ -411,7 +411,7 @@ public static partial class BRepBndLib
             // Set parameters to the OBB
             theOBB.SetCenter(new gp_Pnt(aCenter));
 
-            // OCCT converts the gp_XYZ axes to gp_Dir implicitly
+            // C++ converts the gp_XYZ axes to gp_Dir implicitly
             theOBB.SetXComponent(new gp_Dir(aXDir), anOBBHSize.X());
             theOBB.SetYComponent(new gp_Dir(aYDir), anOBBHSize.Y());
             theOBB.SetZComponent(new gp_Dir(aZDir), anOBBHSize.Z());

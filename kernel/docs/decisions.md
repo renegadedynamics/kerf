@@ -3133,3 +3133,121 @@ Numbers from 3801 are renumbered on merge.
         verdicts, all equal. Native BRepCheck_Shell, ValidateEdge and CheckCurveOnSurface aren't bound.
       - Not covered natively: polygon-only edges (Poly_Polygon3D isn't bound), BRepGProp_Vinert, Sinert, VinertGK and
         the functions directly (not bound; reached through the statics).
+
+## Phase 3: unit 3G, classification and boxes
+
+BRepClass, BRepTopAdaptor, IntCurvesFace, BRepClass3d, BRepIntCurveSurface and BRepBndLib (both its files), in
+OcctNet.ModelingAlgorithms (decision 280). Numbers from 3701 are renumbered on merge.
+
+3701. **The classes are public working objects with OCCT's API** (decision 21): the classifiers, explorers,
+      intersectors, the topological tool and its vertex, `BRepIntCurveSurface_Inter`; their `Perform`, `Load`,
+      `Init`, `Reset`, `Compare` and setters are public. **`BRepClass_Edge` is a struct**, copied as OCCT copies it
+      (the classifiers keep the closest edge by value): its setters (`SetNextEdge`, `SetMaxTolerance`, `SetUseBndBox`)
+      and OCCT's non-const `Edge()`/`Face()` (`ChangeEdge`/`ChangeFace`, `ref` returns) are internal, with
+      `WithNextEdge`, `WithMaxTolerance` and `WithUseBndBox` twins; `new()` is OCCT's default (an infinite maximum
+      tolerance), `default` has a zero one. It is a working value without equality, as decision 324's tools.
+      `BRepClass3d` is a static class, `BRepBndLib` a static partial class over its two files.
+3702. **TopClass's explorer interface takes the edge by `ref`** (changes decision 285): OCCT's face classifier
+      default-constructs one edge for the whole classification and passes it to every `CurrentEdge`, and
+      `BRepClass_FaceExplorer::CurrentEdge` doesn't write the next edge when `SetNextEdge` finds none, so the
+      previous edge's next edge carries over (occt-issues.md). `ITopClass_FaceExplorer.CurrentEdge(ref TheEdge,
+      out TopAbs_Orientation)`, and `TopClass_FaceClassifier.Perform` constrains `TheEdge : new()` to make that edge
+      (`new BRepClass_Edge()`). The TopClass test explorer is updated.
+3703. **BRepClass_Intersector derives from Geom2dInt_IntConicCurveOfGInter**, which is no longer sealed, and
+      implements `ITopClass_Intersector<BRepClass_Edge>` (decisions 288, 329); it fills the base's results through
+      the protected `done`, `Append` and `SetValues`. CheckSkip's `theInter = Geom2dInt_GInter(...)` assigns a new
+      intersector to a `ref` parameter. `LocalGeometry` has `out` directions: where OCCT leaves the tangent as the
+      caller had it (no tangent, chord too short), the port gives the callers' default (1, 0). The 2D classifiers
+      `BRepClass_FClass2dOfFClassifier` and `BRepClass_FacePassiveClassifier` implement `ITopClass_FClass2d`, the
+      interface's `Intersector()` explicitly; their public `Intersector()` returns the `BRepClass_Intersector`.
+      `BRepClass_FClassifier`'s fields are protected, as OCCT's.
+3704. **BRepTopAdaptor_FClass2d** is a sealed class built once per face; OCCT's `Copy` and assignment (which throw)
+      are left out and `Destroy` is internal. `Perform` and `TestOnRestriction`, which OCCT writes out twice and
+      which differ in three places (the polygon test, what an undecided polygon gives, the tolerance for a bad
+      wire), share one private body. `std::nextafter` is `Math.BitIncrement`/`BitDecrement`; CSLib_Class2d's
+      `Result` is compared as OCCT's int. OCCT's never-read U1, V1, U2, V2 are kept with CS0414 suppressed (as
+      decision 221).
+3705. **BRepTopAdaptor_TopolTool** keeps its 2D classifier as a nullable field (OCCT's `void*`), built at the first
+      `Classify` or `IsThePointOn` with that call's tolerance; its curves are a typed list of `BRepAdaptor_Curve2d`;
+      `Edge()` returns the edge boxed (OCCT's `void*` to it). Where OCCT down-casts a handle and dereferences it
+      (`BRepTopAdaptor_HVertex.Parameter`, `Resolution`, `IsSame`, `Orientation(Adaptor2d_Curve2d)`), the port casts
+      and throws InvalidCastException; where OCCT checks (`Initialize`, `Tol3d`, `Pnt`), it throws OCCT's
+      exception. `BRepTopAdaptor_Tool` returns its tool and surface whether loaded or not, as OCCT.
+3706. **Adaptor copies.** IntCurvesFace_Intersector and BRepClass3d_Intersector3d initialise a local
+      `BRepAdaptor_Surface` (or `GeomAdaptor_Curve`) and keep a handle to a copy of it; the port keeps the adaptor
+      itself, which nothing else holds. BRepIntCurveSurface_Inter keeps a `ShallowCopy` of the caller's curve
+      adaptor (OCCT's copy), so the caller may reuse its adaptor.
+3707. **IntCurvesFace.** The intersector's polyhedron and sorted boxes (OCCT's `unique_ptr`s) are nullable fields; it
+      derives from Standard_Transient as OCCT's. The polygon/polyhedron overloads of `IntCurveSurface_HInter.Perform`
+      (with the Bnd_BoundSortBox, OCCT's OPTIMISATION 1) are reached for every surface but the plane, cylinder, cone,
+      sphere and torus; the oracle reaches them through BRepClass3d on surfaces of extrusion and revolution and
+      B-spline faces. `IntCurvesFace_ShapeIntersector` keeps a sequence of intersectors; `PerformNearest`'s
+      `std::swap`s are tuple swaps; OCCT's Load and PerformNearest issues are kept (occt-issues.md).
+3708. **BRepClass3d_SolidExplorer.** OCCT's map of `void*` intersectors is an `NCollection_DataMap<TopoDS_Shape,
+      IntCurvesFace_Intersector?>` with TopTools_ShapeMapHasher; `Bind` replaces as OCCT's does, so a face met twice
+      (in two shells) keeps the last intersector. Arguments OCCT may leave unwritten are `ref` (decision 57): the
+      point, parameters and derivatives of `FindAPointInTheFace` and `PointInTheFace`, and the line and parameter of
+      `Segment` and `OtherSegment`, whose caller keeps them across its loop. OCCT's `++IndexPoint` passed to an
+      `int&` is an increment then `ref IndexPoint`. `GetTree` and `GetMapEV` return the explorer's own structures
+      (working objects); `Destroy` clears the map. The tree is filled through NCollection_UBTreeFiller, whose
+      mt19937 shuffle is OCCT's, so the selectors visit the boxes in OCCT's order.
+3709. **The tree selectors** (`BRepClass3d_BndBoxTreeSelectorPoint`, `...Line`) are public sealed classes deriving
+      from `NCollection_UBTree<int, Bnd_Box>.Selector` over the explorer's map; the line selector's `EdgeParam` and
+      `VertParam` are readonly record structs; `GetEdgeParam` and `GetVertParam` return through `out`.
+3710. **BRepClass3d_SClassifier** keeps OCCT's private int state (1 failed, 2 ON, 3 IN, 4 OUT; `Rejected()` means
+      failed, as in OCCT); `ForceIn`/`ForceOut` are protected. `PerformInfinitePoint` collects the faces in a `List`
+      (OCCT's NCollection_LinearVector) and draws parameters from a `math_BullardGenerator` with its default seed, so
+      its probing points are OCCT's. The SolidClassifier's statistics (LBRCOMPT) and MARCHEPASSIUNESEULEFACE code are
+      compiled out in OCCT and left out. BRepClass3d_Intersector3d's transition before a point is found is
+      IntCurveSurface_Tangent (OCCT's is uninitialised).
+3711. **BRepClass3d.OuterShell** classifies each shell in a solid it builds itself (`EmptyCopy` of the input solid, then
+      `Add` of the frozen shell): unfrozen, internal to the call, never published. It returns the input's own shell.
+3712. **BRepBndLib** passes boxes by `ref` (decision 263) and adds functional forms returning a new box, for Bento:
+      `Box(S, useTriangulation)`, `BoxClose(S)`, `BoxOptimal(S, useTriangulation, useShapeTolerance)` and
+      `OBB(S, ...)`. AddOBB's inertia path calls BRepGProp's in-place statics on a new `GProp_GProps` per sub-shape,
+      as OCCT, and measures a `Moved` copy of the shape value. OCCT's pointer to `HVectorialPart` read as a flat
+      array is `gp_Mat.Value(i, j)` by columns; `GetVertex` into an array position is `AsSpan(index)`. Meshes are only
+      read (design 5): the same shape value always gives the same box.
+3713. **Frozen inputs.** None of these algorithms writes into the topology or geometry it is given; every test runs on
+      frozen shapes. The only topology built is OuterShell's temporary solid (3711).
+3714. **Tests.**
+      - Ported GTest: BRepClass3d_SolidClassifier (5). MakeBox and MakeSphere (unit 3M) are replaced by
+        `TestShapes.Box` and `BRepGPropTestShapes.SphereSolid` (one natural face where MakeSphere has a seam and
+        degenerated edges), frozen.
+      - Known-answer tests (83): the face classifier on a square with a hole (2D and 3D points, IN, OUT, ON on edges
+        and vertices, tolerances, reversed and located faces, bounding boxes, the closest edge and its position, the
+        explorer's segments, wires and edges, the intersector, the passive classifier, BRepClass_Edge's twins);
+        BRepTopAdaptor_FClass2d (holed square, periodic cylinder face brought into its period, test on the
+        restriction, natural faces), the topological tool and its vertices; IntCurvesFace on box faces (transitions,
+        reversed faces, segments, a line in the face's plane: IsParallel), on a surface of extrusion through its
+        polyhedron, with circles, and the shape intersector (sorted points, PerformNearest, the Load issue pinned);
+        the solid classifier on boxes (faces, edges, vertices, tolerance, reversed, located, rotated), a cylinder of
+        faces, a sphere, a solid with a void and its outer shell, compounds, a solid without faces, the infinite point,
+        the explorer and the passive classifier; BRepIntCurveSurface_Inter on rays through boxes, edges, a located box,
+        a holed face, segments and circles; BRepBndLib's boxes of boxes, cylinders, located and rotated shapes, meshes,
+        mesh-only faces, polygon-only edges, vertices and arcs, and oriented boxes by points and by inertia.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepClass3d`, `BRepIntCurveSurface`, `BRepBndLib`), on random scenes
+        built identically on both sides (`ClassificationScenes`: boxes, closed cylinders whose lateral face is a
+        cylinder, a surface of linear extrusion or of revolution, holed faces, natural spheres, tori and sphere
+        patches, natural B-spline faces with a B-spline edge, compounds of placed solids, meshed boxes and mesh-only
+        tetrahedra; placed rigidly or scaled, reversed), all values bit-identical:
+        - BRepClass3d_SolidClassifier: 7,350 points (in and around the shape, on faces with offsets from 1e-9 to 0.3,
+          on edges, at vertices; tolerances 1e-7 and 1e-3) on one classifier per scene, the constructor with a
+          point, and the infinite point: 29,940 values (state, Rejected, IsOnAFace, face);
+        - BRepIntCurveSurface_Inter: 1,512 lines, segments, circles and B-splines (Init with a line; Load then
+          Init with bounded and unbounded GeomAdaptor_Curves), 3,285 points: 34,362 values;
+        - BRepBndLib: Add (both flags), AddClose, AddOptimal (four flag pairs) and AddOBB (eight flag triples), into
+          void and non-void boxes, and the functional forms, 1,800 calls: 31,212 values.
+        BRepClass_FaceClassifier, BRepTopAdaptor_FClass2d and IntCurvesFace aren't bound natively: they are reached
+        through those three, and unit-tested.
+3715. **For later units.**
+      - 3I (BRepLib): `BRepLib::OrientClosedSolid` uses `BRepClass3d_SolidClassifier.PerformInfinitePoint` on the
+        solid it orients (its copy for write, design 4.6); BRepLib_FindSurface and the makers call `BRepBndLib.Add`
+        with `ref Bnd_Box`.
+      - 3J (BRepCheck): BRepCheck_Face's orientation check builds a `BRepTopAdaptor_FClass2d(face, tol)` and calls
+        `PerformInfinitePoint()`; BRepCheck_Solid uses `BRepClass3d_SolidClassifier` (Load, PerformInfinitePoint,
+        Perform). All only read.
+      - 3K (BRepExtrema, BRepBuilderAPI): BRepExtrema calls `BRepClass_FaceClassifier.Perform(face, gp_Pnt, tol)`
+        (the 3D overload projects with Extrema_ExtPS on the face's UV box), `BRepClass3d_SolidClassifier` and
+        `BRepBndLib.Add`/`AddOptimal`; its ExtPF and friends use `BRepTopAdaptor_FClass2d`. Geom2dHatch, when ported,
+        implements `ITopClass_FaceExplorer.CurrentEdge` by `ref` (3702).

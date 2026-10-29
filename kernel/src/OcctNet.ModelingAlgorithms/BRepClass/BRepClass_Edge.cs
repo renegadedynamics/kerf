@@ -76,7 +76,7 @@ public partial struct BRepClass_Edge
             return;
         }
 
-        // OCCT dereferences the result of Seek without a check: the vertex is in the map of its own wire
+        // The vertex is in the map of its own wire (C++ dereferences the result of Seek unchecked)
         theMapVE.FindFromKey(aVL, out NCollection_List<TopoDS_Shape>? aListE);
         if (aListE!.Extent() == 2)
         {

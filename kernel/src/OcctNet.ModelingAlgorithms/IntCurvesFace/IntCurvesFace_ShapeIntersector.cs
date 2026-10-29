@@ -37,6 +37,8 @@ public class IntCurvesFace_ShapeIntersector
     /// <summary>Loads the faces of <paramref name="theShape"/>, with the tolerance <paramref name="theTol"/> (see <see cref="IntCurvesFace_Intersector"/>).</summary>
     public void Load(in TopoDS_Shape theShape, double theTol)
     {
+        // OCCT doesn't clear the intersectors of a shape loaded before: they stay first in the sequence, and myNbFaces
+        // counts only the new faces, so a second Load intersects the old shape's faces (occt-issues.md)
         var Ex = new TopExp_Explorer();
         int i;
         for (myNbFaces = 0, i = 0, Ex.Init(theShape, TopAbs_FACE); Ex.More(); ++i, Ex.Next())
@@ -98,6 +100,8 @@ public class IntCurvesFace_ShapeIntersector
             }
 
             IntCurvesFace_Intersector anIntersector = myIntersector[i];
+            // OCCT: a face skipped here keeps the points of its previous Perform, which SortResult then reports
+            // (occt-issues.md)
             if (theParMin < aParMax)
             {
                 anIntersector.Perform(theL, theParMin, aParMax);

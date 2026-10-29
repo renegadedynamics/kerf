@@ -131,7 +131,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
         myUseBoundTol = UseBToler;
         myIsParallel = false;
 
-        // OCCT initialises a local adaptor and keeps a copy of it; the port keeps the adaptor itself
+        // C++ initialises a local adaptor and keeps a copy of it; the port keeps the adaptor itself
         var surface = new BRepAdaptor_Surface();
         face = Face;
         surface.Initialize(Face, aRestr);
@@ -268,7 +268,8 @@ public class IntCurvesFace_Intersector : Standard_Transient
                         for (; anExp.More(); anExp.Next())
                         {
                             TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-                            // OCCT: an edge without a 3D curve gives a null curve to the projection, which throws
+                            // OCCT: an edge without a 3D curve (a degenerated edge) gives a null curve to the projection, which
+                            // throws (occt-issues.md)
                             Geom_Curve aPC = BRep_Tool.Curve(anE, out double f, out double l)!;
                             var aProj = new GeomAPI_ProjectPointOnCurve(HICSPointindex.Pnt(), aPC, f, l);
                             if (aProj.NbPoints() > 0)
@@ -381,7 +382,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
 
         var HICS = new IntCurveSurface_HInter();
         var geomline = new Geom_Line(L);
-        // OCCT builds an adaptor and copies it into a handle: one adaptor here
+        // C++ builds an adaptor and copies it into a handle: one adaptor here
         var HLL = new GeomAdaptor_Curve(geomline);
         double parinf = ParMin;
         double parsup = ParMax;

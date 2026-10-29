@@ -153,4 +153,20 @@ public class IntCurvesFaceTests
             Assert.True(anInter.WParameter(i) >= anInter.WParameter(i - 1));
         }
     }
+
+    [Fact]
+    public void ShapeIntersector_second_Load_keeps_the_first_shape_OCCT_issue()
+    {
+        // OCCT's Load doesn't clear the faces loaded before, and counts only the new ones: after loading a second box
+        // the intersector still meets the first box's faces (occt-issues.md, pinned)
+        TopoDS_Shape aBox = Box10();
+        TopoDS_Shape aFar = ClassificationTestShapes.Translated(aBox, new gp_Vec(100, 0, 0));
+        var anInter = new IntCurvesFace_ShapeIntersector();
+        anInter.Load(aBox, 1e-7);
+        anInter.Load(aFar, 1e-7);
+        anInter.Perform(new gp_Lin(new gp_Pnt(105, 5, -5), new gp_Dir(0, 0, 1)), -RealLast(), RealLast());
+        Assert.Equal(0, anInter.NbPnt()); // the second box is missed
+        anInter.Perform(new gp_Lin(new gp_Pnt(5, 5, -5), new gp_Dir(0, 0, 1)), -RealLast(), RealLast());
+        Assert.Equal(2, anInter.NbPnt()); // the first box is met
+    }
 }

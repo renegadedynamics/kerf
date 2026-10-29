@@ -120,7 +120,7 @@ internal static class TopClass_FaceClassifier
         gp_Lin2d aLine;
         double aParam;
         bool aIsValidSegment = theFexp.Segment(aPoint, out aLine, out aParam);
-        // OCCT default-constructs one edge for the whole classification (see ITopClass_FaceExplorer.CurrentEdge)
+        // C++ default-constructs one edge for the whole classification (see ITopClass_FaceExplorer.CurrentEdge)
         TheEdge anEdge = new();
         TopAbs_Orientation anEdgeOri;
         int aClosestInd;

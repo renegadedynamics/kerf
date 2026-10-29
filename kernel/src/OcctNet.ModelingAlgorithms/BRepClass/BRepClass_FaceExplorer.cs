@@ -127,7 +127,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
         double aTolParConf2 = Precision.PConfusion() * Precision.PConfusion();
         gp_Pnt2d aPOnC;
         double aParamIn;
-        // OCCT leaves L and Par unwritten for the edges it skips; they are written before every return
+        // C++ leaves L and Par unwritten for the edges it skips; they are written before every return
         L = new gp_Lin2d();
         Par = 0.0;
 
@@ -318,6 +318,8 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     /// </summary>
     public void CurrentEdge(ref BRepClass_Edge E, out TopAbs_Orientation Or)
     {
+        // OCCT: the next edge left from the previous edge reaches the intersector's CheckSkip for an edge without one
+        // (a closed edge, or a vertex with more than two edges) (occt-issues.md)
         E.ChangeEdge() = TopoDS.Edge(myEExplorer.Current());
         E.ChangeFace() = myFace;
         Or = E.Edge().Orientation();
