@@ -78,6 +78,59 @@ The numbers in brackets are the plan's (section 7).
     result, sharing what meshing left unchanged; a functional `Meshed` twin as well. Alternative: throw on frozen
     input.
 
+## Phases 5 and 6 (construction and Booleans), from the plan in [phase5-6-plan.md](phase5-6-plan.md)
+
+The numbers in brackets are the plan's (section 7).
+
+16. **Healing in phase 6** (plan 1). build123d.NET cleans every Boolean with `ShapeUpgrade_UnifySameDomain`, which
+    reaches ShapeFix_Face, Wire, Edge and Shell, and it calls `ShapeFix_Shape` on every wire and face it makes,
+    `ShapeFix_Solid`, `ShapeFix_Wireframe` and `BRepBuilderAPI_Sewing`. *Provisional:* phase 6 ports ShapeFix whole,
+    the rest of ShapeAnalysis, ShapeConstruct, ShapeBuild_ReShape, the rest of ShapeExtend, UnifySameDomain and
+    Sewing (61,400 lines, most of it design.md's phase 7; units 6S, 6H1 to 6H3, 6U). Alternative: only the classes
+    reached (about 48,000). ShapeUpgrade's divide and convert tools (behind 1,600 heal-group cases) and ShapeCustom
+    stay in phase 7.
+17. **ChFi2d and the 2D wire offset in phase 5** (plan 2, sections 2.10 and 2.11). *Provisional:* both pulled in.
+    ChFi2d (6,200 lines) needs only the constraint solvers phase 5 ports anyway. The 2D offset (about 39,000 lines:
+    the medial axis, BRepFill's offset wire, BRepAlgo) reaches the legacy TopOpeBRep through one call,
+    `BRepAlgo_FaceRestrictor` → `TopOpeBRepBuild_WireToFace::MakeFaces`. The port takes only the members that call
+    runs (about 10,000 lines, measured first; the unit stops and asks if it is much more). Alternatives: the whole
+    TopOpeBRepBuild/DS/Tool closure (about 45,000 lines); `BOPAlgo_BuilderFace` instead (not a port, no native
+    parity); the 2D offset in phase 7. It gives build123d.NET's 2D `offset` and the offset group's 621 wire cases.
+18. **Booleans of frozen shapes are non-destructive** (plan 3, section 2.3). *Provisional:*
+    - OCCT's own check (an argument with a `Locked()` sub-shape makes the pave filler non-destructive) applies to
+      every frozen argument, so a Boolean never writes its inputs and needs no new code.
+    - `SetNonDestructive(false)` applies only to unfrozen shapes (ported code).
+    - The result shares the arguments' untouched sub-shapes, as native's does.
+    - Each shared face keeps `Free = 1` where native writes 0 (question 1); the oracle masks that column.
+19. **Parity where native OCCT isn't repeatable** (plan 4, sections 2.4 and 2.5). Native BOP iterates
+    address-ordered maps (216 unordered shape maps and 34 pave-block maps in TKBO), so its output can vary from run
+    to run. *Provisional:*
+    - the port iterates in insertion order and gives the serial result in parallel, bit for bit;
+    - the oracle measures native's repeatability first and compares canonically (sub-shapes matched by geometry,
+      counts, properties, validity, histories) where native varies;
+    - target: 95% of Boolean cases bytes-identical (the Free column apart), the rest canonically identical or
+      attributed.
+20. **The oracle for build123d.NET's tests and a few bindings** (plan 5). *Provisional:*
+    - The milestone replays build123d.NET's Booleans from captured native inputs. It asks for a test-only capture
+      hook in build123d.NET's Boolean path (operands, options, native results and histories as BRep text). Until
+      it exists, the oracle project rebuilds the tests' operands with build123d.NET's public API.
+    - Bindings that would widen the oracle: `BOPAlgo_MakerVolume`, `BOPAlgo_CellsBuilder`,
+      `BRepAlgoAPI_Defeaturing`, `BOPAlgo_ArgumentAnalyzer`, `ShapeFix_Wire`, `ShapeFix_Edge`, `ChFi2d_FilletAPI`,
+      `GeomInt_IntSS`, `Law_Function`. Without them those are checked by the corpus and the GTests.
+21. **Boolean options for Bento** (plan 6). *Provisional:* `BRepAlgoAPI_*` stay OCCT's working objects with frozen
+    results. Each operation also gets a functional twin (`BRepAlgoAPI.Fuse(args, tools, in BRepAlgoAPI_Options, out
+    BRepTools_History)`) with an equatable options struct (fuzzy value, glue, OBB, inverted-solid check, parallel,
+    simplify, non-destructive), OCCT's names and defaults, nothing added. The same for UnifySameDomain and the
+    healing classes' tolerances.
+22. **Boolean performance targets** (plan 7). *Provisional:* the port's serial Boolean within 2× native serial on
+    build123d.NET's operations and the corpus's simple and complex grids, with a comparable parallel speed-up.
+    Allocation reported.
+23. **Order of the independent construction units** (plan 8). The owner's order is: surface/surface, then
+    Booleans with the clean-up, then the rest of phase 5. *Provisional:* the waves follow it. Units with no
+    dependency on the Booleans (constraints 5K1/5K2, laws and GeomFill 5L1 to 5L3, plates 5P, fair curves 5Q, the
+    medial axis 5M, the face maker 5O1) may start when a porter would otherwise wait. Alternative: strictly after
+    the Boolean milestone.
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and
