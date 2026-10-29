@@ -798,3 +798,94 @@ Aligning the Geom (1A) and Geom2d (1B) curves where they made different choices 
       (decisions 126, 135); the default tolerance of `Segment` is the same named constant for
       `Precision::PConfusion()`; the Geom oracle tests use `Oracle`'s array converters instead of private
       copies, and Geom2dOracle builds native B-splines through `Oracle.ToNativeCurve`.
+## Phase 2: unit 1E, approximation leaves (29 October 2026)
+
+AdvApprox, AppParCurves (with its `.gxx` generics), FEmTool and GProp.
+
+141. **AppParCurves_MultiPoint, MultiCurve and MultiBSpCurve are classes with OCCT's public API.** OCCT copies
+      them by value, but their data are handles, so a C++ copy shares the points; a C# reference does the same. The
+      setters stay public (decision 21): callers build MultiPoints as AppDef's input (AppDef_MultiPointConstraint
+      derives from AppParCurves_MultiPoint), and the algorithms fill MultiCurves in place. Where C++ copies one
+      (a by-value return, the slicing `(AppParCurves_MultiCurve)bspCurve`, a member assignment), the port writes
+      the copy constructor `new(x)`, which shares the points, knots and multiplicities as C++ does and copies the
+      rest (the B-spline degree). `MultiBSpCurve.Knots()` and `Multiplicities()` return copies (decision 88);
+      `MultiCurve.Value(i)` returns the stored MultiPoint (OCCT returns a const reference; shared: don't modify).
+      New MultiCurves fill their array with empty MultiPoints, as C++ default-constructs them. Dump takes a
+      TextWriter and `ToString()` returns what it writes (decision 34). AppParCurves_ConstraintCouple is a value
+      type (section 3 of the rules): internal setters, `WithIndex`/`WithConstraint` twins, default index -1.
+142. **AppParCurves' `.gxx` files are generic classes over the MultiLine and its tool**:
+      `AppParCurves_LeastSquare<MultiLine, ToolLine>`, `_ResolConstraint`, `_Function`, `_Gradient`,
+      `_BSpFunction` and `_BSpGradient`, all `where ToolLine : struct, IAppParCurves_LineTool<MultiLine>`. The
+      interface (new, `IAppParCurves_LineTool.cs`) has the static abstract members the templates call on
+      `ToolLine`: FirstPoint, LastPoint, NbP3d, NbP2d, and three overloads each of Value, Tangency and Curvature
+      (3d arrays, 2d arrays, both). As in decision 75, a struct tool makes the JIT specialise the code per
+      instantiation, as OCCT's `_0.cxx` files do. The templates' other macro arguments (Squares, ResolCons,
+      ParLeastSquare, ParFunction, Gradient_BFGS, BSpParLeastSquare, BSpParFunction, BSpGradient_BFGS) are, in
+      every instantiation OCCT makes (AppDef, GeomInt, BRepApprox), the AppParCurves classes over the same
+      MultiLine and tool, so the generic bodies name them directly. `AppParCurves_Gradient_BFGS` and
+      `AppParCurves_BSpGradient_BFGS` have no `.gxx` (OCCT's generator wrote one identical copy per
+      instantiation); they are generic classes ported from AppDef's copy. The public members are those of the
+      instantiations' headers (AppDef_TheLeastSquares.hxx and the like, listed as ported files). This follows the
+      phase 2 plan, which overrides section 9's "one port per instantiation" for these files.
+      **How later units instantiate them** (2C AppDef/AppCont, 5A Approx, and later GeomInt and BRepApprox): write
+      the MultiLine as a class and its tool as a struct implementing `IAppParCurves_LineTool<TheMultiLine>`
+      (`tests/OcctNet.ModelingData.Tests/AppParCurves/AppParCurves_TestLine.cs` is a complete example). Tools
+      with more members (WhatStatus, MakeMLBetween, MakeMLOneMorePoint, which Approx's ComputeLine and
+      BSplComputeLine call) derive their own interface from this one. Where the public API needs OCCT's
+      instantiation names (AppDef_TheLeastSquares, AppDef_MyBSplGradientOfBSplineCompute, ...), they can be sealed
+      subclasses with forwarding constructors; inside the generic bodies the objects are of the AppParCurves types.
+143. **AppParCurves' algorithms are working objects** (decision 21). The matrices and vectors they return
+      (`FunctionMatrix`, `Poles`, `Distance`, `KIndex`, `NewParameters`, `ConstraintMatrix`, ...) are their own
+      (decision 33; shared: don't modify), and so is `LeastSquare.BSplineValue()`, which OCCT returns by const
+      reference. The by-value results (`BezierValue`, `Gradient.Value`, `BSpGradient.Value`,
+      `BSpFunction.CurveValue`) are copies that share the poles, as OCCT's are. C++ `math_Vector`/`math_Matrix`
+      assignments are `Initialized(...)` (decision 31). A function that fails assigns its `out` value 0
+      (decision 32). Members OCCT writes but never reads (the functions' `Done`) or declares but never defines
+      (`ResolConstraint::Error()`) are left out. The MultiLine is kept by reference where OCCT copies it into a
+      member (neither changes it).
+144. **AppParCurves' out-of-bounds reads throw.** Several of OCCT's index errors (occt-issues.md) read past an
+      array in the release build, whose range checks the `.gxx` files also disable (`No_Standard_OutOfRange`). The
+      port always checks (decision 9), so those paths throw Standard_OutOfRange where OCCT goes on with undefined
+      values. The visible consequence: an interior passing or tangency constraint on a MultiLine with both 3d and
+      2d points (AppParCurves_Function, BSpFunction, ResolConstraint) throws. Lines with only 3d or only 2d points,
+      and every approximation without interior constraints, are unaffected.
+145. **AdvApprox_EvaluatorFunction is an abstract class with by-value inputs.** Its one member is
+      `Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter, int DerivativeRequest,
+      Span<double> Result, out int ErrorCode)`. OCCT passes everything through pointers, but none of its 19
+      implementations writes an input. `operator()` is left out, as for BSplCLib_EvaluatorFunction (decision 83).
+      Implementations must always assign ErrorCode.
+146. **AdvApprox_ApproxAFunction's batch accessors return copies** (`Poles1d()`, `Poles2d()`, `Poles()`,
+      `Knots()`, `Multiplicities()`, `MaxError(D)`, `AverageError(D)`), as in decision 88; they return null where
+      OCCT returns a null handle. The tolerance arguments are nullable `NCollection_HArray1<double>?`.
+      AdvApprox_SimpleApprox is a working object whose accessors return its own arrays (shared: don't modify).
+      `Dump` takes a TextWriter; `AdvApprox_Cutting.Value` has `out double cuttingvalue`.
+147. **FEmTool keeps OCCT's mutable API** (decision 21). AppDef_Variational writes knots through
+      `FEmTool_Curve.Knots()`, so it returns the curve's own array (shared). `FEmTool_ElementaryCriterion.Set(HArray2)`
+      keeps the array it is given; `FEmTool_Assembly.AssemblyTable()` returns the table passed to the constructor;
+      `FEmTool_SparseMatrix.ChangeValue` returns `ref double`. `OutM`/`OutS` take a TextWriter instead of writing
+      to std::cout. `Length` and `ReduceDegree` use `out` parameters.
+148. **FEmTool's linear criteria cache their reference integrals per constraint order, under a lock.** OCCT keeps
+      one set in function-local statics and recomputes it whenever the order changes, which isn't thread-safe; the
+      values are the same. The port always throws Standard_ConstructionError for a WorkDegree above 14, where OCCT
+      checks only when it recomputes and otherwise reads past its 120-element table.
+149. **GProp_GProps and its subclasses are classes with OCCT's public mutators.** `Add`, `AddPoint`, `SetLocation`
+      and `Perform` stay public (decision 21): they are accumulators that BRepGProp and GeomGProp fill in place. The
+      fields `g`, `loc`, `dim` and `inertia` are protected with OCCT's names; `GProp_GProps(GProp_GProps)` is the C++
+      copy. **GProp_PrincipalProps is a struct** (section 3 of the rules): OCCT's class has only const members and
+      is copied by value. Its parameterless constructor gives OCCT's undefined value (RealLast moments, radii and
+      centre; the absolute axes); its full constructor, a private friend in OCCT, is internal; `Moments` and
+      `RadiusOfGyration` have `out` parameters. **GProp_PEquation is a sealed, immutable class** computed in its
+      constructor; its nested `enum class Type` stays nested and `GetType()` hides `object.GetType` (as in
+      decision 98).
+150. **GProp_CelGProps, GProp_SelGProps and GProp_VelGProps are ported with OCCT's errors** (occt-issues.md): no
+      OCCT code uses them. Their tests check the masses and centres where OCCT is right and pin the reproduced
+      errors elsewhere.
+151. **GProp is oracle-tested through BRepGProp** (`tests/OcctNet.Oracle.Tests/GProp`), the only way to fill a
+      native GProp_GProps. Native volume, surface and linear properties of 150 random primitives (box, cylinder,
+      cone, sphere, torus, wedge) are loaded into the port's GProp_GProps (a test subclass setting the protected
+      fields, the reference point at the centre of mass), and MatrixOfInertia, StaticMoments, MomentOfInertia,
+      RadiusOfGyration, PrincipalProperties (moments, axes, radii, symmetry checks) and Add with random densities
+      are compared: 20,700 values, all bit-identical. The oracle project now references OcctNet.ModelingData.
+      AdvApprox, AppParCurves and FEmTool have no native entry point in the bindings (GeomConvert_ApproxCurve and
+      GeomAPI_PointsToBSpline reach them indirectly, once their own units are ported); unit tests on known
+      approximations cover them.

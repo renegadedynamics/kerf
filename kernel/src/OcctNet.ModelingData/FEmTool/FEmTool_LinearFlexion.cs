@@ -1,0 +1,223 @@
+// Port of: src/ModelingData/TKGeomBase/FEmTool/FEmTool_LinearFlexion.hxx
+// Port of: src/ModelingData/TKGeomBase/FEmTool/FEmTool_LinearFlexion.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace Occt;
+
+/// <summary>
+/// The linear flexion criterion of Hermite-Jacobi elements: the integral of the squared second derivative.
+/// </summary>
+public class FEmTool_LinearFlexion : FEmTool_ElementaryCriterion
+{
+    // OCCT keeps the integrals of the last constraint order in function-static variables, recomputed when the
+    // order changes; they are cached here per order, under a lock (the values are the same).
+    private const int WDeg = 14;
+    private static readonly math_Vector?[] theMatrixElemts = new math_Vector?[3];
+    private static readonly Lock theLock = new();
+
+    private readonly math_Matrix RefMatrix;
+    private readonly int myOrder;
+
+    /// <summary>The criterion for elements of degree at most <paramref name="WorkDegree"/> (at most 14).</summary>
+    public FEmTool_LinearFlexion(int WorkDegree, GeomAbs_Shape ConstraintOrder)
+    {
+        RefMatrix = new math_Matrix(0, WorkDegree, 0, WorkDegree);
+        myOrder = PLib.NivConstr(ConstraintOrder);
+
+        // OCCT checks the degree only when it computes the integrals, and otherwise reads past them
+        if (WorkDegree > WDeg)
+        {
+            throw new Standard_ConstructionError("Degree too high");
+        }
+
+        math_Vector MatrixElemts;
+        lock (theLock)
+        {
+            if (theMatrixElemts[myOrder] is not math_Vector aCached)
+            {
+                // Calculating RefMatrix
+                int DerOrder = 2;
+                PLib_HermitJacobi theBase = new(WDeg, ConstraintOrder);
+                FEmTool_ElementsOfRefMatrix Elem = new(theBase, DerOrder);
+
+                int maxDegree = WDeg + 1;
+                math_IntegerVector anOrder = new(1, 1, Min(4 * (maxDegree / 2 + 1), math.GaussPointsMax()));
+                math_Vector Lower = new(1, 1, -1.0), Upper = new(1, 1, 1.0);
+
+                math_GaussSetIntegration anInt = new(Elem, Lower, Upper, anOrder);
+
+                aCached = new math_Vector(0, ((WDeg + 2) * (WDeg + 1)) / 2 - 1);
+                aCached.Initialized(anInt.Value());
+                theMatrixElemts[myOrder] = aCached;
+            }
+            MatrixElemts = aCached;
+        }
+
+        int i, j, ii, jj;
+        for (ii = i = 0; i <= WorkDegree; i++)
+        {
+            RefMatrix[i, i] = MatrixElemts[ii];
+            for (j = i + 1, jj = ii + 1; j <= WorkDegree; j++, jj++)
+            {
+                RefMatrix[j, i] = RefMatrix[i, j] = MatrixElemts[jj];
+            }
+            ii += WDeg + 1 - i;
+        }
+    }
+
+    public override NCollection_HArray2<int> DependenceTable()
+    {
+        if (myCoeff is null)
+        {
+            throw new Standard_DomainError("FEmTool_LinearFlexion::DependenceTable");
+        }
+
+        NCollection_HArray2<int> DepTab =
+            new(myCoeff.LowerCol(), myCoeff.UpperCol(), myCoeff.LowerCol(), myCoeff.UpperCol(), 0);
+        int i;
+        for (i = myCoeff.LowerCol(); i <= myCoeff.UpperCol(); i++)
+        {
+            DepTab.SetValue(i, i, 1);
+        }
+
+        return DepTab;
+    }
+
+    public override double Value()
+    {
+        NCollection_HArray2<double> aCoeff = myCoeff!;
+        int deg = Min(aCoeff.ColLength() - 1, RefMatrix.UpperRow()), i, j, j0 = aCoeff.LowerRow(),
+            degH = Min(2 * myOrder + 1, deg), NbDim = aCoeff.RowLength(), dim;
+
+        NCollection_Array2<double> NewCoeff = new(1, NbDim, 0, deg);
+
+        double coeff = (myLast - myFirst) / 2.0, cteh3 = 2.0 / Math.Pow(coeff, 3), mfact, Jline;
+
+        int k1;
+
+        double J = 0.0;
+
+        for (i = 0; i <= degH; i++)
+        {
+            k1 = (i <= myOrder) ? i : i - myOrder - 1;
+            mfact = Math.Pow(coeff, k1);
+            for (dim = 1; dim <= NbDim; dim++)
+            {
+                NewCoeff[dim, i] = aCoeff.Value(j0 + i, dim) * mfact;
+            }
+        }
+
+        for (i = degH + 1; i <= deg; i++)
+        {
+            for (dim = 1; dim <= NbDim; dim++)
+            {
+                NewCoeff[dim, i] = aCoeff.Value(j0 + i, dim);
+            }
+        }
+
+        for (dim = 1; dim <= NbDim; dim++)
+        {
+            for (i = 0; i <= deg; i++)
+            {
+                Jline = 0.5 * RefMatrix[i, i] * NewCoeff[dim, i];
+
+                for (j = 0; j < i; j++)
+                {
+                    Jline += RefMatrix[i, j] * NewCoeff[dim, j];
+                }
+
+                J += Jline * NewCoeff[dim, i];
+            }
+        }
+
+        if (J < 0.0)
+        {
+            J = 0.0;
+        }
+
+        return cteh3 * J;
+    }
+
+    public override void Hessian(int Dimension1, int Dimension2, math_Matrix H)
+    {
+        NCollection_HArray2<int> DepTab = DependenceTable();
+
+        if (Dimension1 < DepTab.LowerRow() || Dimension1 > DepTab.UpperRow() || Dimension2 < DepTab.LowerCol()
+            || Dimension2 > DepTab.UpperCol())
+        {
+            throw new Standard_OutOfRange("FEmTool_LinearJerk::Hessian");
+        }
+
+        if (DepTab.Value(Dimension1, Dimension2) == 0)
+        {
+            throw new Standard_DomainError("FEmTool_LinearJerk::Hessian");
+        }
+
+        int deg = Min(RefMatrix.UpperRow(), H.RowNumber() - 1), degH = Min(2 * myOrder + 1, deg);
+
+        double coeff = (myLast - myFirst) / 2.0, cteh3 = 2.0 / Math.Pow(coeff, 3), mfact;
+        int k1, k2, i, j;
+
+        H.Init(0.0);
+
+        // Unlike the tension and jerk criteria, H is indexed from 0 whatever its bounds (AppDef_LinearCriteria
+        // always passes a 0-based matrix)
+        for (i = 0; i <= degH; i++)
+        {
+            k1 = (i <= myOrder) ? i : i - myOrder - 1;
+            mfact = Math.Pow(coeff, k1) * cteh3;
+            // Hermite*Hermite part of matrix
+            for (j = i; j <= degH; j++)
+            {
+                k2 = (j <= myOrder) ? j : j - myOrder - 1;
+                H[i, j] = mfact * Math.Pow(coeff, k2) * RefMatrix[i, j];
+                if (i != j)
+                {
+                    H[j, i] = H[i, j];
+                }
+            }
+            // Hermite*Jacobi part of matrix
+            for (j = degH + 1; j <= deg; j++)
+            {
+                H[i, j] = H[j, i] = mfact * RefMatrix[i, j];
+            }
+        }
+
+        // Jacoby*Jacobi part of matrix
+        for (i = degH + 1; i <= deg; i++)
+        {
+            for (j = i; j <= deg; j++)
+            {
+                H[i, j] = cteh3 * RefMatrix[i, j];
+                if (i != j)
+                {
+                    H[j, i] = H[i, j];
+                }
+            }
+        }
+    }
+
+    public override void Gradient(int Dimension, math_Vector G)
+    {
+        NCollection_HArray2<double> aCoeff = myCoeff!;
+        if (Dimension < aCoeff.LowerCol() || Dimension > aCoeff.UpperCol())
+        {
+            throw new Standard_OutOfRange("FEmTool_LinearFlexion::Gradient");
+        }
+
+        int deg = Min(G.Length() - 1, aCoeff.ColLength() - 1);
+
+        math_Vector X = new(0, deg);
+        int i, i1 = aCoeff.LowerRow();
+        for (i = 0; i <= deg; i++)
+        {
+            X[i] = aCoeff.Value(i1 + i, Dimension);
+        }
+
+        math_Matrix H = new(0, deg, 0, deg);
+        Hessian(Dimension, Dimension, H);
+
+        G.Multiply(H, X);
+    }
+}

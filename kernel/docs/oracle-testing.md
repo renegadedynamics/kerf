@@ -45,3 +45,6 @@ angles), and say why.
   bit-identical.
 - All oracle tests are in the namespace `OcctNet.Oracle.Tests`, whatever their folder: a namespace named after an OCCT
   package (`...Tests.BSplCLib`, `...Tests.gp`) hides the OCCT class of the same name from every other test file.
+- Build native axes and directions from the same raw components as the port's, rather than converting the port's
+  normalised `gp_Dir` with `Oracle.ToNative`: native OCCT normalises the unit direction again, which can change its
+  last bit (GProp's oracle tests saw it on about 700 values).
