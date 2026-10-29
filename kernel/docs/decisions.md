@@ -3473,3 +3473,219 @@ OcctNet.ModelingAlgorithms (decision 280). Numbers from 3701 are renumbered on m
         (the 3D overload projects with Extrema_ExtPS on the face's UV box), `BRepClass3d_SolidClassifier` and
         `BRepBndLib.Add`/`AddOptimal`; its ExtPF and friends use `BRepTopAdaptor_FClass2d`. Geom2dHatch, when ported,
         implements `ITopClass_FaceExplorer.CurrentEdge` by `ref` (3702).
+
+## Phase 3: unit 3I, BRepLib
+
+BRepLib (BRepLib.cxx's statics, BRepLib_1.cxx), its makers (Command, MakeShape, MakeVertex, MakeEdge, MakeEdge2d,
+MakeWire, MakePolygon, MakeFace, MakeShell, MakeSolid and the error enums), FindSurface, FuseEdges, PointCloudShape and
+ToolTriangulatedShape, in OcctNet.ModelingAlgorithms (decision 280); the functional twins of the in-place statics
+(design 4.6); `BRepTools.ExactCopyForWrite` and `BRepTools.KeepUnchanged` in OcctNet.ModelingData. ValidateEdge and
+CheckCurveOnSurface came with unit 3H. The makers, the two halves of BRepLib.cxx and FuseEdges were written in forked
+worktrees, reviewed and merged. Numbers from 3401 are renumbered on merge.
+
+3401. **The makers are public working objects** (decision 21) with OCCT's constructors, `Init`, `Add`, `Close` and
+      `Error`. `BRepLib_Command` is abstract: `IsDone`/`Check` public, `Done`/`NotDone` protected.
+      - Every public result freezes the whole result graph first (design 4.2): `Shape`, `Vertex`, `Edge`, `Wire`,
+        `Face`, `Shell`, `Solid`, `Vertex1`/`Vertex2`, `FirstVertex`/`LastVertex`, MakeWire's `Edge`/`Vertex`. A
+        sub-shape accessor freezes the whole result with it.
+      - Each has an internal twin that doesn't freeze, for ported code that goes on building: `InternalShape`,
+        `InternalVertex`, `InternalEdge`, `InternalVertex1`/`2`, `InternalWire`, `InternalFace`, `InternalShell`,
+        `InternalSolid`, `InternalFirstVertex`/`InternalLastVertex`. OCCT's conversion operators are explicit
+        operators calling the freezing form (as decision 185).
+      - `DescendantFaces`, `NewFaces` and `FacesFromEdges` return frozen `IBentoList` copies; internal virtual twins
+        (`InternalDescendantFaces`, ...) return the maker's own lists for overriders. As in OCCT, `MakeFace.Face()`
+        and `MakeShell.Shell()` don't check `IsDone`.
+      - Where OCCT remakes the result inside `myShape` (`B.MakeEdge(TopoDS::Edge(myShape))` and the like), the port
+        makes it in a new variable and assigns it, so an `Init` after a public read doesn't throw
+        `TopoDS_LockedShape`. An `Add` or `Close` after a public read (MakeWire, MakePolygon, MakeSolid, MakeFace)
+        goes on with a new TShape holding the same children, location, orientation and flags (`UnfreezeResult`): the
+        shape already handed out never changes.
+3402. **`BRepLib.Precision()` and `Plane()` stay process-wide statics, as in OCCT, with internal setters**: callers
+      always get the defaults (`Precision::Confusion()` and the XOY plane, frozen). In OCCT only Draw's `precision`
+      command sets them; a thread-static was rejected because a `Parallel.For` worker wouldn't see the setting.
+3403. **`BRepTools.ExactCopyForWrite` and `BRepTools.KeepUnchanged`** (internal, ModelingData): the two halves of a
+      copy for write for in-place operations that must give OCCT's in-place results.
+      - `CopyForWrite` (decision 349) is BRepTools_Modifier with BRepTools_CopyModification, as BRepBuilderAPI_Copy.
+        It isn't an exact copy: the modifier gives every pcurve the 3D range (the own range of a pcurve on an edge
+        that isn't SameRange is lost), stores computed pcurves on planes, gives the vertices their points on curves
+        again and drops polygons on surfaces. An in-place static run on it can give another result than on the
+        original, and every sub-shape of it differs from its original.
+      - `ExactCopyForWrite` copies each TShape once with its flags (Locked cleared; Free cleared on children, as
+        `TopoDS_Builder::Add` does), its children at the same places and its BRep data in new representations sharing
+        the frozen geometry and meshes: nothing is recomputed. Its history is CopyForWrite's (each vertex, edge, face
+        and solid, as placed in the shape, modified into its copy).
+      - `KeepUnchanged(original, copy)`, after the in-place operation on the copy, gives back the original's own
+        TShape for every sub-shape whose flags (but the cache bits Free, Modified, Checked, Locked), children (kept or
+        replaced in turn) and BRep data (bit for bit, geometry by identity) didn't change; the changed ones are the
+        copy's TShapes, holding the kept children in place of their copies. An operation that changes nothing gives
+        back the original itself; one that changes a vertex replaces that vertex and the edges, wires, faces and
+        parents above it only. Its history records the original's sub-shapes that the result replaces. A flag
+        tolerates UpdateTolerances' rounding guard (3404).
+      - The 3B twins (`BRepTools.Updated` and the others) keep CopyForWrite; moving them over is left for later.
+3404. **Makers writing into frozen inputs** (design 4.6). Every `B.Update*`, flag setter and `Add` of the makers into a
+      shape the caller passes was audited.
+      - **`MakeFace(W, OnlyPlane)`** runs UpdateTolerances and SameParameter (forced) on the face holding the
+        caller's wire, which writes into its edges and vertices. If anything in the wire is frozen, the maker works
+        on `ExactCopyForWrite` of the wire (after removing degenerated edges when OnlyPlane) and then keeps what the
+        statics left unchanged (`KeepUnchanged`). UpdateTolerances adds `2 * Epsilon(tol)` to every vertex tolerance
+        it computes, so OCCT's MakeFace raises the vertices of the caller's wire by two units in the last place; here
+        the port ignores a raise of no more than that guard. Otherwise no frozen vertex could be kept, and faces built
+        on wires sharing edges (the six faces of a box) wouldn't share them: the first version, copying without
+        keeping, gave a box of 62 TShapes where native OCCT has 34. So a face from a polygon holds the caller's own
+        wire, its vertices' tolerances two ulps below native OCCT's (the BRep text, at 15 digits, is the same). Real
+        changes (a vertex off its edges) replace only the sub-shapes concerned; the internal `InternalHistory()`
+        records them, for 3K's `Modified`.
+      - **MakeWire's vertex merging.** OCCT moves and enlarges an existing wire vertex (`B.UpdateVertex(VW, PC,
+        maxtol)`, MakeWire.cxx:351; MakeWire_1's `aBB.UpdateVertex(aNewV, ...)`) and transfers parameters with
+        `B.Transfert` onto vertices that may be the caller's. Writes that change nothing are skipped (the same point
+        to the bit, no tolerance increase; `// OCCT.NET: frozen`); a `Transfert` onto a frozen vertex already as
+        tolerant sets only the edge's ranges, as `UpdateVertex` would. When a real change to a frozen vertex is
+        needed, a pre-scan (`needsWritableVertices`, with the same arithmetic) finds it first; the maker then replaces
+        the wire built so far by its `ExactCopyForWrite` and remaps its state (the vertex map in its order, VF, VL,
+        FirstVertex, myVertex, myEdge; in the list form, the coincidence groups), merging the copies' histories
+        (`InternalHistory()`, null when nothing was copied). Coincident vertices with equal tolerances, the common
+        case, copy nothing.
+      - `MakeFace(F)` copies with `EmptyCopied` as OCCT does; `MakeShell` and `MakeSolid` write only into their own
+        shapes.
+3405. **Visibility of BRepLib's statics.**
+      - Internal, with shapes by `in`: `SameRange`, `BuildCurve3d`, both `BuildCurves3d`, `UpdateEdgeTol`,
+        `UpdateEdgeTolerance`, `SameParameter` (of an edge; of a shape with a tolerance and `forced`),
+        `UpdateTolerances(S, verify)`, `UpdateInnerTolerances`, the three `EncodeRegularity` (OCCT's `TopoDS_Edge&` is
+        `in`), `EnsureNormalConsistency`, `UpdateDeflection`, `BuildPCurveForEdgeOnPlane(E, F)` and
+        `BuildPCurveForEdgesOnPlane` (OCCT's template over containers is `IEnumerable<TopoDS_Shape>`). They throw
+        `TopoDS_LockedShape` or `Standard_ImmutableObject` on a frozen shape.
+      - `SameParameter(E, tol, ref theNewTol, IsUseOldEdge)` is internal: it returns an unfrozen edge; `theNewTol` is
+        `ref` (unchanged when nothing is computed). `OrientClosedSolid(ref TopoDS_Solid)` is internal: it only
+        reverses the caller's value, so it works on frozen solids.
+      - Public: `Precision()`, `Plane()`, `CheckSameRange`, `ContinuityOfFaces`, `SortFaces`/`ReverseSortFaces` (OCCT's
+        form filling a caller's list, and functional forms returning `IBentoList<TopoDS_Shape>`), `FindValidRange`
+        (`ref` bounds: OCCT may return false without writing them, or after writing the first), `BoundingVertex`
+        (`ref` outputs, unchanged for fewer than two vertices), the query `BuildPCurveForEdgeOnPlane(E, F, out C2D, out
+        bToUpdate)`, and `ExtendFace(..., out TopoDS_Face)`, which freezes the new face (ported code calls the internal
+        `InternalExtendFace`, which reads `BRepLib_MakeFace.InternalShape()`).
+3406. **OCCT's non-destructive forms are public**: `SameParameter(S, BRepTools_ReShape, tol, forced)` and
+      `UpdateTolerances(S, BRepTools_ReShape, verify)` write only into empty copies recorded in the reshaper, as OCCT
+      documents; the reshaper's `Apply` and `Value` freeze at publication. Reads of the caller's edges go through
+      `Curves()` where OCCT calls `ChangeCurves()` (GetCurve3d, CheckSameRange, UpdateEdgeTol; `// OCCT.NET: frozen`),
+      and the reshaper is read through `InternalValue`. Unit tests check frozen inputs unchanged; the oracle compares
+      the input and `Apply` with native OCCT's. Their results can differ from the in-place statics' (a forced
+      SameParameter empty-copies every flagged edge, and the tolerance updates read the reshaper's values).
+3407. **The functional twins** (design 4.6), in `BRepLib.Twins.cs`, a part of the partial class that ports no OCCT
+      file: `SameParametered(S, tol, forced)` (SameParameter), `TolerancesUpdated(S, verify)` (UpdateTolerances),
+      `InnerTolerancesUpdated(S)`, `Curves3dBuilt(S, tol, out bool, continuity, degree, segments)` and
+      `Curves3dBuilt(S, out bool)` (BuildCurves3d; the bool is its result), `RegularityEncoded(S, angle)` and
+      `RegularityEncoded(S, edges, angle)` (EncodeRegularity), `DeflectionUpdated(S)` (UpdateDeflection) and
+      `NormalConsistencyEnsured(S, out bool, angle, force)` (EnsureNormalConsistency), each also with an `out
+      BRepTools_History`; and `ClosedSolidOriented(solid, out bool)` (OrientClosedSolid), which only reverses the
+      value and copies nothing.
+      - Each runs the in-place static on `ExactCopyForWrite` of its input, gives back the input's unchanged
+        sub-shapes with `KeepUnchanged` (exactly: no tolerance slack) and freezes the result; null in, null out. So a
+        twin's result is what OCCT's in-place static makes of the shape (oracle: 1,500 results byte-identical to the
+        native in-place statics' on twin scenes), and it shares with the input everything the static didn't touch
+        (1,257 of the 2,955 input edges there). The history records the input's sub-shapes the result replaces.
+      - This departs from 3B's twins, which copy with CopyForWrite and share nothing (decision 3403: CopyForWrite
+        changes what SameParameter sees).
+      - No twins yet for `SameRange`, `BuildCurve3d` of one edge, `UpdateEdgeTol`, `UpdateEdgeTolerance` and
+        `BuildPCurveForEdgeOnPlane(E, F)`: left until a caller needs them.
+3408. **OCCT's internals in BRepLib.cxx.** `GetCurve3d` returns the edge's own representation list where OCCT copies
+      it (the representations are shared either way). `UpdShTol` walks the tolerance map in the port's hash order
+      (decision 18); each shape is updated independently. `InternalUpdateTolerances`' map of handles is a
+      `HashSet<TopoDS_TShape>` by reference. `UpdateVTol` is private, and skips a frozen vertex that is already at least
+      as tolerant (`UpdateVertex(V, tol)` only raises; `// OCCT.NET: frozen`), which FuseEdges reaches (3412).
+      `Approx_CurvilinearParameter.InternalCurve2d1()` is added (internal, doesn't freeze): SameParameter re-knots
+      the reparametrised curve before the edge takes it. Approx_SameParameter's result is read through
+      `InternalCurve2d()`.
+3409. **Writing into attached triangulations** (`// OCCT.NET: frozen`). EnsureNormalConsistency and UpdateDeflection
+      write normals and deflections into the faces' triangulations, which are frozen once attached (design 4.1). The
+      port writes into one copy per triangulation (faces sharing a triangulation share its copy, as they would see
+      OCCT's change), reads back through the copy, and at the end gives each face whose active triangulation was
+      copied the copy in its place (`BRep_Builder.UpdateFace(F, copy, false)`, keeping the face's list, with the copy
+      active) and replaces the edges' polygons on the old triangulation by ones on the copy, sharing the frozen
+      polygons. Polygons are looked up on the attached triangulation, as OCCT does. On a copy for write the bytes
+      written are OCCT's (oracle). `BRepLib_ToolTriangulatedShape.ComputeNormals` writes into the triangulation it is
+      given, as OCCT does, so it throws on a frozen one; `NormalsComputed(face, tris)` returns the triangulation if it
+      has normals, else an unfrozen copy with them.
+3410. **EncodeRegularity lets a frozen edge's exception through.** OCCT catches every Standard_Failure around
+      ContinuityOfFaces and `B.Continuity`, and again around the whole shape, so a locked edge would be skipped
+      silently. The edge-level catch has the filter `when (!E.TShape().IsFrozen())` and the shape-level catch lets
+      TopoDS_LockedShape through: a write into a frozen input can't pass silently.
+3411. **BRepLib_PointCloudShape** is a public abstract working object with OCCT's protected fields and hooks
+      (`faceArea`, `computeDensity`, `addDensityPoints`, `addTriangulationPoints`, virtual `clear`, abstract
+      `addPoint(in gp_Pnt, in gp_Vec, in gp_Pnt2d, in TopoDS_Shape)`); its constructors are protected. It only reads
+      the shape: missing triangulation normals are computed on a copy (`NormalsComputed`), where OCCT writes them into
+      the face's triangulation. Random points use `std_mt19937(0)` per face, and `std::uniform_real_distribution
+      <double>` is two 32-bit draws, `(x0 + x1·2³²)/2⁶⁴`, then `a + u·(b − a)` (MSVC's and libstdc++'s
+      implementation; no native binding confirms it). An infinite `double` converted to `int` gives INT_MIN, as x86's
+      conversion does (.NET saturates). UpdateDeflection's `std::hash<Link>` with its order-free equality is a private
+      `readonly struct Link : IEquatable<Link>` in an `NCollection_Map<Link>`; only membership matters.
+3412. **BRepLib_FuseEdges** is a sealed public working object.
+      - Public: the constructor (OCCT ignores `PerformNow`, and so does the port), `AvoidEdges` (keeps a copy of the
+        caller's map), `SetConcatBSpl`, `NbVertices`, `Perform`; `Edges()` returns `IReadOnlyDictionary<int,
+        IBentoList<TopoDS_Shape>>` of the input's own edges, `ResultEdges()` and `Faces()` dictionaries of frozen
+        shapes (Faces keyed with TopTools_ShapeMapHasher); `Shape()` freezes the result. OCCT's forms filling a
+        caller's map are internal overloads; with `InternalShape()` they don't freeze.
+      - The substitution's results are read with `BRepTools_Substitution.InternalCopy`, the new edges with
+        `BRepLib_MakeEdge.InternalEdge()`, the concatenations with `InternalBSplineCurve()` (the 2D result's knots are
+        reset before BRep_Builder freezes it). `NextConnexEdge`'s output is `ref` (written only when the vertex has two
+        edges); `UpdatePCurve`'s new edge is `in`.
+      - **Frozen inputs.** It writes only into the edges it builds and the substitution's copies, with two
+        exceptions. OCCT's `MakeClosedCurve` calls `SetPeriodic`, `SetOrigin`, `Segment` and the smoothing on a
+        B-spline that can be the old edge's own curve (or its trimmed curve's basis), changing the caller's geometry;
+        the port copies the curve when it is frozen (`// OCCT.NET: frozen`). And the final `BRepLib::SameParameter` of
+        a fused edge with rebuilt pcurves raises the tolerance of its end vertices, which are the input's: a raise
+        that changes nothing is skipped (3408); a real one throws `TopoDS_LockedShape`. That is a known limit:
+        FuseEdges would need a copy for write of its input with its maps remapped.
+3413. **Smaller choices in the makers.** The edge makers' projection helpers return `out` (0 on failure);
+      `BRepLib_MakeFace.IsDegenerated` (public static) takes `out theActTol`; `FindSurface.Surface()` freezes the
+      surface it returns, and FindSurface only reads its shape; its `Is2DClosed` catches `NullReferenceException` as
+      well as `Standard_Failure`, standing for OCCT's `OCC_CATCH_SIGNALS` around a null pcurve. MakeWire's
+      `CollectCoincidentVertices` maps follow OCCT's `std::hash`/`operator==` (IsEqual:
+      `EqualityComparer<TopoDS_Vertex>.Default`); the other maps use TopTools_ShapeMapHasher. The face order of
+      `MakeSolid(CompSolid)`'s shell and the vertex group MakeWire's list `Add` starts from follow the port's map order
+      (decision 18).
+3414. **Tests.**
+      - Ported GTest: BRepLib_MakeWire (1). Unit tests (131 more): the makers (60: vertices; edges from points,
+        vertices, lines, circles, ellipses, hyperbolas, parabolas, B-splines and curves on surfaces, with ranges and
+        each error; MakeEdge2d; wires connected, disconnected, non-manifold, with near vertices merged, list Add, on
+        frozen inputs; polygons; faces from gp and Geom surfaces with bounds, natural restrictions and degenerated
+        edges, from planar wires with holes, CheckInside, the frozen wire kept, two faces sharing an edge, partial
+        replacement; shells; solids; FindSurface), the statics (19), regularity, sorting, ranges, planar pcurves,
+        ExtendFace and BoundingVertex (17), meshes and PointCloudShape (10), the twins (10), FuseEdges (12), and
+        ExactCopyForWrite and KeepUnchanged (3, in ModelingData). Inputs are frozen where callers would pass them and
+        checked unchanged with `ShapeSnapshot`.
+      - Oracle tests (`tests/OcctNet.Oracle.Tests/BRepLib`) against native OCCT on the same inputs, compared through
+        BRep text. A frozen input reused keeps Free = 1 where native OCCT clears it (design 4.4), so files that differ
+        are compared again with the Free column masked.
+        - BRepBuilderAPI_MakeVertex and MakeEdge against the makers: 585 files, 535 byte-identical and 50 with the
+          Free column masked (65 failed constructions with equal errors); MakeWire and MakePolygon: 400, 240 + 160;
+          MakeFace on plane, cylinder, cone, sphere, torus and Bezier surfaces: 490, all byte-identical (10 equal
+          errors); faces from planar wires: 300, all equal with the Free column masked; MakeShell on B-spline surfaces:
+          120, all byte-identical; MakeSolid of boxes of six `MakeFace(W)` faces: 60, all equal with the Free column
+          masked (the faces share their edges, 3404).
+        - BRepLib_FindSurface: 300 shapes, 171 surfaces found (28 existing), 1,200 values equal, the 171 surfaces
+          byte-identical.
+        - The statics on 300 twin scenes (faces on planes, cylinders and B-spline surfaces with bent pcurves,
+          pcurve-only edges, mismatched tolerances), 11 operations each (SameParameter of an edge and of a shape,
+          forced or not, UpdateTolerances, UpdateInnerTolerances, BuildCurves3d, BuildCurve3d, CheckSameRange and
+          SameRange, both ReShape forms, the new-edge SameParameter, UpdateEdgeTolerance): 4,044 files byte-identical,
+          2,100 returned values equal, 23 throws on both sides. OrientClosedSolid on 60 boxes: all equal.
+        - The twins on frozen copies of the same scenes against the native in-place statics: 1,500 results
+          byte-identical, the port's inputs unchanged.
+        - On random native shapes (primitives, sweeps, Booleans, fillets, lofts, placed and meshed) read on both
+          sides: EncodeRegularity (288 files, 4.8 MB), ExtendFace and BuildPCurveForEdgeOnPlane (602 files, 3.5 MB),
+          UpdateDeflection and EnsureNormalConsistency (288 files, 8.7 MB), all byte-identical; ContinuityOfFaces 6,204
+          values, SortFaces, ReverseSortFaces, FindValidRange and BoundingVertex 10,799 values, all equal; ExtendFace on
+          115 loft faces byte-identical (native OCCT changed its input in 8 of 20 lofts, occt-issues.md).
+        FuseEdges, PointCloudShape and ToolTriangulatedShape have no native binding and are unit-tested.
+3415. **For later units.**
+      - 3K (BRepBuilderAPI over these makers): wrap the internal accessors and freeze once, at BRepBuilderAPI's own
+        `Shape()`. `Modified` of MakeFace-from-wire and of MakeWire should merge the maker's `InternalHistory()` when
+        it isn't null. BRepBuilderAPI's error enums have BRepLib's order. The BRepBuilderAPI GTests MakeEdge, MakeFace
+        and MakeWire are 3K's. Oracle inputs: draw placements and directions with the read-back check of
+        `BRepLibMakersOracleTests` (`Ax2`, `Ax3`, `Dir`), since native gp_Ax2 can round its X direction differently by
+        an ulp. BRepExtrema builds its result shapes with `BRepLib_MakeEdge`/`MakeVertex`: it should read them through
+        the internal accessors if it goes on building.
+      - 3M (primitives): build on `InternalEdge`, `InternalFace` and the like (unfrozen);
+        `BRepLib_MakeFace.IsDegenerated` is public static.
+      - Later in-place algorithms (ShapeFix, offsets, sweeps): `ExactCopyForWrite`, then the operation, then
+        `KeepUnchanged` is the pattern that keeps OCCT's results and the input's identity.

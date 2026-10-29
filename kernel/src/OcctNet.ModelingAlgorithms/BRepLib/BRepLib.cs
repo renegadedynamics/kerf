@@ -2685,7 +2685,8 @@ public static partial class BRepLib
                 continue;
             }
 
-            // the edges still refer to the attached triangulations
+            // the edges still refer to the attached triangulations. OCCT dereferences the polygons without a null check
+            // (occt-issues.md): an edge with no polygon on one of the triangulations throws here.
             Poly_PolygonOnTriangulation aPTEF1 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached1, aLoc1)!;
             Poly_PolygonOnTriangulation aPTEF2 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached2, aLoc2)!;
 
@@ -3255,7 +3256,9 @@ public static partial class BRepLib
             // General case
 
             // OCCT takes the face's surface without its location here, so the extended face of a located face
-            // loses the location (occt-issues.md).
+            // loses the location (occt-issues.md). OCCT also extends that surface handle in place below, changing the
+            // input face and every face sharing the surface (occt-issues.md); the port's GeomLib.ExtendSurfByLength
+            // replaces aSB by an extended copy, so the input is unchanged and the extended face is OCCT's.
             if (BRep_Tool.Surface(theF) is not Geom_BoundedSurface aSB)
             {
                 theFExtended = theF;
