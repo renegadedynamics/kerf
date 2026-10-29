@@ -1958,3 +1958,88 @@ NCollection_UBTree, NCollection_UBTreeFiller and `std_mt19937` (Foundation).
       Extrema_ExtPS, GenLocateExtPS and GenExtPS on adaptors that must outlive them; a port of
       GeomAPI_ProjectPointOnSurf should be the oracle test's port side (a default Extrema_ExtPS, SetAlgo before each
       Initialize, the flag kept across Init).
+## Phase 2: unit 4B, bounding boxes
+
+BndLib (BndLib, BndLib_Add3dCurve, BndLib_Add2dCurve, BndLib_AddSurface), OCCT 8's GeomBndLib (the curve, 2D curve
+and surface evaluators, the dispatchers GeomBndLib_Curve, GeomBndLib_Curve2d and GeomBndLib_Surface, and the helpers
+GeomBndLib_InfiniteHelpers, _SamplingHelpers, _OptimizationHelpers and _SplineHelpers.pxx), and Extrema_ExtCS.
+
+262. **Evaluators and dispatchers follow GeomGridEval (decisions 235, 236).** Each GeomBndLib evaluator is a public
+      sealed class with OCCT's API: built from its Geom type (OtherCurve, OtherCurve2d and OtherSurface from an
+      adaptor, kept by reference as OCCT's `std::reference_wrapper`), `Geometry()`, `Box`, `BoxOptimal`, and OCCT's
+      public static methods over gp types (`GeomBndLib_Circle.Box(in gp_Circ, ...)`). OCCT's `std::variant` of
+      evaluators in the dispatchers is a field of a nested internal interface (`GeomBndLib_Curve.ICurveEvaluator`,
+      `GeomBndLib_Curve2d.ICurve2dEvaluator`, `GeomBndLib_Surface.ISurfaceEvaluator`), null for `std::monostate`;
+      `std::visit` is a call through it and `if constexpr (is_same_v<T, X>)` a type pattern. The curve interfaces
+      have `CurveGeometry()` (null for the "other" evaluators) for the visit that reads `Geometry()`. A dispatcher
+      built from an adaptor keeps a reference to it; one built from a Geom object owns the GeomAdaptor OCCT makes.
+      `GetType()` is `public new` (decision 98). GeomBndLib_Surface tests the Geom type exactly
+      (`GetType() == typeof(...)`), as OCCT's `STANDARD_TYPE` comparison does, not with `is`.
+263. **Boxes are passed `ref`, and the `Box` methods are the functional form.** `Bnd_Box&`/`Bnd_Box2d&` is
+      `ref Bnd_Box`/`ref Bnd_Box2d` in BndLib, BndLib_Add3dCurve/Add2dCurve/AddSurface (static classes) and the
+      dispatchers' `Add`/`AddOptimal`: they fill a caller's local, like BSplCLib's outputs (decision 21). No twins
+      are added: OCCT 8's `[[nodiscard]] Box`/`BoxOptimal` already return a new box.
+264. **The .pxx helpers are internal static classes, their templates ported per instantiation** (rules,
+      section 9). `FillBox` and `ReduceSplineBox` exist for (Bnd_Box, GeomAdaptor_Curve, gp_Pnt) only, the one
+      instantiation OCCT makes; `CurveBoxOptimal` for GeomAdaptor_Curve and Geom2dAdaptor_Curve; the templates that
+      only choose between the 3D and 2D functions (`ComputeNbSamplesT`, `AdjustExtrT`) are overload pairs.
+      `BezierCurveBox`, `BSplineCurveBox`, the pole-range `ReduceSplineBox` and `ComputePoleIndexRange` (called only
+      by them) are never instantiated or called in V8_0_1 and are not ported. The optimisation functors are private
+      readonly structs implementing the MathUtils functor interfaces (decision 51); a `Value` that fails writes 0
+      (decision 32), which the solvers discard. GeomBndLib_OtherCurve2d keeps its own optimiser on the legacy
+      `math_PSO`/`math_BrentMinimum` (private `math_Function`/`math_MultipleVarFunction` classes) as OCCT does, so
+      2D Bezier/B-spline curves and other/offset 2D curves use different optimisers. BndLib's anonymous-namespace
+      template `Compute<PointType, BoxType>` is ported for its two instantiations (2D arcs, the 3D torus).
+265. **Smaller translations.** Lambdas are local functions or inlined into their only loop; BndLib's identical
+      `constexpr` multiplier arrays are two shared `ReadOnlySpan<double>` properties; `std::fmod` is `%`;
+      structured bindings of `Bnd_Box::Get()` are deconstructions of `Bnd_Box.Limits`; locals that C++ shadows are
+      renamed (`aFunc0`, `Ext2`, `bXmin`...). In the surface evaluators, blocks OCCT repeats verbatim became private
+      helpers (the swept surfaces' range clamping, the revolution's eight corners), and the identical Bezier and
+      B-spline surface `BoxOptimal` bodies one internal method (`GeomBndLib_BezierSurface.SurfaceBoxOptimal`);
+      GeomBndLib_OtherSurface keeps its own copy. The OtherSurface, Bezier and B-spline surface evaluators sample
+      through `GeomGridEval_Surface(Adaptor3d_Surface)` as OCCT does, so their samples carry the grid's last-bit
+      differences from point evaluation (decision 241); the oracle found the boxes bit-identical all the same.
+266. **PSO is deterministic.** `BoxOptimal` runs MathOpt's PSO with its default seed; the ported random generator
+      (decision 58) reproduces native OCCT's sequence, and every AddOptimal value in the oracle is bit-identical.
+267. **Extrema_ExtCS** is an algorithm class with OCCT's API (decisions 117, 220): `Initialize`, `Perform`, `IsDone`,
+      `IsParallel`, `NbExt`, `SquareDistance`, `Points(N, out, out)`; the surface adaptor is kept by reference as
+      OCCT keeps the pointer. OCCT's `switch` with `[[fallthrough]]` is written out branch by branch; `Perform`
+      before `Initialize` throws StdFail_NotDone (OCCT dereferences a null pointer); `Points` on a parallel result
+      throws Standard_OutOfRange (OCCT stores no points there). **Unit 4A dependency:** ExtCS calls Extrema_ExtPS and
+      Extrema_GenExtCS and uses Extrema_ExtFlag, which unit 4A ports in parallel. Rather than duplicate them, they
+      are stubbed in `Extrema/Extrema_ExtCS_TODO4A.cs` with 4A's signatures: Extrema_ExtFlag and Extrema_ExtAlgo
+      copied from 4A; GenExtCS's two constructors, `Initialize(S, NbU, NbV, Tol2)`, both `Perform`s, `IsDone`,
+      `NbExt`, `SquareDistance`, `PointOnCurve`, `PointOnSurface`; ExtPS's default and full constructors,
+      `Initialize`, `Perform(in gp_Pnt)`, `IsDone`, `NbExt`, `SquareDistance`, `Point` (from OCCT's header, 4A not
+      having committed ExtPS yet). Each member throws `NotImplementedException("TODO(4A)")`. The merge deletes that
+      file (the duplicate types fail the build with CS0101 until it does) and turns the unit test
+      `LinePlane_NotParallel_NeedsGenExtCS` and the oracle's pending pairs into real comparisons. Until then ExtCS
+      works for the pairs Extrema_ExtElCS solves (line/sphere, line/cylinder, line/parallel plane, circle/plane,
+      circle/cylinder, circle/sphere, hyperbola/plane, and the extremity fallback).
+268. **Oracle coverage** (`tests/OcctNet.Oracle.Tests/BndLib/BndLibOracleTests.cs`,
+      `Extrema/ExtremaCurveSurfaceOracleTests.cs`). BndLib has no binding; native BRepBndLib reaches it, and the
+      port's side mirrors its call path on shapes without triangulation. BRepAdaptor_Curve/Surface derive from
+      GeomAdaptor_TransformedCurve/Surface, so the port uses those (an offset edge then takes GeomBndLib's "other
+      curve" path on both sides, the dynamic_cast to GeomAdaptor_Curve failing). Edges: BndLib_Add3dCurve on the
+      edge's range with its tolerance (AddOptimal into a local box, with or without the shape tolerance); non-planar
+      faces: BndLib_AddSurface on BRepTools::UVBounds with the face's tolerance; planar faces through their edges;
+      AddOptimal on "CanUseEdges" faces through their edges, on natural restrictions through the surface; AddOBB
+      through the vertices (linear shapes) or ComputePCA with native mass properties. The port takes the geometry
+      MakeEdge/MakeFace store, built from the same raw inputs; ranges, UV bounds and tolerances are read natively.
+      Every curve and surface kind, 40 random cases each: Add on 398 edges (11,144 values), AddOptimal on 400 edges
+      (11,200), Add on 404 faces (5,656), AddOptimal on 226 faces (6,328), AddOBB on 197 edges and 220 faces
+      (7,089): all 41,417 values bit-identical. Skipped: 151 AddOptimal faces that need FindExactUVBounds (pcurve
+      boxes) and AdjustFaceBox (Extrema_ExtSS, BRepTopAdaptor_FClass2d), and 6 cases where native OCCT reads
+      uninitialised memory (occt-issues.md, GeomBndLib_BSplineCurve). Extrema_ExtCS through
+      BRepExtrema_DistShapeShape between an edge and a face (BRepExtrema_ExtCF's tolerances and UV bounds mirrored;
+      each native edge/face solution must be one of the port's extrema): 140 solutions on 257 analytic pairs, 1,398
+      of 1,400 values bit-identical, the others within 1.8e-15 relative; 43 pairs pending unit 4A.
+269. **For later units.** Phase 3 (BRepBndLib): BRepAdaptor_Curve/Surface must derive from
+      GeomAdaptor_TransformedCurve/Surface for the GeomBndLib paths to match native; AddOptimal on general faces needs
+      BndLib_Add2dCurve::AddOptimal on the pcurves, BRepTopAdaptor_FClass2d and Extrema_ExtSS (unit 4A); ComputePCA
+      (AddOBB) needs BRepGProp. The oracle test's helpers (MakeFaceGeometry, CanUseEdges, IsLinear, IsPlanar, IsWCS)
+      can be reused against the ported BRepBndLib. Phase 4 (mesher): the boxes behind the mesh tolerances come from
+      these classes; OCCT's pinned errors (occt-issues.md) give turned parabolas (3D and 2D) and cones with an
+      infinite V bound boxes that don't contain the geometry, and offset-surface boxes without the tolerance added
+      to the offset. Unit 4A merge: delete Extrema_ExtCS_TODO4A.cs, check ExtPS's signatures against the stub's, and
+      rerun the ExtCS unit and oracle tests.
