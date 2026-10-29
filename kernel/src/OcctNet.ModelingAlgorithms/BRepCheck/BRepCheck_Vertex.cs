@@ -320,6 +320,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
             TopLoc_Location loc = pr.Location();
             if (pr.IsPointOnCurve())
             {
+                // OCCT: with a null curve, the previous point is kept and transformed again below
                 if (pr.Curve() is not null)
                 {
                     Controlp = pr.Curve()!.Value(pr.Parameter());

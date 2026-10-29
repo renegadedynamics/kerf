@@ -583,6 +583,8 @@ public class BRepCheck_Face : BRepCheck_Result
         }
 
         // quit without error
+        // OCCT: adding NoError appends it after a fault already recorded (a face without surface, checked with
+        // Update by the analyzer, has NoSurface then NoError)
         if (Update)
         {
             BRepCheck.Add(aStatusList, myOrires);

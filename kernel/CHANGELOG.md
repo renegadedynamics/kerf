@@ -208,3 +208,14 @@ Phase 3 (part): classification and boxes.
   known-answer tests of every package; oracle tests of BRepClass3d_SolidClassifier, BRepIntCurveSurface_Inter and
   every BRepBndLib form against native OCCT on random boxes, cylinders (also as surfaces of extrusion and
   revolution), holed faces, natural and B-spline faces, compounds and meshed shapes, all bit-identical.
+
+Phase 3 (part): shape checking.
+
+- `OcctNet.ModelingAlgorithms`: BRepCheck (`BRepCheck_Analyzer`: validity of a shape and each of its sub-shapes, on
+  its own and in context, with OCCT's statuses; topology-only, exact and parallel modes; the vertex, edge, wire,
+  face and solid checks; `BRepCheck.SelfIntersection`). The parallel mode gives the serial mode's statuses. Checking
+  only reads the shape.
+- Tests: the BRepCheck_Face GTests (with BRep_Builder shapes until the makers are ported); known-answer tests on
+  valid and deliberately broken shapes in both modes; oracle tests of the analyzer's verdict on every sub-shape
+  against native OCCT on random native shapes, natively broken edges, vertices, wires, faces, shells and solids, the
+  37 `.brep` files of OCCT's data and 2,320 files of its test dataset: all 396,118 verdicts agree.
