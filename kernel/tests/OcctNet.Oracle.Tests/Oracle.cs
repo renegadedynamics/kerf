@@ -214,8 +214,6 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
-
     public static N.gp_Vec2d ToNative(in gp_Vec2d theV) => new(theV.X(), theV.Y());
 
     public static N.TColStd_Array1OfReal ToNative(NCollection_Array1<double> theArray)
@@ -329,8 +327,6 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public static gp_Vec FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
-    public static gp_Pnt2d FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
-
     public static gp_Vec2d FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
 
     public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
@@ -419,13 +415,6 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     {
         Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
         Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
-    }
-
-    public void Same(int theNative, int thePort, string theWhat)
-    {
-        myValues++;
-        Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
-        myExact++;
     }
 
     public void Same(in gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTolerance = Tolerance)
