@@ -74,7 +74,7 @@ broken down by package.
 | ModelingData | TKBRep | 0 / 277 | 0 / 90,279 | 0.0 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 631 / 720 | 290,368 / 317,408 | 91.5 |
+| ModelingData | TKGeomBase | 683 / 720 | 305,429 / 317,408 | 96.2 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 0 / 380 | 0 / 69,480 | 0.0 |
 | Visualization | TKV3d | 0 / 493 | 0 / 112,071 | 0.0 |
-| **All** |  | 1440 | 536,527 / 2,897,781 | 18.5 |
+| **All** |  | 1492 | 551,588 / 2,897,781 | 19.0 |
 
 ## TKMath
 
@@ -164,7 +164,7 @@ broken down by package.
 | AppCont | 9 / 9 | 125,352 / 125,352 | 100.0 |
 | AppDef | 60 / 60 | 10,573 / 10,573 | 100.0 |
 | AppParCurves | 18 / 18 | 6,330 / 6,330 | 100.0 |
-| Approx | 6 / 28 | 3,610 / 10,308 | 35.0 |
+| Approx | 28 / 28 | 10,308 / 10,308 | 100.0 |
 | BndLib | 8 / 8 | 2,537 / 2,537 | 100.0 |
 | CPnts | 13 / 13 | 1,665 / 1,665 | 100.0 |
 | Extrema | 103 / 104 | 22,481 / 22,613 | 99.4 |
@@ -176,9 +176,9 @@ broken down by package.
 | GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
 | Geom2dConvert | 14 / 14 | 4,160 / 4,160 | 100.0 |
 | GeomBndLib | 65 / 65 | 9,343 / 9,343 | 100.0 |
-| GeomConvert | 31 / 33 | 8,060 / 9,390 | 85.8 |
+| GeomConvert | 33 / 33 | 9,390 / 9,390 | 100.0 |
 | GeomLProp | 10 / 10 | 2,214 / 2,214 | 100.0 |
-| GeomLib | 0 / 28 | 0 / 7,033 | 0.0 |
+| GeomLib | 28 / 28 | 7,033 / 7,033 | 100.0 |
 | GeomProjLib | 0 / 2 | 0 / 491 | 0.0 |
 | GeomTools | 10 / 11 | 3,757 / 3,846 | 97.7 |
 | Hermit | 2 / 2 | 1,280 / 1,280 | 100.0 |
