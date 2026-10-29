@@ -181,7 +181,6 @@ public class GeomGridEval_SurfaceOfRevolutionTest
         }
     }
 
-#if HAS_GEOMGRIDEVAL_SURFACE // TODO(3A merge): GeomGridEval_Surface; drop the #if and the skipped stubs below
     [Fact]
     public void UnifiedDispatch()
     {
@@ -230,11 +229,4 @@ public class GeomGridEval_SurfaceOfRevolutionTest
             }
         }
     }
-#else
-    [Fact(Skip = "needs GeomGridEval_Surface (merge)")]
-    public void UnifiedDispatch() => _ = GeomAbs_SurfaceOfRevolution;
-
-    [Fact(Skip = "needs GeomGridEval_Surface (merge)")]
-    public void AdaptorDispatch() { }
-#endif
 }

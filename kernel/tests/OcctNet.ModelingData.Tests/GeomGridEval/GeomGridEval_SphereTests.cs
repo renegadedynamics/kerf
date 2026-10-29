@@ -3,7 +3,7 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-public class GeomGridEval_SphereTest
+public partial class GeomGridEval_SphereTest
 {
     private const double THE_TOLERANCE = 1e-10;
 

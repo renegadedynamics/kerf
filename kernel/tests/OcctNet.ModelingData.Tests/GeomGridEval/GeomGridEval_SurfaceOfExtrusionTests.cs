@@ -209,7 +209,6 @@ public class GeomGridEval_SurfaceOfExtrusionTest
         }
     }
 
-#if HAS_GEOMGRIDEVAL_SURFACE // TODO(3A merge): GeomGridEval_Surface; drop the #if and the skipped stubs below
     [Fact]
     public void UnifiedDispatch()
     {
@@ -258,13 +257,6 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             }
         }
     }
-#else
-    [Fact(Skip = "needs GeomGridEval_Surface (merge)")]
-    public void UnifiedDispatch() => _ = GeomAbs_SurfaceOfExtrusion;
-
-    [Fact(Skip = "needs GeomGridEval_Surface (merge)")]
-    public void AdaptorDispatch() { }
-#endif
 
     [Fact]
     public void NonAxisAlignedDirection()

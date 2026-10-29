@@ -3,7 +3,7 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-public class GeomGridEval_ConeTest
+public partial class GeomGridEval_ConeTest
 {
     private const double THE_TOLERANCE = 1e-10;
 

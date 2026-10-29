@@ -3,7 +3,7 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-public class GeomGridEval_CylinderTest
+public partial class GeomGridEval_CylinderTest
 {
     private const double THE_TOLERANCE = 1e-10;
 

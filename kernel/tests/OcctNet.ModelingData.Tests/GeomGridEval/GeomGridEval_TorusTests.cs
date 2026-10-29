@@ -3,7 +3,7 @@
 
 namespace OcctNet.ModelingData.Tests;
 
-public class GeomGridEval_TorusTest
+public partial class GeomGridEval_TorusTest
 {
     private const double THE_TOLERANCE = 1e-10;
 
