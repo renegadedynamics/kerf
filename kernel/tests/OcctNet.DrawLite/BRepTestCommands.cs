@@ -13,10 +13,8 @@ namespace OcctNet.DrawLite;
 /// sprops, vprops, vpropsgk; and SWDRAW's tolerance (SWDRAW_ShapeAnalysis.cxx).
 /// </summary>
 /// <remarks>
-/// BRepBuilderAPI (unit 3K) isn't ported yet: BRepBuilderAPI_Transform and BRepBuilderAPI_Copy are mirrored here as
-/// their Perform runs (BRepTools_Modifier with BRepTools_TrsfModification or BRepTools_CopyModification, or Moved for
-/// a rigid transformation without copy). ShapeAnalysis (phase 7) isn't either: ShapeAnalysis_ShapeTolerance is
-/// ported here as a private helper.
+/// The t-commands run BRepBuilderAPI_Transform and tcopy BRepBuilderAPI_Copy, one framework per command as Draw does.
+/// ShapeAnalysis (phase 7) isn't ported: ShapeAnalysis_ShapeTolerance is ported here as a private helper.
 /// </remarks>
 internal static class BRepTestCommands
 {
@@ -167,6 +165,7 @@ internal static class BRepTestCommands
         }
         else
         {
+            var trf = new BRepBuilderAPI_Transform(T);
             for (int i = 1; i < last; i++)
             {
                 TopoDS_Shape S = theDI.GetShape(a[i]);
@@ -176,37 +175,17 @@ internal static class BRepTestCommands
                     return 1;
                 }
 
-                if (!TransformShape(S, T, isCopy, isCopyMesh, out TopoDS_Shape aResult))
+                trf.Perform(S, isCopy, isCopyMesh);
+                if (!trf.IsDone())
                 {
                     return 1;
                 }
 
-                theDI.SetShape(a[i], aResult);
+                theDI.SetShape(a[i], trf.Shape());
             }
         }
 
         return 0;
-    }
-
-    /// <summary>
-    /// BRepBuilderAPI_Transform::Perform(S, copyGeom, copyMesh): the modifier with BRepTools_TrsfModification for a
-    /// copy, a negative or a scaling transformation; otherwise the shape moved.
-    /// </summary>
-    internal static bool TransformShape(in TopoDS_Shape theShape, in gp_Trsf theTrsf, bool theCopyGeom, bool theCopyMesh, out TopoDS_Shape theResult)
-    {
-        bool aUseModif = theCopyGeom || theTrsf.IsNegative()
-                         || Math.Abs(Math.Abs(theTrsf.ScaleFactor()) - 1.0) > TopLoc_Location.ScalePrec();
-        if (!aUseModif)
-        {
-            theResult = theShape.Moved(new TopLoc_Location(theTrsf));
-            return true;
-        }
-
-        var aModification = new BRepTools_TrsfModification(theTrsf);
-        aModification.IsCopyMesh() = theCopyMesh;
-        var aModifier = new BRepTools_Modifier(theShape, aModification);
-        theResult = aModifier.IsDone() ? aModifier.ModifiedShape(theShape) : new TopoDS_Shape();
-        return aModifier.IsDone();
     }
 
     // tcopy [-n(ogeom)] [-m(esh)] shape1 copy1 [shape2 copy2 [...]]
@@ -247,19 +226,13 @@ internal static class BRepTestCommands
             return 1;
         }
 
+        var cop = new BRepBuilderAPI_Copy();
         int nbPairs = (n - iFirst) / 2;
         for (int i = 0; i < nbPairs; i++)
         {
             // OCCT bug: the pair number i indexes the words, where 2 * i was meant (occt-issues.md)
-            // BRepBuilderAPI_Copy::Perform: the modifier with BRepTools_CopyModification
-            TopoDS_Shape S = theDI.GetShape(a[i + iFirst]);
-            if (S.IsNull())
-            {
-                throw new Standard_NullObject();
-            }
-
-            var aModifier = new BRepTools_Modifier(S, new BRepTools_CopyModification(copyGeom, copyMesh));
-            theDI.SetShape(a[i + iFirst + 1], aModifier.IsDone() ? aModifier.ModifiedShape(S) : new TopoDS_Shape());
+            cop.Perform(theDI.GetShape(a[i + iFirst]), copyGeom, copyMesh);
+            theDI.SetShape(a[i + iFirst + 1], cop.Shape());
             di.Append(a[i + iFirst + 1]).Append(" ");
         }
 

@@ -7,14 +7,14 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's TopoDS_TShape and TopoDS_Edge GTests. BRepBuilderAPI_MakeVertex and MakeEdge (unit 3K) are replaced by
-/// <see cref="TestShapes"/>, frozen as the makers' results will be.
+/// OCCT's TopoDS_TShape and TopoDS_Edge GTests, with BRepBuilderAPI_MakeVertex and MakeEdge (whose results are
+/// frozen).
 /// </summary>
 public class TopoDS_TShapeTests
 {
-    private static TopoDS_Vertex MakeVertex(in gp_Pnt theP) => TestShapes.Frozen(TestShapes.Vertex(theP));
+    private static TopoDS_Vertex MakeVertex(in gp_Pnt theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
 
-    private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => TestShapes.Frozen(TestShapes.Edge(theP1, theP2));
+    private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     [Fact]
     public void ShapeType_AllTypes()
@@ -271,13 +271,13 @@ public class TopoDS_TShapeTests
     }
 
     // TopoDS_Edge_Test.BUC60828_InfiniteFlag. OCCT sets the flag on the maker's result; in the port that result is
-    // frozen (setting a flag on it throws, see FreezingTests), so the edge here is built unfrozen, as ported code
-    // that continues building on a maker's result reads it through the maker's internal accessor.
+    // frozen (setting a flag on it throws, see FreezingTests), so the edge here is read through the maker's internal
+    // accessor, as ported code that continues building on a maker's result does.
     [Fact]
     public void BUC60828_InfiniteFlag()
     {
         // Create a simple edge
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(0.0, 0.0, 1.0));
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(0.0, 0.0, 1.0)).InternalEdge();
 
         // Check initial flag value (should be false by default)
         bool anInitialValue = anEdge.Infinite();
@@ -295,7 +295,7 @@ public class TopoDS_TShapeTests
     public void Initial_flags_of_each_TShape_type_are_OCCTs()
     {
         // TopoDS_TShape: Free, Modified, Orientable; TCompound and TSolid aren't orientable; TVertex is closed and convex
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt());
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt()).InternalVertex();
         Assert.True(aV.Free() && aV.Modified() && aV.Orientable() && aV.Closed() && aV.Convex());
         TopoDS_Solid aSolid = new();
         new TopoDS_Builder().MakeSolid(ref aSolid);

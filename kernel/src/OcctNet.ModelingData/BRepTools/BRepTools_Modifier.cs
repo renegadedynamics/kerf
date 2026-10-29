@@ -173,7 +173,12 @@ public sealed class BRepTools_Modifier
                     TopoDS_Face newf1 = TopoDS.Face(myMap[F1]);
                     TopoDS_Face newf2 = TopoDS.Face(myMap[F2]);
                     GeomAbs_Shape Newcont = M.Continuity(CurE, F1, F2, NewE, newf1, newf2);
-                    if (Newcont > GeomAbs_C0)
+                    // OCCT.NET: frozen: an edge rebuilt by an earlier Perform (Init keeps the images, occt-issues.md)
+                    // may have been published since; OCCT sets its continuity again, which changes nothing when it
+                    // already has it
+                    if (Newcont > GeomAbs_C0
+                        && !(NewE.TShape()!.IsFrozen() && BRep_Tool.HasContinuity(NewE, newf1, newf2)
+                             && BRep_Tool.Continuity(NewE, newf1, newf2) == Newcont))
                     {
                         aBB.Continuity(NewE, newf1, newf2, Newcont);
                     }
@@ -278,6 +283,9 @@ public sealed class BRepTools_Modifier
                     }
                     else
                     { // create new face with bare triangulation
+                        // OCCT: also when the modification keeps the face's surface (NurbsConvert on a B-spline or
+                        // Bezier face returns false from NewSurface), so a meshed face loses its surface
+                        // (occt-issues.md)
                         TopoDS_Face aResultF = TopoDS.Face(result);
                         B.MakeFace(ref aResultF, aTriangulation);
                         result = aResultF;

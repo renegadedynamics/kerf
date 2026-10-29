@@ -259,3 +259,20 @@ Phase 3 (part): Draw-lite checking commands.
 - Tests: every command's text against Draw's source; oracle tests of checkshape's verdicts, bounding's boxes
   (bit-identical) and bclassify's states against native OCCT on OCCT's data files and test dataset. The corpus has
   380 runnable cases (23 before), most of them waiting for data files that aren't public.
+Phase 3 (part): distances and makers.
+
+- `OcctNet.ModelingAlgorithms`: BRepExtrema (`BRepExtrema_DistShapeShape` with its supports, parameters and inner
+  solutions, single- or multi-threaded; `BRepExtrema_DistanceSS`, the Ext tools, `BRepExtrema_Poly`; the mesh tools
+  `BRepExtrema_ShapeProximity`, `ProximityValueTool`, `ProximityDistTool`, `OverlapTool`, `SelfIntersection`,
+  `TriangleSet`); BRepBuilderAPI's makers (`BRepBuilderAPI_MakeVertex`, `MakeEdge`, `MakeEdge2d`, `MakePolygon`,
+  `MakeWire`, `MakeFace`, `MakeShell`, `MakeSolid`), the public way to build shapes, whose results are frozen, with
+  `Modified` answering the copies a maker made of frozen inputs; the modifications `BRepBuilderAPI_Transform`,
+  `GTransform`, `Copy` and `NurbsConvert`; `BRepBuilderAPI_Collect` and `BRepBuilderAPI_FindPlane`. Every
+  `BRepBuilderAPI_MakeShape` is a `BRepTools_History.IAlgorithm`. Inputs are never changed.
+- `OcctNet.ModelingData`: `BRepTools_Modifier` reused on a shape it modified before no longer throws on the
+  published result's edges.
+- Tests: the BRepExtrema_DistShapeShape and BRepBuilderAPI (Copy, MakeEdge, MakeFace, MakeWire, Transform) GTests, and
+  the TopoDS, BRep_Tool, BRepTools_ReShape, BRepAdaptor_CompCurve and BRepGProp GTests on the real makers; Draw-lite's
+  t-commands and `tcopy` run the real makers; known-answer tests; oracle tests of BRepExtrema_DistShapeShape on twin
+  scenes and native shapes (bit-identical), of the makers through BRep text (byte-identical apart from the Free flag of
+  reused frozen inputs) and of Transform, Copy and GTransform on twin scenes and native shapes (bit-identical).

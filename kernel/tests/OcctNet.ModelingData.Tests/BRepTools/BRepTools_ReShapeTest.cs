@@ -6,17 +6,16 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
-/// OCCT's BRepTools_ReShape GTests. BRepBuilderAPI_MakeVertex and MakeEdge (unit 3K) are replaced by
-/// <see cref="TestShapes"/>, frozen as the makers' results will be. The compounds the GTests build with BRep_Builder are
+/// OCCT's BRepTools_ReShape GTests, with BRepBuilderAPI_MakeVertex and MakeEdge (whose results are frozen). The compounds the GTests build with BRep_Builder are
 /// frozen too once built: a caller outside OCCT.NET makes them with <c>TopoDS_Builder.MakeCompound</c>, which freezes.
 /// </summary>
 public class BRepTools_ReShapeTest
 {
     private static TopoDS_Vertex MakeVertex(double theX, double theY, double theZ)
-        => TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(theX, theY, theZ)));
+        => new BRepBuilderAPI_MakeVertex(new gp_Pnt(theX, theY, theZ)).Vertex();
 
     private static TopoDS_Edge MakeEdge(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2)
-        => TestShapes.Frozen(TestShapes.Edge(theV1, theV2));
+        => new BRepBuilderAPI_MakeEdge(theV1, theV2).Edge();
 
     private static TopoDS_Compound MakeCompound(params TopoDS_Shape[] theShapes)
     {

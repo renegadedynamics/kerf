@@ -7,9 +7,9 @@ using OcctNet.ModelingData.Tests;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// OCCT's BRepGProp GTests. The makers they use (BRepBuilderAPI_MakeEdge, BRepPrimAPI_MakeBox, MakeCylinder,
-/// MakeSphere: units 3K and 3M) are replaced by shapes built with BRep_Builder with the same geometry (TestShapes,
-/// BRepGPropTestShapes), frozen as the makers' results will be. The sphere is one natural face where MakeSphere makes
+/// OCCT's BRepGProp GTests, with BRepBuilderAPI_MakeEdge. BRepPrimAPI_MakeBox, MakeCylinder and MakeSphere (unit 3M)
+/// are replaced by shapes built with BRep_Builder with the same geometry (TestShapes, BRepGPropTestShapes), frozen as
+/// the makers' results will be. The sphere is one natural face where MakeSphere makes
 /// a face with a seam and degenerated edges, so the integration takes the natural-restriction path. The Cut case waits
 /// for the Booleans (phase 6).
 /// </summary>
@@ -20,7 +20,7 @@ public class BRepGPropTest
     {
         var aP1 = new gp_Pnt(0.0, 0.0, 0.0);
         var aP2 = new gp_Pnt(3.0, 4.0, 0.0);
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(aP1, aP2));
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
 
         var aProps = new GProp_GProps();
         BRepGProp.LinearProperties(anEdge, aProps);
@@ -153,7 +153,7 @@ public class BRepGPropTest
         Assert.True(aLengthAbscissa > 0.0);
 
         // Method 2: BRepGProp::LinearProperties on the equivalent edge
-        TopoDS_Edge aEdge = TestShapes.Frozen(TestShapes.Edge(aSpline, aSpline.FirstParameter(), aSpline.LastParameter()));
+        TopoDS_Edge aEdge = new BRepBuilderAPI_MakeEdge(aSpline).Edge();
         var aEdgeProps = new GProp_GProps();
         BRepGProp.LinearProperties(aEdge, aEdgeProps);
         double aLengthGProp = aEdgeProps.Mass();
