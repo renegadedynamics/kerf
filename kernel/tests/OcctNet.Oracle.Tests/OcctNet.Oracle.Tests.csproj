@@ -33,6 +33,11 @@
   <ItemGroup>
     <!-- Test stand-ins for GeomAdaptor_Curve and Geom2dAdaptor_Curve, shared with the unit tests -->
     <Compile Include="..\OcctNet.ModelingData.Tests\TestGeomAdaptors.cs" Link="TestGeomAdaptors.cs" />
+    <!-- The comparison and determinism harnesses of decisions 5005 and 5006, shared with the unit tests -->
+    <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\BRepTextComparison.cs" Link="Harness\BRepTextComparison.cs" />
+    <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\CanonicalShapeComparer.cs" Link="Harness\CanonicalShapeComparer.cs" />
+    <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\DeterminismHarness.cs" Link="Harness\DeterminismHarness.cs" />
+    <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\HistoryComparison.cs" Link="Harness\HistoryComparison.cs" />
   </ItemGroup>
 
 </Project>
