@@ -17,7 +17,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// One generic class for OCCT's `.gxx` (decisions 142, 202 and 607; decision 5922): the section generator and the
+/// One generic class for OCCT's `.gxx` (decisions 142, 202 and 607; decision 845): the section generator and the
 /// line are instance interfaces (<see cref="IAppBlend_SectionGenerator{ThePoint}"/>,
 /// <see cref="IAppBlend_Line{ThePoint}"/>) and <typeparamref name="ThePoint"/> is what the line gives for a point.
 /// OCCT's instantiations are sealed subclasses: <see cref="GeomFill_AppSurf"/> here, GeomFill_AppSweep and

@@ -9,7 +9,7 @@ namespace Occt;
 /// Approximates a B-spline surface passing through all the curves of a <see cref="GeomFill_SectionGenerator"/>:
 /// OCCT's instantiation of AppBlend_AppSurf over GeomFill_SectionGenerator and GeomFill_Line.
 /// </summary>
-/// <remarks>A sealed subclass with OCCT's constructors (decisions 607 and 5922); the members are the base class's.</remarks>
+/// <remarks>A sealed subclass with OCCT's constructors (decisions 607 and 845); the members are the base class's.</remarks>
 public sealed class GeomFill_AppSurf : AppBlend_AppSurf<GeomFill_SectionGenerator, GeomFill_Line, int>
 {
     public GeomFill_AppSurf()

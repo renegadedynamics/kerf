@@ -13,8 +13,8 @@ namespace OcctNet.DrawLite;
 /// sees the change. Draw-lite runs it as decision 495's in-place commands do: on an unfrozen copy of the input, which
 /// the algorithm then works on in place as OCCT's does, and every variable sharing a changed TShape is rebound
 /// (DrawShapeRebind); the copy's sub-shapes left unchanged are the input's again (BRepTools_CopyAtEntry's Finish), so
-/// only the variables holding a changed one are rebound. The shapes to keep are taken on the copy. Draw's history (BRepTest_Objects) isn't recorded:
-/// Draw-lite has no <c>savehistory</c>.
+/// only the variables holding a changed one are rebound. The shapes to keep are taken on the copy. The history is
+/// recorded in the session (BRepTest_Objects), composed with the copy's.
 /// </remarks>
 internal static class SWDrawShapeUpgradeCommands
 {
@@ -135,6 +135,11 @@ internal static class SWDrawShapeUpgradeCommands
         TopoDS_Shape Result = anEntry.Finish(aUnifier.InternalShape(), [aWork]);
         DrawShapeRebind.Rebind(theDI, aShape, anEntry.Final(aWork));
         theDI.SetShape(a[1], Result);
+        // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the copy so it answers for the input's shapes
+        if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
+        {
+            BRepTestHistoryCommands.SetHistory(theDI, anEntry.Composed(aUnifier.InternalHistory()));
+        }
         return 0;
     }
 }

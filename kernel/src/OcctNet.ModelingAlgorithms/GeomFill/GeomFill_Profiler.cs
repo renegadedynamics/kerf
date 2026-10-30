@@ -15,7 +15,7 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21). The profiler converts each curve it is given into a B-spline of its own (a copy:
 /// the caller's curve is never changed) and changes those in <see cref="Perform"/>. <see cref="Curve"/> hands one out
-/// frozen; a later <see cref="Perform"/> copies a frozen curve before changing it (decision 5921).
+/// frozen; a later <see cref="Perform"/> copies a frozen curve before changing it (decision 844).
 /// </remarks>
 public class GeomFill_Profiler
 {
@@ -152,7 +152,7 @@ public class GeomFill_Profiler
         double U1, U2, UFirst = 0, ULast = 0;
         double EcartMax = 0.0;
 
-        // The curves handed out by Curve() are frozen: change copies (decision 5921).
+        // The curves handed out by Curve() are frozen: change copies (decision 844).
         for (i = 1; i <= mySequence.Length(); i++)
         {
             if (mySequence[i].IsFrozen())
@@ -330,7 +330,7 @@ public class GeomFill_Profiler
 
     /// <summary>
     /// The curve <paramref name="Index"/> (from 1): the profiler's own B-spline, set to the common profile after
-    /// <see cref="Perform"/>; frozen (decision 5921).
+    /// <see cref="Perform"/>; frozen (decision 844).
     /// </summary>
     public Geom_Curve Curve(int Index)
     {
