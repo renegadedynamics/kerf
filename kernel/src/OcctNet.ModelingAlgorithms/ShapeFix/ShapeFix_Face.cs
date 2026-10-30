@@ -2351,9 +2351,12 @@ public partial class ShapeFix_Face : ShapeFix_Root
                 continue;
             }
 
-            // OCCT: the test is && where || is meant, so a FORWARD or REVERSED vertex reaches TopoDS::Wire (which throws in
-            // the port; OCCT's release build reinterprets the vertex).
-            TopoDS_Wire aWire = TopoDS.Wire(aShape);
+            // OCCT: the test is && where || is meant, so a FORWARD or REVERSED vertex (or an INTERNAL wire) gets here, and
+            // TopoDS::Wire, unchecked in OCCT's release build, reinterprets the vertex as a wire: it has no edge, is not
+            // small, and is kept. The port reinterprets it the same way rather than throw.
+            TopoDS_Wire aWire = aShape.ShapeType() == TopAbs_WIRE
+                ? TopoDS.Wire(aShape)
+                : new TopoDS_Wire(aShape.TShape(), aShape.Location(), aShape.Orientation());
             var anAnalyzer = new ShapeAnalysis_Wire(aWire, myFace, aTolerance3d);
             if (anAnalyzer.CheckSmallArea(aWire))
             {
