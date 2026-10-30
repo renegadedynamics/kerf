@@ -1064,3 +1064,32 @@ means an NCollection_Array1 element or a local OCCT never writes: uninitialised 
 | `Geom2dGcc_Lin2dTanObl.cxx` (curve, line, param, angle) | Passes TolAng to the Iter as the start parameter and Param1 as the angular tolerance | Draw's `lintan` with an angle starts from TolAng |
 | `Geom2dGcc_Lin2dTanObl.cxx` (free-form curve) | `Add` calls the Iter's Intersection2, which throws Geom2dGcc_IsParallel when the angle is 0 or π | The constructor throws |
 | `Geom2dGcc_Lin2dTanObl.hxx` | `IsParallel2` declared, not defined (build123d.NET's binding excludes it) | Left out with its write-only `Paral2` |
+
+## Phase 5: unit 5L1, laws and trihedrons
+
+Found while porting Law and GeomFill's trihedron and location laws. Each is ported as OCCT has it, except the array
+bounds of Law_BSpline (decision 808).
+
+| Where | What | Effect |
+|---|---|---|
+| `Law_BSpline::IncreaseMultiplicity` (both overloads), `IncrementMultiplicity` | Call `InsertKnots` with the default `Add = false`; Geom_BSplineCurve passes true | The multiplicity becomes Max(old, M - old) instead of M (or Max(old, Step) instead of old + Step), so `SetKnot(Index, K, M)` misses M. Kept, pinned by a test |
+| `Law_BSpline::Segment` | Locates the end at `NewU1 + (U2 - U1)`, which can round one ulp below the knot just inserted at U2; the strict `< Eps` test misses it | The segment ends at the previous knot and keeps poles of a span whose end knot is not of multiplicity Degree: a wrong curve, in a few percent of random segments. Kept, pinned by a test |
+| `Law_BSpline` constructors and `SetPeriodic` | OCCT 8's `NCollection_Array1::operator=` copies the source's bounds into the (1, n) arrays they allocate | Arrays given with other bounds, and the knots after `SetNotPeriodic` then `SetPeriodic` with FirstUKnotIndex > 1, keep their bounds; later 1-based reads are out of bounds (undefined behaviour). **The port copies into 1-based arrays (decision 808)** |
+| `Law_BSpline` (`Rational(W)`), `Law_Interpolate::BuildParameters` | Read W from index 1, and index the parameters by the points' index, whatever the arrays' lower bounds | Wrong only for arrays not indexed from 1. Kept |
+| `GeomFill_CorrectedFrenet::Copy` | Copies with the default constructor | The copy of a law made `ForEvaluation` searches the mean plane again (it is not "for evaluation"). Kept |
+| `GeomFill_CorrectedFrenet.cxx`, `smoothlaw` | After a successful first pass `Law = BS` shares the handle, and the second pass removes more knots from BS | The returned law is the second pass's even when that pass's control fails. Kept |
+| `GeomFill_CorrectedFrenet::InitInterval` | The next step is `max(|S(t)| / 2, LengthMin) / |S'(t)|` with S = C' ^ C'' (GeomFill_SnglrFunc), capped by the default step but not bounded below | On offset curves the steps fall near 1e-6, so one SetCurve takes hundreds of thousands of Frenet evaluations: seconds to over ten minutes natively on random offsets of B-splines and Bezier curves (the port, in a Debug build, about 30 times longer). Kept; the oracle leaves those spines out (decision 811) |
+| `GeomFill_CorrectedFrenet::Intervals` | No `return` after `EvolAroundT->Intervals(T, S)` when Frenet has one interval | The fusion that follows overwrites T with the same values. Harmless. Kept |
+| `GeomFill_GuideTrihedronAC::D2` | Uses `TN2 = |TN|^2` (= 1) where the second derivative of a unit vector needs `|DTN|^2` | D2BiNormal, and with it D2Tangent, are off by (|DTN|^2 - 1) BiNormal. Kept, pinned by a test |
+| `GeomFill_GuideTrihedronAC::D0/D1` | No guard against zero magnitudes (OCCT's own TODO "finding #8") | Division by zero where the path meets the guide. Kept |
+| `GeomFill_DiscreteTrihedron::Init` | Appends to myKnots and myTrihedrons without clearing them | A second SetCurve on a free-form curve keeps the first curve's samples. Kept |
+| `GeomFill_GuideTrihedronPlan` | Declares its own `myTrimmed`, hiding the base's, so the inherited `GetInterval` reads a null handle; `D2` computes only the path's Frenet frame and returns false | Access violation natively, NullReferenceException in the port; no second derivatives. Kept |
+| `GeomFill_LocationGuide::Copy` | Runs `Set(..., rotation, ...)` before the copy has a path; passes `myPoles2d(1,1).X()` (the first path parameter) as the start angle, as SetCurve does | Copying a law with a rotation throws Standard_ConstructionError. Kept, pinned by a test |
+| `GeomFill_LocationGuide::D2` | Multiplies the caller's incoming matrices by the transformation before setting them from the trihedron | D2 never applies SetTrsf, while D0 and D1 do. Kept, pinned by a test |
+| `GeomFill_LocationGuide::GetAverageLaw` | Averages myNbPts + 1 points with a step of a tenth of the interval | Most of the 22 points lie past the interval's end. Kept, pinned by a test |
+| `GeomFill_LocationGuide::SetRotation` | After the "rescue" solve `Pc` is still the default point | w = 0 is stored. By reading |
+| `GeomFill_FunctionDraft::DerivT` | Omits the w cos(a) B' term | LocationDraft's D1/D2 trace derivatives are wrong where the binormal turns (about 1.6 times the finite difference along a circle; exact along a line). Kept, pinned by a test |
+| `GeomFill_LocationDraft`, the seed search of D0/D1/D2 | For a parameter before the first milestone reads the poles at indices -1 and 0 | Out of bounds natively; Standard_OutOfRange in the port |
+| `GeomFill_CurveAndTrihedron`, `LocationDraft`, `LocationGuide::GetAverageLaw` | The matrix's columns are (T, N, B), where D0 to D2 give (N, B, T) | The average law is not the average of M(t). Kept, pinned by a test (CurveAndTrihedron) |
+| `GeomFill_UniformSection::BarycentreOfSurf` | Starts at the section's first parameter but steps to the converted B-spline's last parameter | A wrong sample range when the two differ. By reading |
+| `GeomFill_LocFunction::DN` | Any order other than 0 to 2 dereferences a null pointer | Access violation natively; Standard_OutOfRange in the port (tested) |

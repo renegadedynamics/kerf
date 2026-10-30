@@ -803,3 +803,21 @@ Phase 5 (part): geometric constraints (unit 5K2).
   of the seven solvers against native OCCT on lines, circles, ellipses, B-splines, offset and trimmed curves (36,288 of
   38,000 cases identical token for token, the rest where native reads uninitialised memory or its build skips a range
   check); the corpus's 2dgcc cases (11 runnable, 10 OK, 1 missing its data).
+Phase 5 (part): laws and trihedrons (unit 5L1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - The Law package: evolution laws (`Law_Constant`, `Law_Linear`, `Law_S`, `Law_Interpol`, `Law_BSpFunc`,
+    `Law_Composite`), `Law_BSpline` (a one-dimensional B-spline, immutable to callers with `With`/past-participle
+    twins), `Law_Interpolate`, `Law_BSplineKnotSplitting` and the package functions (`Law.MixBnd`, `MixTgt`,
+    `Reparametrize`, `Scale`, `ScaleCub`, `BSpline`).
+  - GeomFill's trihedron laws for sweeping: `GeomFill_Frenet`, `CorrectedFrenet` (with `EvaluateBestMode`), `Darboux`,
+    `ConstantBiNormal`, `Fixed`, `DiscreteTrihedron`, `DraftTrihedron`, `GuideTrihedronAC`, `GuideTrihedronPlan`; the
+    location laws `GeomFill_CurveAndTrihedron`, `LocationGuide` and `LocationDraft` with their functions; the section
+    law base with `GeomFill_UniformSection` and `GeomFill_SectionPlacement`; `GeomFill_TgtField`.
+  - Laws are working objects, as the adaptors: they keep the caller's curves and laws and never change them; a
+    `Law_BSpline` a law keeps is frozen.
+- Tests: OCCT's GTests GeomFill_CorrectedFrenet and GeomFill_GuideTrihedronAC; unit tests of every law. Oracle: native
+  GeomFill_Frenet and GeomFill_CorrectedFrenet on random spines of every curve kind and on planar and twisted B-splines
+  (frames and their first and second derivatives, intervals, sub-intervals, copies, the best mode): 2,082,140 values,
+  all bit-identical (offsets of free-form curves left out of CorrectedFrenet's runs: OCCT's own sampling is very slow on
+  them).
