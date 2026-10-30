@@ -270,45 +270,46 @@ public sealed class ShapeFix_IntersectionTool
 
         // change boxes
         boxes.UnBind(edge);
-        updateBoxes(face, newE1, newE2, boxes);
-
-        return true;
-    }
-
-    // The boxes of the two new edges of SplitEdge1 and SplitEdge2 (OCCT repeats this block in both).
-    private static void updateBoxes(in TopoDS_Face face, in TopoDS_Edge newE1, in TopoDS_Edge newE2,
-                                    NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes)
-    {
-        Geom_Surface? S   = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
         var           sae = new ShapeAnalysis_Edge();
         if (sae.PCurve(newE1, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
         {
-            boxes.Bind(newE1, edgeBox(c2d!, cf, cl));
+            var    box    = new Bnd_Box2d();
+            var    gac    = new Geom2dAdaptor_Curve();
+            double aFirst = c2d!.FirstParameter();
+            double aLast  = c2d.LastParameter();
+            if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
+            {
+                // pdn avoiding problems with segment in Bnd_Box
+                gac.Load(c2d);
+            }
+            else
+            {
+                gac.Load(c2d, cf, cl);
+            }
+            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            boxes.Bind(newE1, box);
         }
         if (sae.PCurve(newE2, S, L, out c2d, out cf, out cl, false))
         {
-            boxes.Bind(newE2, edgeBox(c2d!, cf, cl));
+            var    box    = new Bnd_Box2d();
+            var    gac    = new Geom2dAdaptor_Curve();
+            double aFirst = c2d!.FirstParameter();
+            double aLast  = c2d.LastParameter();
+            if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
+            {
+                // pdn avoiding problems with segment in Bnd_Box
+                gac.Load(c2d);
+            }
+            else
+            {
+                gac.Load(c2d, cf, cl);
+            }
+            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            boxes.Bind(newE2, box);
         }
-    }
 
-    // The 2d box of a pcurve on [cf, cl] (OCCT's repeated block).
-    private static Bnd_Box2d edgeBox(Geom2d_Curve c2d, double cf, double cl)
-    {
-        var    box    = new Bnd_Box2d();
-        var    gac    = new Geom2dAdaptor_Curve();
-        double aFirst = c2d.FirstParameter();
-        double aLast  = c2d.LastParameter();
-        if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
-        {
-            // pdn avoiding problems with segment in Bnd_Box
-            gac.Load(c2d);
-        }
-        else
-        {
-            gac.Load(c2d, cf, cl);
-        }
-        BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
-        return box;
+        return true;
     }
 
     //=======================================================================
@@ -387,7 +388,43 @@ public sealed class ShapeFix_IntersectionTool
 
         // change boxes
         boxes.UnBind(edge);
-        updateBoxes(face, newE1, newE2, boxes);
+        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        if (sae.PCurve(newE1, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
+        {
+            var    box    = new Bnd_Box2d();
+            var    gac    = new Geom2dAdaptor_Curve();
+            double aFirst = c2d!.FirstParameter();
+            double aLast  = c2d.LastParameter();
+            if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
+            {
+                // pdn avoiding problems with segment in Bnd_Box
+                gac.Load(c2d);
+            }
+            else
+            {
+                gac.Load(c2d, cf, cl);
+            }
+            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            boxes.Bind(newE1, box);
+        }
+        if (sae.PCurve(newE2, S, L, out c2d, out cf, out cl, false))
+        {
+            var    box    = new Bnd_Box2d();
+            var    gac    = new Geom2dAdaptor_Curve();
+            double aFirst = c2d!.FirstParameter();
+            double aLast  = c2d.LastParameter();
+            if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
+            {
+                // pdn avoiding problems with segment in Bnd_Box
+                gac.Load(c2d);
+            }
+            else
+            {
+                gac.Load(c2d, cf, cl);
+            }
+            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            boxes.Bind(newE2, box);
+        }
 
         return true;
     }
@@ -397,6 +434,7 @@ public sealed class ShapeFix_IntersectionTool
     {
         // union vertexes
         bool          res  = false;
+        var           sbe  = new ShapeBuild_Edge();
         var           sae  = new ShapeAnalysis_Edge();
         var           B    = new BRep_Builder();
         TopoDS_Vertex V1F  = sae.FirstVertex(edge1);
@@ -418,7 +456,76 @@ public sealed class ShapeFix_IntersectionTool
             {
                 // union vertexes V1F and V2F
                 B.UpdateVertex(V1F, tolv);
-                res = unionVertex(sewd, ref edge2, num2, boxes, B2, V1F, V2F, V1F, V2L);
+                TopoDS_Edge NewE = sbe.InternalCopyReplaceVertices(edge2, V1F, V2L);
+                myContext!.Replace(edge2, NewE);
+                sewd.Set(NewE, num2);
+                edge2 = NewE;
+                boxes.Bind(NewE, B2); // update boxes
+                // replace vertex in other edge
+                int num21, num22;
+                if (num2 > 1)
+                {
+                    num21 = num2 - 1;
+                }
+                else
+                {
+                    num21 = sewd.NbEdges();
+                }
+                if (num2 < sewd.NbEdges())
+                {
+                    num22 = num2 + 1;
+                }
+                else
+                {
+                    num22 = 1;
+                }
+                TopoDS_Edge   edge21 = sewd.Edge(num21);
+                TopoDS_Edge   edge22 = sewd.Edge(num22);
+                TopoDS_Vertex V21F   = sae.FirstVertex(edge21);
+                TopoDS_Vertex V21L   = sae.LastVertex(edge21);
+                TopoDS_Vertex V22F   = sae.FirstVertex(edge22);
+                TopoDS_Vertex V22L   = sae.LastVertex(edge22);
+                if (V21F.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V1F, V21L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V21L.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V21F, V1F);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V22F.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V1F, V22L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                if (V22L.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V22F, V1F);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                res = true;
             }
         }
         else if (d12 < d21 && d12 < d22)
@@ -428,7 +535,76 @@ public sealed class ShapeFix_IntersectionTool
             {
                 // union vertexes V1F and V2L
                 B.UpdateVertex(V1F, tolv);
-                res = unionVertex(sewd, ref edge2, num2, boxes, B2, V1F, V2L, V2F, V1F);
+                TopoDS_Edge NewE = sbe.InternalCopyReplaceVertices(edge2, V2F, V1F);
+                myContext!.Replace(edge2, NewE);
+                sewd.Set(NewE, num2);
+                edge2 = NewE;
+                boxes.Bind(NewE, B2); // update boxes
+                // replace vertex in other edge
+                int num21, num22;
+                if (num2 > 1)
+                {
+                    num21 = num2 - 1;
+                }
+                else
+                {
+                    num21 = sewd.NbEdges();
+                }
+                if (num2 < sewd.NbEdges())
+                {
+                    num22 = num2 + 1;
+                }
+                else
+                {
+                    num22 = 1;
+                }
+                TopoDS_Edge   edge21 = sewd.Edge(num21);
+                TopoDS_Edge   edge22 = sewd.Edge(num22);
+                TopoDS_Vertex V21F   = sae.FirstVertex(edge21);
+                TopoDS_Vertex V21L   = sae.LastVertex(edge21);
+                TopoDS_Vertex V22F   = sae.FirstVertex(edge22);
+                TopoDS_Vertex V22L   = sae.LastVertex(edge22);
+                if (V21F.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V1F, V21L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V21L.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V21F, V1F);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V22F.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V1F, V22L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                if (V22L.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V22F, V1F);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                res = true;
             }
         }
         else if (d21 < d22)
@@ -438,7 +614,76 @@ public sealed class ShapeFix_IntersectionTool
             {
                 // union vertexes V1L and V2F
                 B.UpdateVertex(V1L, tolv);
-                res = unionVertex(sewd, ref edge2, num2, boxes, B2, V1L, V2F, V1L, V2L);
+                TopoDS_Edge NewE = sbe.InternalCopyReplaceVertices(edge2, V1L, V2L);
+                myContext!.Replace(edge2, NewE);
+                sewd.Set(NewE, num2);
+                edge2 = NewE;
+                boxes.Bind(NewE, B2); // update boxes
+                // replace vertex in other edge
+                int num21, num22;
+                if (num2 > 1)
+                {
+                    num21 = num2 - 1;
+                }
+                else
+                {
+                    num21 = sewd.NbEdges();
+                }
+                if (num2 < sewd.NbEdges())
+                {
+                    num22 = num2 + 1;
+                }
+                else
+                {
+                    num22 = 1;
+                }
+                TopoDS_Edge   edge21 = sewd.Edge(num21);
+                TopoDS_Edge   edge22 = sewd.Edge(num22);
+                TopoDS_Vertex V21F   = sae.FirstVertex(edge21);
+                TopoDS_Vertex V21L   = sae.LastVertex(edge21);
+                TopoDS_Vertex V22F   = sae.FirstVertex(edge22);
+                TopoDS_Vertex V22L   = sae.LastVertex(edge22);
+                if (V21F.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V1L, V21L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V21L.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V21F, V1L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V22F.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V1L, V22L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                if (V22L.IsSame(V2F))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V22F, V1L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                res = true;
             }
         }
         else
@@ -448,92 +693,80 @@ public sealed class ShapeFix_IntersectionTool
             {
                 // union vertexes V1L and V2L
                 B.UpdateVertex(V1L, tolv);
-                res = unionVertex(sewd, ref edge2, num2, boxes, B2, V1L, V2L, V2F, V1L);
+                TopoDS_Edge NewE = sbe.InternalCopyReplaceVertices(edge2, V2F, V1L);
+                myContext!.Replace(edge2, NewE);
+                sewd.Set(NewE, num2);
+                edge2 = NewE;
+                boxes.Bind(NewE, B2); // update boxes
+                // replace vertex in other edge
+                int num21, num22;
+                if (num2 > 1)
+                {
+                    num21 = num2 - 1;
+                }
+                else
+                {
+                    num21 = sewd.NbEdges();
+                }
+                if (num2 < sewd.NbEdges())
+                {
+                    num22 = num2 + 1;
+                }
+                else
+                {
+                    num22 = 1;
+                }
+                TopoDS_Edge   edge21 = sewd.Edge(num21);
+                TopoDS_Edge   edge22 = sewd.Edge(num22);
+                TopoDS_Vertex V21F   = sae.FirstVertex(edge21);
+                TopoDS_Vertex V21L   = sae.LastVertex(edge21);
+                TopoDS_Vertex V22F   = sae.FirstVertex(edge22);
+                TopoDS_Vertex V22L   = sae.LastVertex(edge22);
+                if (V21F.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V1L, V21L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V21L.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge21, V21F, V1L);
+                    if (boxes.IsBound(edge21))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
+                    }
+                    myContext!.Replace(edge21, NewE);
+                    sewd.Set(NewE, num21);
+                }
+                if (V22F.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V1L, V22L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                if (V22L.IsSame(V2L))
+                {
+                    NewE = sbe.InternalCopyReplaceVertices(edge22, V22F, V1L);
+                    if (boxes.IsBound(edge22))
+                    {
+                        boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
+                    }
+                    myContext!.Replace(edge22, NewE);
+                    sewd.Set(NewE, num22);
+                }
+                res = true;
             }
         }
 
         return res;
-    }
-
-    // The common part of OCCT's four branches of UnionVertexes: edge2 gets the vertices (theNewF, theNewL) and the
-    // adjacent edges sharing theOld get theKept in its place.
-    private bool unionVertex(ShapeExtend_WireData sewd, ref TopoDS_Edge edge2, int num2,
-                             NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes, in Bnd_Box2d B2,
-                             in TopoDS_Vertex theKept, in TopoDS_Vertex theOld, in TopoDS_Vertex theNewF,
-                             in TopoDS_Vertex theNewL)
-    {
-        var         sbe  = new ShapeBuild_Edge();
-        var         sae  = new ShapeAnalysis_Edge();
-        TopoDS_Edge NewE = sbe.InternalCopyReplaceVertices(edge2, theNewF, theNewL);
-        myContext!.Replace(edge2, NewE);
-        sewd.Set(NewE, num2);
-        edge2 = NewE;
-        boxes.Bind(NewE, B2); // update boxes
-        // replace vertex in other edge
-        int num21, num22;
-        if (num2 > 1)
-        {
-            num21 = num2 - 1;
-        }
-        else
-        {
-            num21 = sewd.NbEdges();
-        }
-        if (num2 < sewd.NbEdges())
-        {
-            num22 = num2 + 1;
-        }
-        else
-        {
-            num22 = 1;
-        }
-        TopoDS_Edge   edge21 = sewd.Edge(num21);
-        TopoDS_Edge   edge22 = sewd.Edge(num22);
-        TopoDS_Vertex V21F   = sae.FirstVertex(edge21);
-        TopoDS_Vertex V21L   = sae.LastVertex(edge21);
-        TopoDS_Vertex V22F   = sae.FirstVertex(edge22);
-        TopoDS_Vertex V22L   = sae.LastVertex(edge22);
-        if (V21F.IsSame(theOld))
-        {
-            NewE = sbe.InternalCopyReplaceVertices(edge21, theKept, V21L);
-            if (boxes.IsBound(edge21))
-            {
-                boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
-            }
-            myContext.Replace(edge21, NewE);
-            sewd.Set(NewE, num21);
-        }
-        if (V21L.IsSame(theOld))
-        {
-            NewE = sbe.InternalCopyReplaceVertices(edge21, V21F, theKept);
-            if (boxes.IsBound(edge21))
-            {
-                boxes.Bind(NewE, boxes.Find(edge21)); // update boxes
-            }
-            myContext.Replace(edge21, NewE);
-            sewd.Set(NewE, num21);
-        }
-        if (V22F.IsSame(theOld))
-        {
-            NewE = sbe.InternalCopyReplaceVertices(edge22, theKept, V22L);
-            if (boxes.IsBound(edge22))
-            {
-                boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
-            }
-            myContext.Replace(edge22, NewE);
-            sewd.Set(NewE, num22);
-        }
-        if (V22L.IsSame(theOld))
-        {
-            NewE = sbe.InternalCopyReplaceVertices(edge22, V22F, theKept);
-            if (boxes.IsBound(edge22))
-            {
-                boxes.Bind(NewE, boxes.Find(edge22)); // update boxes
-            }
-            myContext.Replace(edge22, NewE);
-            sewd.Set(NewE, num22);
-        }
-        return true;
     }
 
     private static Bnd_Box2d CreateBoxes2d(ShapeExtend_WireData sewd, in TopoDS_Face face,
@@ -548,7 +781,20 @@ public sealed class ShapeFix_IntersectionTool
             TopoDS_Edge E = sewd.Edge(i);
             if (sae.PCurve(E, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
             {
-                Bnd_Box2d box = edgeBox(c2d!, cf, cl);
+                var    box    = new Bnd_Box2d();
+                var    gac    = new Geom2dAdaptor_Curve();
+                double aFirst = c2d!.FirstParameter();
+                double aLast  = c2d.LastParameter();
+                if (c2d is Geom2d_BSplineCurve && (cf < aFirst || cl > aLast))
+                {
+                    // pdn avoiding problems with segment in Bnd_Box
+                    gac.Load(c2d);
+                }
+                else
+                {
+                    gac.Load(c2d, cf, cl);
+                }
+                BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
                 boxes.Bind(E, box);
                 aTotalBox.Add(box);
             }
