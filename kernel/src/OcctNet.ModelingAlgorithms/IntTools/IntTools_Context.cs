@@ -24,8 +24,10 @@ namespace Occt;
 /// </para>
 /// <para>
 /// The cache audit (plan section 2.4, decision 714): every cached tool but one gives the same answers whatever the
-/// context computed before. The exception is <see cref="SurfaceData"/>, whose boxes IntTools_BeanFaceIntersector
-/// keys by sample index and enlarges by the first edge's tolerance (occt-issues.md, unit 6C).
+/// context computed before. The exception is OCCT's <see cref="SurfaceData(in TopoDS_Face)"/>, whose boxes
+/// IntTools_BeanFaceIntersector keys by sample index and enlarges by the first edge's tolerance (occt-issues.md, unit
+/// 6C). The port's intersector uses the internal keyed overload instead, so that it gives every run the result of a
+/// fresh context (decision 6601).
 /// </para>
 /// <para>
 /// The maps are keyed by shape with <see cref="TopTools_ShapeMapHasher"/> (orientation ignored), and by curve with
@@ -41,6 +43,8 @@ public class IntTools_Context : Standard_Transient
     private readonly NCollection_DataMap<Geom_Curve, GeomAPI_ProjectPointOnCurve> myProjPTMap = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, Geom2dHatch_Hatcher> myHatcherMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, IntTools_SurfaceRangeLocalizeData> myProjSDataMap = new(TopTools_ShapeMapHasher.Instance);
+    // OCCT.NET (decision 6601): the localisation data keyed by face and by what the intersector's boxes depend on
+    private readonly NCollection_DataMap<TopoDS_Shape, Dictionary<SurfaceDataKey, IntTools_SurfaceRangeLocalizeData>> mySDataKeyedMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, Bnd_Box> myBndBoxDataMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, BRepAdaptor_Surface> mySurfAdaptorMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, Bnd_OBB> myOBBMap = new(TopTools_ShapeMapHasher.Instance);
@@ -265,6 +269,41 @@ public class IntTools_Context : Standard_Transient
         }
         return pSData!;
     }
+
+    /// <summary>
+    /// OCCT.NET (decision 6601): the surface localisation data of the face for one set of box parameters (the
+    /// intersector's criteria, the face's tolerance and the surface's parameter ranges), made as
+    /// <see cref="SurfaceData(in TopoDS_Face)"/> on the first call with these values. The boxes
+    /// IntTools_BeanFaceIntersector caches in it are then the boxes it would compute, whichever edge computed them.
+    /// </summary>
+    internal IntTools_SurfaceRangeLocalizeData SurfaceData(in TopoDS_Face aF,
+                                                           double theCriteria,
+                                                           double theFaceTolerance,
+                                                           double theUMin,
+                                                           double theUMax,
+                                                           double theVMin,
+                                                           double theVMax)
+    {
+        if (!mySDataKeyedMap.Find(aF, out Dictionary<SurfaceDataKey, IntTools_SurfaceRangeLocalizeData>? aMap))
+        {
+            aMap = [];
+            mySDataKeyedMap.Bind(aF, aMap);
+        }
+        SurfaceDataKey aKey = new(theCriteria, theFaceTolerance, theUMin, theUMax, theVMin, theVMax);
+        if (!aMap!.TryGetValue(aKey, out IntTools_SurfaceRangeLocalizeData? pSData))
+        {
+            pSData = new IntTools_SurfaceRangeLocalizeData(3,
+                                                           3,
+                                                           10.0 * Precision.PConfusion(),
+                                                           10.0 * Precision.PConfusion());
+            aMap.Add(aKey, pSData);
+        }
+        return pSData;
+    }
+
+    // The key of the localisation data: doubles compared by double.Equals, as the options structs of decision 640.
+    private readonly record struct SurfaceDataKey(double Criteria, double FaceTolerance, double UMin, double UMax,
+                                                  double VMin, double VMax);
 
     /// <summary>
     /// Computes the parameter of the point on the edge. Returns 0 if the distance is within the sum of the point's

@@ -6938,3 +6938,77 @@ by 663–670.
         MakePCurve, UpdateVertex, CorrectTolerances and the other in-place tools must get shapes the filler built or
         EmptyCopied (decision 719). BOPTools_ConnexityBlock is copied with `new(cb)` where OCCT copies by value.
       - **6F:** BOPAlgo_BOP's stub dimension helpers can be replaced by `BOPTools_AlgoTools.Dimensions`/`Dimension`.
+
+## Phase 6: unit 6C, edge intersectors
+
+IntTools_EdgeEdge, IntTools_EdgeFace and IntTools_BeanFaceIntersector, with their use of 6A's range samples and
+localisation data. Numbers from 6601 are placeholders, renumbered on merge; plan decisions are cited by their merged
+numbers (576–590), 6A's by 617–641, 6B's by 714–723.
+
+6601. **IntTools_Context's surface boxes: every edge/face run gives the result of a fresh context** (decisions 580,
+      714, 723).
+      - OCCT caches IntTools_BeanFaceIntersector's sample boxes of a face in the context's `SurfaceData(face)`, keyed by
+        sample only and enlarged by the criteria (edge tolerance + face tolerance) of the edge that made them. A later
+        edge reuses them, and a cached box also skips the check against the run's main curve box that a fresh box
+        gets (so it is never recorded as out for that run). Under per-thread contexts which edge comes first depends
+        on the thread.
+      - The port keys the data by face **and** by everything a box is computed from (the criteria, the face's
+        tolerance, the surface's four parameter bounds; an internal `IntTools_Context.SurfaceData` overload), and gives
+        a box found in the cache the same main-box check a fresh box gets (`// OCCT.NET` in `LocalizeSolutions`). A
+        cached box then equals the box the run would compute and is used as that box would be, so a run's result never
+        depends on what its context did before: reused context = fresh context, serial = parallel (tested). OCCT's
+        public `SurfaceData(face)` is kept, unused by the port's intersector.
+      - **Measured natively** (tools/edgerec `study`: every edge/face pair whose boxes meet on the faces where the
+        intersector localises, the B-spline faces of shell1.brep and MAT.brep, 8,436 pairs, including probe edges of
+        tolerances 1e-7, 1e-5 and 1e-3): one context for all pairs in order gave the fresh-context result for all
+        8,436; in reverse order for all but 1 (MAT probes, a 1e-5 edge run after 1e-7 and 1e-3 ones: the same common
+        parts, ranges 32 ulps apart); with fuzzy values alternating 0 and 1e-4 (so that edges of different criteria
+        share faces) for all 8,436. So native's serial result is its fresh-context result in all but 1 of 25,308 runs,
+        and the port gives that result always.
+      - Rejected: keying by criteria only (6B's recommendation: equal-criteria runs would still depend on the cached
+        boxes' skipped check, so serial = parallel would not be guaranteed); a cache per run (the same results, without
+        the reuse); OCCT's cache as it is (results depend on thread timing).
+6602. **Native recordings: tools/edgerec** (as tools/walkrec, decision 687).
+      - A C++ program built with MSVC against build123d.NET's native OCCT runs IntTools_EdgeEdge and IntTools_EdgeFace
+        on data/occ shapes (`tests/OcctNet.ModelingAlgorithms.Tests/IntTools/Recordings/edgerec.txt.gz`, 19 cases): a
+        shape against a copy moved by a binary-exact translation, against itself, nut against screw, and probe edges
+        (lines, arcs, interpolated B-splines with tolerances 1e-7, 1e-5 and 1e-3, embedded as BRep text and read back
+        natively too) through bottle, CrankArm, Ball, shell1 and MAT. The pairs are those whose boxes meet, sampled.
+      - 2,013 edge/edge runs (whole ranges, sub-ranges, the quick coincidence check, a fuzzy value), 351 with common
+        parts; 3,375 edge/face runs, 589 with common parts, 1,562 on faces where the intersector localises. Every
+        double of every common part (type, which edge is first, ranges, vertex parameters, AllNullFlag, bounding
+        points) and the minimal distance are compared as 64-bit hex.
+      - Result: everything is identical except 46 edge/face runs and 1 edge/edge run whose edge is a probe arc of
+        arbitrary axis: the same common parts, values within 5.2e-9 relative. They are attributed to .NET and MSVC sine and
+        cosine (ElCLib on circles; decision 494) and compared within 1e-8 relative, for circular edges only; every
+        other run must be identical.
+      - The edge/face runs are repeated with one context for a case's pairs in order (and, where the intersector
+        localises, reversed and shuffled); all give the fresh-context results (decision 6601).
+6603. **Classes and signatures of the three intersectors.**
+      - EdgeEdge and EdgeFace are public, non-sealed working classes with OCCT's protected members, because unit 6E's
+        `BOPAlgo_EdgeEdge`/`BOPAlgo_EdgeFace` derive from them and read and restore `myEdge1`, `myFace`,
+        `myCommonParts` and the rest. `Perform` is not virtual, as in OCCT.
+      - `CommonParts()` and BeanFace's `Result()` return the algorithm's own sequences (6A's convention for
+        `Ranges2()`); `Result(seq)` copies into the caller's sequence (`Assign`).
+      - OCCT's by-value `Append(aCommonPrt)` in EdgeFace is `Append(new IntTools_CommonPrt(aCommonPrt))` (decision
+        620), since the local common part is changed and appended again; EdgeEdge appends a new object each time.
+      - The adaptors OCCT copies into value members (`myS = myContext->SurfaceAdaptor(face)`, BeanFace's
+        `myCurve = theCurve`, the handles made for IntCurveSurface_HInter) are shared or shallow-copied: the
+        intersectors only evaluate them. BeanFace's `Init(edge, face)` makes a new curve adaptor rather than
+        re-initialising one that may be a caller's.
+      - Outputs OCCT leaves unwritten on some path are `ref` (FindParameters' bounds, DistPC's, CheckTouch's and
+        CheckTouchVertex's parameter, IsEqDistance's distance, BeanFace's `Distance(t, U, V)`); `FindBestSolution`
+        writes both parameters on every path and takes `out`. File statics are private statics of their class; the
+        `[[fallthrough]]` switch cases are written out; EdgeFace.cxx's uncalled `AdaptiveDiscret` is an internal static.
+      - BeanFace's unused `myProjector` member and ComputeLocalized's unused `aSurfaceDataInit` are left out.
+      - TKBO has no GTests for these classes (only for IntTools_FaceFace, unit 6D).
+6604. **Notes for unit 6E (the pave filler's PerformEE and PerformEF).**
+      - Derive `BOPAlgo_EdgeEdge : IntTools_EdgeEdge, BOPTools_Parallel.ISolver` and `BOPAlgo_EdgeFace :
+        IntTools_EdgeFace, BOPTools_Parallel.IContextSolver<IntTools_Context>`. Their `Perform` (hiding the base's with
+        `new`) moves `myEdge1/2` or `myEdge`/`myFace` by `BOPAlgo_Tools::TrsfToPoint`, calls the base, restores them and
+        rewrites the common parts' edges as OCCT does (`IntTools_CommonPrt.SetEdge1/2` are internal).
+      - Copy common parts kept beyond the solver with `new IntTools_CommonPrt(cp)`.
+      - `MinimalDistance()` stays RealLast on the localised, analytic and line/plane paths (occt-issues.md); PerformEF's
+        `MinimalDistance() < RealLast()` test reproduces native only because that is kept.
+      - A face moved by TrsfToPoint is a different context key; the keyed surface data (6601) is then per moved face,
+        as OCCT's per-face data is.
