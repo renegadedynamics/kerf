@@ -35,6 +35,8 @@
     <EmbeddedResource Include="IntPatch\Recordings\*.txt" LogicalName="IntPatch.Recordings.%(Filename)%(Extension)" />
     <!-- Native OCCT's edge intersectors on data/occ shapes, recorded by tools/edgerec (unit 6C, decision 754) -->
     <EmbeddedResource Include="IntTools\Recordings\edgerec.txt.gz" LogicalName="IntTools.edgerec.txt.gz" />
+    <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\gordonrec.txt.gz" LogicalName="GeomFill.gordonrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
