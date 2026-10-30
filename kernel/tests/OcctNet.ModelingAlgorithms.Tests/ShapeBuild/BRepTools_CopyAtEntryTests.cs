@@ -6,7 +6,7 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The copy at the entry of a healing algorithm (decision 5008) and the composition of its context and histories with
+/// The copy at the entry of a healing algorithm (decision 583) and the composition of its context and histories with
 /// the copy's, on a toy algorithm written as ShapeFix's are: it edits the shape in place and records replacements in a
 /// ShapeBuild_ReShape context. This is the pattern units 6H2, 6H3, 6S and 6U follow.
 /// </summary>

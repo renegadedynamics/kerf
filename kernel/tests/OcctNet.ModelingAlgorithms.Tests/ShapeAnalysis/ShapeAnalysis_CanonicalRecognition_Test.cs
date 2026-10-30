@@ -4,25 +4,22 @@
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
-// OCCT's tests sew four faces with BRepBuilderAPI_Sewing (unit 6S, not merged yet) and intersect a cylinder with a
-// plane with GeomAPI_IntSS (unit 5G). Until then, the sewn faces are put into a shell by BRep_Builder (the recognition
-// explores the shell's faces either way), and the intersection is the ellipse GeomAPI_IntSS computes.
+// OCCT's tests intersect a cylinder with a plane with GeomAPI_IntSS (unit 5G). Until then, the intersection is the
+// ellipse GeomAPI_IntSS computes.
 
 /// <summary>Helpers shared by OCCT's canonical recognition tests.</summary>
 internal static class CanonicalRecognitionTestUtils
 {
-    // TODO(6S): BRepBuilderAPI_Sewing (Add each face, Perform, SewedShape), as OCCT's tests do.
+    // OCCT's tests: BRepBuilderAPI_Sewing with its defaults, each face added, Perform, SewedShape.
     public static TopoDS_Shape Sew(params TopoDS_Face[] theFaces)
     {
-        var aBB = new BRep_Builder();
-        var aShell = new TopoDS_Shell();
-        aBB.MakeShell(ref aShell);
+        var aSewing = new BRepBuilderAPI_Sewing();
         foreach (TopoDS_Face aFace in theFaces)
         {
-            aBB.Add(aShell, aFace);
+            aSewing.Add(aFace);
         }
-        aShell.TShape()!.FreezeGraph();
-        return aShell;
+        aSewing.Perform();
+        return aSewing.SewedShape();
     }
 
     public static TopoDS_Shape NurbsConverted(in TopoDS_Shape theShape)

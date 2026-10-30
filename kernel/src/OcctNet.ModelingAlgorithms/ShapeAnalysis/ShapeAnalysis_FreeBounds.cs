@@ -74,10 +74,10 @@ public sealed class ShapeAnalysis_FreeBounds
     }
 
     // The non-degenerated free edges of the faces of the shape after sewing them with the tolerance (OCCT's
-    // constructor body, up to the chaining).
+    // constructor body, up to the chaining). Sewing copies frozen inputs itself and builds no sewn shape in this mode
+    // (decision 599): nothing here needs a copy.
     private static NCollection_HSequence<TopoDS_Shape> sewnFreeEdges(in TopoDS_Shape shape, double toler)
     {
-#if OCCTNET_SEWING // TODO(6S): BRepBuilderAPI_Sewing comes with unit 6S; remove the condition when it merges
         var Sew = new BRepBuilderAPI_Sewing(toler, false, false);
         for (var S = new TopoDS_Iterator(shape); S.More(); S.Next())
         {
@@ -92,18 +92,13 @@ public sealed class ShapeAnalysis_FreeBounds
         TopoDS_Edge anEdge;
         for (int iedge = 1; iedge <= nbedge; iedge++)
         {
-            anEdge = Sew.InternalFreeEdge(iedge);
+            anEdge = Sew.FreeEdge(iedge); // frozen: the caller's edges where sewing didn't cut them
             if (!BRep_Tool.Degenerated(anEdge))
             {
                 edges.Append(anEdge);
             }
         }
         return edges;
-#else
-        _ = shape;
-        _ = toler;
-        throw new Standard_NotImplemented("ShapeAnalysis_FreeBounds: BRepBuilderAPI_Sewing comes with unit 6S");
-#endif
     }
 
     /// <summary>

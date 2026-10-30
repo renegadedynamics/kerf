@@ -237,7 +237,7 @@ public class ShapeAnalysis_FreeBoundsTest
     }
 
     // Baseline: a single closed face alone does not trigger the bug (see below).
-    [Fact(Skip = "TODO(6S): the tolerance form sews with BRepBuilderAPI_Sewing")]
+    [Fact]
     public void SingleFaceNoCrash()
     {
         TopoDS_Face aFace = MakeSquareFace(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(1.0, 0.0, 0.0),
@@ -249,7 +249,7 @@ public class ShapeAnalysis_FreeBoundsTest
     }
 
     // Regression: two disjoint closed faces used to crash SplitWires (see PR description).
-    [Fact(Skip = "TODO(6S): the tolerance form sews with BRepBuilderAPI_Sewing")]
+    [Fact]
     public void TwoDisjointFacesNoCrash()
     {
         TopoDS_Face aFaceA = MakeSquareFace(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(1.0, 0.0, 0.0),

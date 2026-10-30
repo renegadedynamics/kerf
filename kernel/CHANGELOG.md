@@ -440,6 +440,32 @@ Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spi
   oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
   (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
   6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).
+Phase 5 (part): intersection of triangulated surfaces (unit 5E).
+
+- `OcctNet.ModelingAlgorithms`: the IntPolyh package, all of it. `IntPolyh_Intersection` intersects two surfaces
+  through their triangulations (a 10 x 10 or given sampling, refinement by deflection, the interfering triangles by a
+  BVH of their boxes, the four shifted intersections when the standard one finds too few) and gives section lines
+  and tangent zones, the start points of IntPatch's parametric intersections. `IntPolyh_MaillageAffinage` (the
+  algorithm), `IntPolyh_Triangle`, `Point`, `Edge`, `Couple`, `StartPoint`, `SectionLine`, `Tools` and
+  `IntPolyh_Array`, whose items never move as it grows. Serial, and the same every run.
+- Tests: OCCT's IntPolyh_Point and IntPolyh_Intersection GTests; unit tests on B-spline pairs (couples are real
+  contacts of refined triangles in BVH order, start points lie on both surfaces, every bit the same over repeated,
+  fresh and serial runs; the advanced intersection on tangent surfaces; the enlarged-zone retry and the other OCCT
+  bugs reproduced); the array, section line, couple hasher and dumps.
+Phase 6 (part): sewing (unit 6S).
+
+- `OcctNet.ModelingAlgorithms`: BRepBuilderAPI_Sewing (free, contiguous, multiple and degenerated edges, cutting of
+  bounds, non-manifold mode, `Modified`/`ModifiedSubShape`, the context), BRepBuilderAPI_FastSewing,
+  BRepBuilderAPI_VertexInspector and BRepBuilderAPI_BndBoxTreeSelector. What sewing hands out is frozen; given frozen
+  shapes it sews an exact copy and gives back the caller's own sub-shapes wherever it changed nothing, so the inputs
+  are never written.
+- Tests: OCCT's BRepBuilderAPI_Sewing GTests; unit tests of sewing and fast sewing; oracle tests against native
+  sewing, as Draw's `sewing` sets it up, on the exploded faces of 35 data/occ shapes at 1e-6, 1e-2, 1 and 100 (140
+  sewings) and on the sewing group's 501 public cases at their grids' tolerances and their 499 inputs at 1e-6:
+  every sewn shape, edge list, `Modified` and `ModifiedSubShape` equal through BRep text (5,261 of 5,807 texts
+  byte-identical, the rest but for the Free flag), every count equal; where native OCCT varies from run to run (2
+  sewings) the port gives one of its results.
+
 Phase 6 (part): healing foundations (unit 6H1).
 
 - `OcctNet.ModelingAlgorithms`:
@@ -452,15 +478,14 @@ Phase 6 (part): healing foundations (unit 6H1).
     `ShapeTolerance`, `CheckSmallFace`, `WireVertex`, `Geom`, `BoxBndTree`, `CanonicalRecognition`.
   - `Geom2dAPI_Interpolate` and `Geom2dAPI_PointsToBSpline`.
   - What these classes hand out is frozen; they only read the shapes they are given, or copy before writing.
-  - The tolerance form of `ShapeAnalysis_FreeBounds` sews, and waits for `BRepBuilderAPI_Sewing` (unit 6S).
-- `OcctNet.ModelingData`: the copy at the entry of in-place healing, sewing and clean-up (internal; decision 5008).
+- `OcctNet.ModelingData`: the copy at the entry of in-place healing, sewing and clean-up (internal; decision 583).
   - It works on an exact copy of a frozen input and gives back the caller's sub-shapes wherever nothing changed.
   - It re-keys the algorithm's reshaping context and histories onto the caller's shapes.
 - Draw-lite's `tolerance` command runs the ported ShapeAnalysis_ShapeTolerance.
 - Tests:
   - OCCT's GTests: ShapeBuild_ReShape, ShapeConstruct_ProjectCurveOnSurface, ShapeAnalysis_FreeBounds,
-    ShapeAnalysis_CanonicalRecognition, Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline. Four are skipped until
-    ShapeFix (6H3) and sewing (6S) merge.
+    ShapeAnalysis_CanonicalRecognition, Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline. One (ShapeFix_Shape's stability)
+    waits for unit 6H3.
   - Unit tests of every class, most on frozen inputs checked unchanged; the copy-at-entry pattern on a toy healing
     algorithm.
   - Oracle tests of ShapeAnalysis_Shell and ShapeAnalysis_FreeBounds against native OCCT on the corpus's shells.

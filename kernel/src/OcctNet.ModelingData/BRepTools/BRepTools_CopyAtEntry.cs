@@ -1,5 +1,5 @@
 // OCCT.NET: the copy at the entry of an algorithm that edits the shape it is given in place (healing, sewing,
-// clean-up: docs/phase5-6-plan.md, section 2.7; decision 5008), and the composition of its histories with the copy's.
+// clean-up: docs/phase5-6-plan.md, section 2.7; decision 583), and the composition of its histories with the copy's.
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 

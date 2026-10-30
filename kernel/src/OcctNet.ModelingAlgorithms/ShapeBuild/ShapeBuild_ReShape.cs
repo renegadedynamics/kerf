@@ -24,7 +24,7 @@ namespace Occt;
 /// <para>
 /// Apply only writes into the shapes it builds (EmptyCopied parents, ranges copied onto a rebuilt edge, the Closed
 /// flag of rebuilt wires and shells): it works on frozen shapes. A healing algorithm that ran on a copy of a frozen
-/// shape (decision 5008) records its replacements of the copy's sub-shapes here; <see cref="BRepTools_CopyAtEntry"/>
+/// shape (decision 583) records its replacements of the copy's sub-shapes here; <see cref="BRepTools_CopyAtEntry"/>
 /// then re-keys them to the caller's sub-shapes, so <c>Value</c>, <c>Apply</c> and <c>History</c> answer for the
 /// shapes the caller holds.
 /// </para>

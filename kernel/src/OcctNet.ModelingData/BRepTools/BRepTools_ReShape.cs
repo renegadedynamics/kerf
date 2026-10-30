@@ -682,7 +682,7 @@ public class BRepTools_ReShape : Standard_Transient
     }
 
     /// <summary>
-    /// OCCT.NET (decision 5008, <c>BRepTools_CopyAtEntry</c>): replaces, in every recorded request, the TShape of the
+    /// OCCT.NET (decision 583, <c>BRepTools_CopyAtEntry</c>): replaces, in every recorded request, the TShape of the
     /// recorded shape by its image in <paramref name="theKeys"/> and the TShape of the replacement (and of the
     /// recorded replacements, <see cref="IsNewShape"/>) by its image in <paramref name="theResults"/>, keeping their
     /// locations and orientations; TShapes without an image stay. The requests keep their order and kinds; if two

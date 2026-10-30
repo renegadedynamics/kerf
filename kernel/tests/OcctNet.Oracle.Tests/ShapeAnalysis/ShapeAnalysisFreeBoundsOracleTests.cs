@@ -25,10 +25,9 @@ namespace OcctNet.Oracle.Tests;
 /// <para>
 /// Compared: CheckOrientedShells' result (with and without INTERNAL edges counted as connections), HasBadEdges,
 /// HasFreeEdges, HasConnectedEdges, NbLoaded, and the BadEdges and FreeEdges compounds; FreeBounds' closed and open
-/// compounds for the four split options; ConnectEdgesToWires on the free edges by distance (10^-4), which builds new
+/// compounds for the four split options and, in its tolerance form (sewing at 10^-6 and 10^-2), with the default ones; ConnectEdgesToWires on the free edges by distance (10^-4), which builds new
 /// vertices and edges. Shapes are compared as BRep text (format 3, with triangulations), the Free flag masked: a frozen
-/// sub-shape keeps the Free flag it was frozen with where native OCCT clears it (open question 1). The tolerance form of
-/// FreeBounds sews (BRepBuilderAPI_Sewing, unit 6S) and is compared when 6S merges.
+/// sub-shape keeps the Free flag it was frozen with where native OCCT clears it (open question 1).
 /// </para>
 /// </remarks>
 public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDisposable
@@ -270,7 +269,6 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             SameShape(aNFb!.GetClosedWires(), aPFb!.GetClosedWires(), w + ", closed wires");
             SameShape(aNFb.GetOpenWires(), aPFb.GetOpenWires(), w + ", open wires");
         }
-#if OCCTNET_SEWING // TODO(6S): the tolerance form sews; remove the condition when 6S merges
         // the tolerance form: the free edges sewing leaves, connected by distance
         foreach (double aTol in new[] { 1e-6, 1e-2 })
         {
@@ -284,7 +282,6 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             SameShape(aNFb!.GetClosedWires(), aPFb!.GetClosedWires(), w + ", closed wires");
             SameShape(aNFb.GetOpenWires(), aPFb.GetOpenWires(), w + ", open wires");
         }
-#endif
         using N.ShapeAnalysis_FreeBounds? aNFbI = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, false, true, true), out string? aNErrI);
         ShapeAnalysis_FreeBounds? aPFbI = Try(() => new ShapeAnalysis_FreeBounds(aPS, false, true, true), out string? aPErrI);
         if (Failed(aNErrI, aPErrI, theWhat + ", FreeBounds (internal edges)"))

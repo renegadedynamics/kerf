@@ -160,8 +160,8 @@ parts already here), ShapeProcess(API), ShapeAlgo, SHMessage.
 
 | Dependency | Where | Plan |
 |---|---|---|
-| `OSD_ThreadPool`, `OSD_Thread::Current()` | `BOPTools_Parallel` keys a context per thread id | Onto `OSD_Parallel` (decision 522), with the per-thread context kept (decision 5005) |
-| `Message_Report` and the alerts | BOPAlgo_Options, every BOPAlgo, BRepAlgoAPI | Unit 6A (decision 5009) |
+| `OSD_ThreadPool`, `OSD_Thread::Current()` | `BOPTools_Parallel` keys a context per thread id | Onto `OSD_Parallel` (decision 522), with the per-thread context kept (decision 580) |
+| `Message_Report` and the alerts | BOPAlgo_Options, every BOPAlgo, BRepAlgoAPI | Unit 6A (decision 584) |
 | `NCollection_IncAllocator`, `BaseAllocator` | BOPDS, BOPAlgo, IntPatch | Dropped, by the rules |
 | `TopOpeBRepBuild_WireToFace` (legacy Booleans) | `BRepAlgo_FaceRestrictor`, the 2D offset only | A subset (section 2.11, open question 17) |
 | `BOPAlgo_*`, `IntTools_Context`, `BRepAlgoAPI_Section` | `BRepFill_Sweep`, `TrimShellCorner`; `BRepProj_Projection` | Phase 6 before those units |
@@ -234,7 +234,7 @@ One different last bit can move a start point and give a different but equally v
 - **Walking lines** (ImpPrm, PrmPrm) are expected bit-identical where the arithmetic is the same. The sources of
   difference are attributed as in decision 494: transcendentals, `std::sort` order on ties (IntTools_Root's sort,
   IntPolyh's couples; decision 491's MSVC helper), and OCCT's own bugs (reproduced).
-- **Comparison** (decision 5003): GeomAPI_IntSS's lines through the binding:
+- **Comparison** (decision 578): GeomAPI_IntSS's lines through the binding:
   - number and type of lines,
   - each line's curve as BRep text of an edge (poles, knots, weights) or the analytic parameters,
   - every double bit for bit; then the largest point-to-point deviation where they differ.
@@ -249,7 +249,7 @@ OCCT's BOP modifies its arguments by default. It grows the tolerances of vertice
 edges and splits them, unless it is non-destructive. `BOPAlgo_PaveFiller` turns non-destructive by itself when an
 argument has a `Locked()` sub-shape (PaveFiller_10). Frozen implies Locked (design 4.3).
 
-**So every Boolean of published shapes is non-destructive, with no new code** (decision 5002):
+**So every Boolean of published shapes is non-destructive, with no new code** (decision 577):
 
 - An argument sub-shape whose tolerance must grow, or that needs a pcurve, is replaced by an `EmptyCopied` copy.
   OCCT's own images and origins record the copy, so `Modified`, `Generated` and `IsDeleted` answer for the caller's
@@ -267,7 +267,7 @@ argument has a `Locked()` sub-shape (PaveFiller_10). Frozen implies Locked (desi
     BRepProj, ...);
   - a functional twin per operation for Bento: `BRepAlgoAPI.Fuse(args, tools, in BRepAlgoAPI_Options, out
     BRepTools_History)`, with an equatable options struct (fuzzy value, glue, OBB, inverted-solid check, parallel,
-    simplify, non-destructive) that can key a cache (decision 5004).
+    simplify, non-destructive) that can key a cache (decision 579).
 - **Writes into the result.** BOPAlgo builds its result unfrozen and runs its own post-passes
   (`BOPTools_AlgoTools::CorrectTolerances`, `CorrectShapeTolerances`, `OrientFacesOnShell`, ...) before publishing.
   The only frozen things they can meet are shared argument sub-shapes. In non-destructive mode OCCT routes those
@@ -280,7 +280,7 @@ argument has a `Locked()` sub-shape (PaveFiller_10). Frozen implies Locked (desi
 BOPAlgo runs its intersection and building loops in parallel when `SetRunParallel(true)` (build123d.NET always sets it)
 or when the global default is on (`BOPAlgo_Options::SetParallelMode`, false by default).
 
-**The rule** (decision 5005): **a parallel Boolean gives the serial Boolean's result, bit for bit, every run**, as
+**The rule** (decision 580): **a parallel Boolean gives the serial Boolean's result, bit for bit, every run**, as
 decision 490 for the mesher. BOP is designed for it:
 
 - each loop fills its own element of a vector (`BOPAlgo_VertexEdge`, `BOPAlgo_EdgeEdge`, `BOPAlgo_FaceFace`, ...);
@@ -321,7 +321,7 @@ A case where native varies is compared canonically (2.5), never blamed on the po
 
 1. **BRep bytes**, with the Free column masked (2.3) and counted. This is the milestone's measure, and it needs the
    same sub-shapes in the same order.
-2. Where native's order is address-driven (2.4), or bytes differ, a **canonical comparison** (decision 5006):
+2. Where native's order is address-driven (2.4), or bytes differ, a **canonical comparison** (decision 581):
    - the same number of each shape type (`checknbshapes`);
    - each sub-shape matched to one of the other side by its geometry (a vertex by its point, an edge by its curve's
      BRep text and range, a face by its surface's text and its edges), then its tolerance and flags;
@@ -346,7 +346,7 @@ So the result depends on the order in which intersections grow tolerances. That 
 2.4, which the port keeps. Decisions:
 
 - The options keep OCCT's names, defaults and effects exactly. Bento's caller sets them through the options struct
-  (2.3); no option is added or reinterpreted (decision 5007).
+  (2.3); no option is added or reinterpreted (decision 582).
 - The glue options give wrong results on shapes that do more than touch, as in OCCT. The port doesn't second-guess
   them; build123d.NET's `Fuse(glue: true)` keeps its native meaning.
 - **Fuzzy Booleans** are tested by the corpus's `bfuzzyvalue` cases (37) and an oracle sweep of fuzzy values on
@@ -449,7 +449,7 @@ design.md leaves "the legacy TopOpeBRep Booleans" out. The 2D offset reaches the
 By class, that closure is TopOpeBRepBuild, TopOpeBRepDS and TopOpeBRepTool: 40,500 lines, plus BRepApprox through
 TopOpeBRepTool_CurveTool. Most of it is the Boolean algorithm proper, which the face maker never runs.
 
-**Provisional** (decision 5010, open question 17): port only what `WireToFace::MakeFaces` executes, at member level:
+**Provisional** (decision 585, open question 17): port only what `WireToFace::MakeFaces` executes, at member level:
 
 - the area/loop framework: AreaBuilder, Area2dBuilder, FaceAreaBuilder, LoopSet, Loop, LoopClassifier, ShapeSet,
   WireEdgeSet, WireEdgeClassifier, CompositeClassifier, BlockBuilder, BlockIterator, FaceBuilder (about 6,000);
@@ -508,7 +508,7 @@ FilletAPI and ChamferAPI; ShapeFix_Wire, ShapeFix_Edge, ShapeConstruct; BRepAlgo
 CellsBuilder, ArgumentAnalyzer. They are checked through the bound classes above, the corpus and the GTests. Open
 question 20 asks build123d.NET to bind a short list.
 
-**How the units compare** (decisions 5003 and 5006):
+**How the units compare** (decisions 578 and 581):
 
 - **Surface/surface (5B to 5G):**
   - random pairs of every analytic type at random placements (coaxial, tangent, through apexes, at the degenerate
@@ -543,7 +543,7 @@ question 20 asks build123d.NET to bind a short list.
 - **Native repeatability** (2.4): every Boolean oracle case is also run five times natively, serially and in
   parallel; cases where native varies are reported apart.
 
-**The milestone's harness** (unit 6M, decision 5011). build123d.NET's algebra-mode tests are in
+**The milestone's harness** (unit 6M, decision 586). build123d.NET's algebra-mode tests are in
 `tests/Build123d.Tests` (`Operations/OperationsGenericTests` 89 tests, `OperationsPartTests` 49, `Topology/` Boolean,
 Clean, History, Shape3D and Solid tests). Their Boolean operations are reproduced by **capturing each native
 `BRepAlgoAPI_*` call and each `UnifySameDomain` that build123d.NET makes while its tests run**:
@@ -566,12 +566,12 @@ Draw-lite cases. Sizes are thousands of OCCT lines.
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **5A** Intersection foundations (the phase 5 pilot) | IntSurf's rest (LineOn2S, PntOn2S, PathPoint(Tool), InteriorPoint(Tool), Couple, Transition, TypeTrans, Situation, the package); IntImp's Int2S, ZerImpFunc, ZerParFunc and IntStart's SearchOnBoundaries, SearchInside as generics (2.1); IntPatch's data model and tools: Point, Line, PointLine, ALine, GLine, WLine, RLine, IType, SpecPntType, SearchPnt, HInterTool, HCurve2dTool, ArcFunction, CSFunction, CurvIntSurf, the TheSOnBounds family, TheSearchInside, TheSurfFunction, PolyArc, PolyLine, Polygo, RstInt. **Design:** the generic-instantiation pattern for IntPatch/GeomInt/BRepApprox; lines and points as working objects (not frozen values); the comparison helper of decision 5003 | 16.3 | phase 4 | GT: IntSurf_LineOn2S. Unit tests: walking-line containers (insert, split, purge) against OCCT's semantics; IntStart's boundary search on cylinders and spheres cut by planes (points, arcs, transitions). Oracle: indirect (5G) |
+| **5A** Intersection foundations (the phase 5 pilot) | IntSurf's rest (LineOn2S, PntOn2S, PathPoint(Tool), InteriorPoint(Tool), Couple, Transition, TypeTrans, Situation, the package); IntImp's Int2S, ZerImpFunc, ZerParFunc and IntStart's SearchOnBoundaries, SearchInside as generics (2.1); IntPatch's data model and tools: Point, Line, PointLine, ALine, GLine, WLine, RLine, IType, SpecPntType, SearchPnt, HInterTool, HCurve2dTool, ArcFunction, CSFunction, CurvIntSurf, the TheSOnBounds family, TheSearchInside, TheSurfFunction, PolyArc, PolyLine, Polygo, RstInt. **Design:** the generic-instantiation pattern for IntPatch/GeomInt/BRepApprox; lines and points as working objects (not frozen values); the comparison helper of decision 578 | 16.3 | phase 4 | GT: IntSurf_LineOn2S. Unit tests: walking-line containers (insert, split, purge) against OCCT's semantics; IntStart's boundary search on cylinders and spheres cut by planes (points, arcs, transitions). Oracle: indirect (5G) |
 | **5E** IntPolyh | All of IntPolyh: MaillageAffinage, Triangle, Point, Edge, Couple, StartPoint, SectionLine, Intersection, Tools, the arrays | 7.8 | phase 4 | GT: IntPolyh_Intersection, IntPolyh_Point. Unit tests: triangle-triangle couples and start points on B-spline pairs, the same every run. Oracle: indirect (5D, 5G) |
 | **5H** Hatching and the API remainder | Hatch, HatchGen, Geom2dHatch; GeomAPI_PointsToBSplineSurface; GCE2d's typedefs | 7.7 | phase 4 | GT: Geom2dHatch_Elements, Geom2dHatch_Intersector, GeomAPI_PointsToBSplineSurface. Oracle: PointsToBSplineSurface (bound) on random grids, every parametrisation and continuity; the hatcher through 6B |
-| **6A** BOP data and reports (the phase 6 pilot) | TKernel's Message_Report, Alert, AlertExtended, CompositeAlerts, Attribute*, Level, PrinterToReport; TopoDS_AlertWithShape, AlertAttribute; BOPDS (all); IntTools' data classes (Range, Root, CommonPrt, Curve, PntOnFace, PntOn2Faces, MarkedRangeSet, ShrunkRange, the range samples and localize data, the package's statics); BOPAlgo_Options, Algo, Alerts, GlueEnum, Operation, CheckStatus, SectionAttribute. **Design:** the public API shell (2.3, decision 5004) with a stub builder, so that 6P only fills it; the per-thread context through `OSD_Parallel` (2.4, decision 5005); the determinism and canonical-comparison harnesses (2.5) | 14.7 | phase 4 | Unit tests: reports and alerts (HasErrors, DumpErrors, gravity filters); BOPDS_DS built by hand (paves, pave blocks, common blocks, interference tables, the iterator's sorted pairs); the API shell: frozen inputs never written, `Shape()` frozen, the options struct equatable; the canonical comparer on shapes renumbered at random |
+| **6A** BOP data and reports (the phase 6 pilot) | TKernel's Message_Report, Alert, AlertExtended, CompositeAlerts, Attribute*, Level, PrinterToReport; TopoDS_AlertWithShape, AlertAttribute; BOPDS (all); IntTools' data classes (Range, Root, CommonPrt, Curve, PntOnFace, PntOn2Faces, MarkedRangeSet, ShrunkRange, the range samples and localize data, the package's statics); BOPAlgo_Options, Algo, Alerts, GlueEnum, Operation, CheckStatus, SectionAttribute. **Design:** the public API shell (2.3, decision 579) with a stub builder, so that 6P only fills it; the per-thread context through `OSD_Parallel` (2.4, decision 580); the determinism and canonical-comparison harnesses (2.5) | 14.7 | phase 4 | Unit tests: reports and alerts (HasErrors, DumpErrors, gravity filters); BOPDS_DS built by hand (paves, pave blocks, common blocks, interference tables, the iterator's sorted pairs); the API shell: frozen inputs never written, `Shape()` frozen, the options struct equatable; the canonical comparer on shapes renumbered at random |
 | **6S** Sewing | BRepBuilderAPI_Sewing, FastSewing, VertexInspector, BndBoxTreeSelector. Copy at entry (2.7) | 7.7 | phase 4 | GT: BRepBuilderAPI_Sewing (TKOffset's, 117 lines). Oracle: Sewing (bound) on exploded faces of data/occ shapes and the sewing group's public inputs, at 1e-6, 1e-2, 1 and 100; `Modified`, free, multiple and degenerated edges |
-| **6H1** Healing foundations | ShapeExtend's rest (CompositeSurface, Explorer, MsgRegistrator, BasicMsgRegistrator, Parametrisation); ShapeBuild_ReShape; ShapeConstruct (package, Curve, ProjectCurveOnSurface, MakeTriangulation); ShapeAnalysis's rest (FreeBounds after 6S, Shell, ShapeContents, ShapeTolerance, FreeBoundsProperties, CheckSmallFace, WireVertex, Geom, BoxBndTree, CanonicalRecognition); Geom2dAPI_Interpolate, PointsToBSpline. **Design:** the copy-at-entry helper and history composition for all of healing (2.7, decision 5008) | 16.8 | phase 4 (6S for FreeBounds) | GT: ShapeBuild_ReShape, ShapeConstruct_ProjectCurveOnSurface (999 lines), ShapeAnalysis_FreeBounds, ShapeAnalysis_CanonicalRecognition, Geom2dAPI_Interpolate, Geom2dAPI_PointsToBSpline. Oracle: ShapeAnalysis_FreeBounds and Shell (bound) on the corpus's shells; ProjectCurveOnSurface indirectly through ShapeFix_Edge (6H2) |
+| **6H1** Healing foundations | ShapeExtend's rest (CompositeSurface, Explorer, MsgRegistrator, BasicMsgRegistrator, Parametrisation); ShapeBuild_ReShape; ShapeConstruct (package, Curve, ProjectCurveOnSurface, MakeTriangulation); ShapeAnalysis's rest (FreeBounds after 6S, Shell, ShapeContents, ShapeTolerance, FreeBoundsProperties, CheckSmallFace, WireVertex, Geom, BoxBndTree, CanonicalRecognition); Geom2dAPI_Interpolate, PointsToBSpline. **Design:** the copy-at-entry helper and history composition for all of healing (2.7, decision 583) | 16.8 | phase 4 (6S for FreeBounds) | GT: ShapeBuild_ReShape, ShapeConstruct_ProjectCurveOnSurface (999 lines), ShapeAnalysis_FreeBounds, ShapeAnalysis_CanonicalRecognition, Geom2dAPI_Interpolate, Geom2dAPI_PointsToBSpline. Oracle: ShapeAnalysis_FreeBounds and Shell (bound) on the corpus's shells; ProjectCurveOnSurface indirectly through ShapeFix_Edge (6H2) |
 
 ### Wave 2
 
@@ -734,7 +734,7 @@ That is about **259,000 lines for phase 5** and **135,000 for phase 6**, 395,000
   iterate in insertion order (decision 490). Where OCCT's result could depend on address order, add it to
   occt-issues.md with the site.
 - **BOPTools_Parallel**: `BOPTools_Parallel::Perform(isParallel, vector, context)` → `OSD_Parallel.For` over the
-  vector with the per-worker context of decision 5005. Keep each `myRunParallel` flag.
+  vector with the per-worker context of decision 580. Keep each `myRunParallel` flag.
 - **Exceptions in loop bodies.** BOP's `try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure&)` adds an alert to the
   report: keep it per item. An exception that escapes a parallel loop is unwrapped (decision 431).
 - **Reports.** `AddError(new BOPAlgo_AlertXxx(shape))` keeps OCCT's alert classes (one class per

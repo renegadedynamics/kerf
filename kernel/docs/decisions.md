@@ -5310,7 +5310,7 @@ Numbers from 4801 are placeholders, renumbered on merge; merged decisions are ci
 The scope and design of construction and Booleans ([phase5-6-plan.md](phase5-6-plan.md)). Numbers from 5001 are
 placeholders, renumbered on merge.
 
-5001. **Phases 5 and 6 are planned together, in the owner's order**:
+576. **Phases 5 and 6 are planned together, in the owner's order**:
       1. phase 5's surface/surface intersections (82,600 lines);
       2. phase 6's Booleans (TKBO, 71,200) with build123d.NET's clean-up and the healing and sewing its Boolean and
          face-making paths call (61,400, open question 16);
@@ -5325,7 +5325,7 @@ placeholders, renumbered on merge.
       - BOPTools needs the hatcher.
 
       design.md's phase table is updated.
-5002. **Booleans of frozen shapes are non-destructive, through OCCT's own check.**
+577. **Booleans of frozen shapes are non-destructive, through OCCT's own check.**
       - `BOPAlgo_PaveFiller` turns non-destructive when an argument has a `Locked()` sub-shape (PaveFiller_10), and
         frozen implies Locked (design 4.3). So no Boolean writes a published shape, and no new code is needed.
       - Argument sub-shapes that must grow or gain pcurves are `EmptyCopied` copies, recorded in OCCT's own images.
@@ -5334,13 +5334,13 @@ placeholders, renumbered on merge.
       - Shared faces keep their Free flag (open question 1); the oracle masks that column.
 
       Provisional: open question 18.
-5003. **How intersection results are compared with native OCCT.**
+578. **How intersection results are compared with native OCCT.**
       - Through `GeomAPI_IntSS`: the number and type of lines, and each line as BRep text of an edge or as its
         analytic parameters, every double bit for bit, then the largest deviation where they differ.
       - Through `BRepAlgoAPI_Section` on faces: BRep bytes with pcurves.
       - Analytic pairs are expected bit-identical or attributed (transcendentals, MSVC sort ties, OCCT bugs). At least
         95% of walking-line pairs are expected bit-identical.
-5004. **The Boolean API.**
+579. **The Boolean API.**
       - `BRepAlgoAPI_*` keep OCCT's classes as working objects (decision 414's pattern): `Shape()`,
         `SectionEdges()`, `Modified`/`Generated`/`IsDeleted` and `History()` hand out frozen shapes, and
         `InternalShape()` serves ported callers.
@@ -5350,7 +5350,7 @@ placeholders, renumbered on merge.
       - `SimplifyResult` runs UnifySameDomain on the unfrozen result. Progress ranges are kept.
 
       Provisional: open question 21.
-5005. **A parallel Boolean gives the serial Boolean's result, bit for bit** (decision 490's rule).
+580. **A parallel Boolean gives the serial Boolean's result, bit for bit** (decision 490's rule).
       - `BOPTools_Parallel::Perform` → `OSD_Parallel.For` over OCCT's vectors, keeping each `myRunParallel` flag. Each
         worker has its own `IntTools_Context`, as OCCT's thread-id map does.
       - The context's cached tools are audited for state carried between calls. Where a result depends on call
@@ -5358,7 +5358,7 @@ placeholders, renumbered on merge.
       - Pave-block and common-block maps keyed by handle compare by reference and iterate in insertion order; shape
         maps follow decision 18. Sites where native's address order decides a result go in occt-issues.md.
       - A determinism test runs every oracle and corpus Boolean serially and in parallel, repeatedly.
-5006. **Boolean results are compared as BRep bytes, then canonically.**
+581. **Boolean results are compared as BRep bytes, then canonically.**
       - Bytes: the Free column masked and counted.
       - Canonically, where native's own output varies or the bytes differ:
         - shape counts;
@@ -5371,14 +5371,14 @@ placeholders, renumbered on merge.
         ones. Cases where native varies are reported apart and never blamed on the port.
 
       Provisional: open question 19.
-5007. **Tolerance options are OCCT's, unchanged.**
+582. **Tolerance options are OCCT's, unchanged.**
       - Fuzzy value, glue (shift, full), OBB, inverted-solid check, non-destructive: no option is added or
         reinterpreted.
       - `BOPAlgo_Options::SetParallelMode` and the precision statics stay process-wide with internal setters (decision
         415).
       - Fuzzy and glue are tested by the corpus's `bfuzzyvalue`/`bglue` cases and an oracle sweep on near-coincident
         primitives.
-5008. **Healing and sewing of frozen shapes copy at the entry** (design 4.6, family 2).
+583. **Healing and sewing of frozen shapes copy at the entry** (design 4.6, family 2).
       - Covered: ShapeFix_Shape, Solid, Shell, Face, Wire, Wireframe; ShapeUpgrade_UnifySameDomain;
         BRepBuilderAPI_Sewing.
       - Given a frozen shape, they run on `BRepTools.ExactCopyForWrite` of it. `KeepUnchanged` then gives back the
@@ -5388,13 +5388,13 @@ placeholders, renumbered on merge.
         `Reverse`) copy the curve first where it is frozen; each site is listed.
       - `SetSafeInputMode(false)` on a frozen shape acts as `true`.
       - ShapeFix's in-place statics get internal in-place forms and public functional twins, as BRepLib's (unit 3I).
-5009. **Message_Report and the alerts are ported** for BOPAlgo's warnings and errors.
+584. **Message_Report and the alerts are ported** for BOPAlgo's warnings and errors.
       - Covered: Report, Alert, AlertExtended, CompositeAlerts, the attributes, Level, PrinterToReport;
         TopoDS_AlertWithShape.
       - Each `DEFINE_ALERT_WITH_SHAPE` is a class, so checks by type (`BOPAlgo_AlertSelfInterferingShape`) work.
       - `DumpErrors`/`DumpWarnings` write to a `TextWriter`. Reports belong to their algorithm; nothing is
         process-wide but Message's default messenger (decision 493).
-5010. **The 2D offset ports only the members of TopOpeBRepBuild's face maker that it runs.**
+585. **The 2D offset ports only the members of TopOpeBRepBuild's face maker that it runs.**
       - `BRepAlgo_FaceRestrictor::Perform` → `TopOpeBRepBuild_WireToFace::MakeFaces`: the area/loop builders and
         classifiers, WireEdgeSet, FaceBuilder, `Builder::MakeFaces` and the TopOpeBRepDS_BuildTool and
         TopOpeBRepTool members they reach.
@@ -5403,33 +5403,184 @@ placeholders, renumbered on merge.
         porting.
 
       Provisional: open question 17.
-5011. **The build123d.NET milestone replays build123d.NET's own Booleans.**
+586. **The build123d.NET milestone replays build123d.NET's own Booleans.**
       - Every `BRepAlgoAPI_*` call and `UnifySameDomain` its algebra-mode tests make is captured natively: operands,
         options, results, cleaned results and histories as BRep text.
-      - Each is replayed on the port from the same bytes and compared as decision 5006.
+      - Each is replayed on the port from the same bytes and compared as decision 581.
       - The capture is a test-only hook in build123d.NET, the owner's to allow (open question 20). Until then the
         oracle project rebuilds the operands with build123d.NET's public API.
-5012. **IntPatch's, GeomInt's, BRepApprox's and IntWalk's `.gxx` instantiations follow decision 142.**
+587. **IntPatch's, GeomInt's, BRepApprox's and IntWalk's `.gxx` instantiations follow decision 142.**
       - One generic per `.gxx`, over a struct tool implementing static abstract members, so the JIT specialises each.
       - The instantiation keeps OCCT's name.
       - AppParCurves' generics, already ported, are reused by GeomInt_WLApprox and BRepApprox.
-5013. **Sweeps copy frozen profiles and spines where they write into them** (design family 4, decision 468's pattern).
+588. **Sweeps copy frozen profiles and spines where they write into them** (design family 4, decision 468's pattern).
       - The sites are BRepFill_Sweep's boundaries and corners and TrimShellCorner's section edges, found by building
         every sweep from frozen inputs.
       - `KeepUnchangedIn` gives back what wasn't touched.
       - `Generated`, `FirstShape`, `LastShape` and the histories answer for the caller's sub-shapes.
-5014. **DrawCorpus learns the offset group's `command` branch** (unit 5W), as decision 496 did for the mesh group's
+589. **DrawCorpus learns the offset group's `command` branch** (unit 5W), as decision 496 did for the mesh group's
       data-file branches. The wire grids set `command` to `mkoffset`, and the group's `begin` script branches on it.
       Without the branch the scan sees phase 7's `offsetload`/`offsetperform` and counts the 621 wire cases blocked.
-5015. **Corpus expectations** (a scan of 21,068 cases, 1,834 runnable before phase 5):
+590. **Corpus expectations** (a scan of 21,068 cases, 1,834 runnable before phase 5):
       - phase 6's commands make 4,880 more runnable (4,010 with all their data public): Booleans alone 3,862, sewing
         and ShapeAnalysis's commands 725, ShapeFix's and `unifysamedom` 293;
       - phase 5's construction commands 861 (601);
       - `intersect` alone 7;
-      - the offset group's wire grids about 552 once decision 5014's branch is known.
+      - the offset group's wire grids about 552 once decision 589's branch is known.
 
       What blocks most afterwards is phase 7's (`DT_*` heal tools 1,600, `blend`, `chamf`, `depouille`) and phase 8's
       `stepread`.
+
+## Phase 5: unit 5E, IntPolyh
+
+All of IntPolyh (7,806 lines): MaillageAffinage, Triangle, Point, Edge, Couple, StartPoint, SectionLine,
+Intersection, Tools, the arrays and their typedefs. Numbers from 5501 are placeholders, renumbered on merge; the plan's
+decisions are cited by their placeholders (50xx). IntPolyh needs nothing from unit 5A: its only outside types are
+Adaptor3d_Surface, Bnd_Box, the BVH box sets and IntCurveSurface_ThePolyhedronOfHInter, all ported.
+
+591. **`IntPolyh_Array<T>`: OCCT's dynamic array with OCCT's storage behaviour.**
+      - The items live in blocks of 256 that never move (OCCT's `NCollection_DynamicArray`), so a `ref` to an item
+        stays valid while the array grows. `IntPolyh_Triangle::MiddleRefinement` relies on it: it is called on an item
+        of the array it appends triangles to, and C++'s `this` is that item. `NCollection_DynamicArray`'s port is
+        List-backed and would move them.
+      - Items are constructed with OCCT's default constructors: value types are copied from one `new T()`;
+        `IntPolyh_SectionLine`, a class, is constructed for each item.
+      - `Init(N)` sets item N to a default one and keeps the others, as `SetValue(N, T())` does in OCCT. The
+        enlarged-zone retry depends on it (occt-issues.md, unit 5E).
+      - Readers (`Value`, `NbItems`, `GetN`, `Dump`) are public, mutators (the `ref` indexer, `Init`,
+        `IncrementNbItems`, `SetNbItems`, `Copy`) internal: a working object (decision 21).
+      - The typedef headers (ArrayOfPoints, ArrayOfEdges, ArrayOfTriangles, ArrayOfTangentZones, ArrayOfSectionLines,
+        ArrayOfPointNormal) are written out as `IntPolyh_Array<T>`; `IntPolyh_PMaillageAffinage` (a raw pointer) is a
+        reference to the class. Their `Port of:` lines are in IntPolyh_Array.cs.
+592. **The BVH pairs' `std::sort` needs no MSVC helper.** `GetInterferingTriangles` sorts the pairs of triangles whose
+      boxes interfere by (first, second). Each pair of leaves is visited once and a box set's elements are distinct
+      triangles, so the pairs are distinct: there are no ties, and `List.Sort` gives MSVC's order. The indexed map
+      of couples is then filled in that order (decision 18's insertion order is OCCT's here). MergeCouples' fence map
+      only tests membership; its hash (`IntPolyh_Couple.Hasher`, OCCT's unordered equality) can differ from
+      `std::hash` without changing anything.
+593. **IntPolyh is serial and the same every run** (decision 490's rule). OCCT has no parallel loop in IntPolyh; the
+      only parallel code reached is BVH_LinearBuilder's radix sort, which goes through `OSD_Parallel` and builds the
+      same tree serially. Tests compare every couple and every start point bit for bit over repeated runs, on fresh
+      adaptors, and under `OSD_Parallel.ForceSerialScope`.
+594. **The plain classes are structs with OCCT's defaults**: IntPolyh_Point (`PartOfCommon` 1), Edge (indices -1),
+      Couple (-1, -1, angle -2), Triangle (points and edges -1, intersection possible, a void box), StartPoint (lambdas
+      -1, angle -2, edges -2), PointNormal (zeros).
+      - Setters are internal with public `With` twins (translation rules 3); `Middle` and `Cross` have `Middled` and
+        `Crossed`.
+      - Triangle's `int[3]` members are inline arrays. Its refining members (`MiddleRefinement`,
+        `MultipleMiddleRefinement`, `LinkEdges2Triangle`, `ComputeDeflection`, `BoundingBox`) write into the arrays and
+        cache in the triangle: internal, without twins. `CachedBoundingBox()` reads the cache.
+      - `Equals` and `==` compare the fields exactly; OCCT's `IntPolyh_Couple::operator==` (the same indices in either
+        order) is `IsEqual`, and maps take `IntPolyh_Couple.Hasher` (decision 539's pattern).
+595. **IntPolyh_SectionLine is a class**, because OCCT copies it by value with a deep copy of its sequence (copy
+      constructor, `operator=`): ported as `new IntPolyh_SectionLine(other)` and `Copy`. Its spare last item (an
+      initialized line has one start point more than `NbStartPoints()`) is kept.
+596. **Prints.** OCCT's unconditional debug prints to standard output are left out: `CheckSameSP`'s "Can't Check" with
+      the two points' dumps, and TriangleEdgeContact's "Cote PT2PT3 nul1". The results don't change. The public dumps
+      write OCCT's `printf` format to a `TextWriter` (`IntPolyh_Format`); `IntPolyh_IDump` is what
+      `IntPolyh_Array::Dump` calls, for the items that have a `Dump()`.
+597. **Signatures.**
+      - `const double* theDeflTol = nullptr` → `double? theDeflTol = null`.
+      - Output references: `GetLinePoint`, `GetTangentZonePoint`, `IsEnlargePossible`, `CommonBox`'s limits are `out`;
+        `TriContact`'s angle is `ref` (left unchanged when a normal vanishes, which TriangleCompare relies on);
+        `GetEdgePoints`'s points are `ref` (left unchanged for an edge number other than 1 to 3); the start points
+        filled by the research functions are `ref`.
+      - The `PRINT` argument of MaillageAffinage's constructors is ignored, as OCCT ignores it.
+      - `GetFinTE` and `GetFinTT` are left out: OCCT declares them and never defines them.
+598. **The couple list.** `NCollection_List` is List-backed: MergeCouples' removals are O(n) each, where OCCT's linked
+      list removes in O(1). The lists hold at most a few thousand couples. The iterator copies of
+      `CheckCoupleAndGetAngle2` (`theItCT11 = aIt`) are `Reset` to the same index, and stay valid because nothing is
+      removed while start points are chained.
+## Phase 6: unit 6S, Sewing
+
+BRepBuilderAPI_Sewing, FastSewing, VertexInspector and BndBoxTreeSelector from TKTopAlgo (7,694 lines), in
+OcctNet.ModelingAlgorithms. Numbers from 6801 are placeholders, renumbered on merge; plan decisions are cited by their
+placeholders (5001–5015).
+
+599. **BRepBuilderAPI_Sewing is a public working object** (decision 21), a non-sealed Standard_Transient with OCCT's
+      protected fields and protected (virtual where OCCT's are) members, so a subclass can override them as in OCCT.
+      - Publication points freeze what they return (design 4.2): `SewedShape`, `FreeEdge`, `MultipleEdge`,
+        `ContigousEdge`, `ContigousEdgeCouple` (a new `IBentoList` of frozen shapes), `SectionToBoundary`,
+        `DegeneratedShape`, `DeletedFace`, `WhichFace`, `Modified`, `ModifiedSubShape`.
+      - Internal forms that don't freeze, for ported callers that go on building: `InternalSewedShape`,
+        `InternalFreeEdge`, `InternalContigousEdgeCouple` (the algorithm's own list), `InternalModifiedSubShape`,
+        `InternalWhichFace`.
+      - The context is used through `BRepTools_ReShape.InternalApply` everywhere OCCT calls `Apply`; `GetContext`
+        and `SetContext` are OCCT's.
+      - `Dump()` writes to the console as OCCT's does to `std::cout`; `Dump(TextWriter)` is added.
+      - `Perform`, `FaceAnalysis`, `VerticesAssembling`, `Cutting`, `Merging`, `EdgeProcessing` and `EdgeRegularity`
+        keep their `Message_ProgressRange` and OCCT's scopes (`using var`).
+600. **Sewing frozen shapes copies at the entry** (plan decision 583).
+      - `Perform` puts the context shape and every input into one compound; if it holds a frozen TShape
+        (`BRepTools.HoldsFrozen`), the algorithm runs on `BRepTools.ExactCopyForWrite` of that compound (one copy,
+        so sub-shapes shared between inputs stay shared), the inputs replaced by their copies; otherwise it runs on the
+        inputs in place, as OCCT does (ported callers with shapes they built).
+      - Afterwards `BRepTools.KeepUnchangedIn` gives back, in the sewn shape, the caller's own TShape for every copy
+        sewing left unchanged. Every answer goes through the same map (`fromWork`: the top TShape and the unfrozen
+        graph below it), and every query maps the caller's shapes to the working ones (`toWork`). So a face that
+        needed nothing is the caller's face, `Modified(face)` of an untouched input is the input itself, and
+        `IsModifiedSubShape` answers for the caller's sub-shapes.
+      - Sewing writes into what it was given only at a few places (BRepLib::SameParameter on every edge of the
+        result, EncodeRegularity on merged edges, DegeneratedSection on an edge without a 3D curve); on the copy those
+        writes reach copies, and a changed copy stays a copy (its history: the original is modified into it).
+      - The context records the working copies' sub-shapes when the inputs were copied (documented on `GetContext`).
+      - Unit 6H1's general copy-at-entry helper can replace this one; it needs nothing more than `toWork`,
+        `fromWork` and the two `beginWork`/`endWork` halves.
+601. **Determinism.** Sewing's results don't depend on hash order:
+      - every IndexedMap and IndexedDataMap OCCT iterates is iterated by index (its `Iterator` is in index order), and
+        `RemoveKey` moves the last key into the hole, as OCCT's does (GetFreeWires and CreateNewNodes rely on it);
+      - the only hash-ordered loop, EdgeRegularity's over `myMergedEdges`, encodes each edge on its own;
+      - Cutting's vertex tree is filled by `NCollection_UBTreeFiller` with OCCT's `std::mt19937` default seed, so the
+        tree and the order of the selected candidates are native's.
+602. **Signatures.** SameParameterEdge's `whichSec` is `ref`; ComputeToleranceVertex's new vertex is `ref` (the
+      builder's `MakeVertex(ref)`); IsMergedClosed's `int` flags made of comparisons are `bool`; Merging keeps OCCT's
+      unused `passage`. `try { ... } catch (Standard_Failure)` blocks catch Standard_Failure only (decision 509).
+      Where OCCT dereferences a handle that may be null (a pcurve, a 3D curve), the port does too (`!`), so a null
+      throws where OCCT would crash (occt-issues.md). OCCT's commented-out blocks are left out.
+603. **BRepBuilderAPI_VertexInspector and BndBoxTreeSelector** are public sealed classes: the inspector implements
+      `INCollection_CellFilter_Inspector<int, gp_XYZ>` (its points in an `NCollection_DynamicArray`), the selector
+      derives from `NCollection_UBTree<int, Bnd_Box>.Selector`. `ResInd()` returns their own lists.
+604. **BRepBuilderAPI_FastSewing** is a public working object. Its FS_Vertex, FS_Face and FS_Edge structs are protected
+      nested classes (OCCT changes them in place inside its vectors; as classes the vectors' elements change in
+      place); NodeInspector implements the cell-filter inspector; the IncAllocator is dropped. `FS_Statuses` is a
+      `uint` enum, `GetStatuses(TextWriter?)` returns the bits and writes OCCT's messages. It only reads its inputs
+      (the faces it builds are empty copies sharing the caller's surfaces); `GetResult` freezes the result.
+605. **Tests.**
+      - Ported GTest: BRepBuilderAPI_Sewing (TKOffset's, 5 tests, OCCT's names) on BRepPrimAPI's frozen box.
+      - Unit tests (12): exploded box faces sewn into a closed valid shell (inputs unchanged by ShapeSnapshot, every
+        answer frozen, the caller's surfaces), faces already sharing edges kept as the caller's, a gap within and
+        beyond the tolerance, cutting at a T-junction (sections, and OCCT's unbound sections after sewing pinned),
+        a cone's degenerated edge, analysis only, Init/Load/Dump and the defaults, sewing a sewn shell again,
+        unfrozen inputs sewn in place with the internal forms; FastSewing on Bézier patches (shared edges, frozen
+        result, input unchanged), its statuses and messages, a degenerated patch.
+      - Oracle (`tests/OcctNet.Oracle.Tests/BRepBuilderAPI/BRepBuilderAPISewingOracleTests.cs`), set up as Draw's
+        `sewing`, both sides reading native OCCT's file, the port's inputs frozen; compared as BRep text (Free column
+        masked where needed): the sewn shape; compounds of the free, multiple, contiguous and degenerated edges, the
+        deleted faces, `Modified` of every input and `ModifiedSubShape` of every input edge; every count, the
+        `IsModified`/`IsModifiedSubShape` flags and the number of bound sections; the port's inputs unchanged.
+        - The exploded faces of 35 data/occ shapes (each face copied apart natively) at 1e-6, 1e-2, 1 and 100: 140
+          sewings, 741 texts all equal, 727 byte-identical and 14 with the Free column masked; 9,156 counts and flags
+          equal; 126 sewings byte-identical in every text.
+        - The sewing group's 501 cases with public data at their grids' tolerances (0.01, 1, 100): 2,542 texts all
+          equal, 2,268 byte-identical, 274 with the Free column masked; 5,506 values equal. Its 499 distinct inputs
+          at 1e-6: 2,524 texts, 2,266 byte-identical, 258 masked; 5,486 values equal.
+        - Native OCCT varies from run to run on 2 sewings (tests/sewing Q5, CNP001_projoiei at 1e-6): the oracle
+          sews them seven times natively and the port's result is one of the native variants, the same on every
+          port run. On 5 sewings native OCCT writes into its inputs and then calls them unmodified; there the port
+          (which never writes them) calls them modified, and those flags aren't compared (occt-issues.md).
+        - The Free column: an input face or edge the port puts into the result keeps the Free flag it was frozen
+          with, where native clears it (open question 1).
+606. **For later units.**
+      - 6H1 (ShapeAnalysis_FreeBounds): construct `new BRepBuilderAPI_Sewing(toler, false, false)` (analysis only),
+        `Add` each child, `Perform`, then `NbFreeEdges` and the public `FreeEdge(i)` (frozen; the caller's own edges
+        where they weren't cut, so they can go into the new wires as they are). With `option1 = false` no sewn shape
+        is built. Frozen inputs are copied by Sewing itself, nothing to do in FreeBounds.
+      - 6H3 (ShapeFix_Shape reaches Sewing through ShapeFix_FaceConnect and ShapeUpgrade_ShellSewing): ported code
+        that sews shapes it is still building passes them unfrozen and reads `InternalSewedShape()`; a frozen input is
+        copied and its unchanged sub-shapes come back as the caller's. Don't rely on `IsSectionBound` after sewing
+        (occt-issues.md). `GetContext()` records the working copies when inputs were frozen.
+      - 6L (`sewing`, `fastsewing`): Draw's `sewing` calls `Init(tol, sewing, analysis, cutting, nonmanifold)`, the
+        mode setters and `SetMinTolerance(max(tol*1e-4, Confusion))`/`SetMaxTolerance`, as the oracle does.
 
 ## Phase 6: unit 6H1, healing foundations
 
@@ -5439,10 +5590,10 @@ ShapeAnalysis (FreeBounds, FreeBoundData, FreeBoundsProperties, Shell, ShapeCont
 WireVertex, Geom, BoxBndTree, CanonicalRecognition), Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline, in
 OcctNet.ModelingAlgorithms; the copy-at-entry helper of all healing in OcctNet.ModelingData. Ported in three
 worktrees (ShapeConstruct and Geom2dAPI; six ShapeAnalysis classes; the rest and the design), merged. Numbers from 6201
-are placeholders, renumbered on merge; plan decisions are cited by their placeholders (50xx).
+are placeholders, renumbered on merge; plan decisions are cited by their merged numbers (576–590), 6S's by 599–606.
 
 6201. **`BRepTools_CopyAtEntry` is the copy at the entry of every in-place healing algorithm** (plan 2.7, decision
-      5008). An internal sealed class in `BRepTools/BRepTools_CopyAtEntry.cs` (ModelingData, no OCCT file), over
+      583). An internal sealed class in `BRepTools/BRepTools_CopyAtEntry.cs` (ModelingData, no OCCT file), over
       decision 416's `ExactCopyForWrite` and `KeepUnchangedIn`:
       - `new BRepTools_CopyAtEntry(input, context)` copies the input when its graph holds a frozen TShape
         (`BRepTools.HoldsFrozen`, or always with `theToForce`). An unfrozen input, which only ported code holds, is
@@ -5459,8 +5610,8 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         made are not carried over.
       - A changed result is the copy's TShapes holding the input's kept ones. A shape that needed nothing is the
         input itself, after one copy.
-      - Unit 6S's sewing keeps its own copy and mapping (`fromWork`), written before this helper; it can move onto it
-        when the two merge.
+      - Unit 6S's sewing keeps its own copy and mapping (`fromWork`, decision 599), written before this helper; it
+        can move onto it later.
 6202. **The context answers for the caller's shapes.** `Finish` composes the algorithm's `ShapeBuild_ReShape` (any
       `BRepTools_ReShape`) with the copy:
       - Recorded requests are re-keyed from the copy's sub-shapes to the input's, and their replacements are mapped to
@@ -5473,7 +5624,7 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         result.
       - **Departure from native:** native OCCT's context has no entry for a sub-shape changed in place, because the
         caller's own shape changed. The port's has one, and its `History()` lists that sub-shape as modified. The
-        oracle of 6H3 compares histories through decision 5006's canonical match.
+        oracle of 6H3 compares histories through decision 581's canonical match.
 6203. **Rules for the units that use it (6H2, 6H3, 6U, 6S).**
       - Between the entry and `Finish`, use only the internal, non-freezing forms: `InternalApply`, `InternalValue`,
         `InternalStatus`, `InternalWire`, `InternalFreeEdges`, `InternalCopyReplaceVertices`, ... A public accessor
@@ -5483,7 +5634,7 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         `UnifySameDomain.Build`) only. The algorithms it calls on its copy run in place, because their inputs are
         unfrozen.
       - A curve or surface reached from a representation is still frozen in the copy. Each in-place geometry edit
-        copies it first, as decision 5008 says.
+        copies it first, as decision 583 says.
 6204. **ShapeBuild_ReShape** is a public working object deriving from BRepTools_ReShape (decision 358).
       - `Apply(shape, until, buildmode)` is public and freezes its result; `internal virtual InternalApply(shape, until,
         buildmode)` doesn't.
@@ -5534,13 +5685,10 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         is frozen, so the port replaces it by a new compound holding its items and the added wires (copy-on-write,
         `// OCCT.NET: frozen`), then freezes both. `InternalDispatchWires` adds in place.
       - The deprecated `void` overloads are ported with `[Obsolete]`.
-      - **Sewing.** The tolerance form sews with BRepBuilderAPI_Sewing (unit 6S), which hadn't merged into
-        `phase5/construction`. The code is written against 6S's API (`Add`, `Perform`, `NbFreeEdges`,
-        `InternalFreeEdge`) inside `#if OCCTNET_SEWING`, and throws `Standard_NotImplemented` until then
-        (`// TODO(6S)`). The merge deletes the condition.
-      - The two sewing GTests are skipped, and the oracle's tolerance comparison is under the same condition. On a
-        scratch merge of `phase5/u6s` with the condition removed, both GTests pass and the oracle's tolerance form is
-        compared too (decision 6211).
+      - **Sewing.** The tolerance form is OCCT's: `new BRepBuilderAPI_Sewing(toler, false, false)`, each child added,
+        `Perform`, then the non-degenerated `FreeEdge(i)` (frozen; the caller's own edges where sewing didn't cut
+        them). Sewing copies frozen inputs itself and builds no sewn shape in that mode (decision 599), so FreeBounds
+        needs no copy. `IsSectionBound` isn't read (6S's note: an OCCT bug clears it after sewing).
 6209. **ShapeAnalysis_FreeBoundData and FreeBoundsProperties.**
       - FreeBoundData is a public working object with OCCT's setters; its notches are keyed by TopTools_ShapeMapHasher.
         `Notches()`, `ClosedFreeBounds()` and `OpenFreeBounds()` return the objects' own sequences, as OCCT's handles.
@@ -5551,7 +5699,7 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         polyline has two notches. This is a test, not a bug.
 6210. **Tests (this part).**
       - Ported GTests: ShapeBuild_ReShape_Test (3 of 4; the ShapeFix_Shape stability test is skipped, `TODO(6H3)`) and
-        ShapeAnalysis_FreeBounds_Test (9 of 11; the two sewing tests are skipped, `TODO(6S)`), with OCCT's names.
+        ShapeAnalysis_FreeBounds_Test (11), with OCCT's names.
       - Unit tests (28):
         - BRepTools_CopyAtEntry (7): the pattern for later units, on a toy algorithm written as ShapeFix is. It
           raises a vertex tolerance in place, replaces a face through the context and applies it.
@@ -5573,12 +5721,8 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         edges, which makes new vertices and edges.
       - Inputs: data/occ, the test dataset's .brep files (up to 1 MB and 50,000 sub-shape occurrences) and 72 random
         native shapes, each also with every third face removed. Both sides read native OCCT's file.
-      - Shapes were compared as BRep text with the Free column masked; exceptions by OCCT type. 1,570 shapes: 77,094 values and shapes, all identical
-        (none needed the Free mask; 25 cases throw the same OCCT exception on both sides, data with a vertex without a
-        point), in 5 minutes.
-      - The tolerance form (sewing at 10^-6 and 10^-2) is in the same test under `#if OCCTNET_SEWING`; on a scratch merge
-        of `phase5/u6s` with the condition removed, the same 1,570 shapes give 89,646 values and shapes, all identical
-        (33 same exceptions), the tolerance form included.
+      - The tolerance form was compared too, sewing at 10^-6 and 10^-2.
+      - Shapes were compared as BRep text with the Free column masked; exceptions by OCCT type. ORACLE_RESULT
 6212. **Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline mirror the 3D ports** (decision 243).
       - `Curve()` and the explicit conversion operator freeze. Geom2dAPI_Interpolate gains an internal `InternalCurve()`
         (no freeze) for ShapeConstruct_ProjectCurveOnSurface.
@@ -5654,9 +5798,8 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         - Geom2dAPI_Interpolate_Test (1) and Geom2dAPI_PointsToBSpline_Test (2).
         - ShapeConstruct_ProjectCurveOnSurface_Test (29). Bug27569_HighMultiplicityBSpline_M2's GTEST_SKIP is a
           `return`: xUnit 2.9 has no runtime skip.
-        - ShapeAnalysis_CanonicalRecognition_Test (21). B5–B9 build their shell with BRep_Builder where OCCT sews
-          (`TODO(6S)`, `CanonicalRecognitionTestUtils.Sew`); B10 uses the analytic ellipse GeomAPI_IntSS computes
-          (`TODO(5G)`).
+        - ShapeAnalysis_CanonicalRecognition_Test (21). B5–B9 sew with BRepBuilderAPI_Sewing as OCCT's; B10 uses the
+          analytic ellipse GeomAPI_IntSS computes (`TODO(5G)`).
       - Unit tests (30):
         - ShapeConstruct (13): the statics on frozen inputs, JoinCurves, ShapeConstruct_Curve and its twins,
           ProjectCurveOnSurface's freezing and statuses, PCurvesJoined, MakeTriangulation.
@@ -5688,7 +5831,5 @@ are placeholders, renumbered on merge; plan decisions are cited by their placeho
         - The ShapeFix_Shape stability GTest in ShapeBuild_ReShape_Test waits for it.
       - **6L:** `statshape` counts a closed face's seam twice, as native does, because the explorer visits it FORWARD
         and REVERSED.
-      - **The 6S merge:**
-        - delete `#if OCCTNET_SEWING` in ShapeAnalysis_FreeBounds.cs and ShapeAnalysisFreeBoundsOracleTests.cs;
-        - unskip SingleFaceNoCrash and TwoDisjointFacesNoCrash;
-        - replace `CanonicalRecognitionTestUtils.Sew` with BRepBuilderAPI_Sewing.
+      - **6S** can move its copy at the entry onto `BRepTools_CopyAtEntry` (decision 6201); FreeBounds needs nothing from
+        it.
