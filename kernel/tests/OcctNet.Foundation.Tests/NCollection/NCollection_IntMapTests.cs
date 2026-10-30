@@ -30,7 +30,7 @@ public class NCollection_IntMapTests
         Assert.False(aMap.Add(106));
         Assert.Equal(101, aMap.NbBuckets());
         Assert.Equal([3, 4, 207, 106, 5, 100], Keys(aMap));
-        Assert.Equal([3, 4, 207, 106, 5, 100], [.. aMap]); // foreach gives the same order
+        Assert.Equal([3, 4, 207, 106, 5, 100], aMap.ToList()); // foreach gives the same order
     }
 
     [Fact]
@@ -102,28 +102,30 @@ public class NCollection_IntMapTests
         {
             aMap.Add(aKey);
         }
+        Assert.Equal([2, 209, 108, 7, 50], Keys(aMap));
+        // OCCT's copy re-adds the keys in the source's order, so each bucket's chain comes out reversed
         NCollection_IntMap aCopy = new(aMap);
         Assert.Equal(aMap.NbBuckets(), aCopy.NbBuckets());
-        Assert.Equal(Keys(aMap), Keys(aCopy));
+        Assert.Equal([2, 7, 108, 209, 50], Keys(aCopy));
         Assert.True(aCopy.Contains(209) && !aCopy.Contains(3));
 
         NCollection_IntMap anAssigned = new();
         anAssigned.Add(1000);
         anAssigned.Assign(aMap);
-        Assert.Equal(Keys(aMap), Keys(anAssigned));
+        Assert.Equal(Keys(aCopy), Keys(anAssigned));
 
         NCollection_IntMap anOther = new();
         anOther.Add(1);
         anOther.Exchange(aCopy);
         Assert.Equal([1], Keys(aCopy));
-        Assert.Equal(Keys(aMap), Keys(anOther));
+        Assert.Equal([2, 7, 108, 209, 50], Keys(anOther));
 
         long aBuckets = aMap.NbBuckets();
         aMap.Clear();
         Assert.True(aMap.IsEmpty());
         Assert.Equal(aBuckets, aMap.NbBuckets()); // Clear() keeps the buckets
         Assert.Empty(Keys(aMap));
-        Assert.Empty([.. aMap]);
+        Assert.Empty(aMap.ToList());
         Assert.False(aMap.Remove(7));
     }
 }
