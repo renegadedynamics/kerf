@@ -6695,3 +6695,118 @@ are cited by their merged numbers.
         caches seam ends) and ShapeFix_Wire.
       - **6L:** `settolerance` maps onto `ShapeFix_ShapeTolerance.WithTolerance`/`ToleranceLimited`, `connectedges`
         onto `ShapeFix_EdgeConnect.Built`; `fixshape`, `fixwgaps`, `fixsmall` need 6H3.
+
+## Phase 5: unit 5D, parametric intersections
+
+IntPatch_PrmPrmIntersection (with T3Bits), IntPatch_Polyhedron, PolyhedronTool, PolyhedronBVH, BVHTraversal and
+InterferencePolyhedron, in OcctNet.ModelingAlgorithms (IntPatch_SpecialPoints was ported by 5C, decision 688).
+Numbers from 5401 are placeholders, renumbered on merge; merged decisions are cited by their numbers.
+
+705. **What each class is.**
+      - `IntPatch_PrmPrmIntersection` is a working object (decision 21) with OCCT's public API, including the voxel
+        helpers OCCT makes public (`GrilleInteger`, `IntegerGrille`, `DansGrille`, `NbPointsGrille`, `CodeReject`,
+        `RemplitLin`, `RemplitTri`, `Remplit`, `PointDepart`) and `NewLine`. Its lines are IntPatch_WLines the
+        caller may edit (decision 609); each keeps the IntSurf_LineOn2S of the walking that made it, as in OCCT
+        (IntWalk_PWalking makes a new one at each `Perform`). One partial class in three files: the class, the
+        polyhedra, self-intersection, list-of-points and start-point Performs and NewLine; `.Tools.cs`, the
+        file-static functions (SeveralWlinesProcessing, DublicateOfLinesProcessing, SectionPointToParameters,
+        AdjustOnPeriodic, MakeNewPoint, IsPointOnLine, AddWLine) as private statics (decision 689's pattern);
+        `.Sampled.cs`, the Perform on the domains' samplings (IntPolyh or the voxel search), PointDepart and the
+        file-local `IntPatch_InfoPD`, a private nested class whose accessors return `ref`s into its arrays.
+      - `IntPatch_Polyhedron` is a sealed working class like IntCurveSurface's polyhedron (decision 340): its
+        `void*` arrays are .NET arrays indexed from 1, `Destroy` drops them, `DeflectionOverEstimation(double)` and
+        `FillBounding` are public. It implements `IIntCurveSurface_Polyhedron` so that
+        `IntCurveSurface_PolyhedronUtils.ComputeMaxDeflection` serves it, as OCCT's `PolyUtils` does (decision 344).
+        Its own TriConnex, FillBounding, PlaneEquation and Contain are ported from its .cxx (they differ from
+        PolyhedronUtils' in thresholds and defaults). OCCT declares `Perform`, the four singularity setters and their
+        `Has...` getters but never defines them: left out (the flags are kept, set and never read, with CS0414
+        suppressed on them).
+      - `IntPatch_PolyhedronTool` is a static class: no generic is instantiated over it (decision 338 needs a struct
+        only for a type argument).
+      - `IntPatch_PolyhedronBVH` derives from `BVH_PrimitiveSet<double, NCollection_Vec3<double>>` with OCCT's linear
+        builder (leaf size and depth OCCT's defaults); it references its polyhedron as OCCT's pointer does.
+        `IntPatch_BVHTraversal` derives from `BVH_PairTraverse<double, NCollection_Vec3<double>, double>`; its
+        `TrianglePair` is a `readonly record struct` with OCCT's default arguments; `Pairs()` returns its own array.
+      - `IntPatch_InterferencePolyhedron` derives from 3F's `Intf_Interference`; its `OI`, `TI`, `dpOpT`, `dpOeT`,
+        `deOpT`, `voo`, `vtt` members are arrays allocated with the object (`dpOpT[i][j]` is `dpOpT[i, j]`); the
+        small local arrays of Intersect and TangentZoneValue are `stackalloc` spans, the `NCollection_LocalArray`s
+        managed arrays.
+      - `IntPatch_PrmPrmIntersection_T3Bits` is a sealed class over an `int[]`: C++'s `1 << 31` is
+        `int.MinValue` and `>>` is arithmetic in both languages, so `Val` and `And` give OCCT's bits.
+706. **Signatures.**
+      - `IntPatch_Polyhedron.PlaneEquation(int, out gp_XYZ, ref double)`: on a triangle with an edge shorter than
+        1e-7 OCCT sets the normal to (1, 0, 0) and leaves the polar distance unchanged (decision 57's rule).
+        `SectionPointToParameters` takes its four parameters by `ref`: OCCT leaves them unchanged for a section point
+        of another type than vertex, edge or face. `T3Bits.And(Oth, ref int)`; DublicateOfLinesProcessing's flag
+        `ref bool`; SeveralWlinesProcessing's line `ref IntPatch_WLine` (it replaces it).
+      - `PointDepart(IntSurf_LineOn2S, ...)`: OCCT's `handle&` is never reassigned, so a plain reference.
+      - The list-of-points `Perform` takes the caller's `NCollection_List<IntSurf_PntOn2S>` and, on closed surfaces,
+        appends the points' images across the seams to it, as OCCT does (IntPatch_Intersection then hands the same
+        list to nothing else).
+      - OCCT's reinterpret casts of `SLin.Value(l)` to a WLine handle are C# casts (every line of SLin is a WLine);
+        its `down_cast`s are `as`.
+707. **Code OCCT repeats verbatim is a private helper** (decisions 340 and 671): `AddEndVertices` (the two end
+      vertices every Perform adds to a line without vertices), `KeepOffDiagonalPart` (the self-intersection's line
+      building, twice; OCCT's `continue` after PutVertexOnLine is a `return false` that reaches the same end of the
+      loop body) and `SortThreeNearest` (PointDepart's three swaps, twice). The transition blocks stay inline: they
+      differ (`> 0.` or `>= 0.`, the second surface or the first). The sampled Perform's voxel branch is
+      `PerformOnVoxels`, only because C# can't declare at the method's scope the names the branch above declares in
+      its blocks.
+708. **C++'s conversions.** PointDepart's `(int)((P.X() - x0 + dx2) / dx)` is `CppTruncate`: MSVC's x64 conversion
+      gives `int.MinValue` for NaN and out-of-range values, where .NET's saturates (and gives 0 for NaN, which would
+      put a NaN sample in voxel 0). Every out-of-range value is then outside the grid, as in OCCT. Its `char`
+      position codes are `byte`s.
+709. **Omissions.** TangentZoneValue's print of the points it couldn't insert (Intf_SectionPoint's `Dump`, which
+      prints only in a debug build); `MSG_DEBUG` prints; the self-intersection's unused `IntSurf_LineOn2S LineOn2S`
+      and the voxel branch's `MaxOscill`, read only by OCCT's commented-out step reduction (computed and discarded);
+      SeveralWlinesProcessing's unused parameters of the current point (the call is kept); the null test of a
+      just-allocated IntPolyh_Intersection.
+710. **Order and determinism.**
+      - InterferencePolyhedron intersects the pairs of triangles in the BVH traversal's order and chains the section
+        lines in that order (OCCT doesn't sort the pairs, unlike IntPolyh, decision 592). The port's linear builder
+        and pair traversal are OCCT's, so the order is native's: the recorded interferences' section lines match
+        point for point (decision 711).
+      - The only sorts are written-out code: the bubble sort of the section lines by number of points (strict
+        `>`, so ties keep their order) and Intersect's insertion sort of the section points. No `std::sort`, so no
+        MSVC helper.
+      - Nothing is parallel (BVH_LinearBuilder's radix sort builds the same tree serially, decision 593). Lines are
+        the same every run and from parallel threads (tested).
+711. **Native recordings.** `tools/walkrec` (decision 687) now also compiles OCCT's own
+      IntPatch_PrmPrmIntersection.cxx, whose walkings are the instrumented IntWalk_PWalking; the interference,
+      IntPolyh, IntPatch_RstInt and the polyhedra come from build123d.NET's native DLLs. Seven cases
+      (`tests/OcctNet.ModelingAlgorithms.Tests/IntPatch/Recordings`, embedded): the sampled Perform on two B-spline
+      patches (IntPolyh), an offset surface and a patch, and two B-splines of 30 × 30 poles with more than 2,500
+      samples each (the voxel search, with PointDepart's start points recorded too); the Perform on polyhedra (both
+      polyhedra and their interference recorded: section lines and tangent zones point by point, types, addresses,
+      parameters, incidences); the start-point Perform; the list-of-points Perform on a closed (trimmed cylindrical)
+      surface, then the sampled Perform keeping its lines; and the self-intersection of a folded B-spline (its
+      polyhedron's self-interference too). Every walking step (status, point, parameters), every line's type,
+      transitions, points and vertices: **all seven bit-identical** (1,102 steps, 51 lines, 923 points, 206 section
+      and tangent points, 136 voxel start points; 17,269 doubles).
+712. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 38 new).
+      - OCCT's GTests IntPatch_Polyhedron (5) and IntPatch_PolyhedronBVH (8), names kept (suites
+        `IntPatch_PolyhedronTest`, `IntPatch_PolyhedronBVHTest`).
+      - The native recordings (7), four of them repeated serially and from parallel threads (11).
+      - Unit tests (14): every point and vertex of every line on both surfaces (B-spline pair, offset/B-spline, the voxel
+        case, the polyhedra given either way with identical lines, the self-intersection off the diagonal, the start
+        point); disjoint surfaces and parallel planes done and empty; the list of points gaining its seam image; the
+        not-done throws; NewLine; the grid helpers, Remplit and T3Bits (bit 31); a sphere's degenerate triangles
+        (void boxes, out of the BVH, PlaneEquation's unchanged distance); OCCT's self-interference `Perform` that
+        computes nothing (occt-issues.md, 5D).
+      - No class of this unit is bound natively; the oracle is 5G's (GeomAPI_IntSS, decision 614's comparison).
+713. **For 5G (IntPatch_Intersection).**
+      - PrmPrm's tolerances come in OCCT's order `(TolTangency, Epsilon, Deflection, Increment)`, and
+        IntPatch_Intersection passes `(TolTang, TolArc, myFleche, myUVMaxStep)`.
+      - `ParamParamPerfom` on finite domains: if the list of points isn't empty,
+        `Perform(S1, D1, S2, D2, TolTang, TolArc, myFleche, myUVMaxStep, ListOfPnts)` then the sampled
+        `Perform(..., ClearFlag: false)`; otherwise the sampled Perform alone. With one infinite domain, the sampled
+        Perform on the trimmed surface (`FUN_TrimInfSurf`). The self-intersection path calls
+        `Perform(S1, D1, TolTang, TolArc, myFleche, myUVMaxStep)`, and the start-point mode
+        `Perform(S1, D1, S2, D2, U1, V1, U2, V2, TolTang, TolArc, myFleche, myUVMaxStep)` for non-quadric pairs.
+      - `IsDone`, `IsEmpty`, `NbLines`, `Line(i)` (the line itself). The lines are IntPatch_WLines with
+        `IntPatch_WLPrmPrm`; on the sampled path `EnablePurging(false)` where PWalking added points
+        (SeekAdditionalPoints).
+      - Parity-sensitive spots: PWalking's transcendentals (decision 691); IntPolyh's (decisions 591-598); the
+        transitions' `DotCross` signs (`>` on some paths, `>=` on others, as OCCT); IsPointOnLine's per-coordinate
+        deflection test; the voxel search's truncations (decision 708); the line rejection on end points within
+        TolTangency (the sampled path also tests a middle point against `2 * Epsilon`).

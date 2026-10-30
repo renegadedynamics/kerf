@@ -16,7 +16,7 @@ algo = occt / "src" / "ModelingAlgorithms" / "TKGeomAlgo"
 (out / "src").mkdir(parents=True, exist_ok=True)
 (out / "inc").mkdir(parents=True, exist_ok=True)
 for f in ["IntWalk/IntWalk_IWalking.gxx", "IntWalk/IntWalk_PWalking.cxx", "IntPatch/IntPatch_TheIWalking_0.cxx",
-          "IntPatch/IntPatch_ImpPrmIntersection.cxx"]:
+          "IntPatch/IntPatch_ImpPrmIntersection.cxx", "IntPatch/IntPatch_PrmPrmIntersection.cxx"]:
     shutil.copy(algo / f, out / "src")
 for f in ["IntPatch_TheIWalking.hxx", "IntWalk_PWalking.hxx"]:
     shutil.copy(include / f, out / "inc")
