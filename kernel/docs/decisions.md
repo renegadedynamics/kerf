@@ -8980,3 +8980,126 @@ merged decisions are cited by their numbers.
         `CheckerSI.Original`). Re-run the unit's corpus tests after 6L, and recapture with `OCCTNET_BOREC_CAPTURE` to
         grow the recordings' corpus share. `BRepTools.CopyFrozenForWrite` may suit other destructive steps on mixed
         frozen and unfrozen graphs.
+
+## Phase 5: unit 5S1, sweep laws and sections
+
+BRepFill's package statics (`Face`, `Shell`, `Axe`, `SearchOrigin`, `ComputeACR`, `InsertACR`), the location laws
+(LocationLaw, ACRLaw, Edge3DLaw, EdgeOnSurfLaw), the section laws (SectionLaw, ShapeLaw, NSections), Section,
+SectionPlacement, CompatibleWires, Pipe, TransitionStyle, TypeOfContact and ThruSectionErrorStatus;
+ShapeUpgrade_RemoveLocations; BRepOffsetAPI_MakePipe; Draw-lite's `pipe`. In OcctNet.ModelingAlgorithms (`BRepFill/`,
+`ShapeUpgrade/`, `BRepOffsetAPI/`). Ported in forked worktrees (laws and sections; CompatibleWires; Pipe; the oracle)
+and merged. Numbers from 5851 are placeholders, renumbered on merge.
+
+5851. **`BRepFill.Face` and `Shell` write into copies of frozen inputs.** OCCT puts the given edges into the new face
+      and gives them pcurves, ranges and flags (`UpdateEdge`, `Range`, `SameParameter`, then `BRepLib::SameParameter`
+      on the face): it writes into the caller's edges. When either input holds a frozen TShape, the port copies both at
+      once (`BRepTools.ExactCopyForWrite` of a holder compound, so that the sub-shapes they share stay shared) and gives
+      back with `KeepUnchangedIn` what the construction left unchanged. In practice every edge and vertex of the inputs
+      is rewritten, so the result holds copies only, and its BRep text equals native's byte for byte (Free flags
+      included). Unfrozen inputs (ported code) are used in place, as in OCCT. `Face`, `Shell` and `InsertACR` freeze
+      their results; `InternalFace`, `InternalShell` and `InternalInsertACR` don't. `Axe` writes the axis and the
+      contact flag through `out`; `SearchOrigin` (internal; a friend of PipeShell in OCCT) takes the wire `ref`.
+5852. **Oracle of the statics** (`tests/OcctNet.Oracle.Tests/BRepFill/BRepFillOracleTests.cs`; BRepFill is bound in
+      build123d.NET). Inputs built identically on both sides from settled random values: edges of every curve kind
+      (lines, circles, arcs, ellipses, rational and non-rational B-splines, Bezier, trimmed, reversed, located, closed,
+      sharing vertices) for `Face`; pairs of wires (polygons open and closed, arcs, B-spline chains, located) for
+      `Shell`, as build123d.NET's ruled surfaces use them; planar spines (wires and faces) with profiles touching a
+      vertex, an edge or away for `Axe`; wires and random cut lists for `ComputeACR` and `InsertACR`. Compared through
+      BRep text (then with Free masked, then canonically), and doubles bit for bit. **All identical:** Face 700 of 700
+      byte-identical, Shell 300 of 300, Axe 277 of 277 (23 more throwing the same exception on both sides; 3,324
+      doubles bit-identical), ComputeACR 300 (1,322 doubles), InsertACR 300 of 300. The port's inputs are frozen and
+      never written.
+5861. **ShapeUpgrade_RemoveLocations never writes its input.** OCCT rebuilds every shape it changes (new faces, edges
+      and vertices, EmptyCopied parents) and adds pcurves only to edges it made, so a frozen input needs no copy.
+      `GetResult` and `ModifiedShape` freeze what they return; ported code uses `InternalGetResult` and
+      `InternalModifiedShape`; `GetModifiedShapesMap` returns a new map of frozen shapes and `InternalModifiedShapesMap`
+      the live one. One theoretical exception, never reached: an edge first visited without removal and later with it
+      would get `UpdateEdge` on the original (natively the caller's edge); the port would throw on a frozen edge.
+5862. **BRepFill's location laws are working objects** (decision 806). Each edge gets its own copy of the caller's
+      trihedron law (`Law.Copy()` in Edge3DLaw and EdgeOnSurfLaw; `SetOrigine` then `Copy()` in ACRLaw, which leaves
+      the caller's guide law with the last edge's origin, as in OCCT). `Law(i)` returns the law's own object. `D0`
+      returns a frozen transformed copy, `PerformVertex` a frozen new vertex and `InternalPerformVertex` an unfrozen one
+      for the sweeps. Signatures: `Parameter(double, out int, ref double)` (U unchanged when nothing is found),
+      `CurvilinearBounds(out, out)`, `D0(double, ref TopoDS_Shape)`. `myType` is written and never read, as in OCCT
+      (CS0414 suppressed on that field only, decision 120's precedent).
+5863. **BRepFill_ShapeLaw reads the caller's edges only.** Reversed edges get new curves (`Reversed()`, new trimmed
+      curves). `D0` and `Vertex` give the caller's own wire for a constant law and a frozen scaled copy for an evolved
+      one. Left unsealed: phase 7's BRepFill_DraftLaw derives from it. `ConcatenedLaw` uses
+      `GeomConvert_CompCurveToBSplineCurve.InternalBSplineCurve`.
+5864. **BRepFill_NSections reads `InternalBSplineSurface()`** of its GeomFill_NSections in `Vertex` and `D0`, never the
+      freezing `BSplineSurface()`: the approximated surface is shared by the elementary laws and stays unfrozen.
+      `EdgeToBSpline` edits only curves it builds. Sections are converted, reversed and trimmed into new curves;
+      GeomFill_NSections reparametrises its own copy (decision 838) and BRepFill never reads a section curve back.
+5865. **BRepFill_Section is a value type** (a `partial struct` with exact equality; `Set(bool)` internal with a
+      `WithIsLaw` twin). The profile goes through RemoveLocations at level COMPOUND, or becomes a closed wire of one
+      degenerated edge for a vertex. `Wire()` and `ModifiedShape()` freeze; `InternalWire` and `InternalModifiedShape`
+      don't. BRepFill_SectionPlacement is a sealed algorithm class (decision 837's pattern).
+5866. **Native comparison of the laws through recordings** (`tools/brepfillrec`, as 5L2's sweeprec; embedded as
+      `BRepFill.brepfillrec.txt.gz`). 460 cases: Edge3DLaw with Frenet, CorrectedFrenet, Fixed and ConstantBiNormal on
+      open, closed and G1 B-spline wires with reversed edges (80); ACRLaw with GuideTrihedronAC (20); Edge3DLaw with
+      LocationGuide over GuideTrihedronPlan (20); EdgeOnSurfLaw on plane, cylinder and B-spline faces (40); ShapeLaw
+      for vertices, constant wires and Law_Linear evolutions (80); NSections, both constructors, punctual ends, looped
+      sections (40); RemoveLocations at five levels on located boxes, cylinders, wires and compounds (60); Section
+      (40); SectionPlacement automatic and on a vertex, with contact and correction (80). Compared: IsG1, holes,
+      curvilinear bounds, Parameter, Abscissa, D0, PerformVertex at every vertex with ILoc -1, 0, 1 before and after
+      TransformInG0Law and TransformInCompatibleLaw; section shapes, knots, poles, VertexTol, Continuity, Vertex,
+      IndexOfEdge, ConcatenedLaw; transformations and abscissae. **All 460 cases identical** (37,572 lines; one native
+      Standard_ConstructionError reproduced). The recorder makes one random draw per statement: MSVC evaluates
+      operands and arguments in no fixed order.
+5871. **BRepFill_CompatibleWires is a working object that never writes into its inputs.** `Shape()` returns the result
+      wires as a frozen `IBentoList<TopoDS_Shape>`, `GeneratedShapes(E)` a frozen list (empty for an unknown edge),
+      `Generated()` the frozen map in binding order; ported callers use `InternalShape()`, `InternalGeneratedShapes(E)`
+      and `InternalGenerated()`. `Init` copies the caller's sequence (OCCT copies it by value). New wires are built with
+      BRep_Builder; cut edges are new edges on the caller's shared curves and vertices; nothing is written into a
+      caller's shape, so the result shares the uncut edges (Free = 1 where native writes 0, open question 1). It calls
+      `BRepFill.InternalInsertACR` where OCCT calls the public `InsertACR`.
+5873. **CompatibleWires' translations.** `InsertBefore(LE, itlist)` of a list is repeated `InsertBefore(item, itlist)`;
+      the DataMap iterators are `foreach` in insertion order, the "Fill myMap" loop over a copy of the keys;
+      EdgeIntersectOnWire's `Vsol` and `newW` are `ref` (unwritten when the distance fails); `myInit` is set and never
+      read (CS0414 suppressed on that field only).
+5874. **Native comparison of CompatibleWires through recordings** (`tools/cwrec`, embedded as `BRepFill.cwrec.txt.gz`).
+      390 cases from an LCG: closed polygons; circles, ellipses and periodic B-splines split into 1 to 5 edges; tilted
+      and twisted frames; open polylines, arcs and B-splines; point sections at either end; looping sections;
+      reversed, located and copied wires; open and closed mixed; with and without rotation and `SetPercent`. Each case
+      records its input as BRep text and native runs on what it read back, so both sides run on identical shapes.
+      Compared: status, IsDone, the degenerate flags, the result as BRep text (Free masked) and the generated edges.
+      **385 of 390 identical** (6 byte-identical, 379 with Free masked); the other 5 are looping sections where native
+      itself varies from run to run (5876). Inputs unchanged in every case.
+5876. **SearchRoot's address order** (native nondeterminism, occt-issues.md). SearchRoot returns the first key of RMap
+      or MapVLV whose list holds the vertex: native iterates them in TShape-address order, the port in binding order
+      (decision 18). With looping sections a vertex is in several lists and native's result changes from run to run;
+      the port's is deterministic.
+5881. **BRepFill_Pipe and BRepOffsetAPI_MakePipe are ported against a placeholder BRepFill_Sweep.** The pipe's
+      `MakeShape` runs BRepFill_Sweep, which belongs to unit 5S2 (it needs TrimShellCorner, hence BRepAlgoAPI_Section).
+      `BRepFill/BRepFill_Sweep.cs` is an internal placeholder, not a port (no `Port of:` line), declaring with OCCT's
+      signatures only the members the pipe calls; its constructor throws `Standard_NotImplemented("BRepFill_Sweep is
+      ported by unit 5S2")`, so nothing is silent (decision 99's precedent). Until 5S2 every pipe throws that exception,
+      and the MakePipe oracle and the `pipe` corpus cases wait. **This departs from the plan**, which put the pipe in
+      5S1 without its sweep.
+5882. **MakePipe copies a frozen profile** as MakePrism does (BRepPrimAPI_MakeSweep, decision 468): OCCT's pipe sweeps
+      the profile in place and writes into the sub-shapes the result shares (the end faces of a face's pipe and their
+      section edges: `aWire.Free(true); BB.Remove/Add` and `UpdateTolFromTopOrBottomPCurve` in BRepFill_Pipe, marked
+      `// OCCT.NET`). The history, FirstShape and LastShape answer for the caller's sub-shapes.
+5883. **BRepFill_Pipe is a working object** whose accessors (Shape, FirstShape, LastShape, Face, Edge, Section,
+      PipeLine, Generated, Spine, Profile) hand out frozen shapes, with `Internal` forms for ported callers
+      (BRepFill_Evolved).
+5884. **Draw-lite `pipe`** (BRepTest_SweepCommands.cxx) is registered with `prism` and `revol`, its source in
+      `Draw_Files`. The corpus: 164 cases use `pipe`; none runnable before 5S1, 58 after; the 54 that run fail with
+      5881's `Standard_NotImplemented` and 4 are skipped for missing data. `DrawPipeMakerCommandsTests` pins that
+      expected failure; 5S2 turns it into passing runs.
+5885. **For later units.**
+      - **5S2 (pipe shells):** replace `BRepFill_Sweep.cs` with the port, keeping the members and signatures the pipe
+        uses (constructor (section law, location law, bool), SetBounds, SetForceApproxC1, Build(ReversedEdges, Tapes,
+        Rails, Transition, Continuity, Approx, Degmax, Segmax), IsDone, Shape, ErrorOnSurface, SubShape, InterFaces,
+        Sections, Tape); then update `DrawPipeMakerCommandsTests` and `BRepFill_PipeTests`, and compare MakePipe with
+        native (it isn't bound: recordings, or the corpus's `pipe` cases). Use the Internal forms
+        (`InternalPerformVertex`, `Section.InternalWire`, CompatibleWires' `InternalShape`/`InternalGenerated`).
+        `SectionLaw.D0` and `Vertex` hand out frozen shapes (the caller's wire for a constant ShapeLaw): copy before
+        Sweep or PipeShell write into bounds made from them (decision 588). PipeShell's `mySeq.ChangeValue(i).Set(true)`
+        works on the Section struct through the sequence's ref indexer. `ConcatenedLaw` returns the law's own
+        elementary law for one edge; `IndexOfEdge` throws for an edge not in the section. `BRepFill.SearchOrigin` is
+        internal, for PipeShell.
+      - **5T (lofts):** use CompatibleWires' Internal forms; its result wires share the caller's uncut frozen edges, so
+        BRepFill_Generator must copy before writing pcurves or tolerances into them. Lofts whose first section is also
+        the last aren't repeatable natively (5876): compare those canonically. BRepFill_NSections reads
+        `InternalBSplineSurface`; ThruSections duplicates `EdgeToBSpline` (a private static here).

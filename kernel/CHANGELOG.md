@@ -976,3 +976,17 @@ Phase 6 (part): checks and the other builders (unit 6G).
   runnable before; now check commands 97 (OK 84, 1 known problem, 12 missing data), `mkvolume`/`bc*` 152 (OK 142, 1
   known problem, 9 missing data), periodicity and connection 9 (OK 7, 2 missing data), `removefeatures` 42 (OK 25, 17
   missing data); none failing.
+
+Phase 5 (part): sweep laws and sections (unit 5S1).
+
+- `OcctNet.ModelingAlgorithms`: BRepFill's package statics (`Face`, `Shell`: build123d's ruled surfaces; `Axe`,
+  `ComputeACR`, `InsertACR`), the location laws (LocationLaw, ACRLaw, Edge3DLaw, EdgeOnSurfLaw), the section laws
+  (SectionLaw, ShapeLaw, NSections), Section, SectionPlacement, CompatibleWires, Pipe, TransitionStyle, TypeOfContact,
+  ThruSectionErrorStatus; ShapeUpgrade_RemoveLocations; BRepOffsetAPI_MakePipe. Frozen inputs are never written
+  (copies where OCCT writes into them). BRepFill_Pipe and MakePipe run BRepFill_Sweep, which unit 5S2 ports: until
+  then they throw Standard_NotImplemented through a placeholder.
+- Draw-lite: `pipe` (its 58 runnable corpus cases wait for 5S2).
+- Tests: unit tests of every class. Against native OCCT: `BRepFill.Face`, `Shell`, `Axe`, `ComputeACR` and `InsertACR`
+  through build123d.NET's bindings, 1,900 cases all identical (byte-identical BRep text; 23 Axe cases throwing on both
+  sides); the laws, sections, placement and RemoveLocations (tools/brepfillrec) 460 cases all identical;
+  CompatibleWires (tools/cwrec) 385 of 390 identical, the other 5 looping sections where native varies from run to run.
