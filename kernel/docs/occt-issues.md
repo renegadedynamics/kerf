@@ -662,7 +662,9 @@ otherwise.
 | BOPAlgo_ToolsProvider::SetTools | The same, with `myMapTools` | As above, for tools | — (ported, not yet marked or tested) |
 
 **Order sites (decisions 580 and 633).** Native's NCollection_Map iterates in hash-bucket order. For integer and
-pair keys that order is deterministic but scrambled; the port iterates in insertion order. It decides:
+pair keys that order is deterministic but scrambled; the port iterated in insertion order. Unit 6E's measurements
+showed it decides the pave filler's results, and BOPDS's integer maps now iterate in OCCT's order (decision 784). It
+decided:
 
 - `BOPDS_DS::prepareFaces`/`prepareSolids`: the order of each face's and solid's sub-shape list, and through it
   FaceInfoOn, SharedEdges and AloneVertices;
@@ -989,3 +991,24 @@ natively and in the port (decision 778).
 | `GccAna_Lin2d2Tan.cxx` (two circles) | `qualifier2(...) = Qualified1.Qualifier()` in almost every branch; for unqualified circles WhichQualifier returns GccEnt_unqualified, not a computed qualifier (also circle + point); the mixed branches write solution 2's qualifiers into `qualifier1(1)`/`qualifier2(1)`; unqualified/enclosing gives solution 2 the first's tangency point | Wrong or unset qualifiers; a wrong tangency point (pinned by a test) |
 | `GccAna_Lin2dTanObl.cxx` | The second intersection is computed again with `linsol(1)`; a solution parallel to TheLine gets the intersection data of a default point | Intersection2(2) = Intersection2(1); (0, 0) data for parallel solutions |
 | `GccAna_Lin2dTanPer.cxx` | `qualifier1` never set by the (point, line), (point, circle) and (circle, line) constructors; `maxdist = RealLast()` never lowered, so the last intersection point is kept, not the nearest; (circle, circle) always gives 2 solutions whatever the qualifier, tangent to C1 and perpendicular to the line of centres (they don't pass through TheCircle's centre); no BadQualifier check for noqualifier; ThisSolution throws Standard_RangeError | Unset qualifiers; wrong lines in the circle/circle case (pinned by a test) |
+
+## Phase 6: unit 6E, the pave filler
+
+Found while porting BOPAlgo_PaveFiller, by reading OCCT's code. The port reproduces each (`// OCCT` at the line) except
+where the entry says otherwise. None shows in the comparison with native (decision 785), where all 914 runs are
+bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::PutPaveOnCurve` (PaveFiller_6), new-pave branch | Raises the tolerance of the vertex put on a section curve with `BRep_Builder::UpdateVertex`, without the `IsNewShape`/same-domain check `UpdateVertex(nV, tol)` makes in the non-destructive mode; `PutPavesOnCurve` lets the common vertices of the two faces through | In the non-destructive mode an argument vertex's tolerance can be raised in place. On a frozen argument the port throws (BOPAlgo_AlertIntersectionFailed, decision 787). Not reached by the recordings |
+| `BOPAlgo_PaveFiller::FilterPavesOnCurves` and `MakeBlocks` (PaveFiller_6) | Write the saved tolerances of the vertices of `theMVTol` straight into their TShapes (`BRep_TVertex::Tolerance`) | As above: the vertices of site 1 and the vertices of used paves, argument ones included |
+| `BOPAlgo_PaveFiller::CorrectToleranceOfSE` (PaveFiller_6), step 2.2 | Lowers the tolerance of vertices connected to section edges whose tolerance was reduced, whether or not the vertex is new | In the non-destructive mode an argument vertex can be changed (lowered) in place; the port throws on a frozen one. Not reached by the recordings |
+| `BOPAlgo_MPC::Perform` / file-static `UpdateVertices` (PaveFiller_7) | Raises the tolerances of the vertices of section edges in place, from parallel solvers, on vertices several section edges share; `BRep_TVertex::UpdateTolerance` is an unsynchronised read-compare-write | Natively a larger tolerance can be lost to a concurrent smaller one, so the parallel result can differ from the serial one. **Fixed** (decision 789): the port takes a lock around the update, which gives the serial result. In the non-destructive mode the vertex can be an argument's whose tolerance didn't grow before (the port throws on a frozen one, caught as BOPAlgo_AlertBuildingPCurveFailed) |
+| `BOPAlgo_PaveFiller::PutClosingPaveOnCurve` (PaveFiller_6) | Sets the index of a local copy of the pave (`aPave.SetIndex(nVn)`) that is never used again | No effect. Kept, not marked |
+| `BOPAlgo_PaveFiller::PerformVF` (PaveFiller_4) | Adds to the face's VerticesIn only the last same-domain vertex `nVx` of the loop over a pair's vertices | Possibly intended. Kept, not marked (matches native in every recorded case) |
+
+**Order sites** (decisions 580, 633, 784). The filler iterates integer maps (the faces' sub-shape and vertex sets,
+`ShapesSD`, MakeBlocks' maps of vertices and their tolerances, the same-domain maps of MakeSDVerticesFF, PostTreatFF,
+UpdateFaceInfo and UpdatePaveBlocks, ProcessExistingPaveBlocks' `aDMBV`) in OCCT's bucket order, which decides the
+indices of new shapes; the port reproduces it with `NCollection_IntMap` and `NCollection_IntDataMap` (decision 784). It
+iterates no map keyed by address, so native's filler is reproducible.

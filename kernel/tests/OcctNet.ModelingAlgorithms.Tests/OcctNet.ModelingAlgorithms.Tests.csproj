@@ -39,6 +39,7 @@
     <EmbeddedResource Include="IntTools\FaceFaceRecordings.txt.gz" LogicalName="IntTools.FaceFaceRecordings.txt.gz" />
     <!-- Native OCCT's analytic constraint solvers on random configurations, recorded by tools/gccrec (unit 5K1) -->
     <EmbeddedResource Include="GccAna\Recordings\gccrec.txt.gz" LogicalName="GccAna.gccrec.txt.gz" />
+    <EmbeddedResource Include="BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

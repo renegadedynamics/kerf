@@ -213,16 +213,18 @@ public class BRepAlgoAPI_ShellTests
     }
 
     [Fact]
-    public void InterferingArguments_StubFillerFails()
+    public void InterferingArguments_StubBuilderFails()
     {
         TopoDS_Shape a = Box(0), b = Box(0.5);
         var aFuse = new BRepAlgoAPI_Fuse(a, b);
         Assert.True(aFuse.HasErrors());
-        Assert.True(aFuse.HasError(typeof(BOPAlgo_AlertIntersectionFailed)));
+        // unit 6E's pave filler intersects them; unit 6A's stub builder can't build their images yet
+        Assert.False(aFuse.DSFiller()!.HasErrors());
+        Assert.True(aFuse.HasError(typeof(BOPAlgo_AlertBuilderFailed)));
         Assert.False(aFuse.IsDone());
         using StringWriter aText = new();
         aFuse.DumpErrors(aText);
-        Assert.Contains("BOPAlgo_AlertIntersectionFailed", aText.ToString());
+        Assert.Contains("BOPAlgo_AlertBuilderFailed", aText.ToString());
     }
 
     [Fact]
@@ -270,7 +272,7 @@ public class BRepAlgoAPI_ShellTests
         Assert.False(new TopoDS_Iterator(s2.Shape()).More());
 
         var s2b = new BRepAlgoAPI_Section(a, new gp_Pln(new gp_Pnt(0, 0, 0.5), new gp_Dir(0, 0, 1)));
-        Assert.True(s2b.HasError(typeof(BOPAlgo_AlertIntersectionFailed)));
+        Assert.True(s2b.HasError(typeof(BOPAlgo_AlertBuilderFailed)));
 
         var s3 = new BRepAlgoAPI_Section(new Geom_Plane(aFar), a);
         Assert.Equal(TopAbs_FACE, s3.Shape1().ShapeType());
@@ -353,8 +355,8 @@ public class BRepAlgoAPI_ShellTests
     {
         var anError = Assert.Throws<BRepAlgoAPI_Failure>(
             () => Occt.BRepAlgoAPI.Fuse([Box(0)], [Box(0.5)], new BRepAlgoAPI_Options()));
-        Assert.Contains("BOPAlgo_AlertIntersectionFailed", anError.Message);
-        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertIntersectionFailed), Message_Gravity.Message_Fail));
+        Assert.Contains("BOPAlgo_AlertBuilderFailed", anError.Message);
+        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertBuilderFailed), Message_Gravity.Message_Fail));
         Assert.IsAssignableFrom<StdFail_NotDone>(anError);
 
         Assert.Throws<BRepAlgoAPI_Failure>(() => Occt.BRepAlgoAPI.Cut([Box(0)], [], new BRepAlgoAPI_Options()));

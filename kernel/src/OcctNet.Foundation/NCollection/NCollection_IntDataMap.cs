@@ -16,7 +16,7 @@ namespace Occt;
 /// bucket by bucket. <see cref="Clear()"/> keeps the buckets, as OCCT's <c>Clear()</c> does. Iteration goes bucket by
 /// bucket from 0, each chain from its head. Decisions 66, 67 and 332 port other maps the same way for the same reason.
 /// </remarks>
-public sealed class NCollection_IntDataMap<TValue>
+public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<int, TValue>>
 {
     private sealed class Node(int theKey, TValue theValue, Node? theNext)
     {
@@ -141,6 +141,20 @@ public sealed class NCollection_IntDataMap<TValue>
         myData1![aHash] = new Node(theKey, theItem, myData1[aHash]);
         mySize++;
         return true;
+    }
+
+    /// <summary>Binds the item to the key (replacing a previous item) and returns the bound item for writing.</summary>
+    public ref TValue Bound(int theKey, TValue theItem)
+    {
+        Bind(theKey, theItem);
+        return ref lookup(theKey)!.Value;
+    }
+
+    /// <summary>Binds the item to the key if it is not bound yet, and returns the bound item for writing.</summary>
+    public ref TValue TryBound(int theKey, TValue theItem)
+    {
+        TryBind(theKey, theItem);
+        return ref lookup(theKey)!.Value;
     }
 
     public bool IsBound(int theKey) => lookup(theKey) is not null;
@@ -303,6 +317,29 @@ public sealed class NCollection_IntDataMap<TValue>
             return ref myNode.Value;
         }
     }
+
+    /// <summary>The keys in OCCT's order.</summary>
+    public IEnumerable<int> Keys
+    {
+        get
+        {
+            for (Iterator anIt = new(this); anIt.More(); anIt.Next())
+            {
+                yield return anIt.Key();
+            }
+        }
+    }
+
+    /// <summary>The keys and items in OCCT's order (the map's keys must not change meanwhile; items may).</summary>
+    public IEnumerator<KeyValuePair<int, TValue>> GetEnumerator()
+    {
+        for (Iterator anIt = new(this); anIt.More(); anIt.Next())
+        {
+            yield return new KeyValuePair<int, TValue>(anIt.Key(), anIt.Value());
+        }
+    }
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>The keys and items in OCCT's order.</summary>
     public IEnumerable<(int Key, TValue Value)> Pairs()

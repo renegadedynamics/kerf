@@ -7594,3 +7594,123 @@ decisions are cited by their merged numbers (576–590).
       bit-identical to native on 1,500 random cases each (concentric, tangent, secant, apart and same-radius circles,
       points on and at the centre of circles, points on lines). Pnt2dBisec throws GccAna_NoSolution for coincident
       points; CircPnt2dBisec's single-argument constructor uses a tolerance of 1e-10.
+## Phase 6: unit 6E, the pave filler
+
+BOPAlgo_PaveFiller (the class and its eleven files: VV, VE, EE, VF, EF, FF, the section curves and blocks, the split
+edges and p-curves, the degenerated edges, the shrunk data, the locked-argument check, the self-interference check), the
+members of BOPAlgo_Tools it calls, NCollection_IntMap; tools/pfrec, the native recorder. In OcctNet.ModelingAlgorithms
+(NCollection_IntMap in OcctNet.Foundation), ported in four worktrees and merged. Numbers from 6901 are placeholders,
+renumbered on merge; merged decisions are cited by their numbers (plan 576–590, 6A 617–641, 6B 714–723, 6C 753–756,
+6D 757–764).
+
+784. **Decision 633 decided: the Boolean component iterates its integer maps in OCCT's order.**
+      - OCCT 8 hashes an `int` by its value (`DEFINE_DEFAULT_HASHER_PURE(int)`; 6A's note of FNV-1a was wrong), puts a new
+        key at the head of bucket `key % NbBuckets + 1` and iterates bucket by bucket. The order depends only on the keys
+        and on the history of insertions, removals and clears: deterministic, reproducible, and decisive.
+      - **Measured** on the native recordings (decision 785; the first 400 cases, 800 runs):
+        - the port's maps in .NET order: 281 of 800 runs identical to native;
+        - `NCollection_Map<int>` in OCCT's order, `NCollection_DataMap<int, T>` in .NET order: 732 of 800;
+        - both in OCCT's order: 800 of 800 (and 914 of 914 on the final recording).
+
+        The differences were the order of the faces' sub-shape lists (and so of FaceInfo's pave blocks), of the new
+        same-domain vertices and of the pave-block pool (`ShapesSD`'s order feeds `InitPaveBlocksForVertex`), and
+        through them the indices of every new shape.
+      - So `NCollection_IntMap` (new, OcctNet.Foundation) is OCCT's `NCollection_Map<int>` with OCCT's buckets, as unit
+        4B's `NCollection_IntDataMap` (decision 543) is for the DataMap; the DataMap gains `Bound`, `TryBound`, `Keys`
+        and an enumerator of key/value pairs in OCCT's order. Every `NCollection_Map<int>` and
+        `NCollection_DataMap<int, T>` of BOPDS and of the pave filler uses them, including BOPDS_FaceInfo's public vertex
+        maps, BOPDS_DS's `ShapesSD`/`myMapVE` and `UpdateFaceInfoIn/On`'s argument. OCCT's initial bucket counts are kept
+        (`aMI(100, ...)`: `NextPrimeForMap(0)` is 101, so such maps order as default ones; kept for fidelity), and
+        `Clear()` keeps the buckets as OCCT's does.
+      - The rest of the port keeps .NET-ordered maps (decision 18). Unit 6F's builders should use the two types wherever
+        OCCT iterates an integer map.
+      - Maps keyed otherwise: the filler iterates no map keyed by an address (pave blocks, common blocks, shapes; the one
+        such iterator OCCT declares, in PerformEE, is unused), so native's filler is reproducible and the port can be
+        bit-identical. The one `BOPDS_Pair`-keyed map iterated (`UpdateCommonBlock`'s, hashed natively with
+        MurmurHash64A) only orders the creation of new common blocks, which nothing indexes: its order is not
+        observable, and it keeps the .NET order.
+785. **Native recordings: tools/pfrec** (as tools/ffrec, decision 761).
+      - A C++ program built with MSVC against build123d.NET's native OCCT V8_0_1 (TKBO's own pave filler) writes each
+        case's arguments as BRep text, reads them back and fills them, then writes the filler's errors and warnings and
+        a dump of the data structure, which `tests/OcctNet.ModelingAlgorithms.Tests/BOPAlgo/PaveFillerDump.cs` writes
+        identically: every shape (type, orientation, sub-shapes, tolerance; vertices' points; new edges' ranges, three
+        curve points and stored p-curves), the same-domain vertices, every edge's pave blocks with their shrunk data and
+        common blocks, the common blocks (tolerance, pave blocks, faces), the face information, and every VV, VE, VF, EE,
+        EF and FF interference (common parts; curves with tolerances, bounds, techno vertices and pave blocks; points).
+        Every double is 64-bit hex. Hash-ordered sets (a face's vertices, a source shape's sub-shapes) are written sorted;
+        everything else in the DS's order.
+      - The cases (`PaveFillerRecordings.txt.gz`, 3.3 MB, 457 cases): every distinct script of the boolean group's
+        `bopfuse`, `bopcommon`, `bopcut` and `boptuc_simple` grids made of boxes, cylinders, cones, spheres, tori and
+        transformations (with a small evaluator for `dset` expressions), every tenth again with a fuzzy value of 1e-4;
+        30 pairs of primitive solids at pseudo-random placements; data/occ shapes (bottle, CrankArm, hammer, wedge_ok,
+        solid, Ball, Pump_Nut) against a moved copy and a box through them and, for the smaller ones, a turned copy; and
+        two natural pairs (mal_ecrou and mal_vis, Pump_Nut and Pump_TopCover). Each case is filled twice: in the default
+        (destructive) mode and non-destructively.
+      - The port reads the same text and fills it: the destructive mode on an unfrozen exact copy
+        (`BRepTools.ExactCopyForWrite`, since `BRepTools.Read` publishes frozen shapes), the non-destructive mode on the
+        frozen shapes themselves (the filler turns non-destructive by itself, decision 577), and on every fourth case
+        also on unfrozen copies with `SetNonDestructive(true)`.
+      - **Result: 914 of 914 runs bit-identical**, every line of every dump. No difference needed attributing.
+786. **Classes and signatures.**
+      - BOPAlgo_PaveFiller is a `public partial class` over one file per OCCT `.cxx` (BOPAlgo_PaveFiller.cs with the
+        header, then `_1` to `_11`); OCCT's protected members stay protected (`SetIsPrimary` too, which PostTreatFF's
+        nested filler calls). The allocator constructor goes; the protected typedefs are written out.
+      - The file-local solvers (BOPAlgo_VertexEdge, EdgeEdge, VertexFace, EdgeFace, FaceFace, SplitEdge, MPC, BPC,
+        ShrunkRange) are `internal sealed` classes in their file. OCCT derives EdgeEdge, EdgeFace and FaceFace from an
+        IntTools class and from BOPAlgo_ParallelAlgo; C# has one base, so they derive from the IntTools class (decision
+        756) and hold a `BOPAlgo_Options` for the report and a progress range. BOPAlgo_FaceFace is a plain solver: OCCT
+        runs the face/face vector without a context, so each pair makes its own, as natively.
+      - BOPAlgo_Tools is a `static partial class`: this unit ports the six members the filler calls (`MakeBlocks` and
+        `FillMap`, OCCT's templates, as generics; both `PerformCommonBlocks`; `ComputeToleranceOfCB`;
+        `IntersectVertices` with its pair selector; `TrsfToPoint`), and unit 6F adds the rest to the file. Its `Port of:`
+        lines name the whole class, so port-status counts all of BOPAlgo_Tools.cxx from now on.
+      - Outputs OCCT leaves unwritten on some path are `ref` (`IsExistingPaveBlock`'s pave block and tolerance,
+        `ExtendedTolerance`, `ReduceIntersectionRange`, `GetPBBox`); handles passed by non-const reference but never
+        reassigned (`FillShrunkData`, `ForceInterfVE`) are passed by value. Locals OCCT leaves uninitialised, and reads
+        only after a call writes them, start at 0. OCCT's C arrays are `stackalloc` spans hoisted out of loops.
+      - C++ copies by value are written out: copied list iterators (`aItLI2 = aItLI`), lists bound into maps,
+        `IntTools_CommonPrt` (decision 620), `RemoveMicroSectionEdges`' `theMSCPB = aSEPBMap` (the caller's map is
+        cleared and refilled in order). Direct TShape tolerance writes (`BRep_TVertex::Tolerance`) go through the
+        TShape's mutator, so a frozen shape throws.
+787. **The non-destructive mode and frozen arguments** (decision 577).
+      - `SetNonDestructive()` (PaveFiller_10) turns the mode on when an argument is `Locked()`, and frozen implies
+        locked: every recorded case filled from frozen arguments gives native's non-destructive dump, so the filler never
+        wrote into them (a write would have thrown). Unfrozen arguments with `SetNonDestructive(true)` keep their BRep
+        text in every case; in the destructive mode they change as natively (tolerances, p-curves).
+      - OCCT's non-destructive mode still writes into an argument vertex at four sites (occt-issues.md, 6E):
+        `PutPaveOnCurve`'s tolerance increase, `FilterPavesOnCurves`' tolerance writes, `CorrectToleranceOfSE`'s lowering
+        of section edges' vertices, and BOPAlgo_MPC's `UpdateVertices`. The recordings reach none of them with an
+        argument vertex. On a frozen argument the port throws there (`BOPAlgo_AlertIntersectionFailed`, or
+        `BOPAlgo_AlertBuildingPCurveFailed` from MPC) where native silently changes the argument. Kept as OCCT has them;
+        the remedy, if a case reaches one, is a copy at that site (plan 2.3), recorded then.
+788. **6A's stub builders against the real filler** (decision 638). The stub's rule moves from the filler to the
+      builder: `BOPAlgo_Builder` (and so BOP, Section and Splitter) reports `BOPAlgo_AlertBuilderFailed` when the filled
+      data structure has an interference or a new shape, and otherwise builds 6A's result for non-interfering arguments.
+      The shell's tests expect that error where they expected `BOPAlgo_AlertIntersectionFailed`. OCCT's GTests of the pave
+      filler run BRepAlgoAPI_Fuse; they are ported checking the filler's part (the Fuse's filler has no error). Their
+      IsDone and volume checks return with unit 6F (marked "6F"), and the two loft tests are skipped until
+      BRepOffsetAPI_ThruSections is ported.
+789. **Serial = parallel** (decision 580).
+      - Every loop goes through `BOPTools_Parallel.Perform(myRunParallel, vector[, myContext])` as OCCT's does, and each
+        solver keeps its calls on its context in OCCT's order. Every recorded case filled with the parallel flag at
+        degrees 2 and the processor count gives the serial dump, which is native's (`SerialEqualsParallel`); a cone and
+        a box at every degree, twice.
+      - One OCCT race is closed: BOPAlgo_MPC's solvers update the tolerances of section edges' vertices in place, in
+        parallel, and section edges share vertices. `BRep_TVertex::UpdateTolerance` is a read-compare-write, so a larger
+        value can be lost to a concurrent smaller one (occt-issues.md). The port takes a lock around the update; every
+        vertex then ends with the largest value, which is the serial result in any order. BOPTools' tolerance
+        corrections already run serially (decision 720).
+790. **Notes for units 6F (builders) and 6G.**
+      - The DS's integer maps are `NCollection_IntMap` and `NCollection_IntDataMap`; the builders' own
+        `NCollection_Map<int>` and `DataMap<int, T>` should be too wherever OCCT iterates them (decision 784).
+        Address-keyed maps (shapes, pave blocks) iterate in insertion order (decision 580): list in occt-issues.md each
+        site where native's address order decides a result.
+      - Remove decision 788's stub rule in `BOPAlgo_Builder.PerformInternal1` with `BuildStubResult`, and restore the
+        GTests' IsDone and volume checks (BOPAlgo_PaveFillerTests, marked "6F").
+      - BOPAlgo_Tools is partial: add the rest of the class (EdgesToWires, WiresToFaces, ClassifyFaces, FillInternals,
+        ...) to BOPAlgo_Tools.cs. `MakeBlocks` takes the map's hasher as an argument (`TopTools_ShapeMapHasher.Instance`
+        for shape maps).
+      - tools/pfrec's `Record` and PaveFillerDump.cs can be extended with the builders' results (BRep text of the
+        images) on the same cases; the recording's arguments are already BRep text.
+      - Section edges and split edges are new shapes the filler built, so in-place BOPTools calls on them are allowed
+        (decision 719); argument sub-shapes in the non-destructive mode are not (decision 787).

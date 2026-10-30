@@ -166,7 +166,7 @@ public class BOPDS_Iterator
     /// with the tree of all boxes; the pairs found go to the extra lists (V/V, V/E, V/F), which
     /// <see cref="Initialize"/> then uses.
     /// </summary>
-    public void IntersectExt(NCollection_Map<int> theIndices)
+    public void IntersectExt(NCollection_IntMap theIndices)
     {
         if (myDS is null)
         {

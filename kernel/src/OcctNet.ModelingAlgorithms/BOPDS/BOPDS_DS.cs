@@ -24,9 +24,9 @@ namespace Occt;
 /// </para>
 /// <para>
 /// Maps keyed by pave blocks compare by reference and iterate in insertion order (decision 580). The maps of
-/// integers iterate in insertion order where OCCT's iterate in the order of their hash buckets: the sub-shape lists
-/// of faces and solids built in <c>Init</c> come out in another order than native's (decision 633,
-/// occt-issues.md).
+/// integers are <see cref="NCollection_IntMap"/> and <see cref="NCollection_IntDataMap{TValue}"/>, which iterate in the
+/// order of OCCT's hash buckets as native's do: the sub-shape lists of faces and solids built in <c>Init</c>, and
+/// everything ordered by them, come out as native's (decision 784).
 /// </para>
 /// </remarks>
 public class BOPDS_DS
@@ -45,8 +45,8 @@ public class BOPDS_DS
     private readonly NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> myPaveBlocksPool = new(0);
     private readonly NCollection_DataMap<BOPDS_PaveBlock, BOPDS_CommonBlock> myMapPBCB = new();
     private readonly NCollection_DynamicArray<BOPDS_FaceInfo> myFaceInfoPool = new(0);
-    private readonly NCollection_DataMap<int, int> myShapesSD = new();
-    private readonly NCollection_DataMap<int, NCollection_List<int>> myMapVE = new();
+    private readonly NCollection_IntDataMap<int> myShapesSD = new();
+    private readonly NCollection_IntDataMap<NCollection_List<int>> myMapVE = new();
     private readonly NCollection_Map<BOPDS_Pair> myInterfTB = new();
     private readonly NCollection_DynamicArray<BOPDS_InterfVV> myInterfVV = new(0);
     private readonly NCollection_DynamicArray<BOPDS_InterfVE> myInterfVE = new(0);
@@ -58,7 +58,7 @@ public class BOPDS_DS
     private readonly NCollection_DynamicArray<BOPDS_InterfEZ> myInterfEZ = new(0);
     private readonly NCollection_DynamicArray<BOPDS_InterfFZ> myInterfFZ = new(0);
     private readonly NCollection_DynamicArray<BOPDS_InterfZZ> myInterfZZ = new(0);
-    private readonly NCollection_Map<int> myInterfered = new();
+    private readonly NCollection_IntMap myInterfered = new();
 
     /// <summary>An empty data structure.</summary>
     public BOPDS_DS()
@@ -215,7 +215,7 @@ public class BOPDS_DS
         aShapeInfo.SetShapeType(theShape.ShapeType());
         NCollection_List<int> aSubShapeIndices = aShapeInfo.ChangeSubShapes();
 
-        NCollection_Map<int> anExistingSubShapeIndices = new();
+        NCollection_IntMap anExistingSubShapeIndices = new();
         foreach (int aSubShapeIndex in aSubShapeIndices)
         {
             anExistingSubShapeIndices.Add(aSubShapeIndex);
@@ -438,7 +438,8 @@ public class BOPDS_DS
 
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         // OCCT iterates this map in the order of its hash buckets (keyed by pairs of vertex indices); the port in
-        // insertion order. The order decides only the order in which the new common blocks are made.
+        // insertion order. The order decides only the order in which the new common blocks are made, which nothing
+        // indexes, so it isn't observable (decision 784).
         NCollection_DataMap<BOPDS_Pair, NCollection_List<BOPDS_PaveBlock>> aMPKLPB = new();
 
         foreach (BOPDS_PaveBlock aPaveBlockOfCommonBlock in aPaveBlocksOfCommonBlock)
@@ -616,7 +617,7 @@ public class BOPDS_DS
 
         BOPDS_FaceInfo aFaceInfo = myFaceInfoPool.Value(aShapeInfo.Reference());
         NCollection_IndexedMap<BOPDS_PaveBlock> aPaveBlocksIn = aFaceInfo.ChangePaveBlocksIn();
-        NCollection_Map<int> aVerticesIn = aFaceInfo.ChangeVerticesIn();
+        NCollection_IntMap aVerticesIn = aFaceInfo.ChangeVerticesIn();
         aPaveBlocksIn.Clear();
         aVerticesIn.Clear();
         FaceInfoIn(theIndex, aPaveBlocksIn, aVerticesIn);
@@ -633,14 +634,14 @@ public class BOPDS_DS
 
         BOPDS_FaceInfo aFaceInfo = myFaceInfoPool.Value(aShapeInfo.Reference());
         NCollection_IndexedMap<BOPDS_PaveBlock> aPaveBlocksOn = aFaceInfo.ChangePaveBlocksOn();
-        NCollection_Map<int> aVerticesOn = aFaceInfo.ChangeVerticesOn();
+        NCollection_IntMap aVerticesOn = aFaceInfo.ChangeVerticesOn();
         aPaveBlocksOn.Clear();
         aVerticesOn.Clear();
         FaceInfoOn(theIndex, aPaveBlocksOn, aVerticesOn);
     }
 
     /// <summary>The state On of the face: the (real) pave blocks of its edges and the vertices.</summary>
-    public void FaceInfoOn(int theIndex, NCollection_IndexedMap<BOPDS_PaveBlock> theMPB, NCollection_Map<int> theMVP)
+    public void FaceInfoOn(int theIndex, NCollection_IndexedMap<BOPDS_PaveBlock> theMPB, NCollection_IntMap theMVP)
     {
         foreach (int aSubShapeIndex in ShapeInfo(theIndex).SubShapes())
         {
@@ -665,7 +666,7 @@ public class BOPDS_DS
     /// The state In of the face: its internal vertices, the vertices of vertex/face interferences, the new vertices
     /// of edge/face interferences and the common blocks lying on the face.
     /// </summary>
-    public void FaceInfoIn(int theFaceIndex, NCollection_IndexedMap<BOPDS_PaveBlock> thePaveBlocks, NCollection_Map<int> theIndexMap)
+    public void FaceInfoIn(int theFaceIndex, NCollection_IndexedMap<BOPDS_PaveBlock> thePaveBlocks, NCollection_IntMap theIndexMap)
     {
         // 1. Pure internal vertices on the face
         // Adding to theIndexMap all the indicies of vertices belonging to the face.
@@ -718,7 +719,7 @@ public class BOPDS_DS
     }
 
     /// <summary>Recomputes the state In of every face of the map.</summary>
-    internal void UpdateFaceInfoIn(NCollection_Map<int> theFaces)
+    internal void UpdateFaceInfoIn(NCollection_IntMap theFaces)
     {
         foreach (int aFaceIndex in theFaces)
         {
@@ -776,7 +777,7 @@ public class BOPDS_DS
     }
 
     /// <summary>Recomputes the state On of every face of the map.</summary>
-    internal void UpdateFaceInfoOn(NCollection_Map<int> theFaces)
+    internal void UpdateFaceInfoOn(NCollection_IntMap theFaces)
     {
         foreach (int aShapeIndex in theFaces)
         {
@@ -844,7 +845,7 @@ public class BOPDS_DS
 
     /// <summary>
     /// Appends to the list the vertices In and Sc of the face that are not ends of its In and Sc pave blocks
-    /// (in the vertex maps' order: decision 633).
+    /// (in the vertex maps' order: decision 784).
     /// </summary>
     public void AloneVertices(int theFaceIndex, NCollection_List<int> theVertexList)
     {
@@ -853,7 +854,7 @@ public class BOPDS_DS
             return;
         }
 
-        NCollection_Map<int> aMI = new();
+        NCollection_IntMap aMI = new(100);
         BOPDS_FaceInfo aFaceInfo = FaceInfo(theFaceIndex);
 
         foreach (NCollection_IndexedMap<BOPDS_PaveBlock> aPaveBlocks in new[] { aFaceInfo.PaveBlocksIn(), aFaceInfo.PaveBlocksSc() })
@@ -867,7 +868,7 @@ public class BOPDS_DS
             }
         }
 
-        foreach (NCollection_Map<int> aVertexMap in new[] { aFaceInfo.VerticesIn(), aFaceInfo.VerticesSc() })
+        foreach (NCollection_IntMap aVertexMap in new[] { aFaceInfo.VerticesIn(), aFaceInfo.VerticesSc() })
         {
             foreach (int aVertexIndex in aVertexMap)
             {
@@ -886,8 +887,8 @@ public class BOPDS_DS
     /// </summary>
     public void SubShapesOnIn(int theFaceIndex1,
                               int theFaceIndex2,
-                              NCollection_Map<int> theMVOnIn,
-                              NCollection_Map<int> theMVCommon,
+                              NCollection_IntMap theMVOnIn,
+                              NCollection_IntMap theMVCommon,
                               NCollection_IndexedMap<BOPDS_PaveBlock> thePBOnIn,
                               NCollection_Map<BOPDS_PaveBlock> theCommonPaveBlocks)
     {
@@ -937,12 +938,12 @@ public class BOPDS_DS
         findCommon(aPBOn1);
         findCommon(aPBIn1);
 
-        NCollection_Map<int> aMVOn1 = aFaceInfo1.VerticesOn();
-        NCollection_Map<int> aMVIn1 = aFaceInfo1.VerticesIn();
-        NCollection_Map<int> aMVOn2 = aFaceInfo2.VerticesOn();
-        NCollection_Map<int> aMVIn2 = aFaceInfo2.VerticesIn();
+        NCollection_IntMap aMVOn1 = aFaceInfo1.VerticesOn();
+        NCollection_IntMap aMVIn1 = aFaceInfo1.VerticesIn();
+        NCollection_IntMap aMVOn2 = aFaceInfo2.VerticesOn();
+        NCollection_IntMap aMVIn2 = aFaceInfo2.VerticesIn();
 
-        foreach (NCollection_Map<int> aMV1 in new[] { aMVOn1, aMVIn1 })
+        foreach (NCollection_IntMap aMV1 in new[] { aMVOn1, aMVIn1 })
         {
             foreach (int aVertexIndex in aMV1)
             {
@@ -960,7 +961,7 @@ public class BOPDS_DS
     /// <summary>Appends to the list the edges shared by the two faces (the allocator of OCCT's signature goes).</summary>
     public void SharedEdges(int theFaceIndex1, int theFaceIndex2, NCollection_List<int> theEdgeList)
     {
-        NCollection_Map<int> aFirstFaceEdges = new();
+        NCollection_IntMap aFirstFaceEdges = new(100);
 
         // Collect edges of the first face.
         foreach (int aSubShapeIndex in ShapeInfo(theFaceIndex1).SubShapes())
@@ -1017,7 +1018,7 @@ public class BOPDS_DS
     }
 
     /// <summary>The same-domain shapes (the data structure's own map).</summary>
-    internal NCollection_DataMap<int, int> ShapesSD() => myShapesSD;
+    internal NCollection_IntDataMap<int> ShapesSD() => myShapesSD;
 
     /// <summary>Records that the shape <paramref name="theIndex"/> has the same-domain shape <paramref name="theIndexSD"/>.</summary>
     internal void AddShapeSD(int theIndex, int theIndexSD)
@@ -1558,7 +1559,7 @@ public class BOPDS_DS
             ++aFaceCount;
 
             // Map of sub-shape indices for the face that will replace the current list of wire indices.
-            NCollection_Map<int> aNewSubShapeIndices = new();
+            NCollection_IntMap aNewSubShapeIndices = new(100);
 
             TopoDS_Shape aFace = aFaceInfo.Shape();
 
@@ -1610,7 +1611,7 @@ public class BOPDS_DS
             }
 
             // Remove wire indices and fill in edge and vertex indices instead.
-            // The port's map iterates in insertion order, OCCT's in the order of its hash buckets (decision 633).
+            // In the order of OCCT's hash buckets, as native (decision 784).
             aFaceSubShapes.Clear();
             foreach (int aSubShapeIndex in aNewSubShapeIndices)
             {
@@ -1644,7 +1645,7 @@ public class BOPDS_DS
             ++aSolidCount;
 
             // Map of sub-shape indices for the solid that will replace the current list of shell indices.
-            NCollection_Map<int> aNewSubShapeIndices = new();
+            NCollection_IntMap aNewSubShapeIndices = new(100);
 
             // Update solid bounding box with its own bounding box.
             ref Bnd_Box aSolidBoundBox = ref aSolidInfo.ChangeBox();
@@ -1681,7 +1682,7 @@ public class BOPDS_DS
                 }
             }
 
-            // Remove shell indices and fill in face and edge indices instead (insertion order: decision 633).
+            // Remove shell indices and fill in face and edge indices instead (OCCT's bucket order: decision 784).
             aSolidSubShapes.Clear();
             foreach (int aSubShapeIndex in aNewSubShapeIndices)
             {

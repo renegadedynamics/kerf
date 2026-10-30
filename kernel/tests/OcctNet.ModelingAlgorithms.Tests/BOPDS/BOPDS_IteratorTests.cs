@@ -110,7 +110,7 @@ public class BOPDS_IteratorTests
         // the third box's vertices at x = 10 lie on the first box's face
         BOPDS_DS aDS = BOPDS_DSTests.MakeDS(BOPDS_DSTests.Box(0, 0, 0), BOPDS_DSTests.Box(5, 5, 5),
                                            BOPDS_DSTests.Box(10, 2, 2, 5));
-        NCollection_Map<int> anIndices = new();
+        NCollection_IntMap anIndices = new();
         for (int i = 0; i < aDS.NbSourceShapes(); ++i)
         {
             if (aDS.ShapeInfo(i).ShapeType() == TopAbs_VERTEX)

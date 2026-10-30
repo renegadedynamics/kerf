@@ -12,8 +12,10 @@ namespace Occt;
 /// <b>Unit 6A stub</b> (decision 638). The members are OCCT's (argument fence, options, <see cref="PerformWithFiller"/>,
 /// <see cref="CheckData"/>, <see cref="CheckFiller"/>, <see cref="Prepare"/>, <see cref="PrepareHistory"/>), but
 /// the images (FillImagesVertices to FillImagesCompounds) are unit 6F's. The stub's result is the one for arguments
-/// that don't interfere, which the stub pave filler guarantees: no argument is split, so every image is the argument
-/// itself, the result shares every argument, and the history records nothing modified or generated.
+/// that don't interfere, for which no argument is split, so every image is the argument
+/// itself, the result shares every argument, and the history records nothing modified or generated. Since unit 6E's
+/// pave filler, arguments that interfere fill the data structure, and the stub reports
+/// <see cref="BOPAlgo_AlertBuilderFailed"/> for them.
 /// </para>
 /// <para>
 /// Unit 6F replaces this file with the port, keeping these members' signatures; <see cref="BuildStubResult"/>,
@@ -170,7 +172,13 @@ public class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
         //
-        // 3. Unit 6A stub: the images are the arguments themselves (unit 6F fills the images)
+        // 3. Unit 6A stub: the images are the arguments themselves (unit 6F fills the images). Since unit 6E the pave
+        // filler is real: arguments that interfere get BOPAlgo_AlertBuilderFailed until unit 6F builds their images.
+        if (myDS!.Interferences().Extent() != 0 || myDS.NbShapes() > myDS.NbSourceShapes())
+        {
+            AddError(new BOPAlgo_AlertBuilderFailed());
+            return;
+        }
         BuildStubResult();
         if (HasErrors())
         {
