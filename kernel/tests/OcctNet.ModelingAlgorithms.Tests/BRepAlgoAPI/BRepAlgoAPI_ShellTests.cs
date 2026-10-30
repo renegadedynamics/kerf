@@ -234,8 +234,9 @@ public class BRepAlgoAPI_ShellTests
         // the frozen arguments are worked on non-destructively: unchanged
         sa.AssertUnchanged(a);
         sb.AssertUnchanged(b);
-        // the solids are split into the fused solid; a's face at x = 1 is inside b and is deleted
-        Assert.NotEmpty(aFuse.Modified(new TopExp_Explorer(a, TopAbs_SOLID).Current()));
+        // faces crossing the other box are split (modified); a's face inside b is deleted. As in OCCT, the fused
+        // solid is built by BOPAlgo_BOP::BuildSolid, not an image of an argument solid, so no solid is "modified"
+        Assert.Empty(aFuse.Modified(new TopExp_Explorer(a, TopAbs_SOLID).Current()));
         Assert.True(aFuse.HasModified());
         Assert.True(aFuse.HasDeleted());
     }
