@@ -948,3 +948,44 @@ Found while porting ShapeUpgrade_UnifySameDomain. Each is reproduced in the port
 
 Not bugs, but worth knowing: native UnifySameDomain iterates hashed maps only for membership (`myKeepShapes`, the shells of
 a face), so its result doesn't depend on addresses; every oracle run was byte-identical or Free-masked.
+
+## Phase 5: unit 5K1, analytic constraints
+
+Found while porting GccAna. Each is ported as OCCT has it and marked `// OCCT` at the line; the native recordings
+(tools/gccrec, decision 780) agree with the port on all of them. "Unset" means an NCollection_Array1 element OCCT
+never writes: uninitialised natively, 0 in the port (decision 781). Out-of-range indices throw Standard_OutOfRange
+natively and in the port (decision 778).
+
+| Where | What | Effect |
+|---|---|---|
+| `GccAna_Circ2d3Tan.cxx` (three circles) | `distcc2` and `distcc3` are measured from `center1` | WhichQualifier's computed qualifiers 2 and 3 are wrong for unqualified circles |
+| `GccAna_Circ2d3Tan.cxx` (three circles) | `rSol` has 16 slots where `xSol`/`ySol` have 64 | More than 16 candidate triplets throw Standard_OutOfRange |
+| `GccAna_Circ2d3Tan_1.cxx` (circle, circle, line) | `ok` is not reset when the second circle's check fails, and the distance to the line is never compared with the radius | Qualified runs return circles tangent to the first circle only (56 of 144 qualifier combinations in a sweep). Pinned by a test |
+| `GccAna_Circ2d3Tan_1.cxx` | The line's qualifier branches test `Qualified2` where `Qualified3` is meant; `distcc2` is measured from `center1`; the second tangency's guard tests `pnttg1sol` and writes `par1sol` | Wrong computed qualifiers and tangency parameters |
+| `GccAna_Circ2d3Tan_3.cxx` (three lines) | `cote2` assigned where `cote3` is meant (all unqualified: harmless, that branch returns every solution); `cote3(1)` assigned twice and `cote3(2)` never, in the branches (unqualified, enclosed, unqualified) and (enclosed, unqualified, unqualified) | The solutions of those two branches are filtered with an uninitialised side: native's count varies (the recordings skip those cases) |
+| `GccAna_Circ2d3Tan_3.cxx` | The qualified filtering moves the circle to its new slot but not `qualifier1..3` | Wrong qualifiers after filtering |
+| `GccAna_Circ2d3Tan_4.cxx` (circle, circle, point) | The duplicate-removal loop doesn't shift `TheSame1..3` | IsTheSame of the solutions after a removed duplicate is that of their predecessors |
+| `GccAna_Circ2d3Tan_5.cxx` (circle, line, point) | A 1999 change reversed `dc` | The first tangency point is on the far side of the solution unless the solution is enclosed in C1. Pinned by a test |
+| `GccAna_Circ2d2TanOn.cxx` (two circles, centre on a line) | Up to four boundary cases or matches write `Radius(3..4)` into a 2-element array; the qualifiers of unqualified circles use `Radius(i)`, `i` the bisector's index, instead of `Radius(k)`; `Rbid(1)` is written twice and `Rbid(2)` never; `pararg1` is computed from `pnttg2sol` | Standard_OutOfRange in 189 of 1,500 random cases; otherwise wrong qualifiers and parameter |
+| `GccAna_Circ2d2TanOn.cxx` | `CenterOn3` returns `pnttg1sol` (a tangency point), not the centre; `ThisSolution` checks neither IsDone nor the index, `NbSolutions` not IsDone | Callers reading the centre get a tangency point |
+| `GccAna_Circ2d2TanOn_1.cxx` (circle, line, centre on a line) | The "other side" retry for `pinterm` recomputes the same point | The other side is never tried |
+| `GccAna_Circ2d2TanOn_3.cxx` (circle, point, centre on a line) | `if (std::abs(popradius - dist1))` tests a double as a boolean; `pararg1(i)` uses the bisector's index; `pararg2` is unset on the boundary path; with C1 qualified the radius follows the qualifier whichever hyperbola branch the centre is on | Some solutions don't pass through the point (pinned by a test); unset and misplaced parameters |
+| `GccAna_Circ2d2TanOn_6.cxx` (two circles, centre on a circle) | As `GccAna_Circ2d2TanOn.cxx`: `Rbid(2)` unset, `Radius` overrun | As above |
+| `GccAna_Circ2d2TanOn_7.cxx` (circle, line, centre on a circle) | The retry uses the same `distcco - Ron` point and doesn't recompute `d1`/`d2`; the boundary test checks `Qualified1` against the line's side, with the same sign for enclosed and outside; the boundary case never sets `pntcen` | Missed solutions; `parcen3` is the parameter of the default origin |
+| `GccAna_Circ2d2TanOn_8.cxx` (circle, point, centre on a circle) | The radius follows `Qualified1` only (both radii when unqualified), whichever branch the centre is on; `SameCenter` is always false | Some solutions don't pass through the point (pinned by a test) |
+| `GccAna_Circ2d2TanOn_9.cxx` (two lines, centre on a circle) | `D1.Angle(D2) <= Resolution` is signed, so lines turning clockwise take the "parallel" branch, where the second line's qualifier test overwrites the first's; the centre is `Intp.Point(i)` (the first bisector's index) instead of `Point(l)`; the tolerance is unused | Wrong branch for half the line pairs; Standard_OutOfRange when that point doesn't exist |
+| `GccAna_Circ2d2TanOn_10.cxx` (line, point, centre on a circle) | The boundary `pinterm` is `distpc + Ron` from the point but compared with `distpc - Ron`; `parcen3` is computed then overwritten with 0; tangency point 1 is at distance `dist1` instead of `Radius` | Wrong boundary detection, centre parameter and tangency point |
+| `GccAna_Circ2d2TanOn_11.cxx` (two points, centre on a circle) | The `C1` enlargement branch repeats conditions that returned earlier | Dead code |
+| `GccAna_Circ2d2TanRad.cxx` (two circles) | `C2 = gp_Circ2d(C1)` overwrites C2 in the enclosed/enclosed boundary case | `pararg2` is a parameter on C1 |
+| `GccAna_Circ2d2TanRad.cxx` | `std::abs(R1 - dist - R2) > 0.0` (meant `<= Tol`) always holds | Enclosing + unqualified always returns one circle, not tangent to the second; `TheSame2(1)` unset when the solution is the first circle only |
+| `GccAna_Circ2d2TanRad.cxx` | Outside + unqualified builds `C(2)` on `C(1).Location()` | The pair is concentric and 2 solutions are lost |
+| `GccAna_Circ2d2TanRad_4.cxx` (two lines) | `normL1`/`normL2` are the lines' directions, not their normals | Wrong computed qualifiers for unqualified lines |
+| `GccAna_Circ2dTanOnRad.cxx` (circle, centre on a line) | `CenterOn3` returns `pnttg1sol`, not `pntcen3`; the tangency point's sign is swapped in the general branch | The tangency point is diametrically opposite; enclosed with R1 = 2R puts it at C1's centre, whose parameter throws Standard_ConstructionError |
+| `GccAna_Circ2dTanOnRad_1.cxx` (line, centre on a line) | `pntcen3(NbrSol) = cirsol(1).Location()` | Solution 2 reports solution 1's centre |
+| `GccAna_Circ2dTanOnRad_2.cxx` (point, centre on a line) | With the point on OnLine, 2 solutions are found but WellDone stays false; `qualifier1` unset there | The accessors throw StdFail_NotDone |
+| `GccAna_Circ2dTanOnRad_3.cxx` (circle, centre on a circle) | `qualifier1(NbrSol)` written while NbrSol = 0 | Standard_OutOfRange (a hand-picked recorded case) |
+| `GccAna_Circ2dTanOnRad_4.cxx` (line, centre on a circle) | `sign = (int)dc1.Dot(normL1)` truncates to 0, so the tangency point is the centre | Every generic case throws Standard_ConstructionError (the parameter of the centre): 44 of 120 recorded cases |
+| `GccAna_Circ2dTanOnRad_5.cxx` (point, centre on a circle) | `Location - signe * Point1` is a sum when `signe = -1`; the loop writes index 1, not NbrSol | Wrong boundary circle; solution 2's qualifier, IsTheSame and tangency data unset |
+| `GccAna_Lin2d2Tan.cxx` (two circles) | `qualifier2(...) = Qualified1.Qualifier()` in almost every branch; for unqualified circles WhichQualifier returns GccEnt_unqualified, not a computed qualifier (also circle + point); the mixed branches write solution 2's qualifiers into `qualifier1(1)`/`qualifier2(1)`; unqualified/enclosing gives solution 2 the first's tangency point | Wrong or unset qualifiers; a wrong tangency point (pinned by a test) |
+| `GccAna_Lin2dTanObl.cxx` | The second intersection is computed again with `linsol(1)`; a solution parallel to TheLine gets the intersection data of a default point | Intersection2(2) = Intersection2(1); (0, 0) data for parallel solutions |
+| `GccAna_Lin2dTanPer.cxx` | `qualifier1` never set by the (point, line), (point, circle) and (circle, line) constructors; `maxdist = RealLast()` never lowered, so the last intersection point is kept, not the nearest; (circle, circle) always gives 2 solutions whatever the qualifier, tangent to C1 and perpendicular to the line of centres (they don't pass through TheCircle's centre); no BadQualifier check for noqualifier; ThisSolution throws Standard_RangeError | Unset qualifiers; wrong lines in the circle/circle case (pinned by a test) |

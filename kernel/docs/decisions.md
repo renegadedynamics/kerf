@@ -7507,3 +7507,90 @@ Numbers from 6701 are placeholders, renumbered on merge; earlier decisions are c
         identifies them exactly from native's result.
       - **6G** (CellsBuilder, RemoveFeatures) runs UnifySameDomain on shapes it owns: the internal forms, as 6P.
       - **6L**: `unifysamedom` is in Draw-lite already (decision 771).
+
+## Phase 5: unit 5K1, analytic constraints
+
+GccEnt, GccInt and GccAna: 2D lines and circles tangent to, through or centred on given lines, circles and points,
+and the bisectors of points, lines and circles. Numbers from 5901 are placeholders, renumbered on merge; plan
+decisions are cited by their merged numbers (576–590).
+
+776. **Classes and signatures.**
+      - `GccEnt_QualifiedCirc` and `GccEnt_QualifiedLin` are readonly structs: OCCT uses them by value and gives them
+        no setters. They get exact equality and `ToString` (decision 8). `GccEnt` is a static class; its
+        `PositionFromString(string, ref GccEnt_Position)` leaves the position unchanged when the name is unknown, as
+        OCCT does, so it is `ref`; `Print` writes to a `TextWriter`. `GccEnt_BadQualifier` derives from
+        Standard_DomainError, `GccAna_NoSolution` from Standard_Failure.
+      - `GccInt_Bisec` is an abstract Standard_Transient whose six accessors throw Standard_NotImplemented, as OCCT's;
+        the six `GccInt_B*` kinds are sealed and immutable (set by their constructors only, so nothing to freeze).
+      - The GccAna solvers are sealed classes computed by their constructors (decision 117), with OCCT's accessors:
+        `Tangency1/2/3`, `CenterOn3`, `Intersection1/2` and `WhichQualifier` write `out` parameters (OCCT writes
+        them on every path that doesn't throw). A class split over `_1.cxx` … `_N.cxx` is a partial class with one
+        C# file per OCCT file (`GccAna_Circ2d3Tan_1.cs` …), each with its `Port of:` line. The result arrays stay
+        NCollection_Array1 sized as each constructor's initialiser list sizes them (a private `this(int)` constructor
+        where the sizes vary).
+      - The bisectors build their solution when asked, as OCCT's do: each `ThisSolution(i)` returns a new GccInt
+        object. `GccAna_Circ2dBisec.ThisSolution` returns null for the index combinations OCCT's cases don't cover
+        (none is reachable with OCCT's solution counts); the signature stays non-nullable, as OCCT's handle.
+      - OCCT has no GTests for GccEnt, GccInt or GccAna (V8_0_1's TKGeomAlgo GTests cover Geom2dGcc, unit 5K2).
+777. **Mechanical details.** Unnamed tolerance parameters are named `Tolerance` and unused, as in OCCT;
+      `static int MaxSol = 20` (Circ2d3Tan_4) is a `const`. C#'s scoping forbids reusing a name that an enclosing
+      scope declares later, so a few inner locals are renamed (Circ2d3Tan's derivative roots `yRootsD`, inner `dc` as
+      `dc1`/`dc2` in Circ2d3Tan_1, _2 and _5), with a comment. The `_N.cxx` files were converted by scripts and fixed
+      by hand (gp copy constructors written as assignments, `gp_Dir2d::D::X`, continuation lines).
+778. **Native OCCT checks ranges and null directions: so does the port, with no emulation of unchecked builds.**
+      - Decision 9 assumed OCCT's release builds compile the `Raise_if` checks out. build123d.NET's native OCCT
+        (the oracle's) keeps them, at least NCollection_Array1's range check and gp_Dir2d's null-vector check: of
+        tools/gccrec's 6,600 random cases, native throws Standard_OutOfRange from a constructor in 22 (array writes
+        past OCCT's fixed sizes) and Standard_ConstructionError in 145 (ElCLib's parameter of a circle's centre, a
+        direction between coincident points), all at the same calls as the port.
+      - So where OCCT reads or writes past an array (Circ2d2TanOn's `Radius(3)`, `Radius(i)` with the bisector's
+        index, Circ2dTanOnRad_3's `qualifier1(0)`, Circ2d3Tan's 16-slot `rSol`) or normalises a null vector (the
+        parameter of a tangency point at a circle's centre: Circ2dTanOnRad with a line on a circle, Circ2dTanCen of
+        radius 0, a TheSame solution centred at the origin, whose unset tangency point is (0, 0)), the port throws the
+        same exception native does. The porters' first versions emulated an unchecked build (an ElCLib wrapper
+        returning NaN at a centre, NaN for reads past `Radius`, a `qualifier1` array from 0); the recordings showed
+        native throwing there, so they were removed.
+      - Other units that assumed "native writes past the end" or "native returns NaN" should check against the oracle:
+        with this build, native throws.
+779. **OCCT's mistakes are ported as they are** (decision 10), marked `// OCCT` (70 sites; occt-issues.md, unit
+      5K1). Several make solutions that are not tangent to every argument (Circ2d3Tan's circle-circle-line
+      constructor, Circ2d2TanOn's circle-point constructors, Circ2d2TanRad's enclosing/unqualified circles), or leave
+      results unset (5906). The unit tests assert OCCT's behaviour there, with a comment.
+780. **Native recordings: tools/gccrec** (as tools/edgerec, decision 754).
+      - A C++ program built with MSVC against build123d.NET's native OCCT runs every constructor of every GccAna class
+        (55, the six bisectors included) on 120 random configurations each and on 18 hand-picked ones (the unit
+        tests' degenerate cases: centres on circles, concentric circles, coincident points), and writes each case's
+        inputs (round-trip decimals) and every result as named tokens: IsDone, NbSolutions, each solution, the
+        qualifiers, the tangency, centre and intersection data, IsTheSame, and the exception class wherever one is
+        thrown, every double as 64-bit hex. GccAna isn't bound by build123d.NET, so there is no direct oracle.
+      - Inputs: half on a 0.5 grid (to reach tangent, concentric, coincident, parallel and on-curve cases), half
+        uniform on multiples of 2^-10; radii include 0, the solvers' radius is sometimes negative, qualifiers include
+        the bad ones (noqualifier, enclosing lines), tolerances 1e-7 or 1e-4.
+      - `GccAna_NativeTests` replays each case on the port and compares token by token (NaNs equal whatever their
+        payload): **every token is identical** except the uninitialised results of 5906. A local run of 1,500 cases
+        per constructor (82,500) found one more uninitialised result (Circ2d2TanOn's `pararg2` on a boundary path) and
+        nothing else; the committed recording keeps 120 per constructor (6,618 cases, 650 kB gzipped).
+781. **Results OCCT leaves uninitialised are 0 in the port, and masked in the comparison.** OCCT 8's NCollection_Array1
+      leaves double, int and enum elements uninitialised; the port's are 0 (GccEnt_unqualified). The masked results:
+      Circ2d2TanOn(circle, point, line)'s Tangency1/2 (`pararg1` at the bisector's index, `pararg2` on a boundary
+      path); Circ2d2TanRad(circle, circle)'s IsTheSame2/Tangency2 (`TheSame2(1)` unset when the solution is the first
+      circle only); Lin2d2Tan(circle, circle)'s qualifiers (the second solution's written into the first's);
+      Circ2dTanOnRad(point, circle)'s second solution (the loop writes index 1); Lin2dTanPer's qualifiers (never set).
+      And Circ2d3Tan(three lines) with the third unqualified and the first two enclosed and unqualified is skipped:
+      it filters solutions with `cote3(2)`, never set (10 of the 120 cases). Native's values there vary with memory.
+782. **Notes for unit 5K2 (Geom2dGcc's analytic dispatch).**
+      - Geom2dGcc's solvers construct the GccAna solver when the arguments are lines, circles and points, and copy
+        its results: `CircAna.WhichQualifier(i, qualifier1(i), qualifier2(i))` is `out qualifier1[i]` (the ref
+        indexer is a variable), Tangency through `out` likewise.
+      - GccAna throws where native throws (5903): Standard_ConstructionError, Standard_OutOfRange,
+        Standard_NegativeValue, GccEnt_BadQualifier; and its accessors throw StdFail_NotDone for a TheSame argument.
+        Geom2dGcc's own try/catch, if any, sees the same exception types as native.
+      - Through Geom2dGcc the uninitialised results of 5906 surface too (Lin2d2Tan's qualifiers, Circ2d2TanRad's
+        TheSame2 in its circle/circle case): the Geom2dGcc oracle should mask the same accessors for analytic inputs.
+        Everything else GccAna returns is bit-identical to native.
+783. **Notes for unit 5M (Bisector and MAT2d).** `Bisector_BisecAna` uses GccAna_Circ2dBisec, CircLin2dBisec,
+      CircPnt2dBisec, LinPnt2dBisec and Pnt2dBisec (Lin2dBisec is used by the Draw commands only) and switches on
+      `GccInt_Bisec.ArcType()`; the accessors that don't match the kind throw Standard_NotImplemented. All six bisectors were
+      bit-identical to native on 1,500 random cases each (concentric, tangent, secant, apart and same-radius circles,
+      points on and at the centre of circles, points on lines). Pnt2dBisec throws GccAna_NoSolution for coincident
+      points; CircPnt2dBisec's single-argument constructor uses a tolerance of 1e-10.

@@ -739,3 +739,18 @@ Phase 6 (part): UnifySameDomain (unit 6U).
     data/occ's shapes: all 3,455 results equal native OCCT's, 3,410 byte-identical and 33 with the Free column masked
     (12 the same exception); histories equal through the canonical match.
   - The corpus: 51 cases that use `unifysamedom` are now runnable (none before): OK 14, SKIPPED 37 for data files.
+Phase 5 (part): analytic constraints (unit 5K1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - GccEnt: qualified lines and circles (`GccEnt_QualifiedLin`, `GccEnt_QualifiedCirc`, immutable values), the
+    qualifiers and their names.
+  - GccInt: the bisecting curves (`GccInt_Bisec` and its line, circle, ellipse, hyperbola, parabola and point kinds).
+  - GccAna: circles tangent to three lines, circles or points (`GccAna_Circ2d3Tan`), to two with the centre on a line
+    or circle (`Circ2d2TanOn`), to two with a given radius (`Circ2d2TanRad`), to one with the centre on a curve and a
+    given radius (`Circ2dTanOnRad`), with a given centre (`Circ2dTanCen`); lines tangent to two circles or points
+    (`Lin2d2Tan`), at an angle to a line (`Lin2dTanObl`), parallel (`Lin2dTanPar`) or perpendicular (`Lin2dTanPer`);
+    the bisectors of points, lines and circles. Computed by their constructors, with OCCT's accessors.
+- Tests: unit tests of every solver and bisector on OCCT's documented configurations (solution counts, qualifier
+  filtering, tangency and pass-through of every solution). Native recordings (tools/gccrec, a C++ recorder built
+  against native OCCT): every constructor of every GccAna class on 6,618 random and hand-picked configurations, every
+  result bit-identical to native, exceptions included, except the results OCCT leaves uninitialised.
