@@ -486,6 +486,16 @@ public class ShapeExtend_WireData : Standard_Transient
         mySeamF = -1;
     }
 
+    /// <summary>
+    /// OCCT.NET: replaces the edge <paramref name="num"/> (of the manifold list) whatever its orientation, for
+    /// ShapeFix_Wire's copy at the entry, which puts copies in place of a frozen wire's edges.
+    /// </summary>
+    internal void InternalSetEdge(in TopoDS_Edge edge, int num)
+    {
+        myEdges.SetValue(num, edge);
+        mySeamF = -1;
+    }
+
     /// <summary>Reverses the wire: the order of the edges and each edge's orientation.</summary>
     public void Reverse()
     {

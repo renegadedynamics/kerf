@@ -766,3 +766,24 @@ matches bit for bit.
 | `IntPatch_ImpPrmIntersection.cxx`, `ComputeTangency` (lines 365–373) | On an INTERNAL or EXTERNAL arc, the complex-transition branch never assigns the vertex handle `vtx` | It keeps an earlier point's vertex, or is null, which would crash OCCT in `Identical` (a NullReferenceException in the port). Kept |
 | `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (lines 3188–3195; a property) | `aSSLine` is a second handle to the input line's points | AdjustLine and InsertSeamVertices edit the input line in place, even when it is replaced afterwards. Kept |
 | `IntWalk_PWalking` (the constructor with the bounds; a property) | Leaves `tgfirst`, `tglast`, `myTangentIdx` and `previoustg` uninitialised | Perform writes them before reading them; harmless |
+## Phase 6: unit 6H2, ShapeFix edges and wires
+
+Found while porting ShapeFix's statics, Root, Edge, EdgeProjAux, Wire, WireSegment, WireVertex, IntersectionTool,
+ShapeTolerance, SplitCommonVertex, EdgeConnect and SplitTool. Each is reproduced in the port and marked `// OCCT`
+unless the table says otherwise; "pinned" names the unit test that shows it. Native ShapeFix_Shape on wires and edges
+(the oracle) showed no difference from native.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeFix_ShapeTolerance::LimitTolerance`, TopAbs_WIRE | The edges' result isn't added to `fait` | A change to the edges' tolerances alone returns false. Pinned by `LimitTolerance_Wire_DoesntCountTheEdges` |
+| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port reverses a copy and never writes the edge (the reversed curve isn't read afterwards) |
+| `ShapeFix_Edge::FixReversed2d` | Reverses the stored pcurve in place | Other edges sharing the pcurve are reversed too. The port puts a reversed copy in place of the curve on this edge only (decision 700) |
+| `ShapeFix_WireVertex::FixSame` | Compares `V1 == V2` (orientation included); `B.Add`s the shared vertex without removing the edges' old ones; doesn't make the edges Free first, as `Fix` does | A shared vertex is never detected; the edges end with three or four vertices; on the edges of a wire `Add` throws `TopoDS_FrozenShape`. Pinned |
+| `ShapeFix_IntersectionTool::FixIntersectingWires` | Calls `sewd->Wire()` three times per modified wire | The face gets one new wire, the context records a second as the replacement and the loop goes on with a third: `Context()->Value(oldWire)` isn't the face's wire |
+| `ShapeFix_Wire::FixTails` | Ends with `myStatusNotches = myLastFixStatus` | `StatusFixTails()` always reports OK, and the notches' status is overwritten by the tails' |
+| `ShapeFix_Wire::FixGap2d`, clipping an extended pcurve at the surface's bounds | Uses `jj` (which end of the segment) where `j` (which curve) is meant to pick `reversed1`/`!reversed2` and `cfirst1`/`clast2` | The segment ends are clipped on the wrong curve's side. By reading |
+| `ShapeFix_Edge::FixAddPCurve`, seam branch | Dereferences the projected pcurve, which can be null | Inside OCC_CATCH_SIGNALS it ends as FAIL2. The port throws `Standard_NullObject` inside the same `try`, with the same status |
+
+Map order: `ShapeFix_EdgeConnect::Build` walks `myLists` (a DataMap keyed by vertex) in native's hash order; the port
+walks it in insertion order (decision 18). Each shared vertex is computed on its own, so only the order of the writes
+changes.
