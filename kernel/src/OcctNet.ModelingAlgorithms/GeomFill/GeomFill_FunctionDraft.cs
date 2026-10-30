@@ -77,6 +77,8 @@ public sealed class GeomFill_FunctionDraft : math_FunctionSetWithDerivatives
     {
         C.D1(Param, out _, out gp_Vec DP); // derivee de la section
 
+        // OCCT: the term W cos(teta) B' (the turning binormal) is missing, so LocationDraft's trace derivatives are
+        // wrong wherever the binormal turns.
         F[1] = DP.Coord(1) + W * dN.Coord(1) * Math.Sin(teta);
         F[2] = DP.Coord(2) + W * dN.Coord(2) * Math.Sin(teta);
         F[3] = DP.Coord(3) + W * dN.Coord(3) * Math.Sin(teta);
