@@ -119,7 +119,7 @@ public sealed class GccAna_Lin2dTanPar
             pnttg1sol[NbrSol] = new gp_Pnt2d((C1.Location().XY()).Added(signe * xy));
             par1sol[NbrSol] = 0.0;
             // a circle of radius 0 puts the tangency point at its centre
-            pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
             WellDone = true;
         }
     }

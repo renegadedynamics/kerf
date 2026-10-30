@@ -88,16 +88,16 @@ public sealed partial class GccAna_Circ2dTanOnRad
                 pnttg1sol[NbrSol] = Point1;
                 pntcen3[NbrSol]   = cirsol[NbrSol].Location();
                 pararg1[NbrSol]   = 0.0;
-                par1sol[NbrSol]   = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                parcen3[NbrSol]   = GccAna_ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                parcen3[NbrSol]   = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
             }
             else if (dp1lin < Tol)
             {
                 // OCCT: qualifier1 is not set on this path (uninitialised in OCCT, GccEnt_unqualified here)
                 pntcen3[1] = new gp_Pnt2d(Point1.X() + Radius * xdir, Point1.Y() + Radius * ydir);
                 pntcen3[2] = new gp_Pnt2d(Point1.X() - Radius * xdir, Point1.Y() - Radius * ydir);
-                pntcen3[1] = ElCLib.Value(GccAna_ElCLib.Parameter(OnLine, pntcen3[1]), OnLine);
-                pntcen3[2] = ElCLib.Value(GccAna_ElCLib.Parameter(OnLine, pntcen3[2]), OnLine);
+                pntcen3[1] = ElCLib.Value(ElCLib.Parameter(OnLine, pntcen3[1]), OnLine);
+                pntcen3[2] = ElCLib.Value(ElCLib.Parameter(OnLine, pntcen3[2]), OnLine);
                 gp_Ax2d axe = new(pntcen3[1], OnLine.Direction());
                 cirsol[1]    = new gp_Circ2d(axe, Radius);
                 axe          = new gp_Ax2d(pntcen3[2], OnLine.Direction());
@@ -105,13 +105,13 @@ public sealed partial class GccAna_Circ2dTanOnRad
                 TheSame1[1]  = 0;
                 pnttg1sol[1] = Point1;
                 pararg1[1]   = 0.0;
-                par1sol[1]   = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                parcen3[1]   = GccAna_ElCLib.Parameter(OnLine, pntcen3[1]);
+                par1sol[1]   = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+                parcen3[1]   = ElCLib.Parameter(OnLine, pntcen3[1]);
                 TheSame1[2]  = 0;
                 pnttg1sol[2] = Point1;
                 pararg1[2]   = 0.0;
-                par1sol[2]   = GccAna_ElCLib.Parameter(cirsol[2], pnttg1sol[2]);
-                parcen3[2]   = GccAna_ElCLib.Parameter(OnLine, pntcen3[2]);
+                par1sol[2]   = ElCLib.Parameter(cirsol[2], pnttg1sol[2]);
+                parcen3[2]   = ElCLib.Parameter(OnLine, pntcen3[2]);
                 NbrSol       = 2;
             }
             else
@@ -155,8 +155,8 @@ public sealed partial class GccAna_Circ2dTanOnRad
                             pnttg1sol[NbrSol]  = Point1;
                             pntcen3[NbrSol]    = cirsol[NbrSol].Location();
                             pararg1[NbrSol]    = 0.0;
-                            par1sol[NbrSol]    = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            parcen3[NbrSol]    = GccAna_ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            par1sol[NbrSol]    = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            parcen3[NbrSol]    = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
                         }
                         WellDone = true;
                     }

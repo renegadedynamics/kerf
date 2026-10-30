@@ -92,18 +92,13 @@ public class GccAna_Circ2dTanOnRadTests
         }
     }
 
-    // A tangency point OCCT puts at the centre of the argument gives a NaN parameter, as in OCCT's release build
+    // OCCT puts the tangency point at the centre of the argument (the sign is swapped), and ElCLib's parameter of a
+    // circle's centre normalises a null vector: native OCCT throws Standard_ConstructionError, as the port does
     [Fact]
-    public void CircleCentreOnLine_TangencyPointAtTheCentre()
+    public void CircleCentreOnLine_TangencyPointAtTheCentre_Throws()
     {
-        GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Enclosed(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol);
-        Assert.Equal(2, anAlgo.NbSolutions());
-        for (int i = 1; i <= 2; i++)
-        {
-            anAlgo.Tangency1(i, out _, out double aParArg, out gp_Pnt2d aPnt);
-            Assert.Equal(0.0, aPnt.Distance(new gp_Pnt2d(0, 0)), 1.0e-12);
-            Assert.True(double.IsNaN(aParArg) || aPnt.Distance(new gp_Pnt2d(0, 0)) > 0.0);
-        }
+        Assert.Throws<Standard_ConstructionError>(
+            () => new GccAna_Circ2dTanOnRad(GccEnt.Enclosed(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol));
     }
 
     // OCCT: CenterOn3 returns the tangency point, not the centre
@@ -226,68 +221,31 @@ public class GccAna_Circ2dTanOnRadTests
     }
 
     // Unit circles at the origin and at (1, 0), radius just over 3 (within the tolerance): the circle centred at
-    // (2, 0) encloses the first. OCCT's "sign" branch writes the qualifier at index 0 (outside its array) and leaves
-    // qualifier 1 unset.
+    // (2, 0) encloses the first. OCCT's "sign" branch writes the qualifier at index 0, outside its array: native OCCT's
+    // range check throws Standard_OutOfRange (tools/gccrec's hand-picked cases), and so does the port.
     [Fact]
-    public void CircleCentreOnCircle_EnclosingAll()
+    public void CircleCentreOnCircle_EnclosingAll_Throws()
     {
         gp_Circ2d aC = Circ(0, 0, 1);
         gp_Circ2d anOn = Circ(1, 0, 1);
-        GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(1, anAlgo.NbSolutions());
-        gp_Circ2d aSol = anAlgo.ThisSolution(1);
-        AssertNear(aSol.Location(), new gp_Pnt2d(2, 0));
-        CheckCentreOnCirc(anAlgo, 1, anOn);
-        Assert.Equal(GccEnt_enclosing, CircQualifier(aC, aSol));
-        anAlgo.Tangency1(1, out double aParSol, out double aParArg, out gp_Pnt2d aPnt);
-        AssertNear(aPnt, new gp_Pnt2d(-1, 0));
-        AssertNear(ElCLib.Value(aParSol, aSol), aPnt);
-        AssertNear(ElCLib.Value(aParArg, aC), aPnt);
+        Assert.Throws<Standard_OutOfRange>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol));
     }
 
-    // The X axis, centres on the circle of radius 2 at the origin, radius 1: centres at y = -1 for the first side
-    // OCCT tries. OCCT then truncates a dot product into its side and offsets the line by 0 for the second side, so
-    // the unqualified case also returns two circles centred on the axis.
-    [Fact]
-    public void LineCentreOnCircle_Unqualified()
-    {
-        gp_Lin2d aL = Lin(0, 0, 1, 0);
-        gp_Circ2d anOn = Circ(0, 0, 2);
-        GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Unqualified(aL), anOn, 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(4, anAlgo.NbSolutions());
-        for (int i = 1; i <= 4; i++)
-        {
-            Assert.Equal(1.0, anAlgo.ThisSolution(i).Radius());
-            CheckCentreOnCirc(anAlgo, i, anOn);
-        }
-        Assert.Equal(-1.0, anAlgo.ThisSolution(1).Location().Y(), 1.0e-9);
-        Assert.Equal(-1.0, anAlgo.ThisSolution(2).Location().Y(), 1.0e-9);
-        Assert.Equal(0.0, anAlgo.ThisSolution(3).Location().Y(), 1.0e-9);
-        Assert.Equal(0.0, anAlgo.ThisSolution(4).Location().Y(), 1.0e-9);
-    }
-
+    // The X axis, centres on the circle of radius 2 at the origin, radius 1. OCCT truncates a dot product into its side
+    // (0), so the tangency point is the solution's centre and ElCLib's parameter there normalises a null vector: native
+    // OCCT throws Standard_ConstructionError on every such case (tools/gccrec), as the port does
     [Theory]
-    [InlineData(GccEnt_enclosed, 1.0)]
-    [InlineData(GccEnt_outside, -1.0)]
-    public void LineCentreOnCircle_Qualified(GccEnt_Position theQ, double theY)
+    [InlineData(GccEnt_unqualified)]
+    [InlineData(GccEnt_enclosed)]
+    [InlineData(GccEnt_outside)]
+    public void LineCentreOnCircle_Throws(GccEnt_Position theQ)
     {
         gp_Lin2d aL = Lin(0, 0, 1, 0);
         gp_Circ2d anOn = Circ(0, 0, 2);
-        GccAna_Circ2dTanOnRad anAlgo = new(new GccEnt_QualifiedLin(aL, theQ), anOn, 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(2, anAlgo.NbSolutions());
-        for (int i = 1; i <= 2; i++)
-        {
-            gp_Circ2d aSol = anAlgo.ThisSolution(i);
-            Assert.Equal(theY, aSol.Location().Y(), 1.0e-9);
-            Assert.Equal(1.0, aL.Distance(aSol.Location()), 1.0e-9);
-            CheckCentreOnCirc(anAlgo, i, anOn);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1);
-            Assert.Equal(theQ, aQ1);
-        }
+        Assert.Throws<Standard_ConstructionError>(() => new GccAna_Circ2dTanOnRad(new GccEnt_QualifiedLin(aL, theQ), anOn, 1.0, Tol));
     }
+
+
 
     // The point (1, 1), centres on the circle at (3, 0) of radius 1, radius 2.5: two circles
     [Fact]

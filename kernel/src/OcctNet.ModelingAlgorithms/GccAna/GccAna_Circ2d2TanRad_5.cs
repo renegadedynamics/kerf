@@ -93,8 +93,8 @@ public sealed partial class GccAna_Circ2d2TanRad
         {
             pararg1[i] = 0.0;
             pararg2[i] = 0.0;
-            par1sol[i] = GccAna_ElCLib.Parameter(cirsol[i], pnttg1sol[i]);
-            par2sol[i] = GccAna_ElCLib.Parameter(cirsol[i], pnttg2sol[i]);
+            par1sol[i] = ElCLib.Parameter(cirsol[i], pnttg1sol[i]);
+            par2sol[i] = ElCLib.Parameter(cirsol[i], pnttg2sol[i]);
         }
     }
 }

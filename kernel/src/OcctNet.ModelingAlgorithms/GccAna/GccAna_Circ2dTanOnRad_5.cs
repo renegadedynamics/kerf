@@ -76,8 +76,8 @@ public sealed partial class GccAna_Circ2dTanOnRad
                 pnttg1sol[1]  = Point1;
                 pntcen3[1]    = cirsol[1].Location();
                 pararg1[1]    = 0.0;
-                par1sol[1]    = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                parcen3[1]    = GccAna_ElCLib.Parameter(OnCirc, pntcen3[1]);
+                par1sol[1]    = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+                parcen3[1]    = ElCLib.Parameter(OnCirc, pntcen3[1]);
                 WellDone      = true;
                 NbrSol        = 1;
             }
@@ -98,8 +98,8 @@ public sealed partial class GccAna_Circ2dTanOnRad
                             TheSame1[1]   = 0;
                             pnttg1sol[1]  = Point1;
                             pntcen3[1]    = cirsol[1].Location();
-                            par1sol[1]    = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                            parcen3[1]    = GccAna_ElCLib.Parameter(OnCirc, pntcen3[1]);
+                            par1sol[1]    = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+                            parcen3[1]    = ElCLib.Parameter(OnCirc, pntcen3[1]);
                             pararg1[1]    = 0.0;
                         }
                     }

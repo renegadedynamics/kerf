@@ -398,12 +398,14 @@ public class GccAna_Circ2d2TanRadTests
         }
     }
 
-    // A solution equal to an argument: the circle of radius 1 through a point on it
+    // A solution equal to an argument: the circle of radius 1 through a point on it. OCCT leaves that solution's
+    // tangency point at the default (0, 0) and still asks for its parameter on the solution, so the circle is off the
+    // origin here (see CircleAtTheOriginAndPointOnIt_Throws)
     [Fact]
     public void CircleAndPointOnIt_SolutionIsTheArgument()
     {
-        gp_Circ2d aC1 = Circ(0, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(aC1), new gp_Pnt2d(1, 0), 1.0, Tol);
+        gp_Circ2d aC1 = Circ(1, 2, 1);
+        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(aC1), new gp_Pnt2d(2, 2), 1.0, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.True(anAlgo.NbSolutions() >= 1);
         Assert.True(anAlgo.IsTheSame1(1));
@@ -412,7 +414,16 @@ public class GccAna_Circ2d2TanRadTests
         for (int i = 2; i <= anAlgo.NbSolutions(); i++)
         {
             CheckTangency1(anAlgo, i, aC1);
-            CheckThrough(anAlgo, i, new gp_Pnt2d(1, 0), false);
+            CheckThrough(anAlgo, i, new gp_Pnt2d(2, 2), false);
         }
+    }
+
+    // As above with the circle centred at the origin: the unset tangency point (0, 0) is the solution's centre, and
+    // ElCLib's parameter there normalises a null vector. Native OCCT throws Standard_ConstructionError, as the port does
+    [Fact]
+    public void CircleAtTheOriginAndPointOnIt_Throws()
+    {
+        Assert.Throws<Standard_ConstructionError>(
+            () => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(Circ(0, 0, 1)), new gp_Pnt2d(1, 0), 1.0, Tol));
     }
 }

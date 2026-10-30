@@ -111,7 +111,7 @@ public sealed class GccAna_Lin2dTanPer
         par2sol[1] = ElCLib.Parameter(linsol[1], pntint2sol[1]);
         pararg1[1] = 0.0;
         // a circle of radius 0 puts the intersection at its centre
-        pararg2[1] = GccAna_ElCLib.Parameter(TheCircle, pntint2sol[1]);
+        pararg2[1] = ElCLib.Parameter(TheCircle, pntint2sol[1]);
         NbrSol = 1;
         WellDone = true;
     }
@@ -182,7 +182,7 @@ public sealed class GccAna_Lin2dTanPer
             par1sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
             par2sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
             // a circle of radius 0 puts the tangency point at its centre
-            pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
             pararg2[NbrSol] = ElCLib.Parameter(TheLin, pntint2sol[NbrSol]);
             WellDone = true;
         }
@@ -264,8 +264,8 @@ public sealed class GccAna_Lin2dTanPer
             par2sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
             // a circle of radius 0 puts the tangency point at its centre, and a line missing TheCircle leaves the
             // intersection at the origin, which may be TheCircle's centre
-            pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-            pararg2[NbrSol] = GccAna_ElCLib.Parameter(TheCircle, pntint2sol[NbrSol]);
+            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pararg2[NbrSol] = ElCLib.Parameter(TheCircle, pntint2sol[NbrSol]);
             WellDone = true;
         }
     }

@@ -261,12 +261,12 @@ public sealed partial class GccAna_Circ2d2TanRad
         }
         for (i = 1; i <= NbrSol; i++)
         {
-            par1sol[i] = GccAna_ElCLib.Parameter(cirsol[i], pnttg1sol[i]);
+            par1sol[i] = ElCLib.Parameter(cirsol[i], pnttg1sol[i]);
             if (TheSame1[i] == 0)
             {
-                pararg1[i] = GccAna_ElCLib.Parameter(C1, pnttg1sol[i]);
+                pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[i]);
             }
-            par2sol[i] = GccAna_ElCLib.Parameter(cirsol[i], pnttg2sol[i]);
+            par2sol[i] = ElCLib.Parameter(cirsol[i], pnttg2sol[i]);
             pararg2[i] = 0.0;
         }
     }

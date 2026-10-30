@@ -209,7 +209,7 @@ public sealed class GccAna_Lin2dTanObl
             {
                 par1sol[index] = ElCLib.Parameter(linsol[index], pnttg1sol[index]);
                 // a circle of radius 0 puts the tangency point at its centre
-                pararg1[index] = GccAna_ElCLib.Parameter(C1, pnttg1sol[index]);
+                pararg1[index] = ElCLib.Parameter(C1, pnttg1sol[index]);
                 par2sol[index] = ElCLib.Parameter(linsol[index], pntint2sol[index]);
                 pararg2[index] = ElCLib.Parameter(TheLine, pntint2sol[index]);
             }

@@ -139,9 +139,9 @@ public sealed partial class GccAna_Circ2dTanOnRad
                                 pntcen3[NbrSol]   = cirsol[NbrSol].Location();
                                 pnttg1sol[NbrSol] = new gp_Pnt2d(
                                     pntcen3[NbrSol].XY() + new gp_XY(sign * Radius * dir1.Y(), -sign * Radius * dir1.X()));
-                                pararg1[NbrSol] = GccAna_ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
-                                par1sol[NbrSol] = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                parcen3[NbrSol] = GccAna_ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
+                                pararg1[NbrSol] = ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
+                                par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                parcen3[NbrSol] = ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
                             }
                         }
                         WellDone = true;

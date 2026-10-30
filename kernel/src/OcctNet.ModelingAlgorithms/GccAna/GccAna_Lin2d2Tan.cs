@@ -162,7 +162,7 @@ public sealed class GccAna_Lin2d2Tan
             par1sol[i] = ElCLib.Parameter(linsol[i], pnttg1sol[i]);
             par2sol[i] = ElCLib.Parameter(linsol[i], pnttg2sol[i]);
             // a circle of radius 0 puts the tangency point at its centre
-            pararg1[i] = GccAna_ElCLib.Parameter(C1, pnttg1sol[i]);
+            pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[i]);
             pararg2[i] = 0.0;
         }
     }
@@ -520,8 +520,8 @@ public sealed class GccAna_Lin2d2Tan
             par1sol[i] = ElCLib.Parameter(linsol[i], pnttg1sol[i]);
             par2sol[i] = ElCLib.Parameter(linsol[i], pnttg2sol[i]);
             // circles of radius 0 put the tangency points at their centres
-            pararg1[i] = GccAna_ElCLib.Parameter(C1, pnttg1sol[i]);
-            pararg2[i] = GccAna_ElCLib.Parameter(C2, pnttg2sol[i]);
+            pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[i]);
+            pararg2[i] = ElCLib.Parameter(C2, pnttg2sol[i]);
         }
     }
 

@@ -25,9 +25,9 @@ public sealed partial class GccAna_Circ2dTanOnRad
     public GccAna_Circ2dTanOnRad(in GccEnt_QualifiedCirc Qualified1, in gp_Circ2d OnCirc, double Radius, double Tolerance)
     {
         cirsol = new(1, 4);
-        // OCCT: qualifier1(NbrSol) is written with NbrSol = 0 when sign != 0 (below), outside the array (1, 4); the
-        // port gives the array an element 0 to take that write, and qualifier1(1) keeps its default (uninitialised in OCCT)
-        qualifier1 = new(0, 4);
+        // OCCT: qualifier1(NbrSol) is written with NbrSol = 0 when sign != 0 (below), outside the array (1, 4): OCCT's
+        // range check throws Standard_OutOfRange there, and so does the port
+        qualifier1 = new(1, 4);
         TheSame1 = new(1, 4);
         pnttg1sol = new(1, 4);
         pntcen3 = new(1, 4);
@@ -92,7 +92,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
                             qualifier1[NbrSol] = Qualified1.Qualifier();
                             TheSame1[NbrSol]   = 1;
                             pntcen3[NbrSol]    = center1;
-                            parcen3[NbrSol]    = GccAna_ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
+                            parcen3[NbrSol]    = ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
                             WellDone           = true;
                         }
                         else
@@ -131,7 +131,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
                             qualifier1[NbrSol] = Qualified1.Qualifier();
                             TheSame1[NbrSol]   = 1;
                             pntcen3[NbrSol]    = center1;
-                            parcen3[NbrSol]    = GccAna_ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
+                            parcen3[NbrSol]    = ElCLib.Parameter(OnCirc, pntcen3[NbrSol]);
                             WellDone           = true;
                         }
                         else
@@ -292,9 +292,9 @@ public sealed partial class GccAna_Circ2dTanOnRad
             {
                 pnttg1sol[ii + 1] = new gp_Pnt2d(Center[ii + 1].XY() + signe[ii] * Radius * dir1on[ii + 1].XY());
                 pntcen3[ii + 1]   = cirsol[ii + 1].Location();
-                pararg1[ii + 1]   = GccAna_ElCLib.Parameter(C1, pnttg1sol[ii + 1]);
-                par1sol[ii + 1]   = GccAna_ElCLib.Parameter(cirsol[ii + 1], pnttg1sol[ii + 1]);
-                parcen3[ii + 1]   = GccAna_ElCLib.Parameter(OnCirc, pntcen3[ii + 1]);
+                pararg1[ii + 1]   = ElCLib.Parameter(C1, pnttg1sol[ii + 1]);
+                par1sol[ii + 1]   = ElCLib.Parameter(cirsol[ii + 1], pnttg1sol[ii + 1]);
+                parcen3[ii + 1]   = ElCLib.Parameter(OnCirc, pntcen3[ii + 1]);
                 ii++;
             }
         }

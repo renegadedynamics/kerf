@@ -229,11 +229,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
                 {
                     gp_Dir2d dir1cen = new(Center.X() - x1, Center.Y() - y1);
                     pnttg1sol[1] = new gp_Pnt2d(Center.XY() + signe * Radius * dir1cen.XY());
-                    par1sol[1]   = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                    pararg1[1]   = GccAna_ElCLib.Parameter(C1, pnttg1sol[1]);
+                    par1sol[1]   = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+                    pararg1[1]   = ElCLib.Parameter(C1, pnttg1sol[1]);
                 }
                 pntcen3[1] = cirsol[NbrSol].Location();
-                parcen3[1] = GccAna_ElCLib.Parameter(OnLine, pntcen3[1]);
+                parcen3[1] = ElCLib.Parameter(OnLine, pntcen3[1]);
             }
             else if (nbsol > 0)
             {
@@ -310,9 +310,9 @@ public sealed partial class GccAna_Circ2dTanOnRad
                                 pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() - Radius * dir1cen.XY());
                             }
                             pntcen3[NbrSol] = cirsol[NbrSol].Location();
-                            par1sol[NbrSol] = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-                            parcen3[NbrSol] = GccAna_ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                            parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
                         }
                         WellDone = true;
                     }

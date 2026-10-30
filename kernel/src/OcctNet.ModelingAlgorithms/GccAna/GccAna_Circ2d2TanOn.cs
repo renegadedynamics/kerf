@@ -325,16 +325,16 @@ public sealed partial class GccAna_Circ2d2TanOn
                                         double distcc2 = Center.Distance(center2);
                                         // OCCT: the qualifiers of unqualified arguments are computed with Radius(i),
                                         // i the bisector's index, instead of Radius(k); past Radius's two elements C++
-                                        // reads beyond the array (the port reads NaN, see RadiusAt)
+                                        // reads beyond the array; with OCCT's range checks (on in native builds) both throw Standard_OutOfRange
                                         if (!Qualified1.IsUnqualified())
                                         {
                                             qualifier1[NbrSol] = Qualified1.Qualifier();
                                         }
-                                        else if (Math.Abs(distcc1 + RadiusAt(Radius, i) - R1) < Tol)
+                                        else if (Math.Abs(distcc1 + Radius[i] - R1) < Tol)
                                         {
                                             qualifier1[NbrSol] = GccEnt_enclosed;
                                         }
-                                        else if (Math.Abs(distcc1 - R1 - RadiusAt(Radius, i)) < Tol)
+                                        else if (Math.Abs(distcc1 - R1 - Radius[i]) < Tol)
                                         {
                                             qualifier1[NbrSol] = GccEnt_outside;
                                         }
@@ -346,11 +346,11 @@ public sealed partial class GccAna_Circ2d2TanOn
                                         {
                                             qualifier2[NbrSol] = Qualified2.Qualifier();
                                         }
-                                        else if (Math.Abs(distcc2 + RadiusAt(Radius, i) - R2) < Tol)
+                                        else if (Math.Abs(distcc2 + Radius[i] - R2) < Tol)
                                         {
                                             qualifier2[NbrSol] = GccEnt_enclosed;
                                         }
-                                        else if (Math.Abs(distcc2 - R2 - RadiusAt(Radius, i)) < Tol)
+                                        else if (Math.Abs(distcc2 - R2 - Radius[i]) < Tol)
                                         {
                                             qualifier2[NbrSol] = GccEnt_outside;
                                         }
@@ -394,13 +394,6 @@ public sealed partial class GccAna_Circ2d2TanOn
                 }
             }
         }
-    }
-
-    // Radius(i) as OCCT reads it with the bisector's index i: past the array's end C++ reads whatever follows it, the
-    // port NaN (every tolerance test then fails, so the qualifier is GccEnt_enclosing).
-    private static double RadiusAt(NCollection_Array1<double> theRadius, int theIndex)
-    {
-        return theIndex >= theRadius.Lower() && theIndex <= theRadius.Upper() ? theRadius[theIndex] : double.NaN;
     }
 
     //========================================================================

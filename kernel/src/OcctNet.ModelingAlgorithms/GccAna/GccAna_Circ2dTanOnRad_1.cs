@@ -122,9 +122,9 @@ public sealed partial class GccAna_Circ2dTanOnRad
                                 pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() - Radius * new gp_XY(-dy1, dx1));
                                 pntcen3[NbrSol]   = cirsol[1].Location(); // OCCT: cirsol(1), not cirsol(NbrSol)
                             }
-                            par1sol[NbrSol] = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pararg1[NbrSol] = GccAna_ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
-                            parcen3[NbrSol] = GccAna_ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pararg1[NbrSol] = ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
+                            parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
                         }
                     }
                     WellDone = true;

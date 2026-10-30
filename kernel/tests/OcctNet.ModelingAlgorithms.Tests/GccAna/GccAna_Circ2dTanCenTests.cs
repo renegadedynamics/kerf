@@ -109,19 +109,13 @@ public class GccAna_Circ2dTanCenTests
         Assert.True(anAlgo.IsTheSame1(1));
     }
 
+    // The centre on the circle: a solution of radius 0, whose tangency point is its centre. ElCLib's parameter there
+    // normalises a null vector: native OCCT throws Standard_ConstructionError, as the port does
     [Fact]
-    public void Circle_CentreOnTheCircle_ZeroRadius_NaNParameter()
+    public void Circle_CentreOnTheCircle_Throws()
     {
         gp_Circ2d aC = Circ(0, 0, 2);
-        GccAna_Circ2dTanCen anAlgo = new(GccEnt.Unqualified(aC), new gp_Pnt2d(2, 0), 1.0e-9);
-        Assert.Equal(2, anAlgo.NbSolutions());
-        Assert.Equal(0.0, anAlgo.ThisSolution(1).Radius());
-        // The tangency point is the zero-radius solution's centre: OCCT's release build gives a NaN parameter there
-        anAlgo.Tangency1(1, out double aPs, out double aPa, out gp_Pnt2d aT);
-        Assert.Equal(new gp_Pnt2d(2, 0), aT);
-        Assert.True(double.IsNaN(aPs));
-        Assert.Equal(0.0, aPa, Tol);
-        CheckCircle(anAlgo, 2, aC, new gp_Pnt2d(2, 0));
+        Assert.Throws<Standard_ConstructionError>(() => new GccAna_Circ2dTanCen(GccEnt.Unqualified(aC), new gp_Pnt2d(2, 0), 1.0e-9));
     }
 
     [Fact]
@@ -145,18 +139,13 @@ public class GccAna_Circ2dTanCenTests
         }
     }
 
+    // The centre at the line's location: OCCT's side test normalises a null vector, and native OCCT throws
+    // Standard_ConstructionError, as the port does
     [Fact]
-    public void Line_CentreAtTheLinesLocation_ZeroRadius()
+    public void Line_CentreAtTheLinesLocation_Throws()
     {
-        // OCCT normalises a null vector here; its release build takes the second branch, as the port does
         gp_Lin2d aL = new(new gp_Pnt2d(1, 1), DX);
-        GccAna_Circ2dTanCen anAlgo = new(aL, new gp_Pnt2d(1, 1));
-        Assert.Equal(1, anAlgo.NbSolutions());
-        Assert.Equal(0.0, anAlgo.ThisSolution(1).Radius());
-        anAlgo.Tangency1(1, out double aPs, out double aPa, out gp_Pnt2d aT);
-        Assert.Equal(new gp_Pnt2d(1, 1), aT);
-        Assert.True(double.IsNaN(aPs));
-        Assert.Equal(0.0, aPa);
+        Assert.Throws<Standard_ConstructionError>(() => new GccAna_Circ2dTanCen(aL, new gp_Pnt2d(1, 1)));
     }
 
     [Fact]

@@ -121,8 +121,8 @@ public sealed class GccAna_Circ2dTanCen
                     pnttg1sol[NbrSol] = new gp_Pnt2d(Pcenter.XY() + signe * Radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
-                    par1sol[NbrSol] = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                    pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                    par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                    pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                 }
                 WellDone = true;
             }
@@ -172,8 +172,8 @@ public sealed class GccAna_Circ2dTanCen
                     pnttg1sol[NbrSol] = new gp_Pnt2d(Pcenter.XY() + signe1 * Radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
-                    par1sol[NbrSol] = GccAna_ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                    pararg1[NbrSol] = GccAna_ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                    par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                    pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                 }
             }
             else
@@ -208,20 +208,16 @@ public sealed class GccAna_Circ2dTanCen
         double xdir = Linetan.Direction().X();
         double ydir = Linetan.Direction().Y();
 
-        // OCCT: gp_Dir2d(xloc - Pcenter.X(), yloc - Pcenter.Y()).Dot(gp_Dir2d(-ydir, xdir)) > 0.0. The port takes the
-        // sign of the unnormalised vector's dot product, which is the same, so that Pcenter at the line's location
-        // takes the second branch as OCCT's release build does (its 0/0 direction compares false) instead of throwing
-        if (new gp_XY(xloc - Pcenter.X(), yloc - Pcenter.Y()).Dot(new gp_Dir2d(-ydir, xdir).XY()) > 0.0)
+        if (new gp_Dir2d(xloc - Pcenter.X(), yloc - Pcenter.Y()).Dot(new gp_Dir2d(-ydir, xdir)) > 0.0)
         {
             pnttg1sol[1] = new gp_Pnt2d(Pcenter.XY() + rayon * new gp_XY(-ydir, xdir));
-            // Pcenter on the line gives a circle of radius 0, whose tangency point is its centre
-            par1sol[1] = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+            par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
             pararg1[1] = ElCLib.Parameter(Linetan, pnttg1sol[1]);
         }
         else
         {
             pnttg1sol[1] = new gp_Pnt2d(Pcenter.XY() + rayon * new gp_XY(ydir, -xdir));
-            par1sol[1] = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+            par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
             pararg1[1] = ElCLib.Parameter(Linetan, pnttg1sol[1]);
         }
         NbrSol = 1;
@@ -245,7 +241,7 @@ public sealed class GccAna_Circ2dTanCen
         TheSame1[1] = 0;
         pnttg1sol[1] = Point1;
         // coincident points give a circle of radius 0 through its centre
-        par1sol[1] = GccAna_ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+        par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
         pararg1[1] = 0.0;
         NbrSol = 1;
         WellDone = true;
