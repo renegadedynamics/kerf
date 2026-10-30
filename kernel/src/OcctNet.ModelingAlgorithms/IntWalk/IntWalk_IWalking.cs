@@ -143,6 +143,13 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     /// </summary>
     internal Action<IntWalk_StatusDeflection, IntSurf_PntOn2S>? StepTrace;
 
+    /// <summary>
+    /// The same hook for the walkings that other algorithms create (IntPatch_ImpPrmIntersection's), on the current
+    /// thread only; <see cref="StepTrace"/> takes precedence.
+    /// </summary>
+    [ThreadStatic]
+    internal static Action<IntWalk_StatusDeflection, IntSurf_PntOn2S>? ThreadStepTrace;
+
     // OCCT's stack buffers of the stop tests (written by the function, never read).
     private readonly math_Vector myBidF = new(1, 1);
     private readonly math_Matrix myBidD = new(1, 1, 1, 2);
@@ -2617,7 +2624,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     {
         IntWalk_StatusDeflection aStatus = TestDeflectionImpl(sp, Finished, UV, StatusPrecedent, ref NbDivision,
                                                               ref Step, StepSign);
-        if (StepTrace is { } aTrace)
+        if ((StepTrace ?? ThreadStepTrace) is { } aTrace)
         {
             IntSurf_PntOn2S aPoint = new();
             aPoint.SetValue(sp.Point(), reversed, UV[1], UV[2]);

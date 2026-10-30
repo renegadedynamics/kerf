@@ -77,6 +77,13 @@ public partial class IntWalk_PWalking
     internal Action<IntWalk_StatusDeflection, IntSurf_PntOn2S>? StepTrace;
 
     /// <summary>
+    /// The same hook for the walkings that other algorithms create (IntPatch_PrmPrmIntersection's), on the current
+    /// thread only; <see cref="StepTrace"/> takes precedence.
+    /// </summary>
+    [ThreadStatic]
+    internal static Action<IntWalk_StatusDeflection, IntSurf_PntOn2S>? ThreadStepTrace;
+
+    /// <summary>
     /// Prepares the walking of <paramref name="Caro1"/> and <paramref name="Caro2"/>. TolTangency is the tolerance of
     /// the tangency test, Epsilon the 3D tolerance of the deflection test, Deflection the largest deflection between
     /// consecutive points, Increment the largest step, relative to the parametric ranges.

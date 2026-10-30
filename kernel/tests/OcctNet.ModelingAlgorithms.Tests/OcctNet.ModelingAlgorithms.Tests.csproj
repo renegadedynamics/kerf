@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Native OCCT's walking steps, recorded by tools/walkrec (decision 5302) -->
+    <EmbeddedResource Include="IntWalk\Recordings\*.txt" LogicalName="IntWalk.Recordings.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 

@@ -113,7 +113,7 @@ public partial class IntWalk_PWalking
                                                    IntWalk_StatusDeflection theStatus)
     {
         IntWalk_StatusDeflection aResult = TestDeflectionImpl(choixIso, theStatus);
-        StepTrace?.Invoke(aResult, myIntersectionOn2S.Point());
+        (StepTrace ?? ThreadStepTrace)?.Invoke(aResult, myIntersectionOn2S.Point());
         return aResult;
     }
 
