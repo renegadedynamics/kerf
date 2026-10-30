@@ -1138,3 +1138,15 @@ order in the port: `FillSameDomainFaces` over `myImages` (to propagate each soli
 its own key, and each solid receives only its own shells. The builders' integer maps iterate in OCCT's order (decision
 784), and no map keyed by a pave block or common block is iterated, so native's builders are reproducible: native gave
 the same result serially and in parallel on every oracle case.
+
+## Phase 6: unit 6P, BRepAlgoAPI and the public API
+
+Found by OCCT's GTests and the Boolean oracle. The port reproduces each, or says where it can't (`// OCCT` or
+`// OCCT.NET: frozen` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::MakeBlocks` (PaveFiller_6, "back to previous tolerance values for unused vertices") | Writes each saved tolerance back into the vertex's TShape, also when it is the vertex's own (a vertex only used as an existing pave) and also for an argument's vertex in the non-destructive mode. `UpdateSavedTolerance` can raise a saved value to a section edge's tolerance, and then the write grows an argument vertex in place | The no-op write is skipped in the port (it would throw on a frozen vertex: GTest `bcut_simple/M2`, a cut of a cut result by its own argument, failed with BOPAlgo_AlertIntersectionFailed). A real change of a frozen argument vertex still throws there (not seen; decision 6983) |
+| `BRepTools_History::Merge` | Appends the composed images from a hashed `NCollection_Map` (`add(aL12, aAdditions[aI])`), so the order of a merged Modified or Generated list is the map's address order natively, insertion order in the port | `SimplifyResult`'s merged history lists the same images as native's, in another order, on 37 of the oracle's 393 simplified Booleans (and on different cases from one native run to the next); the sets are equal |
+| `BRepAlgoAPI_BuilderAlgo::SimplifyResult` | Runs UnifySameDomain with `SetSafeInputMode(myNonDestructive)`: in OCCT's default (destructive) mode the unifier writes into the result in place, and the result shares the arguments' untouched sub-shapes, so the caller's arguments change (pcurves added, ranges reset) | Native writes into its arguments; the port's are frozen and the unifier copies at its entry (decision 766), so they never change. Results are the same bytes; the history has decision 643's in-place entries where native has none |
+| OCCT's destructive mode (`SetNonDestructive(false)`, Draw's default) | The pave filler grows tolerances and adds pcurves on the arguments' own sub-shapes, which the result then shares | The port's frozen arguments always run non-destructively (decision 577); where native's destructive result differs, native's non-destructive result is the port's (oracle) |

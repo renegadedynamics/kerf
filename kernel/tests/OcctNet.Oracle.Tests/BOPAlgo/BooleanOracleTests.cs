@@ -28,13 +28,21 @@ public class BooleanOracleTests(ITestOutputHelper output)
 {
     internal enum Op { Fuse, Cut, Common, Cut21, Section, Splitter, GeneralFuse }
 
+    /// <summary>
+    /// One comparison. Unit 6P added <paramref name="Simplify"/> (<c>SimplifyResult()</c> after the operation; the General
+    /// Fuse and the Splitter then run through BRepAlgoAPI_BuilderAlgo and BRepAlgoAPI_Splitter),
+    /// <paramref name="NonDestructive"/> (native's flag: the port's arguments are frozen, so its operation is
+    /// non-destructive whatever the flag, decision 577) and <paramref name="CheckInverted"/>.
+    /// </summary>
     internal sealed record Run(string Name, string ArgsText, int NbObjects, Op Op, double Fuzzy = 0.0,
-                               BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff, bool UseOBB = false);
+                               BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff, bool UseOBB = false,
+                               bool Simplify = false, bool NonDestructive = true, bool CheckInverted = true);
 
     internal sealed class Tally
     {
         public int Runs, SameError, Identical, FreeMasked, FreeFlags, Canonical, NativeVaries, NativeVariesCanonical, Histories,
-                   HistoriesSame, NonEmpty, SplitFaces, InputsChanged, NotFrozen, NotDeterministic, Skipped;
+                   HistoriesSame, HistoriesSameButInPlace, NonEmpty, SplitFaces, InputsChanged, NotFrozen, NotDeterministic, Skipped,
+                   DestructiveOnly, DestructiveOnlyHistories, HistoriesSameButOrder;
         public readonly Dictionary<Op, (int Runs, int Identical, int FreeMasked, int Canonical)> ByOp = [];
         public readonly List<string> Differences = [];
         public readonly List<string> HistoryDifferences = [];
@@ -81,6 +89,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
         return aCases;
     }
+
+    /// <summary>The recorded cases, each with its own operation (and fuzzy value).</summary>
+    internal static IEnumerable<Run> RecordedRuns() =>
+        s_recorded.Value.Select(c => new Run($"{c.Id} {c.Name}", c.Shapes, 1, OpOfName(c.Name), c.Fuzzy));
 
     // The grid's operation of a recorded case (bopfuse_simple/..., bopcut_simple/..., ...), Fuse for the others.
     private static Op OpOfName(string theName) =>
@@ -173,7 +185,9 @@ public class BooleanOracleTests(ITestOutputHelper output)
     internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Run theCase)
     {
         string aWhat = $"{theCase.Name} [{theCase.Op}{(theCase.Fuzzy > 0 ? $" fuzzy {theCase.Fuzzy:g}" : "")}"
-                       + $"{(theCase.Glue != BOPAlgo_GlueEnum.BOPAlgo_GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}]";
+                       + $"{(theCase.Glue != BOPAlgo_GlueEnum.BOPAlgo_GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
+                       + $"{(theCase.Simplify ? " simplify" : "")}{(theCase.NonDestructive ? "" : " destructive")}"
+                       + $"{(theCase.CheckInverted ? "" : " no-inverted-check")}]";
         if (ReadArgs(theRun, theCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<TopoDS_Shape> aPArgs))
         {
             theTally.Skipped++;
@@ -184,7 +198,9 @@ public class BooleanOracleTests(ITestOutputHelper output)
 
         // native, serially then in parallel (its repeatability)
         (N.TopoDS_Shape? aNRes, N.BRepTools_History? aNHist, string? aNErr) = RunNative(theCase, aNArgs, false);
-        (N.TopoDS_Shape? aNResPar, _, string? aNErrPar) = RunNative(theCase, aNArgs, true);
+        // in the destructive mode native writes into its arguments: its parallel run reads them afresh
+        List<N.TopoDS_Shape> aNArgsPar = theCase.NonDestructive ? aNArgs : ReadArgs(theRun, theCase.ArgsText)!.Value.Item1;
+        (N.TopoDS_Shape? aNResPar, _, string? aNErrPar) = RunNative(theCase, aNArgsPar, true);
         string? aNText = aNRes is null ? null : theRun.NativeText(aNRes);
         bool isNativeRepeatable = aNErr == aNErrPar && (aNText is null || aNText == theRun.NativeText(aNResPar!));
 
@@ -192,7 +208,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         (TopoDS_Shape? aPRes, BRepTools_History? aPHist, string? aPErr) = RunPort(theCase, aPArgs, false);
         string? aPText = aPRes is null ? null : theRun.PortText(aPRes.Value);
         string aPRecord = (aPText ?? aPErr ?? "") + DeterminismHarness.HistoryText(aPArgs, aPRes ?? new TopoDS_Shape(), aPHist);
-        foreach (int aDegree in new[] { 2, Environment.ProcessorCount }.Distinct())
+        foreach (int aDegree in new[] { 2, 3, Environment.ProcessorCount }.Distinct())
         {
             using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
             {
@@ -259,6 +275,14 @@ public class BooleanOracleTests(ITestOutputHelper output)
             aByOp.FreeMasked++;
             isSameMap = true;
         }
+        else if (!theCase.NonDestructive && NonDestructiveAgrees(theRun, theCase))
+        {
+            // the port's frozen arguments make its operation non-destructive (decision 577): native's destructive result
+            // differs, and native's non-destructive one is the port's, byte for byte, histories included
+            theTally.DestructiveOnly++;
+            theTally.ByOp[theCase.Op] = aByOp;
+            return;
+        }
         else
         {
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNResP, aPResP, new CanonicalOptions { CheckValidity = false });
@@ -294,13 +318,35 @@ public class BooleanOracleTests(ITestOutputHelper output)
             return;
         }
         theTally.Histories++;
-        BRepTools_History aNH = NativeHistory(aNHist, aNArgs, aNRes!, aPArgs, aNResP);
+        BRepTools_History aNH = NativeHistory(aNHist, aNArgs, aNRes!, aPArgs, aNResP, out Dictionary<(int, int), TopoDS_Shape> aKeptByNative);
         BRepTools_History aPH = PortHistory(aPHist, aPArgs, aPR, aPResP);
         List<string> aHDiff = isSameMap ? IndexedHistoryDiff(aNH, aPH, aPArgs, aNResP, aPResP)
                                         : HistoryComparison.Compare(aPArgs, aNResP, aNH, aPArgs, aPResP, aPH);
         if (aHDiff.Count == 0)
         {
             theTally.HistoriesSame++;
+            return;
+        }
+        if (isSameMap && IndexedHistoryDiff(aNH, aPH, aPArgs, aNResP, aPResP, true).Count == 0)
+        {
+            // the same images in another order: BRepTools_History::Merge's hashed map (SimplifyResult's merge)
+            theTally.HistoriesSameButOrder++;
+            return;
+        }
+        // decision 643 (and 577 in the destructive mode): an argument sub-shape native changes in place and keeps in its
+        // result (UnifySameDomain adding a pcurve, the destructive filler growing a tolerance) is modified into its
+        // changed copy in the port, where native's history has no entry; drop those entries and compare again
+        CanonicalKeys aNKeys = CanonicalKeys.Build(aNResP), aPKeys = CanonicalKeys.Build(aPResP);
+        BRepTools_History aPH2 = WithoutInPlace(aPH, aPArgs, aKeptByNative, (p, n) => aPKeys.Key(p) == aNKeys.Key(n));
+        List<string> aHDiff2 = isSameMap ? IndexedHistoryDiff(aNH, aPH2, aPArgs, aNResP, aPResP, true)
+                                         : HistoryComparison.Compare(aPArgs, aNResP, aNH, aPArgs, aPResP, aPH2);
+        if (aHDiff2.Count == 0)
+        {
+            theTally.HistoriesSameButInPlace++;
+        }
+        else if (!theCase.NonDestructive && NonDestructiveAgrees(theRun, theCase))
+        {
+            theTally.DestructiveOnlyHistories++;
         }
         else
         {
@@ -308,15 +354,37 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
     }
 
+    // The same case with native told to be non-destructive, as the port's frozen arguments make it: true if native then
+    // gives the port's result byte for byte (Free masked) with equal histories.
+    private bool NonDestructiveAgrees(ShapeFixOracleRun theRun, Run theCase)
+    {
+        var aTally = new Tally();
+        Compare(theRun, aTally, theCase with { NonDestructive = true });
+        return aTally.Differences.Count == 0 && aTally.HistoryDifferences.Count == 0 && aTally.Identical + aTally.FreeMasked == 1
+               && aTally.HistoriesSame + aTally.HistoriesSameButInPlace == aTally.Histories;
+    }
+
     // Where the results' texts agree (Free masked), the histories are compared exactly, through the indices of the
     // results' sub-shapes in TopExp::MapShapes (which the text keeps): a stronger check than the canonical keys.
     private static List<string> IndexedHistoryDiff(BRepTools_History theN, BRepTools_History theP, List<TopoDS_Shape> theArgs,
-                                                   in TopoDS_Shape theNRes, in TopoDS_Shape thePRes)
+                                                   in TopoDS_Shape theNRes, in TopoDS_Shape thePRes, bool theUnordered = false)
     {
         string aN = DeterminismHarness.HistoryText(theArgs, theNRes, theN);
         string aP = DeterminismHarness.HistoryText(theArgs, thePRes, theP);
+        if (theUnordered)
+        {
+            aN = Unordered(aN);
+            aP = Unordered(aP);
+        }
         return aN == aP ? [] : [DeterminismHarness.FirstDifference(aN, aP)];
     }
+
+    // The history text with each list of Modified and Generated indices sorted: BRepTools_History::Merge appends the
+    // shapes of a hashed map (address order natively, insertion order in the port; occt-issues.md, unit 6P).
+    private static string Unordered(string theText) =>
+        System.Text.RegularExpressions.Regex.Replace(theText, @"([MG])\[([^\]]*)\]", m =>
+            m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                                         .Select(s => int.Parse(s, CultureInfo.InvariantCulture)).Order()) + "]");
 
     internal void Report(Tally theTally, string theWhat)
     {
@@ -336,7 +404,14 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
         output.WriteLine($"  non-empty results: {theTally.NonEmpty}; runs where an argument face is split: {theTally.SplitFaces}");
         output.WriteLine($"  native varies between its serial and parallel runs: {theTally.NativeVaries}");
-        output.WriteLine($"  histories: {theTally.HistoriesSame} of {theTally.Histories} equal; {theTally.HistoryDifferences.Count} differ");
+        output.WriteLine($"  histories: {theTally.HistoriesSame} of {theTally.Histories} equal, {theTally.HistoriesSameButOrder} equal but for the "
+                         + $"order of an image list (BRepTools_History::Merge), {theTally.HistoriesSameButInPlace} equal but for "
+                         + $"the in-place entries of decision 643; {theTally.HistoryDifferences.Count} differ");
+        if (theTally.DestructiveOnly + theTally.DestructiveOnlyHistories > 0)
+        {
+            output.WriteLine($"  native's destructive mode differs, its non-destructive mode is the port's (decision 577): "
+                             + $"{theTally.DestructiveOnly} results, {theTally.DestructiveOnlyHistories} histories");
+        }
         output.WriteLine($"  port: arguments changed {theTally.InputsChanged}, results not frozen {theTally.NotFrozen}, parallel != serial {theTally.NotDeterministic}");
         foreach (string aDifference in theTally.Differences.Take(60))
         {
@@ -353,7 +428,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------------
     // The two sides
 
-    private static (List<N.TopoDS_Shape>, List<TopoDS_Shape>)? ReadArgs(ShapeFixOracleRun theRun, string theText)
+    internal static (List<N.TopoDS_Shape>, List<TopoDS_Shape>)? ReadArgs(ShapeFixOracleRun theRun, string theText)
     {
         string aFile = Path.Combine(Path.GetTempPath(), $"bop-{Guid.NewGuid():N}.brep");
         File.WriteAllText(aFile, theText);
@@ -400,8 +475,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         {
             switch (theCase.Op)
             {
-                case Op.GeneralFuse:
-                case Op.Splitter:
+                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify:
                 {
                     using N.BOPAlgo_Builder aB = theCase.Op == Op.GeneralFuse ? new N.BOPAlgo_Builder() : new N.BOPAlgo_Splitter();
                     if (aB is N.BOPAlgo_Splitter aSplitter)
@@ -413,7 +487,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     {
                         aB.SetArguments(anAll);
                     }
-                    aB.SetNonDestructive(true);
+                    aB.SetNonDestructive(theCase.NonDestructive);
+                    aB.SetCheckInverted(theCase.CheckInverted);
                     aB.SetRunParallel(theParallel);
                     aB.SetFuzzyValue(theCase.Fuzzy);
                     aB.SetGlue((N.BOPAlgo_GlueEnum)(int)theCase.Glue);
@@ -427,24 +502,36 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
                 default:
                 {
-                    using N.BRepAlgoAPI_BooleanOperation aBop = theCase.Op switch
+                    using N.BRepAlgoAPI_BuilderAlgo aBop = theCase.Op switch
                     {
                         Op.Fuse => new N.BRepAlgoAPI_Fuse(),
                         Op.Cut or Op.Cut21 => new N.BRepAlgoAPI_Cut(),
                         Op.Common => new N.BRepAlgoAPI_Common(),
+                        Op.GeneralFuse => new N.BRepAlgoAPI_BuilderAlgo(),
+                        Op.Splitter => new N.BRepAlgoAPI_Splitter(),
                         _ => new N.BRepAlgoAPI_Section(),
                     };
-                    if (theCase.Op == Op.Cut21)
+                    if (aBop is N.BRepAlgoAPI_BooleanOperation aBO && theCase.Op == Op.Cut21)
                     {
-                        aBop.SetArguments(aTools);
-                        aBop.SetTools(anObjects);
+                        aBO.SetArguments(aTools);
+                        aBO.SetTools(anObjects);
+                    }
+                    else if (aBop is N.BRepAlgoAPI_BooleanOperation aBO2)
+                    {
+                        aBO2.SetArguments(anObjects);
+                        aBO2.SetTools(aTools);
+                    }
+                    else if (aBop is N.BRepAlgoAPI_Splitter aSp)
+                    {
+                        aSp.SetArguments(anObjects);
+                        aSp.SetTools(aTools);
                     }
                     else
                     {
-                        aBop.SetArguments(anObjects);
-                        aBop.SetTools(aTools);
+                        aBop.SetArguments(anAll);
                     }
-                    aBop.SetNonDestructive(true);
+                    aBop.SetNonDestructive(theCase.NonDestructive);
+                    aBop.SetCheckInverted(theCase.CheckInverted);
                     aBop.SetRunParallel(theParallel);
                     aBop.SetFuzzyValue(theCase.Fuzzy);
                     aBop.SetGlue((N.BOPAlgo_GlueEnum)(int)theCase.Glue);
@@ -453,6 +540,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     if (aBop.HasErrors())
                     {
                         return (null, null, "errors");
+                    }
+                    if (theCase.Simplify)
+                    {
+                        aBop.SimplifyResult();
                     }
                     return (aBop.Shape(), aBop.History(), null);
                 }
@@ -478,8 +569,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         {
             switch (theCase.Op)
             {
-                case Op.GeneralFuse:
-                case Op.Splitter:
+                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify:
                 {
                     BOPAlgo_Builder aB = theCase.Op == Op.GeneralFuse ? new BOPAlgo_Builder() : new BOPAlgo_Splitter();
                     if (aB is BOPAlgo_Splitter aSplitter)
@@ -491,7 +581,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     {
                         aB.SetArguments(anAll);
                     }
-                    aB.SetNonDestructive(true);
+                    aB.SetNonDestructive(theCase.NonDestructive);
+                    aB.SetCheckInverted(theCase.CheckInverted);
                     aB.SetRunParallel(theParallel);
                     aB.SetFuzzyValue(theCase.Fuzzy);
                     aB.SetGlue(theCase.Glue);
@@ -505,24 +596,36 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
                 default:
                 {
-                    BRepAlgoAPI_BooleanOperation aBop = theCase.Op switch
+                    BRepAlgoAPI_BuilderAlgo aBop = theCase.Op switch
                     {
                         Op.Fuse => new BRepAlgoAPI_Fuse(),
                         Op.Cut or Op.Cut21 => new BRepAlgoAPI_Cut(),
                         Op.Common => new BRepAlgoAPI_Common(),
+                        Op.GeneralFuse => new BRepAlgoAPI_BuilderAlgo(),
+                        Op.Splitter => new BRepAlgoAPI_Splitter(),
                         _ => new BRepAlgoAPI_Section(),
                     };
-                    if (theCase.Op == Op.Cut21)
+                    if (aBop is BRepAlgoAPI_BooleanOperation aBO && theCase.Op == Op.Cut21)
                     {
-                        aBop.SetArguments(aTools);
-                        aBop.SetTools(anObjects);
+                        aBO.SetArguments(aTools);
+                        aBO.SetTools(anObjects);
+                    }
+                    else if (aBop is BRepAlgoAPI_BooleanOperation aBO2)
+                    {
+                        aBO2.SetArguments(anObjects);
+                        aBO2.SetTools(aTools);
+                    }
+                    else if (aBop is BRepAlgoAPI_Splitter aSp)
+                    {
+                        aSp.SetArguments(anObjects);
+                        aSp.SetTools(aTools);
                     }
                     else
                     {
-                        aBop.SetArguments(anObjects);
-                        aBop.SetTools(aTools);
+                        aBop.SetArguments(anAll);
                     }
-                    aBop.SetNonDestructive(true);
+                    aBop.SetNonDestructive(theCase.NonDestructive);
+                    aBop.SetCheckInverted(theCase.CheckInverted);
                     aBop.SetRunParallel(theParallel);
                     aBop.SetFuzzyValue(theCase.Fuzzy);
                     aBop.SetGlue(theCase.Glue);
@@ -531,6 +634,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     if (aBop.HasErrors())
                     {
                         return (null, null, "errors");
+                    }
+                    if (theCase.Simplify)
+                    {
+                        aBop.SimplifyResult();
                     }
                     return (aBop.Shape(), aBop.History(), null);
                 }
@@ -551,8 +658,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
     // Native's history over the port's readings of the arguments and of native's result (sub-shapes matched by their
     // indices in TopExp::MapShapes, which the BRep text keeps).
     private static BRepTools_History NativeHistory(N.BRepTools_History theHistory, List<N.TopoDS_Shape> theNArgs, N.TopoDS_Shape theNRes,
-                                                   List<TopoDS_Shape> thePArgs, in TopoDS_Shape thePRes)
+                                                   List<TopoDS_Shape> thePArgs, in TopoDS_Shape thePRes,
+                                                   out Dictionary<(int, int), TopoDS_Shape> theKeptByNative)
     {
+        theKeptByNative = [];
         using var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNRes, aNResMap);
         var aPResMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
@@ -570,6 +679,11 @@ public class BooleanOracleTests(ITestOutputHelper output)
             {
                 using N.TopoDS_Shape aNS = aNInMap.FindKey(i);
                 TopoDS_Shape aPS = aPInMap[i];
+                int aKeptIndex = aNResMap.FindIndex(aNS);
+                if (aKeptIndex > 0)
+                {
+                    theKeptByNative[(a, i)] = aPResMap[aKeptIndex];
+                }
                 if (!BRepTools_History.IsSupportedType(aPS))
                 {
                     continue;
@@ -637,6 +751,46 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     int anIndex = aResMap.FindIndex(aG);
                     Assert.True(anIndex > 0, "a generated shape outside the port's result");
                     aHistory.AddGenerated(aS, aReadMap[anIndex]);
+                }
+            }
+        }
+        return aHistory;
+    }
+
+    // The port's history without the entries "modified into its changed copy": an argument sub-shape native's result
+    // holds by TShape (changed in place or not), modified in the port into exactly the sub-shape of its result that
+    // stands at that place (the same canonical key: the same geometry, vertices and range).
+    private static BRepTools_History WithoutInPlace(BRepTools_History theHistory, List<TopoDS_Shape> theArgs,
+                                                    Dictionary<(int, int), TopoDS_Shape> theKeptByNative,
+                                                    Func<TopoDS_Shape, TopoDS_Shape, bool> theSame)
+    {
+        var aHistory = new BRepTools_History();
+        for (int a = 0; a < theArgs.Count; a++)
+        {
+            var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            TopExp.MapShapes(theArgs[a], aMap);
+            for (int i = 1; i <= aMap.Extent(); i++)
+            {
+                TopoDS_Shape aS = aMap[i];
+                if (!BRepTools_History.IsSupportedType(aS))
+                {
+                    continue;
+                }
+                if (theHistory.IsRemoved(aS))
+                {
+                    aHistory.Remove(aS);
+                }
+                var aModified = theHistory.Modified(aS);
+                if (!(aModified.Count == 1 && theKeptByNative.TryGetValue((a, i), out TopoDS_Shape aKept) && theSame(aModified[0], aKept)))
+                {
+                    foreach (TopoDS_Shape aM in aModified)
+                    {
+                        aHistory.AddModified(aS, aM);
+                    }
+                }
+                foreach (TopoDS_Shape aG in theHistory.Generated(aS))
+                {
+                    aHistory.AddGenerated(aS, aG);
                 }
             }
         }
@@ -718,7 +872,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     /// pockets, coaxial cylinders and cones, spheres, tori, and random primitives anywhere; each with a random operation,
     /// some with glue (on shapes that only touch, its intended use), OBB or a fuzzy value.
     /// </summary>
-    private static IEnumerable<Run> RandomRuns(Oracle theO, ShapeFixOracleRun theRun, int theCount)
+    internal static IEnumerable<Run> RandomRuns(Oracle theO, ShapeFixOracleRun theRun, int theCount)
     {
         Op[] anOps = [Op.Fuse, Op.Cut, Op.Common, Op.Cut21, Op.Section, Op.Splitter, Op.GeneralFuse];
         for (int i = 0; i < theCount; i++)

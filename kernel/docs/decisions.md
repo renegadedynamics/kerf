@@ -8236,3 +8236,102 @@ Numbers from 6951 are placeholders, renumbered on merge; merged decisions are ci
       - **6M** (build123d.NET's Booleans): build123d.NET runs `BRepAlgoAPI_*` with `SetRunParallel(true)`, then Clean
         (6U). Both are bit-identical to native on everything measured here, so the milestone's replay should compare
         bytes first; the twins (decision 640) freeze the inputs and give a frozen result and history.
+
+## Phase 6: unit 6P, BRepAlgoAPI and the public API
+
+BRepAlgoAPI (all ten classes but Check and Defeaturing, which unit 6G ports) was ported by 6A as a shell and made to
+give real results by 6F (decisions 638 to 640, 833). This unit fills in the public API of plan 2.3: `SimplifyResult`
+through unit 6U, the functional twins' `Simplify`, progress and cancellation, and runs the Boolean milestone's oracle
+(plan section 3, milestones 2 and 3). Numbers from 6981 are placeholders, renumbered on merge.
+
+6981. **`SimplifyResult` runs on the unfrozen result** (decisions 579, 775).
+      - OCCT's code: `ShapeUpgrade_UnifySameDomain(myShape, theUnifyEdges, theUnifyFaces, true)` with the fuzzy value
+        as the linear tolerance, the angular tolerance, `SetSafeInputMode(myNonDestructive)` and
+        `AllowInternalEdges(false)`; `Build`, then the unifier's `InternalShape()` replaces the result and its
+        `InternalHistory()` is kept (`mySimplifierHistory`, read by `SectionEdges`) and merged into the operation's.
+      - The result shares the arguments' untouched sub-shapes, which are frozen, so the unifier copies the result at its
+        entry (decision 766) and the arguments are never written, whatever the non-destructive flag. Native writes into
+        its arguments there in the destructive mode (occt-issues.md). The sub-shapes it leaves unchanged are the result's
+        (and the arguments') own again; those it changed in place are its copies, which the history records as modified
+        (decision 643's in-place entries, where native has none).
+      - OCCT's default `theAngularTol = Precision::Angular()` isn't a constant: an overload `SimplifyResult(bool = true,
+        bool = true)` passes it (translation rules, section 4).
+6982. **The twins simplify and take a progress range** (decisions 20, 640).
+      - `BRepAlgoAPI_Options.Simplify` runs `SimplifyResult()` with its defaults after a successful operation, as a
+        caller of the working object would; `Standard_NotImplemented` is gone.
+      - Every twin takes an optional last `Message_ProgressRange theRange = default`, as BRepTools' and BinTools' static
+        readers do, so Bento cancels a long Boolean with a `Message_ProgressIndicator(CancellationToken)`.
+      - A user break is OCCT's: the filler or builder adds `BOPAlgo_AlertUserBreak` and stops, not done. The working
+        object reports it as OCCT does; the twin throws `OperationCanceledException` (what a .NET caller of a cancellable
+        call expects), whose inner exception is the `BRepAlgoAPI_Failure` with the report. Any other failure throws
+        `BRepAlgoAPI_Failure` as before.
+      - Progress is OCCT's (`Performing ... operation`, 70/30 between the filler and the builder). A range handed out
+        and never used isn't counted (decision 20), so the indicator can end short of 1 (0.83 on a box cut by a
+        cylinder); it never moves backwards.
+6983. **The pave filler's tolerance restore skips a no-op write** (BOPAlgo_PaveFiller_6's MakeBlocks, `// OCCT.NET:
+      frozen`). OCCT writes each saved tolerance back into the vertex, also when it is the vertex's own (a vertex only
+      used as an existing pave); on a frozen argument vertex the port threw and the whole intersection failed
+      (`BOPAlgo_AlertIntersectionFailed`). Found by OCCT's GTest `bcut_simple/M2` (a cut result cut again by its own
+      argument, which shares its vertices). A write of a different value is kept: on a frozen argument vertex it still
+      throws, where native grows its argument (occt-issues.md); not seen in any test.
+6984. **OCCT's GTests** (tests/OcctNet.ModelingAlgorithms.Tests/BRepAlgoAPI): TKBO's BRepAlgoAPI_Cut_Test (82),
+      Cut_Test_1 (28), Fuse_Test (100), Common_Test (1), BuilderAlgo_Test (10) and TKBool's Cut, Fuse and Section tests
+      (11), with BOPTest_Utilities.pxx's helpers and `BRepAlgoAPI_TestBase` fixture (`BOPTest_Utilities.cs`). Fixtures
+      are nested classes in one outer class per file, so OCCT's suite and test names are kept. Seven Fuse tests (K3 to
+      K9) need `BOPTest_Utilities::CreateBlend` (BRepFilletAPI_MakeFillet, phase 7) and are skipped with that reason;
+      `CreateBlend` is left out. BuilderAlgo_Test checks that the algorithms aren't copyable: in C# a class has no copy,
+      so the tests check for a reference type without a copy constructor. Plus unit tests of `SimplifyResult` (faces
+      unified, arguments unchanged in both modes, history and section edges through the simplification), the twins'
+      `Simplify`, progress and cancellation (before the start and at 5%, 50% and 80% of the progress, serially and in
+      parallel: user break reported, arguments unchanged, a later run gives the uncancelled result).
+6985. **The Boolean milestone's oracle** (tests/OcctNet.Oracle.Tests/BRepAlgoAPI/BRepAlgoAPIOracleTests.cs, through
+      6F's `BooleanOracleTests.Compare`, which now also takes `Simplify`, native's `NonDestructive` and
+      `CheckInverted`; the General Fuse and the Splitter simplified run through BRepAlgoAPI_BuilderAlgo and
+      BRepAlgoAPI_Splitter). Each case runs natively serially and in parallel, and in the port serially and at degrees 2,
+      3 and the processor count; results are compared as BRep text (Free masked), then canonically; histories (Modified,
+      Generated, IsDeleted of every argument sub-shape) through the results' indices, then without order, then without
+      decision 643's in-place entries (an argument sub-shape native's result holds by TShape, modified in the port into
+      the sub-shape with the same canonical key).
+      - `SimplifyResult` on 240 random primitive Booleans of the seven operations (glue, OBB, fuzzy on some): 240
+        byte-identical; histories 225 equal, 15 equal but for the order of an image list.
+      - `SimplifyResult` on every third of the boolean group's and data/occ's argument sets (6F's recording), each
+        case's own operation: 153 runs, 149 byte-identical, 4 canonically identical where native's own serial and
+        parallel results differ (UnifySameDomain's order on native's address-ordered maps); histories 125 equal, 22
+        equal but for the order, 6 equal but for in-place entries.
+      - Native's destructive mode on 160 random Booleans (every fourth simplified, every fifth without the
+        inverted-solid check): 92 byte-identical; 68 differ, and on each native's non-destructive result is the port's
+        byte for byte (decision 577: the port's frozen arguments are always non-destructive); histories 75 equal, 14 but
+        for in-place entries, 3 differing only as native's destructive history does.
+      - The corpus's `bfuzzyvalue` and `bglue` cases: the 48 scripts run in Draw-lite with recording stand-ins for
+        BOPTest's commands (the port's result bound so that the script goes on); 36 operations from the scripts whose
+        data is public (the others restore files the public dataset lacks, or stop at `bcbuild`, `mksweep` or
+        `testreadstep`): 32 byte-identical, 4 differing only by native's destructive mode (Draw's default), histories
+        equal.
+      - **Over the 589 comparisons: 513 byte-identical (87%), 72 attributed to native's destructive mode (the port is
+        non-destructive by design, and matches native's non-destructive result), 4 canonically identical where native
+        varies; no other difference.** Every port argument unchanged, every result frozen, every parallel run equal to
+        the serial run. 6F's 1,853 comparisons (the plain operations, fuzzy, glue, OBB) stay byte-identical.
+6986. **Determinism** (decision 580, milestone 3). 96 random Booleans of every operation (a third simplified), each run by
+      the port three more times serially and three times at each of the degrees 2, 3, 4, 8 and the processor count
+      (1,728 runs): every run gave the serial run's BRep text and history. Native, run five times serially and five in
+      parallel in-process on the same cases, never varied there; it varied between serial and parallel on 4 simplified
+      data/occ cases above.
+6987. **Notes for later units.**
+      - **6L** (Draw-lite's `bop*`, `bfuse`, `bcut`, `bcommon`, `bsection`, `bfuzzyvalue`, `bglue`): the oracle's
+        recording stand-ins (`BRepAlgoAPIOracleTests.Register`) show the command set the corpus's fuzzy and glue cases
+        use (`baddobjects`, `baddtools`, `bclear*`, `bfillds`, `bbop r op` with op 0 COMMON to 4 SECTION, `bbuild`,
+        `bsplit`, `bop`/`bopfuse`/..., `bfuse r a b`/..., the option commands, `setfillhistory`, `bapibop`). Draw's
+        default is destructive: on frozen variables the operation is non-destructive (decision 577), so expect results
+        that differ from DRAWEXE's where the destructive filler grows argument tolerances (the reference values in the
+        scripts are properties, which agree). Most of these cases restore files the public dataset lacks.
+      - **6M** (build123d.NET's Booleans and `Clean`): build123d.NET runs `BRepAlgoAPI_*` with `SetRunParallel(true)`
+        and default (destructive) options, then `Clean` through UnifySameDomain on the result: compare against native's
+        non-destructive result, or attribute differences to decision 577 by rerunning natively non-destructively as
+        `BooleanOracleTests.NonDestructiveAgrees` does. Histories after a simplification list the same images in
+        another order (BRepTools_History::Merge): compare them as sets; `Select.New`/`Select.Last` must not depend on
+        the order.
+      - **5S2/5T** (sweeps and lofts): `BRepAlgoAPI_Section` and the operations read `InternalShape()`,
+        `InternalHistory()` and `InternalSectionEdges()` while building (unfrozen; the arguments' untouched sub-shapes are
+        shared and frozen, so copy before writing into a result's sub-shape). BRepFill_TrimShellCorner runs a pave filler
+        and BRepAlgoAPI_Section on its own unfrozen shapes, so OCCT's destructive mode applies there as natively;
+        a frozen profile or spine reaching them is non-destructive by decision 577.
