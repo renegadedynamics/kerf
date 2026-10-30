@@ -73,6 +73,17 @@ internal sealed class IntersectionComparison : IDisposable
         Deviation(aFirst, aLast, u => aNCurve.Value(u).Distance(thePort.Value(u)), theWhat);
     }
 
+    /// <summary>
+    /// True if the two 3D lines' records are bit-identical (every token equal), without tallying or asserting: for
+    /// matching lines whose order differs between the two sides (IntTools_FaceFace against GeomAPI_IntSS, unit 6D).
+    /// </summary>
+    public bool SameRecord(N.Geom_Curve theNative, Geom_Curve thePort)
+    {
+        string aNText = Section(NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge()), "Curves");
+        string aPText = Section(PortText(new BRepBuilderAPI_MakeEdge(thePort).Edge()), "Curves");
+        return Tokens(aNText).SequenceEqual(Tokens(aPText));
+    }
+
     /// <summary>Compares two 2D lines.</summary>
     public void CompareLine2d(N.Geom2d_Curve theNative, Geom2d_Curve thePort, string theWhat)
     {

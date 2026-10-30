@@ -7235,3 +7235,85 @@ cited by their numbers.
       - **5L, 5S (sweeps, BRepFill):** GeomAPI_IntSS and GeomInt_IntSS are ready; their lines are frozen, so copy before
         an in-place edit (Segment, SetTrim on a basis). `GeomInt.AdjustPeriodic` is 6B's.
       - **6P:** compare `BRepAlgoAPI_Section`'s pcurves (ComputePCurveOn1/2) natively, which this oracle can't.
+
+## Phase 6: unit 6D, face/face intersection
+
+IntTools_FaceFace and IntTools_WLineTool, in OcctNet.ModelingAlgorithms; tools/ffrec, the native recorder. Numbers
+from 6851 are placeholders, renumbered on merge; merged decisions are cited by their numbers (plan 576–590, 6A
+617–641, 5F 678–685, 6B 714–723, 5G 740–752).
+
+6851. **What each class is.**
+      - `IntTools_FaceFace` is a working object (decision 21), a `public partial class` over three files as GeomInt_IntSS
+        (decision 740): the class (`IntTools_FaceFace.cs`: the accessors, SetParameters, Perform, ComputeTolReached3d,
+        PrepareLines3D), `.MakeCurve.cs` and `.Tools.cs` (the file-static functions as private statics). OCCT's
+        protected members and methods stay protected. OCCT's global `MakeBSpline` in the same file is never called
+        (MakeCurve calls GeomInt_IntSS's) and isn't ported; the `INTTOOLS_FACEFACE_DEBUG` dumps go.
+      - `IntTools_WLineTool` is a static class; its file-static helpers are private statics.
+      - The code is OCCT's, line for line: `goto reapprox` stays a goto (to a label at the top of MakeCurve, as in C++),
+        `myHS1 == myHS2` compares references as handles do, `std::abs`/`fabs` are `Math.Abs`, `std::min`/`max` are
+        Standard's `Min`/`Max`.
+6852. **Results and their freezing** (design 4.2, decisions 455 and 741).
+      - `Lines()` returns a copy of the sequence of IntTools_Curve (OCCT returns a const reference: the caller can't
+        change the result) with each 3D and 2D curve frozen, as GeomInt_IntSS's accessors. `InternalLines()`
+        (internal) returns the sequence itself, unfrozen, for the pave filler (6E), which keeps building on the curves.
+        Both throw StdFail_NotDone when not done, as OCCT's `Lines()`.
+      - `Points()` returns a copy (values). `Context()` is nullable (OCCT's null handle until Perform makes one).
+        `SetList` copies the list, as OCCT's assignment does; the kept list may grow in Perform (decision 706).
+      - Every curve FaceFace makes is new: its own lines, trimmed curves, approximations, and GeomInt_IntSS's statics'
+        results (unfrozen, decision 741). Nothing writes into the faces or their geometry.
+6853. **Signatures and outputs.** Outputs written on every path are `out` (Parameters, ApproxParameters,
+      ParameterOutOfBoundary, IsPointOnBoundary, PerformPlanes' tangent flag); outputs read and written are `ref`
+      (CorrectSurfaceBoundaries' and CorrectPlaneBoundaries' bounds, Tolerances, RefineVector, FindPoint's point; the
+      `Tolpc` tolerance passed to BuildPCurves, which persists across calls in MakeCurve as in OCCT). ClassifyLin2d
+      writes 0 to its parameters where OCCT leaves them unwritten (the line misses the domain; its caller returns
+      then). OCCT's `double par[2]` is a `stackalloc` span. The `NCollection_Array1<NCollection_List<int>>` of
+      DecompositionOfWLine gets copies of the point lists (OCCT's `SetValue` copies). The restriction-line trimming
+      holds `ref` locals into the parameter array, as OCCT's `double&`.
+6854. **How FaceFace drives unit 5G's classes** (decision 752). Perform sets IntPatch_Intersection's tolerances
+      (`SetTolerances(TolArc, TolTang, DefineUVMaxStep(...), Deflection)`), then calls the list-of-points Perform (or the
+      self-intersection Perform for the same face); MakeCurve calls `GeomInt_IntSS.BuildPCurves` (both forms, with a
+      null 2D curve), `MakeBSpline`, `MakeBSpline2d`, `TreatRLine`, `TrimILineOnSurfBoundaries`, GeomInt_LineConstructor,
+      `ApproxInt_KnotTools.DefineParType` and GeomInt_WLApprox (decision 684) with FaceFace's own degrees and flags.
+      The three GeomInt bugs 5G logged, checked in FaceFace: the uncleared result has a FaceFace form (`myPnts` is never
+      cleared); FaceFace never uses the start-point mode; BuildPCurves' null dereference is reachable from FaceFace's
+      line, circle and B-spline branches, where FaceFace's own null check comes too late (occt-issues.md, 6D).
+6855. **Native IntTools_FaceFace, bit for bit** (`tests/OcctNet.ModelingAlgorithms.Tests/IntTools/IntTools_FaceFaceNativeTests.cs`).
+      - IntTools_FaceFace isn't bound, so `tools/ffrec` (MSVC, linked against build123d.NET's native OCCT V8_0_1, TKBO
+        itself, nothing instrumented) records it once into `IntTools/FaceFaceRecordings.txt.gz` (530 KB, embedded).
+        Per pair: the outcome (done, not done, throws; tangent faces; counts), per line the curves' presence and both
+        tolerances (bits), the token count and FNV-1a hash of the BRep text records (version 3, 17 significant digits:
+        equal tokens are equal bits) of the 3D curve and of the 2D curves (an edge with them on two fixed planes), nine
+        points per curve (bits, for the deviation where a record differs), and every intersection point (bits).
+      - The faces: every overlapping face pair of two primitive solids (box, cylinder, cone, sphere, torus) of each
+        kind pair at pseudo-random placements, twice; free-form sheets (B-spline, Bezier, revolution, extrusion,
+        offset) against each other and against the solids' faces; 43 special placements (point contacts, coplanar and
+        coaxial faces, unbounded faces, OCC24005, the cylinder/sphere and cylinder/torus shortcuts, a plane through a
+        cone's axis, the same face twice, B-splines with degenerated poles). These are written into the recording as
+        BRep text and read back natively before intersecting, so both sides intersect the same bits. Then 142 pairs of
+        data/occ faces, named by file and face index: overlapping faces of mal_ecrou/mal_tige/mal_vis, Pump_Nut and
+        Pump_TopCover, face1/face2, the MODERN sinks and cookers, and adjacent faces of 14 shapes.
+      - Four parameter sets in turn: the pave filler's (approximation and both 2D curves at 1e-7, PrepareLines3D(false)),
+        no approximation with PrepareLines3D(true), no 2D curves with a fuzzy value of 1e-5, and one 2D curve at 1e-6
+        on the reversed pair.
+      - Result: 531 pairs, every outcome the same (3 throw on both sides); 580 lines, all bit-identical (tolerances,
+        the presence of each curve, 1,160 curve records with 1,337,929 values); 2 points, bit-identical. Native's
+        recording is the same from run to run (two processes compared).
+6856. **Against native GeomAPI_IntSS where the parameters agree** (`tests/OcctNet.Oracle.Tests/IntTools/IntTools_FaceFaceOracleTests.cs`;
+      the plan's oracle before 6P). Unbounded faces of tolerance 0 on random planes, cylinders, cones and spheres give
+      FaceFace GeomAPI_IntSS's criteria (1e-7) and domains; native gets the surfaces in FaceFace's order (IndexType).
+      Each of FaceFace's analytic lines' basis curves is compared with GeomAPI_IntSS's lines' basis curves through
+      decision 614's records (`IntersectionComparison.SameRecord`, added): 277 pairs, 170 lines, all bit-identical.
+      Walking lines aren't comparable (FaceFace approximates with its own degrees, flags and decomposition), nor are
+      plane pairs (PerformPlanes). 6P's BRepAlgoAPI_Section compares the whole result through the binding.
+6857. **Determinism** (decision 580). FaceFace has no parallel loop of its own: `theToRunParallel` reaches
+      IntTools_Tools.ComputeTolerance (GeomLib_CheckCurveOnSurface), whose parallel result is the serial one. The
+      context's tools it uses (SurfaceAdaptor, UVBounds, IsPointInOnFace, StatePointFace, ProjPS; the FClass2d behind
+      them) carry no result-changing state (decision 714); ParameterOutOfBoundary makes its own projectors. The
+      native-recording test runs every third pair serially, with `theToRunParallel`, from 8 threads at once (an
+      object and context each) and again: all records equal.
+6858. **For the pave filler (6E).** `BOPAlgo_PaveFiller::PerformFF` makes one IntTools_FaceFace per face pair, sets
+      `SetParameters(approx, pcurve1, pcurve2, 1e-7)`, `SetFuzzyValue`, `SetList` and the thread's context, runs
+      `Perform(F1, F2, myRunParallel)` and `PrepareLines3D(false)`, then reads the curves through `InternalLines()`
+      (unfrozen; `Lines()` copies and freezes) and the points through `Points()`. IntTools_Curve is a struct: keep
+      OCCT's copies (a `ref` into the sequence where OCCT holds a non-const reference). `TangentFaces()` and the curves'
+      `Tolerance()`/`TangentialTolerance()` are native's bit for bit. The faces are only read.

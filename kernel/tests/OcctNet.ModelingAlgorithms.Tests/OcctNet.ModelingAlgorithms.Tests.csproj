@@ -33,6 +33,8 @@
     <EmbeddedResource Include="IntWalk\Recordings\*.txt" LogicalName="IntWalk.Recordings.%(Filename)%(Extension)" />
     <!-- Native OCCT's parametric intersections step by step, recorded by tools/walkrec (unit 5D) -->
     <EmbeddedResource Include="IntPatch\Recordings\*.txt" LogicalName="IntPatch.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's face/face intersections, recorded by tools/ffrec (unit 6D) -->
+    <EmbeddedResource Include="IntTools\FaceFaceRecordings.txt.gz" LogicalName="IntTools.FaceFaceRecordings.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
