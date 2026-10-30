@@ -46,6 +46,8 @@
     <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
+    <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
+    <EmbeddedResource Include="BOPAlgo\Recordings\*.txt.gz" LogicalName="BOPAlgo.Recordings.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
