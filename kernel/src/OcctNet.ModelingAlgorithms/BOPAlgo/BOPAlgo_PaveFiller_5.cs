@@ -157,7 +157,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_DynamicArray<BOPAlgo_EdgeFace> aVEdgeFace = new();
         //-----------------------------------------------------scope f
         //
-        NCollection_Map<int> aMIEFC = new();
+        NCollection_IntMap aMIEFC = new(100);
         NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(TopTools_ShapeMapHasher.Instance);
         NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<int>> aMPBLI = new();
         NCollection_DataMap<BOPDS_PaveBlock, Bnd_Box> aDMPBBox = new();
@@ -185,8 +185,8 @@ public partial class BOPAlgo_PaveFiller
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
             NCollection_IndexedMap<BOPDS_PaveBlock> aMPBF = aFI.PaveBlocksOn();
             //
-            NCollection_Map<int> aMVIn = aFI.VerticesIn();
-            NCollection_Map<int> aMVOn = aFI.VerticesOn();
+            NCollection_IntMap aMVIn = aFI.VerticesIn();
+            NCollection_IntMap aMVOn = aFI.VerticesOn();
             //
             aTolE = BRep_Tool.Tolerance(aE);
             aTolF = BRep_Tool.Tolerance(aF);
@@ -332,8 +332,8 @@ public partial class BOPAlgo_PaveFiller
             IntTools_Range aR1 = new(aT1, aTS1), aR2 = new(aTS2, aT2);
             //
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_Map<int> aMIFOn = aFI.VerticesOn();
-            NCollection_Map<int> aMIFIn = aFI.VerticesIn();
+            NCollection_IntMap aMIFOn = aFI.VerticesOn();
+            NCollection_IntMap aMIFIn = aFI.VerticesIn();
             //
             bool bLinePlane = false;
             if (aNbCPrts != 0)
@@ -541,13 +541,13 @@ public partial class BOPAlgo_PaveFiller
     }
 
     /// <summary>Whether the vertex is on or in the face (its index in one of the two maps).</summary>
-    protected static bool CheckFacePaves(int nVx, NCollection_Map<int> aMIFOn, NCollection_Map<int> aMIFIn)
+    protected static bool CheckFacePaves(int nVx, NCollection_IntMap aMIFOn, NCollection_IntMap aMIFIn)
     {
         return aMIFOn.Contains(nVx) || aMIFIn.Contains(nVx);
     }
 
     /// <summary>Whether the new vertex interferes with one of the vertices of the map.</summary>
-    protected bool CheckFacePaves(in TopoDS_Vertex aVnew, NCollection_Map<int> aMIF)
+    protected bool CheckFacePaves(in TopoDS_Vertex aVnew, NCollection_IntMap aMIF)
     {
         bool bRet;
         int iFlag;
@@ -602,7 +602,7 @@ public partial class BOPAlgo_PaveFiller
             }
             //
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_Map<int> aMVIn = aFI.ChangeVerticesIn();
+            NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
             aMVIn.Add(nVx);
             //
             // check for self-interference
@@ -647,7 +647,7 @@ public partial class BOPAlgo_PaveFiller
         double aTR1, aTR2;
         //
         // get face's edges to check that E/E contains the edge from the face
-        NCollection_Map<int> aMFE = new();
+        NCollection_IntMap aMFE = new();
         NCollection_List<int> aLI = myDS.ShapeInfo(theF).SubShapes();
         NCollection_List<int>.Iterator aItLI = new(aLI);
         for (; aItLI.More(); aItLI.Next())
@@ -847,8 +847,8 @@ public partial class BOPAlgo_PaveFiller
             TopoDS_Face aF = TopoDS.Face(aSI.Shape());
             BOPDS_FaceInfo aFI = myDS.FaceInfo(nF);
             // Vertices of the face
-            NCollection_Map<int> aMVF = new();
-            NCollection_Map<int>[] pMVF = [aFI.VerticesOn(), aFI.VerticesIn(), aFI.VerticesSc()];
+            NCollection_IntMap aMVF = new();
+            NCollection_IntMap[] pMVF = [aFI.VerticesOn(), aFI.VerticesIn(), aFI.VerticesSc()];
             for (int iM = 0; iM < 3; ++iM)
             {
                 foreach (int aVIndex in pMVF[iM])

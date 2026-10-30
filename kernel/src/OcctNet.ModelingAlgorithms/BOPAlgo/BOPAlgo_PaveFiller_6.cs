@@ -215,7 +215,7 @@ public partial class BOPAlgo_PaveFiller
         int iSize = myIterator.ExpectedLength();
 
         // Collect faces from intersection pairs
-        NCollection_Map<int> aMIFence = new();
+        NCollection_IntMap aMIFence = new();
         int nF1, nF2;
         for (; myIterator.More(); myIterator.Next())
         {
@@ -551,7 +551,7 @@ public partial class BOPAlgo_PaveFiller
     private static void UpdateSavedTolerance(BOPDS_DS theDS,
                                              int theNE,
                                              double theTolNew,
-                                             NCollection_DataMap<int, double> theMVTol)
+                                             NCollection_IntDataMap<double> theMVTol)
     {
         NCollection_List<int> aSubShapes = theDS.ShapeInfo(theNE).SubShapes();
         NCollection_List<int>.Iterator itSS = new(aSubShapes);
@@ -601,16 +601,16 @@ public partial class BOPAlgo_PaveFiller
         // Per-iteration collections (OCCT: a temporary allocator, cleared and reset each iteration).
         NCollection_List<int> aLSE = new();
         NCollection_List<int> aLBV = new();
-        NCollection_Map<int> aMVOnIn = new();
-        NCollection_Map<int> aMVCommon = new();
-        NCollection_Map<int> aMVStick = new();
-        NCollection_Map<int> aMVEF = new();
-        NCollection_Map<int> aMVBounds = new();
-        NCollection_Map<int> aMI = new();
+        NCollection_IntMap aMVOnIn = new(100);
+        NCollection_IntMap aMVCommon = new(100);
+        NCollection_IntMap aMVStick = new(100);
+        NCollection_IntMap aMVEF = new(100);
+        NCollection_IntMap aMVBounds = new(100);
+        NCollection_IntMap aMI = new(100);
         NCollection_IndexedMap<BOPDS_PaveBlock> aMPBOnIn = new();
         NCollection_Map<BOPDS_PaveBlock> aMPBCommon = new();
-        NCollection_DataMap<int, NCollection_List<int>> aDMBV = new();
-        NCollection_DataMap<int, double> aMVTol = new();
+        NCollection_IntDataMap<NCollection_List<int>> aDMBV = new(100);
+        NCollection_IntDataMap<double> aMVTol = new(100);
         //
         // Cross-iteration collections (persist through entire loop)
         NCollection_Map<BOPDS_PaveBlock> aMPBAdd = new();
@@ -618,8 +618,8 @@ public partial class BOPAlgo_PaveFiller
         NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMSCPB = new(TopTools_ShapeMapHasher.Instance);
         NCollection_DataMap<TopoDS_Shape, int> aMVI = new(TopTools_ShapeMapHasher.Instance);
         NCollection_DataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aDMExEdges = new();
-        NCollection_DataMap<int, int> aDMNewSD = new();
-        NCollection_DataMap<int, NCollection_List<int>> aDMVLV = new();
+        NCollection_IntDataMap<int> aDMNewSD = new(100);
+        NCollection_IntDataMap<NCollection_List<int>> aDMVLV = new(100);
         NCollection_IndexedMap<BOPDS_PaveBlock> aMicroPB = new();
         NCollection_IndexedMap<TopoDS_Shape> aVertsOnRejectedPB = new(TopTools_ShapeMapHasher.Instance);
         // Map of PaveBlocks with the faces to which it has to be added
@@ -1044,8 +1044,8 @@ public partial class BOPAlgo_PaveFiller
     //=================================================================================================
 
     /// <summary>Makes a same-domain vertex for each group of coinciding vertices.</summary>
-    protected void MakeSDVerticesFF(NCollection_DataMap<int, NCollection_List<int>> theDMVLV,
-                                    NCollection_DataMap<int, int> theDMNewSD)
+    protected void MakeSDVerticesFF(NCollection_IntDataMap<NCollection_List<int>> theDMVLV,
+                                    NCollection_IntDataMap<int> theDMNewSD)
     {
         // Create a new SD vertex for each group of coinciding vertices
         // and put new substitutions to theDMNewSD.
@@ -1073,7 +1073,7 @@ public partial class BOPAlgo_PaveFiller
     /// </summary>
     protected void PostTreatFF(NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> theMSCPB,
                                NCollection_DataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aDMExEdges,
-                               NCollection_DataMap<int, int> aDMNewSD,
+                               NCollection_IntDataMap<int> aDMNewSD,
                                NCollection_IndexedMap<BOPDS_PaveBlock> theMicroPB,
                                NCollection_IndexedMap<TopoDS_Shape> theVertsOnRejectedPB,
                                Message_ProgressRange theRange)
@@ -1107,13 +1107,13 @@ public partial class BOPAlgo_PaveFiller
 
         // Find unused vertices
         NCollection_IndexedMap<TopoDS_Shape> VertsUnused = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<int> IndMap = new();
+        NCollection_IntMap IndMap = new();
         for (int i = 0; i < aNbFF; i++)
         {
             BOPDS_InterfFF aFF = aFFs[i];
             aFF.Indices(out int nF1, out int nF2);
 
-            NCollection_Map<int> aMV = new(), aMVEF = new(), aMI = new();
+            NCollection_IntMap aMV = new(), aMVEF = new(), aMI = new();
             GetStickVertices(nF1, nF2, aMV, aMVEF, aMI);
             NCollection_DynamicArray<BOPDS_Curve> aVC = aFF.ChangeCurves();
             RemoveUsedVertices(aVC, aMV);
@@ -1302,7 +1302,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_DataMap<BOPDS_CommonBlock, double> aMCBTol = new();
         // Map to avoid creation of different pave blocks for
         // the same intersection edge
-        NCollection_DataMap<int, BOPDS_PaveBlock> aMEPB = new();
+        NCollection_IntDataMap<BOPDS_PaveBlock> aMEPB = new();
         //
         aItLS.Initialize(aLS);
         for (; aItLS.More(); aItLS.Next())
@@ -1579,15 +1579,15 @@ public partial class BOPAlgo_PaveFiller
     /// that the post-treatment replaced.
     /// </summary>
     protected void UpdateFaceInfo(NCollection_DataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> theDME,
-                                  NCollection_DataMap<int, int> theDMV,
+                                  NCollection_IntDataMap<int> theDMV,
                                   NCollection_DataMap<BOPDS_PaveBlock, NCollection_List<int>> thePBFacesMap)
     {
         int i, j, nV1, nF1, nF2, aNbFF, aNbC, aNbP;
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        NCollection_Map<int> aMF = new();
+        NCollection_IntMap aMF = new();
 
         // Unify pave blocks of the existing edges united on the post-treat stage
-        NCollection_DataMap<int, NCollection_List<BOPDS_PaveBlock>> anEdgeLPB = new();
+        NCollection_IntDataMap<NCollection_List<BOPDS_PaveBlock>> anEdgeLPB = new();
 
         NCollection_DynamicArray<BOPDS_InterfFF> aFFs = myDS!.InterfFF();
         aNbFF = aFFs.Length();
@@ -1686,7 +1686,7 @@ public partial class BOPAlgo_PaveFiller
                 // Find or create common block
                 BOPDS_CommonBlock? aCB = null;
                 // Collect all faces attached to common blocks
-                NCollection_Map<int> aMFaces = new();
+                NCollection_IntMap aMFaces = new();
                 // Collect all pave blocks attached to common blocks
                 NCollection_IndexedMap<BOPDS_PaveBlock> aMPaveBlocks = new();
 
@@ -1779,8 +1779,8 @@ public partial class BOPAlgo_PaveFiller
             // 2.1. Update information about vertices
             if (bVerts)
             {
-                NCollection_Map<int> aMVOn = aFI.ChangeVerticesOn();
-                NCollection_Map<int> aMVIn = aFI.ChangeVerticesIn();
+                NCollection_IntMap aMVOn = aFI.ChangeVerticesOn();
+                NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
                 //
                 foreach (KeyValuePair<int, int> aItMV in theDMV)
                 {
@@ -1844,7 +1844,7 @@ public partial class BOPAlgo_PaveFiller
     //=================================================================================================
 
     /// <summary>Whether the point coincides with one of the vertices <paramref name="aMVOnIn"/>.</summary>
-    protected bool IsExistingVertex(in gp_Pnt aP, double theTolR3D, NCollection_Map<int> aMVOnIn)
+    protected bool IsExistingVertex(in gp_Pnt aP, double theTolR3D, NCollection_IntMap aMVOnIn)
     {
         bool bRet;
         int nV, iFlag;
@@ -2255,13 +2255,13 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void PutPavesOnCurve(NCollection_Map<int> theMVOnIn,
-                                   NCollection_Map<int> theMVCommon,
+    protected void PutPavesOnCurve(NCollection_IntMap theMVOnIn,
+                                   NCollection_IntMap theMVCommon,
                                    BOPDS_Curve theNC,
-                                   NCollection_Map<int> theMI,
-                                   NCollection_Map<int> theMVEF,
-                                   NCollection_DataMap<int, double> theMVTol,
-                                   NCollection_DataMap<int, NCollection_List<int>> theDMVLV)
+                                   NCollection_IntMap theMI,
+                                   NCollection_IntMap theMVEF,
+                                   NCollection_IntDataMap<double> theMVTol,
+                                   NCollection_IntDataMap<NCollection_List<int>> theDMVLV)
     {
         //
         Bnd_Box aBoxC = theNC.Box();
@@ -2312,7 +2312,7 @@ public partial class BOPAlgo_PaveFiller
         public double Tolerance; // tolerance of the section curve
     }
 
-    protected void FilterPavesOnCurves(NCollection_DynamicArray<BOPDS_Curve> theVNC, NCollection_DataMap<int, double> theMVTol)
+    protected void FilterPavesOnCurves(NCollection_DynamicArray<BOPDS_Curve> theVNC, NCollection_IntDataMap<double> theMVTol)
     {
         // For each vertex found in ExtPaves of pave blocks of section curves
         // collect list of pave blocks with distance to the curve
@@ -2413,7 +2413,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected bool ExtendedTolerance(int nV, NCollection_Map<int> aMI, ref double aTolVExt, int aType = 0)
+    protected bool ExtendedTolerance(int nV, NCollection_IntMap aMI, ref double aTolVExt, int aType = 0)
     {
         bool bFound = false;
         if (!(myDS!.IsNewShape(nV)))
@@ -2480,7 +2480,7 @@ public partial class BOPAlgo_PaveFiller
     {
         int nE, nF, nFOpposite, aNbEFs, i;
         double U1, U2, V1, V2, f, l;
-        NCollection_Map<int> aMI = new();
+        NCollection_IntMap aMI = new();
         //
         // collect indexes of all shapes from nF1 and nF2.
         GetFullShapeMap(nF1, aMI);
@@ -2559,10 +2559,10 @@ public partial class BOPAlgo_PaveFiller
 
     protected void PutEFPavesOnCurve(NCollection_DynamicArray<BOPDS_Curve> theVC,
                                      int theIndex,
-                                     NCollection_Map<int> aMI,
-                                     NCollection_Map<int> aMVEF,
-                                     NCollection_DataMap<int, double> aMVTol,
-                                     NCollection_DataMap<int, NCollection_List<int>> aDMVLV)
+                                     NCollection_IntMap aMI,
+                                     NCollection_IntMap aMVEF,
+                                     NCollection_IntDataMap<double> aMVTol,
+                                     NCollection_IntDataMap<NCollection_List<int>> aDMVLV)
     {
         if (aMVEF.Extent() == 0)
         {
@@ -2578,7 +2578,7 @@ public partial class BOPAlgo_PaveFiller
             return;
         }
         //
-        NCollection_Map<int> aMV = new(aMVEF);
+        NCollection_IntMap aMV = new(aMVEF);
         //
         RemoveUsedVertices(theVC, aMV);
         if (aMV.Extent() == 0)
@@ -2610,12 +2610,12 @@ public partial class BOPAlgo_PaveFiller
 
     protected void PutStickPavesOnCurve(in TopoDS_Face aF1,
                                         in TopoDS_Face aF2,
-                                        NCollection_Map<int> aMI,
+                                        NCollection_IntMap aMI,
                                         NCollection_DynamicArray<BOPDS_Curve> theVC,
                                         int theIndex,
-                                        NCollection_Map<int> aMVStick,
-                                        NCollection_DataMap<int, double> aMVTol,
-                                        NCollection_DataMap<int, NCollection_List<int>> aDMVLV)
+                                        NCollection_IntMap aMVStick,
+                                        NCollection_IntDataMap<double> aMVTol,
+                                        NCollection_IntDataMap<NCollection_List<int>> aDMVLV)
     {
         BOPDS_Curve aNC = theVC.Value(theIndex);
         // Get numbers of vertices assigned to the ends of the curve
@@ -2626,7 +2626,7 @@ public partial class BOPAlgo_PaveFiller
             // both curve ends already have assigned vertices
             return;
         }
-        NCollection_Map<int> aMV = new(aMVStick);
+        NCollection_IntMap aMV = new(aMVStick);
         RemoveUsedVertices(theVC, aMV);
         //
         if (aMV.Extent() == 0)
@@ -2705,7 +2705,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void GetStickVertices(int nF1, int nF2, NCollection_Map<int> aMVStick, NCollection_Map<int> aMVEF, NCollection_Map<int> aMI)
+    protected void GetStickVertices(int nF1, int nF2, NCollection_IntMap aMVStick, NCollection_IntMap aMVEF, NCollection_IntMap aMI)
     {
         int nS1, nS2, nVNew, aTypeInt, i;
         //
@@ -2763,7 +2763,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void GetFullShapeMap(int nF, NCollection_Map<int> aMI)
+    protected void GetFullShapeMap(int nF, NCollection_IntMap aMI)
     {
         NCollection_List<int>.Iterator aIt = new();
         int nS;
@@ -2782,7 +2782,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void RemoveUsedVertices(NCollection_DynamicArray<BOPDS_Curve> aVC, NCollection_Map<int> aMV)
+    protected void RemoveUsedVertices(NCollection_DynamicArray<BOPDS_Curve> aVC, NCollection_IntMap aMV)
     {
         if (aMV.IsEmpty())
         {
@@ -2815,9 +2815,9 @@ public partial class BOPAlgo_PaveFiller
     protected void PutPaveOnCurve(int nV,
                                   double aTolR3D,
                                   BOPDS_Curve aNC,
-                                  NCollection_Map<int> aMI,
-                                  NCollection_DataMap<int, double> aMVTol,
-                                  NCollection_DataMap<int, NCollection_List<int>> aDMVLV,
+                                  NCollection_IntMap aMI,
+                                  NCollection_IntDataMap<double> aMVTol,
+                                  NCollection_IntDataMap<NCollection_List<int>> aDMVLV,
                                   int iCheckExtend = 0)
     {
         bool bIsVertexOnLine;
@@ -3024,7 +3024,7 @@ public partial class BOPAlgo_PaveFiller
                                              int nF2,
                                              NCollection_IndexedMap<BOPDS_PaveBlock> aMPBOnIn,
                                              BOPTools_BoxTree thePBTree,
-                                             NCollection_DataMap<int, NCollection_List<int>> aDMBV,
+                                             NCollection_IntDataMap<NCollection_List<int>> aDMBV,
                                              NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMSCPB,
                                              NCollection_DataMap<TopoDS_Shape, int> aMVI,
                                              NCollection_DataMap<BOPDS_PaveBlock, NCollection_List<int>> thePBFacesMap,
@@ -3490,13 +3490,13 @@ public partial class BOPAlgo_PaveFiller
         BOPDS_FaceInfo aFI1 = myDS!.ChangeFaceInfo(nF1);
         BOPDS_FaceInfo aFI2 = myDS.ChangeFaceInfo(nF2);
         //
-        NCollection_Map<int> aMVIn1 = aFI1.VerticesIn();
-        NCollection_Map<int> aMVOn1 = aFI1.VerticesOn();
+        NCollection_IntMap aMVIn1 = aFI1.VerticesIn();
+        NCollection_IntMap aMVOn1 = aFI1.VerticesOn();
         //
         iCnt = 0;
         for (i = 0; (i < 2 && !bToIntersect); ++i)
         {
-            NCollection_Map<int> aMV2 = (i == 0) ? aFI2.VerticesIn() : aFI2.VerticesOn();
+            NCollection_IntMap aMV2 = (i == 0) ? aFI2.VerticesIn() : aFI2.VerticesOn();
             //
             foreach (int nV2 in aMV2)
             {
@@ -3517,7 +3517,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void UpdatePaveBlocks(NCollection_DataMap<int, int> aDMNewSD)
+    protected void UpdatePaveBlocks(NCollection_IntDataMap<int> aDMNewSD)
     {
         if (aDMNewSD.IsEmpty())
         {
@@ -3530,7 +3530,7 @@ public partial class BOPAlgo_PaveFiller
         bool bCB, bRebuild;
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         NCollection_Map<BOPDS_PaveBlock> aMPB = new();
-        NCollection_Map<int> aMicroEdges = new();
+        NCollection_IntMap aMicroEdges = new();
         //
         NCollection_List<BOPDS_PaveBlock> anAllPBs = new();
 
@@ -3653,7 +3653,7 @@ public partial class BOPAlgo_PaveFiller
 
     //=================================================================================================
 
-    protected void RemovePaveBlocks(NCollection_Map<int> theEdges)
+    protected void RemovePaveBlocks(NCollection_IntMap theEdges)
     {
         // Remove all pave blocks referring to input edges:
         //
@@ -3801,7 +3801,7 @@ public partial class BOPAlgo_PaveFiller
         bool bOnCurve, bHasShapeSD;
         int i, nF1, nF2, aNbC, j, nVSD = 0;
         double aTolV;
-        NCollection_Map<int> aMF = new();
+        NCollection_IntMap aMF = new();
         //
         for (i = 0; i < aNbFF; ++i)
         {
@@ -3826,19 +3826,19 @@ public partial class BOPAlgo_PaveFiller
             }
             //
             // Collect old vertices that are shared for nF1, nF2 ->aMI;
-            NCollection_Map<int> aMI = new();
+            NCollection_IntMap aMI = new();
             //
             BOPDS_FaceInfo aFI1 = myDS.ChangeFaceInfo(nF1);
             BOPDS_FaceInfo aFI2 = myDS.ChangeFaceInfo(nF2);
             //
-            NCollection_Map<int> aMVOn1 = aFI1.VerticesOn();
-            NCollection_Map<int> aMVIn1 = aFI1.VerticesIn();
-            NCollection_Map<int> aMVOn2 = aFI2.VerticesOn();
-            NCollection_Map<int> aMVIn2 = aFI2.VerticesIn();
+            NCollection_IntMap aMVOn1 = aFI1.VerticesOn();
+            NCollection_IntMap aMVIn1 = aFI1.VerticesIn();
+            NCollection_IntMap aMVOn2 = aFI2.VerticesOn();
+            NCollection_IntMap aMVIn2 = aFI2.VerticesIn();
             //
             for (j = 0; j < 2; ++j)
             {
-                NCollection_Map<int> aMV1 = (j == 0) ? aMVOn1 : aMVIn1;
+                NCollection_IntMap aMV1 = (j == 0) ? aMVOn1 : aMVIn1;
                 foreach (int nV in aMV1)
                 {
                     if (myDS.IsNewShape(nV))
@@ -3906,7 +3906,7 @@ public partial class BOPAlgo_PaveFiller
     {
         NCollection_DynamicArray<BOPDS_InterfFF> aFFs = myDS!.InterfFF();
         NCollection_IndexedDataMap<int, NCollection_List<BOPDS_PaveBlock>> aMVIPBs = new();
-        NCollection_Map<int> aMVIToReduce = new();
+        NCollection_IntMap aMVIToReduce = new();
         // Fence map to avoid repeated checking of the same edge
         NCollection_Map<BOPDS_PaveBlock> aMPB = new();
         //
@@ -3994,7 +3994,7 @@ public partial class BOPAlgo_PaveFiller
         //     reducing the tolerance to the value less than the tolerances of edges,
         //     i.e. minimal tolerance for the vertex is the max tolerance of the
         //     edges containing this vertex
-        NCollection_DataMap<int, double> aMVITol = new();
+        NCollection_IntDataMap<double> aMVITol = new();
         NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS.ChangePaveBlocksPool();
         aNb = aPBP.Length();
         Span<int> nVs = stackalloc int[2];
@@ -4219,7 +4219,7 @@ public partial class BOPAlgo_PaveFiller
         // Fence map
         NCollection_Map<BOPDS_PaveBlock> aMPBFence = new();
         // Resulting map of micro edges
-        NCollection_Map<int> aMicroEdges = new();
+        NCollection_IntMap aMicroEdges = new();
         // Check all pave blocks from the pool to find the micro edges
         NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS!.ChangePaveBlocksPool();
         int aNbPBP = aPBP.Length();

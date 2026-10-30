@@ -37,6 +37,7 @@
     <EmbeddedResource Include="IntTools\Recordings\edgerec.txt.gz" LogicalName="IntTools.edgerec.txt.gz" />
     <!-- Native OCCT's face/face intersections, recorded by tools/ffrec (unit 6D) -->
     <EmbeddedResource Include="IntTools\FaceFaceRecordings.txt.gz" LogicalName="IntTools.FaceFaceRecordings.txt.gz" />
+    <EmbeddedResource Include="BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

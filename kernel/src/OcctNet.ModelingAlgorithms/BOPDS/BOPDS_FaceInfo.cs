@@ -19,11 +19,11 @@ public class BOPDS_FaceInfo
 {
     protected int myIndex;
     protected NCollection_IndexedMap<BOPDS_PaveBlock> myPaveBlocksIn = new();
-    protected NCollection_Map<int> myVerticesIn = new();
+    protected NCollection_IntMap myVerticesIn = new();
     protected NCollection_IndexedMap<BOPDS_PaveBlock> myPaveBlocksOn = new();
-    protected NCollection_Map<int> myVerticesOn = new();
+    protected NCollection_IntMap myVerticesOn = new();
     protected NCollection_IndexedMap<BOPDS_PaveBlock> myPaveBlocksSc = new();
-    protected NCollection_Map<int> myVerticesSc = new();
+    protected NCollection_IntMap myVerticesSc = new();
 
     public BOPDS_FaceInfo()
     {
@@ -49,25 +49,25 @@ public class BOPDS_FaceInfo
 
     internal NCollection_IndexedMap<BOPDS_PaveBlock> ChangePaveBlocksIn() => myPaveBlocksIn;
 
-    public NCollection_Map<int> VerticesIn() => myVerticesIn;
+    public NCollection_IntMap VerticesIn() => myVerticesIn;
 
-    internal NCollection_Map<int> ChangeVerticesIn() => myVerticesIn;
+    internal NCollection_IntMap ChangeVerticesIn() => myVerticesIn;
 
     /// <summary>The pave blocks On the face (read only for callers).</summary>
     public NCollection_IndexedMap<BOPDS_PaveBlock> PaveBlocksOn() => myPaveBlocksOn;
 
     internal NCollection_IndexedMap<BOPDS_PaveBlock> ChangePaveBlocksOn() => myPaveBlocksOn;
 
-    public NCollection_Map<int> VerticesOn() => myVerticesOn;
+    public NCollection_IntMap VerticesOn() => myVerticesOn;
 
-    internal NCollection_Map<int> ChangeVerticesOn() => myVerticesOn;
+    internal NCollection_IntMap ChangeVerticesOn() => myVerticesOn;
 
     /// <summary>The pave blocks of the section curves on the face (read only for callers).</summary>
     public NCollection_IndexedMap<BOPDS_PaveBlock> PaveBlocksSc() => myPaveBlocksSc;
 
     internal NCollection_IndexedMap<BOPDS_PaveBlock> ChangePaveBlocksSc() => myPaveBlocksSc;
 
-    public NCollection_Map<int> VerticesSc() => myVerticesSc;
+    public NCollection_IntMap VerticesSc() => myVerticesSc;
 
-    internal NCollection_Map<int> ChangeVerticesSc() => myVerticesSc;
+    internal NCollection_IntMap ChangeVerticesSc() => myVerticesSc;
 }

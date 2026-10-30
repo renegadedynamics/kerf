@@ -195,7 +195,7 @@ public partial class BOPAlgo_PaveFiller
             BOPDS_PaveBlock aPB = theVEPairs.FindKey(i);
             int nE = aPB.OriginalEdge();
             //
-            NCollection_Map<int> aMVPB = new();
+            NCollection_IntMap aMVPB = new();
             NCollection_List<BOPDS_PaveBlock> aLPB = myDS.PaveBlocks(nE);
             for (NCollection_List<BOPDS_PaveBlock>.Iterator itPB = new(aLPB); itPB.More(); itPB.Next())
             {
@@ -260,7 +260,7 @@ public partial class BOPAlgo_PaveFiller
         }
         //
         // Keep the modified edges for further update
-        NCollection_Map<int> aMEdges = new();
+        NCollection_IntMap aMEdges = new();
         //
         // Analyze intersections
         for (i = 0; i < aNbVE; ++i)
@@ -362,7 +362,7 @@ public partial class BOPAlgo_PaveFiller
     /// Splits the pave blocks of the edges by their extra paves; the vertices of a new pave block without a valid range
     /// are unified.
     /// </summary>
-    protected void SplitPaveBlocks(NCollection_Map<int> theMEdges, bool theAddInterfs)
+    protected void SplitPaveBlocks(NCollection_IntMap theMEdges, bool theAddInterfs)
     {
         // Fence map to avoid unification of the same vertices twice
         NCollection_Map<BOPDS_Pair> aMPairs = new();
@@ -370,7 +370,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_IndexedDataMap<BOPDS_CommonBlock, NCollection_List<BOPDS_PaveBlock>> aMCBNewPB = new();
         //
         // Map of vertices to init the pave blocks for them
-        NCollection_Map<int> aMVerticesToInitPB = new();
+        NCollection_IntMap aMVerticesToInitPB = new();
 
         // OCCT iterates the edges in the int map's bucket order (decision 633): it decides the order of the new
         // same-domain vertices.

@@ -55,7 +55,7 @@ public partial class BOPAlgo_PaveFiller
                     //
                     // Analyze the shared vertices and common blocks
                     //
-                    NCollection_Map<int> aMSubS = new();
+                    NCollection_IntMap aMSubS = new();
                     NCollection_List<int>.Iterator aItLI = new(aSI.SubShapes());
                     for (; aItLI.More(); aItLI.Next())
                     {
@@ -134,7 +134,7 @@ public partial class BOPAlgo_PaveFiller
                     //
                     for (int k = 0; k < 2; ++k)
                     {
-                        NCollection_Map<int> aMVF = k == 0 ? aFI.VerticesIn() : aFI.VerticesSc();
+                        NCollection_IntMap aMVF = k == 0 ? aFI.VerticesIn() : aFI.VerticesSc();
                         foreach (int aVIndex in aMVF)
                         {
                             TopoDS_Shape aV = myDS.Shape(aVIndex);

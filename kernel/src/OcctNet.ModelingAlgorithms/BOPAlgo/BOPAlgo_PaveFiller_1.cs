@@ -80,7 +80,7 @@ public partial class BOPAlgo_PaveFiller
         //
         // OCCT iterates the same-domain map in its bucket order; the port's DataMap iterates in .NET's (decision 633).
         // InitPaveBlocksForVertex only fills each vertex's own list, so the order doesn't change the result.
-        NCollection_DataMap<int, int> aDMII = myDS.ShapesSD();
+        NCollection_IntDataMap<int> aDMII = myDS.ShapesSD();
         foreach (KeyValuePair<int, int> aItDMII in aDMII)
         {
             if (UserBreak(aPS))

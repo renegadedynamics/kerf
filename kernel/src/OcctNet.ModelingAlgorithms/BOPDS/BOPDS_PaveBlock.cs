@@ -24,7 +24,7 @@ public class BOPDS_PaveBlock : Standard_Transient
     protected double myTS1;
     protected double myTS2;
     protected Bnd_Box myShrunkBox = new();
-    protected NCollection_Map<int> myMFence = new();
+    protected NCollection_IntMap myMFence = new();
     protected bool myIsSplittable;
 
     /// <summary>An empty pave block.</summary>

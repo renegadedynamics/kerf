@@ -89,11 +89,11 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     protected BOPAlgo_GlueEnum myGlue;
 
     //! Fence map of intersected faces and pave blocks
-    protected NCollection_DataMap<int, NCollection_Map<BOPDS_PaveBlock>> myFPBDone = new();
+    protected NCollection_IntDataMap<NCollection_Map<BOPDS_PaveBlock>> myFPBDone = new();
     //! Sub-shapes with increased tolerance during the operation
-    protected NCollection_Map<int> myIncreasedSS = new();
+    protected NCollection_IntMap myIncreasedSS = new();
     //! Vertices located close to E/E or E/F intersection points
-    protected NCollection_Map<int> myVertsToAvoidExtension = new();
+    protected NCollection_IntMap myVertsToAvoidExtension = new();
     //! Map to store minimal distances between shapes
     protected NCollection_DataMap<BOPDS_Pair, NCollection_List<EdgeRangeDistance>> myDistances = new();
 
@@ -346,7 +346,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     protected void RepeatIntersection(Message_ProgressRange theRange)
     {
         // Find all vertices with increased tolerance
-        NCollection_Map<int> anExtraInterfMap = new();
+        NCollection_IntMap anExtraInterfMap = new();
         int aNbS = myDS!.NbSourceShapes();
         using var aPS = new Message_ProgressScope(theRange, "Repeat intersection", 3);
         for (int i = 0; i < aNbS; ++i)

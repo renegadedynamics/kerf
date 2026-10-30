@@ -33,7 +33,7 @@ public partial class BOPAlgo_PaveFiller
         double aT1, aT2;
         Span<int> nS = stackalloc int[2];
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        NCollection_Map<int> aMI = new();
+        NCollection_IntMap aMI = new();
         NCollection_DynamicArray<BOPAlgo_ShrunkRange> aVSD = new();
         Span<TopAbs_ShapeEnum> aType = [aType1, aType2];
         //

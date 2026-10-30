@@ -89,7 +89,7 @@ public static partial class BOPAlgo_Tools
         MakeBlocks(aMPBLPB, aMBlocks);
 
         // Use temporary allocator for the local fence map
-        NCollection_Map<int> aMFaces = new();
+        NCollection_IntMap aMFaces = new();
 
         NCollection_List<NCollection_List<BOPDS_PaveBlock>>.Iterator aItB = new(aMBlocks);
         for (; aItB.More(); aItB.Next())

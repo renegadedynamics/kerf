@@ -120,7 +120,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_List<BOPDS_PaveBlock>.Iterator aIt1 = new(), aIt2 = new();
         NCollection_DynamicArray<BOPAlgo_EdgeEdge> aVEdgeEdge = new();
         // keep modified edges for further update
-        NCollection_Map<int> aMEdges = new();
+        NCollection_IntMap aMEdges = new();
         //
         //-----------------------------------------------------scope f
         NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aMPBLPB = new();
@@ -421,7 +421,7 @@ public partial class BOPAlgo_PaveFiller
                         {
                             int iFound;
                             double aTolVx, aD2, aDT2;
-                            NCollection_Map<int> aMV = new();
+                            NCollection_IntMap aMV = new();
                             gp_Pnt aPx;
                             //
                             iFound = 0;
@@ -763,7 +763,7 @@ public partial class BOPAlgo_PaveFiller
     /// Forces the vertex/edge interference of the vertex with the pave block's edge: on success adds the interference
     /// and the extra pave, and the edge to <paramref name="theMEdges"/>.
     /// </summary>
-    protected bool ForceInterfVE(int nV, BOPDS_PaveBlock aPB, NCollection_Map<int> theMEdges)
+    protected bool ForceInterfVE(int nV, BOPDS_PaveBlock aPB, NCollection_IntMap theMEdges)
     {
         int nE, nVx, nVSD = 0, iFlag;
         double aT = 0.0, aTolVNew = 0.0; // OCCT: uninitialised, read only on success

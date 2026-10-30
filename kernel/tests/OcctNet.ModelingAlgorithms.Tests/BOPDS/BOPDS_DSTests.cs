@@ -576,7 +576,7 @@ public class BOPDS_DSTests
         aVF.SetIndices(nV, nF);
         aDS.UpdateFaceInfoIn(nF);
         Assert.True(aFI.VerticesIn().Contains(nV));
-        NCollection_Map<int> aFaces = new();
+        NCollection_IntMap aFaces = new();
         aFaces.Add(nF);
         aDS.UpdateFaceInfoIn(aFaces);
         Assert.True(aFI.VerticesIn().Contains(nV));
@@ -633,7 +633,7 @@ public class BOPDS_DSTests
         Assert.True(aDS.ShapeInfo(nF1).HasSubShape(aShared.First()));
         Assert.True(aDS.ShapeInfo(nF2).HasSubShape(aShared.First()));
 
-        NCollection_Map<int> aMVOnIn = new(), aMVCommon = new();
+        NCollection_IntMap aMVOnIn = new(), aMVCommon = new();
         NCollection_IndexedMap<BOPDS_PaveBlock> aPBOnIn = new();
         NCollection_Map<BOPDS_PaveBlock> aCommonPB = new();
         aDS.SubShapesOnIn(nF1, nF2, aMVOnIn, aMVCommon, aPBOnIn, aCommonPB);

@@ -133,7 +133,7 @@ public partial class BOPAlgo_PaveFiller
         //
         // Avoid repeated intersection of the same vertex with face in case
         // the group of vertices formed a single SD vertex
-        NCollection_DataMap<BOPDS_Pair, NCollection_Map<int>> aMVFPairs = new();
+        NCollection_DataMap<BOPDS_Pair, NCollection_IntMap> aMVFPairs = new();
         for (; myIterator.More(); myIterator.Next())
         {
             if (UserBreak(aPSOuter))
@@ -165,13 +165,13 @@ public partial class BOPAlgo_PaveFiller
             }
             //
             BOPDS_Pair aVFPair = new(nVx, nF);
-            if (aMVFPairs.Find(aVFPair, out NCollection_Map<int> pMV0))
+            if (aMVFPairs.Find(aVFPair, out NCollection_IntMap pMV0))
             {
                 pMV0.Add(nV);
                 continue;
             }
 
-            NCollection_Map<int> pMV = aMVFPairs.Bound(aVFPair, new NCollection_Map<int>());
+            NCollection_IntMap pMV = aMVFPairs.Bound(aVFPair, new NCollection_IntMap());
             pMV.Add(nV);
 
             TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nVx));
@@ -227,7 +227,7 @@ public partial class BOPAlgo_PaveFiller
             double aTolVNew = aVertexFace.VertexNewTolerance();
 
             BOPDS_Pair aVFPair = new(nVx, nF);
-            NCollection_Map<int> aMV = aMVFPairs.Find(aVFPair);
+            NCollection_IntMap aMV = aMVFPairs.Find(aVFPair);
             // OCCT iterates the vertices in the int map's bucket order (decision 633): it decides the order of the
             // interferences and which nVx is added to VerticesIn below (the last one).
             foreach (int nVi in aMV)
@@ -251,7 +251,7 @@ public partial class BOPAlgo_PaveFiller
             }
             // 5 update FaceInfo
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_Map<int> aMVIn = aFI.ChangeVerticesIn();
+            NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
             aMVIn.Add(nVx);
         } // for (k=0; k < aNbVF; ++k) {
         //
@@ -265,7 +265,7 @@ public partial class BOPAlgo_PaveFiller
         double aT1 = 0.0, aT2 = 0.0, dummy = 0.0; // OCCT: uninitialised, read only on success
         //
         NCollection_List<int> aLIV = new(), aLIF = new();
-        NCollection_Map<int> aMI = new();
+        NCollection_IntMap aMI = new(100);
         //
         aNbS = myDS!.NbSourceShapes();
         //
@@ -316,7 +316,7 @@ public partial class BOPAlgo_PaveFiller
             aIt.Value(out nV, out nF);
             //
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_Map<int> aMVOn = aFI.VerticesOn();
+            NCollection_IntMap aMVOn = aFI.VerticesOn();
             //
             if (!aMVOn.Contains(nV))
             {
@@ -333,7 +333,7 @@ public partial class BOPAlgo_PaveFiller
                     // 2
                     myDS.AddInterf(nV, nF);
                     //
-                    NCollection_Map<int> aMVIn = aFI.ChangeVerticesIn();
+                    NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
                     aMVIn.Add(nV);
                 }
             }
