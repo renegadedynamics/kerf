@@ -231,7 +231,7 @@ public class IntPatch_IntersectionTests
         Assert.Equal(0, anInt.NbLines());
     }
 
-    [Fact(Skip = "needs 5G merge")]
+    [Fact]
     public void Start_point_on_two_patches()
     {
         GeomAdaptor_Surface aP1 = Patch(), aP2 = Patch(0.3);
@@ -244,7 +244,7 @@ public class IntPatch_IntersectionTests
         Assert.True(CheckWalkingLines(anInt, aP1, aP2) >= 1);
     }
 
-    [Fact(Skip = "needs 5G merge")]
+    [Fact]
     public void Start_point_with_a_plane()
     {
         GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.24), new gp_Dir(0, 0, 1)), aPatch = Patch();
@@ -256,7 +256,7 @@ public class IntPatch_IntersectionTests
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
     }
 
-    [Fact(Skip = "needs 5G merge")]
+    [Fact]
     public void Plane_and_patch_purged()
     {
         GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.24), new gp_Dir(0, 0, 1)), aPatch = Patch();
@@ -265,7 +265,7 @@ public class IntPatch_IntersectionTests
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
     }
 
-    [Fact(Skip = "needs 5G merge")]
+    [Fact]
     public void Sphere_and_cylinder_analytic_lines_become_walking_lines()
     {
         var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
@@ -283,7 +283,7 @@ public class IntPatch_IntersectionTests
         }
     }
 
-    [Fact(Skip = "needs 5G merge")]
+    [Fact]
     public void Two_cylinders_walking_lines_joined()
     {
         var aC1 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),

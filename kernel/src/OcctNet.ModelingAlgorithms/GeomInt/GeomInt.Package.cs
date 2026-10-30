@@ -6,7 +6,7 @@
 namespace Occt;
 
 /// <summary>The GeomInt package's tools: intersections between Geom surfaces (<see cref="GeomInt_IntSS"/>).</summary>
-public static class GeomInt
+public static partial class GeomInt
 {
     /// <summary>
     /// Brings thePar into [theParMin, theParMax] (with the tolerance theEps) by whole periods of thePeriod:
