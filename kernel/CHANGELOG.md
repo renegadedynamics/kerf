@@ -954,3 +954,25 @@ Phase 6 (part): BRepAlgoAPI and the public API, the Boolean milestone (unit 6P).
   72 where native's destructive mode differs and its non-destructive result is the port's, 4 canonically identical where
   native varies); the determinism test (1,728 repeated and parallel runs at degrees 2 to the processor count, all equal
   to the serial run).
+
+Phase 6 (part): checks and the other builders (unit 6G).
+
+- `OcctNet.ModelingAlgorithms`: BOPAlgo_CheckerSI, ArgumentAnalyzer and CheckResult (self-interference and argument
+  checks) with `BRepAlgoAPI_Check`; BOPAlgo_MakerVolume (solids from faces); BOPAlgo_CellsBuilder (cells, materials,
+  internal boundaries); BOPAlgo_MakePeriodic and BOPAlgo_MakeConnected (periodic and connected shapes, repetitions,
+  twins, materials); BOPAlgo_RemoveFeatures with `BRepAlgoAPI_Defeaturing`. Inputs are never written (a frozen input is
+  copied where OCCT writes into it); results, histories and check results hand out frozen shapes. `BOPDS_DS`'s
+  interference table iterates in OCCT's order.
+- Draw-lite: `bopcheck`, `bopargcheck`, `bopapicheck`, `xdistef`, `checkcurveonsurf`, `mkvolume`, `bcbuild`, `bcadd`,
+  `bcaddall`, `bcremove`, `bcremoveall`, `bcremoveint`, `bcmakecontainers`, `makeperiodic`, `periodictwins`,
+  `repeatshape`, `clearrepetitions`, `makeconnected`, `cmaterialson`, `cmakeperiodic`, `crepeatshape`,
+  `cperiodictwins`, `cclearrepetitions`, `removefeatures`; the Boolean session (`baddobjects`, `baddtools`, `bclear*`,
+  `bfillds`, the option commands) and the history commands (`setfillhistory`, `savehistory`, `modified`, `generated`,
+  `isdeleted`); `unifysamedom` records its history.
+- Tests: unit tests of every class. Against native OCCT (tools/borec, on the corpus's inputs captured by Draw-lite and
+  on random primitives and data/occ shapes): checks 488 of 488 identical; volumes and cells 797 of 801 byte-identical,
+  4 with the Free flag masked; periodic and connected shapes 488 of 499 byte-identical, 11 with Free masked; feature
+  removal 220 of 225 byte-identical, 5 the same error; parallel runs equal to serial ones. Corpus: of the cases using these commands, none
+  runnable before; now check commands 97 (OK 84, 1 known problem, 12 missing data), `mkvolume`/`bc*` 152 (OK 142, 1
+  known problem, 9 missing data), periodicity and connection 9 (OK 7, 2 missing data), `removefeatures` 42 (OK 25, 17
+  missing data); none failing.

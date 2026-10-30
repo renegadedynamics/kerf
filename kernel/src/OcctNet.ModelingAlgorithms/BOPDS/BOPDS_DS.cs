@@ -47,7 +47,7 @@ public class BOPDS_DS
     private readonly NCollection_DynamicArray<BOPDS_FaceInfo> myFaceInfoPool = new(0);
     private readonly NCollection_IntDataMap<int> myShapesSD = new();
     private readonly NCollection_IntDataMap<NCollection_List<int>> myMapVE = new();
-    private readonly NCollection_Map<BOPDS_Pair> myInterfTB = new();
+    private readonly BOPDS_MapOfPair myInterfTB = new(100); // OCCT's buckets and hash, so that it iterates as OCCT's (BOPDS_MapOfPair)
     private readonly NCollection_DynamicArray<BOPDS_InterfVV> myInterfVV = new(0);
     private readonly NCollection_DynamicArray<BOPDS_InterfVE> myInterfVE = new(0);
     private readonly NCollection_DynamicArray<BOPDS_InterfVF> myInterfVF = new(0);
@@ -1103,7 +1103,7 @@ public class BOPDS_DS
     }
 
     /// <summary>The table of interferences (the data structure's own map; read only for callers).</summary>
-    public NCollection_Map<BOPDS_Pair> Interferences() => myInterfTB;
+    public BOPDS_MapOfPair Interferences() => myInterfTB;
 
     /// <summary>Writes the ranges and the shapes as OCCT's <c>Dump</c> prints them.</summary>
     public void Dump(TextWriter theOS)

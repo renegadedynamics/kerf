@@ -2411,7 +2411,11 @@ public partial class BOPAlgo_PaveFiller
                     TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
                     double aRealTol = Max(pTol, Math.Sqrt(aMaxDistKept) + Precision.Confusion());
                     // OCCT writes the tolerance into the vertex's TShape directly (a frozen vertex throws).
-                    ((BRep_TVertex)aV.TShape()!).Tolerance(aRealTol);
+                    // OCCT.NET: an identical write is skipped, as in MakeBlocks (unit 6G).
+                    if (((BRep_TVertex)aV.TShape()!).Tolerance() != aRealTol)
+                    {
+                        ((BRep_TVertex)aV.TShape()!).Tolerance(aRealTol);
+                    }
                 }
             }
         }

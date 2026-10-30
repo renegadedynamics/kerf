@@ -57,6 +57,14 @@ internal static class DrawBuiltins
         DrawTrSurfCommands.Register(theInterpreter);
         MeshTestCommands.Register(theInterpreter);
         SWDrawShapeUpgradeCommands.Register(theInterpreter);
+        BOPTestObjCommands.Register(theInterpreter);
+        BRepTestHistoryCommands.Register(theInterpreter);
+        BOPTestBOPCommands.Register(theInterpreter);
+        BOPTestCheckCommands.Register(theInterpreter);
+        BOPTestCellsCommands.Register(theInterpreter);
+        BOPTestMkConnectedCommands.Register(theInterpreter);
+        BOPTestPeriodicityCommands.Register(theInterpreter);
+        BOPTestRemoveFeaturesCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
