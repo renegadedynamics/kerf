@@ -799,6 +799,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                         }
                         else if (aBSplineSurface.IsFrozen())
                         {
+                            // OCCT: makes the face's own surface periodic in place.
                             // OCCT.NET: frozen. OCCT makes the face's own surface periodic in place, so every shape
                             // sharing it sees a periodic surface, the input's faces included (occt-issues.md). The
                             // port makes a periodic copy and puts it in the original's place in the shape it works on

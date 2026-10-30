@@ -750,6 +750,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                         anEdge.Reverse();
                         Geom2d_Curve? aPC2 = BRep_Tool.CurveOnSurface(anEdge, theFrefFace, out Param1, out Param2);
                         anEdge.Reverse(); // again FORWARD
+                        // OCCT: rewrites the pcurves of a removed seam of the input (the port's copy)
                         var           aBB   = new BRep_Builder();
                         double        aTol  = BRep_Tool.Tolerance(anEdge);
                         Geom_Surface? aSurf = BRep_Tool.Surface(theFrefFace, out TopLoc_Location aLoc);
@@ -916,6 +917,8 @@ public partial class ShapeUpgrade_UnifySameDomain
         return true;
     }
 
+    // OCCT: writes the reference surface's pcurves and a new range into the edges of the faces to unify, which are the
+    // input's own even in the safe input mode (the port works on its copy, see Build)
     private static void TransformPCurves(in TopoDS_Face                theRefFace,
                                          in TopoDS_Face                theFace,
                                          NCollection_Map<TopoDS_Shape> theMapEdgesWithTemporaryPCurves)
