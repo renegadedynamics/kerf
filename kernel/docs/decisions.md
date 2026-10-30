@@ -6356,3 +6356,98 @@ walking, in OcctNet.ModelingAlgorithms. Numbers from 5201 are placeholders, renu
       - Parity-sensitive spots: the cylinder/cylinder walking (acos, sqrt and MathRoot.Brent in the boundary search;
         the critical points' order, decision 674); ALines (IntAna_Curve's trigonometry); the transitions taken
         from `DotCross` signs at 1e-9 thresholds (IntPCo's parabola and hyperbola, ProcessSegments).
+
+## Phase 5: unit 5F, approximating intersection lines
+
+ApproxInt (Approx, ImpPrmSvSurfaces, PrmPrmSvSurfaces, SvSurfaces, MultiLine, MultiLineTool, KnotTools), GeomInt_WLApprox
+and its 24 instantiations, BRepApprox (Approx, ApproxLine, SurfaceTool and their 24 instantiations), in
+OcctNet.ModelingAlgorithms. Numbers from 5601 are placeholders, renumbered on merge; 5A's decisions are cited by
+their merged numbers (607, 608).
+
+678. **ApproxInt's `.gxx` files are generic classes** (decision 607's pattern).
+      - `ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>`, `ApproxInt_PrmPrmSvSurfaces<ThePSurface,
+        ThePSurfaceTool>`, `ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool>`, `ApproxInt_MultiLine<TheLine>`,
+        and `ApproxInt_MultiLineTool<TheLine>`, a readonly struct implementing
+        `IApprox_LineTool<ApproxInt_MultiLine<TheLine>>` (decision 202).
+      - The macros that are the same type in GeomInt's and BRepApprox's instantiations are named in the bodies:
+        TheISurface/TheISurfaceTool (IntSurf_Quadric), TheSvSurfaces (ApproxInt_SvSurfaces), the Int2S, its
+        function and the ZerImpFunc (IntImp's generics over the same surface and tool), the MultiLine and its tool,
+        and TheComputeLine/TheComputeLineBezier (`Approx_BSplComputeLine` and `Approx_ComputeLine` over that
+        MultiLine and tool). The SvSurfaces' TheLine macro, which their bodies never use, is dropped.
+      - **Surface tool:** `IApproxInt_SurfaceTool<ThePSurface>` adds to IntImp's `IIntImp_ZerCSParPSurfaceTool` what
+        ApproxInt calls (GetType, Plane, Cylinder, Sphere, Cone, IsU/VPeriodic, U/VPeriod). It is implemented by
+        `IntCurveSurface_TheHSurfaceTool` (the stand-in for Adaptor3d_HSurfaceTool, decision 338; the interface is
+        added to its list) and by `BRepApprox_SurfaceTool`, a readonly struct with all of OCCT's statics.
+      - **Line:** `IApproxInt_WLine<TSelf>` is an instance interface (NbPnts, Point) with a static abstract `Create`
+        for OCCT's `new TheLine(lin, false)`. `IntPatch_WLine` implements it (the interface and an explicit `Create`
+        are added to 5A's class) and so does `BRepApprox_ApproxLine`.
+679. **The instantiations.** `GeomInt_WLApprox` (over Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool and
+      IntPatch_WLine) and `BRepApprox_Approx` (over BRepAdaptor_Surface, BRepApprox_SurfaceTool and
+      BRepApprox_ApproxLine) are sealed subclasses: the public API that GeomInt_IntSS, IntTools_FaceFace, ChFi3d,
+      TopOpeBRepTool and HLRTopoBRep use. Each package's other instantiations are sealed subclasses with OCCT's
+      constructors forwarded, which the generic algorithms never build (they use the generic types):
+      - the 16 of AppParCurves and Approx (TheComputeLine, TheComputeLineBezier, the gradients, least squares,
+        functions, constraint resolutions and BFGS minimisations) are written by a scratch script from AppDef's
+        (decision 202), with `ApproxInt_MultiLine<line>` and `ApproxInt_MultiLineTool<line>` for AppDef's types;
+      - TheMultiLine, ThePrmPrmSvSurfaces, TheImpPrmSvSurfaces, TheInt2S, TheFunctionOfTheInt2S and TheZerImpFunc,
+        over ApproxInt's and IntImp's generics;
+      - TheMultiLineTool has no class (a struct can't be derived): its header is listed in the `Port of:` lines of
+        GeomInt_WLApprox.cs and BRepApprox_Approx.cs.
+
+      GeomInt needs nothing else for WLApprox: the GeomInt package, IntSS, LineTool, LineConstructor and
+      ParameterAndOrientation are unit 5G's. ApproxInt_KnotTools::DefineParType uses GeomInt_TheMultiLineOfWLApprox
+      and GeomInt_WLApprox::Parameters, both ported here.
+680. **Native recordings** (the harness is not committed, as decisions 84, 116 and 199). A C++ program built with
+      MSVC 14.44 (`cl /O2`, x64) against build123d.NET's OCCT 8.0.1 install (`.deps/install/win-x64`; TKGeomAlgo
+      and TKTopAlgo export every class of this unit) records, for nine surface pairs (B-spline/B-spline; cylinder,
+      sphere, plane on either side, cone, torus, Bezier and revolution surfaces against B-splines):
+      - each surface as GeomTools text at 17 digits, read back natively and used only as read back, so that the
+        port, reading the same text, has the same bits;
+      - up to two walking lines of `IntPatch_Intersection` (GeomInt_IntSS's tolerances), point by point;
+      - per line, DefineParType, and eight approximations: A as GeomInt_IntSS calls it (1e-7, degrees 4 to 8, no
+        iteration, the plane rule for ApproxXYZ), B without tangency at 1e-3, C centripetal with NbPntMax 10, D on
+        five points (the B-spline path), E through `Perform(line)`, F 2D only and isoparametric; G and H through
+        BRepApprox_Approx (on faces, and on an ApproxLine of degree-1 B-splines through the points);
+      - BuildKnots on the first B-spline line for four minimal numbers of points.
+
+      Every result is compared bit for bit: IsDone, TolReached3d/2d, NbMultiCurves, and the MultiBSpCurve's degree,
+      knots, multiplicities and poles. The test resource (`ApproxIntRecordings.txt.gz`, 533 KB) has the lines
+      thinned natively to at most 150 points (every k-th point and the last, approximated natively as thinned) and
+      the cone case at full length, whose approximation C makes the ComputeLine add points (MakeMLOneMorePoint);
+      MakeMLBetween runs 253 times. **All 128 approximations are bit-identical** (43,477 values). Run locally on the
+      lines at full length (406 to 7,837 points) and thinned to 300: 112 and 112, all bit-identical (80,374 and
+      50,318 values). The OCCT issues of this unit were reproduced by a second native program, whose values the unit
+      tests pin.
+681. **SvSurfaces and the MultiLine.**
+      - `ApproxInt_SvSurfaces` is an abstract class. `Compute`, `Pnt`, `SeekPoint` and the `Tangency` methods take
+        their outputs by `ref`: OCCT leaves them as given on a cache hit and on some failures (occt-issues.md, 5F).
+      - The MultiLine's `void*` to the SvSurfaces is a typed reference (null: no points are added).
+      - `ApproxInt_MultiLine` is a C++ value class whose state never changes after construction, so it is a class
+        with read-only fields, as the AppParCurves generics expect (decision 142); it shares the line and the
+        SvSurfaces, as OCCT's copies do. `MakeMLOneMorePoint` assigns an empty MultiLine where it returns false
+        (decision 202). `Dump` writes to a TextWriter (decision 612).
+      - C# forbids a nested local named as a later outer one: PrmPrmSvSurfaces' cache swap names OCCT's `TV` `TV0`.
+682. **Decision 608 holds for ApproxInt_ImpPrmSvSurfaces.** Its ZerImpFunc keeps a copy of the quadric and the
+      parametric surface by reference. ApproxInt_Approx builds the quadric (a local) before the SvSurfaces and never
+      changes it, and the SvSurfaces live only during `Perform`; `Compute`, `SeekPoint` and
+      `FillInitialVectorOfSolution` read `ISurface()` (a copy) and `PSurface()` (the caller's adaptor) once per call.
+      So the port reads the values OCCT reads. In BRepApprox the parametric surface is the caller's
+      BRepAdaptor_Surface object, which OCCT also references.
+683. **ApproxInt_Approx and KnotTools.** A working object (decision 21). `Value(i)` returns the approximation's own
+      MultiBSpCurve (the Bezier-to-B-spline converter's or the B-spline ComputeLine's; shared: don't modify, decision
+      204). OCCT's declared but undefined `Perform()` is left out. `ApproxInt_KnotTools` is a static class; C++'s
+      stack arrays in BuildCurvature are `stackalloc` spans and EvalCurv's pointers slices; `BuildCurvature`'s
+      maximal curvature is `out`.
+684. **For unit 5G (GeomInt_IntSS).** IntSS drives the approximation as recorded case A: per walking line (after
+      `GeomInt_LineTool::DecompositionOfWLine` or the LineConstructor's parts), `ApproxInt_KnotTools.DefineParType(WL,
+      ifprm, ilprm, anApprox, anApprox1, anApprox2)`, then `theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30,
+      myHS1 != myHS2, aParType)` (tangency forced true for two B-spline/Bezier surfaces), then `Perform(myHS1, myHS2,
+      WL, ...)` with ApproxXYZ false on a plane, and `IsDone`, `TolReached3d/2d`, `NbMultiCurves`, `Value(j)` (the 3D
+      curve first, then the 2D ones). `myHS1 != myHS2` compares the adaptors by reference, as OCCT's handles. The
+      Perform overloads are told apart by their first argument (a surface, or the line). Native results match bit
+      for bit, so differences in IntSS's curves come from the walking lines (5C, 5D) or 5G's own code.
+685. **For unit 6D (IntTools_FaceFace).** FaceFace's MakeCurve calls GeomInt_WLApprox and
+      `ApproxInt_KnotTools.DefineParType` as IntSS does (decision 684), with its own tolerances; nothing else of
+      this unit. TopOpeBRepTool (unit 5O1) and HLRTopoBRep use `BRepApprox_Approx` with a `BRepApprox_ApproxLine`
+      built from B-spline curves and `Perform(line, ...)`: the middle-knot issue of occt-issues.md (5F) only shows
+      from a first index above 1, which those callers don't use.

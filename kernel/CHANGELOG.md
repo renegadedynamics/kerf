@@ -575,3 +575,16 @@ Phase 5 (part): analytic intersections (unit 5B).
   bug21750, bug23163, bug23177, bug23178, bug24648, bug25782, bug26894, bug28222, bug29807), each line checked to lie
   on both surfaces; an oracle against native GeomAPI_IntSS on 504 random analytic pairs: all 375 conic lines are
   bit-identical to the port's.
+Phase 5 (part): approximating intersection lines (unit 5F).
+
+- `OcctNet.ModelingAlgorithms`: ApproxInt, the approximation of a walking line by a B-spline curve in 3D and on the
+  surfaces' parameter spaces (`ApproxInt_Approx`, the SvSurfaces that add points on quadric/parametric and
+  parametric/parametric pairs, the MultiLine and its tool, `ApproxInt_KnotTools`), as generic classes over the
+  surface, its tool and the line; `GeomInt_WLApprox`, its instantiation over surface adaptors and `IntPatch_WLine`,
+  used by GeomInt_IntSS and IntTools_FaceFace; BRepApprox (`BRepApprox_Approx` over faces, `BRepApprox_ApproxLine`,
+  `BRepApprox_SurfaceTool`); and both packages' instantiations of AppParCurves', Approx's, ApproxInt's and IntImp's
+  generics under OCCT's names.
+- Tests: GeomInt_WLApprox, BRepApprox_Approx and ApproxInt_KnotTools on walking lines recorded from native
+  IntPatch_Intersection on nine surface pairs, against native OCCT's approximations of the same lines: all 128 (degree,
+  knots, multiplicities, poles, tolerances reached) bit-identical; the MultiLine, ApproxLine and the OCCT issues
+  reproduced natively.

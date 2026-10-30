@@ -16,9 +16,10 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 609): the intersection algorithms split, purge and edit it in place.
 /// <see cref="Vertex"/> returns a copy; <see cref="ChangeVertex"/> a reference to the stored vertex (valid until the
-/// next vertex is added or removed). <see cref="Dump(int, TextWriter)"/> is OCCT's <c>Dump</c> (to stdout).
+/// next vertex is added or removed). <see cref="Dump(int, TextWriter)"/> is OCCT's <c>Dump</c> (to stdout). It is
+/// the line of GeomInt's instantiations of ApproxInt's generics (<see cref="IApproxInt_WLine{TSelf}"/>).
 /// </remarks>
-public class IntPatch_WLine : IntPatch_PointLine
+public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLine>
 {
     /// <summary>The ways a WLine is created.</summary>
     public enum IntPatch_WLType
@@ -91,6 +92,9 @@ public class IntPatch_WLine : IntPatch_PointLine
         curv = Line;
         u1period = v1period = u2period = v2period = 0.0;
     }
+
+    /// <summary>OCCT's <c>new IntPatch_WLine(Line, Tang)</c> in ApproxInt's generics (the TheLine macro).</summary>
+    static IntPatch_WLine IApproxInt_WLine<IntPatch_WLine>.Create(IntSurf_LineOn2S lin, bool theTang) => new(lin, theTang);
 
     public override void AddVertex(in IntPatch_Point Pnt, bool theIsPrepend = false)
     {

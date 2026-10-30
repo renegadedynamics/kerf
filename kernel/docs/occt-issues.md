@@ -738,3 +738,15 @@ line). The conics are confirmed bit-identical by the early oracle (decision 676)
 | `ProcessSegments` (a property) | `ptvtx` lives across the segments and the vertex loop; an end point no line carries is built from the last vertex read, setting only its value, parameters and (for a vertex) one arc | The vertex can keep the arc, vertex and multiple flag of an unrelated vertex on the other surface. Kept |
 | `IntCyCo`, `IntCoCo`, `IntCoSp` (a property) | `ptf`/`ptl` are declared outside the loop over the IntAna curves | Where a curve's bound is open, ProcessBounds gets the previous curve's end point (unused while that bound is open). Kept |
 | `CyCyAnalyticalIntersect` (a property) | Doesn't reset `Multpoint` | Harmless: IntCyCy resets it before |
+
+## Phase 5: unit 5F, approximating intersection lines
+
+Found while porting ApproxInt, GeomInt_WLApprox and BRepApprox. The port reproduces each (`// OCCT` at the line), and
+a native program built against OCCT 8.0.1 (decision 680) confirmed the first and the third; `ApproxIntTests` pins
+the native values.
+
+| Where | What | Effect |
+|---|---|---|
+| `ApproxInt_PrmPrmSvSurfaces::Compute`, `ApproxInt_ImpPrmSvSurfaces::Compute`, the two-entry cache | On a hit (the same parameters as one of the last two computations) they return the cached flag without writing their outputs: the point, the tangents and the refined parameters stay as the caller gave them | PrmPrm's `SeekPoint` called twice at the same parameters gives the origin with the unrefined parameters the second time, as a valid point (native: `(0, 0, 0)`); `MakeMLBetween` would insert a stale point if a resampled parameter set repeated one of the last two. Kept; pinned by `PrmPrmSvSurfaces_SeekPointTwice_ReturnsTheOriginTheSecondTime` and `ImpPrmSvSurfaces_ComputeTwice_LeavesTheOutputsTheSecondTime` |
+| `ApproxInt_ImpPrmSvSurfaces::Compute`, the parametric surface first | Stores the cache key `MyParOnS2.SetCoord(tu2, tu2)` where `(tu2, tv2)` is meant | The point is never found in the cache (unless tu2 = tv2) and is computed again: the same values, more work. Kept |
+| `ApproxInt_Approx::Perform(line, ...)` (the line alone) | With two knots and more than 2·NbPntMax points it adds a middle knot `(indicemax - indicemin) / 2`, an index count rather than `indicemin + ...` | From a first index above 1 the knots go backwards: on a straight line of 300 points, `Perform(WL, ..., 150, 300)` gives a curve from point 75, and from 200 a curve from point 50 (native too). Harmless from index 1 (BRepApprox's callers). Kept; pinned by `WLApprox_PerformLine_MiddleKnotIsAnIndexCount` |
