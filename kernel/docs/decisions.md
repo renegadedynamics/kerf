@@ -7812,3 +7812,100 @@ Notes for 5O2 (the 2D wire offset):
 - BRepFill_Evolved's `BRepAlgo_Loop` runs in place on its own shapes.
 - WireToFace never builds blocks for these callers; only planar faces have been recorded. A non-planar face whose
   edges have no pcurves would run `TopOpeBRepTool_CurveTool.MakePCurveOnFace` (ported, not recorded).
+
+## Phase 5: unit 5K2, geometric constraints
+
+Geom2dGcc: 2D circles and lines tangent to curves, through points, centred on curves or of a given radius, with
+the analytic cases dispatched to GccAna and the others to the Geo (offset and intersect) and Iter (Newton) solvers.
+Numbers from 5971 are placeholders, renumbered on merge; plan decisions are cited by their merged numbers (576–590)
+and 5K1's by theirs (776–783).
+
+797. **Qualified curves are values over a private adaptor.**
+      - `Geom2dGcc_QualifiedCurve` and `Geom2dGcc_QCurve` are readonly structs, as GccEnt's qualified circle and line
+        (decision 776). OCCT stores a copy of the Geom2dAdaptor_Curve and `Qualified()` returns another: the port
+        stores a `ShallowCopy()` (the curve shared, the evaluation caches not) and returns a new one on each call, so
+        a caller's later `Load` changes nothing and no two solvers share a B-spline cache (which isn't thread-safe).
+      - Equality: the same qualifier, the same Geom2d_Curve object and the same parameter range; `ToString` names the
+        curve type, the range and the qualifier. `Geom2dGcc` (Unqualified, Enclosing, Enclosed, Outside) is a static
+        class.
+      - Inside a solver the copies OCCT makes for its function objects (`TheCurv = C`) share the solver's adaptor,
+        which nothing writes; `new Geom2dAdaptor_Curve(Cu)` (a copy into a handle) is `ShallowCopy()`.
+798. **Solvers are sealed classes computed by their constructors** (decisions 117 and 776): the seven solvers, the
+      Geo and Iter variants, with OCCT's accessors (`out` parameters, OCCT's exceptions in OCCT's order).
+      - Result arrays are NCollection_Array1 sized as OCCT's initialiser lists; where the size depends on the
+        constructor, a private `this(int)` constructor sizes them. `static const int aNbSolMAX` is a `const`.
+      - `Results(...)`, public in OCCT but writing the solver, is internal; Lin2dTanObl's `Add` stays private.
+      - The analytic dispatch copies GccAna's results with `out` on the ref indexer
+        (`CircAna.WhichQualifier(i, out qualifier1[i], out qualifier2[i])`).
+      - `occ::down_cast<Geom2d_Circle>(CC1)->Circ2d()` is `(CC1 as Geom2d_Circle)!.Circ2d()`: a mismatch would be a
+        NullReferenceException where native dereferences null. Geom2d_Point parameters are non-nullable.
+      - Left out, each with a comment: Lin2dTanObl's `IsParallel2` (declared, never defined in OCCT 8.0.1) and its
+        `Paral2`; the write-only `TheSame2` fields of Circ2d2TanOnIter and Circ2d3TanIter (C# rejects an unread
+        field); FunctionTanCuCuCu's three declared but undefined constructors.
+      - Function objects (`Geom2dGcc_FunctionTan*`) are public sealed subclasses of math's function bases, with
+        default-constructed members (`new()`) where OCCT default-constructs them; InitDerivative's outputs are `out`.
+799. **The work was split four ways** (forks in their own worktrees, merged in phase5/u5k2): foundations (qualified
+      curves, CurveTool, enums, functions); Circ2d2TanOn with its Geo and Iter; Circ2d3Tan with its Iter; Circ2dTanOnRad,
+      Circ2dTanCen, Lin2d2Tan, Lin2dTanObl with theirs; Circ2d2TanRad with its Geo. One set of conventions (5971,
+      5972) for all.
+800. **OCCT's mistakes are ported as they are** (decision 10), marked `// OCCT` (58 sites; occt-issues.md, unit 5K2).
+      Several decide whether native's results depend on uninitialised memory; the oracle masks or attributes those
+      (5976), and the unit tests assert OCCT's behaviour where it is deterministic (Lin2dTanObl throwing at angle 0
+      for a free-form curve, Circ2dTanOnRadGeo finding nothing on a free-form centre curve, Circ2d2TanOn throwing
+      for a free-form curve and a point).
+801. **Tests.** OCCT's GTests pass unchanged: Geom2dGcc_Circ2d2TanRad (BUC60897_TangentToLineAndBezier),
+      Geom2dGcc_Circ2d3Tan (8: BUC60622_RegressionCase, ToleranceImpact_Analysis, Simple_ThreeCircle_Case,
+      Concentric_Circles_EdgeCase, SmallCircles_PrecisionTest, LargeCircles_ScalingTest,
+      LinearConfiguration_GeometricTest, TouchingCircles_DegenerateCase), Geom2dGcc_Lin2d2Tan (OCC813_EllipseAndPoint,
+      OCC814_CircleAndEllipse). Unit tests of each solver: the analytic dispatch equal to GccAna (with the inverted
+      argument order of Circ2d2TanRad and Circ2d2TanOn), free-form arguments through Geo and Iter giving tangent
+      solutions, the accessors' and constructors' exceptions; 43 tests in all.
+802. **The oracle: the seven bound solvers, token for token** (`Geom2dGccOracleTests`).
+      - Every bound constructor (19) on random arguments: lines, circles, ellipses, B-splines (degrees 1 to 5,
+        rational, periodic), offset curves (of circles, ellipses and smooth B-splines) and trimmed curves (of circles,
+        lines, ellipses and B-splines), each with a random qualifier, and points; random radii, tolerances (1e-7, 1e-4),
+        start parameters and angles (a fifth of them multiples of π/2).
+      - Native's 2D offset curves aren't bound: the port writes each as the pcurve of an edge on a plane face to a
+        BRep file, which both sides read (BRep_Tool::CurveOnSurface).
+      - Each case is written on both sides as named tokens, every double as its 64 bits: the constructor's exception
+        type, IsDone, NbSolutions, each solution, each Tangency (or the accessor's exception), IsTheSame and CenterOn3.
+        WhichQualifier isn't bound.
+      - Masked, as OCCT leaves them unset: CenterOn3's parameter on Circ2d2TanOn's Iter paths; GccAna's of decision
+        781 reached through the dispatch (Circ2d2TanRad(circle, circle)'s TheSame2 and Tangency2, Circ2d2TanOn(circle,
+        point, line)'s tangency parameters, Circ2dTanOnRad(point, circle)'s second solution).
+      - Attributed by kind, where native's result depends on memory: Circ2d3Tan through FunctionTanCuCuCu's empty
+        Values, Circ2dTanCenGeo's `Index` (only when native has the port's solutions and more), Circ2d2TanOnGeo's
+        `Rbid(2)`, GccAna_Circ2d3Tan's `cote3(2)`; and the exception type of 5977. Each attributed case is run
+        natively a second time and whether native repeats itself is reported.
+      - Result, 2,000 cases per constructor (38,000; 19,337 with solutions): 36,288 identical token for token
+        (585,030 tokens, 4,757 masked). The other 1,712 are all attributed: 991 to 5977 (both throw), 323 to
+        FunctionTanCuCuCu (no native repeat), 387 to Circ2dTanCenGeo's Index (251 repeating), 11 to Rbid(2) (9
+        repeating). Native's own counts move a little from run to run for the same reason. The committed test runs
+        500 cases per constructor.
+803. **Where native's build skips a check the port makes, both throw, with different types.** math_FunctionSetRoot.cxx
+      defines `No_Standard_OutOfRange` (and RangeError, DimensionError) before its includes, so its inline
+      NCollection_Array1 reads are unchecked in native's build. Circ2d2TanOnIter's point constructors give it
+      3-vectors for a 4-variable function: native's SetTolerance reads past the tolerance vector and Perform throws
+      Standard_DimensionError; the port's math_Vector checks the read and throws Standard_OutOfRange. Decision 9 (as
+      corrected by 778) keeps the port's check rather than read past an array; the oracle compares the two
+      exceptions as this pair. Other units calling math_FunctionSetRoot with mismatched sizes should expect the same.
+804. **Draw-lite: `cirtang` and `lintan`** (GeometryTest_ConstraintCommands.cxx), written as OCCT writes them in
+      GeometryTestCommands.cs beside `gcarc`: each solution bound as `name_i` and listed in the result; OCCT's messages
+      and statuses (lintan's "Not done" doesn't fail; cirtang's does). A trailing option without its value reads an
+      empty word where OCCT reads Tcl's null `argv[argc]` (decision 477). Draw's colour changes are left out. `gcarc`
+      uses GC, not Geom2dGcc (unit 3L2b). Corpus (`DrawConstraintCorpusTests`): 16 cases use the two commands;
+      runnable before 5K2: 0, after: 11: 10 OK (lowalgos/2dgcc buc60607_1 to _4, buc60618, buc60622_1 to _3,
+      buc60941, bug29694), 1 SKIPPED (bug31140: its data file isn't public). The other 5 miss `2dfit`, `to2d`,
+      `offsetload` and the Booleans.
+805. **For later units.**
+      - 5R (ChFi2d): `ChFi2d_Builder::BuildFilletEdge` builds `Geom2dGcc_Circ2d2TanRad(Geom2dGcc_QualifiedCurve(basisC1,
+        Qual1), ..., Radius, Precision::Confusion())`, where C++ converts the handle to an adaptor implicitly: write
+        `new Geom2dGcc_QualifiedCurve(new Geom2dAdaptor_Curve(basisC1), Qual1)`. It reads Tangency1, and Tangency2
+        when C1 isn't a line. With two circles the dispatch goes to GccAna_Circ2d2TanRad(circle, circle), whose unset
+        `TheSame2(1)` (decision 781) can make native throw StdFail_NotDone from `Results` where the port doesn't (no
+        oracle case did): ChFi2d's oracle should attribute such a case, not chase it. Fillets on two lines or a line
+        and a circle are bit-identical through the dispatch.
+      - 5M: Bisector_BisecCC includes Geom2dGcc_Circ2d2TanRad.hxx but doesn't use it.
+      - Any caller of Circ2d3Tan with a free-form argument (Draw's `cirtang -c`, build123d.NET's constrained circles)
+        gets native results that vary with memory (5976); compare the port with itself, or with native only where
+        native is IsDone false.

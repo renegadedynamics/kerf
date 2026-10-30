@@ -1,17 +1,22 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Globalization;
 using Occt;
 
 namespace OcctNet.DrawLite;
 
 /// <summary>
-/// GeometryTest_ConstraintCommands.cxx's <c>gcarc</c> (segments and arcs of circles through points, GC) and
+/// GeometryTest_ConstraintCommands.cxx's <c>gcarc</c> (segments and arcs of circles through points, GC),
+/// <c>cirtang</c> and <c>lintan</c> (circles and lines under constraints, Geom2dGcc), and
 /// GeometryTest_APICommands.cxx's <c>extrema</c> (GeomAPI_ExtremaCurveCurve, CurveSurface, SurfaceSurface).
 /// </summary>
+/// <remarks>Draw's curve colour changes around the constraint commands' results are left out (no viewer).</remarks>
 internal static class GeometryTestCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
     {
+        DrawCxx.Add(theInterpreter, "cirtang", Cirtang);
+        DrawCxx.Add(theInterpreter, "lintan", Lintang);
         DrawCxx.Add(theInterpreter, "gcarc", GcArc);
         DrawCxx.Add(theInterpreter, "extrema", Extrema);
     }
@@ -204,6 +209,277 @@ internal static class GeometryTestCommands
                     theDI.SetNumber(aName, aPrms[aJ][aK]);
                     di.Append(aName).Append(" ");
                 }
+            }
+        }
+
+        return 0;
+    }
+
+    // The three `solutions` helpers of GeometryTest_ConstraintCommands.cxx: each circle bound as name_i, the names
+    // listed in the result.
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, bool theIsDone, Func<int> theNb, Func<int, gp_Circ2d> theSolution,
+                                 string theName, string theNotDone)
+    {
+        if (theIsDone)
+        {
+            for (int i = 1; i <= theNb(); i++)
+            {
+                Geom2d_Circle C = new(theSolution(i));
+                string solname = theName + "_" + i.ToString(CultureInfo.InvariantCulture);
+                DrawTrSurf.Set(theDI, solname, C);
+                di.Append(solname).Append(" ");
+            }
+            return 0;
+        }
+        else
+        {
+            di.Append(theNotDone);
+            return 1;
+        }
+    }
+
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d2TanRad ct3, string name)
+        => Solutions(theDI, di, ct3.IsDone(), ct3.NbSolutions, ct3.ThisSolution, name, "Circ2d2TanRad Not done");
+
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d3Tan ct3, string name)
+        => Solutions(theDI, di, ct3.IsDone(), ct3.NbSolutions, ct3.ThisSolution, name, "Circ2d3Tan Not done");
+
+    private static int Solutions(DrawInterpreter theDI, DrawResult theDIResult, Geom2dGcc_Circ2dTanCen theCt2, string theName)
+        => Solutions(theDI, theDIResult, theCt2.IsDone(), theCt2.NbSolutions, theCt2.ThisSolution, theName, "Circ2dTanCen Not done");
+
+    /// <summary>
+    /// cirtang cname [-t Tolerance] -c curve -p point -r Radius...: circles tangent to up to three unqualified curves,
+    /// through points, or of a radius (Geom2dGcc_Circ2d3Tan, Circ2d2TanRad, Circ2dTanCen), named cname_1, cname_2, ...
+    /// An option at the end without its value reads an empty word, where OCCT reads Tcl's null argv[argc].
+    /// </summary>
+    private static int Cirtang(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgVals)
+    {
+        int theNArgs = theArgVals.Count;
+        if (theNArgs < 3)
+        {
+            theResult.Append("Use: ").Append(theArgVals[0]).Append("result [-t <Tolerance>] -c <curve> -p <point> -r <Radius>...\n");
+            return 1;
+        }
+
+        string Word(int theI) => theI < theNArgs ? theArgVals[theI] : "";
+
+        double aTol = Precision.Confusion();
+        Geom2d_Curve?[] aC = new Geom2d_Curve?[3];
+        gp_Pnt2d[] aP = [new(), new(), new()];
+        double aRadius = -1.0;
+
+        int aNbCurves = 0, aNbPnts = 0;
+
+        for (int anArgID = 2; anArgID < theNArgs; anArgID++)
+        {
+            if (!theArgVals[anArgID].StartsWith('-'))
+            {
+                theResult.Append("Cannot interpret the argument #").Append(anArgID).Append(" (").Append(theArgVals[anArgID]).Append(")\n");
+                return 1;
+            }
+            else if (theArgVals[anArgID] == "-c")
+            {
+                if (aNbCurves >= 3)
+                {
+                    theResult.Append("A lot of curves are given (not greater than 3 ones are expected)\n");
+                    return 1;
+                }
+
+                aC[aNbCurves] = DrawTrSurf.GetCurve2d(theDI, Word(++anArgID));
+                if (aC[aNbCurves] is null)
+                {
+                    theResult.Append("Error: ").Append(Word(anArgID)).Append(" is not a curve\n");
+                    return 1;
+                }
+
+                aNbCurves++;
+            }
+            else if (theArgVals[anArgID] == "-p")
+            {
+                if (aNbPnts >= 3)
+                {
+                    theResult.Append("A lot of points are given (not greater than 3 ones are expected)\n");
+                    return 1;
+                }
+
+                if (!DrawTrSurf.GetPoint2d(theDI, Word(++anArgID), ref aP[aNbPnts]))
+                {
+                    theResult.Append("Error: ").Append(Word(anArgID)).Append(" is not a point\n");
+                    return 1;
+                }
+
+                aNbPnts++;
+            }
+            else if (theArgVals[anArgID] == "-r")
+            {
+                aRadius = theDI.Atof(Word(++anArgID));
+            }
+            else if (theArgVals[anArgID] == "-t")
+            {
+                aTol = theDI.Atof(Word(++anArgID));
+            }
+            else
+            {
+                theResult.Append("Unknown option ").Append(theArgVals[anArgID]).Append("\n");
+                return 1;
+            }
+        }
+
+        static Geom2dGcc_QualifiedCurve Unqualified(Geom2d_Curve? theC) => Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(theC!));
+
+        if (aNbCurves == 3)
+        {
+            // C-C-C
+            Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), Unqualified(aC[2]), aTol, 0, 0, 0);
+            theResult.Append("Solution of type C-C-C is: ");
+            return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+        }
+        else if (aNbCurves == 2)
+        {
+            if (aNbPnts >= 1)
+            {
+                // C-C-P
+                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), new Geom2d_CartesianPoint(aP[0]), aTol, 0, 0);
+                theResult.Append("Solution of type C-C-P is: ");
+                return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+            }
+            else if (aRadius > 0)
+            {
+                // C-C-R
+                Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), aRadius, aTol);
+                theResult.Append("Solution of type C-C-R is: ");
+                return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+            }
+
+            theResult.Append("Error: Unsupported set of input data!\n");
+            return 1;
+        }
+        else if (aNbCurves == 1)
+        {
+            if (aNbPnts == 2)
+            {
+                // C-P-P
+                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]),
+                                                aTol, 0);
+                theResult.Append("Solution of type C-P-P is: ");
+                return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+            }
+            else if (aNbPnts == 1)
+            {
+                if (aRadius > 0.0)
+                {
+                    // C-P-R
+                    Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), aRadius, aTol);
+                    theResult.Append("Solution of type C-P-R is: ");
+                    return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+                }
+                else
+                {
+                    // C-P
+                    Geom2dGcc_Circ2dTanCen aCt2 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), aTol);
+                    theResult.Append("Solution of type C-P is: ");
+                    return Solutions(theDI, theResult, aCt2, theArgVals[1]);
+                }
+            }
+
+            theResult.Append("Error: Unsupported set of input data!\n");
+            return 1;
+        }
+        else if (aNbPnts >= 2)
+        {
+            if (aNbPnts == 3)
+            {
+                // P-P-P
+                Geom2dGcc_Circ2d3Tan aCt3 = new(new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]),
+                                                new Geom2d_CartesianPoint(aP[2]), aTol);
+                theResult.Append("Solution of type P-P-P is: ");
+                return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+            }
+            else if (aRadius > 0)
+            {
+                // P-P-R
+                Geom2dGcc_Circ2d2TanRad aCt3 = new(new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]), aRadius, aTol);
+                theResult.Append("Solution of type P-P-R is: ");
+                return Solutions(theDI, theResult, aCt3, theArgVals[1]);
+            }
+
+            theResult.Append("Error: Unsupported set of input data!\n");
+            return 1;
+        }
+
+        theResult.Append("Error: Unsupported set of input data!\n");
+        return 1;
+    }
+
+    /// <summary>
+    /// lintan lname curve1 curve2 [angle]: the lines tangent to two curves (Geom2dGcc_Lin2d2Tan, started at the
+    /// middles of their parameter ranges), or tangent to curve1 at an angle in degrees to the line curve2
+    /// (Geom2dGcc_Lin2dTanObl), named lname_1, lname_2, ... "Not done" doesn't fail the command, as in OCCT.
+    /// </summary>
+    private static int Lintang(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 4)
+        {
+            return 1;
+        }
+
+        Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
+
+        if (C1 is null || C2 is null)
+        {
+            return 1;
+        }
+
+        if (n >= 5)
+        {
+            if (C2 is not Geom2d_Line L)
+            {
+                di.Append("Second argument must be a line");
+                return 1;
+            }
+            double                ang = theDI.Atof(a[4]) * (Math.PI / 180.0);
+            Geom2dGcc_Lin2dTanObl ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
+                                            L.Lin2d(),
+                                            Precision.Angular(),
+                                            (C1.FirstParameter() + C1.LastParameter()) / 2.0,
+                                            ang);
+            if (ct3.IsDone())
+            {
+                for (int i = 1; i <= ct3.NbSolutions(); i++)
+                {
+                    Geom2d_Line LS = new(ct3.ThisSolution(i));
+                    string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
+                    DrawTrSurf.Set(theDI, solname, LS);
+                    di.Append(solname).Append(" ");
+                }
+            }
+            else
+            {
+                di.Append("Lin2dTanObl Not done\n");
+            }
+        }
+        else
+        {
+            Geom2dGcc_Lin2d2Tan ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
+                                          Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C2)),
+                                          Precision.Angular(),
+                                          (C1.FirstParameter() + C1.LastParameter()) / 2.0,
+                                          (C2.FirstParameter() + C2.LastParameter()) / 2.0);
+            if (ct3.IsDone())
+            {
+                for (int i = 1; i <= ct3.NbSolutions(); i++)
+                {
+                    Geom2d_Line LS = new(ct3.ThisSolution(i));
+                    string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
+                    DrawTrSurf.Set(theDI, solname, LS);
+                    di.Append(solname).Append(" ");
+                }
+            }
+            else
+            {
+                di.Append("Lin2d2Tan Not done\n");
             }
         }
 

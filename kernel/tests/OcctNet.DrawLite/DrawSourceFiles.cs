@@ -24,7 +24,7 @@ internal static class DrawSourceFiles
          ["plane", "cone", "cylinder", "sphere", "torus", "beziersurf", "bsplinesurf", "upbsplinesurf", "vpbsplinesurf",
           "uvpbsplinesurf", "extsurf", "revsurf", "offset", "trim", "trimu", "trimv", "ureverse", "vreverse", "uiso",
           "viso", "svalue", "sderivative", "parameters", "bounds"]),
-        ("src/Draw/TKTopTest/GeometryTest/GeometryTest_ConstraintCommands.cxx", ["gcarc"]),
+        ("src/Draw/TKTopTest/GeometryTest/GeometryTest_ConstraintCommands.cxx", ["cirtang", "lintan", "gcarc"]),
         ("src/Draw/TKTopTest/GeometryTest/GeometryTest_APICommands.cxx", ["extrema"]),
         ("src/Draw/TKDraw/DrawTrSurf/DrawTrSurf.cxx",
          ["translate", "rotate", "pmirror", "lmirror", "smirror", "pscale", "2dtranslate", "2drotate", "2dpmirror",
