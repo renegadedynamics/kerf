@@ -71,6 +71,14 @@ public partial class ShapeFix_Wire
         myEntry = new BRepTools_CopyAtEntry(anEdges, Context());
         TopoDS_Shape aCopy = myEntry.Shape();
         setEdges(sbwd, aCopy);
+
+        // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
+        // bit, which KeepUnchanged ignores), so the fixes that test E.Free() (FixConnected, ...) take OCCT's branch.
+        var anOriginal = new TopoDS_Iterator(anEdges, false, false);
+        for (var aCopied = new TopoDS_Iterator(aCopy, false, false); aCopied.More(); aCopied.Next(), anOriginal.Next())
+        {
+            aCopied.Value().TShape()!.Free(anOriginal.Value().TShape()!.Free());
+        }
     }
 
     /// <summary>
