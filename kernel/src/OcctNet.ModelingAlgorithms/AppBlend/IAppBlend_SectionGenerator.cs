@@ -5,7 +5,7 @@ namespace Occt;
 /// <summary>
 /// What <see cref="AppBlend_AppSurf{TheSectionGenerator, TheLine, ThePoint}"/> calls on its section generator
 /// (the <c>TheSectionGenerator</c> macro of AppBlend_AppSurf.gxx): GeomFill_SectionGenerator, GeomFill_SweepSectionGenerator
-/// and, later, Blend_AppFunction implement it (decision 5922).
+/// and, later, Blend_AppFunction implement it (decision 845).
 /// </summary>
 /// <typeparam name="ThePoint">What the line gives for each of its points: an index for GeomFill_Line, a
 /// Blend_Point for BRepBlend_Line.</typeparam>
@@ -35,7 +35,7 @@ public interface IAppBlend_SectionGenerator<ThePoint>
 
 /// <summary>
 /// What <see cref="AppBlend_AppSurf{TheSectionGenerator, TheLine, ThePoint}"/> calls on its line (the <c>TheLine</c>
-/// macro of AppBlend_AppSurf.gxx): GeomFill_Line and, later, BRepBlend_Line implement it (decision 5922).
+/// macro of AppBlend_AppSurf.gxx): GeomFill_Line and, later, BRepBlend_Line implement it (decision 845).
 /// </summary>
 public interface IAppBlend_Line<ThePoint>
 {
