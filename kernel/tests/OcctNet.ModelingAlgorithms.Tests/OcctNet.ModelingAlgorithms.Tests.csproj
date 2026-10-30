@@ -41,6 +41,8 @@
     <EmbeddedResource Include="GccAna\Recordings\gccrec.txt.gz" LogicalName="GccAna.gccrec.txt.gz" />
     <!-- Native OCCT's bisectors (Bisector_Bisec, Bisector_Inter), recorded by tools/bisrec (unit 5M) -->
     <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
+    <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
+    <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
