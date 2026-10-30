@@ -15,11 +15,3 @@ public static partial class IntTools_Tools
     public static bool ComputeTolerance(Geom_Curve theCurve3D, Geom2d_Curve theCurve2D, Geom_Surface theSurf, double theFirst, double theLast, out double theMaxDist, out double theMaxPar, double theTolRange, bool theToRunParallel = false) => throw new NotImplementedException();
 }
 
-/// <summary>Stub.</summary>
-public static partial class BOPTools_AlgoTools
-{
-    /// <summary>Stub.</summary>
-    public static bool IsSplitToReverse(in TopoDS_Edge theSplit, in TopoDS_Edge theShape, IntTools_Context? theContext) => throw new NotImplementedException();
-    /// <summary>Stub.</summary>
-    public static bool IsSplitToReverse(in TopoDS_Edge theSplit, in TopoDS_Edge theShape, IntTools_Context? theContext, out int theError) => throw new NotImplementedException();
-}
