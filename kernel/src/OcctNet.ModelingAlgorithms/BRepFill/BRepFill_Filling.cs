@@ -723,6 +723,9 @@ public class BRepFill_Filling
         return myGenerated;
     }
 
+    /// <summary>The plate builder of the last <see cref="Build"/>, for ported code and tests.</summary>
+    internal GeomPlate_BuildPlateSurface? InternalBuilder() => myBuilder;
+
     /// <summary>The largest distance from the boundary to the surface.</summary>
     public double G0Error() => myBuilder!.G0Error();
 

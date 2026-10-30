@@ -103,6 +103,9 @@ public class BRepOffsetAPI_MakeFilling : BRepBuilderAPI_MakeShape
         myShape.TShape()?.FreezeGraph();
     }
 
+    /// <summary>The filling algorithm, for ported code and tests.</summary>
+    internal BRepFill_Filling InternalFilling() => myFilling;
+
     /// <summary>The largest distance from the boundary to the surface.</summary>
     public double G0Error() => myFilling.G0Error();
 

@@ -1124,6 +1124,19 @@ public class GeomPlate_BuildPlateSurface
         return MaxCurvature;
     }
 
+    /// <summary>
+    /// The number of intervals of the last discretisation of the curve constraint <paramref name="Index"/>, which
+    /// G0Error(Index) to G2Error(Index) fill (OCCT.NET, for the oracle's attribution of OCCT's uninitialised reads).
+    /// </summary>
+    internal int NbIntervalsChecked(int Index)
+    {
+        int NbPt = myParCont!.Value(Index).Length();
+        return (NbPt < 3 ? 4 : NbPt) - 1;
+    }
+
+    /// <summary>The number of points per curve the builder was given (NbPtsOnCur).</summary>
+    internal int NbPtsOnCur() => myNbPtsOnCur;
+
     /// <summary>The curve constraint at <paramref name="order"/> in the (reordered) list.</summary>
     public GeomPlate_CurveConstraint CurveConstraint(int order) => myLinCont.Value(order);
 
