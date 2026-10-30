@@ -5706,3 +5706,93 @@ from 5101 are placeholders, renumbered on merge; the plan's decisions are cited 
         own Adaptor2d_Curve2d objects. Compare GeomAPI_IntSS with decision 614's helper.
       - 5F (approximation): the generics over BRepAdaptor_Surface as in decision 607's example; check decision 608
         on ApproxInt_ImpPrmSvSurfaces' use of `ISurface()` and `PSurface()` (a copy and a reference).
+
+## Phase 5: unit 5H, hatching
+
+Hatch, HatchGen and Geom2dHatch (the 2D hatcher that IntTools_Context and BOPTools_AlgoTools3D use),
+GeomAPI_PointsToBSplineSurface and GCE2d's aliases, in OcctNet.ModelingAlgorithms. Numbers from 5801 are
+placeholders, renumbered on merge.
+
+5801. **Hatch.** `Hatch_Parameter` is a readonly struct whose fields are internal (OCCT's friends Hatch_Line and
+      Hatch_Hatcher read them; nothing writes them after construction), with equality and ToString; `default` is
+      OCCT's default. `Hatch_Line` is a sealed class (it holds its sorted intersections and changes them in place);
+      `Hatch_Hatcher` a working object with OCCT's API, `StartIndex`/`EndIndex` returning through `out`.
+5802. **HatchGen's points are classes, copied where OCCT copies them.** HatchGen_PointOnElement and
+      HatchGen_PointOnHatching derive from the abstract HatchGen_IntersectionPoint, and a point on hatching holds a list
+      of points on element, so neither fits a struct (decision 609's rule for value classes). They are sealed classes
+      with copy constructors and internal setters (the hatcher fills them; callers read them). A copy is made wherever
+      the C++ copy outlives a change to its source: Geom2dHatch_Hatching.AddPoint appends a copy, each HatchGen_Domain
+      setter keeps its own copy, and RemElement's local copy is kept, because OCCT's bug depends on it (occt-issues.md).
+      A copied point on hatching has its own list sharing the point-on-element objects, which nothing changes once
+      added. `HatchGen_Domain` is a struct (a working value without equality, as decision 324's tools, since its
+      points are classes) with internal setters and `With` twins; `default` is OCCT's infinite domain.
+      `Dump(TextWriter, int Index = 0)` writes what OCCT writes to std::cout (numbers in std::cout's six significant
+      digits, as "G6"); ToString is the dump.
+5803. **Geom2dHatch_Intersector derives from Geom2dInt_GInter**, which is no longer sealed (as decision 391 for
+      Geom2dInt_IntConicCurveOfGInter), and implements `ITopClass_Intersector<Geom2dAdaptor_Curve>`. `Intersect`
+      calls the base `Perform` explicitly. C++'s copy constructor (results copied, not done, through
+      IntRes2d_Intersection's) is a public copy constructor, its assignment the internal `Assign` (results and flags).
+      `LocalGeometry` writes all three outputs on every path, so they are `out`.
+5804. **Geom2dHatch's containers.**
+      - `Geom2dHatch_Element` is a struct: the constructor keeps a shallow copy of the caller's adaptor (OCCT copies
+        it), so a later `Load` of the caller's adaptor doesn't reach the element; copies of an element share that
+        adaptor, which nothing changes. `ChangeCurve` and the orientation setter are internal (`WithOrientation`);
+        equality compares the adaptor by reference. OCCT's default constructor leaves the orientation uninitialised;
+        the port's is FORWARD.
+      - `Geom2dHatch_Hatching` is a class with OCCT's public API (the hatcher changes it in place); it also keeps a
+        shallow copy of the curve.
+      - `Geom2dHatch_Elements` and `Geom2dHatch_Hatcher` keep their maps as `NCollection_IntDataMap` (decision 543),
+        so the elements are explored in OCCT's bucket order: that order decides which half-lines OtherSegment
+        probes and in which order the classifier compares the elements. `CurrentEdge` gives a shallow copy of the
+        element's adaptor (OCCT copies it; the classifier keeps it as `Edge()`), so TopClass's rule for class edges
+        (decision 390) holds.
+      - The hatcher's private `Trim(IndH, IndE)` intersects the stored adaptors themselves, where OCCT intersects
+        copies that share their curves and evaluation caches. `GlobalTransition` passes the adaptors to
+        `LocalGeometry`, where OCCT passes `Curve()` (converted to an adaptor of the whole basis curve): LocalGeometry
+        reads only `Curve()`, which is the same object.
+      - Left out: OCCT's unconditional `std::cout` when an intersection is not done, the TRACE_HATCHER blocks, and
+        `IsDone()` without an index (declared, never defined). The hatcher is not sealed (OCCT gives it protected
+        `Element` and `Hatching`).
+5805. **GeomAPI_PointsToBSplineSurface follows decision 341.** `Surface()` returns the stored surface frozen, the
+      same object at every call, and throws StdFail_NotDone when not done (OCCT's Raise_if, always checked); the
+      handle conversion is explicit. The GeomFill headers OCCT includes are unused, so the class needs no GeomFill
+      (unit 3F expected it to). `theTang = 0.5 * (V1 + V2)` is `Initialized` (math_Vector's assignment). As in OCCT,
+      the methods index the multi-points with the arrays' own indices, so grids must start at 1 (occt-issues.md).
+5806. **GCE2d** stays a set of aliases (decision 186): its 15 headers are listed (`Port of:`) in the GC classes they
+      alias, GC_Root and the GC_Make*2d makers, so port-status counts the package.
+5807. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 40 new; oracle 1 new).
+      - OCCT's GTests Geom2dHatch_Elements (3), Geom2dHatch_Intersector (3) and GeomAPI_PointsToBSplineSurface (1), the
+        first two as `Geom2dHatch_ElementsTest` and `Geom2dHatch_IntersectorTest` (decision 342's suffix).
+      - Known answers: Hatch_Hatcher's X, Y and other lines trimmed by an oriented square, half-open and infinite
+        intervals, the segment-end rules, the oriented and unoriented modes, OCC109's cancelling intersections;
+        Geom2dHatch_Hatcher set up as IntTools_Context does (a square, a square with a hole drawn clockwise or with
+        REVERSED elements, a diagonal through two vertices, a circle, a hatching inside or outside without
+        intersections, reuse as BOPTools_AlgoTools3D::PointInFace does, index reuse, the settings that clear points
+        or domains, RemElement's OCCT behaviour, the dump), the classifier (IN, OUT, ON with its edge and
+        parameter), HatchGen's points and domains; GeomAPI_PointsToBSplineSurface's interpolation, approximation,
+        periodic and Z-grid forms.
+      - Oracle (`tests/OcctNet.Oracle.Tests/GeomAPI/GeomAPI_PointsToBSplineSurfaceOracleTests.cs`): native
+        GeomAPI_PointsToBSplineSurface (bound) against the port on 700 random grids (2 to 12 by 2 to 12 random
+        points or samples of random polynomial, wave and cylinder-like surfaces, unevenly spaced, with and without
+        noise; rings closed in U for the periodic forms; random Z grids): every method (the three parametrisations,
+        chord length with default arguments, the variational method, interpolation periodic or not, periodic
+        approximation, Z grids approximated and interpolated), continuities C0 to C3 (C1 and C2 for the variational
+        method, decision 206), degrees 1 to 8, tolerances 1e-6 to 1, constructors and `Init` on a reused object.
+        653 surfaces (65 variational, 88 periodic approximations), 378,088 values, all bit-identical. Failures agree (AppDef_Variational's "WorkDegree too small for given ConstraintOrder" at low degrees,
+        StdFail_NotDone from periodic approximations), and so does IsDone.
+      - The hatcher has no native binding: unit 6B checks it through IntTools_Context and BOPTools.
+5808. **For unit 6B.**
+      - `IntTools_Context::Hatcher(face)`: `new Geom2dHatch_Hatcher(new Geom2dHatch_Intersector(1.e-10, 1.e-10),
+        1.e-8, 1.e-8, true, false)`, then `AddElement(new Geom2dAdaptor_Curve(new Geom2d_TrimmedCurve(c2d, u1, u2)),
+        edge.Orientation())` per edge; the hatcher copies the adaptor, so a local one is fine. The context's map of
+        hatchers per face needs no allocator (a map from TopoDS_Shape to Geom2dHatch_Hatcher with the shape hasher).
+      - `BOPTools_AlgoTools3D::PointInFace`: `ClrHatchings`, `AddHatching(new Geom2dAdaptor_Curve(trimmed line))`
+        (index 1 every time), `Trim()`, `TrimDone`, `ComputeDomains(i)`, `IsDone(i)`, `NbDomains`, `Domain(i, 1)`
+        (a HatchGen_Domain struct: `HasFirstPoint`, `FirstPoint().Parameter()`), `RemHatching`.
+      - Cache audit (plan 2.4): a reused hatcher carries no state that changes a result. ClrHatchings resets the
+        hatchings and their count (the map keeps its buckets, as OCCT's); the elements don't change; the classifier's
+        probing restarts at every `Segment`, and `InitEdges` restarts the edge iterator; the elements' adaptors keep
+        their evaluation caches, which don't change values. `Reuse_AsIntToolsContext` checks it. A hatcher is not
+        thread-safe (its intersector, adaptors and iterators): one per context, so one per worker (decision 580).
+      - Geom2dInt_GInter is no longer sealed. Geom2dHatch_Classifier, Geom2dHatch_Elements and
+        Geom2dHatch_FClass2dOfClassifier are TopClass instantiations like BRepClass's (decision 285).

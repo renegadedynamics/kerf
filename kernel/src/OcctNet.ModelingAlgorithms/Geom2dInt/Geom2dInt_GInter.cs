@@ -8,9 +8,10 @@ namespace Occt;
 /// <summary>The intersection between two 2D curves (Adaptor2d_Curve2d), or the self-intersection of one.</summary>
 /// <remarks>
 /// OCCT's instantiation of IntCurve_IntCurveCurveGen.gxx over Adaptor2d_Curve2d (decision 321). The curves are
-/// kept by reference during the computation only; the results are values.
+/// kept by reference during the computation only; the results are values. Not sealed: Geom2dHatch_Intersector derives
+/// from it, as in OCCT (decision 5803).
 /// </remarks>
-public sealed class Geom2dInt_GInter
+public class Geom2dInt_GInter
     : IntCurve_IntCurveCurveGen<Adaptor2d_Curve2d, Geom2dInt_Geom2dCurveTool, Geom2dInt_TheProjPCurOfGInter,
                                 Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter>
 {

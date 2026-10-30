@@ -481,3 +481,16 @@ Phase 5 (part): intersection foundations (unit 5A).
   (points, segments, transitions), the interior search, Int2S and CurvIntSurf, GLine and ALine, the polygons and
   RstInt; the oracle's comparison of intersection lines with native OCCT (decision 5003), checked on native
   GeomAPI_IntSS results.
+Phase 5 (part): hatching and the API remainder (unit 5H).
+
+- `OcctNet.ModelingAlgorithms`: the Hatch package (Hatch_Hatcher: lines trimmed by oriented 2D segments and lines,
+  read back as parameter intervals); HatchGen (points on hatchings and elements, domains, statuses); Geom2dHatch
+  (Geom2dHatch_Hatcher, which trims 2D curves by a boundary of 2D curves and computes their domains inside it, with
+  its intersector, elements, hatchings and classifier), the hatcher that IntTools_Context and BOPTools use;
+  GeomAPI_PointsToBSplineSurface (least squares with each parametrisation, interpolation, periodic forms, the
+  variational method, Z grids), whose surface is handed out frozen. GCE2d's deprecated aliases are listed in the GC
+  makers they name.
+- Tests: OCCT's Geom2dHatch_Elements, Geom2dHatch_Intersector and GeomAPI_PointsToBSplineSurface GTests; unit tests of
+  both hatchers on squares, holes, vertices and circles, of the classifier, of HatchGen's points and domains and of
+  the surface approximation's forms; oracle tests of GeomAPI_PointsToBSplineSurface against native OCCT on 700
+  random grids, every method and continuity: 653 surfaces, all 378,088 values bit-identical.
