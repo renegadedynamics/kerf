@@ -48,6 +48,20 @@ public class BOPAlgo_MakePeriodicTests
         return aMaker;
     }
 
+    private static TopoDS_Shape FaceAt(in TopoDS_Shape theShape, double theX)
+    {
+        for (TopExp_Explorer anExp = new(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        {
+            var aProps = new GProp_GProps();
+            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
+            {
+                return anExp.Current();
+            }
+        }
+        return new TopoDS_Shape();
+    }
+
     private static TopoDS_Shape Box(double theDX = 10.0, double theDY = 10.0, double theDZ = 10.0)
         => new BRepPrimAPI_MakeBox(theDX, theDY, theDZ).Shape();
 
@@ -74,10 +88,13 @@ public class BOPAlgo_MakePeriodicTests
         Assert.Equal(73440.0, Area(aR), 1e-6);
         Assert.Equal(86400.0, Volume(aR), 1e-6);
 
-        // the repetitions are cleared, the periodic shape stays
+        // the repetitions are cleared, the periodic shape stays: a copy of the one handed out, which the gluing of the
+        // repetitions wrote into (natively the same shape, changed in place)
         aMaker.ClearRepetitions();
         Assert.True(aMaker.RepeatedShape().IsNull());
-        Assert.True(aMaker.Shape().IsSame(aP));
+        Assert.False(aMaker.Shape().IsSame(aP));
+        Assert.Equal(400.0, Volume(aMaker.Shape()), 1e-9);
+        Assert.True(aP.TShape()!.IsFrozen());
     }
 
     [Fact]
@@ -131,28 +148,16 @@ public class BOPAlgo_MakePeriodicTests
         aMaker.Perform();
         Assert.False(aMaker.HasErrors());
         TopoDS_Shape aP = aMaker.Shape();
-        TopoDS_Shape aXMin = new(), aXMax = new();
-        for (TopExp_Explorer anExp = new(aP, TopAbs_FACE); anExp.More(); anExp.Next())
-        {
-            var aProps = new GProp_GProps();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
-            double aX = aProps.CentreOfMass().X();
-            if (Math.Abs(aX) < 1e-9)
-            {
-                aXMin = anExp.Current();
-            }
-            else if (Math.Abs(aX - 4.0) < 1e-9)
-            {
-                aXMax = anExp.Current();
-            }
-        }
+        TopoDS_Shape aXMin = FaceAt(aP, 0.0), aXMax = FaceAt(aP, 4.0);
         Assert.True(aMaker.GetTwins(aXMin).Single().IsSame(aXMax));
         Assert.True(aMaker.GetTwins(aXMax).Single().IsSame(aXMin));
         Assert.Empty(aMaker.GetTwins(aBox));
 
-        // After two repetitions the group of the ends holds the four faces at x = 0, 4, 8 and 12
+        // After two repetitions the group of the ends holds the four faces at x = 0, 4, 8 and 12. The periodic shape
+        // was handed out (frozen), so the repetition works on a copy of it: its faces are found again
         aMaker.RepeatShape(0, 2);
         TopoDS_Shape aR = aMaker.RepeatedShape();
+        aXMin = FaceAt(aMaker.Shape(), 0.0);
         Assert.Equal(3, Count(aR, TopAbs_SOLID));
         IReadOnlyList<TopoDS_Shape> aTwins = [.. aMaker.GetTwins(aXMin)];
         Assert.Equal(3, aTwins.Count);

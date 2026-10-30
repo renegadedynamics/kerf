@@ -127,7 +127,6 @@ public class BOPAlgo_MakeConnectedTests
         // the faces at x = 0 and x = 20 are twins
         TopoDS_Shape aP = aTool.PeriodicShape();
         Assert.True(aTool.PeriodicityTool().GetTwins(FaceAt(aP, 0.0)).Single().IsSame(FaceAt(aP, 20.0)));
-
         aTool.RepeatShape(0, 1);
         aTool.RepeatShape(1, -2);
         Assert.False(aTool.HasWarnings());
@@ -146,6 +145,27 @@ public class BOPAlgo_MakeConnectedTests
         aTool.ClearRepetitions();
         Assert.Equal(2, Count(aTool.PeriodicShape(), TopAbs_SOLID));
         Assert.True(aTool.PeriodicShape().TShape()!.IsFrozen());
+        Assert.Equal(aTextA, BRepTextComparison.Write(aA));
+    }
+
+    [Fact]
+    public void The_caller_s_faces_answer_through_the_copies_the_algorithm_wrote_into()
+    {
+        // A period longer than the boxes: nothing is split, so natively every face of the result is an argument's own
+        // face; the port works on copies of them (the arguments are frozen) and answers for the arguments' faces
+        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        string aTextA = BRepTextComparison.Write(aA);
+        BOPAlgo_MakeConnected aTool = Connected(aA, aB);
+        var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+        aParams.myPeriodic[0] = true;
+        aParams.myPeriod[0] = 30.0;
+        aTool.MakePeriodic(aParams);
+        Assert.False(aTool.HasWarnings());
+        TopoDS_Shape anOuter = FaceAt(aA, 0.0);
+        Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
+        aTool.RepeatShape(0, 1);
+        Assert.Equal(4, Count(aTool.PeriodicShape(), TopAbs_SOLID));
+        Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
     }
 

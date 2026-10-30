@@ -132,6 +132,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myTwins = new(TopTools_ShapeMapHasher.Instance); //!< Map of associations of the identical sub-shapes
     protected BRepTools_History? mySplitHistory;                    //!< Split history - history of shapes modification
     protected BRepTools_History? myHistory;                         //!< Final history of shapes modifications
+    private BRepTools_History myCopies = new();                     //!< OCCT.NET: the frozen shapes replaced by copies
 
     public BOPAlgo_MakePeriodic()
     {
@@ -289,7 +290,20 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     {
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMap =
             myRepeatedTwins.IsEmpty() ? myTwins : myRepeatedTwins;
-        return aMap.Find(theS, out NCollection_List<TopoDS_Shape> aTwins) ? aTwins : new NCollection_List<TopoDS_Shape>();
+        if (aMap.Find(theS, out NCollection_List<TopoDS_Shape> aTwins))
+        {
+            return aTwins;
+        }
+        // OCCT.NET: a frozen shape the algorithm replaced by a copy (decision on CopyFrozenForWrite) has the twins of
+        // its copy, which natively is the shape itself
+        foreach (TopoDS_Shape aCopy in myCopies.Modified(theS))
+        {
+            if (aMap.Find(aCopy, out aTwins))
+            {
+                return aTwins;
+            }
+        }
+        return new NCollection_List<TopoDS_Shape>();
     }
 
     /// <summary>The history of the operation (null before it is performed); the result graphs are frozen first.</summary>
@@ -302,6 +316,9 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// <summary>The history, without freezing.</summary>
     internal BRepTools_History? InternalHistory() => myHistory;
 
+    /// <summary>OCCT.NET: the frozen shapes the algorithm replaced by copies to write into, modified into the copies.</summary>
+    internal BRepTools_History InternalCopies() => myCopies;
+
     private void FreezeResults()
     {
         myShape.TShape()?.FreezeGraph();
@@ -312,6 +329,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     public override void Clear()
     {
         base.Clear();
+        myCopies = new BRepTools_History();
         myPeriodicityParams.Clear();
         myShape.Nullify();
         mySplitHistory?.Clear();
@@ -423,6 +441,13 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         BRepPrimAPI_MakeBox aMBox = new(aPMin, aPMax);
         TopoDS_Shape aTrimBox = aMBox.InternalSolid();
 
+        // OCCT.NET: the Common below is destructive and natively writes into the input (tolerances, p-curves): the
+        // frozen parts of the input (the caller's shape, or the arguments' sub-shapes a connected shape shares) are
+        // replaced by copies first, which it then writes into
+        BRepTools_History aCopyHistory = new();
+        myInputShape = BRepTools.CopyFrozenForWrite(myInputShape, aCopyHistory);
+        myCopies.Merge(aCopyHistory);
+
         // Perform trimming of the shape by solid
         BRepAlgoAPI_Common aCommon = new();
         // Set Object
@@ -435,13 +460,6 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         aCommon.SetTools(aTool);
         // Set the parallel processing mode
         aCommon.SetRunParallel(myRunParallel);
-        // OCCT.NET: an input holding frozen sub-shapes without being frozen itself (the connected shape of
-        // BOPAlgo_MakeConnected, which shares its arguments' untouched sub-shapes) isn't Locked, so the filler would
-        // run destructively and write into the frozen ones; the operation is made non-destructive instead
-        if (BRepTools.HoldsFrozen(myInputShape))
-        {
-            aCommon.SetNonDestructive(true);
-        }
         // Build
         aCommon.Build();
         if (aCommon.HasErrors())
@@ -460,6 +478,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         myShape = aCommon.InternalShape();
         // Fill the History for the object only
         mySplitHistory = new BRepTools_History();
+        mySplitHistory.Merge(aCopyHistory);
         mySplitHistory.Merge(anObj, new MakeShapeHistory(aCommon));
     }
 
@@ -741,6 +760,11 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // theTimes is negative - in negative direction.
         int iDir = theTimes > 0 ? 1 : -1;
 
+        // OCCT.NET: the gluing below is destructive and writes into the shape to repeat (tolerances, p-curves), which
+        // natively changes the periodic shape and the input's sub-shapes it shares. Frozen sub-shapes (the input's,
+        // or the results already handed out) are replaced by copies first, which the gluing then writes into.
+        CopyFrozenForWrite();
+
         // Create the translation history - all translated shapes will be
         // created as Generated from the shape.
         BRepTools_History aTranslationHistory = new();
@@ -791,12 +815,6 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         aGluer.SetGlue(BOPAlgo_GlueFull);
         // Set parallel processing mode
         aGluer.SetRunParallel(myRunParallel);
-        // OCCT.NET: the shape to repeat shares the sub-shapes a caller was given (Shape(), RepeatShape()) or that the
-        // input had; frozen, they would be written by a destructive gluing, which is made non-destructive instead
-        if (BRepTools.HoldsFrozen(myRepeatedShape))
-        {
-            aGluer.SetNonDestructive(true);
-        }
         // Perform gluing
         aGluer.Perform();
         if (aGluer.HasErrors())
@@ -822,6 +840,52 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         UpdateTwins(aTranslationHistory, aGluingHistory);
 
         return myRepeatedShape;
+    }
+
+    /// <summary>
+    /// OCCT.NET: replaces the frozen sub-shapes of the shape to repeat by exact copies (in place in its unfrozen parents,
+    /// so the periodic shape sharing them sees the same shapes), recording the copies in the histories and the twins.
+    /// </summary>
+    private void CopyFrozenForWrite()
+    {
+        if (!BRepTools.HoldsFrozen(myRepeatedShape))
+        {
+            return;
+        }
+        BRepTools_History aCopyHistory = new();
+        bool anIsShape = myRepeatedShape.IsSame(myShape);
+        myRepeatedShape = BRepTools.CopyFrozenForWrite(myRepeatedShape, aCopyHistory);
+        if (anIsShape)
+        {
+            myShape = myRepeatedShape.Oriented(myShape.Orientation());
+        }
+        myHistory!.Merge(aCopyHistory);
+        mySplitHistory?.Merge(aCopyHistory);
+        myCopies.Merge(aCopyHistory);
+        myTwins = CopiedTwins(myTwins, aCopyHistory);
+        myRepeatedTwins = CopiedTwins(myRepeatedTwins, aCopyHistory);
+    }
+
+    // The twins with the copied shapes in place of the frozen ones
+    private static NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> CopiedTwins(
+        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap, BRepTools_History theCopyHistory)
+    {
+        TopoDS_Shape Copied(in TopoDS_Shape theS)
+        {
+            IBentoList<TopoDS_Shape> aM = theCopyHistory.Modified(theS);
+            return aM.Count == 1 ? aM[0].Oriented(theS.Orientation()) : theS;
+        }
+        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCopy = new(TopTools_ShapeMapHasher.Instance);
+        foreach ((TopoDS_Shape aKey, NCollection_List<TopoDS_Shape> aList) in theMap)
+        {
+            NCollection_List<TopoDS_Shape> aNew = new();
+            foreach (TopoDS_Shape aS in aList)
+            {
+                aNew.Append(Copied(aS));
+            }
+            aCopy.Bind(Copied(aKey), aNew);
+        }
+        return aCopy;
     }
 
     /// <summary>Updates the map of twins after repetition.</summary>

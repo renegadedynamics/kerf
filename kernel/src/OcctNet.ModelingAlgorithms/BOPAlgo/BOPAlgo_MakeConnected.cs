@@ -32,6 +32,7 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
     protected BRepTools_History? myHistory;                                                //!< Final History of shapes modifications
     protected TopoDS_Shape myGlued = new();                                                //!< The resulting connected (glued) shape
     protected TopoDS_Shape myShape = new();                                                //!< The resulting shape
+    private BRepTools_History myCopies = new();                                            //!< OCCT.NET: the frozen shapes replaced by copies
 
     public BOPAlgo_MakeConnected()
     {
@@ -80,6 +81,16 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
         {
             return;
         }
+
+        // OCCT.NET: making the shape periodic and repeating it writes into the connected shape in place natively
+        // (the trim and the gluing of the repetitions are destructive), and the connected shape shares the
+        // arguments' untouched sub-shapes. Its frozen parts are replaced by copies here, in place in its unfrozen
+        // parents, so that those writes reach the connected shape as in OCCT while the arguments are never written.
+        BRepTools_History aCopyHistory = new();
+        myGlued = BRepTools.CopyFrozenForWrite(myGlued, aCopyHistory);
+        myGlueHistory ??= new BRepTools_History();
+        myGlueHistory.Merge(aCopyHistory);
+        myCopies.Merge(aCopyHistory);
 
         // Make the shape periodic
         myPeriodicityMaker.Clear();
@@ -163,11 +174,40 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
         return Published(InternalMaterialsOnNegativeSide(theS));
     }
 
-    internal NCollection_List<TopoDS_Shape> InternalMaterialsOnPositiveSide(in TopoDS_Shape theS)
-        => myMaterials.Find(theS.Oriented(TopAbs_FORWARD), out NCollection_List<TopoDS_Shape> aLM) ? aLM : EmptyList();
+    internal NCollection_List<TopoDS_Shape> InternalMaterialsOnPositiveSide(in TopoDS_Shape theS) => Materials(theS, TopAbs_FORWARD);
 
-    internal NCollection_List<TopoDS_Shape> InternalMaterialsOnNegativeSide(in TopoDS_Shape theS)
-        => myMaterials.Find(theS.Oriented(TopAbs_REVERSED), out NCollection_List<TopoDS_Shape> aLM) ? aLM : EmptyList();
+    internal NCollection_List<TopoDS_Shape> InternalMaterialsOnNegativeSide(in TopoDS_Shape theS) => Materials(theS, TopAbs_REVERSED);
+
+    private NCollection_List<TopoDS_Shape> Materials(in TopoDS_Shape theS, TopAbs_Orientation theSide)
+    {
+        foreach (TopoDS_Shape aS in Candidates(theS))
+        {
+            if (myMaterials.Find(aS.Oriented(theSide), out NCollection_List<TopoDS_Shape> aLM))
+            {
+                return aLM;
+            }
+        }
+        return EmptyList();
+    }
+
+    // OCCT.NET: the shape, then the copies that replaced it if it was frozen (CopyFrozenForWrite), which natively are
+    // the shape itself: the connected shape's copies, and the periodicity tool's
+    private IEnumerable<TopoDS_Shape> Candidates(TopoDS_Shape theS)
+    {
+        yield return theS;
+        List<TopoDS_Shape> aFirst = [theS, .. myCopies.Modified(theS)];
+        foreach (TopoDS_Shape aS in aFirst.Skip(1))
+        {
+            yield return aS;
+        }
+        foreach (TopoDS_Shape aS in aFirst)
+        {
+            foreach (TopoDS_Shape aCopy in myPeriodicityMaker.InternalCopies().Modified(aS))
+            {
+                yield return aCopy;
+            }
+        }
+    }
 
     /// <summary>The history of the operations (null before Perform); the result graphs are frozen first.</summary>
     public BRepTools_History? History()
@@ -236,6 +276,7 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
         myPeriodicityMaker.Clear();
         myOrigins.Clear();
         myMaterials.Clear();
+        myCopies = new BRepTools_History();
         myGlueHistory?.Clear();
         myHistory?.Clear();
         myGlued.Nullify();
