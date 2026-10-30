@@ -589,3 +589,41 @@ float-identical to native's on every compared face and edge.
 |---|---|---|
 | build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
 | BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |
+
+## Phase 6: unit 6A, BOP data and reports
+
+Each bug is reproduced by a test and marked `// OCCT` at the line, and ported as OCCT has it unless the entry says
+otherwise.
+
+| Where | What | Effect | Test |
+|---|---|---|---|
+| Message_Report::AddAlert | When `Message_CompositeAlerts::AddAlert` merges the new alert into one of the same type, it returns false. The report then tests `anAlerts.Extent() > myLimit`, which is always true with the default limit of -1, and removes the first alert of that gravity. The limit is never applied to an appended alert | Simple alerts merge by default, so adding the same simple alert twice with the same gravity leaves none; a third add appends it again. In BOPAlgo, `AddError(new BOPAlgo_AlertTooFewArguments)` twice gives `HasErrors() == false`, and merging two reports that hold the same simple alert type loses alerts. If another alert is first in the list, that one is removed instead | `AddAlert_MergingRemovesTheFirstAlert_OcctIssue`, `AddAlert_LimitAppliesOnlyOnMerge_OcctIssue`, `SimpleErrorAddedTwice_OcctIssue` |
+| Message_CompositeAlerts::Clear(type) | The loop's else branch calls `anIt.More()` instead of `anIt.Next()` | An alert not of the cleared type makes the loop run forever, so `Message_Report::Clear(type)` hangs. **Fixed minimally** (`Next()`), because a hang can't be shipped | `Clear_AllGravityAndType` |
+| IntTools_Curve::D0 | The bounds test is `thePar >= First \|\| thePar <= Last`, where `&&` is meant | Every parameter counts as inside the curve and is evaluated | `Curve_D0_OcctBug_EvaluatesOutsideTheBounds` |
+| IntTools_CommonPrt copy constructor | Sets `myAllNullFlag(false)` instead of copying it (`Assign` does copy it) | A copied common part loses its all-null flag | `CommonPrt_OcctBug_CopyConstructorDropsTheFlag` |
+| IntTools_CommonPrt::Assign | Appends the other part's Ranges2 to its own instead of replacing them | `a = b` accumulates ranges. BOPDS_InterfEE/EF::SetCommonPart goes through it, so setting a common part twice accumulates the second edge's ranges | `CommonPrt_OcctBug_AssignAppendsTheRanges`, `InterfEE_SetCommonPartTwice_AccumulatesTheSecondEdgeRanges` |
+| IntTools::RemoveIdenticalRoots | After `aSR.Remove(k)` the loop goes on at k+1, so the root moved into slot k is never compared with root j | With roots 1.0, 1.0001 and 1.0002 and eps 1, the result is 1.0 and 1.0002, though 1.0002 is within eps of 1.0 | `RemoveIdenticalRoots_OcctBug_SkipsTheRootAfterARemoval` |
+| BOPDS_FaceInfo::Clear | Clears the In and On maps but not the Sc maps | A cleared face info keeps its section pave blocks and vertices | a BOPDS_DSTests case |
+| BOPDS_DS::Paves | Sizes its array as the number of pave blocks plus one. If fewer distinct paves are found, the default paves left in the array (index -1, parameter 99) are sorted and appended too; OCCT's assert only fires in debug builds | Spurious paves in the list for an edge whose pave blocks share paves | — (kept; reached by 6E) |
+| BOPDS_DS::BuildBndBoxSolid | Called after `Init` with one argument, it returns a void box: `prepareSolids` has already replaced the solid's shells by faces, edges and vertices, so no shell is found | A void box for such a solid | a BOPDS_DSTests case |
+| BOPAlgo_Builder::SetArguments (stub, OCCT's code) | Clears `myArguments` but not the fence map `myMapFence` | Setting again arguments that were added before leaves none | `BuilderSetArguments_Twice_KeepsNothing_OcctIssue` |
+| BOPAlgo_ToolsProvider::SetTools | The same, with `myMapTools` | As above, for tools | — (ported, not yet marked or tested) |
+
+**Order sites (decisions 5005 and 6153).** Native's NCollection_Map iterates in hash-bucket order. For integer and
+pair keys that order is deterministic but scrambled; the port iterates in insertion order. It decides:
+
+- `BOPDS_DS::prepareFaces`/`prepareSolids`: the order of each face's and solid's sub-shape list, and through it
+  FaceInfoOn, SharedEdges and AloneVertices;
+- `UpdateFaceInfoIn/On(NCollection_Map<int>)`;
+- `UpdateCommonBlock`: the order in which the new common blocks are made (a `DataMap<BOPDS_Pair, …>`);
+- `IntTools_CurveRangeLocalizeData`/`SurfaceRangeLocalizeData::ListRangeOut` (hash order of samples).
+
+In BOPDS, no map keyed by pave block's address is iterated: FaceInfo's In/On/Sc maps are indexed maps (insertion
+order in native too), and `myMapPBCB` is only looked up.
+
+Not bugs, but worth knowing:
+
+- IntTools_ShrunkRange never resets its bounding box. `SetData`, `Perform` and `SetShrunkRange` only add to it, so an
+  object reused for a second edge keeps the first edge's box. OCCT's callers make one object per pave block.
+- The BOPAlgo message file's key `BOPAlgo_AlertBOPIsNotSet` doesn't match the class `BOPAlgo_AlertBOPNotSet`, and
+  `BOPAlgo_AlertNullFace` has no class.

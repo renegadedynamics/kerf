@@ -5430,3 +5430,237 @@ placeholders, renumbered on merge.
 
       What blocks most afterwards is phase 7's (`DT_*` heal tools 1,600, `blend`, `chamf`, `depouille`) and phase 8's
       `stepread`.
+
+## Phase 6: unit 6A, BOP data and reports
+
+The phase 6 pilot: TKernel's reports and alerts, TopoDS' alerts, BOPDS, IntTools' data classes, BOPAlgo's options,
+alerts and enums; the public Boolean API shell over a stub builder; the per-thread context; the determinism and
+canonical-comparison harnesses. Numbers from 6101 are placeholders, renumbered on merge.
+
+6101. **Placement, and what 6A pulls forward from 6B.**
+      - Message's reports and alerts are in OcctNet.Foundation/Message, TopoDS_AlertWithShape and AlertAttribute in
+        OcctNet.ModelingData/TopoDS, and TKBO (BOPDS, IntTools, BOPAlgo, BOPTools, BRepAlgoAPI) in
+        OcctNet.ModelingAlgorithms.
+      - The tests are under `tests/OcctNet.*.Tests/<package>`. The harnesses are in
+        `tests/OcctNet.ModelingAlgorithms.Tests/Harness`, linked into Oracle.Tests.
+      - BOPDS needs four things from unit 6B's packages. 6A ports them, and 6B adds the rest of each class to the
+        same file:
+        - BOPTools_Parallel, BoxTree, BoxSelector and PairSelector, whole;
+        - `BOPTools_AlgoTools.PointOnEdge`, `IsOpenShell` and `IsInvertedSolid` (a `static partial class`);
+        - `IntTools_Context`'s constructor, `BndBox` and `OBB`;
+        - `IntTools_Tools.IntermediatePoint`.
+      - BOPTools_Box2dPairSelector's `RejectNode` uses its own dimension. OCCT's builds a 3D box whatever the
+        dimension, and only the 3D selector is instantiated.
+6102. **The per-thread context** (decision 5005).
+      - `BOPTools_Parallel.Perform(isRunParallel, solvers[, context])` runs on `OSD_Parallel.For` with
+        `!myRunParallel` as the sequential flag, over an `IReadOnlyList` or an NCollection vector of solvers.
+      - A solver implements `BOPTools_Parallel.ISolver` (`Perform()`), or `IContextSolver<TContext>`, which adds
+        `SetContext`. That replaces C++'s template duck typing. BOPAlgo_ParallelAlgo implements ISolver.
+      - OCCT's `ContextFunctor` is ported as it is: a map from thread id (`Environment.CurrentManagedThreadId`) to
+        context.
+        - The calling thread uses the algorithm's own context.
+        - Every other thread makes `new TContext()` on its first solver and keeps it for the rest of the loop.
+        - A serial loop gives every solver the algorithm's context, as OCCT does.
+      - `ContextFunctor2`, keyed by OSD_ThreadPool's thread index, serves OCCT's own pool, which the port doesn't
+        have (decision 522), so it is left out.
+      - The tests check that the calling thread uses the given context, that no context is used by two threads,
+        that results are bit-identical to the serial ones, and that exceptions come out unwrapped.
+      - Unit 6B audits IntTools_Context's cached tools for state carried between calls.
+6103. **`OSD_Parallel.MaxDegreeOfParallelismScope(n)`** is an internal test hook, an `AsyncLocal` like
+      `ForceSerialScope`. The loops started under it run with `ParallelOptions.MaxDegreeOfParallelism = n`, so the
+      determinism harness can run an algorithm at several degrees of parallelism.
+6104. **IntTools_Range, Curve and CommonPrt.**
+      - Range and Curve are structs with internal setters and `With` twins. A copy of a Curve shares its curves, as a
+        C++ copy shares the handles.
+      - CommonPrt holds a sequence of ranges, so it is a sealed class. Its copy constructor and `Assign` are written
+        out wherever OCCT copies by value. Both keep OCCT's bugs (occt-issues.md).
+6110. **`std_sort`: MSVC's `std::sort` order on ties** (decision 491).
+      - It ports MSVC's `_Sort_unchecked`:
+        - insertion sort up to 32 elements, which keeps tied elements in their order;
+        - above that, the median-guess partition (Tukey's ninther above 40 elements);
+        - std_heap's heap sort after 1.5 log2(N) divisions.
+      - `stable_sort` is any stable sort, since the result of a stable sort is unique.
+      - It is used for IntTools' roots and BOPDS' paves (sorted by parameter only, so ties are possible) and BOPDS'
+        pairs.
+      - Ranges of up to 32 elements are MSVC's order by construction. The partition of longer ranges is written
+        from MSVC's source but hasn't been checked against an MSVC-compiled program.
+6111. **Message_Report and the alerts are working objects** (decision 5009).
+      - `DEFINE_SIMPLE_ALERT` and `DEFINE_ALERT_WITH_SHAPE` are plain subclasses of `Message_Alert` and
+        `TopoDS_AlertWithShape`. `GetMessageKey()` is the .NET class name, which is OCCT's.
+      - `AddAlert`, `AddLevel`, `RemoveLevel` and the `Clear` methods take a `Lock` (OCCT's `std::mutex`).
+      - `GetAlerts` returns the report's own list. A gravity out of range gives a new empty list, as
+        `Standard_ASSERT_RETURN` does in release builds.
+      - `Dump` writes to a `TextWriter`, one key and `'\n'` per alert, with the children of an extended alert below
+        it.
+      - `Merge(other)` iterates over a copy of the other report's list, so merging a report into itself ends.
+      - DumpJson is left out. `ActivateInMessenger` is internal, because adding printers is internal (decision
+        521).
+6112. **`Message.DefaultReport(theToCreate)` is internal, process-wide state** (decisions 415 and 5009).
+      - Only Message_Level, Message_PrinterToReport and Message_AttributeMeter reach it.
+      - It is null until something creates it. `SetDefaultReport` is internal, for tests and Draw-lite.
+      - Message_Level is `IDisposable` (`using var aLevel = new Message_Level("name")` is OCCT's
+        `OCCT_ADD_MESSAGE_LEVEL_SENTRY`).
+      - PrinterToReport's DumpJson branch (`Standard_Dump::HasChildKey`) is kept but never taken, because the port
+        writes no DumpJson text.
+6113. **Message_AttributeMeter's metrics come from .NET.**
+      - The wall clock is `Stopwatch`.
+      - Process CPU time is `Process.UserProcessorTime` and `PrivilegedProcessorTime`.
+      - Memory, in MiB, comes from the `Process` counters: the paged-memory ones stand for swap, and the heap is
+        `GC.GetTotalMemory(false)`.
+      - Thread CPU time stays undefined (-1). So does everything but the wall clock in a browser or under WASI.
+      - `ToOSDMetric` and `ToMessageMetric` are left out.
+6114. **An alert's shape is published by `GetShape()`**, which freezes the shape's graph (design 4.2), because an
+      algorithm may put shapes it is still building into an alert.
+      - Ported code reads `InternalGetShape()`, which doesn't freeze. `SetShape` is internal.
+      - TopoDS_AlertAttribute's stream is the shape's `ToString()`, not OCCT's DumpJson.
+      - OCCT's `messenger << shape` is `TopoDS_AlertAttribute.Send(messenger, shape)`.
+6115. **BOPAlgo's message texts are a table** (BOPAlgo_BOPAlgo_msg.cs), added to Message_MsgFile with the internal
+      `AddMsg`, because `LoadFromString` is left out (decision 520).
+      - The first BOPAlgo_Options loads it, once and thread-safely.
+      - As in OCCT, the file's key `BOPAlgo_AlertBOPIsNotSet` doesn't match the class `BOPAlgo_AlertBOPNotSet`.
+6116. **BOPAlgo_Options can be held as well as derived from.**
+      - BRepAlgoAPI_Algo derives from BRepBuilderAPI_MakeShape and inherits BOPAlgo_Options as a protected base,
+        which C# can't do. So BOPAlgo_Options is a concrete class with a public constructor, its state is
+        `protected internal`, and BRepAlgoAPI_Algo holds one and forwards the members OCCT re-exposes with `using`.
+      - The allocator goes.
+      - `GetParallelMode()` is public; `SetParallelMode` is internal and process-wide (decisions 415 and 5007).
+      - BOPAlgo_SectionAttribute is a struct with internal setters under OCCT's names and the public twins
+        `WithApproximation`, `WithPCurveOnS1` and `WithPCurveOnS2`.
+6131. **IntTools' by-value data classes.**
+      - Root, PntOnFace, PntOn2Faces, BaseRangeSample, CurveRangeSample and SurfaceRangeSample are structs with
+        internal setters, `With` twins, field-by-field equality, a hash and ToString.
+      - OCCT's `std::hash` specialisations are `GetHashCode`. The hash values differ from native's.
+      - A struct can't derive, so `IntTools_CurveRangeSample : IntTools_BaseRangeSample` is one struct holding its
+        own depth; `BaseRangeSample()` returns the base part.
+      - MarkedRangeSet is a sealed class, with its implicit copy constructor written out.
+      - The localize data and ShrunkRange are working objects.
+      - SurfaceRangeLocalizeData's copy and `Assign` share the grid arrays, as OCCT shares the handles.
+      - `IntTools_PntOnFace::IsValid()`, declared but never defined in OCCT, is left out.
+6132. **The localize data list their out ranges in insertion order.**
+      - `ListRangeOut` iterates an NCollection_Map: insertion order in the port (decision 18), hash order natively.
+      - Unit 6C lists in occt-issues.md wherever IntTools_BeanFaceIntersector's result depends on that order.
+6133. **`IntTools::SortRoots` uses `std_sort.sort`** (decision 6110), so tied roots end up in MSVC's order.
+6151. **BOPDS: values and working objects.**
+      - Pave, Pair, IndexRange, Point and CoupleOfPaveBlocks are structs.
+      - ShapeInfo, FaceInfo, Curve and the Interf classes are classes, held in the DS's vectors and changed in place.
+        OCCT's by-value copies are copy constructors, so `DS.Append(BOPDS_ShapeInfo)` copies, as does `new
+        BOPDS_Curve(other)`.
+      - `NCollection_DynamicArray<T>.Appended()` appends null for a class, so ported code writes `Append(new T())`.
+      - PaveBlock and CommonBlock compare by reference, and maps of them iterate in insertion order (5005).
+      - OCCT's equalities are kept: Pave's `==` compares index and parameter, while `<` compares parameters only.
+        Pair's equality and hash ignore the order of the two indices.
+      - Allocators and `SetIncrement` go. `GetIndexNew` returns `int?`.
+      - `SetRealPaveBlock` removes, then prepends; OCCT prepends, then removes through a list node. The resulting
+        list is the same.
+      - The interference tables, `AddInterf` and the `Change*` members are internal; the readers are public. Dumps
+        write to a `TextWriter`.
+6152. **BOPDS' sorts.**
+      - The paves (`PaveBlock.Update`, `DS.Paves`) are sorted with `std_sort.sort`, and the iterators' pairs with
+        `std_sort.stable_sort`.
+      - `BOPDS_Iterator.IntersectExt` runs its selectors through BOPTools_Parallel; they are read back serially in
+        vector order. Serial and parallel runs give the same pairs at every degree of parallelism (tested).
+6153. **Native iterates an `NCollection_Map<int>` in hash-bucket order. Open; unit 6E measures it.**
+      - OCCT 8's NCollection_Map puts a new key at the head of its bucket and iterates bucket by bucket, with
+        `std::hash<int>` (FNV-1a in an MSVC build) modulo `NextPrimeForMap`.
+      - That order is deterministic but scrambled. The port's map iterates in insertion order (decision 18).
+      - It decides:
+        - the order of `ShapeInfo(face/solid).SubShapes()`, which BOPDS_DS `prepareFaces` and `prepareSolids` build
+          from such a map;
+        - through those lists, FaceInfoOn, SharedEdges, AloneVertices and `UpdateFaceInfoIn/On(Map<int>)`;
+        - and, from a `DataMap<BOPDS_Pair, …>`, the order in which UpdateCommonBlock makes its new common blocks.
+      - These orders reach the pave filler's results. 6A keeps insertion order and lists the sites in
+        occt-issues.md.
+      - If unit 6E's oracle shows that byte parity needs native's order, an integer-keyed map that iterates as
+        OCCT's does is the remedy. It needs no addresses, so it is reproducible, but it is a Foundation change and
+        must be decided then.
+6171. **BRep bytes are compared with the Free flag masked** (decision 5006).
+      - `BRepTextComparison` reads the TShapes section one entry at a time: a type line, the geometry, a 7-character
+        flags line, then the sub-shapes up to `*`. It masks the first flag, which is Free.
+      - It reports:
+        - whether the bytes are identical;
+        - whether they are identical with Free masked;
+        - how many Free flags differ;
+        - the first differing line.
+6172. **The canonical match** (decision 5006).
+      - Each sub-shape is keyed by its geometry, ignoring storage order and TShape identity:
+        - a vertex by the bits of its point, location applied;
+        - an edge by its 3D curve's compact `PrintCurve` text (transformed by the location), the bits of its range
+          and its vertices' keys, sorted;
+        - a face by its surface's `PrintSurface` text and its edges' keys;
+        - a container by its type and its children's keys.
+      - Each type must have the same number of each key on both sides. Within a matched group, tolerances,
+        Degenerated/SameParameter/SameRange/NaturalRestriction and the TShape flags other than Free, Modified,
+        Checked and Locked are compared.
+      - Orientation is optional.
+      - Volume, area and centroid must agree within 1e-9 relative, and both shapes must be valid
+        (`BRepCheck_Analyzer`).
+      - An optional vertex tolerance matches each unmatched vertex to its nearest unused one. Curves and surfaces
+        always match exactly.
+6173. **The determinism harness** (decision 5005).
+      - The reference run is serial, under `ForceSerialScope`.
+      - The operation then runs `repeats` times at each degree of parallelism (1, 2, 4 and the processor count by
+        default), under `MaxDegreeOfParallelismScope`. Each run must give the reference's text: a shape's BRep
+        text, and a history written in a stable order (each argument sub-shape's Modified and Generated shapes as
+        indices in the result's `MapShapes` numbering, and whether it is removed).
+6174. **Histories are compared through the canonical keys** (decision 5006). For each argument key, the multisets
+      of Modified and Generated result keys and the IsRemoved flags must agree.
+6181. **The Boolean API runs over a stub builder until units 6E and 6F.**
+      - BOPAlgo_PaveFiller, Builder, BOP, Section and Splitter are stubs. Each file says so and has no `Port of:`
+        line, so port-status doesn't count them.
+      - They keep OCCT's members and argument checks:
+        - the pave filler's `Init` (DS, context, iterator);
+        - Builder's `PerformWithFiller`, `CheckData`, `CheckFiller`, `Prepare` and `PrepareHistory`;
+        - BOP's `CheckData`, with its dimension rules.
+      - The stub pave filler adds `BOPAlgo_AlertIntersectionFailed` whenever the iterator finds a pair of
+        sub-shapes whose boxes meet.
+      - Arguments that don't interfere need no intersection, so for them the stub gives OCCT's result: images are
+        the arguments themselves.
+        - The General Fuse and FUSE keep everything, COMMON nothing, CUT the objects, CUT21 the tools and Splitter
+          the objects.
+        - Section gives an empty compound.
+        - The history removes the left-out argument sub-shapes, through OCCT's PrepareHistory.
+      - BOPAlgo_BuilderShape and ToolsProvider are real ports.
+      - 6E replaces the stub rule with PerformVV to PerformFF and PaveFiller_10's `SetNonDestructive()`. 6F
+        replaces Builder's `BuildStubResult` and the stub dimension helpers.
+6182. **The BRepAlgoAPI classes publish their results** (decisions 414, 454 and 5004).
+      - The algorithms keep OCCT's classes and calls.
+      - `Shape()` freezes the result, and like OCCT's it doesn't check IsDone. `Modified`, `Generated`,
+        `SectionEdges()` and `History()` freeze the whole result first (the new hook `BeforePublishingLists` in
+        BRepBuilderAPI_MakeShape), because their shapes are its sub-shapes.
+      - Ported code reads `InternalShape`, `InternalHistory`, `InternalSectionEdges`, `DSFiller` and `Builder`.
+      - OCCT's CSF_DEBUG_BOP dump is left out, because it reads the environment and writes files.
+      - `SimplifyResult` is left out until units 6U and 6P, with a comment and no stub.
+      - Section makes a plane or surface argument into a face with the makers' unfrozen `InternalShape()`.
+        `HasAncestorFaceOn1/2` return the face frozen, or null.
+6183. **The functional twins and `BRepAlgoAPI_Options`** (decision 5004, open question 21).
+      - `BRepAlgoAPI.Fuse/Common/Cut/Split(args, tools, in options, out history)` and `Section(args, tools, in
+        options, in BOPAlgo_SectionAttribute, out history)`, with overloads without the history:
+        - freeze the arguments first, so they are locked and the pave filler runs non-destructively (decision
+          5002);
+        - always fill the history;
+        - return a frozen result;
+        - throw `BRepAlgoAPI_Failure : StdFail_NotDone`, which carries the report and lists the error keys.
+      - `BRepAlgoAPI_Options` is a struct with public fields and an explicit constructor giving OCCT's defaults, as
+        decision 528 does: FuzzyValue = Precision.Confusion(), Glue off, UseOBB false, CheckInverted true,
+        RunParallel false, NonDestructive false, Simplify false.
+      - `default(BRepAlgoAPI_Options)` differs from those defaults (fuzzy value 0, CheckInverted false).
+      - RunParallel defaults to false, not to the global `GetParallelMode()`, so a value never depends on process
+        state. The result is the same either way (decision 5005).
+      - Equality is field by field (doubles by `double.Equals`), so the options can key a cache.
+      - `Simplify = true` throws Standard_NotImplemented until 6U and 6P.
+6190. **Notes for later units.**
+      - 6B:
+        - fill IntTools_Context in its file, with `SurfaceData(face)` returning the cached
+          `IntTools_SurfaceRangeLocalizeData` class itself;
+        - add the rest of `BOPTools_AlgoTools` (partial class) and IntTools_Tools;
+        - audit the cached tools.
+      - 6C and 6E: IntTools_CommonPrt is a class, so copy it explicitly (`new IntTools_CommonPrt(x)`), and remember
+        that `Assign` appends Ranges2. Interference vectors take `Append(new BOPDS_InterfXX())`.
+      - 6E:
+        - replace BOPAlgo_PaveFiller.cs's stub;
+        - run its solvers through `BOPTools_Parallel.Perform(myRunParallel, vector, myContext)`;
+        - measure decision 6153's orders with the oracle;
+        - use the determinism harness on every corpus Boolean.
+      - 6F and 6P: keep the shell's members listed in the stub files' headers. Later oracles compare with
+        `BRepTextComparison`, then `CanonicalShapeComparer` and `HistoryComparison`, and check parallel runs with
+        `DeterminismHarness`.

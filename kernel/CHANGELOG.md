@@ -440,3 +440,49 @@ Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spi
   oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
   (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
   6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).
+
+Phase 6 (part): BOP data and reports, the phase 6 pilot (unit 6A).
+
+- `OcctNet.Foundation`:
+  - Message's reports and alerts: Message_Report, Alert, AlertExtended, CompositeAlerts, Attribute,
+    AttributeMeter, AttributeObject, AttributeStream, Level, PrinterToReport and MetricType.
+  - `std_sort`, which gives MSVC's `std::sort` order on ties.
+  - `OSD_Parallel.MaxDegreeOfParallelismScope`, a test hook.
+- `OcctNet.ModelingData`: TopoDS_AlertWithShape and TopoDS_AlertAttribute. An alert's `GetShape()` publishes the
+  shape (frozen).
+- `OcctNet.ModelingAlgorithms`:
+  - BOPDS, the Boolean data structure, all of it.
+  - IntTools' data classes: Range, Root, CommonPrt, Curve, PntOnFace, PntOn2Faces, MarkedRangeSet, ShrunkRange,
+    the range samples and localize data, and the package statics.
+  - BOPAlgo_Options, Algo, the alerts (41 classes, checked by type), GlueEnum, Operation, CheckStatus,
+    SectionAttribute, BuilderShape and ToolsProvider.
+  - From BOPTools: Parallel (each thread gets its own IntTools_Context), the box trees and selectors, and three
+    AlgoTools statics. The IntTools_Context shell.
+  - **The public Boolean API**: BRepAlgoAPI_Cut, Fuse, Common, Section and Splitter, with BuilderAlgo,
+    BooleanOperation and Algo.
+    - They keep OCCT's classes and calls, and publish frozen results, histories and section edges.
+    - The functional twins `BRepAlgoAPI.Fuse/Common/Cut/Section/Split(args, tools, in BRepAlgoAPI_Options, out
+      history)` take an equatable options struct with OCCT's defaults.
+    - Until units 6E and 6F port the pave filler and the builders, a stub builder gives OCCT's result for
+      arguments that don't interfere, and reports `BOPAlgo_AlertIntersectionFailed` for arguments that do.
+- Tests:
+  - reports and alerts (gravities, type checks, merging, levels, printers, DumpErrors and DumpWarnings);
+  - BOPDS built by hand (paves, pave blocks, common blocks, interference tables, face infos, the iterators'
+    sorted pairs, serial against parallel);
+  - IntTools' data classes;
+  - the API shell (frozen inputs never written, frozen `Shape()`, histories, errors, the options struct, the
+    twins);
+  - the per-thread context;
+  - the harnesses later units compare Booleans with:
+    - BRep bytes with the Free flag masked;
+    - a canonical match of sub-shapes by geometry, tested on shapes renumbered at random;
+    - serial against parallel at several degrees of parallelism;
+    - histories through the canonical match.
+- OCCT bugs found:
+  - Message_Report deletes alerts that merge;
+  - Message_CompositeAlerts::Clear(type) never ends (fixed);
+  - IntTools_Curve::D0 accepts any parameter;
+  - IntTools_CommonPrt's copy loses its flag, and its assignment accumulates ranges;
+  - IntTools::RemoveIdenticalRoots skips roots;
+  - BOPDS_FaceInfo::Clear and BOPDS_DS::Paves;
+  - BOPAlgo_Builder::SetArguments.
