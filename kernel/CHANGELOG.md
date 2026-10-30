@@ -690,3 +690,18 @@ Phase 5 (part): surface/surface intersection, the milestone (unit 5G).
   at random and special placements, every kind against revolution, extrusion, Bezier, B-spline, offset and trimmed
   surfaces, the lowalgos/intss corpus' surfaces, data/occ faces): 2,038 lines, every value bit-identical; serial =
   parallel = repeat.
+Phase 6 (part): edge intersectors (unit 6C).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `IntTools_EdgeEdge` (common parts of two edges: line/line in closed form, otherwise by box refinement and
+    coincidence checks), `IntTools_EdgeFace` (common parts of an edge and a face: vertices with touch detection, or the
+    whole edge) and `IntTools_BeanFaceIntersector` (the parameter ranges of a curve on a surface, with the sample-box
+    localisation on B-spline and Bezier surfaces).
+  - The intersector's surface boxes cached in `IntTools_Context` are keyed by what they are computed from, so an
+    edge/face run gives the same result whatever its context computed before, and parallel runs give the serial result.
+- Tests:
+  - Native recordings (tools/edgerec, a C++ recorder built against native OCCT): 2,013 edge/edge and 3,375 edge/face
+    runs on data/occ shapes and probe edges, compared bit for bit; all identical but 47 runs on arcs of arbitrary axis,
+    which agree within 5.2e-9 (sine and cosine).
+  - A reused context gives fresh-context results in any order; serial = parallel through BOPTools_Parallel with edges
+    of different tolerances on the same faces; known answers for lines, circles, planes, cylinders and spheres.

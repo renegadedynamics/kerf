@@ -899,3 +899,17 @@ comparisons (decision 748), where every pair is bit-identical.
 | `GeomInt_IntSS::BuildPCurves` (GeomInt_IntSS_1.cxx) | Calls `theCurve2d->DynamicType()` after a second `GeomProjLib::Curve2d` that may return null | Access violation in OCCT, NullReferenceException in the port. Kept |
 | `GeomInt_LineTool::DecompositionOfWLine` | Its two neighbour searches step one index past a part before testing | When all points of an end part coincide in UV, `Point(i)` is read past the line (unchecked in OCCT's release build; Standard_OutOfRange in the port). Kept |
 | Draw's `intersect`, curve/surface branch (GeometryTest_CurveCommands.cxx) | The points' loop calls `Inters.Point(i)` with `i` running from `nblines + 1` | With segments and points both, the points read are past the last one (Standard_OutOfRange, reported by Draw) and the first points are skipped. Kept in Draw-lite |
+
+## Phase 6: unit 6C, edge intersectors
+
+Found while porting IntTools_EdgeEdge, IntTools_EdgeFace and IntTools_BeanFaceIntersector. Each is ported as OCCT has
+it, except the first (decision 753).
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_BeanFaceIntersector::LocalizeSolutions`, `ComputeLocalized` with `IntTools_Context::SurfaceData` | The face's sample boxes are cached across runs, keyed by sample only, enlarged by the first edge's criteria, and a cached box skips the check against the run's main curve box (6B's entry) | A run's result depends on what its context computed before, so native's parallel edge/face results depend on thread order. Measured (tools/edgerec `study`): 1 run in 25,308 (8,436 pairs on localising faces, in order, reversed and with alternating fuzzy values) differs from a fresh context, by 32 ulps in a range. **The port keys the cache and checks cached boxes as fresh ones (decision 753)**, so it always gives the fresh-context result; that run is the residual difference from native's serial result |
+| `IntTools_BeanFaceIntersector`, `myMinSqDistance` | Only `ComputeAroundExactIntersection` and `ComputeUsingExtremum` update it; the line/plane path, `FastComputeAnalytic`, the coincidence test and `ComputeLocalized` never do | `IntTools_EdgeFace::MinimalDistance()` is RealLast for edges on B-spline faces even with common parts (all 177 such recorded runs), and BOPAlgo_PaveFiller_5's distance check is skipped for them. Recorded |
+| `IntTools_EdgeFace::CheckTouchVertex` | Builds its surface adaptor on the surface's natural bounds (`Surface->Bounds`), where `CheckTouch` uses the face's | On a plane or another infinite surface the extrema run on an unbounded surface. By reading |
+| `IntTools_EdgeFace::CheckData` | Sets status 2 for a degenerated edge, then overwrites it with 3 if the edge has no geometry | The degenerated status is lost for such edges. By reading |
+| `IntTools_BeanFaceIntersector::ComputeAroundExactIntersection` | With more than one exact intersection point it lowers `myCriteria` to 3·Confusion for the rest of the run (meant for the range search) | The extremum and boundary passes that follow use the lowered criteria too. By reading |
+| `IntTools_CurveRangeLocalizeData::ListRangeOut` (decision 629) | Native lists the curve's out ranges in hash order, the port in insertion order; `ComputeLocalized` inserts them into the range manager with flag 1 | The ranges are disjoint and share one flag, so only zero-length ranges at shared ends can come out in a different order. No difference in the 1,562 recorded runs on localising faces |
