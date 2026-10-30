@@ -554,7 +554,7 @@ public partial class BOPAlgo_PaveFiller
         //
         bRet = true;
         //
-        // OCCT iterates the map in its hash order (decision 633); the result is whether any vertex interferes.
+        // OCCT iterates the map in its hash order (decision 6901); the result is whether any vertex interferes.
         foreach (int nV in aMIF)
         {
             TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));

@@ -3,9 +3,10 @@
 // structure after filling, written exactly as the port's tests/OcctNet.ModelingAlgorithms.Tests/BOPAlgo/
 // PaveFillerDump.cs writes it (every double as its 64 bits in hex). Built against build123d.NET's native OCCT V8_0_1
 // (TKBO's own pave filler). The cases are the boolean group's *_simple scripts made of primitives and
-// transformations (one case per distinct script), and pairs of primitive solids at pseudo-random placements; each is
-// filled twice, in the default (destructive) mode and non-destructively.
-//   pfrec <tests/boolean directory> <case list: group/name lines> > recording.txt
+// transformations (one case per distinct script; every tenth also with a fuzzy value), pairs of primitive solids at
+// pseudo-random placements, and data/occ shapes against moved copies, a box and each other; each is filled twice, in
+// the default (destructive) mode and non-destructively.
+//   pfrec <tests/boolean directory> <case list: group/name lines> <data/occ directory> > recording.txt
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
@@ -30,6 +31,7 @@
 #include <BOPDS_PaveBlock.hxx>
 #include <BOPDS_Point.hxx>
 #include <BOPDS_ShapeInfo.hxx>
+#include <BRepBndLib.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
@@ -325,7 +327,7 @@ static std::string Alerts(const occ::handle<Message_Report>& theReport, Message_
 static int gCase = 0;
 
 // Writes the case: the arguments' compound as BRep text, then for each mode the filler's outcome and dump.
-static void Record(const std::string& theName, const std::vector<TopoDS_Shape>& theArgs)
+static void Record(const std::string& theName, const std::vector<TopoDS_Shape>& theArgs, double theFuzzy = 0.0)
 {
   TopoDS_Compound aC;
   BRep_Builder    aBB;
@@ -336,6 +338,8 @@ static void Record(const std::string& theName, const std::vector<TopoDS_Shape>& 
   std::printf("case %d %s\nshapes %d\n", ++gCase, theName.c_str(), (int)aText.size());
   std::fwrite(aText.data(), 1, aText.size(), stdout);
   std::printf("\n");
+  if (theFuzzy > 0.0)
+    std::printf("fuzzy %s\n", H(theFuzzy).c_str());
   for (int aMode = 0; aMode < 2; aMode++)
   {
     // the same bits on both sides: fill shapes read back from the text
@@ -349,6 +353,8 @@ static void Record(const std::string& theName, const std::vector<TopoDS_Shape>& 
     BOPAlgo_PaveFiller aPF;
     aPF.SetArguments(aLS);
     aPF.SetNonDestructive(aMode == 1);
+    if (theFuzzy > 0.0)
+      aPF.SetFuzzyValue(theFuzzy);
     std::string aDump, anOutcome;
     try
     {
@@ -607,6 +613,9 @@ static void Scripts(const std::string& theDir, const std::string& theList)
     if (!RunScript(aSS.str(), anArgs, aKey) || !aSeen.insert(aKey).second)
       continue;
     Record(aName, anArgs);
+    // a fuzzy variant of every tenth script
+    if (aSeen.size() % 10 == 1)
+      Record(aName + "-fuzzy", anArgs, 1.e-4);
   }
 }
 
@@ -658,14 +667,69 @@ static void Primitives()
       }
 }
 
+// ------------------------------------------------------------------------------------------------ data/occ shapes
+
+static TopoDS_Shape ReadOcc(const std::string& theDir, const char* theFile)
+{
+  TopoDS_Shape aS;
+  BRep_Builder aB;
+  if (!BRepTools::Read(aS, (theDir + "/" + theFile).c_str(), aB))
+    std::fprintf(stderr, "cannot read %s\n", theFile);
+  return aS;
+}
+
+static TopoDS_Shape Shifted(const TopoDS_Shape& theS, double theFx, double theFy, double theFz, double theAngle)
+{
+  Bnd_Box aBox;
+  BRepBndLib::Add(theS, aBox);
+  double x0, y0, z0, x1, y1, z1;
+  aBox.Get(x0, y0, z0, x1, y1, z1);
+  gp_Trsf aRot;
+  aRot.SetRotation(gp_Ax1(gp_Pnt((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), gp_Dir(0.3, 0.2, 1.0)), theAngle);
+  gp_Trsf aMove;
+  aMove.SetTranslation(gp_Vec(theFx * (x1 - x0), theFy * (y1 - y0), theFz * (z1 - z0)));
+  return theS.Moved(TopLoc_Location(aMove * aRot));
+}
+
+static void OccCases(const std::string& theDir)
+{
+  // (a shape against itself turned about its centre only for the smaller shapes: the larger give megabytes of dump)
+  const char* aSelf[] = {"bottle.brep", "CrankArm.brep", "hammer.brep", "wedge_ok.brep", "solid.brep", "Ball.brep",
+                         "Pump_Nut.brep"};
+  for (const char* aFile : aSelf)
+  {
+    TopoDS_Shape aS = ReadOcc(theDir, aFile);
+    if (aS.IsNull())
+      continue;
+    Record(std::string("occ/") + aFile + "-shift", {aS, Shifted(aS, 0.23, 0.11, 0.17, 0.0)});
+    if (std::strcmp(aFile, "wedge_ok.brep") == 0 || std::strcmp(aFile, "solid.brep") == 0
+        || std::strcmp(aFile, "Ball.brep") == 0 || std::strcmp(aFile, "Pump_Nut.brep") == 0)
+      Record(std::string("occ/") + aFile + "-turn", {aS, Shifted(aS, 0.0, 0.0, 0.0, 0.4)});
+    Bnd_Box aBox;
+    BRepBndLib::Add(aS, aBox);
+    double x0, y0, z0, x1, y1, z1;
+    aBox.Get(x0, y0, z0, x1, y1, z1);
+    TopoDS_Shape aCut = BRepPrimAPI_MakeBox(gp_Pnt(x0 - 1, y0 - 1, (z0 + z1) / 2 - 0.123 * (z1 - z0)), gp_Pnt((x0 + x1) / 2 + 0.071 * (x1 - x0), y1 + 1, z1 + 1)).Shape();
+    Record(std::string("occ/") + aFile + "-box", {aS, aCut});
+  }
+  const char* aCross[][2] = {{"mal_ecrou.brep", "mal_vis.brep"}, {"Pump_Nut.brep", "Pump_TopCover.brep"}};
+  for (const auto& aPair : aCross)
+  {
+    TopoDS_Shape a = ReadOcc(theDir, aPair[0]), b = ReadOcc(theDir, aPair[1]);
+    if (!a.IsNull() && !b.IsNull())
+      Record(std::string("occ/") + aPair[0] + "+" + aPair[1], {a, b});
+  }
+}
+
 int main(int argc, char** argv)
 {
-  if (argc < 3)
+  if (argc < 4)
   {
-    std::fprintf(stderr, "pfrec <tests/boolean directory> <case list>\n");
+    std::fprintf(stderr, "pfrec <tests/boolean directory> <case list> <data/occ directory>\n");
     return 1;
   }
   Scripts(argv[1], argv[2]);
   Primitives();
+  OccCases(argv[3]);
   return 0;
 }

@@ -719,3 +719,21 @@ Phase 6 (part): face/face intersection (unit 6D).
   with the Boolean operations' and other parameters, 580 lines and 2 points, every value bit-identical; serial =
   parallel = repeat. Oracle: the analytic lines against native GeomAPI_IntSS where the parameters agree, 170 lines
   bit-identical.
+
+Phase 6 (part): the pave filler (unit 6E).
+
+- `OcctNet.ModelingAlgorithms`: `BOPAlgo_PaveFiller`, the intersection part of the Boolean operations: the
+  vertex/vertex, vertex/edge, edge/edge, vertex/face, edge/face and face/face interferences with their parallel loops,
+  the pave blocks, common blocks and same-domain vertices, the section curves and edges, the split edges, the p-curves,
+  the degenerated edges and the self-interference warnings, filling `BOPDS_DS`. Locked (so frozen) arguments make it
+  non-destructive by OCCT's own check: published shapes are never written. The members of `BOPAlgo_Tools` it uses.
+  The Boolean API's stub builders now report `BOPAlgo_AlertBuilderFailed` for interfering arguments until unit 6F.
+- `OcctNet.Foundation`: `NCollection_IntMap`, OCCT's `NCollection_Map<int>` iterating in OCCT's bucket order;
+  `NCollection_IntDataMap` gains `Bound`, `TryBound`, `Keys` and an enumerator. BOPDS's and the filler's integer maps
+  use them, which native parity needs.
+- `tools/pfrec`: records native BOPAlgo_PaveFiller (linked against build123d.NET's OCCT) as a dump of the data
+  structure.
+- Tests: OCCT's GTests of BOPAlgo_PaveFiller (the filler's part; the Fuse's own checks wait for unit 6F). Against
+  native (recorded): 457 cases (the boolean group's simple scripts, some with a fuzzy value; primitives at random
+  placements; data/occ shapes), each destructive and non-destructive, 914 of 914 runs bit-identical. Serial =
+  parallel on every case; frozen and non-destructive arguments are never written.

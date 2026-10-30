@@ -1049,7 +1049,7 @@ public partial class BOPAlgo_PaveFiller
     {
         // Create a new SD vertex for each group of coinciding vertices
         // and put new substitutions to theDMNewSD.
-        // The groups are visited in the map's order: the new vertices' indices depend on it (decision 633).
+        // The groups are visited in the map's order: the new vertices' indices depend on it (decision 6901).
         foreach (KeyValuePair<int, NCollection_List<int>> aItG in theDMVLV)
         {
             NCollection_List<int> aList = aItG.Value;
@@ -1119,7 +1119,7 @@ public partial class BOPAlgo_PaveFiller
             RemoveUsedVertices(aVC, aMV);
 
             // The vertices are visited in the map's order, which orders VertsUnused and so the nested filler's
-            // arguments (decision 633).
+            // arguments (decision 6901).
             foreach (int indV in aMV)
             {
                 TopoDS_Shape aVertex = myDS.Shape(indV);
@@ -1555,7 +1555,7 @@ public partial class BOPAlgo_PaveFiller
 
         // Update SD for vertices that did not participate in operation
         // OCCT assigns through the map's iterator; the port visits a snapshot of the keys in the map's order and
-        // assigns through the map (the same values in the same order; the order matters for chains, decision 633).
+        // assigns through the map (the same values in the same order; the order matters for chains, decision 6901).
         NCollection_List<int> aKeys = new();
         foreach (KeyValuePair<int, int> aKV in aDMNewSD)
         {
@@ -1672,7 +1672,7 @@ public partial class BOPAlgo_PaveFiller
         {
             // Unify pave blocks of the existing edges united on the post-treat stage
             // by making new Common blocks from them
-            // (the edges are visited in the map's order, which orders the new common blocks, decision 633)
+            // (the edges are visited in the map's order, which orders the new common blocks, decision 6901)
             foreach (KeyValuePair<int, NCollection_List<BOPDS_PaveBlock>> itDM in anEdgeLPB)
             {
                 NCollection_List<BOPDS_PaveBlock> aLPB = itDM.Value;
@@ -1747,7 +1747,7 @@ public partial class BOPAlgo_PaveFiller
                     aCB.SetPaveBlocks(aLPBNew);
 
                     // Update faces of the common block
-                    // (in the map's order, decision 633)
+                    // (in the map's order, decision 6901)
                     NCollection_List<int> aLFaces = new();
                     foreach (int nF in aMFaces)
                     {
@@ -2268,7 +2268,7 @@ public partial class BOPAlgo_PaveFiller
         double aTolR3D = Max(theNC.Tolerance(), theNC.TangentialTolerance());
         //
         // Put EF vertices first
-        // (decision 633: the order of the map decides the order of the extra paves and of the lists of theDMVLV)
+        // (decision 6901: the order of the map decides the order of the extra paves and of the lists of theDMVLV)
         foreach (int nV in theMVEF)
         {
             PutPaveOnCurve(nV, aTolR3D, theNC, theMI, theMVTol, theDMVLV, 2);
@@ -2591,7 +2591,7 @@ public partial class BOPAlgo_PaveFiller
         Geom_Curve aC3D = aIC.Curve()!;
         GeomAPI_ProjectPointOnCurve aProjPT = myContext!.ProjPT(aC3D);
         //
-        // (decision 633: the order of the map decides the order of the extra paves)
+        // (decision 6901: the order of the map decides the order of the extra paves)
         foreach (int nV in aMV)
         {
             TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
@@ -2656,7 +2656,7 @@ public partial class BOPAlgo_PaveFiller
             aDScPr = 5.0e-9; // the creasing criteria
             aIC.Bounds(ref aTC[0], ref aTC[1], ref aPC[0], ref aPC[1]);
             //
-            // (decision 633: the order of the map decides which vertex is put first)
+            // (decision 6901: the order of the map decides which vertex is put first)
             foreach (int nV in aMV)
             {
                 TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
@@ -3046,7 +3046,7 @@ public partial class BOPAlgo_PaveFiller
         BOPDS_FaceInfo aFI1 = myDS.FaceInfo(nF1);
         BOPDS_FaceInfo aFI2 = myDS.FaceInfo(nF2);
         //
-        // (decision 633: OCCT iterates the DataMap<int, ...> in bucket order; the order of the curves decides the
+        // (decision 6901: OCCT iterates the DataMap<int, ...> in bucket order; the order of the curves decides the
         // order of the post-treated pave blocks)
         foreach (KeyValuePair<int, NCollection_List<int>> aItBV in aDMBV)
         {
@@ -3858,7 +3858,7 @@ public partial class BOPAlgo_PaveFiller
                 BOPDS_Curve aNC = aVC[j];
                 double aTolR3D = Max(aNC.Tolerance(), aNC.TangentialTolerance());
                 //
-                // (decision 633: the order of aMI decides the order of the new vertices UpdateVertex appends)
+                // (decision 6901: the order of aMI decides the order of the new vertices UpdateVertex appends)
                 foreach (int nV in aMI)
                 {
                     //

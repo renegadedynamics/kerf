@@ -372,7 +372,7 @@ public partial class BOPAlgo_PaveFiller
         // Map of vertices to init the pave blocks for them
         NCollection_IntMap aMVerticesToInitPB = new();
 
-        // OCCT iterates the edges in the int map's bucket order (decision 633): it decides the order of the new
+        // OCCT iterates the edges in the int map's bucket order (decision 6901): it decides the order of the new
         // same-domain vertices.
         foreach (int nE in theMEdges)
         {

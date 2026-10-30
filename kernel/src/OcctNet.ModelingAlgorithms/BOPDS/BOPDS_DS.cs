@@ -24,9 +24,9 @@ namespace Occt;
 /// </para>
 /// <para>
 /// Maps keyed by pave blocks compare by reference and iterate in insertion order (decision 580). The maps of
-/// integers iterate in insertion order where OCCT's iterate in the order of their hash buckets: the sub-shape lists
-/// of faces and solids built in <c>Init</c> come out in another order than native's (decision 633,
-/// occt-issues.md).
+/// integers are <see cref="NCollection_IntMap"/> and <see cref="NCollection_IntDataMap{TValue}"/>, which iterate in the
+/// order of OCCT's hash buckets as native's do: the sub-shape lists of faces and solids built in <c>Init</c>, and
+/// everything ordered by them, come out as native's (decision 6901).
 /// </para>
 /// </remarks>
 public class BOPDS_DS
@@ -438,7 +438,8 @@ public class BOPDS_DS
 
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         // OCCT iterates this map in the order of its hash buckets (keyed by pairs of vertex indices); the port in
-        // insertion order. The order decides only the order in which the new common blocks are made.
+        // insertion order. The order decides only the order in which the new common blocks are made, which nothing
+        // indexes, so it isn't observable (decision 6901).
         NCollection_DataMap<BOPDS_Pair, NCollection_List<BOPDS_PaveBlock>> aMPKLPB = new();
 
         foreach (BOPDS_PaveBlock aPaveBlockOfCommonBlock in aPaveBlocksOfCommonBlock)
@@ -844,7 +845,7 @@ public class BOPDS_DS
 
     /// <summary>
     /// Appends to the list the vertices In and Sc of the face that are not ends of its In and Sc pave blocks
-    /// (in the vertex maps' order: decision 633).
+    /// (in the vertex maps' order: decision 6901).
     /// </summary>
     public void AloneVertices(int theFaceIndex, NCollection_List<int> theVertexList)
     {
@@ -1610,7 +1611,7 @@ public class BOPDS_DS
             }
 
             // Remove wire indices and fill in edge and vertex indices instead.
-            // The port's map iterates in insertion order, OCCT's in the order of its hash buckets (decision 633).
+            // In the order of OCCT's hash buckets, as native (decision 6901).
             aFaceSubShapes.Clear();
             foreach (int aSubShapeIndex in aNewSubShapeIndices)
             {
@@ -1681,7 +1682,7 @@ public class BOPDS_DS
                 }
             }
 
-            // Remove shell indices and fill in face and edge indices instead (insertion order: decision 633).
+            // Remove shell indices and fill in face and edge indices instead (OCCT's bucket order: decision 6901).
             aSolidSubShapes.Clear();
             foreach (int aSubShapeIndex in aNewSubShapeIndices)
             {

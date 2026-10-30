@@ -80,7 +80,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 /// <remarks>
 /// The solver builds a new p-curve only on a copy of the edge (<c>CopyEdge</c>) or adjusts an existing one; the pave
 /// filler stores the new p-curve afterwards, serially. The vertex tolerances of section edges (<c>myFlag</c>) are
-/// updated in place by <c>UpdateVertices</c>, in parallel, as in OCCT.
+/// updated in place by <c>UpdateVertices</c>, in parallel, as in OCCT, but each update under a lock (decision 6906).
 /// </remarks>
 internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
 {
@@ -189,8 +189,8 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
             if (myFlag)
             {
                 // OCCT: updates the tolerances of the edge's vertices in place, from parallel solvers that may share
-                // a vertex (unsynchronised read-compare-writes), and in non-destructive mode a section edge may have an
-                // argument vertex (see BOPAlgo_PaveFiller.UpdateVertices).
+                // a vertex (unsynchronised read-compare-writes: the port takes a lock, decision 6906), and in
+                // non-destructive mode a section edge may have an argument vertex (see BOPAlgo_PaveFiller.UpdateVertices).
                 BOPAlgo_PaveFiller.UpdateVertices(aCopyE, myF);
             }
         }
@@ -680,12 +680,18 @@ public partial class BOPAlgo_PaveFiller
         }
     }
 
+    private static readonly Lock theVerticesLock = new();
+
     /// <summary>
     /// Updates the tolerances of the edge's vertices comparing the extremities of its 3D curve and of its p-curve on
     /// the face (OCCT's file-static <c>UpdateVertices</c>; writes into the vertices in place).
     /// </summary>
     internal static void UpdateVertices(in TopoDS_Edge aE, in TopoDS_Face aF)
     {
+        // OCCT.NET: the solvers of MakePCurves run this in parallel on section edges that share vertices. OCCT's
+        // tolerance update (a read-compare-write in BRep_TVertex::UpdateTolerance) can lose a larger value to a
+        // concurrent smaller one; under the lock every vertex ends with the largest value, which is the serial
+        // result in any order (decision 6906).
         int j;
         double aUx, aVx, aTolV2, aD2, aD;
         Span<double> aT = stackalloc double[2];
@@ -720,7 +726,10 @@ public partial class BOPAlgo_PaveFiller
             if (aD2 > aTolV2)
             {
                 aD = Math.Sqrt(aD2);
-                aBB.UpdateVertex(aV[j], aD + BOPTools_AlgoTools.DTolerance());
+                lock (theVerticesLock)
+                {
+                    aBB.UpdateVertex(aV[j], aD + BOPTools_AlgoTools.DTolerance());
+                }
             }
         }
     }

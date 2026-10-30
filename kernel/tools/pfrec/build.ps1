@@ -24,9 +24,9 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 Push-Location $Out
 try {
   $libs = Get-ChildItem (Join-Path $inst 'lib\TK*.lib') | ForEach-Object { $_.FullName }
-  & cl /nologo /O2 /EHsc /MD /std:c++17 /D_USE_MATH_DEFINES /DWNT /I"$inst\include\opencascade" `
-    (Join-Path $PSScriptRoot 'main.cpp') /Fe"pfrec.exe" /link $libs
-  if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
+  $cl = & cl /nologo /O2 /EHsc /MD /std:c++17 /D_USE_MATH_DEFINES /DWNT /I"$inst\include\opencascade" `
+    (Join-Path $PSScriptRoot 'main.cpp') /Fe"pfrec.exe" /link $libs 2>&1
+  if ($LASTEXITCODE -ne 0) { $cl | Select-String 'error' | ForEach-Object { Write-Host $_.Line }; throw 'cl failed' }
   $env:PATH = "$(Join-Path $inst 'bin');$env:PATH"
   $boolean = Join-Path $OcctSource 'tests\boolean'
   $list = Join-Path $Out 'cases.txt'
@@ -34,7 +34,8 @@ try {
     Get-ChildItem (Join-Path $boolean $g) -File | Sort-Object Name | ForEach-Object { "$g/$($_.Name)" }
   }
   [IO.File]::WriteAllLines($list, [string[]]$names)
-  $text = (& .\pfrec.exe $boolean.Replace([char]92, [char]47) $list | Out-String) -replace "`r`n", "`n"
+  $occ = (Join-Path $OcctSource 'data\occ').Replace([char]92, [char]47)
+  $text = (& .\pfrec.exe $boolean.Replace([char]92, [char]47) $list $occ | Out-String) -replace "`r`n", "`n"
   if ($LASTEXITCODE -ne 0) { throw 'pfrec failed' }
   [IO.File]::WriteAllText((Join-Path $Out 'PaveFillerRecordings.txt'), $text)
   $gz = Join-Path $Out 'PaveFillerRecordings.txt.gz'

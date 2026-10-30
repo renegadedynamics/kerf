@@ -11,9 +11,9 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A class, a working object held in the data structure's pool and changed in place (decision 631). The pave-block
-/// maps compare by reference and iterate in insertion order (decision 580). The vertex maps (<c>NCollection_Map
-/// &lt;int&gt;</c>) iterate in insertion order too, where OCCT's iterate in the order of their hash buckets (decision
-/// 6153). As in OCCT, <see cref="Clear"/> leaves the Sc maps.
+/// maps compare by reference and iterate in insertion order (decision 580). The vertex maps are
+/// <see cref="NCollection_IntMap"/>s, which iterate in the order of OCCT's hash buckets as native's do (decision 6901).
+/// As in OCCT, <see cref="Clear"/> leaves the Sc maps.
 /// </remarks>
 public class BOPDS_FaceInfo
 {

@@ -78,8 +78,8 @@ public partial class BOPAlgo_PaveFiller
             MakeSDVertices(aLI);
         }
         //
-        // OCCT iterates the same-domain map in its bucket order; the port's DataMap iterates in .NET's (decision 633).
-        // InitPaveBlocksForVertex only fills each vertex's own list, so the order doesn't change the result.
+        // In OCCT's bucket order (decision 6901): it decides the order in which InitPaveBlocksForVertex adds the edges'
+        // lists to the pave-block pool, and so the order of MakeSplitEdges' new edges.
         NCollection_IntDataMap<int> aDMII = myDS.ShapesSD();
         foreach (KeyValuePair<int, int> aItDMII in aDMII)
         {

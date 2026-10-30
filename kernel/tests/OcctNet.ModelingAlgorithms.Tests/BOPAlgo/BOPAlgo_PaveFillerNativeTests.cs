@@ -3,13 +3,15 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
+using OcctNet.TestHarness;
 using Xunit.Abstractions;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The data structure after BOPAlgo_PaveFiller against native OCCT's, recorded once by tools/pfrec (decision 6902) on
-/// the boolean group's simple scripts and on primitive solids at pseudo-random placements, each filled in the default
+/// the boolean group's simple scripts (every tenth also with a fuzzy value), on primitive solids at pseudo-random
+/// placements and on data/occ shapes against moved copies, a box and each other, each filled in the default
 /// (destructive) mode and non-destructively.
 /// </summary>
 /// <remarks>
@@ -21,7 +23,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </remarks>
 public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
 {
-    internal sealed record Case(int Id, string Name, string ShapesText, string[] Native);
+    internal sealed record Case(int Id, string Name, string ShapesText, double Fuzzy, string[] Native);
 
     internal static readonly Lazy<List<Case>> Cases = new(ReadCases);
 
@@ -50,6 +52,11 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
             int aLength = int.Parse(aShapesLine[7..], CultureInfo.InvariantCulture);
             string aShapes = aText.Substring(aPos, aLength);
             aPos += aLength + 1;
+            double aFuzzy = 0.0;
+            if (aText.AsSpan(aPos).StartsWith("fuzzy "))
+            {
+                aFuzzy = BitConverter.Int64BitsToDouble(long.Parse(NextLine()[6..], NumberStyles.HexNumber, CultureInfo.InvariantCulture));
+            }
             string[] aModes = new string[2];
             for (int m = 0; m < 2; ++m)
             {
@@ -61,7 +68,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
                 }
                 aModes[m] = aB.ToString();
             }
-            aCases.Add(new Case(int.Parse(aHead[1], CultureInfo.InvariantCulture), aHead[2], aShapes, aModes));
+            aCases.Add(new Case(int.Parse(aHead[1], CultureInfo.InvariantCulture), aHead[2], aShapes, aFuzzy, aModes));
         }
         return aCases;
     }
@@ -94,12 +101,17 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>The port's record of a run, as the recorder writes native's.</summary>
-    internal static string Run(NCollection_List<TopoDS_Shape> theArgs, bool theNonDestructive, bool theParallel = false)
+    internal static string Run(NCollection_List<TopoDS_Shape> theArgs, bool theNonDestructive, bool theParallel = false,
+                               double theFuzzy = 0.0)
     {
         BOPAlgo_PaveFiller aPF = new();
         aPF.SetArguments(theArgs);
         aPF.SetNonDestructive(theNonDestructive);
         aPF.SetRunParallel(theParallel);
+        if (theFuzzy > 0.0)
+        {
+            aPF.SetFuzzyValue(theFuzzy);
+        }
         try
         {
             aPF.Perform();
@@ -137,7 +149,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         {
             for (int m = 0; m < 2; ++m)
             {
-                string aPort = m == 0 ? Run(Arguments(aCase, false), false) : Run(Arguments(aCase, true), false);
+                string aPort = Run(Arguments(aCase, m == 1), false, false, aCase.Fuzzy);
                 ++aRuns;
                 if (aPort == aCase.Native[m])
                 {
@@ -150,7 +162,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
                 if (m == 1 && aCase.Id % 4 == 0)
                 {
                     // unfrozen arguments, the mode set explicitly: the same result
-                    Assert.Equal(aPort, Run(Arguments(aCase, false), true));
+                    Assert.Equal(aPort, Run(Arguments(aCase, false), true, false, aCase.Fuzzy));
                 }
             }
         }
@@ -162,6 +174,69 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         Assert.Empty(aDiffs);
     }
 
+    private static string Text(NCollection_List<TopoDS_Shape> theArgs)
+    {
+        StringBuilder aB = new();
+        foreach (TopoDS_Shape aS in theArgs)
+        {
+            using StringWriter aW = new();
+            BRepTools.Write(aS, aW);
+            aB.Append(aW.ToString());
+        }
+        return aB.ToString();
+    }
+
+    /// <summary>
+    /// Serial = parallel (decision 580): every recorded case filled with the parallel flag, serially and at two
+    /// degrees of parallelism (2 and the processor count), gives the serial run's record, which is native's.
+    /// </summary>
+    [Fact]
+    public void SerialEqualsParallel()
+    {
+        foreach (Case aCase in Cases.Value)
+        {
+            string aReference = DeterminismHarness.AssertSerialEqualsParallel(
+                () => Run(Arguments(aCase, false), false, true, aCase.Fuzzy), 1, 2, Environment.ProcessorCount);
+            Assert.Equal(aCase.Native[0], aReference);
+        }
+    }
+
+    /// <summary>
+    /// Non-destructive mode writes nothing into the arguments: unfrozen arguments with <c>SetNonDestructive(true)</c>
+    /// keep their BRep text, and frozen ones (which throw at any write) give native's non-destructive record.
+    /// </summary>
+    [Fact]
+    public void NonDestructive_ArgumentsUnchanged()
+    {
+        foreach (Case aCase in Cases.Value)
+        {
+            NCollection_List<TopoDS_Shape> anArgs = Arguments(aCase, false);
+            string aBefore = Text(anArgs);
+            Assert.Equal(aCase.Native[1], Run(anArgs, true, false, aCase.Fuzzy));
+            Assert.Equal(aBefore, Text(anArgs));
+        }
+    }
+
+    /// <summary>The destructive mode does write into unfrozen arguments where native does (tolerances, p-curves).</summary>
+    [Fact]
+    public void Destructive_WritesUnfrozenArguments()
+    {
+        int aChanged = 0;
+        foreach (Case aCase in Cases.Value.Take(100))
+        {
+            NCollection_List<TopoDS_Shape> anArgs = Arguments(aCase, false);
+            string aBefore = Text(anArgs);
+            Run(anArgs, false, false, aCase.Fuzzy);
+            aChanged += aBefore != Text(anArgs) ? 1 : 0;
+        }
+        output.WriteLine($"{aChanged} of 100 cases changed their arguments in the destructive mode");
+        Assert.True(aChanged > 0);
+    }
+
+    /// <summary>
+    /// A debugging aid, idle unless <c>PFREC_CASE</c> (case ids, comma-separated) and <c>PFREC_OUT</c> (a directory) are
+    /// set: writes native's and the port's records of those cases, both modes, for a diff.
+    /// </summary>
     [Fact]
     public void Debug_WriteCase()
     {
@@ -177,7 +252,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
             for (int m = 0; m < 2; ++m)
             {
                 File.WriteAllText(Path.Combine(aDir, $"c{aOne}m{m}.native.txt"), aCase.Native[m]);
-                File.WriteAllText(Path.Combine(aDir, $"c{aOne}m{m}.port.txt"), Run(Arguments(aCase, m == 1), false));
+                File.WriteAllText(Path.Combine(aDir, $"c{aOne}m{m}.port.txt"), Run(Arguments(aCase, m == 1), false, false, aCase.Fuzzy));
             }
         }
     }

@@ -228,7 +228,7 @@ public partial class BOPAlgo_PaveFiller
 
             BOPDS_Pair aVFPair = new(nVx, nF);
             NCollection_IntMap aMV = aMVFPairs.Find(aVFPair);
-            // OCCT iterates the vertices in the int map's bucket order (decision 633): it decides the order of the
+            // OCCT iterates the vertices in the int map's bucket order (decision 6901): it decides the order of the
             // interferences and which nVx is added to VerticesIn below (the last one).
             foreach (int nVi in aMV)
             {

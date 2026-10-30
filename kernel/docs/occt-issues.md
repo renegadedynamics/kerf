@@ -662,7 +662,9 @@ otherwise.
 | BOPAlgo_ToolsProvider::SetTools | The same, with `myMapTools` | As above, for tools | — (ported, not yet marked or tested) |
 
 **Order sites (decisions 580 and 633).** Native's NCollection_Map iterates in hash-bucket order. For integer and
-pair keys that order is deterministic but scrambled; the port iterates in insertion order. It decides:
+pair keys that order is deterministic but scrambled; the port iterated in insertion order. Unit 6E's measurements
+showed it decides the pave filler's results, and BOPDS's integer maps now iterate in OCCT's order (decision 6901). It
+decided:
 
 - `BOPDS_DS::prepareFaces`/`prepareSolids`: the order of each face's and solid's sub-shape list, and through it
   FaceInfoOn, SharedEdges and AloneVertices;
@@ -931,3 +933,24 @@ pair is bit-identical.
 | `IntTools_FaceFace.cxx`, `CheckPCurve` | The sample parameter runs on from the curve's first parameter by `(NPoints - 1) * dT` per interval | With several C∞ intervals the samples drift from the intervals and the end of the last one is never checked |
 | `IntTools_WLineTool.cxx`, `IsPointInDegeneratedZone` | Reads the first surface's bounds for the second (`aS1->Bounds(US21, ...)`), and compares V on both surfaces, and U on the second, with `aDelta` (1e-7) instead of the resolution `aD` it has just computed | The degenerated-zone test of the second surface uses the first's bounds and a 3D tolerance as a parametric one |
 | `IntTools_WLineTool::DecompositionOfWLine`, "correction of projected coordinates" | `X < umin && X > umax && Y < vmin && Y > vmax` can't hold (and uses the other surface's bounds) | The rough re-projection never runs |
+
+## Phase 6: unit 6E, the pave filler
+
+Found while porting BOPAlgo_PaveFiller, by reading OCCT's code. The port reproduces each (`// OCCT` at the line) except
+where the entry says otherwise. None shows in the comparison with native (decision 6902), where all 914 runs are
+bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::PutPaveOnCurve` (PaveFiller_6), new-pave branch | Raises the tolerance of the vertex put on a section curve with `BRep_Builder::UpdateVertex`, without the `IsNewShape`/same-domain check `UpdateVertex(nV, tol)` makes in the non-destructive mode; `PutPavesOnCurve` lets the common vertices of the two faces through | In the non-destructive mode an argument vertex's tolerance can be raised in place. On a frozen argument the port throws (BOPAlgo_AlertIntersectionFailed, decision 6904). Not reached by the recordings |
+| `BOPAlgo_PaveFiller::FilterPavesOnCurves` and `MakeBlocks` (PaveFiller_6) | Write the saved tolerances of the vertices of `theMVTol` straight into their TShapes (`BRep_TVertex::Tolerance`) | As above: the vertices of site 1 and the vertices of used paves, argument ones included |
+| `BOPAlgo_PaveFiller::CorrectToleranceOfSE` (PaveFiller_6), step 2.2 | Lowers the tolerance of vertices connected to section edges whose tolerance was reduced, whether or not the vertex is new | In the non-destructive mode an argument vertex can be changed (lowered) in place; the port throws on a frozen one. Not reached by the recordings |
+| `BOPAlgo_MPC::Perform` / file-static `UpdateVertices` (PaveFiller_7) | Raises the tolerances of the vertices of section edges in place, from parallel solvers, on vertices several section edges share; `BRep_TVertex::UpdateTolerance` is an unsynchronised read-compare-write | Natively a larger tolerance can be lost to a concurrent smaller one, so the parallel result can differ from the serial one. **Fixed** (decision 6906): the port takes a lock around the update, which gives the serial result. In the non-destructive mode the vertex can be an argument's whose tolerance didn't grow before (the port throws on a frozen one, caught as BOPAlgo_AlertBuildingPCurveFailed) |
+| `BOPAlgo_PaveFiller::PutClosingPaveOnCurve` (PaveFiller_6) | Sets the index of a local copy of the pave (`aPave.SetIndex(nVn)`) that is never used again | No effect. Kept, not marked |
+| `BOPAlgo_PaveFiller::PerformVF` (PaveFiller_4) | Adds to the face's VerticesIn only the last same-domain vertex `nVx` of the loop over a pair's vertices | Possibly intended. Kept, not marked (matches native in every recorded case) |
+
+**Order sites** (decisions 580, 633, 6901). The filler iterates integer maps (the faces' sub-shape and vertex sets,
+`ShapesSD`, MakeBlocks' maps of vertices and their tolerances, the same-domain maps of MakeSDVerticesFF, PostTreatFF,
+UpdateFaceInfo and UpdatePaveBlocks, ProcessExistingPaveBlocks' `aDMBV`) in OCCT's bucket order, which decides the
+indices of new shapes; the port reproduces it with `NCollection_IntMap` and `NCollection_IntDataMap` (decision 6901). It
+iterates no map keyed by address, so native's filler is reproducible.
