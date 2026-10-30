@@ -705,3 +705,20 @@ showed no difference from native.
 | `ShapeAnalysis_CanonicalRecognition::GetSurface` (shell form) | The loop recomputes the parameters from the first face's surface instead of `anElemSurf1` | Every later face compares equal: any shell whose first face fits is accepted. By reading |
 | `ShapeAnalysis_CanonicalRecognition::GetCurve` | When the edge's 3D curve already is the target conic and the edge has a location, transforms the edge's own (shared) curve in place | Native OCCT changes shared geometry, and repeated calls accumulate the transformation. The port copies the curve first (decision 660). Pinned (three calls give the same result) |
 | `ShapeAnalysis_CanonicalRecognition`'s FillSolverData (cone) | The semi-angle's upper bound uses the radius step `aDR` instead of `aDAng` | By reading |
+
+## Phase 5: unit 5H, hatching
+
+Found while porting Hatch, HatchGen, Geom2dHatch and GeomAPI_PointsToBSplineSurface. By reading OCCT's code unless a
+test is named; the port reproduces each (`// OCCT` at the line). The hatcher has no native binding: unit 6B checks
+it through IntTools_Context and BOPTools.
+
+| Where | What | Effect |
+|---|---|---|
+| `Geom2dHatch_Hatcher::RemElement` | `HatchGen_PointOnHatching PntH = Hatching.ChangePoint(IPntH);` copies the point, so the element's points on element are removed from the copy | The hatching's points keep the removed element's points on element; only a point that had no other element is removed. As the trimming stays done, a later `ComputeDomains` reuses those points and their transitions. Kept; pinned by `RemElement_KeepsTheOtherElementsPointsOnHatching` |
+| `Geom2dHatch_Elements` copy constructor ("magic constructor") | Copies nothing: the new set is empty, with current edge 0 and probing parameter 0 (the default constructor sets 1 and 0.123) | A copied set of elements classifies as if it had none. Kept; pinned by `Elements_CopyConstructorCopiesNothing` |
+| `Geom2dHatch_Hatcher::GlobalTransition` | The parameter chosen from the point's position on the element (its first or last parameter at an end) is overwritten by the point's parameter (OCCT's own "TODO: finding #25") | The local geometry at an element's end is taken at the intersection's parameter, not at the end. Kept |
+| `Geom2dHatch_Hatcher::Trim(IndH, IndE)` | Writes " Intersector -> Done = False " to std::cout when an intersection fails | Output from a library; left out of the port (decision 666) |
+| `Geom2dHatch_Hatcher::IsDone()` (no index) | Declared, never defined | A link error for a caller; left out |
+| `Geom2dHatch_Element` default constructor | Leaves the orientation uninitialised | The port's is FORWARD |
+| `Hatch_Hatcher::StartIndex`, `EndIndex` | Don't check the oriented mode where `Start` and `End` do | On an unoriented hatcher, a line without intersections gives index 0 and parameter 0 for interval 1 where `Start` throws. Kept |
+| `GeomAPI_PointsToBSplineSurface::Init` (all forms) | Sets each multi-point at the grid's own row index (`MP.SetPoint(i, Points(i, j))` from `LowerRow()`) and each line entry at its column index (`Line.SetValue(j, MP)` from `LowerCol()`); the periodic form closes with `Points(1, j)` | A grid not indexed from 1 throws Standard_OutOfRange (or closes on the wrong point). Kept |
