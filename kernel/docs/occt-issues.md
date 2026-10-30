@@ -642,3 +642,19 @@ is confirmed by the oracle yet (5G).
 | `IntStart_SearchOnBoundaries.gxx`, `BoundedArc` (a site, decision 610) | `std::sort` of the roots (SolInfo) by parameter: ties keep their order with MSVC on up to 32 roots (insertion sort) | The port sorts as MSVC on up to 32; with more roots, tied parameters could come out in another order than native's |
 | `IntImp_ZerImpFunc`, `IntImp_ZerParFunc`, `IntPatch_CSFunction` (a property, decision 608) | Keep `void*` pointers to the caller's handles (and quadric) | A later reassignment of the caller's handle variable would change the function's surface in OCCT; the port keeps the object. No caller does it |
 | `IntSurf_Transition::SetValue()` and `SetValue(Tangent, Type)` (a property) | Leave the other fields (situation, opposite flag, tangency) as they were | Two in transitions can differ in fields their queries don't show; MakeTransition passes the caller's objects (`ref` in the port). Kept |
+
+## Phase 5: unit 5B, analytic intersections
+
+Found while porting IntPatch_ImpImpIntersection, by reading OCCT's code; the port reproduces each (`// OCCT` at the
+line). The conics are confirmed bit-identical by the early oracle (decision 5206); the rest is 5G's to confirm.
+
+| Where | What | Effect |
+|---|---|---|
+| `Perform`, the cone/torus case (`case 35`/`53`) | Doesn't set `bEmpty = empt` after IntCoTo, as every other pair does | An empty cone/torus intersection still runs the boundary search; with points on the boundaries it reports a non-empty result. Kept |
+| `IntCyCo`, the `IntAna_Point` case | `Quad1.Parameters(psol, U2, V2)` where Quad2 is meant | The isolated point's parameters on the second surface are those on the first. Kept |
+| `ProcessBounds` | The loop over `slin` advances `j` only on analytic lines | A non-analytic line in `slin` while a bound is still unprocessed loops forever. Its callers put only ALines in `slin` first, so it isn't reached. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB < 0` | Tests `mB <= -mB - 1` where its comment's derivation gives `mB <= -mC - 1` | The U1 range for that sign of B is chosen on a wrong bound. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB > 0` | `mB + |mC| < -1` can never be true for `mB > 0` | The "no solution" branch is dead. Kept |
+| `ProcessSegments` (a property) | `ptvtx` lives across the segments and the vertex loop; an end point no line carries is built from the last vertex read, setting only its value, parameters and (for a vertex) one arc | The vertex can keep the arc, vertex and multiple flag of an unrelated vertex on the other surface. Kept |
+| `IntCyCo`, `IntCoCo`, `IntCoSp` (a property) | `ptf`/`ptl` are declared outside the loop over the IntAna curves | Where a curve's bound is open, ProcessBounds gets the previous curve's end point (unused while that bound is open). Kept |
+| `CyCyAnalyticalIntersect` (a property) | Doesn't reset `Multpoint` | Harmless: IntCyCy resets it before |

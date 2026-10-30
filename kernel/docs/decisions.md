@@ -5706,3 +5706,75 @@ from 5101 are placeholders, renumbered on merge; the plan's decisions are cited 
         own Adaptor2d_Curve2d objects. Compare GeomAPI_IntSS with decision 614's helper.
       - 5F (approximation): the generics over BRepAdaptor_Surface as in decision 607's example; check decision 608
         on ApproxInt_ImpPrmSvSurfaces' use of `ISurface()` and `PSurface()` (a copy and a reference).
+
+## Phase 5: unit 5B, analytic intersections
+
+IntPatch_ImpImpIntersection (OCCT 7.x's `_0` to `_5`, one .cxx in V8_0_1): the intersection of two planes, cylinders,
+cones, spheres or tori bounded by their domains, with the coaxial and tangent cases and OCCT 7.x's cylinder/cylinder
+walking, in OcctNet.ModelingAlgorithms. Numbers from 5201 are placeholders, renumbered on merge; 5A's are cited as
+51xx.
+
+5201. **One class in partial files by subject.** OCCT's .cxx (9,714 lines) is one class with file-static functions;
+      the port keeps one `public sealed partial class IntPatch_ImpImpIntersection` (a working object, decision 21)
+      split as 7.x's `.gxx` files were: the class and Perform; Boundaries (PutPointsOnLine, MultiplePoint,
+      PointOnSecondDom, FindLine, SingleLine, IntersectionWithAnArc, Recadre); Restrictions (ProcessSegments,
+      IsRLineGood, ProcessRLine); Plane (IntPP, IntPCy, IntPSp, IntPCo, IntPTo, AdjustToSeam, SeamPosition); CyCy
+      (ComputationMethods, WorkWithBoundaries, the walking helpers, CyCyAnalyticalIntersect, CyCyNoGeometric,
+      IntCyCy); Quadrics (ProcessBounds, IntCySp, IntCyCo, IntCoCo, IntCoSp, IntSpSp, ExploreCurve and the tori).
+      - File-static functions (and the global `IntersectionWithAnArc`) are private static methods; the file-local
+        classes are private nested types: ComputationMethods a static class with `stCoeffsValue` a sealed class (it
+        holds math_Vectors), WorkWithBoundaries a sealed class keeping copies of the quadrics and boxes where OCCT
+        keeps const references (none changes while it lives), StPInfo a struct with OCCT's RealLast defaults,
+        VBoundDelta a readonly struct implementing `MathUtils.IScalarFunction` (MathRoot.Brent), the lambda
+        `findVBoundCrossing` a private method.
+      - `IntStatus` is a nested enum with OCCT's member names (`IntStatus.IntStatus_OK`). `Point(i)` returns a copy;
+        `Line(i)` the line itself (decision 609).
+      - Where OCCT down-casts by `ArcType()` to reach a GLine's or ALine's non-virtual vertex members (decision 613)
+        in the same three lines over and over, small private helpers do it (`NbVertexOf`, `VertexOf`, `AddVertexTo`,
+        `ReplaceVertexOf` and their RLine-aware twins); ProcessSegments' transition block, repeated four times, is
+        `SetArcTransition`.
+5202. **Signatures.** Non-const references of OCCT's helpers are `ref` (as 5A's IntSurf_Quadric), `out` only where
+      the function writes the value unconditionally first (SetQuad's surface type, SeamPosition). The cross-file
+      signatures follow OCCT's forward declarations (`bool&` → `ref bool`). `double* const theDelta = nullptr` in
+      CylCylComputeParameters is two overloads over a private core with a `bool theHasDelta`; IsRLineGood's function
+      pointer is a `Func<IntPatch_RLine, int, gp_Pnt>`.
+5203. **C++'s implicit conversions are written out**, keeping what they compute:
+      - `gp_Dir::DotCross(gp_Dir, gp_Dir)` called with surface normals (gp_Vec) normalises them: `new gp_Dir(...)`
+        (IntPP, IntPCy, IntPCo, IntCoCo). `gp_Vec::DotCross` (the circles' tangents) doesn't.
+      - IntSurf::MakeTransition's `const gp_Dir& Normale` given a gp_Vec: `new gp_Dir(Normale)`, after OCCT's own
+        test that the normal isn't null.
+      - IntAna_IntQuadQuad's quadric argument (`new IntAna_Quadric(...)`), the hyperbola's X axis as a gp_Lin.
+
+      A gp_Dir built from a null vector throws in the port where OCCT's release build divides by zero; the sites
+      above are guarded by OCCT or evaluate normals away from apexes.
+5204. **`std::sort` as MSVC does it** (decision 610): AddBoundaryPoint's four StPInfo (by U1, ties possible),
+      CriticalPointsComputing's and CyCyNoGeometric's critical parameters (at most 12 doubles, where 0.0 and -0.0
+      tie: Array.Sort isn't stable) use a private `_Insertion_sort_unchecked` written line for line; MSVC's
+      `std::sort` is an insertion sort below 32 elements.
+5205. **Checks OCCT's release build skips are kept** (decision 9): `Standard_DivideByZero_Raise_if` in
+      CylCylComputeParameters. Perform throws Standard_ConstructionError for a surface other than the five quadrics,
+      as OCCT does.
+5206. **Tests and oracle.** No native class reaches ImpImp alone, but GeomInt_IntSS makes each GLine a Geom conic
+      built from the GLine's own conic (GeomInt_IntSS::MakeCurve), so the basis curves of native GeomAPI_IntSS's
+      conic lines are ImpImp's conics. The early oracle (`ImpImpIntersectionOracleTests`) runs 625 random plane,
+      cylinder, cone, sphere and torus pairs (random, coaxial, parallel, sharing a location or an apex, tangent):
+      504 pairs (121 skipped where native's surface position doesn't round-trip bit for bit), 375 native conic
+      lines, all bit-identical to a GLine of the port. Native's approximated lines (487, from ALines and WLines),
+      trimming, vertices and counts are 5G's. The unit tests (`IntPatch_ImpImpIntersectionTests`, 26) cover every
+      pair Perform dispatches and OCCT's lowalgos/intss cases buc60815, bug20766, bug21750, bug23163_1, bug23177_1,
+      bug23178, bug24648, bug25782_2, bug26894 (IntStatus_InfiniteSectionCurve), bug28222_2 and bug29807_i5002, and
+      check that every line lies on both surfaces (conics between their vertices, analytic lines over their domain,
+      walking lines' points with their parameters).
+5207. **For 5G.**
+      - IntPatch_Intersection reaches ImpImp in `GeomGeomPerfom` when both surfaces are planes, cylinders, cones or
+        spheres, or one is a torus whose axis (or, for a sphere, centre) the other shares (`bGeomGeom`). On finite
+        domains a quasi-degenerate cone (semi-angle below 0.02 or above 1.55) or a torus is treated as parametric
+        unless the other surface shares its axis (`TreatAsBiParametric`). It passes its own `myTolArc`/`myTolTang` (TolArc
+        clamped to [1e-8, 0.5]) and `theIsReqToKeepRLine`. If ImpImp is not done (IntStatus_Fail: non-coaxial tori,
+        no geometric solution) it falls back to ParamParamPerfom; `done` is `GetStatus() == IntStatus_OK`, so
+        IntStatus_InfiniteSectionCurve gives a done-but-false intersection. ALines go through
+        IntPatch_ALineToWLine (200 points), RLines are dropped unless kept, WLines get `EnablePurging(false)`, and
+        cylinder/cylinder WLines are joined by `IntPatch_WLineTool::JoinWLines` (bug23178's 8 lines become 6).
+      - Parity-sensitive spots: the cylinder/cylinder walking (acos, sqrt and MathRoot.Brent in the boundary search;
+        the critical points' order, decision 5204); ALines (IntAna_Curve's trigonometry); the transitions taken
+        from `DotCross` signs at 1e-9 thresholds (IntPCo's parabola and hyperbola, ProcessSegments).

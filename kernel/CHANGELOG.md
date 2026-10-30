@@ -481,3 +481,15 @@ Phase 5 (part): intersection foundations (unit 5A).
   (points, segments, transitions), the interior search, Int2S and CurvIntSurf, GLine and ALine, the polygons and
   RstInt; the oracle's comparison of intersection lines with native OCCT (decision 5003), checked on native
   GeomAPI_IntSS results.
+Phase 5 (part): analytic intersections (unit 5B).
+
+- `OcctNet.ModelingAlgorithms`: IntPatch_ImpImpIntersection, the intersection of two bounded planes, cylinders, cones,
+  spheres or tori: conics (IntPatch_GLine), analytic curves (IntPatch_ALine), restrictions lying on the other surface
+  (IntPatch_RLine), isolated points and tangent faces, with the coaxial, parallel, tangent and through-the-apex cases
+  and OCCT 7.x's cylinder/cylinder walking lines; the points of the domains' boundaries are put on the lines with
+  their transitions. `GetStatus` tells a failure from an intersection curve too long to compute
+  (`IntStatus_InfiniteSectionCurve`).
+- Tests: unit tests of every quadric pair it treats apart and of OCCT's lowalgos/intss bug cases (buc60815, bug20766,
+  bug21750, bug23163, bug23177, bug23178, bug24648, bug25782, bug26894, bug28222, bug29807), each line checked to lie
+  on both surfaces; an oracle against native GeomAPI_IntSS on 504 random analytic pairs: all 375 conic lines are
+  bit-identical to the port's.
