@@ -12,9 +12,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 /// <remarks>
 /// OCCT's tests run BRepAlgoAPI_Fuse, whose crash they guard against was in the pave filler (degenerated edges
-/// without p-curves). Until unit 6F ports the builders, the tests check the pave filler's part: the Fuse's filler
-/// succeeds, and the stub builder reports <see cref="BOPAlgo_AlertBuilderFailed"/> (decision 638); unit 6F restores
-/// OCCT's IsDone and volume checks (marked "6F"). The two loft tests need BRepOffsetAPI_ThruSections, not ported yet.
+/// without p-curves). With unit 6F's builders, OCCT's IsDone and volume checks are back. The two loft tests need
+/// BRepOffsetAPI_ThruSections, not ported yet.
 /// </remarks>
 public class BOPAlgo_PaveFillerTests
 {
@@ -54,12 +53,11 @@ public class BOPAlgo_PaveFillerTests
         return false;
     }
 
-    // The pave filler's part of a BRepAlgoAPI_Fuse (until unit 6F): the filler succeeds, the stub builder can't build.
-    private static void AssertFillerDone(BRepAlgoAPI_Fuse theFuser)
+    private static double GetVolume(in TopoDS_Shape theShape)
     {
-        Assert.NotNull(theFuser.DSFiller());
-        Assert.False(theFuser.DSFiller()!.HasErrors());
-        Assert.True(theFuser.HasError(typeof(BOPAlgo_AlertBuilderFailed))); // 6F: Assert.True(theFuser.IsDone())
+        GProp_GProps aProps = new();
+        BRepGProp.VolumeProperties(theShape, aProps);
+        return aProps.Mass();
     }
 
     [Fact(Skip = "BRepOffsetAPI_ThruSections (the loft) is not ported yet")]
@@ -79,8 +77,11 @@ public class BOPAlgo_PaveFillerTests
 
         // Perform Boolean fuse
         BRepAlgoAPI_Fuse aFuser = new(aCone, aBox);
-        AssertFillerDone(aFuser);
-        // 6F: Assert.False(aFuser.Shape().IsNull()); the result's volume is positive
+        Assert.True(aFuser.IsDone()); // Boolean fuse of cone and box should succeed
+        Assert.False(aFuser.Shape().IsNull());
+
+        double aResultVolume = GetVolume(aFuser.Shape());
+        Assert.True(aResultVolume > 0.0); // Result should have positive volume
     }
 
     [Fact(Skip = "BRepOffsetAPI_ThruSections (the loft) is not ported yet")]

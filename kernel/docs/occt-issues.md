@@ -1117,3 +1117,24 @@ line; the native recordings (tools/bisrec, tools/matrec, decision 823) agree wit
 | `BRepMAT2d_BisectingLocus::RenumerationAndFusion` | Reads `MergeArc1`, `MergeArc2` and `GeomIndexArc1..4`, which `MAT_Graph::FusionOfBasicElts` leaves unset when the two elements are one, and `MergeArc2` unset when the start and end arcs are one | Uninitialised or stale values; the port starts them at false/0 and keeps OCCT's reuse of stale values |
 | `MAT_Bisector`, `MAT2d_Mat2d` | MAT_Bisector's index, issue and end points, vectors, sense and distance, and Mat2d's `intersectionpoint`, uninitialised until set | Harmless (always set before read on the recorded paths); 0 in the port |
 | `MAT2d_CutCurve` | `Perform(C, aSide)` and `PerformInf` declared, never defined; `thenumberofedges` never read | None |
+
+## Phase 6: unit 6F, builders and Booleans
+
+Found while porting the builders, by reading OCCT's code. The port reproduces each (`// OCCT` at the line). None shows
+in the oracle (decision 835).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_BOP::BuildSolid` | Scans the face-to-solids map with `for (i = 1; i < aNb; ++i)`: the last face is never checked for being shared by two argument solids | A solid whose only face shared with another is that last one is wrongly taken as possibly untouched |
+| `BOPAlgo_Builder::BuildDraftFace` (Builder_2) | Changes the orientation of the edge splits stored in `myImages` in place (`ChangeValue` through a const reference) | Later readers of the images see each edge split's last orientation |
+| `BOPAlgo_Builder::FillInternalVertices` (Builder_2) | Adds an internal vertex into a face split, which can be another argument's own face kept as its same-domain group's face | In the non-destructive mode an argument face can be changed in place. On a frozen argument the port throws (BOPAlgo_AlertBuilderFailed, decision 829). Not reached by the oracle |
+| `BOPAlgo_Builder::FillInternalShapes` (Builder_3) | Adds internal vertices and edges into a split solid, which can be an argument's solid kept as the same-domain solid | As above, for solids |
+| `BOPAlgo_Tools::WiresToFaces` | Adds p-curves and corrects tolerances on the input's edges | The input changes; the port copies a frozen input at the entry (decision 830) |
+| `BOPAlgo_ToolsProvider::SetTools` | Clears `myTools` but not the fence `myMapTools` (as 6A's SetArguments) | Setting again tools added before leaves none |
+
+**Order sites (decision 580).** Two builder loops iterate a shape-keyed map, in address order natively and in insertion
+order in the port: `FillSameDomainFaces` over `myImages` (to propagate each solid parent to its face pieces) and
+`BOPAlgo_Tools::FillInternals` over the solids' internal faces. Neither order is observable: each piece is bound under
+its own key, and each solid receives only its own shells. The builders' integer maps iterate in OCCT's order (decision
+784), and no map keyed by a pave block or common block is iterated, so native's builders are reproducible: native gave
+the same result serially and in parallel on every oracle case.

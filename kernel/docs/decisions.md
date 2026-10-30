@@ -8135,3 +8135,104 @@ by their merged numbers (576–590), 5K1's as 776–783.
       - The port throws where native throws (Standard_OutOfRange from `Compute` on some holed faces with side Right or
         Intersection joins) and a NullReferenceException where native crashes (a face bounded by one closed edge;
         BisecFusion on a BisecPC; occt-issues.md).
+
+## Phase 6: unit 6F, builders and Booleans
+
+BOPAlgo_Builder (and `_1` to `_4`), BuilderArea, BuilderFace, BuilderSolid, WireSplitter (and `_1`), ShellSplitter,
+WireEdgeSet, the rest of BOPAlgo_Tools, BOP, Section and Splitter, replacing unit 6A's stub builders (decision 638)
+and keeping the shell's public members. Ported in four worktrees over a skeleton of the classes' API, and merged.
+Numbers from 6951 are placeholders, renumbered on merge; merged decisions are cited by their numbers.
+
+826. **Classes and files.**
+      - BOPAlgo_Builder is a `public partial class` over one file per OCCT `.cxx` (BOPAlgo_Builder.cs, `_1` to `_4`);
+        WireSplitter over two (`_1` holds SplitBlock, Path and the angle functions). File-local solvers
+        (BOPAlgo_PairOfShapeBoolean, SplitFace, VFI, SplitSolid, WS_ConnexityBlock, CBK) are `internal sealed` in their
+        file; those deriving from BuilderFace/BuilderSolid implement `BOPTools_Parallel.ISolver` through OCCT's own-range
+        `Perform()`. BOPAlgo_Tools' file-local ShapeBox and FillIn3DParts are private nested classes, as 6E's selector.
+        OCCT's private empty `Perform(range)` overrides stay public (C# can't narrow an override).
+      - BuilderArea is abstract with OCCT's protected state; `SetShapes` copies the list. WireEdgeSet and EdgeInfo are
+        sealed working classes (OCCT holds them by pointer; the splitter fills the set it is given).
+      - OCCT's nested `BOPAlgo_PIOperation` enums of Builder, BOP and Section are nested enums (`new` in the derived
+        classes, BOP's continuing from the Builder's `PIOperation_Last`), indexed with `(int)`. `NbShapes`' accessors
+        return `ref int`. `LocModified` returns a nullable list.
+      - Signatures: outputs OCCT writes only on some paths are `ref` (`BuildDraftSolid`'s solid, `EdgesToWires`,
+        `WiresToFaces`, `FindPlane`, `FindEdgeTangent`); `WireSplitter.MakeWire` is `out`. ClassifyFaces' default maps are
+        nullable (null is OCCT's empty default).
+      - Filler ownership: OCCT deletes the filler it made itself (`myEntryPoint == 1`); the port drops the reference.
+827. **Maps and orders** (decisions 580, 721, 784).
+      - Every `NCollection_Map<int>`/`DataMap<int, …>` OCCT iterates is `NCollection_IntMap`/`IntDataMap`
+        (FillSameDomainFaces', LocGenerated's and BuildSection's, the DS's VerticesSc/In/On, ShapesSD); maps only queried
+        may stay .NET maps.
+      - Shape maps take TopTools_ShapeMapHasher, except where OCCT uses the default `std::hash` hasher (orientation
+        included): BuilderFace's `aMAdded`/`aMEP`, ShellSplitter's and BuilderSolid's added-faces maps, RefineShell's
+        `aMFProcessed`, BuildBOP's `aMObjFacesOri`/`aMToolFacesOri`/`aMResFacesOri`/`aMFenceOri`, BOP's
+        RemoveDuplicates: `EqualityComparer<TopoDS_Shape>.Default`.
+      - `NCollection_Map<BOPTools_Set>::Added` (BuildSplitSolids) is an indexed map's `FindKey(Add(set))`; it is never
+        iterated.
+      - Address-ordered iterations (native: address order, the port: insertion order): FillSameDomainFaces over
+        `myImages` and FillInternals over `anINFaces`. Neither is observable (each piece is bound under its own key;
+        each solid receives only its own shells); listed in occt-issues.md. No other shape- or handle-keyed map is
+        iterated by the builders.
+      - `std::sort` of distinct face indices (FillSameDomainFaces, FillIn3DParts) is a plain sort: no ties.
+828. **C++ copies written out.** The areas lists stored per face and solid (`aFacesIm.Add(F, aBF.Areas())`), copied
+      list iterators (`aIt2 = aIt1`), WireSplitter's connexity blocks (`new(cb)`), Path's assigned sequences (`Assign`),
+      BOP's `aMItExp = aMIt`, `SetOwnIF` and ClassifyFaces' IN lists.
+829. **Writes into argument sub-shapes in the non-destructive mode** (plan 2.3, decision 577). OCCT routes its own
+      writes through copies, but three builder sites can still reach an argument's sub-shape (occt-issues.md):
+      FillInternalVertices (a vertex added into a face split that is another argument's face, kept as the group's
+      same-domain face), FillInternalShapes (a vertex or edge added into an argument's solid kept as the same-domain
+      solid) and the seam splits of BuildSplitFaces/BuildDraftFace (on edge images, which are filler-built in every
+      case seen). Kept as OCCT has them: on a frozen argument the port throws there and reports
+      `BOPAlgo_AlertBuilderFailed` where native silently changes its argument. The oracle reaches none of them.
+      `BRepLib.BuildPCurveForEdgesOnPlane` runs only in the destructive mode, as in OCCT.
+830. **BOPAlgo_Tools.WiresToFaces copies a frozen input at its entry.** OCCT adds p-curves on the planes and
+      corrects tolerances on the input's edges; the port runs on `BRepTools_CopyAtEntry(theWires)` and returns
+      `Finish(faces)`, so unchanged sub-shapes are the caller's own. EdgesToWires reads its General Fuse's unfrozen
+      `InternalShape()` (decision 639).
+831. **BuilderSolid classifies a shell as a solid** (OCCT's `IsHole`/`IsInside` cast a shell reference to
+      `TopoDS_Solid`): the port builds the same unchecked solid from the shell's TShape, location and orientation, so
+      the context's classifier cache is keyed as OCCT's.
+832. **BOP and Section replace 6A's stand-ins**: `BOPTools_AlgoTools.Dimensions`/`Dimension` and
+      `BOPTools_AlgoTools3D.IsEmptyShape` (decision 723). `CheckArgsForOpenSolid` reads alert shapes with
+      `InternalGetShape()` (decision 625) and compares alert types exactly, as `DynamicType() ==`.
+833. **The Boolean API produces real results** through these builders: `BRepAlgoAPI_Fuse/Cut/Common/Section/Splitter`
+      and `BuilderAlgo` (General Fuse) and the functional twins (decision 640) are unchanged; only `Simplify` waits for
+      6P. As in OCCT, a Fuse's result solid is made by BOP's BuildSolid, not an image of an argument solid, so argument
+      solids have no Modified entry (the shell test that expected one is corrected).
+834. **Tests.**
+      - OCCT's GTest BOPAlgo_BOP (21 tests, OCCT's names, its fixtures as nested classes); the PaveFiller GTests' IsDone,
+        result and volume checks restored (decision 788); the BRepAlgoAPI shell tests now expect real results.
+      - Unit tests of BuilderFace (splits, holes, internal and unused edges, seams, degenerated edges), BuilderSolid,
+        ShellSplitter, ClassifyFaces, FillInternals, EdgesToWires, and of the General Fuse (images, history, frozen
+        arguments unchanged, serial = parallel).
+835. **Oracle** (`tests/OcctNet.Oracle.Tests/BOPAlgo/BooleanOracleTests.cs`). Native `BRepAlgoAPI_Fuse`, `Cut`
+      (and CUT21 as a Cut with the groups swapped), `Common`, `Section`, `BOPAlgo_Splitter` and `BOPAlgo_Builder`
+      against the port, both reading the same BRep text (the port's arguments frozen, native's told non-destructive),
+      each run also in parallel on both sides; results compared as BRep text with Free masked, then canonically;
+      histories through `TopExp::MapShapes` indices where the texts agree, through the canonical keys otherwise.
+      - The boolean group's simple grids and data/occ's shapes (the 457 argument sets of tools/pfrec's recording, every
+        tenth with a fuzzy value): each case's own operation and Section, and every fourth case all six operations:
+        1,374 runs, 1,373 byte-identical, 1 the same error on both sides.
+      - 240 random primitive pairs and triples (boxes side by side, touching, overlapping, coplanar, turned, pockets,
+        coaxial cylinders and cones, spheres, tori, random placements; a random operation of the seven, glue on touching
+        boxes, OBB on a sixth, fuzzy 1e-5 on an eighth): 240 byte-identical.
+      - Fuzzy values on near-coincident primitives (offsets 1e-7 to 1e-3, fuzzy 0, twice and half the offset; Fuse, Cut,
+        Common, Section): 240 byte-identical.
+      - **1,853 of 1,853 compared results byte-identical** (no Free mask and no canonical comparison needed: the results
+        share the arguments' untouched sub-shapes exactly as native's do), histories equal on all 1,853. Native gave the
+        same result serially and in parallel on every case; the port's parallel runs (degrees 2 and the processor count)
+        gave its serial result, history included, on every case; the port's arguments were never changed and its
+        results were always frozen. No difference to attribute.
+836. **Notes for later units.**
+      - **6G** (CheckerSI, ArgumentAnalyzer, MakerVolume, CellsBuilder, RemoveFeatures, MakeConnected, MakePeriodic):
+        derive from or drive the ported builders (`BuildBOP` for open solids, `BOPAlgo_Tools.ClassifyFaces`, `FillInternals`
+        and `EdgesToWires/WiresToFaces`); read results with `InternalShape()` while building; pass FillInternals solids the
+        builder made, never argument solids. The non-destructive sites of decision 829 may be reached by MakerVolume's or
+        CellsBuilder's own inputs: copy there and record it if a test hits one.
+      - **6P** (BRepAlgoAPI): `SimplifyResult` on `myBuilder.InternalShape()` with 6U's notes (decision 775); `Check`
+        through 6G's ArgumentAnalyzer; Defeaturing through RemoveFeatures. The Boolean oracle here can be extended with
+        `SimplifyResult` and with the corpus's `bfuzzyvalue`/`bglue` cases; its harness (`BooleanOracleTests.Compare`) takes
+        any argument set and options.
+      - **6M** (build123d.NET's Booleans): build123d.NET runs `BRepAlgoAPI_*` with `SetRunParallel(true)`, then Clean
+        (6U). Both are bit-identical to native on everything measured here, so the milestone's replay should compare
+        bytes first; the twins (decision 640) freeze the inputs and give a frozen result and history.

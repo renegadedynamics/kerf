@@ -839,3 +839,18 @@ Phase 5 (part): the medial axis (unit 5M).
   included (16,523 and 5,432 cases checked locally); unit tests on the bisectors, the loci's graphs and MAT's lists.
 - Draw-lite: `bisec`; `topoload`, `drawcont`, `side`, `mat`, `result`, `zone`. No corpus case uses `bisec`; the 8
   that use `topoload` still need phase 7's offset commands.
+Phase 6 (part): builders and Booleans (unit 6F).
+
+- `OcctNet.ModelingAlgorithms`: the building part of the Boolean operations: `BOPAlgo_Builder` (the General Fuse:
+  images of vertices, edges, faces, solids and containers, same-domain faces, internal parts, the history),
+  `BOPAlgo_BuilderFace` and `BOPAlgo_WireSplitter` (faces from split edges), `BOPAlgo_BuilderSolid` and
+  `BOPAlgo_ShellSplitter` (solids from split faces), `BOPAlgo_BuilderArea`, `BOPAlgo_WireEdgeSet`, `BOPAlgo_BOP`
+  (FUSE, COMMON, CUT, CUT21), `BOPAlgo_Section`, `BOPAlgo_Splitter`, and the rest of `BOPAlgo_Tools` (EdgesToWires,
+  WiresToFaces, ClassifyFaces, FillInternals). They replace unit 6A's stub builders: `BRepAlgoAPI_Fuse`, `Cut`,
+  `Common`, `Section`, `Splitter`, `BuilderAlgo` and the functional twins now give real results, frozen, with
+  histories; frozen arguments are never written.
+- Tests: OCCT's GTests of BOPAlgo_BOP, and the PaveFiller GTests' result checks; unit tests of every builder. Against
+  native OCCT (live, through build123d.NET's bindings): Fuse, Cut, Cut21, Common, Section, Splitter and the General
+  Fuse on the boolean group's simple grids, data/occ's shapes, random primitive pairs and triples (with glue, OBB and
+  fuzzy values) and near-coincident primitives over a sweep of fuzzy values: 1,853 of 1,853 results byte-identical
+  to native, histories equal, serial = parallel on every case.
