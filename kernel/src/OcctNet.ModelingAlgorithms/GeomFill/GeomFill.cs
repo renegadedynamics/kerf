@@ -394,6 +394,8 @@ public static class GeomFill
                 {
                     // Cas Rational, on utilise une expression directe beaucoup plus
                     // performente que GeomConvert
+                    // OCCT: the interior poles below are on the circle for ns1 running from the centre to pts1, not
+                    // for the inward normal the header documents (occt-issues.md).
                     int NbSpan = (Poles.Length() - 1) / 2;
 
                     Poles[low] = pts1;

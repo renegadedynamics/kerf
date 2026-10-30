@@ -7424,3 +7424,99 @@ Ported in three forked worktrees (Law; trihedrons; location laws) against the co
         keeps the caller's Law_Function for `SetLaw`. BRepFill's location laws hold `GeomFill_LocationLaw`s and call
         their `SetCurve`/`SetInterval`/`Copy`; keep OCCT's copies of the user's trihedron law per edge. LocationDraft's
         trace derivatives are approximate (FunctionDraft::DerivT, occt-issues.md).
+
+## Phase 5: unit 5L2, sections and sweep surfaces
+
+GeomFill's sweep half beyond 5L1's laws: the sweep function and GeomFill_Sweep, the sections EvolvedSection and
+NSections, CircularBlendFunc with the convertors (QuasiAngular, Polynomial), SweepSectionGenerator and AppSweep (the old
+pipe algorithm), GeomFill_Pipe, ApproxStyle and the package functions of `GeomFill` (GeomFill.cxx). In
+OcctNet.ModelingAlgorithms (`GeomFill/`). SectionLaw, UniformSection, SectionPlacement and Tensor came with 5L1. The
+branch is fast-forwarded onto unit 5L3's first commit (AppBlend_AppSurf, GeomFill_Line, Profiler, SectionGenerator,
+Generator), which NSections, AppSweep, SweepSectionGenerator and `GeomFill.Surface` call, so the two branches share it.
+Numbers from 5911 are placeholders, renumbered on merge.
+
+5911. **The sweep classes keep 5951's split.**
+      - Working objects (decision 21): `GeomFill_SweepFunction` and `GeomFill_CircularBlendFunc` (the
+        `Approx_SweepFunction`s), `GeomFill_EvolvedSection` and `GeomFill_NSections` (section laws). They keep the
+        caller's laws and adaptors as OCCT keeps the handles; `SetInterval` trims into new adaptors (CircularBlendFunc)
+        or a trimmed copy of the law (EvolvedSection). EvolvedSection keeps the caller's B-spline section, read only,
+        as UniformSection does.
+      - Algorithms, sealed classes with OCCT's methods: `GeomFill_Sweep`, `GeomFill_Pipe`,
+        `GeomFill_SweepSectionGenerator`, the two convertors, `GeomFill_AppSweep`.
+      - Results are frozen when handed out, the same object each time (decision 132's pattern):
+        `GeomFill_Sweep.Surface`, `Restriction`, `Trace`; `GeomFill_Pipe.Surface`; `GeomFill_NSections.BSplineSurface`;
+        `GeomFill.Surface`. Ported callers read them unfrozen through `InternalSurface`, `InternalRestriction`,
+        `InternalTrace`, `InternalBSplineSurface` and `GeomFill.InternalSurface` (decision 455's pattern); the pipe keeps
+        the sweep's unfrozen surface. `ConstantSection` and `CirclSection` build new, unfrozen geometry, as in 5951.
+      - No law is copied: GeomFill_Sweep and GeomFill_Pipe use the caller's laws as OCCT does (a guided LocationGuide
+        after `Set(..., true, ...)` can't be copied anyway, 5958).
+5912. **NSections reparametrises a copy of each B-spline section.** `ComputeSurface` calls `SetKnots` on the caller's
+      curve when the section is a B-spline: OCCT reparametrises the caller's curve in place. The port copies the curve
+      first and puts the copy in the law's own sequence (OCCT copies the sequence of handles, so its sequence then holds
+      the reparametrised curve): the law sees exactly what OCCT's sees, and the caller's curve, frozen or not, is
+      unchanged. Other sections are converted to new B-splines, as in OCCT. GeomFill_Pipe's `CheckSense` reverses
+      sections in place, but they are SectionPlacement's new curves (5951), so nothing is copied there. Found by the
+      frozen-input tests (every pipe construction on frozen paths and sections).
+
+      Rejected: writing into the caller's curve when it isn't frozen (a value the caller holds would change).
+5913. **Signatures and small translations.**
+      - `GeomFill.GetShape` takes the conversion type `ref` (it turns Convert_TgtThetaOver2 into _1 to _3) and gives
+        the shape `out`; `GetCircle`'s vectors and points are `in`.
+      - `GeomFill_SweepSectionGenerator` implements 5L3's `IAppBlend_SectionGenerator<int>`, and `GeomFill_AppSweep` is
+        a sealed subclass of `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>` with OCCT's
+        constructors, as 5L3's GeomFill_AppSurf.
+      - The convertors' function-local static matrices are static readonly fields, copied into each convertor by
+        `Init` (OCCT's `operator=`).
+      - `GeomFill_NSections.SectionShape` writes zeros when there is no surface (OCCT leaves its outputs unwritten);
+        GeomFill_Sweep's evaluator starts the error code at 0 before LocFunction's DN (OCCT passes the caller's).
+      - OCCT's implicit gp_Vec to gp_Dir conversions are written out where they normalise
+        (`GeomFill::Surface`'s `D1.Crossed(gp_Dir(P1P2))`, KPartT4's `V1.Dot(gp_Dir(YRef))`, the axes built from
+        vectors). `GeomFill_Sweep::BuildProduct`, never called (OCCT comments out the call), is ported as it is.
+      - Left out: SweepSectionGenerator's `myIsDone` (written, never read), the `OCCT_DEBUG` blocks (NSections'
+        verifD1/verifD2, Pipe's section dumps).
+5914. **Native comparison through recordings** (GeomFill_Pipe and GeomFill_Sweep are not bound). `tools/sweeprec`, an
+      MSVC program against build123d.NET's native OCCT, builds cases from a small deterministic generator (an LCG
+      whose doubles have 32 significant bits) and writes every result double as its 64 bits in hex;
+      `SweepRecordingCases` (tests) repeats the generator and the cases line for line, so each case compares as text
+      (`GeomFill_SweepNativeTests`, `GeomFill/Recordings/sweeprec.txt.gz`). Surfaces are written as their type, bounds,
+      a 5 x 5 grid of points, and for B-splines degrees, flags, knots and the FNV-1a hash of all poles and weights.
+      The cases: GeomFill_Pipe of constant radius, of a constant section with each trihedron (corrected Frenet,
+      Frenet, fixed, constant normal, Darboux on planes, cylinders and B-spline surfaces), with a fixed binormal, with
+      guides (by abscissa and by planes, with and without rotation), with two sections (3D paths and convex planar
+      ones), N sections, on edges (CircularBlendFunc, rational and polynomial, and the old AppSweep algorithm), and
+      the particular cases (planes, cylinders, cones, tori, extrusions, revolutions, conical laws); GeomFill_Sweep with
+      EvolvedSection (linear and S laws, C1 and C2, with and without particular cases, forced C1); the NSections law
+      (D0 to D2, intervals, minimal weights, constant and conical tests); CircularBlendFunc (D0 to D2, intervals,
+      tolerances); SweepSectionGenerator (types 1 to 6); the package functions (GetShape, Knots, Mults, GetTolerance,
+      GetMinimalWeights, the three GetCircle for the three conversions) and `GeomFill.Surface`.
+      **All 710 cases are identical**: 109,805 doubles and the poles of 474 B-spline surfaces (167,397 poles with
+      their weights), the 21 cases where native throws (the same exception type) and the 27 pipes native can't build.
+      No random case reached a sphere (BuildKPart's sphere branch is covered by the unit tests only).
+5915. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests/GeomFill`): OCCT's GTest GeomFill_NSections (name kept);
+      `GeomFill_SweepTests`: the sweep function against the location law and central differences, the particular
+      cases, frozen results and frozen laws' inputs, EvolvedSection and NSections against their definitions and
+      differences, constant and conical laws, a reference surface, GetCircle's arcs and first derivatives for each
+      conversion, the convertors, ruled surfaces, CircularBlendFunc's arcs, SweepSectionGenerator's sections, pipes of
+      constant radius, pipes on edges (cylinder, torus), guided pipes, every pipe construction on frozen inputs, and
+      the OCCT failures of occt-issues.md, pinned.
+5916. **Draw-lite: `sweep` and `tuyau`** (GeometryTest_SurfaceCommands.cxx, `GeometryTestPipeCommands`), registered in
+      DrawBuiltins with their source in `Draw_Files`. The file's other commands (`ruled`, `appsurf`, `fillcurves`,
+      ...) are not registered here. The corpus (`DrawPipeCommandsTests`): five cases use them, none runnable before
+      5L2, one after (pipe/bugs/bug31631, the old algorithm through AppSweep: OK). Three wait for
+      `offsetparameter`/`offsetload`/`offsetperform` and one (pipe/bugs/bug30003) for `convert`, `clpoles`, `clknots`
+      and `nbiso`.
+5917. **For later units.**
+      - **5S1 (BRepFill laws and sections):** BRepFill_NSections builds GeomFill_NSections and reads
+        `BSplineSurface()`, which freezes the law's surface; `InternalBSplineSurface()` keeps OCCT's handle without
+        freezing. A B-spline section given to GeomFill_NSections is no longer reparametrised in place (5912): where
+        BRepFill reads the curve afterwards expecting the new knots, read the law's. BRepFill_ShapeLaw's
+        UniformSection and EvolvedSection only read the edge curves.
+      - **5S2 (pipe shells):** BRepFill_Sweep drives `GeomFill_Sweep` with its own location and section laws; use
+        `InternalSurface()`, `InternalRestriction()` and `InternalTrace()`, so the BRep builder stays the place that
+        freezes. `ErrorOnSurface`, `ErrorOnRestriction`, `ErrorOnTrace`, `ExchangeUV`, `UReversed` and `VReversed` are
+        OCCT's. GeomFill_Sweep calls `SetInterval` and `SetTolerance` on the caller's laws while approximating, as OCCT
+        does, so BRepFill's per-edge copies of the laws matter as in OCCT.
+      - **Blends (phase 7):** BlendFunc and BRepBlend call `GeomFill.GetCircle`, `GetShape`, `Knots`, `Mults`,
+        `GetTolerance` and `GetMinimalWeights`: all are here and recorded against native. GetCircle's rational branch
+        builds its interior poles for normals running from the centre to the ends, contrary to its documented "inward"
+        normals (occt-issues.md); it only matters for arcs of more than one span.

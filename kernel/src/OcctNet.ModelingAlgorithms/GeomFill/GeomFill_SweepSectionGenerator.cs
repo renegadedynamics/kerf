@@ -324,6 +324,8 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         }
         else
         { // myType == 0
+            // OCCT: the quasi-angular shape even when Perform(Polynomial) asked for the polynomial conversion, whose
+            // 8 poles Section then assigns (occt-issues.md).
             NbPoles = 7;
             NbKnots = 2;
             Degree = 6;

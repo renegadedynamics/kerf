@@ -569,6 +569,8 @@ public sealed class GeomFill_Pipe
         {
             myLoc = new GeomFill_CurveAndTrihedron(TLaw);
 
+            // OCCT: CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction, not whether
+            // it failed, so most 3D paths end here (occt-issues.md).
             if (!(myLoc.SetCurve(myAdpPath)))
             {
                 myStatus = GeomFill_ImpossibleContact;

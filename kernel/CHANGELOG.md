@@ -723,3 +723,20 @@ Phase 5 (part): laws and trihedrons (unit 5L1).
   (frames and their first and second derivatives, intervals, sub-intervals, copies, the best mode): 2,082,140 values,
   all bit-identical (offsets of free-form curves left out of CorrectedFrenet's runs: OCCT's own sampling is very slow on
   them).
+
+Phase 5 (part): sections and sweep surfaces (unit 5L2).
+
+- `OcctNet.ModelingAlgorithms`:
+  - GeomFill's sweeps: `GeomFill_Sweep` (elementary surfaces where it can, else a B-spline surface approximated by
+    `Approx_SweepApproximation`) over `GeomFill_SweepFunction`; the section laws `GeomFill_EvolvedSection` and
+    `GeomFill_NSections`; `GeomFill_Pipe` (pipes of constant radius, of a constant section with each trihedron, with a
+    fixed binormal, along a curve on a surface, with guides, through two or N sections, and pipes on edges);
+    `GeomFill_CircularBlendFunc`, `GeomFill_QuasiAngularConvertor`, `GeomFill_PolynomialConvertor`,
+    `GeomFill_SweepSectionGenerator` and `GeomFill_AppSweep`; the package functions of `GeomFill` (ruled surfaces,
+    circular sections for blends).
+  - Surfaces and curves the sweeps hand out are frozen; GeomFill_NSections leaves the caller's sections unchanged
+    (OCCT reparametrises them in place).
+- Draw-lite: `sweep` and `tuyau`.
+- Tests: OCCT's GTest GeomFill_NSections; unit tests of every class, with frozen inputs. Native recordings
+  (tools/sweeprec, a C++ recorder built against native OCCT): 710 cases of pipes, sweeps, section laws, blend functions,
+  section generators and package functions, 109,805 doubles and the poles of 474 surfaces, all bit-identical.

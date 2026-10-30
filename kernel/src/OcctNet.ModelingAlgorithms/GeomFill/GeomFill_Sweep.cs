@@ -163,6 +163,7 @@ public sealed class GeomFill_Sweep
             if (BS is not null)
             {
                 // Approx de la loi
+                // OCCT: the call is commented out, so GeomFill_Location approximates globally (occt-issues.md).
                 //    isProduct = BuildProduct(Continuity, Degmax, Segmax);
             }
         }
