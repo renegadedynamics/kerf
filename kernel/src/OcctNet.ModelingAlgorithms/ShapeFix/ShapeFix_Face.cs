@@ -31,7 +31,6 @@ public partial class ShapeFix_Face : ShapeFix_Root
         myFace    = new TopoDS_Face();
         myResult  = new TopoDS_Shape();
         myFixWire = new ShapeFix_Wire();
-        throw new NotImplementedException("6H3 skeleton");
     }
 
     public ShapeFix_Face(in TopoDS_Face face) : this() => throw new NotImplementedException("6H3 skeleton");
@@ -44,13 +43,29 @@ public partial class ShapeFix_Face : ShapeFix_Root
 
     public void Init(ShapeAnalysis_Surface surf, double preci, bool fwd = true) => throw new NotImplementedException("6H3 skeleton");
 
-    public override void SetMsgRegistrator(ShapeExtend_BasicMsgRegistrator? msgreg) => throw new NotImplementedException("6H3 skeleton");
+    public override void SetMsgRegistrator(ShapeExtend_BasicMsgRegistrator? msgreg)
+    {
+        base.SetMsgRegistrator(msgreg);
+        myFixWire.SetMsgRegistrator(msgreg);
+    }
 
-    public override void SetPrecision(double preci) => throw new NotImplementedException("6H3 skeleton");
+    public override void SetPrecision(double preci)
+    {
+        base.SetPrecision(preci);
+        myFixWire.SetPrecision(preci);
+    }
 
-    public override void SetMinTolerance(double mintol) => throw new NotImplementedException("6H3 skeleton");
+    public override void SetMinTolerance(double mintol)
+    {
+        base.SetMinTolerance(mintol);
+        myFixWire.SetMinTolerance(mintol);
+    }
 
-    public override void SetMaxTolerance(double maxtol) => throw new NotImplementedException("6H3 skeleton");
+    public override void SetMaxTolerance(double maxtol)
+    {
+        base.SetMaxTolerance(maxtol);
+        myFixWire.SetMaxTolerance(maxtol);
+    }
 
     public ref int FixWireMode() => ref myFixWireMode;
     public ref int FixOrientationMode() => ref myFixOrientationMode;
