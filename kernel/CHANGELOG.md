@@ -550,3 +550,24 @@ Phase 6 (part): healing foundations (unit 6H1).
     algorithm.
   - Oracle tests of ShapeAnalysis_Shell and ShapeAnalysis_FreeBounds against native OCCT on the corpus's shells.
     On 1,570 shapes, 89,646 values and shapes are all identical.
+
+Phase 6 (part): ShapeFix, edges and wires (unit 6H2).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `ShapeFix_Root`; `ShapeFix_Wire` (every fix: reorder, small edges, connection, edge curves, degenerated edges,
+    self-intersection, lacking edges, closure, gaps in 3D and 2D, seams, shifted pcurves, notches, tails), with
+    `ShapeFix_IntersectionTool` and `ShapeFix_SplitTool`; `ShapeFix_Edge`, `ShapeFix_EdgeProjAux`;
+    `ShapeFix_ShapeTolerance`; ShapeFix's package statics (`SameParameter`, `EncodeRegularity`, `FixVertexPosition`,
+    `LeastEdgeSize`); `ShapeFix_WireVertex`, `ShapeFix_WireSegment`, `ShapeFix_SplitCommonVertex`,
+    `ShapeFix_EdgeConnect`.
+  - ShapeFix_Wire and ShapeFix_WireVertex given a frozen wire fix a copy of it: their public results give back the
+    caller's own edges and vertices wherever nothing changed, and the context answers for the caller's shapes.
+  - The in-place tools have public functional twins: `ShapeFix_Edge.AddPCurveFixed` and the other `...Fixed`,
+    `ShapeFix_ShapeTolerance.ToleranceLimited`/`WithTolerance`, `ShapeFix.SameParametered`/`RegularityEncoded`/
+    `VertexPositionFixed`, `ShapeFix_EdgeConnect.Built`.
+- Tests:
+  - Unit tests of every class, ShapeFix_Wire's fixes one by one on frozen wires, and ShapeFix_Wire on the wires of the
+    heal group's inputs with their faces.
+  - Oracle tests of native `ShapeFix_Shape` on wires and edges (the way build123d.NET's `MakeFace` fixes its wires):
+    random sketch wires with gaps, tiny, shuffled and reversed edges, and the wires and edges of the heal group's and
+    data/occ's shapes. All 14,346 results are byte-identical to native OCCT's.

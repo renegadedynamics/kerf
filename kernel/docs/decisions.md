@@ -6194,3 +6194,144 @@ are placeholders, renumbered on merge; plan decisions are cited by their merged 
         and REVERSED.
       - **6S** can move its copy at the entry onto `BRepTools_CopyAtEntry` (decision 642); FreeBounds needs nothing from
         it.
+
+## Phase 6: unit 6H2, ShapeFix edges and wires
+
+ShapeFix's package statics, Root, Edge, EdgeProjAux, Wire (with ShapeFix_Wire_1), WireSegment, WireVertex,
+IntersectionTool, ShapeTolerance, SplitCommonVertex, EdgeConnect, and SplitTool (in 6H3's list, but ShapeFix_Wire calls
+it), from TKShHealing (15,900 lines), in OcctNet.ModelingAlgorithms. Ported in five forked worktrees against skeletons
+of the classes' internal signatures (Edge, tolerance, statics and SplitTool; IntersectionTool and the small tools;
+Wire.cxx in two halves; Wire_1.cxx), merged. Numbers from 6301 are placeholders, renumbered on merge; earlier decisions
+are cited by their merged numbers.
+
+6301. **ShapeFix's classes are working objects** (decision 21). `ShapeFix_Root` keeps OCCT's public setters and its
+      protected `myShape` and `NeedFix`; the context is the caller's `ShapeBuild_ReShape`, shared by reference. Inside
+      its subclasses `Precision()` hides the Precision class, so ported code writes `Occt.Precision.Confusion()`.
+      ShapeFix_Wire's three-position modes return `ref int`/`ref bool`, as decision 511's. `FixSmall(lockvtx, prec)`
+      returns OCCT's `int`. ShapeFix_Wire.cxx's two halves are one file again.
+6302. **ShapeFix_Wire copies a frozen wire at its first fix** (plan decision 583, the pattern of decision 642;
+      `ShapeFix_Wire.CopyAtEntry.cs`, no OCCT file).
+      - The loaders (`Init`, `Load`, both forms; the constructor goes through `Init`) only mark the wire data. The first
+        fix (`Perform` and every public `Fix*` start with `enterWork()`) copies its edges and non-manifold edges, as one
+        compound, with `BRepTools_CopyAtEntry` and the tool's context, if they hold a frozen shape. The copies take
+        their originals' places in the wire data (`ShapeExtend_WireData.InternalSetEdge`, new) and keep their Free flags
+        (the exact copy clears them; FixConnected and others branch on `E.Free()`).
+      - So the context can be set after the load and before the first fix, as ShapeFix_Shape does.
+      - `Wire()` and `WireAPIMake()` finish the copy: the caller's own edges and vertices come back wherever the fixes
+        left them unchanged, in the wire data and in the context, and the context records the copies changed in
+        place. Then they freeze what they return. A fix after a public result copies again; the result handed out
+        never changes.
+      - `InternalWire()` and `InternalWireAPIMake()` don't finish or freeze, for ported callers fixing a wire they own
+        (ShapeFix_Face, UnifySameDomain): on unfrozen edges nothing is copied and the fixes run in place, as in OCCT.
+      - Inside the fixes the context is used through `InternalApply`; new edges and vertices come from the internal
+        makers (`InternalCopyReplaceVertices`, `InternalCombineVertex`, `InternalEdge`, `InternalVertex`), wires built
+        on the way from `InternalWire`. The face is never written.
+      - `WireData()` is the working object: between the first fix and the result its edges are the copies.
+6303. **ShapeFix_Edge's fixes are internal under OCCT's names, with public `...Fixed` twins**
+      (`ShapeFix_Edge.Twins.cs`): `RemovePCurveFixed` (2), `RemoveCurve3dFixed`, `AddPCurveFixed` (4),
+      `AddCurve3dFixed`, `VertexToleranceFixed` (2), `Reversed2dFixed` (2), `SameParameterFixed` (2), each
+      `TopoDS_Edge XxxFixed(<OCCT's arguments>, out bool theIsDone, <OCCT's defaulted ones>)`.
+      - Each runs the in-place fix on `BRepTools_CopyAtEntry` of the edge with the tool's context, finishes and freezes;
+        nothing changed gives back the input. The statuses stay on the tool.
+      - With a context, FixVertexTolerance writes only into new vertices recorded in it (`CopyVertex`): the twin
+        returns the edge, and the context maps the caller's vertices to the more tolerant ones.
+      - FixAddPCurve projects with `ShapeConstruct_ProjectCurveOnSurface.InternalPerform` and only stores the pcurve; a
+        seam's second pcurve is a translated `Copy()`.
+6304. **ShapeFix's statics and ShapeFix_ShapeTolerance** follow decision 420.
+      - Internal in-place forms: `ShapeFix.SameParameter`, `EncodeRegularity`, `FixVertexPosition(ref shape, tol,
+        context)`; `ShapeFix_ShapeTolerance.LimitTolerance`, `SetTolerance`. Twins: `SameParametered(shape, enforce,
+        out bool, preci, progress, msgReg)`, `RegularityEncoded`, `VertexPositionFixed(shape, tol, context, out bool)`;
+        `ToleranceLimited(shape, tmin, out bool, tmax, styp)`, `WithTolerance(shape, preci, styp)`.
+      - `LeastEdgeSize` only reads: public, `in`.
+      - `RemoveSmallEdges` runs ShapeFix_Shape: left for unit 6H3 (a one-line comment in the class).
+      - SameParameter's progress scopes are `using var`; its messages go to the registrator, which does nothing by
+        default.
+6305. **The other tools.**
+      - `ShapeFix_IntersectionTool` and `ShapeFix_SplitTool` are public sealed; their constructors (and the
+        intersection tool's `Context()`) are public, their fixes internal: they edit the wires and edges they are given
+        in place and record replacements in the context, for ShapeFix_Wire and ShapeFix_Face on their copies.
+        `FixSelfIntersectWire` takes the wire data by value (OCCT never reassigns the handle); `NbSplit`, `NbCut` and
+        `NbRemoved` are `ref` (NbRemoved accumulates). `FixIntersectingWires(ref TopoDS_Face)` writes into the face.
+        `SplitEdge`'s new edges and `CutEdge`'s `iscutline` are `ref`.
+      - `ShapeFix_WireVertex` copies at its first fix as 6302 (no context) and publishes through `Wire()`
+        (`InternalWire()` for ported code); `Init(sawv)` shares the analyser.
+      - `ShapeFix_SplitCommonVertex` writes nothing in place (new edges recorded in its context), so it needs no copy:
+        `Shape()` freezes, `InternalShape()` doesn't. OCCT's own private `myShape` is a `new` field, so messages still
+        go to the root's.
+      - `ShapeFix_EdgeConnect`: `Add` and `Clear` public, OCCT's `Build` internal (it writes into the recorded edges and
+        vertices), and a twin `Built(shape)` that runs Build on an exact copy of a shape holding the recorded edges,
+        keeps what is unchanged and freezes.
+      - `ShapeFix_WireSegment` is a public struct (OCCT uses it by value): a copy shares the wire data and index
+        sequences as OCCT's handles do; readers public, mutators internal. OCCT's constructor from a TopoDS_Wire is
+        declared and never defined: left out.
+6306. **Internal forms added to ported classes.** `ShapeExtend_WireData.InternalSetEdge` (6302).
+      `ShapeAnalysis_Wire.InternalCheckTail`: the public `CheckTail` freezes the tail parts it cuts (decision 515), and
+      they share a vertex with the working edges, so it would freeze those too; FixTails uses the internal form, and
+      both go through one private `checkTail(..., theToFreeze)`.
+6307. **Geometry edits** (plan 2.7). Writes into shapes reach only the working copies or new shapes. Curves:
+      - `ShapeFix_Edge.FixReversed2d`: OCCT reverses the stored pcurve in place; the port puts a reversed copy in place
+        of that curve object in the edge's representations (both pcurves of a seam). Other edges sharing the curve
+        keep it (occt-issues.md).
+      - `ShapeFix_EdgeProjAux.Init2d` and `UpdateParam2d`: the reverse is done on a copy, which nothing reads after.
+      - `ShapeFix_Wire`'s `TryBendingPCurve`: a frozen B-spline is copied before its poles move and it is segmented
+        (OCCT's B-spline branch already copies; the guard never triggers on OCCT's paths).
+      - `ShapeFix_Wire_1`: FixGap3d/2d edit poles only on curves they made (copies of basis curves, conversions); the
+        approximations are read through `Approx_Curve3d/2d.InternalCurve()`, which doesn't freeze.
+      - Reads of another edge's representation list use `Curves()` where OCCT walks `ChangeCurves()` (howMuchPCurves,
+        CopyReversePcurves; `// OCCT.NET: frozen`).
+      - `ShapeFix_SplitTool.CutEdge` calls ValidateRange on the edge's frozen curve; with ordered bounds it never
+        reverses (commented).
+6308. **Translation notes.** OCCT's `try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure&)` catches
+      `Standard_Failure` (decision 509); OCCT_DEBUG output is left out (decision 493). Where C# forbids a local hiding
+      an outer one, the inner is renamed (FixShifted's `du2`/`dv2`/`Shift2`/`Shift3`, FixGap's `uu1`/`uu2`).
+      `std::trunc` is `Math.Truncate`. ShapeFix_SplitCommonVertex's two fields that OCCT sets and never reads suppress
+      CS0414 on themselves only (decision 120's precedent). UnionVertexes leaves out OCCT's commented-out lines and an
+      unused local.
+6309. **Tests.** OCCT has no GTests for these classes (TKShHealing's are ShapeFix_Face's and ShapeFix_Shape's, 6H3's).
+      - Unit tests (73), each fix on frozen inputs checked unchanged with ShapeSnapshot, results frozen, the caller's
+        own sub-shapes kept where nothing changed:
+        - ShapeFix_Wire (14): reorder, small, connected (with the context answering for the caller's vertex), edge
+          curves on a cylinder with its seam, the degenerated apex of a cone, self-intersection of a bow tie (split by
+          the intersection tool), lacking, gaps in 3d (the caller's curves unmoved) and 2d, shifted pcurves, tails (the
+          heal group's `wire_tails_composed/A1`: 3 edges, length 9.054743851305652, as its reference), a fix after a
+          public result, unfrozen edges fixed in place, a loaded wire data of frozen edges;
+        - ShapeFix_Wire with its face on the wires of the heal group's inputs (540 shapes, 6,792 fixes, two settings):
+          the inputs unchanged, every result frozen, no exception but OCCT's;
+        - ShapeFix_Edge (18) and EdgeProjAux, ShapeTolerance (4), the statics (8), SplitTool (4), IntersectionTool (8),
+          WireVertex (6), SplitCommonVertex (3), EdgeConnect (4), WireSegment (4).
+      - The unit tests' project gains the `OcctTestDataDir` metadata, as the oracle's has.
+6310. **Oracle** (`tests/OcctNet.Oracle.Tests/ShapeFix/ShapeFixWireOracleTests.cs`). ShapeFix_Wire and ShapeFix_Edge
+      aren't bound; native `ShapeFix_Shape` is, and on a wire or an edge it reaches only this unit's classes. The
+      port's side transcribes its wire and edge branches (a context considering locations; ShapeFix_Wire with topology
+      changes on, the closed mode off for an open wire, no face, the context set after the load; or FixVertexTolerance
+      of an edge; the context applied, SameParameter not enforced, applied again), two ways: with a copy at the entry
+      of the shape (as 6H3's ShapeFix_Shape will) and with ShapeFix_Wire's own copy and the SameParameter twin.
+      - Random sketch wires as build123d.NET's `MakeFace` fixes them (lines, arcs, B-splines; gaps from 0 to 10^-2,
+        tiny, shuffled and reversed edges, open and closed; precision 10^-7 and 10^-3): 1,160 results, all
+        byte-identical, every input unchanged (native fixed 465 of the 580 inputs).
+      - The wires and edges of the heal group's data files and data/occ (577 shapes, a sample per shape): 13,186
+        results, all byte-identical, every input unchanged (native changed 2,406).
+      - The 2d fixes (with a face) aren't reached natively except through ShapeFix_Face and ShapeFix_Wireframe, which
+        are unit 6H3's: their oracle is 6H3's.
+6311. **For later units.**
+      - **6H3:**
+        - ShapeFix_Face, ComposeShell, Shell, Shape and Wireframe run on their own copies (decision 642): they call
+          ShapeFix_Wire's `InternalWire()`/`InternalWireAPIMake()` (the public ones freeze the working edges), the
+          internal ShapeFix_Edge fixes, the internal statics `ShapeFix.SameParameter`/`FixVertexPosition` and
+          `IntersectionTool.FixIntersectingWires(ref face)`, never the twins.
+        - ShapeFix_Wire given unfrozen edges copies nothing. Given frozen ones (a caller's wire) it copies at its first
+          fix: set its context before the first fix.
+        - `ShapeFix.RemoveSmallEdges` and the ShapeFix_Shape stability GTest wait for ShapeFix_Shape.
+        - ComposeShell keeps ShapeFix_WireSegment as a struct, taking `ref` of `seqw.ChangeValue(i)` where OCCT uses
+          `&`, and calls its internal mutators.
+        - The oracle's `PortFixShape` transcribes ShapeFix_Shape's wire and edge branches: replace it by the ported
+          class and keep the inputs. The tool chain (Shape, Solid, Shell, Face, Wire) passes SetPrecision and the
+          tolerances down, as the transcription does.
+        - KeepUnchanged pairs children by position: an edge whose vertex list was edited (Remove then Add, as
+          EdgeConnect and FixConnected do) keeps copies of its other vertices, not the caller's. Correct, but less
+          shared.
+      - **6U:** UnifySameDomain works on its own unfrozen result (or its copy at the entry): call ShapeFix_Wire's
+        internal results and ShapeFix_Edge's internal fixes; give each loop body its own ShapeFix_Edge (its projector
+        caches seam ends) and ShapeFix_Wire.
+      - **6L:** `settolerance` maps onto `ShapeFix_ShapeTolerance.WithTolerance`/`ToleranceLimited`, `connectedges`
+        onto `ShapeFix_EdgeConnect.Built`; `fixshape`, `fixwgaps`, `fixsmall` need 6H3.
