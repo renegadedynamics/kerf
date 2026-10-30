@@ -22,7 +22,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
     private readonly string myDirectory = Directory.CreateTempSubdirectory(thePrefix).FullName;
     private int myFileNumber;
     public readonly List<string> Differences = [];
-    public int Compared, Identical, FreeMasked, Canonical, Exceptions, Unchanged, NativeChanged, KeptFaces, ResultFaces,
+    public int Compared, Identical, FreeMasked, CheckedMasked, Canonical, Exceptions, Unchanged, NativeChanged, KeptFaces, ResultFaces,
                KeptEdges, ResultEdges;
 
     public void Dispose() => Directory.Delete(myDirectory, true);
@@ -149,6 +149,12 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
             Identical++;
             FreeMasked++;
         }
+        else if (ShapeFixFaceOracleTests.MaskFreeAndChecked(aNT) == ShapeFixFaceOracleTests.MaskFreeAndChecked(aPT))
+        {
+            // native BRepTools::Update set the Checked bit of the caller's face in place (decision 6515)
+            Identical++;
+            CheckedMasked++;
+        }
         else
         {
             string aFile = NewFile();
@@ -195,7 +201,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
 
     public void Report(string theWhat, TimeSpan theTime)
     {
-        output.WriteLine($"{theWhat}: {Identical}/{Compared} results identical as BRep text ({FreeMasked} with the Free column masked, "
+        output.WriteLine($"{theWhat}: {Identical}/{Compared} results identical as BRep text ({FreeMasked} with the Free column masked, {CheckedMasked} with the Free and Checked columns masked, "
                          + $"{Exceptions} the same exception on both sides), {Canonical} canonically identical, {Differences.Count} different; "
                          + $"inputs unchanged {Unchanged}; native results differing from their input {NativeChanged}; "
                          + $"the caller's faces kept {KeptFaces}/{ResultFaces}, edges {KeptEdges}/{ResultEdges}; {theTime.TotalSeconds:F0} s");

@@ -787,3 +787,29 @@ unless the table says otherwise; "pinned" names the unit test that shows it. Nat
 Map order: `ShapeFix_EdgeConnect::Build` walks `myLists` (a DataMap keyed by vertex) in native's hash order; the port
 walks it in insertion order (decision 18). Each shared vertex is computed on its own, so only the order of the writes
 changes.
+## Phase 6: unit 6H3, ShapeFix faces to shapes
+
+Found while porting ShapeFix_Face, ComposeShell, Shell, Solid, Shape, Wireframe, FixSmallFace, FixSmallSolid,
+FaceConnect and FreeBounds. Each is reproduced in the port and marked `// OCCT` unless the table says otherwise;
+"pinned" names the test that shows it.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeFix_Face::FixMissingSeam`, two open wires of the same orientation | `isdeg2 = isdeg` stores the flag (1) where the other branch stores the wire's index | A later `ws.Remove(isdeg ? i : isdeg2 ? isdeg2 : isdeg1)` can remove wire 1 instead of the degenerated one. By reading |
+| `ShapeFix_Face::FixSmallAreaWire` | Tests `ShapeType() != WIRE && Orientation() != FORWARD && != REVERSED` where `\|\|` is meant | FORWARD/REVERSED vertices and INTERNAL wires reach `TopoDS::Wire`; OCCT's release build reinterprets a vertex as a wire without edges, which is kept. The port does the same instead of throwing. Pinned by a ShapeFix_FaceTests case |
+| `ShapeFix_Face::Perform` (a property) | `BRepTools::Update` sets the Checked bit of the caller's face in place | The port never writes the caller's face; the oracle masks the Checked column with the Free one |
+| `ShapeFix_Wireframe::FixWireGaps`, `FixSmallEdges` on a compound | Each recursive call resets the status | The statuses are the last child's only. Reproduced by the oracle |
+| `ShapeFix_Wireframe::MergeSmallEdges`, the free-wire block | Reads `anExpf2.Current()` after that face explorer is exhausted | It yields the explored shape; the port has the same semantics |
+| `ShapeFix_Shell::Perform` | When FixFaceOrientation gives up (Möbius-like faces) it sets FAIL but not DONE2, and the new shell isn't recorded in the context | Perform returns false. Pinned by the Möbius band test |
+| `ShapeFix_Shell::FixFaceOrientation` | Always rebuilds the shell, even when nothing is reoriented, and then records nothing | `Shape()` is a new shell holding the same faces, while the context maps the input to itself |
+| `ShapeFix_Shape::Perform` | The early return (a shape already fixed or made by the context) and the abort paths don't restore the face tool's FixSmallAreaWireMode | A later Perform on a non-face can keep the forced mode |
+| `ShapeFix_FreeBounds::Perform` | Removes and adds an edge's vertices while a TopoDS_Iterator walks them | The list iterator reads a freed node; the vertex order inside the edge then depends on freed memory. The port walks a snapshot (the same vertices) |
+| `ShapeFix_FreeBounds::Perform` | `BRep_Builder::Remove`/`Add` on edges that sit in wires (not Free) | `TopoDS_FrozenShape` is compiled out in OCCT's release build but raised by its debug build and by the port. The port sets the Free flag around the edit, as ShapeFix_EdgeConnect does in OCCT |
+| `ShapeFix_FixSmallFace::SplitOneFace` | Removes and adds edges of `wireonface` while a TopExp_Explorer walks it | The same freed-node read; the port explores a snapshot first |
+
+Map order (decision 18; native iterates hashed maps in address order, the port in insertion order):
+ShapeFix_Shell's GlueClosedCandidate, AddMultiConexityFaces and CreateNonManifoldShells (`mapmerge`; the result can't
+change there, `IndexedDataMap::Add` keeps the first value), ShapeFix_Solid's CollectSolids, ShapeFix_Wireframe's edge
+maps, ShapeFix_FixSmallSolid's MergeShells (the face order in the merged shell) and ShapeFix_FaceConnect's
+`theFreeEdges`, `myConnected`, `myOriFreeEdges`, `theRepEdges` and `theNewVertices` (the order of the sewing inputs and
+replacements). Only the order of faces, shells or writes can differ; the oracle saw no case.

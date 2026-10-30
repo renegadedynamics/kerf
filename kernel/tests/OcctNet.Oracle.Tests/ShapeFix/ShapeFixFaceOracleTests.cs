@@ -334,7 +334,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     /// shapes it is given (BRepTools::Update marks a face Checked), where the port gives back the caller's frozen
     /// shapes as they are. The flag lines are found as BRepTextComparison finds them (TopTools_ShapeSet.Write).
     /// </summary>
-    private static string MaskFreeAndChecked(string theText)
+    internal static string MaskFreeAndChecked(string theText)
     {
         string[] aLines = theText.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         int i = Array.FindIndex(aLines, l => l.StartsWith("TShapes ", StringComparison.Ordinal));

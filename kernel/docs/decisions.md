@@ -6695,3 +6695,165 @@ are cited by their merged numbers.
         caches seam ends) and ShapeFix_Wire.
       - **6L:** `settolerance` maps onto `ShapeFix_ShapeTolerance.WithTolerance`/`ToleranceLimited`, `connectedges`
         onto `ShapeFix_EdgeConnect.Built`; `fixshape`, `fixwgaps`, `fixsmall` need 6H3.
+## Phase 6: unit 6H3, ShapeFix faces to shapes
+
+ShapeFix_Face, ComposeShell, Shell, Solid, Shape, Wireframe, FixSmallFace, FixSmallSolid, FaceConnect and FreeBounds,
+and `ShapeFix::RemoveSmallEdges`, from TKShHealing (16,700 lines), in OcctNet.ModelingAlgorithms. Ported in three
+forked worktrees (Face and ComposeShell; Shell, Solid, Shape and Wireframe; the four small tools) against skeletons of
+ShapeFix_Face's and ShapeFix_Shape's signatures, merged. Numbers from 6501 are placeholders, renumbered on merge;
+earlier decisions are cited by their merged numbers.
+
+6501. **ShapeFix_Face copies at the entry** (decisions 583, 642–644; `ShapeFix_Face.CopyAtEntry.cs`, ShapeFix_Wire's
+      pattern of decision 695).
+      - The loaders (the three `Init`s, `Add`) only record. `Perform` and every public `Fix*` start with `enterWork()`,
+        which copies the face with `BRepTools_CopyAtEntry` when it holds a frozen TShape. The public fixes are thin
+        wrappers over private implementations, so `Perform` doesn't enter twice.
+      - `Face()` and `Result()` finish (`Finish(myResult, [myFace])`, the face mapped with `Final`) and freeze.
+        `InternalFace()` and `InternalResult()` neither finish nor freeze. The context answers for the caller's shapes
+        after a public result.
+      - `Add` after `Init(face)` on a frozen face adds the wire to an `EmptyCopied` face holding the face's children,
+        where OCCT writes into the caller's face (`// OCCT.NET: frozen`).
+      - FixMissingSeam makes a context when there is none: the overridden `SetContext` hands it to the entry
+        (`BRepTools_CopyAtEntry.AttachContext`, new), so it is re-keyed too.
+      - An unfrozen face (from ShapeFix_Shell, Shape, ComposeShell, FaceConnect, FixSmallFace, later UnifySameDomain) is
+        fixed in place, as in OCCT.
+6502. **ShapeFix_ComposeShell is a public working object.**
+      - OCCT's protected members stay protected; `DispatchWires`, `SplitEdges`, the transfer-parameter tool,
+        `ClosedMode()` (`ref bool`) and `Status` are public. `Perform` and `SplitEdges` copy a frozen face at the entry.
+        `Result()` finishes and freezes; `InternalResult()` (ShapeFix_Face's) doesn't.
+      - ShapeFix_WireSegment stays a struct: `ref seqw.ChangeValue(i)` where OCCT takes `&` and the sequence isn't
+        resized while the reference is held. BreakWires and CollectWires keep OCCT's value copies and `SetValue`.
+        `SplitWire` and the single `SplitByLine` take `ref`; `ApplyContext`, `DefinePatch` and `IsSamePatch` take `in`.
+      - The patch indices read `ShapeExtend_CompositeSurface.InternalUJointValues()`/`InternalVJointValues()` (new; the
+        public ones copy). ShapeBuild_Edge, ShapeBuild_Vertex and TransferParametersProj are called through their
+        `Internal*` forms. `CheckByCurve3d` keeps OCCT's `int`.
+6503. **Geometry edits** (plan 2.7) go through `internal static ShapeFix_Face.EditPCurve(edge, c2d, edit)`.
+      - On an unfrozen curve it edits in place. Otherwise it edits a `Copy()` and puts it in the edge's representations;
+        the edit comes first, because BRep_GCurve's setter freezes the curve it is given.
+      - Sites: `Shift2dWire` (Transform), FixMissingSeam's torus adjustment (Translate), ComposeShell's DispatchWires
+        (the seam's second pcurve, Translate). SplitByLine already translates copies, as in OCCT.
+      - Shell, Solid, Shape, Wireframe and the four small tools edit no curve in place.
+6504. **ShapeFix_Shell, Solid, Shape and Wireframe copy at the entry** too.
+      - Shell's `Perform` and `FixFaceOrientation` and Solid's `Perform` copy a frozen input and finish at the end of
+        the call. Their results go to `Finish`'s others and are mapped with `Final`.
+      - ShapeFix_Shape copies in its public `Perform`, around a private recursive `perform` (OCCT's recursion over
+        compounds), and finishes at its end.
+      - ShapeFix_Wireframe follows ShapeFix_Wire: the first fix after `Load` (FixWireGaps, FixSmallEdges,
+        CheckSmallEdges, MergeSmallEdges) enters, `Shape()` finishes. Without a context, the entry makes one first and
+        the fix doesn't apply it, as OCCT's first call doesn't.
+      - Public, freezing: `Shape()`, `Shell()`, `Solid()`, `ErrorFaces()`, `SolidFromShell`. Internal, not freezing:
+        `InternalShape`, `InternalShell`, `InternalErrorFaces`, `InternalSolid`, `InternalSolidFromShell`, and
+        Wireframe's `InternalShape`.
+      - The nested tools (Shape → Solid → Shell → Face → Wire → Edge) are given unfrozen working shapes and run in
+        place. ShapeFix_Shape replaces a wire by `sfw.InternalWire()`; Wireframe uses `InternalWire`,
+        `InternalJoinCurves` and `InternalCopyNMVertex`.
+6505. **ShapeFix_Shape on repeated Perform.**
+      - OCCT's early return (a shape the context made, or one this tool already fixed) is tested first on the caller's
+        shape, and then no copy is made.
+      - After `Finish`, the keys the call added to `myMapFixingShape` over the copy are replaced by their originals
+        (`BRepTools_CopyAtEntry.Original`, new), so a second `Perform` of the same input takes OCCT's early return.
+      - The ShapeBuild_ReShape stability GTest (five passes over a box keep 6 faces, 12 edges and 8 vertices) passes.
+6506. **`ShapeFix_Solid.SolidFromShell` needs no copy.** It writes only the shell's Free flag, which is skipped on a
+      frozen shell (`// OCCT.NET: frozen`; the oracle masks that column). The solid holds the caller's own shell and is
+      frozen.
+6507. **`ShapeFix.RemoveSmallEdges`** follows decision 697: `RemoveSmallEdges(in shape, tol, out ShapeBuild_ReShape
+      context)` returns a frozen result (ShapeFix_Shape does the copying, so no twin is needed);
+      `InternalRemoveSmallEdges` serves ported code.
+6508. **ShapeFix_FreeBounds** is a sealed working object (OCCT uses it by value).
+      - Connecting open wires writes into the given shape's edges, so `Perform` copies a frozen shape with
+        `BRepTools_CopyAtEntry` (no context) and finishes with the wire compounds as others. `GetShape`,
+        `GetClosedWires` and `GetOpenWires` freeze. A shape needing no connection comes back as the input itself.
+      - It reads ShapeAnalysis_FreeBounds' internal forms: `InternalSewn` (new: the tolerance form reading sewing's
+        `InternalFreeEdge`, because the public form freezes sewing's free edges and with them the working copy),
+        `InternalGetClosedWires`/`InternalGetOpenWires`, `InternalConnectWiresToWires`, `InternalDispatchWires`.
+6509. **ShapeFix_FixSmallSolid writes nothing in place** (context Remove/Replace and new EmptyCopied shells), so it
+      needs no copy. `Remove`/`Merge` freeze what they return; `InternalRemove`/`InternalMerge` apply with
+      `InternalApply` and don't freeze (for ShapeProcess later). `ChangeSeek` pointers are `Find(out)`/`ChangeFind`;
+      `std::swap` of the map pointers is a tuple swap.
+6510. **ShapeFix_FaceConnect.**
+      - OCCT's `Build` writes in place: sewing makes the free edges same-parameter, merged vertices are moved and their
+        tolerances raised.
+      - The public `Build` copies a frozen shell, maps the recorded faces onto their copies, runs, finishes and freezes.
+        A shell with nothing connected comes back as itself. `InternalBuild` is OCCT's in-place form.
+      - Inside: Sewing's `InternalSewedShape` and `InternalModified` (new: `Modified` without the freeze), the context's
+        `InternalApply`, ShapeFix_Wire's `InternalWire` and ShapeFix_Face's `InternalFace`.
+6511. **ShapeFix_FixSmallFace copies at its first fix**, as ShapeFix_Wire (ComputeSharedEdgeForStripFace raises the
+      strip's vertex tolerance in place).
+      - `Init` only loads, so the context can be set afterwards. Every entry (Perform, FixSpotFace, FixStripFace,
+        FixSplitFace, FixShape) enters. `Shape()` finishes and freezes; `InternalShape()` doesn't.
+      - OCCT's public per-face steps (ReplaceVerticesInCaseOfSpot, RemoveFacesInCaseOfSpot, ReplaceInCaseOfStrip,
+        RemoveFacesInCaseOfStrip, ComputeSharedEdgeForStripFace, SplitOneFace, FixFace) are internal: they work on the
+        copy's faces. FixPinFace (a no-op in OCCT) stays public. Their out-parameters are `ref`.
+      - SplitOneFace calls `ShapeAnalysis_CheckSmallFace.InternalCheckSplittingVertices` (each vertex twice, as OCCT)
+        and edits `ShapeFix_Wire.InternalWire()`. FixFace reads `ShapeFix_Face.InternalFace()`. OCCT's ShapeFix_Shape
+        call there is commented out.
+6512. **Translation notes.**
+      - `catch (Standard_Failure)` only (decision 509); OCCT_DEBUG output dropped (493).
+      - The local `fixed` is `@fixed`; FixMissingSeam's `m1[2][2]`/`m2[2][2]` are `stackalloc` spans. OCCT's two
+        private `SplitEdge`s share their identical tail (`splitEdgeDone`).
+      - Every `->Wire()` on a wire data or a wire tool is `InternalWire()`; the BRepBuilderAPI makers are read through
+        `Internal*`.
+      - ShapeFix_Shell's FaceEdgesMap compares with `IsEqual` (orientation included), as OCCT's `std::unordered_map` over
+        `TopoDS_Shape` does; its `std::stack` is `Stack<>`.
+      - Wireframe's and the small tools' own `myShape` hide the root's (`new`), as OCCT's do.
+      - Loops where OCCT removes the children it is walking (FreeBounds, FixSmallFace's SplitOneFace) walk a snapshot
+        (occt-issues.md).
+6513. **Internal forms and helpers added to ported classes.** `BRepTools_CopyAtEntry.AttachContext` (6501) and
+      `Original(s)` (the inverse of `Copied`, 6505); `ShapeExtend_CompositeSurface.InternalUJointValues`/
+      `InternalVJointValues`; `ShapeAnalysis_FreeBounds.InternalSewn`; `BRepBuilderAPI_Sewing.InternalModified`.
+6514. **Tests.**
+      - Ported GTests, OCCT's names: ShapeFix_Face_Test (4), ShapeFix_Shape_Test (5) and ShapeBuild_ReShape_Test's
+        ShapeFix_Shape stability test (no longer skipped).
+      - Unit tests (67), each on frozen inputs checked unchanged with ShapeSnapshot, results frozen, the caller's
+        sub-shapes kept where nothing changed, the context answering for the caller's shapes, and unfrozen inputs fixed
+        in place:
+        - ShapeFix_Face (12) and ComposeShell (3): missing seams on a cylinder band and a sphere cap made from a surface
+          and wires, natural bounds, orientation, a valid face given back as the caller's own, small-area wires (with the
+          face removed through the context), two-edge coincident wires, split faces, a fix after a public result;
+        - Shell, Solid, Shape and Wireframe (28): reversed faces, multiconnexity, non-manifold, a Möbius band,
+          SolidFromShell, open solids, holes and disjoint shells, compounds, repeated Perform, RemoveSmallEdges, gaps and
+          small edges with the limit angle and the drop mode;
+        - FixSmallSolid (13, with the heal group's `drop_small_solids` M1–M3 and R1–R8 against their reference files as
+          the grid's `end` script compares them), FreeBounds (5), FaceConnect (2), FixSmallFace (4).
+      - Intersecting and loop wires (ShapeFix_Face's DONE6 and DONE7) and FixSmallFace's splitting have no test of their
+        own yet.
+6515. **Oracle** (`tests/OcctNet.Oracle.Tests/ShapeFix/`). Native ShapeFix_Shape, Solid, Face and Wireframe are bound.
+      Both sides read native OCCT's file; the port's inputs are frozen. Results are compared as BRep text, the Free
+      column masked where needed, then the Free and Checked columns, then canonically (decision 581); statuses and
+      exceptions too. Native's context isn't bound, so histories aren't compared natively (the unit tests check the
+      port's context against the caller's shapes).
+      - ShapeFix_Face: the faces of the heal group's and data/occ's shapes (577 shapes, 10 faces each), 4,516 results,
+        all equal (4,360 byte-identical, 156 with the Free and Checked columns masked); build123d.NET-style faces (280
+        faces on cylinders, cones, spheres and tori bounded by 3d circles, as faces and through `Init(surface)`/`Add`,
+        and 150 planar faces with misoriented holes, `FixOrientation` then `Perform`), 860 results, all equal (720
+        byte-identical, 140 masked).
+      - ShapeFix_Shape: the heal group's and data/occ's shapes and their solids, shells and faces (default, and
+        `fixshape`'s 1e-3/5e-3), 4,246 results, all byte-identical; planar faces from random sketch wires after
+        MakeFace, 109, all equal (17 byte-identical, 92 with Free and Checked masked: the faces needing nothing are the
+        caller's own); the wire oracle of decision 703 on the ported ShapeFix_Shape, 14,346 results, all byte-identical.
+      - ShapeFix_Solid::SolidFromShell on 1,032 shells (also reversed): all equal (1,022 byte-identical, 10 Free-masked),
+        every face the caller's own.
+      - ShapeFix_Wireframe (FixWireGaps, FixSmallEdges as build123d.NET's `Wire.Fix` and Draw's `fixwgaps`/`fixsmall`):
+        534 random wires and 1,332 heal-group and data/occ shapes, all byte-identical.
+      - No canonical-only match, no difference; every input unchanged.
+      - **The Checked column:** native `BRepTools::Update` (ShapeFix_Face's end) sets the Checked bit of the caller's
+        face in place; the port gives that face back as it is, frozen. It is a cache bit, masked like Free (open
+        question 1).
+6516. **For later units.**
+      - **6U (UnifySameDomain):** on faces it owns, call ShapeFix_Face's `Init(face)`, `Perform()` and read
+        `InternalResult()`/`InternalFace()`; ShapeFix_Wire's `InternalWire()`; ShapeFix_Shell's
+        `InternalShape`/`InternalShell`, ShapeFix_Solid's `InternalSolid`. On unfrozen shapes they run in place (the
+        copy at the entry is a no-op), so give UnifySameDomain's own result or its copy. `ShapeFix_Face.EditPCurve` is
+        there for in-place pcurve edits. Give each parallel loop body its own tools.
+      - **6L (Draw-lite healing):**
+        - `fixshape`: the FixWireTool modes (l, h, d, s, i, n) and the FixFaceTool modes (o, m), `SetMaxTailAngle`,
+          `SetMaxTailWidth` with `FixTailMode() = 1`, then Init, SetPrecision, SetMaxTolerance, Perform(progress); the
+          counts from ShapeExtend_MsgRegistrator's `MapShape`.
+        - `fixwgaps`: `new ShapeFix_Wireframe(S)`, `SetPrecision(prec or 0)`, `FixWireGaps`, `Shape()`. `fixsmall`:
+          precision 1 by default, `FixSmallEdges`. `fixsmalledges`: SetContext, Load, SetPrecision, `CheckSmallEdges`,
+          `MergeSmallEdges(..., modeDrop = mode != 2, tolang)`, `Shape()`.
+        - `fbclose`: ShapeFix_FreeBounds (a sewing tolerance ≤ 0 selects the shell form), `<name>_c` and `<name>_o`.
+        - `fixsmallfaces`: Init, SetPrecision, Perform, `Shape()`; Draw's `!Shape().IsSame(aShape)` works, because an
+          unchanged shape comes back as the input itself.
+        - DropSmallSolids: `ShapeFix_FixSmallSolid.Merge`/`Remove` with a new ShapeBuild_ReShape.
+        - The heal grids use `fixshape a 0.001 0.005`, `fixwgaps 0.001` and `fixsmall 1`.
