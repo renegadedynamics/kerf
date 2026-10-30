@@ -22,6 +22,9 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
    stay as `IsEqual(other, tol)`.
 9. **Argument checks always on.** OCCT's release builds compile most `Raise_if` checks out (`No_Exception`); the
    port keeps them, preferring a clear exception to garbage geometry. Oracle tests use valid inputs.
+   *Corrected in phase 5 (unit 5K1):* the native build the oracle uses (build123d.NET's OCCT V8_0_1) keeps these
+   checks too. Native throws `Standard_OutOfRange` and `Standard_ConstructionError` at the same calls as the port,
+   so the port must not imitate an unchecked build (NaN results, reads past an array); compare with the oracle.
 10. **OCCT's bugs are reproduced**, marked `// OCCT` and listed in occt-issues.md, to be fixed only once
     consistent behaviour with native OCCT is proven (owner's decision).
 11. **Returned collections are Bento.Collections interfaces**; numeric arrays use `PackedList<T>`, a contiguous
