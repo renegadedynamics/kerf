@@ -18,13 +18,10 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ShapeFix_Shape is unit 6H3's. On a wire or an edge it only reaches this unit's classes, so the port's side is a
-/// transcription of its wire and edge branches (<see cref="PortFixShape"/>): a context considering locations, then on a
-/// wire ShapeFix_Wire with topology changes allowed and the closed mode off for an open wire, no face, the context set
-/// after the load, the wire replaced by the fixed one; on an edge ShapeFix_Edge's FixVertexTolerance; then the context
-/// applied, ShapeFix::SameParameter (not enforced) and the context applied again. It runs two ways on the frozen input:
-/// with a copy at the entry of the whole shape (as ShapeFix_Shape will, decision 583), and with ShapeFix_Wire's own copy
-/// at the entry and the SameParameter twin.
+/// The port's ShapeFix_Shape (unit 6H3; on a wire or an edge it reaches ShapeFix_Wire, ShapeFix_Edge and SameParameter)
+/// runs two ways (<see cref="PortFixShape"/>): on the frozen input, as a caller's (copied at the entry, the result
+/// frozen), and on an unfrozen read of the same file, as a ported caller's (fixed in place, read with InternalShape).
+/// (Unit 6H2 compared a transcription of ShapeFix_Shape's wire and edge branches here.)
 /// </para>
 /// <para>
 /// Inputs: the wires and edges of the heal group's data files and data/occ (up to 1 MB, a sample per shape), and
@@ -70,8 +67,11 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         return aText;
     }
 
-    /// <summary>Native writes the shape; both read it. Null if native OCCT can't write or read it.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P)? Read(N.TopoDS_Shape theShape)
+    /// <summary>
+    /// Native writes the shape; both read it (the port twice: frozen, as a caller's, and unfrozen, as a ported caller's).
+    /// Null if native OCCT can't write or read it.
+    /// </summary>
+    private (N.TopoDS_Shape N, TopoDS_Shape P, TopoDS_Shape U)? Read(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         if (!N.BRepTools.Write(theShape, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3))
@@ -87,80 +87,32 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             }
         }
         Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
+        Assert.True(BRepTools.Read(out TopoDS_Shape anUnfrozen, aFile), aFile);
         File.Delete(aFile);
         if (!aPShape.IsNull())
         {
             aPShape.TShape()!.FreezeGraph(); // a caller's shape
         }
-        return (aNShape, aPShape);
+        return (aNShape, aPShape, anUnfrozen);
     }
 
-    // ---- the port's ShapeFix_Shape on a wire or an edge (ShapeFix_Shape.cxx, Init and Perform) ----
+    // ---- the port's ShapeFix_Shape (unit 6H3) ----
 
-    private static TopoDS_Shape PortFixShape(in TopoDS_Shape theShape, double thePrecision, double theMaxTol, bool theEntryOfShape,
+    // On the frozen input (the public path: a copy at the entry, the result frozen) or on an unfrozen one (a ported
+    // caller's: fixed in place, InternalShape).
+    private static TopoDS_Shape PortFixShape(in TopoDS_Shape theShape, double thePrecision, double theMaxTol,
                                              out bool theStatus, out bool theDone1, out bool theDone2)
     {
-        var aContext = new ShapeBuild_ReShape();
-        aContext.ModeConsiderLocation(true);
-        BRepTools_CopyAtEntry? anEntry = theEntryOfShape ? new BRepTools_CopyAtEntry(theShape, aContext) : null;
-        TopoDS_Shape myShape = anEntry is null ? theShape : anEntry.Shape();
-
-        // ShapeFix_Shape's tools as its constructor makes them, the precision passed down as SetPrecision does
-        var sfw = new ShapeFix_Wire();
-        sfw.SetPrecision(thePrecision);
-        sfw.SetMaxTolerance(theMaxTol);
-        ShapeFix_Edge sfe = sfw.FixEdgeTool();
-
-        theStatus = theDone1 = theDone2 = false;
-        TopoDS_Shape S = aContext.InternalApply(myShape);
-        switch (S.ShapeType())
+        var aFix = new ShapeFix_Shape(theShape);
+        if (thePrecision != 1.0e-7 || theMaxTol != 1.0e-7)
         {
-            case TopAbs_WIRE:
-            {
-                sfw.ModifyTopologyMode() = true;
-                if (!S.Closed())
-                {
-                    sfw.ClosedWireMode() = false;
-                }
-                sfw.SetFace(new TopoDS_Face());
-                sfw.Load(TopoDS.Wire(S));
-                sfw.SetContext(aContext);
-                if (sfw.Perform())
-                {
-                    theStatus = true;
-                    aContext.Replace(S, anEntry is null ? sfw.Wire() : sfw.InternalWire());
-                }
-                theDone2 = true;
-                break;
-            }
-            case TopAbs_EDGE:
-            {
-                sfe.SetContext(aContext);
-                if (sfe.FixVertexTolerance(TopoDS.Edge(S)))
-                {
-                    theDone1 = true;
-                }
-                break;
-            }
+            aFix.SetPrecision(thePrecision);
+            aFix.SetMaxTolerance(theMaxTol);
         }
-
-        TopoDS_Shape myResult = aContext.InternalApply(S);
-        if (anEntry is not null)
-        {
-            ShapeFix.SameParameter(myResult, false, 0.0);
-            myResult = aContext.InternalApply(myResult);
-            myResult = anEntry.Finish(myResult);
-        }
-        else
-        {
-            myResult = ShapeFix.SameParametered(myResult, false, out _);
-            myResult = aContext.InternalApply(myResult);
-        }
-        if (!myResult.IsNull())
-        {
-            myResult.TShape()!.FreezeGraph();
-        }
-        return myResult;
+        theStatus = aFix.Perform();
+        theDone1 = aFix.Status(ShapeExtend_DONE1);
+        theDone2 = aFix.Status(ShapeExtend_DONE2);
+        return theShape.TShape()!.IsFrozen() ? aFix.Shape() : aFix.InternalShape();
     }
 
     private static string? ErrorOf(Exception theException) => theException switch
@@ -172,7 +124,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
 
     private void Compare(N.TopoDS_Shape theShape, string theWhat, double thePrecision = 1.0e-7, double theMaxTol = 1.0e-7)
     {
-        if (Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
+        if (Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS, TopoDS_Shape aUS))
         {
             return;
         }
@@ -201,15 +153,15 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             aNErr = ErrorOf(e);
         }
 
-        foreach (bool anEntryOfShape in new[] { true, false })
+        foreach (bool isFrozen in new[] { true, false })
         {
-            string w = $"{theWhat} ({(anEntryOfShape ? "copy of the shape" : "ShapeFix_Wire's copy")})";
+            string w = $"{theWhat} ({(isFrozen ? "frozen input" : "unfrozen input, in place")})";
             TopoDS_Shape aPRes = new();
             bool aPStatus = false, aPD1 = false, aPD2 = false;
             string? aPErr = null;
             try
             {
-                aPRes = PortFixShape(aPS, thePrecision, theMaxTol, anEntryOfShape, out aPStatus, out aPD1, out aPD2);
+                aPRes = PortFixShape(isFrozen ? aPS : aUS, thePrecision, theMaxTol, out aPStatus, out aPD1, out aPD2);
             }
             catch (Standard_Failure e)
             {
@@ -324,7 +276,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
 
     // A random wire as a sketch makes it: lines, arcs and B-splines around a loop in a random plane, each edge with
     // its own vertices, the ends moved apart by a gap; sometimes with tiny edges, shuffled, reversed or open.
-    private static N.TopoDS_Shape RandomWire(Oracle theOracle, int theIndex, out string theWhat)
+    internal static N.TopoDS_Shape RandomWire(Oracle theOracle, int theIndex, out string theWhat)
     {
         int aNb = theOracle.Int(3, 8);
         double[] aGaps = [0.0, 0.0, 1.0e-8, 1.0e-6, 1.0e-5, 1.0e-4, 1.0e-3, 1.0e-2];

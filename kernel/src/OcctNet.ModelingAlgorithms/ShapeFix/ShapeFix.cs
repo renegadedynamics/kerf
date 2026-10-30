@@ -18,7 +18,7 @@ namespace Occt;
 /// they are internal (ported code on shapes it owns); callers use their functional twins
 /// (<see cref="SameParametered"/>, <see cref="RegularityEncoded"/>, <see cref="VertexPositionFixed"/>), which work on
 /// a copy of a frozen shape, give back its unchanged sub-shapes and freeze the result (plan 2.7, decision 583).
-/// <c>RemoveSmallEdges</c> runs ShapeFix_Shape and comes with it (unit 6H3).
+/// <see cref="RemoveSmallEdges"/> runs ShapeFix_Shape, which copies a frozen shape itself, and freezes its result.
 /// </remarks>
 public static partial class ShapeFix
 {
@@ -215,7 +215,49 @@ public static partial class ShapeFix
         BRepLib.EncodeRegularity(shape, tolang);
     }
 
-    // RemoveSmallEdges: unit 6H3 (it runs ShapeFix_Shape).
+    /// <summary>
+    /// Removes the edges of the shape shorter than <paramref name="Tolerance"/>, with ShapeFix_Wire's FixSmall run by
+    /// ShapeFix_Shape (the other wire and face fixes off but reordering). Returns the result, frozen, and the context
+    /// of the fix in <paramref name="context"/>, which answers for the caller's sub-shapes. The shape itself isn't
+    /// changed (ShapeFix_Shape copies a frozen shape first).
+    /// </summary>
+    public static TopoDS_Shape RemoveSmallEdges(in TopoDS_Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
+    {
+        ShapeFix_Shape sfs = removeSmallEdges(Shape, Tolerance);
+        context = sfs.Context()!;
+        return sfs.Shape();
+    }
+
+    /// <summary>
+    /// <see cref="RemoveSmallEdges"/> without freezing the result, for ported code fixing a shape it owns (fixed in
+    /// place, as in OCCT).
+    /// </summary>
+    internal static TopoDS_Shape InternalRemoveSmallEdges(in TopoDS_Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
+    {
+        ShapeFix_Shape sfs = removeSmallEdges(Shape, Tolerance);
+        context = sfs.Context()!;
+        return sfs.InternalShape();
+    }
+
+    private static ShapeFix_Shape removeSmallEdges(in TopoDS_Shape Shape, double Tolerance)
+    {
+        var sfs = new ShapeFix_Shape();
+        sfs.Init(Shape);
+        sfs.SetPrecision(Tolerance);
+        sfs.FixFaceTool().FixMissingSeamMode()   = 0;
+        sfs.FixFaceTool().FixOrientationMode()   = 0;
+        sfs.FixFaceTool().FixSmallAreaWireMode() = 0;
+        sfs.FixWireTool().ModifyTopologyMode()   = true;
+        // sfs.FixWireTool().FixReorderMode() = false;
+        sfs.FixWireTool().FixConnectedMode()        = 0;
+        sfs.FixWireTool().FixEdgeCurvesMode()       = 0;
+        sfs.FixWireTool().FixDegeneratedMode()      = 0;
+        sfs.FixWireTool().FixSelfIntersectionMode() = 0;
+        sfs.FixWireTool().FixLackingMode()          = 0;
+        sfs.FixWireTool().FixSmallMode()            = 1;
+        sfs.Perform();
+        return sfs;
+    }
 
     //=======================================================================
     // function : ReplaceVertex

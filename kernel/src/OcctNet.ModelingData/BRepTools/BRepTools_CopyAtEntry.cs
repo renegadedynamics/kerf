@@ -42,7 +42,7 @@ internal sealed class BRepTools_CopyAtEntry
 {
     private readonly TopoDS_Shape myInput;
     private readonly TopoDS_Shape myCopy;
-    private readonly BRepTools_ReShape? myContext;
+    private BRepTools_ReShape? myContext;
     private readonly Dictionary<TopoDS_TShape, TopoDS_TShape>? myCopies;    // original -> copy
     private readonly Dictionary<TopoDS_TShape, TopoDS_TShape>? myOriginals; // copy -> original
     private Dictionary<TopoDS_TShape, TopoDS_TShape>? myFinal;              // copy -> what stands for it after Finish
@@ -77,6 +77,19 @@ internal sealed class BRepTools_CopyAtEntry
 
     private static readonly Dictionary<TopoDS_TShape, TopoDS_TShape> s_noImages = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>
+    /// Gives the helper the context an algorithm created after the entry (ShapeFix_Face's FixMissingSeam creates one
+    /// when it has none), so that <see cref="Finish"/> re-keys it too. Ignored when a context was given at the entry:
+    /// a context created later holds requests on the copy's sub-shapes only, so nothing had to be moved at the entry.
+    /// </summary>
+    public void AttachContext(BRepTools_ReShape? theContext)
+    {
+        if (myContext is null && !myIsFinished)
+        {
+            myContext = theContext;
+        }
+    }
+
     /// <summary>The input.</summary>
     public TopoDS_Shape Input() => myInput;
 
@@ -91,6 +104,12 @@ internal sealed class BRepTools_CopyAtEntry
     /// wasn't copied, or when it isn't a sub-shape of the input).
     /// </summary>
     public TopoDS_Shape Copied(in TopoDS_Shape theShape) => withImage(theShape, myCopies);
+
+    /// <summary>
+    /// The input's sub-shape a copy was made from, at the copy's location and orientation (the shape itself when the
+    /// input wasn't copied, or when it isn't a copy). The inverse of <see cref="Copied"/>.
+    /// </summary>
+    public TopoDS_Shape Original(in TopoDS_Shape theShape) => withImage(theShape, myOriginals);
 
     /// <summary>
     /// After <see cref="Finish"/>: what stands for a shape the algorithm worked with: for a copied sub-shape, its

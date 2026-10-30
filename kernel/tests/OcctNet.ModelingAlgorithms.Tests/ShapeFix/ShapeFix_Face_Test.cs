@@ -1,0 +1,130 @@
+// Port of: src/ModelingAlgorithms/TKShHealing/GTests/ShapeFix_Face_Test.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using static Occt.ShapeExtend_Status;
+
+namespace OcctNet.ModelingAlgorithms.Tests;
+
+/// <summary>OCCT's ShapeFix_FaceTest GTests, with OCCT's names. The port's faces are frozen, as a caller's are.</summary>
+public class ShapeFix_Face_Test
+{
+    // Creates a bounded planar face suitable for testing context replacements.
+    // Returns a null face if construction fails.
+    private static TopoDS_Face makePlanarFace()
+    {
+        var aMakeFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 0.0,
+                                                    1.0, 0.0, 1.0);
+        if (!aMakeFace.IsDone())
+        {
+            return new TopoDS_Face();
+        }
+        return aMakeFace.Face();
+    }
+
+    // A closed edge belting a cone's full period (8 points sampled off the cone surface).
+    private static TopoDS_Face MakeFaceOnPeriodicConicalSingleWire(out Geom_ConicalSurface theCone)
+    {
+        var anAxis = new gp_Ax3(new gp_Pnt(0.0, 4.0, -9.1), new gp_Dir(0.0, 0.09, -1.0));
+        theCone = new Geom_ConicalSurface(anAxis, 0.35, 0.0);
+
+        const int anN = 8;
+        const double aV = 0.5;
+        var aPts = new NCollection_HArray1<gp_Pnt>(1, anN);
+        for (int i = 1; i <= anN; i++)
+        {
+            double anU = 2.0 * Math.PI * (i - 1) / anN;
+            aPts.SetValue(i, theCone.Value(anU, aV));
+        }
+
+        var anInterp = new GeomAPI_Interpolate(aPts, true, 1e-6);
+        anInterp.Perform();
+        if (!anInterp.IsDone())
+        {
+            return new TopoDS_Face();
+        }
+
+        var aMakeEdge = new BRepBuilderAPI_MakeEdge(anInterp.Curve());
+        if (!aMakeEdge.IsDone())
+        {
+            return new TopoDS_Face();
+        }
+
+        var aMakeWire = new BRepLib_MakeWire();
+        aMakeWire.Add(aMakeEdge.Edge());
+        if (!aMakeWire.IsDone() || !aMakeWire.Wire().Closed())
+        {
+            return new TopoDS_Face();
+        }
+
+        var aMakeFace = new BRepBuilderAPI_MakeFace(theCone, aMakeWire.Wire(), true);
+        return aMakeFace.IsDone() ? aMakeFace.Face() : new TopoDS_Face();
+    }
+
+    [Fact]
+    public void Perform_FaceReplacedByCompound_PreservesReplacement()
+    {
+        TopoDS_Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull());
+
+        var aBuilder = new BRep_Builder();
+        var aCompound = new TopoDS_Compound();
+        aBuilder.MakeCompound(ref aCompound);
+
+        var aContext = new ShapeBuild_ReShape();
+        aContext.Replace(aFace, aCompound);
+
+        var aFixer = new ShapeFix_Face(aFace);
+        aFixer.SetContext(aContext);
+
+        Assert.False(aFixer.Perform());
+        Assert.True(aFixer.Status(ShapeExtend_OK));
+        Assert.True(aFixer.Result().IsSame(aCompound));
+    }
+
+    [Fact]
+    public void Perform_RemovedFace_PreservesNullReplacement()
+    {
+        TopoDS_Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull());
+
+        var aContext = new ShapeBuild_ReShape();
+        aContext.Remove(aFace);
+
+        var aFixer = new ShapeFix_Face(aFace);
+        aFixer.SetContext(aContext);
+
+        Assert.False(aFixer.Perform());
+        Assert.True(aFixer.Status(ShapeExtend_OK));
+        Assert.True(aFixer.Result().IsNull());
+    }
+
+    // No SetContext() call (the ordinary usage) -- used to SIGSEGV in FixPeriodicDegenerated().
+    [Fact]
+    public void NoCrashOnPeriodicConicalSingleWire()
+    {
+        TopoDS_Face aFace = MakeFaceOnPeriodicConicalSingleWire(out _);
+        Assert.False(aFace.IsNull());
+
+        var aFixer = new ShapeFix_Face(aFace);
+        aFixer.Perform();
+
+        Assert.False(aFixer.Face().IsNull());
+    }
+
+    // With a context supplied, the same input heals to a genuinely valid face.
+    [Fact]
+    public void ValidFaceOnPeriodicConicalSingleWireWithContext()
+    {
+        TopoDS_Face aFace = MakeFaceOnPeriodicConicalSingleWire(out _);
+        Assert.False(aFace.IsNull());
+
+        var aFixer = new ShapeFix_Face(aFace);
+        aFixer.SetContext(new ShapeBuild_ReShape());
+        aFixer.Perform();
+
+        TopoDS_Face aFixed = aFixer.Face();
+        Assert.False(aFixed.IsNull());
+        Assert.True(new BRepCheck_Analyzer(aFixed).IsValid());
+    }
+}

@@ -660,3 +660,20 @@ Phase 6 (part): context and BOP tools (unit 6B).
     - IntTools_FClass2d on 3,072 faces: 338,880 comparisons, all identical.
     - `ComputeState` against BRepClass3d_SolidClassifier: 4,968 points, all identical.
     - The context's surface and curve projectors: 66,160 values, all bit-identical.
+
+Phase 6 (part): ShapeFix, faces to shapes (unit 6H3).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `ShapeFix_Face` (wires, orientation, natural bounds, missing seams, small-area wires, loop and intersecting wires,
+    split faces, periodic degenerated edges) with `ShapeFix_ComposeShell`; `ShapeFix_Shell`, `ShapeFix_Solid`
+    (`SolidFromShell`), `ShapeFix_Shape`, `ShapeFix_Wireframe` (wire gaps, small edges); `ShapeFix_FixSmallFace`,
+    `ShapeFix_FixSmallSolid`, `ShapeFix_FaceConnect`, `ShapeFix_FreeBounds`; `ShapeFix.RemoveSmallEdges`.
+  - Given frozen shapes, each fixes a copy: the public results give back the caller's own sub-shapes wherever nothing
+    changed (a shape needing nothing is the input itself), are frozen, and the context answers for the caller's shapes.
+- Tests:
+  - OCCT's ShapeFix_Face and ShapeFix_Shape GTests and ShapeBuild_ReShape's ShapeFix_Shape stability test; unit tests
+    of every class on frozen inputs, with the heal group's `drop_small_solids` cases against their reference files.
+  - Oracle tests of native `ShapeFix_Shape`, `ShapeFix_Solid::SolidFromShell`, `ShapeFix_Face` and
+    `ShapeFix_Wireframe` on the heal group's and data/occ's shapes and on faces and wires as build123d.NET makes them:
+    all 26,975 results equal native OCCT's, 26,577 byte-identical and the rest with only the Free and Checked cache
+    columns masked.

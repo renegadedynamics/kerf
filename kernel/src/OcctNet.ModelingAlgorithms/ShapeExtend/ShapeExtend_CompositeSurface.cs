@@ -130,6 +130,12 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     public NCollection_HArray1<double>? VJointValues() =>
         myVJointValues is null ? null : new NCollection_HArray1<double>(myVJointValues);
 
+    /// <summary>The stored U joint values, for ported code that only reads them (ShapeFix_ComposeShell).</summary>
+    internal NCollection_HArray1<double>? InternalUJointValues() => myUJointValues;
+
+    /// <summary>The stored V joint values, for ported code that only reads them (ShapeFix_ComposeShell).</summary>
+    internal NCollection_HArray1<double>? InternalVJointValues() => myVJointValues;
+
     /// <summary>The i-th U joint value.</summary>
     public double UJointValue(int i) => myUJointValues!.Value(i);
 

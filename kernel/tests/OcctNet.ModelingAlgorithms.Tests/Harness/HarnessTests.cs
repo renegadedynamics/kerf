@@ -300,19 +300,15 @@ public class HarnessTests
     [Fact]
     public void Determinism_NondeterministicComputation_Fails()
     {
-        if (Environment.ProcessorCount < 2)
-        {
-            return; // no parallelism to show
-        }
+        // A result that differs on every run, so the harness must report it however the threads are scheduled (an
+        // order-dependent parallel loop could come out in order on a busy machine whose pool runs it on one thread)
+        int aRun = 0;
         Assert.ThrowsAny<Exception>(() => DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
-            var anOrder = new ConcurrentQueue<int>();
-            OSD_Parallel.For(0, 20000, i =>
-            {
-                Thread.SpinWait(50);
-                anOrder.Enqueue(i);
-            });
-            return string.Join("\n", anOrder);
+            int aThis = Interlocked.Increment(ref aRun);
+            var aSum = new ConcurrentQueue<int>();
+            OSD_Parallel.For(0, 100, i => aSum.Enqueue(i));
+            return aThis + ":" + aSum.Count;
         }, 3, 2, 4));
     }
 
