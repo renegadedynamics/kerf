@@ -878,3 +878,24 @@ change there, `IndexedDataMap::Add` keeps the first value), ShapeFix_Solid's Col
 maps, ShapeFix_FixSmallSolid's MergeShells (the face order in the merged shell) and ShapeFix_FaceConnect's
 `theFreeEdges`, `myConnected`, `myOriFreeEdges`, `theRepEdges` and `theNewVertices` (the order of the sewing inputs and
 replacements). Only the order of faces, shells or writes can differ; the oracle saw no case.
+
+## Phase 5: unit 5G, surface/surface intersection
+
+Found while porting IntPatch_Intersection, ALineToWLine, WLineTool, LineConstructor, GeomInt and Draw's `intersect`. By
+reading OCCT's code; the port reproduces each (`// OCCT` at the line). None shows in the oracle's GeomAPI_IntSS
+comparisons (decision 748), where every pair is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_Intersection::Perform(S1, D1, S2, D2, TolArc, TolTang, ...)`, two tori | `bToCheck = aTor2.MajorRadius() > aTor2.MinorRadius()` overwrites the first torus's test; the list-of-points Perform combines both and also accepts equal radii within TolTang | A self-crossing first torus is sent to ImpImp by one overload and not by the other. Kept |
+| `IntPatch_Intersection.cxx`, `FUN_GetUiso` (offset surface whose basis U-iso is a line, parabola or hyperbola) | `Geom_RectangularTrimmedSurface(gos, VmTr, VMTr, true)` gives the V range as a U trim; `FUN_GetViso`'s call is right | The U-iso of the trimmed offset keeps its infinite V range. Kept |
+| `IntPatch_Intersection.cxx`, `FUN_NewFirstLast` | The second test isn't `else if` | A line, parabola or hyperbola range on the positive side (both ends ≥ 0) falls to the final `else` and is replaced by the symmetric [-TrVal, TrVal]; a hyperbola then also misses the `Fst > 4` early return. Kept |
+| `IntPatch_LineConstructor::Perform`, the GLine branch and the "RLine on S2" branch | `myDom1->Init(); if (myDom2->More())` tests the other domain's iteration state | The restriction loop runs, or not, on the state myDom2 was left in. Kept |
+| `IntPatch_LineConstructor::Perform`, the same branches | Read `Tol3d(...)` from the domain, which a plain `Adaptor3d_TopolTool` doesn't have (Standard_DomainError) | LineConstructor on GLines or one-sided RLines works only with a face's topology tool. OCCT reaches the class only from TopOpeBRep (and `IntPatch_Intersection::Dump`, compiled out). Pinned by a test |
+| `IntPatch_LineConstructor::Perform`, GLine branch, closed conics | The arc from the last vertex to the first is classified with the `Tol` of the loop's last iteration | Kept |
+| `IntPatch_WLineTool::ComputePurgedWLine` | `nb` is reassigned inside the equal-points loop; the later `nb < aNbSingleBezier` test uses the count before the last removal | Kept |
+| `GeomInt_IntSS::InternalPerform` | Clears `sline` but not `slineS1`/`slineS2` | On a GeomInt_IntSS performed twice, `LineOnS1/S2(i)` and `HasLineOnS1/S2(i)` return the first Perform's 2D curves. GeomAPI_IntSS never asks for them. Kept |
+| `GeomInt_IntSS::InternalPerform`, start-point mode | Skips `myIntersector.Perform` when the start point is outside a domain | `IsDone()` and the lines come from the previous Perform on the same object (or "not done"). Kept |
+| `GeomInt_IntSS::BuildPCurves` (GeomInt_IntSS_1.cxx) | Calls `theCurve2d->DynamicType()` after a second `GeomProjLib::Curve2d` that may return null | Access violation in OCCT, NullReferenceException in the port. Kept |
+| `GeomInt_LineTool::DecompositionOfWLine` | Its two neighbour searches step one index past a part before testing | When all points of an end part coincide in UV, `Point(i)` is read past the line (unchecked in OCCT's release build; Standard_OutOfRange in the port). Kept |
+| Draw's `intersect`, curve/surface branch (GeometryTest_CurveCommands.cxx) | The points' loop calls `Inters.Point(i)` with `i` running from `nblines + 1` | With segments and points both, the points read are past the last one (Standard_OutOfRange, reported by Draw) and the first points are skipped. Kept in Draw-lite |

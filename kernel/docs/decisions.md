@@ -7100,3 +7100,138 @@ earlier decisions are cited by their merged numbers.
           unchanged shape comes back as the input itself.
         - DropSmallSolids: `ShapeFix_FixSmallSolid.Merge`/`Remove` with a new ShapeBuild_ReShape.
         - The heal grids use `fixshape a 0.001 0.005`, `fixwgaps 0.001` and `fixsmall 1`.
+
+## Phase 5: unit 5G, surface/surface intersection
+
+IntPatch_Intersection, ALineToWLine, WLineTool and LineConstructor; GeomInt (IntSS with IntSS_1, LineConstructor,
+LineTool, ParameterAndOrientation; the package function is 6B's GeomInt.cs); GeomAPI_IntSS; Draw-lite's `intersect`,
+`xdistcs` and `checkoverlapedges`, in OcctNet.ModelingAlgorithms and Draw-lite. Ported in three forked worktrees
+(IntPatch_Intersection with ALineToWLine; WLineTool with LineConstructor; GeomInt with GeomAPI_IntSS) against skeletons
+of the public API, reviewed and merged. Numbers from 5701 are placeholders, renumbered on merge; merged decisions are
+cited by their numbers.
+
+740. **What each class is.**
+      - `IntPatch_Intersection` is a working object (decision 21), `public partial`: the class (constructors,
+        SetTolerances, the four Performs, ParamParamPerfom, GeomGeomPerfom, GeomParamPerfom, the accessors,
+        CheckSingularPoints, DefineUVMaxStep, PrepareSurfaces and `splitCone`) and `.Tools.cs`, the file-static functions
+        (FUN_GetMinMaxXYZPnt, FUN_TrimInfSurf, FUN_GetUiso/Viso, FUN_PL_Intersection, FUN_NewFirstLast, FUN_TrimBothSurf)
+        as private statics. `Line(i)` returns the line itself, `Point(i)` a copy (decision 609). `Dump(..., TextWriter)`
+        writes nothing: OCCT's whole body is under `DUMPOFIntPatch_Intersection`, compiled out of its builds.
+      - `IntPatch_ALineToWLine` is a working class; OCCT's protected StepComputing, CheckDeflection, GetSectionRadius and
+        CorrectEndPoint are `protected internal`; its quadrics are struct fields set by the constructor.
+      - `IntPatch_WLineTool` is a `static partial class` (ComputePurgedWLine and JoinWLines; `.Extend.cs`,
+        ExtendTwoWLines and its helpers); `IntPatch_LineConstructor` a `partial class` (`.Tools.cs`, the file statics).
+        ComputePurgedWLine returns null where OCCT returns a null handle (a degenerate line), which IntPatch_Intersection
+        skips. ExtendTwoWLines takes the periods as a `ReadOnlySpan<double>` (decision 688) and the boxes `in`.
+      - `GeomInt_IntSS` (`GeomInt_IntSS.cs`, the class and InternalPerform; `.MakeCurve.cs`, GeomInt_IntSS_1.cxx) is a
+        working object holding its IntPatch_Intersection and GeomInt_LineConstructor (class fields, as OCCT's members).
+        Its statics (TreatRLine, both BuildPCurves, TrimILineOnSurfBoundaries, MakeBSpline, MakeBSpline2d) are public
+        for 6D; the outputs OCCT leaves as given on early returns are `ref` (TreatRLine's curves and tolerance,
+        BuildPCurves' tolerance and 2D curve). `LineOnS1/S2` return `Geom2d_Curve?` (OCCT stores null handles).
+        `GeomInt_LineTool` is a static class (its file-local ProjectPointOnSurf a private nested class);
+        `GeomInt_LineConstructor` a class with `Part(I, out, out)` and protected TreatCircle (its file-local GeomInt_Vertex
+        a private nested struct); `GeomInt_ParameterAndOrientation` a struct (internal setters, `With` twins).
+      - `GeomAPI_IntSS` holds a GeomInt_IntSS and forwards, as OCCT's .lxx.
+741. **Public results are frozen when returned** (design 4.2): `GeomInt_IntSS.Line`, `LineOnS1/S2` and `Boundary`
+      freeze the curve (as `GeomAPI_Interpolate.Curve`), so `GeomAPI_IntSS.Line` returns frozen curves. No internal
+      non-freezing accessor is needed: IntTools_FaceFace (6D) calls only the statics, which return new, unfrozen curves;
+      ChFi3d, BRepOffset, LocOpe and Draft read the lines and make trimmed curves (which copy the basis). TreatRLine takes
+      `Approx_CurveOnSurface.InternalCurve3d()` (the approximation is discarded), so its curve stays unfrozen. In-place
+      edits (the projections' SetKnots and Translate, AdjustUPeriodic's Translate, FixTangent, SetPole) reach only
+      curves the code has just made.
+742. **Code OCCT repeats verbatim is a private helper** (decisions 671 and 707): IntPatch_Intersection's `CheckGeomGeom`
+      (the "bToCheck" switch and coaxial test of the two two-surface Performs), `SurfaceKind` (the ts1/ts2 switches) and
+      `PurgeWLines` (the ComputePurgedWLine loop ending the three two-surface Performs). The cone and torus prologues
+      stay inline: the Performs differ there. LineConstructor's pointers to member functions (piParOnS, pIsOnDomS,
+      pArcOnS, pParOnArc) are private helpers chosen by `onFirst`.
+743. **References to sequence nodes in ExtendTwoWLines.** OCCT holds `const IntSurf_PntOn2S& aPnt = aWLine->Point(i)`
+      (the first two and last two points of both lines) across `InsertBefore(1, ...)` and in-place replacements; on its
+      linked sequence the reference follows its node. The port's sequence is List-backed (decision 609), so a private
+      `PntRef` keeps the line and the node's current index, a private `InsertBefore` shifts the PntRefs of that line, and
+      every read goes through it. JoinWLines and the other functions read their references before editing and need
+      nothing.
+744. **ALineToWLine's points are `ref`.** OCCT's AddPointIntoLine edits the caller's point through
+      `IntSurf_PntOn2S&` (AdjustPointAndVertex) and the caller reads it afterwards; its optional vertex pointer is a
+      second overload. `CheckDeflection`'s gp_XYZ to gp_Pnt conversion is written out.
+745. **Casts and conversions.** OCCT's unchecked `*(GeomAdaptor_Surface*)(S.get())` in FUN_PL_Intersection and
+      FUN_TrimBothSurf are checked C# casts (its callers pass GeomAdaptor_Surfaces); `down_cast`s whose ArcType is known
+      are casts, the others `as`. `[[fallthrough]]` is `goto case`. LineConstructor's `int*` index tables are `int[]`,
+      its arc maps `NCollection_IndexedMap<Adaptor2d_Curve2d>` with `ReferenceEqualityComparer` (handles compare by
+      address). GeomInt's C++ copies are written out (`anArrayOfLines[n] = list` is `new NCollection_List<int>(list)`);
+      `myHS1 != myHS2` and `S1 == S2` compare references, as handles do; `modf` is `Math.Truncate`.
+746. **MSVC's sort order** (decision 621): GeomInt_LineConstructor::TreatCircle's two vertex sorts and
+      TrimILineOnSurfBoundaries' sort of parameters (where only 0.0 and -0.0 tie) use `std_sort.sort`. Nothing else in
+      the unit sorts; nothing is parallel.
+747. **Omissions.** OCCT_DEBUG and `INTPATCH_ALINETOWLINE_DEBUG` prints, `DUMPOFIntPatch_Intersection`
+      (IntPatch_Intersection::Dump's body and `IntPatch_Intersection__MAJ_R`), `GEOMINT_INTSS_DEBUG`, the IncAllocators,
+      LineConstructor's `#if XPU1009` guards (always on; kept as comments) and AddLine's unused surface types.
+      `myNbrestr` is always 0, as in OCCT, so `NbBoundaries()` is 0.
+748. **The milestone's oracle** (`tests/OcctNet.Oracle.Tests/GeomAPI/GeomAPI_IntSSOracleTests.cs`). Each surface is
+      built natively, written as the BRep text of a face made by `BRep_Builder::MakeFace` (the surface stored as it is,
+      trimmed and offset surfaces included) and read back by native OCCT and by the port, so both intersect the same
+      bits. Native GeomAPI_IntSS (bound) and the port's run at 1e-7; the outcome (done, not done, an exception) and
+      the lines are compared with decision 614's IntersectionComparison (count, types, records bit for bit, the
+      deviation where a record differs). Native runs twice per pair to set its own nondeterminism apart.
+      - Analytic pairs (plane, cylinder, cone, sphere, torus at random placements and at ImpImp's special ones: coaxial,
+        parallel axes, sharing a location or an apex, tangent): 500 pairs, 389 with lines, **all identical**: 866 lines,
+        178,328 values bit-identical.
+      - Every kind against every kind with at least one revolution, extrusion, Bezier, B-spline, offset or trimmed
+        surface (96 kind pairs, 4 each, about the free-form sheets' region): 384 pairs, 328 with lines, **all
+        identical**: 971 lines, 525,435 values.
+      - The surfaces of OCCT's lowalgos/intss cases: the 49 runnable cases run in Draw-lite with `intersect` wrapped to
+        record its surfaces; the 44 general calls (`intersect r s1 s2 [1e-7]`, GeomAPI_IntSS's computation) are **all
+        identical**: 137 lines, 105,308 values. 3 calls with bounds, a start point or another tolerance aren't
+        GeomAPI_IntSS's and aren't compared.
+      - Random pairs of face surfaces of each data/occ shape: 95 pairs, 39 with lines, **all identical**: 64 lines,
+        2,445 values.
+      - In all: 1,023 pairs, 2,038 lines, 811,516 values, every one bit-identical; no difference to attribute, and
+        native never varied between its two runs.
+      - 2D curves and boundaries: GeomAPI_IntSS gives neither, and GeomInt_IntSS isn't bound (open question 20 asks
+        for it), so they are checked by the unit tests (BuildPCurves, MakeBSpline2d, the GTest); 6P's
+        BRepAlgoAPI_Section with ComputePCurveOn1/2 will compare pcurves natively. `NbBoundaries()` is always 0
+        (decision 747).
+749. **Determinism.** The port's lines are the same serially, from 8 parallel threads and on a repeat (138 pairs, 296
+      lines, compared as BRep text); the unit tests repeat IntPatch_Intersection, JoinWLines and ALineToWLine serially
+      and from parallel threads.
+750. **Draw-lite** (decision 405's conventions).
+      - `intersect` is GeometryTest_CurveCommands.cxx's `intersection`: surface/surface with GeomInt_IntSS (the
+        general form, a start point, bounds, or both; lines named `r` or `r_i`, points `r_p_i`) and curve/surface with
+        GeomAPI_IntCS (OCCT's index bug in the points' loop kept, occt-issues.md). `std::cout` lines go to the
+        interpreter's output.
+      - The lowalgos/intss grid's begin file runs `xdistcs` (GeometryTest_TestProjCommands.cxx; printf's `%lg` through
+        TclFormat's `%g`; the markers go, there is no viewer) and `checkoverlapedges` (SWDRAW_ShapeFix.cxx, over
+        ShapeAnalysis_Edge::CheckOverlapping) in every case, so both are ported too.
+      - Corpus (`DrawIntersectCorpusTests`, `Before5G` removes the three commands): 697 cases use `intersect`;
+        runnable 0 before, 56 after (49 of lowalgos/intss' 92). After: 31 OK, 8 BAD (OCCT's own TODOs: buc60815,
+        bug23163_1/2/3, bug27623, bug27950, bug537, bug604), 16 SKIPPED (data files the public dataset lacks), 1
+        IMPROVEMENT, no FAILED. The IMPROVEMENT is bug236, whose TODO expects `[directory]` to end with another name
+        than `result_2`: Draw-lite's `info globals` lists variables in creation order, Tcl in its hash order; its lines
+        are native's bit for bit (decision 748). The other intss cases miss `lastrep` (31, a viewer pick), the Boolean
+        commands (13), `clpoles`, `QACheckBends`, `proj`, `bopcurves`; 592 of the 697 are the offset group's.
+751. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 51 new; Draw-lite 2; oracle 5).
+      - OCCT's GTest GeomAPI_IntSS (3, names kept: OCC26675_IntersectionCurveCount,
+        OCC26675_IntersectionCurveRangeNonDegenerate, OCC23972_TwoConesIntersection).
+      - IntPatch_Intersection (19): plane/plane, coincident and parallel planes, plane/cylinder, plane and patch in both
+        orders, patch/patch, start points, isGeomInt false, a quasi-degenerate cone as parametric, self-intersections,
+        CheckSingularPoints, DefineUVMaxStep, PrepareSurfaces, sphere/cylinder ALines to WLines, cylinder pairs joined;
+        lines on both surfaces, bit-identical serially and in parallel. ALineToWLine (6). WLineTool (8): purging on
+        PrmPrm and ImpPrm lines, duplicates, degenerate lines; JoinWLines on bug23178 (8 lines to 6) and bug28222_2
+        (8 to 4); ExtendTwoWLines. LineConstructor (3). GeomInt (12): AdjustPeriodic, ParameterAndOrientation,
+        MakeBSpline/2d, BuildPCurves' branches, TrimILineOnSurfBoundaries, LineTool, LineConstructor,
+        DecompositionOfWLine, TolFixTangents.
+      - ShapeAnalysis_CanonicalRecognition's B10 now builds its ellipse with GeomAPI_IntSS, as OCCT's GTest (6H1's
+        TODO(5G)).
+752. **For later units.**
+      - **6D (IntTools_FaceFace):** it drives IntPatch_Intersection as GeomInt_IntSS::InternalPerform does, with its own
+        tolerances: `SetTolerances(TolArc, TolTang, UVMaxStep, Fleche)`, then `Perform(S1, D1, S2, D2, TolArc, TolTang,
+        ListOfPnts, isGeomInt, theIsReqToKeepRLine, theIsReqToPostWLProc)` (the list may grow, decision 706), or the
+        start-point Perform; `IntPatch_Intersection.PrepareSurfaces` and `DefineUVMaxStep` are public statics. Its
+        MakeCurve mirrors GeomInt_IntSS_1's: call `GeomInt_IntSS.BuildPCurves(f, l, ref tol, surf, curve, ref c2d)` with
+        c2d null (a non-null one returns at once), `MakeBSpline`/`MakeBSpline2d(WL, i, j, onFirst)`, `TreatRLine(RL,
+        HS1, HS2, ref c3d, ref c2d1, ref c2d2, ref tol)` (unfrozen results), `GeomInt_LineConstructor` (Load, Perform,
+        NbParts, Part) and `GeomInt_LineTool.DecompositionOfWLine`; the approximation as decision 684. Check FaceFace's
+        copies of the GeomInt bugs (occt-issues.md, 5G). IntTools_WLineTool calls `IntPatch_WLineTool`'s public
+        statics.
+      - **5L, 5S (sweeps, BRepFill):** GeomAPI_IntSS and GeomInt_IntSS are ready; their lines are frozen, so copy before
+        an in-place edit (Segment, SetTrim on a basis). `GeomInt.AdjustPeriodic` is 6B's.
+      - **6P:** compare `BRepAlgoAPI_Section`'s pcurves (ComputePCurveOn1/2) natively, which this oracle can't.
