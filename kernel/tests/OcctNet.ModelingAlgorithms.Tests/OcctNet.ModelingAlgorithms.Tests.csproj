@@ -48,6 +48,8 @@
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
     <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
+    <!-- Native OCCT's BRepFill_CompatibleWires, recorded by tools/cwrec (unit 5S1) -->
+    <EmbeddedResource Include="BRepFill\Recordings\cwrec.txt.gz" LogicalName="BRepFill.cwrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
