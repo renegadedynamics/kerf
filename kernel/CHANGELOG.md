@@ -489,4 +489,4 @@ Phase 6 (part): healing foundations (unit 6H1).
   - Unit tests of every class, most on frozen inputs checked unchanged; the copy-at-entry pattern on a toy healing
     algorithm.
   - Oracle tests of ShapeAnalysis_Shell and ShapeAnalysis_FreeBounds against native OCCT on the corpus's shells.
-    On 1,570 shapes, 77,094 values and shapes are all identical.
+    On 1,570 shapes, 89,646 values and shapes are all identical.

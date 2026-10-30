@@ -5722,7 +5722,10 @@ are placeholders, renumbered on merge; plan decisions are cited by their merged 
       - Inputs: data/occ, the test dataset's .brep files (up to 1 MB and 50,000 sub-shape occurrences) and 72 random
         native shapes, each also with every third face removed. Both sides read native OCCT's file.
       - The tolerance form was compared too, sewing at 10^-6 and 10^-2.
-      - Shapes were compared as BRep text with the Free column masked; exceptions by OCCT type. ORACLE_RESULT
+      - Shapes were compared as BRep text with the Free column masked; exceptions by OCCT type.
+      - Result: 1,570 shapes, 89,646 values and shapes, all identical, in 6 minutes. 126 shapes needed the Free mask:
+        free edges that sewing left untouched are the caller's frozen edges, which keep their Free flag. 33 cases
+        throw the same OCCT exception on both sides (data with a vertex without a point).
 6212. **Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline mirror the 3D ports** (decision 243).
       - `Curve()` and the explicit conversion operator freeze. Geom2dAPI_Interpolate gains an internal `InternalCurve()`
         (no freeze) for ShapeConstruct_ProjectCurveOnSurface.
