@@ -728,5 +728,93 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         Report("MakeFilling with mixed, point, free and initial-surface constraints", aWatch.Elapsed);
         Assert.Empty(myDifferences);
     }
+
+    [Fact]
+    public void MakeFilling_on_the_corpus_case_bug23380_matches_native_OCCT()
+    {
+        // bugs/filling/bug23380: "filling result 4 0 0 i f_1 f 1 d_3 d 1 b_2 0 b_3 0", which Draw reads as the bounds
+        // i (C0), the face f as a free constraint (G1), d_3 on d (G1) and b_2 (C0)
+        string aRoot = Metadata("OcctTestDataDir");
+        string? aFile = string.IsNullOrEmpty(aRoot) || !Directory.Exists(aRoot) ? null
+            : Directory.EnumerateFiles(aRoot, "bug23380.brep", SearchOption.AllDirectories).FirstOrDefault();
+        if (aFile is null)
+        {
+            output.WriteLine("bug23380.brep isn't available");
+            return;
+        }
+        var aWatch = Stopwatch.StartNew();
+        var aShape = new N.TopoDS_Shape();
+        using (var aBuilder = new N.BRep_Builder())
+        {
+            Assert.True(N.BRepTools.Read(aShape, aFile, aBuilder));
+        }
+        List<N.TopoDS_Shape> aB = NativeChildren(aShape).ToList(); // b_1 .. b_5
+        var aD = new List<N.TopoDS_Shape>();
+        for (var anExp = new N.TopExp_Explorer(aB[4], N.TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            if (!aD.Any(e => e.IsSame(anExp.Current()))) // explode skips the edges it has seen
+            {
+                aD.Add(anExp.Current());
+            }
+        }
+        var aF = new List<N.TopoDS_Shape>();
+        for (var anExp = new N.TopExp_Explorer(aB[0], N.TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            if (!aF.Any(e => e.IsSame(anExp.Current())))
+            {
+                aF.Add(anExp.Current());
+            }
+        }
+        // Draw's variables, and filling's reading of its words (BRepTest_FillingCommands.cxx): for each bound, an edge
+        // if the word names one, then a face if the next names one, then the order (Draw::Atoi, 0 for a name)
+        var aVars = new Dictionary<string, N.TopoDS_Shape>
+        {
+            ["i"] = aB[3], ["f_1"] = aF[0], ["f"] = aB[0], ["d_3"] = aD[2], ["d"] = aB[4], ["b_2"] = aB[1], ["b_3"] = aB[2],
+        };
+        string[] aWords = ["i", "f_1", "f", "1", "d_3", "d", "1", "b_2", "0", "b_3", "0"];
+        var aCase = new FillingCase { What = "bug23380", Inputs = [] };
+        int Index(N.TopoDS_Shape theS)
+        {
+            aCase.Inputs.Add(theS);
+            return aCase.Inputs.Count - 1;
+        }
+        N.TopoDS_Shape? Get(int theWord, N.TopAbs_ShapeEnum theType)
+            => theWord < aWords.Length && aVars.TryGetValue(aWords[theWord], out N.TopoDS_Shape? aS) && aS.ShapeType() == theType ? aS : null;
+        int w = 0;
+        var aParsed = new List<string>();
+        for (int k = 1; k <= 4; k++)
+        {
+            N.TopoDS_Shape? anE = Get(w, N.TopAbs_ShapeEnum.TopAbs_EDGE);
+            if (anE is not null)
+            {
+                w++;
+            }
+            N.TopoDS_Shape? aFace = Get(w, N.TopAbs_ShapeEnum.TopAbs_FACE);
+            if (aFace is not null)
+            {
+                w++;
+            }
+            var anOrder = (GeomAbs_Shape)(int.TryParse(aWords[w++], out int o) ? o : 0);
+            if (anE is not null && aFace is not null)
+            {
+                aCase.Steps.Add(new Step(Op.EdgeFace, Index(anE), Index(aFace), anOrder));
+            }
+            else if (anE is null)
+            {
+                Assert.NotNull(aFace);
+                aCase.Steps.Add(new Step(Op.Face, Index(aFace), Order: anOrder));
+            }
+            else
+            {
+                aCase.Steps.Add(new Step(Op.Edge, Index(anE), Order: anOrder));
+            }
+            aParsed.Add(aCase.Steps[^1].ToString());
+        }
+        output.WriteLine("bug23380's bounds: " + string.Join("; ", aParsed));
+        aCase.Steps.Add(new Step(Op.Build));
+        Run(aCase);
+        Report("MakeFilling on bug23380", aWatch.Elapsed);
+        Assert.Empty(myDifferences);
+    }
 }
 #endif
