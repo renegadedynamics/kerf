@@ -8607,3 +8607,147 @@ renumbered on merge.
         computes twice on creation (the command with the defaults, then the drawable's constructor with 50 iterations
         and 1.0e-2), and so does Draw-lite. Draw's 2D transformations change the drawable's curve in place; Draw-lite's
         bind the transformed curve to the name, which then holds a plain B-spline.
+## Phase 5: unit 5P, plates and filling
+
+Plate, NLPlate, GeomPlate and LocalAnalysis (TKGeomAlgo); BRepFill_Filling, CurveConstraint, FaceAndOrder and
+EdgeFaceAndOrder (TKBool); BRepOffsetAPI_MakeFilling (TKOffset); Draw-lite's `plate`, `gplate`, `approxplate`,
+`filling` and `fillingparam`. In OcctNet.ModelingAlgorithms (`Plate/`, `NLPlate/`, `GeomPlate/`, `LocalAnalysis/`,
+`BRepFill/`, `BRepOffsetAPI/`). Plate with NLPlate and LocalAnalysis were ported in two forked worktrees, then merged.
+Numbers from 5941 are placeholders, renumbered on merge.
+
+863. **Plate's constraints: values and shared linear constraints.**
+      - `Plate_PinpointConstraint` (readonly) and `Plate_D1`/`D2`/`D3` are value types (rules, section 3). D1 to D3
+        keep OCCT's fields internal for the GtoC constraints, which transform local copies in place
+        (`rota.Transforms(ref D1T.Du)`); D2 and D3 have no public accessors, as in OCCT.
+      - `Plate_LinearXYZConstraint` and `Plate_LinearScalarConstraint` are classes and working objects (decision 21):
+        OCCT copies them by value, but their data are handles, so its copies share the arrays as C# references do.
+        `GetPPC()`/`Coeff()` return the held arrays.
+      - The Global, Line, Plane and SampledCurve constraints (each holding one of those) and `Plate_GtoCConstraint`/
+        `Plate_FreeGtoCConstraint` (fixed arrays) are classes too; GtoC keeps OCCT's copy constructor. The array
+        constructors copy with `Assign`, which takes the source's bounds as OCCT 8's `operator=` does (decision 808).
+864. **Plate_Plate and NLPlate_NLPlate are working objects** with OCCT's public API.
+      - `void*` buffers are typed arrays (`gp_XYZ[]`, `gp_XY[]`, `int[]`) behind private `ref` accessors.
+      - OCCT's copy constructor is `new Plate_Plate(other)` and its `operator=` is `Copy(other)`: both copy the solution
+        and the constraint sequences; the linear constraints in them stay shared, as in C++.
+      - `UVBox` takes `out`; `CoefPol()` returns a new `NCollection_HArray2<gp_XYZ>` and the deprecated `out` overload
+        is `[Obsolete]`; `SolveTI` keeps its progress range, the scopes are `using var`.
+      - NLPlate's stack of plates is a list of `Plate_Plate`s: OCCT prepends a copy of an empty plate and works on the
+        stored one; the port prepends a new plate. NLPlate_HGPPConstraint's `const&` getters return values.
+865. **C# scoping renames in Plate.** Where OCCT declares a local in an inner block and the same name later in the
+      enclosing block, the port hoists or renames: `i` in Plate_Plate::Evaluate/EvaluateDerivative, `j` and the final
+      `ksol`/`kSolution` (`ksolS`/`kSolutionS`) in SolveTI3, Plate_FreeGtoCConstraint's inner `du`/`dv`/`c`/`s`/`d`
+      (`du1`, ...). SolEm's closed forms are copied verbatim, integer products promoted as in C++. Arithmetic and its
+      order are unchanged.
+866. **LocalAnalysis's continuity analyses are working objects.**
+      - `LocalAnalysis_CurveContinuity` and `LocalAnalysis_SurfaceContinuity` are classes (decision 21): the
+        constructors compute and the queries read, with OCCT's names; the tolerances are fixed at construction.
+      - `ComputeAnalysis` may be called again on the same object, as GeomPlate_BuildPlateSurface does in a loop, and
+        keeps a failure (`IsDone` false) once one occurs, as in OCCT. Queries other than `IsDone` and `StatusError`
+        throw `StdFail_NotDone` after a failure.
+      - OCCT leaves `StatusError()` uninitialised after a successful analysis, and `ContinuityStatus()` before the first
+        `ComputeAnalysis`; the port returns `LocalAnalysis_NullFirstDerivative` and `GeomAbs_C0` (occt-issues.md).
+      - `LocalAnalysis.Dump` writes OCCT's text to a `TextWriter`. The order switch the two surface constructors repeat
+        is a private `Analyse` (decision 742's pattern).
+
+      Rejected: structs, because they are mutable results reused across calls.
+867. **GeomPlate's constraints and builders are working objects; what they hand out is frozen.**
+      - `GeomPlate_PointConstraint`, `GeomPlate_CurveConstraint` (and `BRepFill_CurveConstraint`) keep the caller's
+        surface, adaptors and laws (Law_Function, decision 806), read only, and their setters stay public: the builder
+        sets their 2D curves, numbers of points and projected points, as OCCT does. `LPropSurf` returns the
+        constraint's own `GeomLProp_SLProps` (OCCT's reference).
+      - `GeomPlate_BuildPlateSurface` keeps the caller's constraints, changes them as OCCT does, and reorders its list
+        of curve constraints. `Surface()`, `SurfInit()` and `Curves2d()` freeze what they return (the stored surfaces
+        and 2D curves). Its arrays of sequences (`myParCont`, `myPlateCont`, the intersection intervals) are filled with
+        new sequences, as OCCT default-constructs them.
+      - `GeomPlate_MakeApprox.Surface()` and `GeomPlate_BuildAveragePlane.Plane()`/`Line()` freeze the geometry they
+        return (the same object each time); `MakeApprox.InternalSurface()` serves ported code. The criteria keep copies
+        of the caller's sequences, as OCCT's members do.
+      - `GeomPlate_Aij` is a value type with internal fields, mutable because OCCT's friend `HalfSpace` re-indexes the
+        pairs it keeps (`B2set[k].Ind1 = ii` through the sequence's `ref` indexer).
+      - MakeApprox's surface evaluator is a private nested `AdvApp2Var_EvaluatorFunc2Var` (decision 193's signature).
+868. **GeomPlate_Surface is geometry** (rules, section 8).
+      - `SetBounds` is internal with `CheckMutable()`, with the public twin `WithBounds`; OCCT's empty `UReverse`,
+        `VReverse` and `Transform` check too. The builder sets the bounds of the surface it made before handing it out.
+      - The surface keeps its own copy of the plate (OCCT holds it by value), so a builder's later `Init` doesn't change
+        it; the initial surface is the caller's, read only.
+      - As in OCCT: `Copy()` doesn't keep the bounds; `UIso`/`VIso` return null, `Continuity` GeomAbs_C0, `UPeriod`/
+        `VPeriod` 0 (OCCT returns `false`); `IsCNu`/`IsCNv` throw Standard_Failure; D3 and DN throw
+        Geom_UndefinedDerivative. `Bounds` of a surface over another GeomPlate_Surface returns the inner one's, by exact
+        type as OCCT's `DynamicType() ==`.
+869. **Two OCCT faults the port turns into defined behaviour** (occt-issues.md).
+      - GeomPlate_BuildPlateSurface::Perform approximates `myGeomPlateSurface` when a curve can't be projected, but
+        Perform nulled it at its start and only ComputeSurfInit's non-linear branch sets it again: natively an access
+        violation (the corpus's bug23343, an OCCT TODO). The port throws `Standard_NullObject` there, so Draw's
+        "An exception was caught" appears as OCCT's TODO expects.
+      - `G0Error(Index)`, `G1Error(Index)` and `G2Error(Index)` size their arrays by NbPtsOnCur, but EcartContraintesMil
+        writes one value per interval of the curve's last discretisation. With more intervals both sides throw
+        Standard_OutOfRange (native keeps the check, decision 9). With fewer, native reads uninitialised memory, and its
+        value can change from call to call; the port's arrays are zeroed, so its value is the maximum over the
+        intervals, which native's is never below. The oracle attributes such values (decision 873).
+870. **Plate_Plate's evaluation doesn't cache.** OCCT's SolEm keeps the last point's U, V, U², R and log R in the plate
+      (through a `const_cast`) and reuses them when the next point is the same. The port computes them on every call:
+      the same arithmetic, so the same values (the only exception is a point at exactly (1e20, 1e20), which OCCT's
+      initial cache answers with 0). So a solved plate, and the GeomPlate_Surface over it, can be evaluated from
+      several threads at once, as frozen geometry must be in Bento. Rejected: a lock (it serialises every evaluation)
+      and a per-thread cache (it saves nothing measurable).
+871. **BRepFill_Filling and BRepOffsetAPI_MakeFilling never write the caller's shapes** (plan 2.8).
+      - OCCT already builds the result on new topology: each boundary edge is `EmptyCopied` (a new TShape, its
+        representations copied, sharing the frozen curves) on new vertices, then given its pcurve on the approximated
+        surface and SameParameter. The port follows it, with the makers' internal forms where OCCT goes on writing what
+        it made (`BRepLib_MakeVertex.InternalVertex()` before `UpdateVertex`, `BRepLib_MakeWire.InternalWire()`/
+        `InternalEdge()` in BuildWires, `BRepLib_MakeEdge.InternalEdge()` for the free constraints' edges,
+        `BRepLib_MakeFace.InternalFace()` for the result). No copy at entry is needed; the oracle checks that every
+        input's BRep text is unchanged.
+      - The maker follows decisions 414 and 454: `Shape()` freezes the face, `Generated` publishes frozen shapes (and
+        freezes the face first, the generated shapes being its sub-shapes); `InternalGenerated` returns the filling's
+        own list. `BRepFill_Filling.Face()` and `Generated` freeze too, with `InternalFace()`/`InternalGenerated()` for
+        ported code. OCCT's MakeFilling ignores the progress range and never calls `Done()`; `IsDone` is the filling's.
+      - **Rebuilding**, as build123d.NET's `MakeSurface` does (build, add points, build again): each `Build` starts a new
+        plate but keeps the old-to-new map, so a boundary edge is rebuilt from the previous build's edge, whose pcurve on
+        the previous surface its empty copy keeps; and the bounds found for free constraints stay in the boundary. The
+        port keeps both (the oracle compares the second builds' BRep text); the face handed out before doesn't change.
+      - `BRepFill_FaceAndOrder` and `BRepFill_EdgeFaceAndOrder` are value types with internal fields (OCCT's friend
+        reads them). Internal `BRepFill_Filling.InternalBuilder()`, `MakeFilling.InternalFilling()` and
+        `GeomPlate_BuildPlateSurface.NbIntervalsChecked(i)`/`NbPtsOnCur()` let the oracle attribute decision 869's
+        uninitialised reads.
+872. **Draw-lite's filling commands** (BRepTest_FillingCommands.cxx) are ported whole: `plate`, `gplate`,
+      `approxplate`, `filling`, `fillingparam`.
+      - fillingparam's settings are Draw's file statics; in Draw-lite they belong to the interpreter (a weak table), so
+        corpus cases running in parallel don't share them.
+      - The history `filling` records for `savehistory` isn't kept (Draw-lite has none, as for the sweeps), nor is
+        Draw's progress indicator. `plate` and `approxplate` take their edges' internal forms before updating their
+        vertices, as the ported algorithms do. A word read past the end of the command is an empty word.
+873. **Tests.**
+      - OCCT's GTests Plate_Plate (2) and GeomPlate_BuildPlateSurface (2), names kept. Unit tests: Plate (interpolation
+        at orders 2 to 5, anisotropy, derivatives against differences, the SolveTI2/SolveTI3 paths, copies, CoefPol),
+        NLPlate (G0, G1, incremental solves, sliding), LocalAnalysis (closed forms on circles, spheres, planes and lines,
+        each failure status, reuse, Dump), GeomPlate (constraints, the plate surface and its frozen bounds, evaluation
+        from several threads, the average plane and HalfSpace, the approximation with each criterion, the builder on
+        contours, points, an initial surface and G1 to a cylinder), BRepFill_Filling and MakeFilling (valid frozen faces,
+        inputs unchanged, Generated, a rebuild with a point, G1 to a half cylinder, indices, the value types).
+      - **Oracle** (`tests/OcctNet.Oracle.Tests/BRepOffsetAPI`): BRepOffsetAPI_MakeFilling against native OCCT, the
+        inputs built natively as one compound and read on both sides (the port's frozen), the same constraint calls
+        replayed: build123d.NET's `Face.MakeSurface` (60 random non-planar contours of lines, arcs and B-splines with its
+        parameters, 40 of them built again after adding one or two points), `MakeSurfacePatch`-like holes in boxes with
+        the side faces as G1 or G2 supports (30) and cylinder caps (20), contours with points (20), points on support
+        faces (15), free face constraints (10), an initial surface (10), and the corpus's bug23380. **All 206 builds of
+        166 cases give BRep text identical to native's, byte for byte** (no Free column to mask: the result is new
+        topology), counting the 10 both sides reject with the same exception and the 9 neither completes; all 5,463
+        `Generated` lists are identical; every input is unchanged; G0Error, G1Error and G2Error are bit-identical, and
+        the per-constraint errors too except where native reads uninitialised memory (decision 869), each of which is
+        attributed: the port's curve had fewer intervals than NbPtsOnCur and native's values are never below the
+        port's, or native varies between calls and gives the port's value. GeomPlate, Plate, NLPlate and LocalAnalysis
+        are not bound natively: they are compared through MakeFilling.
+      - **Corpus** (`DrawFillingCorpusTests`): 13 cases use the commands; 0 runnable before the unit, 6 after: 1 OK
+        (bug22786), 1 BAD as OCCT expects (bug23343: decision 869's exception), 3 skipped for missing data
+        (bug22783, bug27873, bug31558), and bug23380 fails its `checknbshapes` (3 edges for 4). Replaying bug23380's
+        calls as Draw reads its words (the faces `i` and `f` become free constraints) on native OCCT through
+        build123d.NET's binding gives the same 3-edge face, byte for byte (the oracle's test): the difference is native
+        OCCT 8.0.1's against the reference the script was written for, not the port's. The other 7 cases need XProgress
+        (4), vcomputehlr, build3d, top, savehistory, generated or xdistcc.
+874. **For later units.**
+      - **5S1/5S2 (BRepFill):** `BRepFill/` now holds Filling, CurveConstraint, FaceAndOrder and EdgeFaceAndOrder;
+        `BRepOffsetAPI/` holds MakeFilling. BRepFill_CurveConstraint is a GeomPlate_CurveConstraint.
+      - **5W (Draw-lite construction):** the filling commands are done; `XProgress` would unlock 4 more filling cases.
+      - **build123d.NET:** `MakeSurfacePatch` maps C2 to GeomAbs_G2, which MakeFilling rejects natively and in the port
+        (occt-issues.md); its C1 maps to G1, as it should.

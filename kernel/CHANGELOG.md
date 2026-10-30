@@ -915,3 +915,24 @@ Phase 5 (part): fair curves (unit 5Q).
   bit-identical to native, exceptions included; unit tests (OCCT has no FairCurve GTests).
 - Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`, `setheight`,
   `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. No corpus case uses them.
+Phase 5 (part): plates and filling (unit 5P).
+
+- `OcctNet.ModelingAlgorithms`:
+  - Plate (the thin-plate solver `Plate_Plate` and its pinpoint, linear, G1 to G3 and free constraints), NLPlate
+    (non-linear plates over a surface), LocalAnalysis (curve and surface continuity analyses).
+  - GeomPlate: the plate surface builder `GeomPlate_BuildPlateSurface` with point and curve constraints, the plate
+    surface `GeomPlate_Surface` (geometry, immutable to callers, with `WithBounds`), its B-spline approximation
+    `GeomPlate_MakeApprox` with the G0 and G1 criteria, and `GeomPlate_BuildAveragePlane`.
+  - N-sided filling: `BRepFill_Filling` with its constraint classes, and the maker `BRepOffsetAPI_MakeFilling`
+    (build123d.NET's `Face.MakeSurface` and `MakeSurfacePatch`). The face is new topology; the caller's edges and faces
+    are never written; `Shape()` and `Generated` publish frozen shapes; a built filling can take more constraints and be
+    built again, as build123d.NET does.
+  - A solved plate and the plate surface over it evaluate from several threads at once (OCCT's evaluation cache
+    dropped; same values).
+- Draw-lite: `plate`, `gplate`, `approxplate`, `filling`, `fillingparam`.
+- Tests: OCCT's GTests Plate_Plate and GeomPlate_BuildPlateSurface; unit tests of every class. Oracle: MakeFilling
+  against native OCCT on build123d.NET's MakeSurface (random contours of lines, arcs and B-splines, rebuilt with
+  points), holes in boxes with G1 and G2 supports, cylinder caps, points, points on faces, free constraints and an
+  initial surface: all 206 builds byte-identical as BRep text, every Generated list identical, every value
+  bit-identical but where native reads uninitialised memory. Corpus: the filling cases (6 runnable, from none; 1 OK, 1
+  known problem as OCCT, 3 missing their data, 1 failing as native OCCT 8 does).
