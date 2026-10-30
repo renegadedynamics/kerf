@@ -660,3 +660,17 @@ Phase 6 (part): context and BOP tools (unit 6B).
     - IntTools_FClass2d on 3,072 faces: 338,880 comparisons, all identical.
     - `ComputeState` against BRepClass3d_SolidClassifier: 4,968 points, all identical.
     - The context's surface and curve projectors: 66,160 values, all bit-identical.
+
+Phase 5 (part): surface/surface intersection, the milestone (unit 5G).
+
+- `OcctNet.ModelingAlgorithms`: `GeomAPI_IntSS` and `GeomInt_IntSS`, the intersection of two surfaces of any kind as
+  approximated curves (conics where exact) with their pcurves; `IntPatch_Intersection`, which dispatches to the
+  analytic, quadric/parametric and parametric intersections, with `IntPatch_ALineToWLine`, `IntPatch_WLineTool` (purging,
+  joining and extending walking lines) and `IntPatch_LineConstructor`; `GeomInt_LineConstructor`, `GeomInt_LineTool`,
+  `GeomInt_ParameterAndOrientation`. Returned curves are frozen. Serial, and the same lines every run.
+- Draw-lite: `intersect` (surfaces, and curve/surface), `xdistcs`, `checkoverlapedges`; 56 corpus cases that use
+  `intersect` become runnable (31 OK, 8 BAD on OCCT's TODOs, 16 lacking data, 1 IMPROVEMENT from Tcl's variable order).
+- Tests: OCCT's GTest GeomAPI_IntSS; unit tests of every class. Oracle: native GeomAPI_IntSS on 1,023 pairs (analytic
+  at random and special placements, every kind against revolution, extrusion, Bezier, B-spline, offset and trimmed
+  surfaces, the lowalgos/intss corpus' surfaces, data/occ faces): 2,038 lines, every value bit-identical; serial =
+  parallel = repeat.
