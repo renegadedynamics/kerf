@@ -28,4 +28,5 @@ public partial class BOPAlgo_PaveFiller
     protected void PutSEInOtherFaces(Message_ProgressRange theRange) => throw new NotImplementedException();
     protected void RemoveMicroSectionEdges(NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> theMSCPB, NCollection_IndexedMap<BOPDS_PaveBlock> theMicroPB) => throw new NotImplementedException();
     protected void RemoveMicroEdges() => throw new NotImplementedException();
+    private static double ToleranceFF(BRepAdaptor_Surface aBAS1, BRepAdaptor_Surface aBAS2) => throw new NotImplementedException();
 }
