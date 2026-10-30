@@ -603,3 +603,16 @@ Phase 5 (part): walking (unit 5C).
   lines serially and in parallel on every run. Unit tests of PWalking (planes, plane and cylinder, boundaries),
   ImpPrmIntersection (every quadric against patches and an extrusion: points on both surfaces, vertices) and
   SpecialPoints (poles, apexes, isolines, periods).
+Phase 5 (part): parametric intersections (unit 5D).
+
+- `OcctNet.ModelingAlgorithms`: `IntPatch_PrmPrmIntersection`, the intersection of two parametric surfaces (B-spline,
+  Bézier, offset, swept and the rest): start points from the interference of the surfaces' polyhedra, from
+  IntPolyh's triangulations, from a voxel search on dense surfaces, from given points or a start point, then walking
+  lines (IntWalk_PWalking) with their vertices on the restrictions; also the self-intersection of a surface. With
+  `IntPatch_Polyhedron`, `IntPatch_PolyhedronTool`, `IntPatch_PolyhedronBVH`, `IntPatch_BVHTraversal`,
+  `IntPatch_InterferencePolyhedron` and `IntPatch_PrmPrmIntersection_T3Bits`. Serial, and the same lines every run.
+- Tests: OCCT's GTests IntPatch_Polyhedron and IntPatch_PolyhedronBVH; seven intersections step by step against
+  native OCCT, recorded by `tools/walkrec` with OCCT's own IntPatch_PrmPrmIntersection.cxx (B-spline pairs through
+  IntPolyh, polyhedra and the voxel search, an offset surface, a start point, a list of points on a closed surface,
+  a self-intersection): every walking step, interference point and line bit-identical; lines on both surfaces, the
+  same serially and in parallel.

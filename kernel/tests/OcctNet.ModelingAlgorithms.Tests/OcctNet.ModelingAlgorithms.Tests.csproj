@@ -26,6 +26,8 @@
     <EmbeddedResource Include="ApproxInt\ApproxIntRecordings.txt.gz" LogicalName="ApproxIntRecordings.txt.gz" />
     <!-- Native OCCT's walking steps, recorded by tools/walkrec (decision 687) -->
     <EmbeddedResource Include="IntWalk\Recordings\*.txt" LogicalName="IntWalk.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's parametric intersections step by step, recorded by tools/walkrec (unit 5D) -->
+    <EmbeddedResource Include="IntPatch\Recordings\*.txt" LogicalName="IntPatch.Recordings.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -766,3 +766,20 @@ matches bit for bit.
 | `IntPatch_ImpPrmIntersection.cxx`, `ComputeTangency` (lines 365–373) | On an INTERNAL or EXTERNAL arc, the complex-transition branch never assigns the vertex handle `vtx` | It keeps an earlier point's vertex, or is null, which would crash OCCT in `Identical` (a NullReferenceException in the port). Kept |
 | `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (lines 3188–3195; a property) | `aSSLine` is a second handle to the input line's points | AdjustLine and InsertSeamVertices edit the input line in place, even when it is replaced afterwards. Kept |
 | `IntWalk_PWalking` (the constructor with the bounds; a property) | Leaves `tgfirst`, `tglast`, `myTangentIdx` and `previoustg` uninitialised | Perform writes them before reading them; harmless |
+
+## Phase 5: unit 5D, parametric intersections
+
+Found while porting IntPatch_PrmPrmIntersection, the polyhedra and their interference. By reading OCCT's code; the
+port reproduces each (`// OCCT` at the line). None changes the seven intersections recorded natively (decision 5407),
+which the port matches bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_InterferencePolyhedron::Perform(const IntPatch_Polyhedron&)` | Calls the self-interference `Interference(Obje)`, whose body is empty; the constructor of the self-interference calls `Interference(Obje, Obje)` instead | `Perform` on one polyhedron finds nothing (only the mode and tolerance are set). OCCT's own callers use the constructor. Kept, and pinned by a test |
+| `IntPatch_Polyhedron.hxx` | Declares `Perform`, `UMinSingularity`... (the four setters) and `HasUMinSingularity`... (the four getters), which no .cxx defines | A caller would fail to link. Left out of the port |
+| `IntPatch_Polyhedron::PlaneEquation` | On a triangle with an edge shorter than 1e-7, sets the normal to (1, 0, 0) and returns without writing `PolarDistance` | The caller's variable keeps its value (uninitialised in a typical caller). Nothing in OCCT calls it; kept (`ref` in the port) |
+| `IntPatch_Polyhedron::TriConnex` (the end; OCCT's own "BUG NON CORRIGE") | When the other point of the connected triangle coincides with `Pedge`, returns 0 instead of looking further, with `TriCon` and `OtherP` set | InterferencePolyhedron reads `TriCon` (into `pivo`) to tell whether the neighbouring triangle has already given the segment of an edge lying in the other triangle's plane; at such a vertex it decides on the triangle found so far. Kept |
+| `IntPatch_PrmPrmIntersection::NewLine` (line 1555) | Tests `nab > ds`, where `nab = 1 / (a + b)` is the inverse of the segment's length and `ds` the arc-length step | A point is inserted only in segments shorter than `1 / ds` (in parameter units, so the test depends on the parametrisation's scale). Nothing in OCCT calls NewLine. Kept |
+| `IntPatch_PrmPrmIntersection::Perform` (the sampled one, the branch for more than 2,500 samples) | Doesn't clear the lines, whatever `ClearFlag` says (the other branch clears them when it is true) | A second sampled Perform on the same object keeps the first one's lines. IntPatch_Intersection uses a fresh object (or wants them kept). Kept |
+| `IntPatch_PrmPrmIntersection::Perform` (with the list of points; a property) | Appends the points' images across the seams of closed surfaces to the caller's list | The caller's list grows. Kept |
+| `IntPatch_PrmPrmIntersection::PointDepart` (lines 3689-3718; a property) | Converts `(P.X() - x0 + dx2) / dx` to `int` without a range check (undefined behaviour in C++ out of range; MSVC gives `INT_MIN`) | Out of range and NaN samples fall outside the grid. The port reproduces MSVC's result (decision 5404) |
