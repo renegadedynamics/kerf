@@ -2461,6 +2461,16 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         return aShape;
     }
 
+    /// <summary>The modified input shape, as <see cref="Modified"/>, without freezing it (ported code).</summary>
+    internal TopoDS_Shape InternalModified(in TopoDS_Shape aShape)
+    {
+        if (myOldShapes.Contains(aShape))
+        {
+            return fromWork(myOldShapes.FindFromKey(aShape));
+        }
+        return aShape;
+    }
+
     //=================================================================================================
 
     /// <summary>True if the input sub-shape has been modified.</summary>

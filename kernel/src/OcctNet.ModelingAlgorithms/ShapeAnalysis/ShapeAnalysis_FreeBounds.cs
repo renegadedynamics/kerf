@@ -55,6 +55,18 @@ public sealed class ShapeAnalysis_FreeBounds
     /// from the closed (open) wires.
     /// </summary>
     public ShapeAnalysis_FreeBounds(in TopoDS_Shape shape, double toler, bool splitclosed = false, bool splitopen = true)
+        : this(shape, toler, splitclosed, splitopen, true)
+    {
+    }
+
+    /// <summary>
+    /// The analyser of the sewing form, without freezing the free edges sewing hands out (it works in place on
+    /// unfrozen shapes): for ported code that goes on writing into the shape it analyses (ShapeFix_FreeBounds).
+    /// </summary>
+    internal static ShapeAnalysis_FreeBounds InternalSewn(in TopoDS_Shape shape, double toler, bool splitclosed, bool splitopen) =>
+        new(shape, toler, splitclosed, splitopen, false);
+
+    private ShapeAnalysis_FreeBounds(in TopoDS_Shape shape, double toler, bool splitclosed, bool splitopen, bool theToFreeze)
     {
         myTolerance = toler;
         myShared = false;
@@ -64,7 +76,7 @@ public sealed class ShapeAnalysis_FreeBounds
         //
         // Extract free edges.
         //
-        NCollection_HSequence<TopoDS_Shape> edges = sewnFreeEdges(shape, toler);
+        NCollection_HSequence<TopoDS_Shape> edges = sewnFreeEdges(shape, toler, theToFreeze);
         //
         // Chainage.
         //
@@ -76,7 +88,8 @@ public sealed class ShapeAnalysis_FreeBounds
     // The non-degenerated free edges of the faces of the shape after sewing them with the tolerance (OCCT's
     // constructor body, up to the chaining). Sewing copies frozen inputs itself and builds no sewn shape in this mode
     // (decision 599): nothing here needs a copy.
-    private static NCollection_HSequence<TopoDS_Shape> sewnFreeEdges(in TopoDS_Shape shape, double toler)
+    // With theToFreeze false, the free edges aren't frozen (InternalFreeEdge).
+    private static NCollection_HSequence<TopoDS_Shape> sewnFreeEdges(in TopoDS_Shape shape, double toler, bool theToFreeze)
     {
         var Sew = new BRepBuilderAPI_Sewing(toler, false, false);
         for (var S = new TopoDS_Iterator(shape); S.More(); S.Next())
@@ -92,7 +105,8 @@ public sealed class ShapeAnalysis_FreeBounds
         TopoDS_Edge anEdge;
         for (int iedge = 1; iedge <= nbedge; iedge++)
         {
-            anEdge = Sew.FreeEdge(iedge); // frozen: the caller's edges where sewing didn't cut them
+            anEdge = theToFreeze ? Sew.FreeEdge(iedge) // frozen: the caller's edges where sewing didn't cut them
+                                 : Sew.InternalFreeEdge(iedge);
             if (!BRep_Tool.Degenerated(anEdge))
             {
                 edges.Append(anEdge);
