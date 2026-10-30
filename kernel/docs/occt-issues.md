@@ -642,3 +642,15 @@ is confirmed by the oracle yet (5G).
 | `IntStart_SearchOnBoundaries.gxx`, `BoundedArc` (a site, decision 610) | `std::sort` of the roots (SolInfo) by parameter: ties keep their order with MSVC on up to 32 roots (insertion sort) | The port sorts as MSVC on up to 32; with more roots, tied parameters could come out in another order than native's |
 | `IntImp_ZerImpFunc`, `IntImp_ZerParFunc`, `IntPatch_CSFunction` (a property, decision 608) | Keep `void*` pointers to the caller's handles (and quadric) | A later reassignment of the caller's handle variable would change the function's surface in OCCT; the port keeps the object. No caller does it |
 | `IntSurf_Transition::SetValue()` and `SetValue(Tangent, Type)` (a property) | Leave the other fields (situation, opposite flag, tangency) as they were | Two in transitions can differ in fields their queries don't show; MakeTransition passes the caller's objects (`ref` in the port). Kept |
+
+## Phase 5: unit 5F, approximating intersection lines
+
+Found while porting ApproxInt, GeomInt_WLApprox and BRepApprox. The port reproduces each (`// OCCT` at the line), and
+a native program built against OCCT 8.0.1 (decision 5603) confirmed the first and the third; `ApproxIntTests` pins
+the native values.
+
+| Where | What | Effect |
+|---|---|---|
+| `ApproxInt_PrmPrmSvSurfaces::Compute`, `ApproxInt_ImpPrmSvSurfaces::Compute`, the two-entry cache | On a hit (the same parameters as one of the last two computations) they return the cached flag without writing their outputs: the point, the tangents and the refined parameters stay as the caller gave them | PrmPrm's `SeekPoint` called twice at the same parameters gives the origin with the unrefined parameters the second time, as a valid point (native: `(0, 0, 0)`); `MakeMLBetween` would insert a stale point if a resampled parameter set repeated one of the last two. Kept; pinned by `PrmPrmSvSurfaces_SeekPointTwice_ReturnsTheOriginTheSecondTime` and `ImpPrmSvSurfaces_ComputeTwice_LeavesTheOutputsTheSecondTime` |
+| `ApproxInt_ImpPrmSvSurfaces::Compute`, the parametric surface first | Stores the cache key `MyParOnS2.SetCoord(tu2, tu2)` where `(tu2, tv2)` is meant | The point is never found in the cache (unless tu2 = tv2) and is computed again: the same values, more work. Kept |
+| `ApproxInt_Approx::Perform(line, ...)` (the line alone) | With two knots and more than 2·NbPntMax points it adds a middle knot `(indicemax - indicemin) / 2`, an index count rather than `indicemin + ...` | From a first index above 1 the knots go backwards: on a straight line of 300 points, `Perform(WL, ..., 150, 300)` gives a curve from point 75, and from 200 a curve from point 50 (native too). Harmless from index 1 (BRepApprox's callers). Kept; pinned by `WLApprox_PerformLine_MiddleKnotIsAnIndexCount` |

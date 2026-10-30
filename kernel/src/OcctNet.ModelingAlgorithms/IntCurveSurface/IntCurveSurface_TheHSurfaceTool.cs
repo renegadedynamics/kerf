@@ -11,9 +11,11 @@ namespace Occt;
 /// Not an OCCT class. OCCT passes Adaptor3d_HSurfaceTool itself as the template argument; the port's
 /// Adaptor3d_HSurfaceTool is a static class of OcctNet.ModelingData, which can't implement the interfaces of this
 /// assembly, so this struct stands in for it (decision 338). IntPatch and the other instantiations over
-/// Adaptor3d_HSurfaceTool use it too.
+/// Adaptor3d_HSurfaceTool use it too, and so do GeomInt's instantiations of ApproxInt's generics
+/// (<see cref="IApproxInt_SurfaceTool{ThePSurface}"/>).
 /// </remarks>
-public readonly struct IntCurveSurface_TheHSurfaceTool : IIntCurveSurface_SurfaceTool<Adaptor3d_Surface>
+public readonly struct IntCurveSurface_TheHSurfaceTool
+    : IIntCurveSurface_SurfaceTool<Adaptor3d_Surface>, IApproxInt_SurfaceTool<Adaptor3d_Surface>
 {
     public static double FirstUParameter(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.FirstUParameter(S);
 

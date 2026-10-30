@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Native OCCT's walking lines and their approximations, recorded once (unit 5F, decision 5603) -->
+    <EmbeddedResource Include="ApproxInt\ApproxIntRecordings.txt.gz" LogicalName="ApproxIntRecordings.txt.gz" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 

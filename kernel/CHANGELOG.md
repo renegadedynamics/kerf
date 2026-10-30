@@ -481,3 +481,16 @@ Phase 5 (part): intersection foundations (unit 5A).
   (points, segments, transitions), the interior search, Int2S and CurvIntSurf, GLine and ALine, the polygons and
   RstInt; the oracle's comparison of intersection lines with native OCCT (decision 5003), checked on native
   GeomAPI_IntSS results.
+Phase 5 (part): approximating intersection lines (unit 5F).
+
+- `OcctNet.ModelingAlgorithms`: ApproxInt, the approximation of a walking line by a B-spline curve in 3D and on the
+  surfaces' parameter spaces (`ApproxInt_Approx`, the SvSurfaces that add points on quadric/parametric and
+  parametric/parametric pairs, the MultiLine and its tool, `ApproxInt_KnotTools`), as generic classes over the
+  surface, its tool and the line; `GeomInt_WLApprox`, its instantiation over surface adaptors and `IntPatch_WLine`,
+  used by GeomInt_IntSS and IntTools_FaceFace; BRepApprox (`BRepApprox_Approx` over faces, `BRepApprox_ApproxLine`,
+  `BRepApprox_SurfaceTool`); and both packages' instantiations of AppParCurves', Approx's, ApproxInt's and IntImp's
+  generics under OCCT's names.
+- Tests: GeomInt_WLApprox, BRepApprox_Approx and ApproxInt_KnotTools on walking lines recorded from native
+  IntPatch_Intersection on nine surface pairs, against native OCCT's approximations of the same lines: all 128 (degree,
+  knots, multiplicities, poles, tolerances reached) bit-identical; the MultiLine, ApproxLine and the OCCT issues
+  reproduced natively.
