@@ -7309,3 +7309,118 @@ numbers (576–590), 6A's by 617–641, 6B's by 714–723.
         `MinimalDistance() < RealLast()` test reproduces native only because that is kept.
       - A face moved by TrsfToPoint is a different context key; the keyed surface data (6601) is then per moved face,
         as OCCT's per-face data is.
+
+## Phase 5: unit 5L1, laws and trihedrons
+
+Law (all); GeomFill's trihedron laws (TrihedronLaw, TrihedronWithGuide, Frenet, CorrectedFrenet, Darboux,
+ConstantBiNormal, Fixed, DiscreteTrihedron, DraftTrihedron, GuideTrihedronAC, GuideTrihedronPlan) and location laws
+(LocationLaw, CurveAndTrihedron, LocationGuide, LocationDraft) with their functions (LocFunction, FunctionGuide,
+FunctionDraft, PlanFunc, SnglrFunc) and TgtField; and, because LocationGuide needs them, PipeError, Trihedron, Tensor,
+SectionLaw, UniformSection and SectionPlacement from 5L2's list. In OcctNet.ModelingAlgorithms (`Law/`, `GeomFill/`).
+Ported in three forked worktrees (Law; trihedrons; location laws) against the committed bases, then merged. Numbers from
+5951 are placeholders, renumbered on merge.
+
+5951. **Laws are working objects; Law_BSpline is geometry.**
+      - Law functions (`Law_Function` and its subclasses), trihedron laws, location laws, section laws and
+        SectionPlacement are working objects (decision 21), as the adaptors (decisions 101, 214): OCCT's setters stay
+        public (`SetCurve`, `SetInterval`, `SetTrsf`, `SetTolerance`, `Set`, `Init`, `Origine`, `SetAngle`,
+        `SetStopSurf`, `ChangeLaws`, ...), and evaluation may update state (Frenet's and Composite's current interval,
+        DiscreteTrihedron's samples). They are never frozen: a frozen law could not be evaluated.
+      - They keep the caller's objects as OCCT keeps the handles (adaptors, trihedron and section laws, Law_Composite's
+        list) and never change a caller's adaptor: `SetInterval` trims into a new adaptor. A location law does call
+        `SetCurve`, `SetInterval` and `Origine` on the trihedron law it holds, as OCCT does; a consumer that must keep a
+        caller's law unchanged copies it first (`Copy()` returns a new, independent law). A law is not safe to evaluate
+        from several threads at once; copy one per thread.
+      - `Law_BSpline` is a one-dimensional B-spline curve and follows the geometry rules (rules, section 8), as
+        Geom2d_BSplineCurve: mutators internal with `CheckMutable()`, twins with decision 133's names
+        (`DegreeIncreased`, `MultiplicityIncreased`, `MultiplicityIncremented`, `KnotInserted`, `KnotsInserted`,
+        `KnotRemoved` (null on failure), `Reversed`, `Segmented`, `WithKnot(s)`, `WithPeriodic`, `WithNotPeriodic`,
+        `WithOrigin`, `WithPole`, `WithWeight`, `PointAndTangentMoved`), arrays returned as `PackedList` copies and to
+        ported code through `Internal*()`, `Copy()` unfrozen.
+      - Where a Law_BSpline becomes shared it is frozen: `Law_BSpFunc` freezes the curve its constructor and `SetCurve`
+        keep, and `Curve()` returns it (the same object each time, decision 132's pattern); `Law_Interpolate.Curve()`
+        freezes its result as `GeomAPI_Interpolate.Curve()` does, with an internal non-freezing `InternalCurve()` for
+        `Law::Reparametrize` and Law_Interpol. The package statics (`MixBnd`, `MixTgt`, `Reparametrize`, `Scale`,
+        `ScaleCub`, `BSpline`) return new, unfrozen curves (MixBnd's Law_BSpFunc freezes the curve it keeps). Ported
+        code that changes a Law_BSpline works on a copy: CorrectedFrenet's `smoothlaw` (`Law->Copy()`, then
+        `RemoveKnot`), as OCCT does.
+      - Geometry the location and section laws build and hand out (`SectionPlacement.Section`/`ModifiedSection`,
+        `UniformSection.ConstantSection`/`BSplineSurface`, `LocationGuide.Section`) is new and unfrozen; UniformSection
+        keeps the caller's B-spline section, read only, as OCCT does. Nothing stored is handed out, so nothing else is
+        frozen.
+
+      Rejected: freezing laws when a consumer takes them (they could not be evaluated), and copying the caller's
+      trihedron law in the location laws' constructors (OCCT shares it, and BRepFill reads its state).
+5952. **Signatures of the virtual evaluators.**
+      - The trihedron laws' `D0`/`D1`/`D2` and `GetAverageLaw` vectors and the location laws' `D0`/`D1`/`D2` matrices
+        and vectors are `ref`: several laws leave them unwritten on some paths (a failed guide search, a singular
+        point), and OCCT's callers then read what they held. `GetInterval`/`GetDomain`, `Resolution`, `SectionShape`
+        and Law_Function's `D1`/`D2`/`Bounds` are `out` (always written). `IsTranslation`/`IsRotation`/`IsConstant`/
+        `IsConicalLaw(ref Error)` and `Rotation(ref Center)` are `ref` (the defaults leave them unwritten).
+      - 2D poles, weights and sections are the caller's `NCollection_Array1`s, as in OCCT.
+      - `GeomFill_Tensor` is a class with a `ref` indexer for OCCT's `operator()` (math_Matrix's pattern).
+      - GuideTrihedronAC's own `myCurve` and GuideTrihedronPlan's `myCurve`/`myTrimmed` hide the base's fields with
+        `new`, exactly as OCCT's class members do (so GuideTrihedronPlan's inherited `GetInterval` reads the base's null
+        field, as in OCCT; occt-issues.md).
+      - PlanFunc's `D2` (empty in OCCT) takes `ref`; `D2E` takes `out DFDT` and `ref` for the two outputs OCCT never
+        writes; LocationGuide's `Set` takes `ref LastAngle`; LocFunction's `DN` writes a `Span<double>` with `ref Ier`.
+5953. **Arrays in Law_BSpline are indexed from 1.** OCCT 8's `NCollection_Array1::operator=` copies the source's bounds,
+      so Law_BSpline's constructors and `SetPeriodic` (after `SetNotPeriodic`, FirstUKnotIndex > 1) keep arrays not
+      indexed from 1, and later 1-based reads are undefined behaviour natively (occt-issues.md). The port copies the
+      values into 1-based arrays (`CopyValues`), OCCT 7's behaviour and the evident intent. Law is not bound natively,
+      so no oracle can tell the difference; every other Law_BSpline bug is kept.
+5954. **Code OCCT repeats verbatim is a private helper** (decision 742): Law_BSpFunc's bound location (Value, D1, D2:
+      `LocateBound`), LocationDraft's seed search (D0, D1, D2: `Seed`) and LocationGuide's rotation (both D0s:
+      `Rotate`). Frenet's file-static FDeriv/DDeriv stay duplicated per file, as in OCCT.
+5955. **Other translations.**
+      - Darboux's unchecked `static_cast` to Adaptor3d_CurveOnSurface is a checked cast; its file statics NormalD0/1/2
+        take `ref gp_Dir` and `out` derivatives.
+      - Frenet's `std::sort` of doubles is `Span.Sort` (only equal values tie).
+      - GeomFill_SnglrFunc is an `Adaptor3d_Curve` with `sealed override` evaluators.
+      - SectionPlacement's unused private `SectionAxis` is internal. Not ported: Law_Interpolate's `ClearTangents`
+        (declared, never defined), FunctionGuide's `Deriv2T` (definition commented out), LocFunction's unused M/DM/D2M
+        members, LocationGuide's debug-only TraceRevol, and the `std::cout` lines.
+      - Copy() in Fixed, GuideTrihedronAC and GuideTrihedronPlan passes the curve even when null, as OCCT does.
+      - The package functions of `GeomFill` (GeomFill.cxx) are not needed here and are left to 5L2.
+5956. **Oracle tests** (`tests/OcctNet.Oracle.Tests/GeomFill`; the shared harness `TrihedronOracle` compares any bound
+      trihedron law). Native GeomFill_Frenet and GeomFill_CorrectedFrenet (bound, through `GeomFill_TrihedronLaw`) on
+      spines built identically on both sides: AdaptorOracleInputs' ten curve kinds through bounded GeomAdaptor_Curves,
+      planar zigzag B-splines with inflexions and straight runs, twisted B-splines (degrees 2 to 5, C0 to C(d-1) knots,
+      rational or not). Compared: SetCurve's result; D0, D1, D2 (return value and every vector, or a throw on both
+      sides) at random parameters, at the curve's interval bounds for C0 to CN, at the law's own C0 bounds (Frenet's
+      singular points) and 1e-7 either side, and at the ends; NbIntervals/Intervals for C0 to CN; GetAverageLaw,
+      IsConstant, IsOnlyBy3dCurve, ErrorStatus; SetInterval on a random sub-range with GetInterval and D0 to D2 there;
+      Copy(); CorrectedFrenet for sweeping and for evaluation, and EvaluateBestMode.
+      Frenet: 747,924 values (491,862 on the ten kinds, 256,062 on 150 planar B-splines, 100 with singular points);
+      CorrectedFrenet: 1,334,216 values (446,510 and 223,364 for evaluation on the kinds but offsets, 11,360 on offsets
+      of circles, 652,982 on 200 twisted and planar B-splines, sweeping and evaluation, all building an angle law), with
+      the same EvaluateBestMode for all 400. **All 2,082,140 values are bit-identical.** Random offsets of B-splines and
+      Bezier curves are left out of the CorrectedFrenet runs: OCCT's angle-law sampling takes steps near 1e-6 there, and
+      one SetCurve takes seconds to over ten minutes natively (occt-issues.md); the port, in a Debug build, took about
+      30 times native's time on the two such spines measured (48 s against 1.3 s), a figure for unit 5S2's benchmarks to
+      revisit in Release.
+      The Law functions and the other GeomFill classes are not bound: unit tests only (open question 20 asks for
+      `Law_Function`).
+5957. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, `Law/` and `GeomFill/`). OCCT's GTests GeomFill_CorrectedFrenet
+      (4) and GeomFill_GuideTrihedronAC (4), names kept. Unit tests: every Law class (values and derivatives against
+      finite differences and closed forms, Trim, Bounds, Intervals, Law_BSpline's knot operations against evaluation,
+      Law_Interpolate through points and tangents, the package statics); every trihedron law (orthonormal frames, D1/D2
+      against central differences, intervals, Frenet's singular points and straight runs, closed forms, Copy
+      independence, frozen spines); the location laws (D0 against D1/D2 differences, SetTrsf, intervals,
+      GetAverageLaw, IsTranslation/IsRotation, Copy), FunctionGuide/FunctionDraft derivatives, SectionPlacement and
+      UniformSection; LocationGuide with test trihedrons and with GuideTrihedronAC and GuideTrihedronPlan. The OCCT
+      bugs of occt-issues.md that change a result are pinned by tests.
+5958. **For later units.**
+      - **5L2 (sections and sweeps):** SectionLaw, UniformSection, SectionPlacement and Tensor are ported here; port the
+        other sections (EvolvedSection, NSections) against them, and the GeomFill package functions. The location laws'
+        evaluators take `ref` matrices and vectors (5952). `Copy()` of a LocationGuide with a rotation throws, as in
+        OCCT (occt-issues.md), so GeomFill_Sweep and BRepFill must not copy a guided law after `Set(..., true, ...)`.
+      - **5L3 (filling):** `GeomFill_TgtField` is here (TgtOnCoons derives from it); GeomFill_BoundWithSurf and
+        SimpleBound call `Law_BSpFunc.SetCurve`, which freezes the curve; GeomFill_ConstrainedFilling uses `Law.ScaleCub`
+        (an unfrozen result).
+      - **5P (plates):** GeomPlate's laws are `Law_Function`s (working objects); Law has unit tests only.
+      - **5Q (fair curves):** nothing of this unit is used.
+      - **5S1 (BRepFill laws):** `BRepFill_PipeShell` calls `new Law_Interpol()` then `Set(ParAndRad, IsPeriodic)` and
+        keeps the caller's Law_Function for `SetLaw`. BRepFill's location laws hold `GeomFill_LocationLaw`s and call
+        their `SetCurve`/`SetInterval`/`Copy`; keep OCCT's copies of the user's trihedron law per edge. LocationDraft's
+        trace derivatives are approximate (FunctionDraft::DerivT, occt-issues.md).

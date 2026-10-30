@@ -28,10 +28,14 @@ internal static class TrihedronOracle
 
     /// <summary>Runs <paramref name="theCases"/> random spines of every curve kind through both laws.</summary>
     internal static void Run(ITestOutputHelper theOutput, string theName, Func<N.GeomFill_TrihedronLaw> theNative,
-                             Func<GeomFill_TrihedronLaw> thePort, int theCases, int theSeed)
+                             Func<GeomFill_TrihedronLaw> thePort, int theCases, int theSeed, int[]? theSkippedKinds = null)
     {
         for (int aKind = 0; aKind < CurveKinds.Length; aKind++)
         {
+            if (theSkippedKinds is not null && Array.IndexOf(theSkippedKinds, aKind) >= 0)
+            {
+                continue;
+            }
             var anOracle = new Oracle(theOutput, theSeed + aKind);
             for (int i = 0; i < theCases; i++)
             {

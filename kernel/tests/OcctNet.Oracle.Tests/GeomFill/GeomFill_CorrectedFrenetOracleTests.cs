@@ -11,20 +11,51 @@ namespace OcctNet.Oracle.Tests;
 /// sweeping and for evaluation, and twisted and planar B-splines (where the angle law is built), with
 /// EvaluateBestMode.
 /// </summary>
+/// <remarks>
+/// Offset spines (kind 8) are left out of the random runs: on them CorrectedFrenet's angle-law sampling (steps of
+/// |SnglrFunc| / |SnglrFunc'|) takes steps near 1e-6, so a single SetCurve takes seconds to many minutes natively
+/// (occt-issues.md). <see cref="OffsetSpines_Short"/> compares a few offsets of circles, which stay fast.
+/// </remarks>
 public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
 {
+    private static readonly int[] SlowKinds = [8];
+
     [Fact]
     public void RandomSpines()
     {
         TrihedronOracle.Run(output, "GeomFill_CorrectedFrenet", () => new N.GeomFill_CorrectedFrenet(),
-                            () => new GeomFill_CorrectedFrenet(), 40, 20261101);
+                            () => new GeomFill_CorrectedFrenet(), 40, 20261101, SlowKinds);
     }
 
     [Fact]
     public void RandomSpines_ForEvaluation()
     {
         TrihedronOracle.Run(output, "GeomFill_CorrectedFrenet(true)", () => new N.GeomFill_CorrectedFrenet(true),
-                            () => new GeomFill_CorrectedFrenet(true), 20, 20261102);
+                            () => new GeomFill_CorrectedFrenet(true), 20, 20261102, SlowKinds);
+    }
+
+    /// <summary>Offsets of circles (conics' offsets are B-spline-like for the adaptor, so the angle law is built).</summary>
+    [Fact]
+    public void OffsetSpines_Short()
+    {
+        var anOracle = new Oracle(output, 20261104);
+        for (int i = 0; i < 10; i++)
+        {
+            (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = GeomOracleInputs.Ax2sFromDirection(anOracle);
+            using var aNAx2Owner = aNAx2;
+            double aR = anOracle.Real(1, 10), anOffset = anOracle.Real(0.1, 0.9) * aR * (anOracle.Bool() ? 1 : -1);
+            (N.gp_Dir aNDir, gp_Dir aDir) = GeomOracleInputs.Dirs(anOracle);
+            using var aNDirOwner = aNDir;
+            using var aNBasis = new N.Geom_Circle(aNAx2, aR);
+            using var aNC = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir, true);
+            var aPC = new Geom_OffsetCurve(new Geom_Circle(anAx2, aR), anOffset, aDir, true);
+            double aF = anOracle.Real(0, 1), aL = aF + anOracle.Real(1, 4);
+            using var aNA = new N.GeomAdaptor_Curve(aNC, aF, aL);
+            var aPA = new GeomAdaptor_Curve(aPC, aF, aL);
+            using var aNLaw = new N.GeomFill_CorrectedFrenet();
+            TrihedronOracle.Compare(anOracle, aNLaw, new GeomFill_CorrectedFrenet(), aNA, aPA, $"offset circle #{i}");
+        }
+        anOracle.Report("GeomFill_CorrectedFrenet on offset circles");
     }
 
     /// <summary>
