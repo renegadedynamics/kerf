@@ -42,7 +42,7 @@ internal sealed class BRepTools_CopyAtEntry
 {
     private readonly TopoDS_Shape myInput;
     private readonly TopoDS_Shape myCopy;
-    private readonly BRepTools_ReShape? myContext;
+    private BRepTools_ReShape? myContext;
     private readonly Dictionary<TopoDS_TShape, TopoDS_TShape>? myCopies;    // original -> copy
     private readonly Dictionary<TopoDS_TShape, TopoDS_TShape>? myOriginals; // copy -> original
     private Dictionary<TopoDS_TShape, TopoDS_TShape>? myFinal;              // copy -> what stands for it after Finish
@@ -76,6 +76,19 @@ internal sealed class BRepTools_CopyAtEntry
     }
 
     private static readonly Dictionary<TopoDS_TShape, TopoDS_TShape> s_noImages = new(ReferenceEqualityComparer.Instance);
+
+    /// <summary>
+    /// Gives the helper the context an algorithm created after the entry (ShapeFix_Face's FixMissingSeam creates one
+    /// when it has none), so that <see cref="Finish"/> re-keys it too. Ignored when a context was given at the entry:
+    /// a context created later holds requests on the copy's sub-shapes only, so nothing had to be moved at the entry.
+    /// </summary>
+    public void AttachContext(BRepTools_ReShape? theContext)
+    {
+        if (myContext is null && !myIsFinished)
+        {
+            myContext = theContext;
+        }
+    }
 
     /// <summary>The input.</summary>
     public TopoDS_Shape Input() => myInput;
