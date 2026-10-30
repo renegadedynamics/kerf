@@ -10,7 +10,7 @@ namespace Occt;
 /// intersection (OCCT's instantiation of IntImp_ZerImpFunc.gxx over Adaptor3d_Surface, decision 607).
 /// </summary>
 public sealed class IntPatch_TheSurfFunction
-    : IntImp_ZerImpFunc<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>, IIntWalk_IWFunction
+    : IntImp_ZerImpFunc<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>, IIntWalk_IWFunction<IntPatch_TheSurfFunction>
 {
     public IntPatch_TheSurfFunction()
     {
@@ -25,4 +25,13 @@ public sealed class IntPatch_TheSurfFunction
         : base(IS)
     {
     }
+
+    /// <summary>A copy of <paramref name="theOther"/> (OCCT's implicit copy constructor; decision 5301).</summary>
+    public IntPatch_TheSurfFunction(IntPatch_TheSurfFunction theOther)
+        : base(theOther)
+    {
+    }
+
+    static IntPatch_TheSurfFunction IIntWalk_IWFunction<IntPatch_TheSurfFunction>.Copy(IntPatch_TheSurfFunction theOther) =>
+        new(theOther);
 }
