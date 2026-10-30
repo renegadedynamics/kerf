@@ -17,7 +17,7 @@ namespace Occt;
 /// <remarks>
 /// With <see cref="SetIntersect"/> false the arguments are not intersected: they must already make closed volumes
 /// that share their faces. The result is a solid, or a compound of solids. <see cref="Box"/> and <see cref="Faces"/>
-/// return the box and the faces the solids were built from (OCCT's working data; the box is unfrozen, the port's own).
+/// return the box and the faces the solids were built from (OCCT's working data; the box is published frozen).
 /// </remarks>
 public class BOPAlgo_MakerVolume : BOPAlgo_Builder
 {
@@ -51,8 +51,15 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     /// <summary>Whether the arguments are intersected.</summary>
     public bool IsIntersect() => myIntersect;
 
-    /// <summary>The solid box enclosing the faces.</summary>
-    public TopoDS_Solid Box() => mySBox;
+    /// <summary>The solid box enclosing the faces (frozen).</summary>
+    public TopoDS_Solid Box()
+    {
+        mySBox.TShape()?.FreezeGraph();
+        return mySBox;
+    }
+
+    /// <summary>The solid box, unfrozen, for ported code.</summary>
+    internal TopoDS_Solid InternalBox() => mySBox;
 
     /// <summary>The faces the solids are built from (each face in both orientations, and the box's faces).</summary>
     public NCollection_List<TopoDS_Shape> Faces() => myFaces;
