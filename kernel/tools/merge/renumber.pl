@@ -30,7 +30,7 @@ for (@lines) {
 # heading in this merge always wins.
 (my $histfile = __FILE__) =~ s/[^\/\\]+$/decision-map.txt/;
 my %hist;
-if (open my $hh, '<', $histfile) { while (<$hh>) { $hist{$1} = $2 if /^(\d+) (\d+)$/; } close $hh; }
+if (open my $hh, '<', $histfile) { while (<$hh>) { $hist{$1} = $2 if /^(\d+) (\d+)\r?$/; } close $hh; }
 my %new = %map;
 for my $k (keys %hist) { $map{$k} = $hist{$k} unless exists $map{$k}; }
 if (%new) { open my $ha, '>>', $histfile or die $!; print $ha "$_ $new{$_}\n" for sort { $a <=> $b } keys %new; close $ha; }
