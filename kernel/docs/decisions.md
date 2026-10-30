@@ -6284,3 +6284,132 @@ placeholders, renumbered on merge.
         thread-safe (its intersector, adaptors and iterators): one per context, so one per worker (decision 580).
       - Geom2dInt_GInter is no longer sealed. Geom2dHatch_Classifier, Geom2dHatch_Elements and
         Geom2dHatch_FClass2dOfClassifier are TopClass instantiations like BRepClass's (decision 285).
+
+## Phase 6: unit 6B, context and BOP tools
+
+IntTools_Context (filled in 6A's file), IntTools_FClass2d, IntTools_TopolTool, the rest of IntTools_Tools; BOPTools'
+AlgoTools (with `_1` and `_2`), AlgoTools2D (with `_1`), AlgoTools3D, Set, ConnexityBlock and CoupleOfShape; GeomInt's
+one package function. In OcctNet.ModelingAlgorithms, ported in four worktrees and merged. Numbers from 6401 are
+placeholders, renumbered on merge; plan decisions are cited by their merged numbers (576–590), 6A's by 617–641, 5H's
+by 663–670.
+
+6401. **IntTools_Context's cache audit** (plan 2.4, decision 580). Each cached tool was read in the port for state
+      carried from one call to the next:
+      - **No result-changing state:** IntTools_FClass2d (BRepClass_FaceExplorer's probing restarts at every
+        `Segment`; the polygons are read-only; a new FClassifier per call), GeomAPI_ProjectPointOnSurf (Extrema_GenExtPS
+        keeps its grid nodes but recomputes every distance at each Perform; FuncPSNorm.SetPoint clears the solutions),
+        GeomAPI_ProjectPointOnCurve (Extrema_ExtPC clears results and intervals at each Perform), the hatcher (decision
+        670, confirmed: ClrHatchings, `Trim(IndH)`'s ClrPoints, ComputeDomains' ClrDomains), BRepAdaptor_Surface
+        (evaluation caches only), the boxes and oriented boxes (computed once from the shape).
+      - **BRepClass3d_SolidClassifier carries native state:** BRepClass3d_SolidExplorer's `myParamOnEdge` advances
+        when a pass over the faces finds no ray and is never reset; that pass also rebinds cached face intersectors
+        unrestricted; IntCurvesFace_Intersector's `myIsParallel` is never reset, so SClassifier's parallel-line check
+        can read a stale flag. Rare paths only (none hit on the tests' solids); kept as OCCT has them, so a context
+        per worker reproduces native's per-thread behaviour (occt-issues.md).
+      - **SurfaceData is call-history state** (occt-issues.md): IntTools_BeanFaceIntersector caches surface boxes in
+        it keyed by sample index, enlarged by the criteria (the edge's tolerance plus the face's) of whichever edge
+        computed them first. A later edge on the same face reuses them; under parallel loops which edge comes first
+        depends on the thread. Unit 6C decides (decision 6410).
+      - Tests: a context reused over shuffled and reversed inputs answers every query (FClass2d, StatePointFace,
+        IsPointInFace, IsValidPointForFace, ProjPS, ComputePE/VE/VF, ProjectPointOnEdge, IsVertexOnLine,
+        SolidClassifier; PointInFace; IsSplitToReverse, ComputeState, IsInternalFace) bit for bit as a fresh context
+        per call, on primitives and data/occ shapes; context solvers run through BOPTools_Parallel give the serial
+        answers at every degree of parallelism.
+6402. **GeomInt's package function is ported here.** `GeomInt.AdjustPeriodic` (the whole of GeomInt.cxx) is a
+      `static partial class` in GeomInt/GeomInt.cs, because IntTools_FClass2d and BOPTools_AlgoTools2D call it; unit 5G
+      adds its classes beside it. `modf`'s integer part is `Math.Truncate`.
+6403. **IntTools_Context's API.**
+      - The cached tools are returned as the context's own objects (OCCT returns references): `ProjPS(F).Perform(P)`
+        then reads the result before the next call on the same context. `SurfaceData(F)` is the cached
+        IntTools_SurfaceRangeLocalizeData itself (decision 641). The boxes are structs, returned by value.
+      - Shape-keyed maps use TopTools_ShapeMapHasher (orientation ignored, so `FClass2d(F.Reversed())` is the same
+        classifier); `ProjPT`'s map is keyed by the curve object (reference equality, OCCT's handle hash).
+      - Outputs OCCT leaves unwritten on failure are `ref` (ComputePE, ComputeVE, ComputeVF, IsVertexOnLine,
+        ProjectPointOnEdge); `UVBounds` writes all four through `out`. `theFuzz` defaults are overloads.
+      - `SetPOnSProjectionTolerance` clears the cached surface projectors, as OCCT; the allocator constructor goes, its
+        flag stays internal.
+6404. **IntTools_FClass2d and IntTools_TopolTool.** FClass2d is a sealed working class; its face explorer is made
+      lazily (`??=`), as OCCT's mutable `unique_ptr`. The parameterless constructor leaves a null face and zero
+      bounds (OCCT: uninitialised). U1..V2 are set and never read, as in OCCT (CS0414 suppressed on those fields only).
+      TopolTool derives from Adaptor3d_TopolTool; `Initialize()` throws Standard_NotImplemented; OCCT's off-by-one
+      sample indexing is kept (occt-issues.md); the file-static `Analyse` is a private static.
+6405. **BOPTools_AlgoTools, AlgoTools2D and AlgoTools3D are static classes; AlgoTools is partial over three files**
+      matching OCCT's .cxx files (BOPTools_AlgoTools.cs, `_1.cs`, `_2.cs`, with PointOnEdge in `_2` where OCCT defines
+      it); AlgoTools2D_1.cxx is in AlgoTools2D.cs. Signatures:
+      - outputs OCCT leaves unwritten on some path are `ref` (`PointInFace`, `PointNearEdge`,
+        `GetApproxNormalToFaceOnEdge`, `EdgeTangent`, `HasCurveOnSurface`'s curve, `Make2D`'s tolerance, `GetFaceOff`,
+        `GetEdgeOff`, `GetEdgeOnFace`, `MakeVertex`, `MakeContainer`, `OrientEdgesOnWire`, `OrientFacesOnShell`);
+        `MakePCurveOnFace`'s `TolReached2d` is `ref` because OCCT reads it; outputs always written are `out`;
+      - `int* theError = nullptr` becomes overloads with and without `out int theError`;
+      - context arguments are `IntTools_Context?` where OCCT checks for null (the functions then make their own
+        adaptor or context) and non-null where OCCT dereferences them unchecked;
+      - `theReport` is `Message_Report?`; `theFuzz` defaults are overloads.
+6406. **Writes into the shapes BOPTools is given** (plan 2.3). Kept as OCCT has them; ported callers pass shapes they
+      built, copied or (in non-destructive mode) EmptyCopied, and a frozen input throws at the first write (tested):
+      - AlgoTools2D: `BuildPCurveForEdgeOnFace` (UpdateEdge), `AttachExistingPCurve` (Transfert into the new edge,
+        UpdateVertex on its vertices);
+      - AlgoTools3D: both `DoSplitSEAMOnFace` forms (UpdateEdge on the split);
+      - AlgoTools: `MakeEdge` (UpdateVertex on the given vertices), `MakePCurve` (UpdateEdge per face, then
+        `BRepLib.SameParameter`), the three `UpdateVertex` forms;
+      - AlgoTools_1: the private `UpdateShape` (UpdateEdge/UpdateVertex tolerances, only ever increased), reached from
+        CorrectTolerances, CorrectPointOnCurve, CorrectCurveOnSurface and CorrectShapeTolerances.
+
+      `MakeSectEdge` reads the maker's unfrozen `InternalShape()` before setting the range; `MakeSplitEdge` and
+      `CopyEdge` EmptyCopy; `OrientFacesOnShell` builds a new shell. No functional twins are added: BOPAlgo calls these
+      on results it is still building. A public twin over `BRepTools_CopyAtEntry` can be added if a caller outside
+      BOP needs one.
+6407. **BOPTools_AlgoTools' tolerance corrections run serially whatever `bRunParallel` says.** Their parallel items
+      (edges of a face, faces sharing edges and vertices) update shared tolerances with unsynchronised, order-dependent
+      read-compare-writes (CheckEdge's `0.1 * Tol` margin, CorrectWires' and CorrectEdgeTolerance's comparisons), so
+      native's parallel result depends on thread timing (occt-issues.md). Serial is native's serial result and
+      serial = parallel holds (decision 580). The flag is kept for OCCT's API, and the five solvers (CPC, CWT, CDT,
+      CVT, CET) still go through `BOPTools_Parallel.Perform`.
+6408. **Values and copies.**
+      - BOPTools_Set is a sealed class (filled by Add, then a map key) with OCCT's copy constructor and Assign; its
+        equality is IsEqual (same count, every shape IsSame), its hash OCCT's normalised sum of shape hashes (values
+        differ from native's address-based ones; maps iterate in insertion order, so no result changes).
+      - BOPTools_ConnexityBlock is a sealed class with a copy constructor that copies both lists: the wire and shell
+        splitters change its lists in place, and OCCT copies blocks by value (WireSplitter's `myCB = theCB` becomes
+        `new(theCB)`). MakeConnexityBlocks appends its local block itself, which isn't used afterwards.
+      - BOPTools_CoupleOfShape is a struct with internal setters, `With` twins and field equality.
+      - OCCT's default-hashed `NCollection_Map<TopoDS_Shape>`/`DataMap<TopoDS_Shape, …>` (OrientEdgesOnWire,
+        CorrectWires' edge lengths) use `EqualityComparer<TopoDS_Shape>.Default` (orientation included, as
+        `operator==`); the others use TopTools_ShapeMapHasher.
+      - IntTools_Tools' `ComputeTolerance` and AlgoTools' `ComputeTolerance(face, edge)` give 0 through `out` on
+        failure, where OCCT leaves them unchanged (no caller reads them then). `SegPln`'s outputs are `ref`.
+        `RejectLines` changes its input sequence as OCCT does through a const_cast.
+6409. **Tests and oracle.**
+      - Unit tests (`tests/OcctNet.ModelingAlgorithms.Tests/IntTools`, `/BOPTools`): known answers for every public
+        static of IntTools_Tools, AlgoTools, AlgoTools2D and AlgoTools3D on primitives and data/occ shapes; FClass2d
+        and TopolTool; BOPTools_Set; the context reuse tests of decision 6401; the tolerance corrections on unfrozen
+        copies with shrunk tolerances (BRepCheck valid afterwards, frozen input throws, serial = parallel through
+        DeterminismHarness at several degrees); context solvers through BOPTools_Parallel (serial = parallel). TKBO has
+        no GTests for these classes.
+      - Oracle (`tests/OcctNet.Oracle.Tests/IntTools`, `/BOPTools`). Of the unit's classes only IntTools_FClass2d is
+        bound natively:
+        - IntTools_FClass2d against native on 3,072 faces (data/occ's 37 BRep files, and every 4th BRep file of the
+          test dataset under 300 KB): 82,184 random points in and around the UV box, near the pcurves and shifted by
+          periods; Perform with and without recadre, TestOnRestriction, PerformInfinitePoint, IsHole; 338,880
+          comparisons, **0 mismatches**.
+        - `BOPTools_AlgoTools.ComputeState(point, solid)` against native BRepClass3d_SolidClassifier (which it wraps)
+          on 50 data/occ solids, 4,968 points at two tolerances: 0 mismatches. The context's ProjPS and ProjPC
+          against native GeomAPI_ProjectPointOnSurf/OnCurve initialised as the context does: 1,134 faces, 1,979
+          edges, 18,678 points, 66,160 bitwise comparisons, 0 mismatches.
+        - `IsSplitToReverse`, `PointInFace`, `MakePCurve` and `CorrectTolerances` aren't bound: they are checked by
+          the unit tests and, through BOPAlgo, by the Boolean oracle of 6E onwards. Binding BOPTools_AlgoTools (and
+          AlgoTools3D) would let them be compared directly (open question 20).
+6410. **Notes for later units.**
+      - **6C (edge intersectors):** decide SurfaceData's box cache (decision 6401). Recommended: key the cached boxes
+        by the criteria as well as the sample (or give a BeanFaceIntersector run its own boxes when its criteria
+        differ from the cached ones). That keeps native's serial result whenever the edges on a face share a
+        tolerance and makes serial = parallel hold; record the residual difference in occt-issues.md. IsMicroEdge runs
+        IntTools_ShrunkRange with a nullable context, which ShrunkRange.Perform never uses. `IsVertexOnLine` and
+        `ComputePE/VE/VF` take `ref` outputs.
+      - **6D (face/face):** `IsValidBlockForFace(s)`, `IsVertexOnLine`, `IntTools_Tools.SplitCurve`, `RejectLines`,
+        `CheckCurve`, `ComputeTolerance` and BOPTools_AlgoTools2D's `MakePCurveOnFace`/`AdjustPCurveOnFace` are
+        ported; FaceFace's tolerance code reads `ComputeTolerance`'s outputs only on success.
+      - **6E (pave filler):** run solvers through `BOPTools_Parallel.Perform(myRunParallel, solvers, myContext)`; keep
+        each solver's calls on its context in OCCT's order (the solid classifier's state, decision 6401). MakeEdge,
+        MakePCurve, UpdateVertex, CorrectTolerances and the other in-place tools must get shapes the filler built or
+        EmptyCopied (decision 6406). BOPTools_ConnexityBlock is copied with `new(cb)` where OCCT copies by value.
+      - **6F:** BOPAlgo_BOP's stub dimension helpers can be replaced by `BOPTools_AlgoTools.Dimensions`/`Dimension`.
