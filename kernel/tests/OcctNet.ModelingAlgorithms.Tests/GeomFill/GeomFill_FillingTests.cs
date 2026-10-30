@@ -275,7 +275,7 @@ public class GeomFill_FillingTests
     public void BSplineCurves_curved_two_curves_leave_the_callers_curve_unchanged()
     {
         // C1's end is C2's start: OCCT reverses the caller's C1 (and builds from the unreversed copy); the port
-        // builds the same surface and leaves C1 alone (decision 5921, occt-issues.md)
+        // builds the same surface and leaves C1 alone (decision 5923, occt-issues.md)
         Geom_BSplineCurve C1 = BS(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 1), new gp_Pnt(2, 0, 0));
         Geom_BSplineCurve C2 = BS(new gp_Pnt(2, 0, 0), new gp_Pnt(2, 1, 1), new gp_Pnt(2, 2, 0));
         C1.Freeze();

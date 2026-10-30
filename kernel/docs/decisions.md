@@ -7424,3 +7424,146 @@ Ported in three forked worktrees (Law; trihedrons; location laws) against the co
         keeps the caller's Law_Function for `SetLaw`. BRepFill's location laws hold `GeomFill_LocationLaw`s and call
         their `SetCurve`/`SetInterval`/`Copy`; keep OCCT's copies of the user's trihedron law per edge. LocationDraft's
         trace derivatives are approximate (FunctionDraft::DerivT, occt-issues.md).
+
+## Phase 5: unit 5L3, surfaces from curves
+
+GeomFill's filling half: Profiler, Generator, SectionGenerator, Line, AppSurf; Filling, Coons, Curved, Stretch,
+FillingStyle, BSplineCurves, BezierCurves; the boundaries (Boundary, SimpleBound, BoundWithSurf, DegeneratedBound),
+CoonsAlgPatch, TgtOnCoons, CornerState, ConstrainedFilling; GordonUtilities, NetworkSurface and Gordon (new in OCCT 8);
+and AppBlend (Approx, the AppSurf generic, the context switches). In OcctNet.ModelingAlgorithms (`GeomFill/`,
+`AppBlend/`). Ported in two forked worktrees (the fillings and boundaries; Gordon) on a base of the profiler and
+AppBlend, then merged. Numbers from 5921 are placeholders, renumbered on merge.
+
+5921. **Working objects; surfaces handed out frozen; the caller's curves never changed.**
+      - Every class of the unit is a working object (decision 21; decision 5951 for the laws): OCCT's setters stay
+        public (`AddCurve`, `Perform`, `Init`, `SetParam`, `SetContinuity`, `SetParType`, `SetCriteriumWeight`,
+        `SetDomain`, `ReBuild`, `Tol3d`, `Tolang`, `Reparametrize`, `SetFunc`).
+      - `Surface()` of GeomFill_Generator, BSplineCurves, BezierCurves, ConstrainedFilling, NetworkSurface and Gordon
+        freezes the surface and returns the same object each time (decision 132's pattern); `InternalSurface()`
+        gives ported callers (BRepFill, 5S1/5T) the unfrozen one.
+      - GeomFill_Profiler converts each curve it is given into a B-spline of its own (GeomConvert copies; conics go
+        through GeomConvert_ApproxCurve's `InternalCurve()`) and changes only those. `Curve(i)` hands one out frozen,
+        `InternalCurve(i)` unfrozen; a `Perform` after `Curve(i)` first replaces frozen curves by copies (the one
+        copy-first site of the unit). Its arrays are copied into the caller's (`Poles`, `Weights`,
+        `KnotsAndMults`) with `Assign`, which takes the source's bounds as OCCT 8's `operator=` does.
+      - The boundaries keep the caller's adaptors, bounds and laws as OCCT keeps the handles (BoundWithSurf a
+        `ShallowCopy()` of the curve-on-surface adaptor, which OCCT copies by value); SimpleBound and BoundWithSurf
+        freeze the reparametrisation curves through `Law_BSpFunc.SetCurve`; ConstrainedFilling reparametrises the
+        caller's boundaries in place, as OCCT does, and its `Law.ScaleCub` results go unfrozen into
+        `TgtField.Scale`. GeomFill_SectionGenerator keeps the caller's parameter array (OCCT's handle) and writes
+        into it, as OCCT does (occt-issues.md).
+      - Gordon converts the caller's curves with GeomConvert (copies) and works on further copies; NetworkSurface
+        copies the arrays and reads the caller's curves through a Profiler. The interpolated curves GeomLib and
+        GeomAPI freeze on the way are only read afterwards.
+5922. **AppBlend_AppSurf is one generic class over instance interfaces** (decisions 142, 202 and 607).
+      - `AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend_Approx`, `where TheSectionGenerator :
+        IAppBlend_SectionGenerator<ThePoint>` and `TheLine : class, IAppBlend_Line<ThePoint>`. The generator and the
+        line are objects the caller gives, so their members are instance interfaces (decision 607's rule for what a
+        generic reads from an object): GetShape (`out`), Knots, Mults, the two Section overloads and Parameter;
+        NbPoints and Point. `ThePoint` is what the line gives for a point: `int` for GeomFill_Line,
+        Blend_Point for BRepBlend_Line (phase 7).
+      - OCCT's instantiations are sealed subclasses with OCCT's constructors: GeomFill_AppSurf here; unit 5L2's
+        GeomFill_AppSweep is `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>` with
+        GeomFill_SweepSectionGenerator implementing `IAppBlend_SectionGenerator<int>`.
+      - AppBlend_Approx is an abstract class; the arrays its accessors return (`SurfPoles`, `SurfUKnots`,
+        `Curve2dPoles`, ...) are the object's own (decision 143: shared, don't modify), `Surface` and `Curve2d` copy
+        them into the caller's arrays; `SurfShape`, `Curves2dShape` and `TolReached` have `out` parameters.
+      - AppBlend_Debug.cxx's two switches (`AppBlend_Set/GetContextSplineApprox`, `...ApproxWithNoTgt`) are
+        process-wide statics with internal setters (decision 415); the gxx's `static bool scal = 1` is a constant
+        (its dead branch is kept). `AppDef_Compute theapprox = theAppDef` (a C++ object copy) is a reference
+        assignment: the first object is never used again.
+5923. **BSplineCurves and BezierCurves leave the caller's curve unchanged.** In `Init(C1, C2, GeomFill_CurvedStyle)`,
+      when CC1's end is CC2's start, OCCT calls `C1->Reverse()` on the caller's curve, not on its copy CC1, then
+      builds from the unreversed copy (occt-issues.md). The port skips the write: the result is OCCT's, and a frozen
+      or shared curve stays as it was (natively a second call sees the curve reversed). Pinned by a test.
+5924. **Signatures.**
+      - GeomFill_CornerState is a value struct (rules, section 3): public getters, internal setters `Gap(G)`,
+        `TgtAng`, `Constraint()`, `NorAng`, `DoKill` with twins `WithGap`, `WithTgtAng`, `Constrained`,
+        `WithNorAng`, `Killed`; `IEquatable`, `ToString`; `new()` has OCCT's defaults.
+      - `out` where always written: Boundary `D1`, `D1Norm`, `Bounds`, `Points`; `TgtOnCoons.D1(W, out, out)`;
+        `CoonsAlgPatch.Func(out, out)`; `CornerState.IsToKill(out)`; the AppSurf shape and tolerance queries.
+        `ConstrainedFilling.Eval(W, Ord, Span<double> Result)` replaces OCCT's `double&` used as an array; its
+        evaluator is a private nested `AdvApprox_EvaluatorFunction`. Bezier poles and weights are read through
+        Geom_BezierCurve's copying accessors.
+      - GeomFill_Gordon's enums are nested (`ResultStatus`, `ApproximationMode`, `BuildStage`;
+        `GeomFill_NetworkSurface.ResultStatus`); `BuildReport` is an equatable struct with OCCT's defaults and
+        `Report()` returns a copy. `Gordon.Init` takes `NCollection_Array1<Geom_Curve>`, `NetworkSurface.Init`
+        `NCollection_Array1<Geom_BSplineCurve?>`. GordonUtilities.pxx is the internal static class
+        `GordonUtilities` (OCCT's namespace) with its structs nested.
+      - `int&`/`bool&` outputs are `ref` where OCCT reads them and `out` otherwise; an `out` OCCT leaves unwritten
+        on a failure path is assigned null or 0 (GordonUtilities' `uniteKnots`, `DenominatorProductEvaluator`,
+        ConstrainedFilling's `nbnp`/`nbnk` after a failed `PrepareInsertKnots`, which OCCT reads uninitialised).
+      - Omissions: the OCCT_DEBUG chronometers and couts; `OCC_CATCH_SIGNALS` (each `try/catch (Standard_Failure)`
+        kept). ConstrainedFilling's `CheckTgteField`, `CheckApprox` and `CheckResult` write to an optional
+        `TextWriter` (Console.Out by default) with `G6` numbers, for cout. BezierCurves' `Arrange` result, which
+        OCCT's release build ignores, is checked (decision 9; native threw on the same inputs).
+5925. **Gordon's parallel loop, sorts and views.**
+      - The one `OSD_Parallel::For` (`fillContactTable`) is `OSD_Parallel.For` with OCCT's sequential flag
+        `!theToUseParallel`; each pair writes only its own ContactSet, and `std::atomic<bool>` (an early exit on
+        failure) is an int read and written with `Volatile`. Parallel gives the serial result (decision 490): the
+        replay test runs 120 recorded cases in the other mode.
+      - The `std::sort` calls (doubles, contacts, ranked curves, which can tie, knot entries) go through `std_sort`
+        with MSVC's tie order (decision 491).
+      - `toMatrix` shares the table's storage as OCCT's math_Matrix over `&ChangeFirst()` does (an internal
+        `NCollection_Array2.Storage()` was added for it); `toOneBasedArrayView` returns a copy, its uses being
+        read-only.
+5926. **Native recordings** (none of these classes is bound in build123d.NET, so there is no direct oracle; the
+      indirect one is 5T's ThruSections). Three MSVC recorders built against build123d.NET's native OCCT write
+      reproducible random inputs as round-trip decimals and every result double as its bits; the tests replay each
+      case on the port and compare every token.
+      - `tools/fillrec` (`GeomFill/Recordings/fillrec.txt.gz`): 880 cases, 568,389 doubles. BSplineCurves and
+        BezierCurves in each style on 2, 3 and 4 curves (degrees 1 to 5, rational or not, interior and double knots,
+        shuffled and reversed, degenerated sides; 9 Standard_ConstructionErrors on both sides); Coons, Curved,
+        Stretch and the two-row Curved directly; ConstrainedFilling with SimpleBound and BoundWithSurf, 3 and 4
+        sides, NoCheck, SetDomain and ReBuild, Eval, the boundaries' Value/D1/Norm/D1Norm/Reparametrize, the
+        CoonsAlgPatch and TgtOnCoons. **All bit-identical.**
+      - `tools/gordonrec` (`gordonrec.txt.gz`): 380 cases (310 Gordon: analytic networks, reversed and shuffled
+        curves, rational lines with and without the approximate fallback, closed and periodic profiles; 70
+        NetworkSurface), 353 done and 27 failing with the same status on both sides, a quarter in parallel mode.
+        **All bit-identical.**
+      - `tools/appsurfrec` (`appsurfrec.txt.gz`): 400 cases, 6,475 tokens. GeomFill_Profiler and Generator on 2 to 6
+        sections (B-splines, Beziers, circle arcs, segments, periodic B-splines among non-periodic ones); AppSurf on
+        2 to 8 sections in its four ways (Bezier pieces, B-spline least squares with each continuity and
+        parametrisation, the smoothing, pieces of at most NbMaxP sections), known parameters or not, and Draw's
+        `appsurf` settings. 80 generated surfaces and 208 approximations done; the other cases fail on both sides
+        with the same exception or `IsDone` false. **All bit-identical** but 10 smoothings of two sections, where
+        native throws Standard_OutOfRange after reading past AppDef_Variational's points and the port's range check
+        throws Standard_RangeError (its base) first (occt-issues.md, AppDef); the test attributes them by that
+        pattern. The recorder never asks for all-periodic sections, where the profiler's knot insertion can corrupt
+        native's heap (occt-issues.md). In two cases coin flips made them all periodic anyway: the profile came out
+        with unequal pole counts, the same on both sides, and like any unequal profile (on which OCCT's Generator
+        and AppSurf read and write past their arrays) the case stops after it.
+5927. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests/GeomFill`).
+      - OCCT's GTests GeomFill_BSplineCurves (OCC28131_FillSurfaceFromBezierAndInterpolatedCurves; the two offset
+        cases need BRepOffset, phase 7) and GeomFill_Gordon (all 64; in InterpolatedPeriodicProfilesWithAlignedSeams
+        OCCT calls `SetOrigin` on an interpolated curve the port hands out frozen, so the test uses `WithOrigin`),
+        names kept.
+      - Unit tests: the fillings (boundaries kept, bilinear grids, weights, the three styles with 2 to 4 curves in
+        any order, frozen inputs unchanged and results frozen), the boundaries' derivatives against finite
+        differences, CoonsAlgPatch, TgtOnCoons, CornerState, ConstrainedFilling (3 and 4 sides, NoCheck, SetDomain,
+        ReBuild, the checks); GordonUtilities' helpers, NetworkSurface and Gordon (frozen inputs, repeatable
+        results, BuildReport); the profiler (common profile, shapes kept, frozen hand-out and copy-first, periodic
+        sections), Generator, SectionGenerator, Line and AppSurf (its four ways through the sections, state and
+        argument checks, repeatability). The OCCT bugs of occt-issues.md that change a result are pinned by tests.
+5928. **Draw-lite** (decision 405's conventions). GeometryTest_SurfaceCommands.cxx's `appsurf` (SectionGenerator,
+      AppSurf(3, 8, Confusion, PConfusion, 0)) and `fillcurves` (GeomFill_BSplineCurves of the four curves converted
+      with Convert_RationalC1, style 1, 2 or 3) in `GeometryTestSurfaceCommands`. `ruled` needs `GeomFill::Surface`
+      (GeomFill.cxx, unit 5L2) and `sweep`/`tuyau` GeomFill_Pipe (5L2): left to 5L2 or 5W. Corpus
+      (`DrawSurfaceFromCurvesCorpusTests`, `Before5L3` removes the two commands): 5 cases use them; runnable 0
+      before, 4 after (bugs/filling bug13904, bug16119, bug16833, bug27775), all OK. The fifth needs `offsetload`,
+      `sewing` and the Booleans.
+5929. **For later units.**
+      - **5T (lofts):** BRepFill_Generator and `BRepFill.Face/Shell` use GeomFill_Generator (call `Perform`, then
+        `InternalSurface()` if the surface is changed or stored unfrozen); BRepFill_NSections and ThruSections'
+        smooth lofts use GeomFill_SectionGenerator + GeomFill_Line + GeomFill_AppSurf (`SetParam` keeps the
+        caller's array; `Perform(Lin, Sec, true)` with SetContinuity/SetParType/SetCriteriumWeight, or
+        `PerformSmoothing`). The arrays AppSurf returns are its own: build the surface from them (a new
+        Geom_BSplineSurface copies). All-periodic sections throw Standard_RangeError in the profiler where native
+        corrupts its heap.
+      - **5L2:** GeomFill_AppSweep instantiates `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>`
+        (decision 5922); `ruled` waits for `GeomFill::Surface`, which calls GeomFill_Generator.
+      - **5P (plates):** GeomFill_ConstrainedFilling and BoundWithSurf are ready (ChFi3d uses them in phase 7);
+        ConstrainedFilling reparametrises the boundaries it is given, so a caller reusing one builds a fresh one.
+      - **Phase 7 (BRepBlend):** BRepBlend_AppSurf is `AppBlend_AppSurf<Blend_AppFunction, BRepBlend_Line,
+        Blend_Point>` with Blend_AppFunction and BRepBlend_Line implementing the two interfaces; ChFi3d sets the
+        AppBlend context switches through the internal setters.

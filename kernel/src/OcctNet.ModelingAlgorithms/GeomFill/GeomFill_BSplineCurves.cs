@@ -437,7 +437,7 @@ public class GeomFill_BSplineCurves
             else if (CC1.EndPoint().IsEqual(CC2.StartPoint(), Eps))
             {
                 // OCCT: reverses the caller's C1, not its copy CC1, so the filling is built from the unreversed
-                // copy. The port leaves the caller's curve unchanged (decision 5921): the result is OCCT's
+                // copy. The port leaves the caller's curve unchanged (decision 5923): the result is OCCT's
                 // (occt-issues.md).
                 IsOK = true;
             }

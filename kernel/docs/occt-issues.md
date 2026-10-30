@@ -942,3 +942,28 @@ bounds of Law_BSpline (decision 5953).
 | `GeomFill_CurveAndTrihedron`, `LocationDraft`, `LocationGuide::GetAverageLaw` | The matrix's columns are (T, N, B), where D0 to D2 give (N, B, T) | The average law is not the average of M(t). Kept, pinned by a test (CurveAndTrihedron) |
 | `GeomFill_UniformSection::BarycentreOfSurf` | Starts at the section's first parameter but steps to the converted B-spline's last parameter | A wrong sample range when the two differ. By reading |
 | `GeomFill_LocFunction::DN` | Any order other than 0 to 2 dereferences a null pointer | Access violation natively; Standard_OutOfRange in the port (tested) |
+
+## Phase 5: unit 5L3, surfaces from curves
+
+Found while porting GeomFill's filling half and AppBlend. Each is ported as OCCT has it, except the reversal of the
+caller's curve in BSplineCurves and BezierCurves (decision 5923). None was found in GordonUtilities, NetworkSurface or
+Gordon.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Coons::Init`, rational form | The poles put P2 in column 1 and P4 in column NU, the weights W4 in column 1 and W2 in column NU | Through BSplineCurves/BezierCurves, which pass (P1, P4, P3, P2, W1, W4, W3, W2), rational Coons fillings get the left and right boundary weights swapped. Kept, pinned by a test |
+| `GeomFill_CoonsAlgPatch::Value` | Evaluates bounds 0 and 2 at V instead of U | A wrong point; `D1U`, `D1V` and `DUV` are right, and ConstrainedFilling uses only those. Kept, pinned by a test |
+| `GeomFill_BSplineCurves::Init`, `GeomFill_BezierCurves::Init` (two curves, CurvedStyle) | When CC1's end is CC2's start, calls `C1->Reverse()` on the caller's curve, not on its copy | The result is built from the unreversed copy, so it is right, but the caller's curve is reversed (a second call sees it so). The port leaves the caller's curve alone (decision 5923) |
+| `GeomFill_ConstrainedFilling::MatchKnots` | After SetDomain, the `ind[]` searches compare `dom` with the multiplicities `nm[]->Value(i)` instead of the knots `nk[]` | The knot is not found and the tangency mixing index keeps its default. Kept |
+| `GeomFill_ConstrainedFilling` | `stcor`, `tgalg` and `dom` are never reset by Init | A second Init on the same object starts sortbounds from the previous corner gaps and keeps tangency fields of bounds that no longer have normals. Kept |
+| `GeomFill_ConstrainedFilling::MatchKnots` | Reads `nbnp`/`nbnk` after `PrepareInsertKnots` returns false | Uninitialised natively; the port's out parameters are assigned |
+| `GeomFill_Profiler::UnifyByInsertingAllKnots` | Inserts every curve's knots into the others with `Add = false`; on periodic sections `BSplCLib::PrepareInsertKnots` mispredicts the pole count (Phase 1's entry above) | Natively `BSplCLib::InsertKnots` writes past its arrays: heap corruption, a crash in the recorder; the port throws Standard_RangeError. Reached by every Generator, SectionGenerator and loft whose sections are all periodic B-splines with different knots |
+| `GeomFill_Profiler::Perform` | When knot insertion does not unify the curves, `UnifyBySettingMiddleKnots` only moves knots | The curves keep different numbers of poles; `Poles`, GeomFill_Generator and AppBlend_AppSurf then read and write past arrays sized for the first curve natively (unchecked) where the port throws. Seen with all-periodic sections |
+| `GeomFill_SectionGenerator::SetParam` | Keeps the caller's array, then writes `myParams(i) = Params(Lower() + i - 1)` into it for i from 1 | For an array not indexed from 1 the caller's values are shifted and the last write is past the end (unchecked natively; Standard_OutOfRange in the port, tested) |
+| `GeomFill_SectionGenerator` constructor | Sets default parameters only if `mySequence` has curves, which it never has there | `Parameter` without `SetParam` dereferences a null handle (an access violation natively, NullReferenceException in the port) |
+| `AppBlend_AppSurf::InternalPerform`, spline approximation | `if (C0) SetContinuity(0); if (C1) ... else if (C2) ... else SetContinuity(3)` | GeomAbs_C0 ends as continuity 3. Kept (recorded) |
+| `AppBlend_AppSurf::InternalPerform`, Bezier pieces (not SpApprox) | Computes the tolerances reached but never stores them | `TolReached` and `TolCurveOnSurf` give the previous run's values (0 at first). Kept |
+| `AppBlend_AppSurf` (both Perform) | The two-section rule (IFV occ13904) writes `dmin = 1` and possibly `dmax = 1` into the object's settings | They stay for the next pieces of `Perform(..., NbMaxP)` and for later runs: a piece of two sections lowers every later piece's degrees, and later pieces can fail (StdFail_NotDone). Kept (recorded) |
+| `AppBlend_AppSurf::Perform(..., NbMaxP)`, known parameters | Measures each Bezier piece by `mucu.Pole(Index, 1)` to `Pole(Index, NbPoles)`, Index being the piece's number | The distances, hence the interior knots, come from the wrong curve of the multi-curve. Kept |
+| `AppBlend_AppSurf::Curves2dShape` | `NbPoles = tabPoles->ColLength()`, the number of U poles | The 2d curves have the V poles. Kept |
+| `AppDef_Variational::InitCriterionEstimations` through `AppBlend_AppSurf::PerformSmoothing` | The entry above (EstTangent past a two-point line) | Smoothing two sections: native reads past the points and throws Standard_OutOfRange later; the port's range check throws Standard_RangeError first (decision 5926) |

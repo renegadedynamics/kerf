@@ -723,3 +723,23 @@ Phase 5 (part): laws and trihedrons (unit 5L1).
   (frames and their first and second derivatives, intervals, sub-intervals, copies, the best mode): 2,082,140 values,
   all bit-identical (offsets of free-form curves left out of CorrectedFrenet's runs: OCCT's own sampling is very slow on
   them).
+
+Phase 5 (part): surfaces from curves (unit 5L3).
+
+- `OcctNet.ModelingAlgorithms`:
+  - Surfaces through sections: `GeomFill_Profiler` (a common B-spline profile), `GeomFill_Generator` (the ruled
+    surface through the sections), `GeomFill_SectionGenerator`, `GeomFill_Line` and `GeomFill_AppSurf` (the
+    approximated surface: Bezier pieces, B-spline least squares, variational smoothing, pieces of NbMaxP sections),
+    over AppBlend: `AppBlend_Approx` and the generic `AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint>`.
+  - Fillings: `GeomFill_Coons`, `Curved`, `Stretch`, `GeomFill_BSplineCurves` and `GeomFill_BezierCurves` (two, three
+    or four curves, three styles), and the constrained filling `GeomFill_ConstrainedFilling` with its boundaries
+    (`GeomFill_SimpleBound`, `BoundWithSurf`, `DegeneratedBound`), `GeomFill_CoonsAlgPatch`, `GeomFill_TgtOnCoons`
+    and `GeomFill_CornerState`.
+  - Gordon surfaces (new in OCCT 8): `GeomFill_Gordon` and `GeomFill_NetworkSurface` over a network of profiles and
+    guides, with a parallel contact search that gives the serial result.
+  - Surfaces are handed out frozen; the caller's curves are never changed.
+- Draw-lite: `appsurf` and `fillcurves`; the four corpus cases they make runnable pass.
+- Tests: OCCT's GTests GeomFill_BSplineCurves and GeomFill_Gordon; unit tests of every class. Native recordings (no
+  bindings exist): the fillings (tools/fillrec, 880 cases, 568,389 doubles), Gordon and NetworkSurface
+  (tools/gordonrec, 380 cases) and the surfaces through sections (tools/appsurfrec, 400 cases), all bit-identical
+  but 10 two-section smoothings where native and the port throw different exceptions past an AppDef bug.
