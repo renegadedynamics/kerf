@@ -913,3 +913,21 @@ it, except the first (decision 753).
 | `IntTools_EdgeFace::CheckData` | Sets status 2 for a degenerated edge, then overwrites it with 3 if the edge has no geometry | The degenerated status is lost for such edges. By reading |
 | `IntTools_BeanFaceIntersector::ComputeAroundExactIntersection` | With more than one exact intersection point it lowers `myCriteria` to 3·Confusion for the rest of the run (meant for the range search) | The extremum and boundary passes that follow use the lowered criteria too. By reading |
 | `IntTools_CurveRangeLocalizeData::ListRangeOut` (decision 629) | Native lists the curve's out ranges in hash order, the port in insertion order; `ComputeLocalized` inserts them into the range manager with flag 1 | The ranges are disjoint and share one flag, so only zero-length ranges at shared ends can come out in a different order. No difference in the 1,562 recorded runs on localising faces |
+## Phase 6: unit 6D, face/face intersection
+
+Found while porting IntTools_FaceFace and IntTools_WLineTool. By reading OCCT's code unless said; the port reproduces
+each (`// OCCT` at the line). None shows in the comparison with native IntTools_FaceFace (decision 761), where every
+pair is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_FaceFace::Perform` | Clears the curves but never `myPnts` (5G's `InternalPerform` bug in FaceFace's form) | A second Perform on the same object appends its points to the first's. Pinned by a test. The pave filler makes one object per face pair, so no Boolean is affected |
+| `IntTools_FaceFace.cxx`, `PerformPlanes` | Without the second 2D curve (`theApprox2` false) it clears the first (`SetFirstCurve2d(H1)` in the second branch) | A plane/plane line asked for with the first 2D curve only has none. The pave filler asks for both or neither. Pinned by a test |
+| `IntTools_FaceFace.cxx`, `PerformPlanes` | Two planar faces without wires (unbounded) give `ClassifyLin2d` the infinite bounds; `Geom_TrimmedCurve` on the resulting parameters throws | Standard_ConstructionError, natively too (three such pairs in the recordings). Pinned by a test |
+| `IntTools_FaceFace::MakeCurve`, walking lines | `myTolApprox = 1.e-5` (cylinder/sphere pairs where `ApproxWithPCurves` is false, and the re-approximation after an invalid 2D curve) writes the member | The looser tolerance stays for the following lines and for later Performs on the object (until SetParameters) |
+| `IntTools_FaceFace::MakeCurve`, `goto reapprox` | Restarts the whole line although the curves of its earlier parts (or multicurves) are already appended | Those curves are appended twice. Kept |
+| `IntTools_FaceFace::MakeCurve`, lines, parabolas, hyperbolas | Checks `C2d.IsNull()` after `GeomInt_IntSS::BuildPCurves`, which has already dereferenced a null second projection (5G's issue) | The check can't help: OCCT crashes, the port throws NullReferenceException. Kept |
+| `IntTools_FaceFace::SetList` and Perform | The start points are kept between Performs; on a reversed pair Perform swaps each point's parameters in place | A second reversed Perform swaps them back to the wrong order; the list also grows (decision 706) |
+| `IntTools_FaceFace.cxx`, `CheckPCurve` | The sample parameter runs on from the curve's first parameter by `(NPoints - 1) * dT` per interval | With several C∞ intervals the samples drift from the intervals and the end of the last one is never checked |
+| `IntTools_WLineTool.cxx`, `IsPointInDegeneratedZone` | Reads the first surface's bounds for the second (`aS1->Bounds(US21, ...)`), and compares V on both surfaces, and U on the second, with `aDelta` (1e-7) instead of the resolution `aD` it has just computed | The degenerated-zone test of the second surface uses the first's bounds and a 3D tolerance as a parametric one |
+| `IntTools_WLineTool::DecompositionOfWLine`, "correction of projected coordinates" | `X < umin && X > umax && Y < vmin && Y > vmax` can't hold (and uses the other surface's bounds) | The rough re-projection never runs |

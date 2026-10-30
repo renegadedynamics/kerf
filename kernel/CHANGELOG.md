@@ -705,3 +705,17 @@ Phase 6 (part): edge intersectors (unit 6C).
     which agree within 5.2e-9 (sine and cosine).
   - A reused context gives fresh-context results in any order; serial = parallel through BOPTools_Parallel with edges
     of different tolerances on the same faces; known answers for lines, circles, planes, cylinders and spheres.
+
+Phase 6 (part): face/face intersection (unit 6D).
+
+- `OcctNet.ModelingAlgorithms`: `IntTools_FaceFace`, the intersection of two faces as the Boolean operations need it
+  (curves with their 2D curves on both faces, their tolerances and tangential tolerances, isolated points, tangent
+  faces), with its own criteria (the faces' tolerances and the fuzzy value), the plane/plane shortcut and the
+  approximation flags; `IntTools_WLineTool` (degenerated zones, the decomposition of walking lines at periodic
+  boundaries). `Lines()` hands out frozen curves; the faces are only read.
+- `tools/ffrec`: records native IntTools_FaceFace (linked against build123d.NET's OCCT) on face pairs.
+- Tests: OCCT's GTest IntTools_FaceFace; unit tests of the API and of OCCT's behaviours the port keeps. Against native
+  IntTools_FaceFace (recorded): 531 face pairs of primitives, free-form sheets, special placements and data/occ shapes
+  with the Boolean operations' and other parameters, 580 lines and 2 points, every value bit-identical; serial =
+  parallel = repeat. Oracle: the analytic lines against native GeomAPI_IntSS where the parameters agree, 170 lines
+  bit-identical.
