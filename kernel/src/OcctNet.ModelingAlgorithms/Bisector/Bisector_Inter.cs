@@ -294,6 +294,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         BisTemp = Bis2.ChangeGuide();
         Guide = Bis2.Curve(2);
         // note: returned points are not used in the code, but can be useful for consulting in debugger
+        // OCCT: ValueAndDist may leave UMax and UMin unset (they are 0 here; occt-issues.md).
         Bis2.ValueAndDist(D2.FirstParameter(), ref U1, ref UMax, ref Dist);
         Bis2.ValueAndDist(D2.LastParameter(), ref U1, ref UMin, ref Dist);
 

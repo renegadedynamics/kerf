@@ -315,6 +315,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
         gp_Vec2d Tu = new(), Tuu = new(), T3u = new();
         gp_Pnt2d PC = new();
 
+        // OCCT: no case for N = 3 (EvalD3): the tangent stays null and the point is the given point (occt-issues.md).
         switch (N)
         {
             case 0:
@@ -614,6 +615,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
         // on the curve. The offset can be done if the curve is periodical and the
         // point of initial parameter is less then the interval of continuity.
         //------------------------------------------------------------------------
+        // OCCT: dead code, one interval was appended (and Period() would throw: the bisector isn't periodic).
         if (curve.IsPeriodic())
         {
             if (startIntervals.Length() > 1)

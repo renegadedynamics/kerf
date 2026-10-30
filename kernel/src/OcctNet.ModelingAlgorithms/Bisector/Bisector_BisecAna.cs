@@ -471,6 +471,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                             }
                         }
                     }
+                    // OCCT: with no solution kept, the bisector stays unset (occt-issues.md).
                     if (TheSol is not null)
                     {
                         Geom2d_Curve bisectorcurve;
@@ -660,6 +661,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                             }
                         }
                     }
+                    // OCCT: with no solution kept, the bisector stays unset (occt-issues.md).
                     if (TheSol is not null)
                     {
                         GccInt_IType type = TheSol.ArcType();
@@ -924,6 +926,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                             distancemini = distanceptsol;
                         }
                     }
+                    // OCCT: with no solution kept, the bisector stays unset (occt-issues.md).
                     if (TheSol is not null)
                     {
                         GccInt_IType aSolType = TheSol.ArcType();
@@ -1119,6 +1122,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
 
         sense = false;
         Distance(apoint, solution, afirstvector, asecondvector, VecRef, adirection, ref parameter, ref sense, out ok);
+        // OCCT: otherwise the bisector stays unset, and Bisector_Bisec dereferences it (occt-issues.md).
         if (ok || !oncurve)
         {
             Geom2d_Curve bisectorcurve = new Geom2d_Line(line);

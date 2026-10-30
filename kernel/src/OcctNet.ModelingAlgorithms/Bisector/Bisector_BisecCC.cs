@@ -958,7 +958,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
         //-----------------------------------------------
         if (myPolygon.Length() <= 1)
         {
-            P = Extension(U, ref U0, ref V0, out Dist, out V1);
+            P = Extension(U, ref U0, ref V0, out Dist, out V1); // OCCT: no return (occt-issues.md).
         }
         if (U < myPolygon.First().ParamOnBis())
         {
