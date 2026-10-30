@@ -936,3 +936,21 @@ Phase 5 (part): plates and filling (unit 5P).
   initial surface: all 206 builds byte-identical as BRep text, every Generated list identical, every value
   bit-identical but where native reads uninitialised memory. Corpus: the filling cases (6 runnable, from none; 1 OK, 1
   known problem as OCCT, 3 missing their data, 1 failing as native OCCT 8 does).
+
+Phase 6 (part): BRepAlgoAPI and the public API, the Boolean milestone (unit 6P).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `BRepAlgoAPI_BuilderAlgo.SimplifyResult` (and so every Boolean operation's): UnifySameDomain on the result, its
+    history merged into the operation's; the arguments are never written, whatever the non-destructive flag.
+  - The functional twins (`BRepAlgoAPI.Fuse`, `Common`, `Cut`, `Section`, `Split`): `BRepAlgoAPI_Options.Simplify`
+    now works, and each takes an optional `Message_ProgressRange`; a cancelled operation throws
+    `OperationCanceledException` over the `BRepAlgoAPI_Failure` that carries OCCT's `BOPAlgo_AlertUserBreak`.
+  - `BOPAlgo_PaveFiller` no longer fails when it would write a frozen argument vertex's own tolerance back into it (a
+    shape cut again by one of its arguments).
+- Tests: OCCT's GTests of BRepAlgoAPI_Fuse, Cut, Common, BuilderAlgo (TKBO) and Cut, Fuse, Section (TKBool), 232
+  tests, 7 skipped for fillets (phase 7); unit tests of the simplification, progress and cancellation. Against native
+  OCCT: SimplifyResult on random primitives and on the boolean group's and data/occ's arguments, native's destructive
+  mode, the inverted-solid check, and the corpus's `bfuzzyvalue`/`bglue` cases (589 comparisons: 513 byte-identical,
+  72 where native's destructive mode differs and its non-destructive result is the port's, 4 canonically identical where
+  native varies); the determinism test (1,728 repeated and parallel runs at degrees 2 to the processor count, all equal
+  to the serial run).

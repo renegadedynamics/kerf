@@ -377,8 +377,6 @@ public class BRepAlgoAPI_ShellTests
         Assert.IsAssignableFrom<StdFail_NotDone>(anError);
 
         Assert.Throws<BRepAlgoAPI_Failure>(() => Occt.BRepAlgoAPI.Cut([Box(0)], [], new BRepAlgoAPI_Options()));
-        Assert.Throws<Standard_NotImplemented>(
-            () => Occt.BRepAlgoAPI.Fuse([Box(0)], [Box(5)], new BRepAlgoAPI_Options { Simplify = true }));
     }
 
     [Fact]

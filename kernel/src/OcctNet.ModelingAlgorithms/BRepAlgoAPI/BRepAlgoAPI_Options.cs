@@ -65,8 +65,8 @@ public struct BRepAlgoAPI_Options : IEquatable<BRepAlgoAPI_Options>
     public bool NonDestructive;
 
     /// <summary>
-    /// Simplifies the result with ShapeUpgrade_UnifySameDomain (<c>SimplifyResult()</c> with its defaults; false by
-    /// default). Not available until units 6U and 6P: the twins throw <see cref="Standard_NotImplemented"/> when set.
+    /// Simplifies the result with ShapeUpgrade_UnifySameDomain (<c>SimplifyResult()</c> with its defaults: edges and
+    /// faces, <see cref="Precision.Angular"/>; the fuzzy value as the linear tolerance; false by default).
     /// </summary>
     public bool Simplify;
 
