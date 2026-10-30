@@ -529,6 +529,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                                          lastparam,
                                          Tol);
                 Geom2dAdaptor_Curve   HOnCurv = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy();
+                // OCCT: the one-argument constructor leaves the range [0, 0], so C2 is the single point at parameter 0
+                // and the intersection finds no centre (IsDone, no solution).
                 Adaptor2d_OffsetCurve C2      = new(HOnCurv);
                 firstparam                    = Max(C2.FirstParameter(), thefirst);
                 lastparam                     = Min(C2.LastParameter(), thelast);

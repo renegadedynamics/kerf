@@ -255,14 +255,15 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : math_FunctionSetWithDerivative
         return true;
     }
 
-    // OCCT: computes nothing and leaves the derivatives as they are (Circ2d3TanIter never reaches it: it solves
-    // with math_FunctionSetRoot, which calls Values; see occt-issues.md).
+    // OCCT: computes nothing and leaves the derivatives as they are (occt-issues.md).
     public override bool Derivatives(math_Vector X, math_Matrix D)
     {
         return true;
     }
 
-    // OCCT: computes nothing and leaves the values and derivatives as they are (occt-issues.md).
+    // OCCT: computes nothing and leaves the values and derivatives as they are. Circ2d3TanIter solves with
+    // math_FunctionSetRoot, which calls Values: its search starts from whatever F and DF hold, uninitialised natively
+    // and zeros in the port, which therefore stops at once at the starting point (occt-issues.md, decision 5976).
     public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
     {
         return true;

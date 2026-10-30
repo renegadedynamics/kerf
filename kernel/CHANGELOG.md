@@ -754,3 +754,18 @@ Phase 5 (part): analytic constraints (unit 5K1).
   filtering, tangency and pass-through of every solution). Native recordings (tools/gccrec, a C++ recorder built
   against native OCCT): every constructor of every GccAna class on 6,618 random and hand-picked configurations, every
   result bit-identical to native, exceptions included, except the results OCCT leaves uninitialised.
+
+Phase 5 (part): geometric constraints (unit 5K2).
+
+- `OcctNet.ModelingAlgorithms`: Geom2dGcc, all of it. Qualified curves (`Geom2dGcc_QualifiedCurve`, an immutable
+  value over its own copy of the adaptor) and the seven solvers: circles tangent to three curves or points
+  (`Geom2dGcc_Circ2d3Tan`), to two with the centre on a curve (`Circ2d2TanOn`), to two with a given radius
+  (`Circ2d2TanRad`), to one with the centre on a curve and a given radius (`Circ2dTanOnRad`), with a given centre
+  (`Circ2dTanCen`); lines tangent to two curves or a curve and a point (`Lin2d2Tan`), at an angle to a line
+  (`Lin2dTanObl`). Lines and circles go to GccAna; other curves to the Geo and Iter solvers, which are public too,
+  with CurveTool, QCurve and the tangency functions.
+- Draw-lite: `cirtang` and `lintan`.
+- Tests: OCCT's Geom2dGcc GTests (Circ2d2TanRad, Circ2d3Tan, Lin2d2Tan) and unit tests of every solver; oracle tests
+  of the seven solvers against native OCCT on lines, circles, ellipses, B-splines, offset and trimmed curves (36,288 of
+  38,000 cases identical token for token, the rest where native reads uninitialised memory or its build skips a range
+  check); the corpus's 2dgcc cases (11 runnable, 10 OK, 1 missing its data).
