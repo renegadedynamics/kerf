@@ -588,3 +588,18 @@ Phase 5 (part): approximating intersection lines (unit 5F).
   IntPatch_Intersection on nine surface pairs, against native OCCT's approximations of the same lines: all 128 (degree,
   knots, multiplicities, poles, tolerances reached) bit-identical; the MultiLine, ApproxLine and the OCCT issues
   reproduced natively.
+Phase 5 (part): walking (unit 5C).
+
+- `OcctNet.ModelingAlgorithms`: IntWalk, all of it: `IntWalk_IWalking` (the implicit/parametric walking, one generic
+  class over the function and the line it builds), `IntWalk_PWalking` (the parametric/parametric walking),
+  `IntWalk_TheInt2S`, the walking data and the deflection status; IntPatch's instantiations `IntPatch_TheIWalking`
+  and `IntPatch_TheIWLineOfTheIWalking`; `IntPatch_ImpPrmIntersection`, the intersection of a quadric (plane,
+  cylinder, sphere, cone) with any parametric surface, and `IntPatch_SpecialPoints`, which it uses at seams and poles.
+  Serial, and the same line every run.
+- Tests: the walking step by step against native OCCT: every step's status and point and the resulting lines, bit for
+  bit, recorded by `tools/walkrec` (OCCT's own walking sources built with MSVC against build123d.NET's native OCCT) for
+  nine cases: a cylinder, a sphere, a cone and planes against B-spline patches and a plane against a torus through
+  IntPatch_ImpPrmIntersection, and a cylinder, a torus and a patch against a patch through IntWalk_PWalking; the same
+  lines serially and in parallel on every run. Unit tests of PWalking (planes, plane and cylinder, boundaries),
+  ImpPrmIntersection (every quadric against patches and an extrusion: points on both surfaces, vertices) and
+  SpecialPoints (poles, apexes, isolines, periods).

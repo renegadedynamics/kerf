@@ -1,4 +1,4 @@
-# Generates the 2D curve extrema from the 3D ones (decision 2201): for each of Extrema_PCFOfEPCOfExtPC, EPCOfExtPC,
+# Generates the 2D curve extrema from the 3D ones (decision 218): for each of Extrema_PCFOfEPCOfExtPC, EPCOfExtPC,
 # ExtPC, LocEPCOfLocateExtPC, LocateExtPC, CCLocFOfLocECC, ECC and LocECC in src/OcctNet.ModelingData/Extrema,
 #   sed -E -f tools/extrema-to2d.sed Extrema_X.cs > Extrema_X2d.cs
 # The 2D files are its output with no hand edits.

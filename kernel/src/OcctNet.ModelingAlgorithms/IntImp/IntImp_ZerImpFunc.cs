@@ -81,6 +81,31 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         func = IS;
     }
 
+    /// <summary>
+    /// A copy of <paramref name="theOther"/>, as OCCT's implicit copy constructor: the same surface (a reference) and
+    /// a copy of the quadric, with the state of the last evaluation (IntWalk_IWalking's duplicate of its function).
+    /// </summary>
+    protected IntImp_ZerImpFunc(IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> theOther)
+    {
+        surf = theOther.surf;
+        func = theOther.func;
+        u = theOther.u;
+        v = theOther.v;
+        tol = theOther.tol;
+        pntsol = theOther.pntsol;
+        valf = theOther.valf;
+        computed = theOther.computed;
+        tangent = theOther.tangent;
+        tgdu = theOther.tgdu;
+        tgdv = theOther.tgdv;
+        gradient = theOther.gradient;
+        derived = theOther.derived;
+        d1u = theOther.d1u;
+        d1v = theOther.d1v;
+        d3d = theOther.d3d;
+        d2d = theOther.d2d;
+    }
+
     public void Set(ThePSurface PS) => surf = PS;
 
     public void SetImplicitSurface(in IntSurf_Quadric IS) => func = IS;

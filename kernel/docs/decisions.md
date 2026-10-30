@@ -6451,3 +6451,107 @@ their merged numbers (607, 608).
       this unit. TopOpeBRepTool (unit 5O1) and HLRTopoBRep use `BRepApprox_Approx` with a `BRepApprox_ApproxLine`
       built from B-spline curves and `Perform(line, ...)`: the middle-knot issue of occt-issues.md (5F) only shows
       from a first index above 1, which those callers don't use.
+
+## Phase 5: unit 5C, walking
+
+IntWalk (IWalking, PWalking, TheInt2S and its function, the walking data and status), IntPatch_TheIWalking,
+IntPatch_TheIWLineOfTheIWalking, IntPatch_ImpPrmIntersection and IntPatch_SpecialPoints, in OcctNet.ModelingAlgorithms.
+PWalking, and ImpPrmIntersection with SpecialPoints, were ported in forked worktrees, reviewed and merged. Numbers from
+5301 are placeholders, renumbered on merge; merged decisions are cited by their numbers.
+
+686. **IWalking is one generic over its function and its line** (decision 607's pattern).
+      - `IntWalk_IWalking<TheIWFunction, TheIWLine>`. OCCT instantiates the `.gxx` twice (IntPatch_TheIWalking,
+        Contap_TheIWalking); only the function (IntPatch_TheSurfFunction, Contap_SurfFunction) and the line differ.
+        The path and interior points, their tools and the surface (Adaptor3d_Surface, Adaptor3d_HSurfaceTool) are the
+        same in both and named in the body.
+      - **The line.** IntPatch_TheIWLineOfTheIWalking and Contap_TheIWLineOfTheIWalking are two identical classes in
+        OCCT (written out from a generic file since removed). The port writes the class once as `IntWalk_TheIWLine`,
+        the `.gxx`'s macro name; each instantiation is a sealed subclass with OCCT's name, which the generic builds with
+        `new()` (OCCT's allocator argument is dropped). `IntPatch_TheIWalking.Value(i)` returns the line itself; the
+        line's `FirstPoint`, `LastPoint` and `Value` return copies.
+      - **The function** is constrained by `IIntWalk_IWFunction<TSelf>`, which adds `PSurface()` and a static `Copy`
+        to IntStart's `IIntStart_SurfFunction`. `Copy` stands for C++'s copy constructor: ComputeOpenLine and
+        ComputeCloseLine copy the function (`aFuncForDuplicate`) to test whether a start point is on a line already
+        computed. IntImp_ZerImpFunc gains a protected copy constructor (the surface by reference, the quadric and the
+        evaluation state copied), IntPatch_TheSurfFunction a public one.
+      - **Decision 608 checked.** IWalking sets the function's surface (`Func.Set(Caro)`) to the adaptor it is given,
+        then copies the function. ImpPrmIntersection builds its quadric before giving it to the surface and arc
+        functions and never changes it, and the walking's surface is the one the function already has. The port's
+        copies of the quadric see what OCCT's pointers see.
+      - The vectors (`IntWalk_VectorOfWalkingData`, `IntWalk_VectorOfInteger`) are `NCollection_LinearVector`s of
+        `IntWalk_WalkingData` and `int`, indexed from 0 with OCCT's dummy item 0. OCCT's math_Vectors over stack
+        buffers are managed vectors; the throw-away value and derivatives of the stop tests are two fields.
+      - `IntWalk_TheInt2S` is a sealed subclass of `IntImp_Int2S` over Adaptor3d_Surface (decision 607's example);
+        IntWalk_TheFunctionOfTheInt2S needs no class.
+687. **The walking is compared with native OCCT step by step.** IntWalk isn't bound natively.
+      - **Hooks.** IWalking and PWalking have an internal `StepTrace`, and a `[ThreadStatic]` `ThreadStepTrace` for
+        the walkings other algorithms create. OCCT's `TestDeflection` body is the private `TestDeflectionImpl`; the
+        wrapper calls the hook with the status it returns and the point it tested (IWalking: the function's point with
+        the parameters on the parametric surface, as `IntSurf_PntOn2S.SetValue(P, reversed, U, V)` builds it;
+        PWalking: `myIntersectionOn2S.Point()`). The hooks change nothing in the computation.
+      - **Recorder.** `tools/walkrec` copies OCCT's IntWalk_IWalking.gxx, IntPatch_TheIWalking_0.cxx,
+        IntPatch_ImpPrmIntersection.cxx and IntWalk_PWalking.cxx and wraps the two TestDeflection methods the same way
+        (`instrument.py`: the body becomes `TestDeflection_Impl`, a non-virtual member added to copies of the headers,
+        so the classes' layout is unchanged). `build.ps1` compiles them with `main.cpp` (MSVC 19.44, `/O2`, x64)
+        against build123d.NET's native OCCT V8_0_1 (its headers, import libraries and DLLs). The executable's own
+        definitions take precedence over the DLL's, so the ImpPrmIntersection compiled into it walks with the
+        instrumented IWalking.
+      - **Cases** (`tests/OcctNet.ModelingAlgorithms.Tests/IntWalk/Recordings`, embedded). Through
+        IntPatch_ImpPrmIntersection (TolArc and TolTang 1e-7, Fleche 0.01, Pas 0.05): a cylinder against a bicubic
+        patch inside it and across its edge (closed and open lines), a tilted plane against a torus (four lines), a
+        sphere, a cone and a tilted plane against patches. Through IntWalk_PWalking from a start point (1e-8, 1e-8,
+        0.01, 0.05): a trimmed cylinder, a torus and a second patch against a patch. 466 steps in all. Every step's
+        status and point, then every line's type, transitions, points and vertices (parameter on the line, point),
+        every double as its 64 bits: **all nine are bit-identical**.
+688. **IntPatch_SpecialPoints is ported in 5C, not 5D.** ImpPrmIntersection's DecomposeResult calls four of its
+      functions (ContinueAfterSpecialPoint, AddCrossUVIsoPoint, AddPointOnUorVIso, AddSingularPole).
+      - A static class; its file-local `FuncPreciseSeam` is a private nested class; OCCT's protected members
+        (ProcessSphere, ProcessCone, GetTangentToIntLineForCone) are internal.
+      - The points a function fills or updates are `ref`. `AdjustPointAndVertex`'s optional vertex pointer is a second
+        overload taking `ref IntPatch_Point`; the periods array is a `ReadOnlySpan<double>`.
+689. **ImpPrmIntersection.**
+      - The file-static functions are private statics of the class, in a partial file (`.Tools.cs`).
+      - DecomposeResult copies an RLine (C++'s implicit copy constructor): RLine gains a public copy constructor (the
+        vertices copied, the arcs and the point polygon shared, as C++'s member-wise copy shares the handles), and
+        IntPatch_Line and IntPatch_PointLine protected ones.
+      - OCCT's implicit conversions of vectors to directions in its TopTrans_CurveTransition calls are explicit
+        `new gp_Dir(v)`, which throws on a null vector as OCCT's conversion does. Casts OCCT makes without a check are
+        C# casts.
+690. **PWalking.**
+      - OCCT's public API; its protected members are internal (ComputePasInit, DistanceMinimizeByGradient and
+        ByExtrema, SeekPointOnBoundary, HandleSingleSingularPoint, ExtendLineInCommonZone).
+        `PerformFirstPoint(ParDep, ref FirstPoint)` takes `ref`: OCCT doesn't write the point on failure (decision
+        115). DistanceMinimizeByGradient's optional step pointer is `double[]? theStep0 = null`.
+      - The step arrays are fields; small local arrays are `stackalloc` spans hoisted out of loops (CA2014). The
+        `[[fallthrough]]` from IntWalk_StepTooSmall into the OK case is `goto case`. `AdjustToDomain` takes an array
+        and offsets for OCCT's pointers.
+      - OCCT's second constructor leaves `tgfirst`, `tglast`, `myTangentIdx` and `previoustg` uninitialised; Perform
+        writes them before reading them. The port's start at false and 0.
+691. **Omissions.** The `OCCT_DEBUG` and `CHRONO` blocks; NCollection_IncAllocator (each line's allocator);
+      NCollection_LocalArray (an `int[]`). Nothing in this unit sorts, so the MSVC tie helper isn't needed. The
+      transcendentals are PWalking's `CosRef2D = cos(π/9)` and its `exp` and `sqrt` in TestDeflection (IWalking has
+      none): the sources to attribute under decision 494 if the oracle finds a difference.
+692. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 34 new).
+      - The native step recordings (decision 687): 9 cases, and 4 of them run again serially and in parallel.
+      - PWalking: two planes, a plane and a cylinder (points on both surfaces, the boundaries, PutToBoundary),
+        coincident planes (not done), determinism.
+      - ImpPrmIntersection: a plane (both orders), a cylinder, a sphere and a cone against a patch and an extrusion
+        (every point on both surfaces to 1e-5, vertices, line types), an empty result, non-quadric surfaces
+        (Standard_ConstructionError), determinism.
+      - SpecialPoints: the cone apex's tangents, AddSingularPole at a sphere's pole and a cone's apex (both orders,
+        the failing reference check, the throw on a cylinder), AddPointOnUorVIso, AddCrossUVIsoPoint,
+        AdjustPointAndVertex, ContinueAfterSpecialPoint.
+      - IntWalk and these IntPatch classes have no GTests. The oracle is 5G's (GeomAPI_IntSS, decision 614's
+        comparison).
+693. **For later units.**
+      - 5D (PrmPrm): `IntWalk_PWalking(S1, S2, TolTangency, Epsilon, Deflection, Increment)`; `Perform(ParDep)` or the
+        Perform with the bounds; `PerformFirstPoint(ParDep, ref point)`; `PutToBoundary(S1, S2)`;
+        `SeekAdditionalPoints(S1, S2, minNbPoints)`; `Line()`, the walking's own IntSurf_LineOn2S (copy it before
+        editing if the walking is reused); `TangentAtFirst/Last`, `IsClosed`, `MaxStep(i)`. IntPolyh's start points
+        give ParDep. To compare a PrmPrm walk with native step by step, compile IntPatch_PrmPrmIntersection.cxx into
+        `tools/walkrec` as ImpPrmIntersection is, add a case, and set `IntWalk_PWalking.ThreadStepTrace` around the
+        port's call.
+      - 5G: `IntPatch_ImpPrmIntersection(S1, D1, S2, D2, TolArc, TolTang, Fleche, Pas)`, and `SetStartPoint(U, V)`
+        before Perform for IntPatch_Intersection's start-point mode. Its lines are WLines and RLines
+        (DecomposeResult). It throws Standard_ConstructionError when neither surface is a plane, cylinder, sphere or
+        cone (OCCT's dispatch never calls it then). IntPatch_SpecialPoints is ready for ALineToWLine and WLineTool.

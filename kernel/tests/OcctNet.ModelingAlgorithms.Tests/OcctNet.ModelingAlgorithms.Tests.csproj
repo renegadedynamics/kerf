@@ -22,8 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Native OCCT's walking lines and their approximations, recorded once (unit 5F, decision 5603) -->
+    <!-- Native OCCT's walking lines and their approximations, recorded once (unit 5F, decision 680) -->
     <EmbeddedResource Include="ApproxInt\ApproxIntRecordings.txt.gz" LogicalName="ApproxIntRecordings.txt.gz" />
+    <!-- Native OCCT's walking steps, recorded by tools/walkrec (decision 687) -->
+    <EmbeddedResource Include="IntWalk\Recordings\*.txt" LogicalName="IntWalk.Recordings.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

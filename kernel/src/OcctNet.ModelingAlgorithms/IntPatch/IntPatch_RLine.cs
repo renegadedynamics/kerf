@@ -69,6 +69,28 @@ public class IntPatch_RLine : IntPatch_PointLine
         onS1 = false;
     }
 
+    /// <summary>
+    /// A copy of <paramref name="theOther"/>, as OCCT's implicit copy constructor: the vertices are copied, the arcs
+    /// and the points (<see cref="Curve"/>) are shared.
+    /// </summary>
+    public IntPatch_RLine(IntPatch_RLine theOther)
+        : base(theOther)
+    {
+        theArcOnS1 = theOther.theArcOnS1;
+        theArcOnS2 = theOther.theArcOnS2;
+        onS1 = theOther.onS1;
+        onS2 = theOther.onS2;
+        curv = theOther.curv;
+        fipt = theOther.fipt;
+        lapt = theOther.lapt;
+        indf = theOther.indf;
+        indl = theOther.indl;
+        for (int i = 1; i <= theOther.svtx.Length(); i++)
+        {
+            svtx.Append(theOther.svtx.Value(i));
+        }
+    }
+
     public override void AddVertex(in IntPatch_Point Pnt, bool theIsPrepend = false)
     {
         if (theIsPrepend)
