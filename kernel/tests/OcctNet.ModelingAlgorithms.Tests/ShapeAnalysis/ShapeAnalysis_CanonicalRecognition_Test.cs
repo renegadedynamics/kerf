@@ -399,12 +399,14 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void ExtrudedCylindricalSurfaceRecognition_B10()
     {
-        // TODO(5G): GeomAPI_IntSS of the cylinder (radius 1, axis Z) and the plane through the origin with normal
-        // (1, 0, 1). Its line is this ellipse: centre at the origin, minor radius 1 along Y, major radius sqrt(2) in the
-        // plane.
-        gp_Dir aNormal = new(1, 0, 1);
-        var anEllipse = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), aNormal, new gp_Dir(1, 0, -1)), Math.Sqrt(2.0), 1.0);
-        Geom_Curve anIntCurve = anEllipse;
+        var aCylSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 1.0);
+        var aGeomPlane = new Geom_Plane(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1)));
+
+        var anIntersector = new GeomAPI_IntSS(aCylSurf, aGeomPlane, Precision.Confusion());
+        Assert.True(anIntersector.IsDone(), "Surface-surface intersection failed");
+        Assert.True(anIntersector.NbLines() > 0, "No intersection curves found");
+        Geom_Curve anIntCurve = anIntersector.Line(1);
+        Assert.NotNull(anIntCurve);
 
         var anExtSurf = new Geom_SurfaceOfLinearExtrusion(anIntCurve, new gp_Dir(gp_Dir.D.Z));
         anExtSurf.Bounds(out double uMin, out double uMax, out double _, out double _);
