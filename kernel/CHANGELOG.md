@@ -739,3 +739,20 @@ Phase 6 (part): UnifySameDomain (unit 6U).
     data/occ's shapes: all 3,455 results equal native OCCT's, 3,410 byte-identical and 33 with the Free column masked
     (12 the same exception); histories equal through the canonical match.
   - The corpus: 51 cases that use `unifysamedom` are now runnable (none before): OK 14, SKIPPED 37 for data files.
+
+Phase 5 (part): faces from wires (unit 5O1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - BRepAlgo: `BRepAlgo_FaceRestrictor` (the faces closed wires bound on a face's surface, with or without orientation
+    correction), `BRepAlgo_Loop`, `BRepAlgo_Image`, `BRepAlgo_AsDes`, and `BRepAlgo`'s ConvertWire, ConvertFace,
+    ConcatenateWire, ConcatenateWireC0, IsValid and IsTopologicallyValid.
+  - The face maker the restrictor uses, `TopOpeBRepBuild_WireToFace`, with the part of the legacy Booleans it runs:
+    TopOpeBRepBuild's area and loop builders, classifiers, shape sets and face builder; `Builder.MakeFaces`; the
+    TopOpeBRepDS_BuildTool and TopOpeBRepTool members they reach (pcurves, shape classifiers, tangents). The Boolean
+    algorithm itself is not ported.
+  - Given frozen wires, the restrictor and WireToFace work on copies where OCCT writes into them (closed flags,
+    pcurves) and give the caller's own wires back where nothing changed; the faces they hand out are frozen.
+- Tools: `tools/frrec`, the native recorder of the tests.
+- Tests: against native OCCT (recorded): 602 face restrictor and WireToFace cases (nested, disjoint, crossing and
+  wrongly oriented wires of lines, arcs, circles and B-splines on three planes, four modes, random sets) and 30 cases of
+  the other BRepAlgo tools, all byte-identical; repeatable, serial = parallel, the caller's wires unchanged.

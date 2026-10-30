@@ -96,6 +96,10 @@ The numbers in brackets are the plan's (section 7).
     runs (about 10,000 lines, measured first; the unit stops and asks if it is much more). Alternatives: the whole
     TopOpeBRepBuild/DS/Tool closure (about 45,000 lines); `BOPAlgo_BuilderFace` instead (not a port, no native
     parity); the 2D offset in phase 7. It gives build123d.NET's 2D `offset` and the offset group's 621 wire cases.
+    *Measured (unit 5O1, decision 5961):* WireToFace only adds wires, so every loop is a shape loop and no
+    Boolean data structure runs; the executed path is about 5,500 lines, and the subset ported (whole classes where a
+    partial port would be awkward) about 8,000 of TopOpeBRepBuild/DS/Tool, with BRepAlgo's 3,764. Well under the
+    estimate, so the unit went on; its faces equal native's byte for byte on 632 recorded cases.
 18. **Booleans of frozen shapes are non-destructive** (plan 3, section 2.3). *Provisional:*
     - OCCT's own check (an argument with a `Locked()` sub-shape makes the pave filler non-destructive) applies to
       every frozen argument, so a Boolean never writes its inputs and needs no new code.

@@ -948,3 +948,22 @@ Found while porting ShapeUpgrade_UnifySameDomain. Each is reproduced in the port
 
 Not bugs, but worth knowing: native UnifySameDomain iterates hashed maps only for membership (`myKeepShapes`, the shells of
 a face), so its result doesn't depend on addresses; every oracle run was byte-identical or Free-masked.
+
+## Phase 5: unit 5O1, faces from wires
+
+Found while porting BRepAlgo and the TopOpeBRepBuild/DS/Tool members `TopOpeBRepBuild_WireToFace::MakeFaces` runs.
+Each is reproduced in the port and marked `// OCCT` unless the table says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepAlgo_FaceRestrictor::Perform`, `ChangePCurve` | Returns `C2.IsNull()` (true when the edge has *no* pcurve), which the caller stores as `YaPCurve` and tests `if (!YaPCurve)` | Without projection, an edge without a pcurve on the surface but with one elsewhere gets that pcurve moved onto the surface, then its 3D curve projected as well; without a 3D curve Perform returns not done, having written the pcurve into the caller's edge. Reproduced by the recordings (scenario 14: done 0, no face) |
+| `BRepAlgo_FaceRestrictor::PerformWithCorrection`, `IsInside` | Evaluates the first edge's pcurve on the face without checking it | Native crashes on an edge without a pcurve on the face (and not on a plane with a 3D curve); the port throws NullReferenceException |
+| `BRepAlgo_FaceRestrictor` | The default constructor leaves `myDone`, `modeProj` and `myCorrection` uninitialised | `IsDone` before `Perform` reads garbage; the port's are false |
+| `TopOpeBRepTool_2d.cxx`, `FC2D_FancestorE` | Without a 3D curve, looks the edge's face up in a map only `FC2D_Prepare` (the Booleans) creates, dereferencing a null pointer otherwise | Native crashes when WireToFace meets an edge with neither a pcurve on the face nor a 3D curve; the port throws Standard_NullObject (decision 5962) |
+| `TopOpeBRepTool_2d.cxx`, the pcurve cache | Kept in `thread_local` statics that survive between calls; `FC2D_FancestorE` allocates the cache map before crashing | In a native process that ran a legacy Boolean on the thread, WireToFace may find pcurves cached by it. The port never has the cache (decision 5962) |
+| `TopOpeBRepTool_ShapeClassifier` | The default constructor leaves `mySameDomain`, `mymren`, `mymredone`, `myState` and `myPAvLS` uninitialised; the shared classifier (`FSC_GetPSC`) is made with it | Its callers set them before reading; the port's are zero, false and null |
+| `TopOpeBRepBuild_WireEdgeSet::MakeNeighboursList` | `VertexConnectsEdges` leaves its orientations unwritten when the vertex isn't shared, and the caller reads `oVE` | Undefined on closing edges at a vertex they don't share; the port reads FORWARD |
+| `TopOpeBRepBuild_Merge.cxx`, `CorrectUnclosedWire` | Removes a wire's children while a TopoDS_Iterator is on them (the iterator's node is freed) | Undefined; in practice the next child is visited. The port iterates a snapshot. Only new wires (blocks of edges) get there, never WireToFace's |
+| `TopOpeBRepBuild_Builder::MakeFaces` | `myBuildTool.Closed(newWire, true)` on old wires too, and `AddFaceWire` | WireToFace flags the caller's wires closed (and not free). The port works on copies of frozen wires and gives the caller's back where nothing changed (decision 5963) |
+| `BRepAlgo_Image::Image` | For a shape without images, appends it to a function-level `static` list and returns the list | The list keeps every shape so asked for: the second call returns two shapes. Shared between threads natively (racy); per thread in the port |
+| `BRepAlgo_AsDes::Ascendant`, `Descendant`, `ChangeDescendant` | Return a function-level `static` empty list for an unknown shape; `ChangeDescendant` hands it out writable | A caller filling it changes what every later call returns for unknown shapes. Per thread in the port |

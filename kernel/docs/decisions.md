@@ -7507,3 +7507,102 @@ Numbers from 6701 are placeholders, renumbered on merge; earlier decisions are c
         identifies them exactly from native's result.
       - **6G** (CellsBuilder, RemoveFeatures) runs UnifySameDomain on shapes it owns: the internal forms, as 6P.
       - **6L**: `unifysamedom` is in Draw-lite already (decision 771).
+
+## Phase 5: unit 5O1, faces from wires
+
+BRepAlgo (the package class, FaceRestrictor, Loop, Image, AsDes; 3,764 lines) and the TopOpeBRepBuild/DS/Tool members
+`TopOpeBRepBuild_WireToFace::MakeFaces` runs (plan 2.11, decision 585), in OcctNet.ModelingAlgorithms, with
+`tools/frrec`, the native recorder of the tests. Numbers from 5961 are placeholders, renumbered on merge; earlier
+decisions are cited by their merged numbers.
+
+5961. **The subset was measured first and is about 8,000 lines, not the 45,000 of the class closure** (open question
+      17). Traced member by member from `WireToFace::MakeFaces` and from `BRepAlgo_FaceRestrictor::Perform` (both
+      modes) as BRepOffsetAPI_MakeOffset's `BuildDomains` and BRepFill_Evolved call them:
+      - WireToFace only ever adds wires (`AddShape`), so every loop is a shape loop: no block of edges is built, and
+        the classification is `WireEdgeClassifier::CompareShapes` (a passive 2D classifier, then BRepClass_FaceClassifier),
+        `Builder::MakeFaces` keeps the old wires, and nothing of the Boolean data structure runs. That executed path
+        is about 5,500 lines.
+      - **Whole classes** where a partial port would be awkward (virtual interfaces, block paths sharing code with the
+        shape paths): the area/loop framework (AreaBuilder, Area2dBuilder, FaceAreaBuilder, LoopSet, Loop,
+        LoopClassifier, LoopEnum, CompositeClassifier, BlockBuilder, BlockIterator, ShapeSet, WireEdgeSet,
+        WireEdgeClassifier, FaceBuilder, WireToFace: 4,920 lines); TopOpeBRepTool_ShapeClassifier and SolidClassifier
+        (the block/block fallback of WireEdgeClassifier::Compare), C2DF, GeomTool, ShapeExplorer, OutCurveType
+        (2,475 lines with the FC2D and FSC files).
+      - **Members**: `TopOpeBRepBuild_Builder` (constructor, build tool accessors, `MakeFaces`, Merge.cxx's
+        `CorrectUnclosedWire` and `CorrectEdgeOrientation`); `TopOpeBRepDS_BuildTool` (constructors, flags, MakeWire,
+        CopyFace, AddWireEdge, AddFaceWire, Closed, Parameter); `TopOpeBRepTool_CurveTool` (constructors, geomtool,
+        `MakePCurveOnFace`, the file's `MakePCurve`); `TopOpeBRepTool_TOOL` (both `TggeomE`, `CheckEdgeLength`);
+        `FUN_tool_bounds`; `FSC_GetPSC`; the FC2D functions but `FC2D_Prepare`, `FC2D_HasC3D`,
+        `FC2D_EditableCurveOnSurface` and the overload with a reference edge. Each class says what is left out, in a
+        one-line comment; nothing is stubbed. The data structure (TopOpeBRepDS_HDataStructure) is left out with
+        Builder's Boolean members, so `MakeFaces` has no `hns` branch.
+      - BRepAlgo_NormalProjection (798 lines, not in the unit) is left for its caller's unit.
+      - `TopOpeBRepTool_ShapeExplorer` derives from TopExp_Explorer in OCCT; the port's explorer is sealed, so it holds
+        one and forwards (Init, More, Next, Current, Index).
+5962. **No pcurve cache, and no ancestor faces, in the FC2D functions.** OCCT keeps computed pcurves in per-thread
+      statics that only `FC2D_Prepare` (the legacy Booleans) creates; without it `FC2D_HasNewCurveOnSurface` is false
+      and `FC2D_AddNewCurveOnSurface` stores nothing, which the port does by construction. For an edge without a 3D
+      curve, `FC2D_FancestorE` dereferences the map `FC2D_Prepare` would have made; native crashes, the port throws
+      Standard_NullObject in its place and leaves out the projection after it (it needs FTOL and the box tool, for an
+      edge only the Booleans make). OCCT issues.
+5963. **WireToFace, FaceRestrictor and ConcatenateWireC0 copy frozen inputs at the entry** (decisions 583, 642-644).
+      OCCT writes into the caller's shapes: `Builder::MakeFaces` flags every wire closed (old ones too), FaceRestrictor
+      stores pcurves (`ChangePCurve`, `ProjCurve3d`), WireEdgeClassifier stores the pcurves it computes (not on planes,
+      where BRep_Tool computes them), ConcatenateWireC0 builds 3D curves and fixes the wire.
+      - `TopOpeBRepBuild_WireToFace.MakeFaces` and `BRepAlgo_FaceRestrictor.Perform` put the wires in one holder
+        compound (children appended directly, so their Free flags don't change) and copy it with
+        `BRepTools_CopyAtEntry` when it holds a frozen TShape; they run on the copies and `Finish` gives the caller's
+        own wires and edges back wherever nothing was written. On a plane with closed-flagged wires (MakeOffset's
+        case) nothing is written: the faces hold the caller's wires, as native's do, byte for byte.
+      - The faces are frozen when handed out (`MakeFaces`, `Current`). `InternalMakeFaces`, `InternalPerform` and
+        `InternalCurrent` run in place and don't freeze, for ported callers whose wires are unfrozen
+        (BRepAlgo_Loop.WiresToFaces, 5O2's BuildDomains on its own offset wires).
+      - The orientations the correction mode gives the copied wires are carried back onto the caller's wires in the
+        restrictor's list, as OCCT's in-place reversal leaves them.
+      - BRepAlgo's functions build with the makers' internal accessors (`InternalEdge`, `InternalWire`,
+        `InternalFace`) and freeze only their result: a frozen component keeps its Free flag when added (phase 3
+        design 4.4), so freezing an intermediate edge would leave `Free = 1` where native writes 0 (found by the
+        recordings).
+5964. **Values and working objects.** BlockIterator and GeomTool are structs (OCCT copies them; `new()` is OCCT's
+      default, `default` isn't); the rest are classes. OCCT's members held by value (FaceBuilder's loop set, block
+      builder and area builder) are owned instances; the classifier's `void*` block builder is a reference to it.
+      `TopOpeBRepDS_BuildTool` and `TopOpeBRepTool_CurveTool` have copy constructors for OCCT's by-value copies
+      (`Builder` keeps a copy of its build tool).
+      - C++ calls the virtual `InitAreaBuilder` from AreaBuilder's and Area2dBuilder's constructors, which runs the
+        constructing class's version; the port's constructors call a private initialiser, so a derived override is
+        never reached from a base constructor (and CA2214 doesn't apply).
+      - The maps OCCT declares with its default hasher (the block builder's elements, the shape set's added shapes,
+        AsDes's ReplaceInList) compare with IsEqual (`EqualityComparer<TopoDS_Shape>.Default`), the others with
+        TopTools_ShapeMapHasher. The DataMaps iterate in insertion order; the two places that iterate one
+        (`BRepAlgo_Image.Filter`, `BRepAlgo_Loop`'s PurgeNewEdges and the substitutes) don't depend on the order.
+      - OCCT's debugging members (Dump*, DEBName, SName, SNameori, the `void*` labels of the area builder's list
+        helpers) are left out (decision 493).
+5965. **BRepAlgo_Loop, Image and AsDes are working objects of the offset algorithms.** They keep OCCT's in-place
+      behaviour: BRepAlgo_Loop replaces the vertices of the edges it is given and raises vertex tolerances, so its
+      callers (BRepOffset in phase 7, BRepFill_Evolved) give it unfrozen shapes, and it hands out unfrozen wires,
+      faces and edges. Image's and AsDes's function-level static lists (shared and writable in OCCT) are per thread.
+      `SetImageVV` and `GetVerticesForSubstitute`/`VerticesForSubstitute` copy, as OCCT's assignments do.
+5966. **Tested against native results recorded once by `tools/frrec`**, which links build123d.NET's TKBool (decision
+      761's pattern). Each case's input is written as BRep text and read back on both sides, and the results compared as
+      BRep text, byte for byte:
+      - 602 FaceRestrictor/WireToFace cases: 15 scenarios (outer only; holes; three holes of lines, arcs and a
+        B-spline; disjoint outers; island in a hole; crossing, touching and overlapping wires; wrongly oriented
+        holes; four nested circles; inner wire given first; every wire clockwise; wires not flagged closed; edges with
+        pcurves on another plane and no 3D curve) on three planes (one left-handed) with three faces (infinite, the
+        first wire's, reversed), in four modes (plain, projection, orientation correction, WireToFace), and 80 random
+        sets of circles, rectangles and rounded rectangles. All equal native, on frozen inputs (the copy at entry) and
+        on unfrozen copies (the internal forms); repeatable, and serial = parallel; the caller's wires unchanged.
+      - 30 cases of the other tools: ConvertWire and ConvertFace, ConcatenateWire (C1, G1), ConcatenateWireC0,
+        IsValid, IsTopologicallyValid, and BRepAlgo_Loop (a cut edge, constant edges, a hole; NewWires, NewFaces,
+        NewEdges). All equal native, the exceptions included.
+      - TKBool has no GTests for these packages.
+
+Notes for 5O2 (the 2D wire offset):
+- MakeOffset's `BuildDomains` runs `BRepAlgo_FaceRestrictor` with `Init(face, true)` on the caller's (frozen) wires:
+  call `Perform` and `InternalCurrent` (the faces are then built on the caller's wires, given back unchanged, and stay
+  unfrozen for BRepFill_OffsetWire). BRepFill_Evolved's restrictor runs on wires it made: `InternalPerform`.
+- `BRepAlgo.ConvertWire` (MakeOffset's approximation option) freezes its result; use `InternalConvertWire` where the
+  wire is built on further.
+- BRepFill_Evolved's `BRepAlgo_Loop` runs in place on its own shapes.
+- WireToFace never builds blocks for these callers; only planar faces have been recorded. A non-planar face whose
+  edges have no pcurves would run `TopOpeBRepTool_CurveTool.MakePCurveOnFace` (ported, not recorded).
