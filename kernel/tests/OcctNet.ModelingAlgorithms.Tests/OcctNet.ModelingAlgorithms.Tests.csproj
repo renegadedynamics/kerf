@@ -54,6 +54,8 @@
     <EmbeddedResource Include="GeomFill\Recordings\gordonrec.txt.gz" LogicalName="GeomFill.gordonrec.txt.gz" />
     <!-- Native OCCT's surfaces through sections (GeomFill_Generator, GeomFill_AppSurf), recorded by tools/appsurfrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\appsurfrec.txt.gz" LogicalName="GeomFill.appsurfrec.txt.gz" />
+    <!-- Native OCCT's ChFi2d_FilletAPI and ChFi2d_ChamferAPI on random pairs of edges, recorded by tools/chfi2drec (unit 5R) -->
+    <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

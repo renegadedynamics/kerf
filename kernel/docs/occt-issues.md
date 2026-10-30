@@ -1182,3 +1182,21 @@ Gordon.
 | `AppBlend_AppSurf::Perform(..., NbMaxP)`, known parameters | Measures each Bezier piece by `mucu.Pole(Index, 1)` to `Pole(Index, NbPoles)`, Index being the piece's number | The distances, hence the interior knots, come from the wrong curve of the multi-curve. Kept |
 | `AppBlend_AppSurf::Curves2dShape` | `NbPoles = tabPoles->ColLength()`, the number of U poles | The 2d curves have the V poles. Kept |
 | `AppDef_Variational::InitCriterionEstimations` through `AppBlend_AppSurf::PerformSmoothing` | The entry above (EstTangent past a two-point line) | Smoothing two sections: native reads past the points and throws Standard_OutOfRange later; the port's range check throws Standard_RangeError first (decision 849) |
+## Phase 5: unit 5R, 2D fillets and chamfers
+
+ChFi2d and BRepFilletAPI_MakeFillet2d, reproduced as OCCT has them (decision 10), each marked `// OCCT`. None made
+the port differ from native in the oracle or the recordings (decision 856).
+
+| Where | What | Effect |
+|---|---|---|
+| `ChFi2d_Builder.cxx`, `BuildNewWire` | Every edge of the face being built goes into one new wire, closed as the face's first wire | A face with holes comes back with one wire holding the outer and inner edges (build123d.NET chamfers each wire on its own for this reason) |
+| `BRepFilletAPI_MakeFillet2d.cxx`, `Modified` | `DescendantEdge` reads the history with `Find` | Standard_NoSuchObject for any edge MakeFillet2d didn't trim, where BRepBuilderAPI_MakeShape's contract is an empty list |
+| `ChFi2d_Builder.cxx`, `BuildFilletEdge` | `vec1` built from the vertices and overwritten at once; `Ebid1`/`Ebid2` built and unused; the basis curves down-cast to Geom2d_Line unchecked | Dead code; a curve neither line nor circle would be a null dereference (IsLineOrCircle rejects it first) |
+| `ChFi2d_Builder_0.cxx`, `ComputePoint(F, L, E, Param)` | `Param` unset and the point at the plane's origin when the chamfer's line meets nothing | An angle chamfer that misses its second edge ends at the origin of the plane with an uninitialised parameter (0 in the port) |
+| `ChFi2d_Builder_0.cxx`, `ModifyChamfer(Chamfer, E1, E2, D1, D2)` | `E1` unused | Only `E2` orients the new chamfer |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Init(wire)` | `e1` and `e2` are only set when null | A second Init (ChFi2d_FilletAPI reuses its algorithm) keeps the first wire's edges |
+| `ChFi2d_AnaFilletAlgo.cxx`, `isCW` | The middle point is evaluated on the edge's curve without the edge's location, the ends with it | Wrong orientation for an arc edge with a location |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Perform` | The right neighbour's ends are chosen by `e1.Orientation()` | Wrong trimming when the two edges have different orientations |
+| `ChFi2d_AnaFilletAlgo.cxx`, `ArcFilletSegment` | Compares a squared distance difference with `SquareConfusion`, where SegmentFilletArc uses `Confusion` | The arc's end point is found less often; the parameter path is used instead |
+| `ChFi2d_FilletAlgo.cxx`, `IsRadiusIntersected` | `LowerDistanceParameter()` (a parameter) compared with `Precision::Confusion()` as if it were a distance | Intersections are judged on the edge by their parameter |
+| `ChFi2d_FilletAlgo.cxx`, `FilletPoint::Copy`, `FilterPoints` | `Copy` doesn't copy `myNear`; FilterPoints removes `myV(b)` with `b` an index into `myNear` | Values and their near indices can fall out of step |

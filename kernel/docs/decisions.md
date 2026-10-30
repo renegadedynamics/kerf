@@ -8473,3 +8473,87 @@ AppBlend, then merged. Numbers from 5921 are placeholders, renumbered on merge.
       - **Phase 7 (BRepBlend):** BRepBlend_AppSurf is `AppBlend_AppSurf<Blend_AppFunction, BRepBlend_Line,
         Blend_Point>` with Blend_AppFunction and BRepBlend_Line implementing the two interfaces; ChFi3d sets the
         AppBlend context switches through the internal setters.
+## Phase 5: unit 5R, 2D fillets and chamfers
+
+ChFi2d (ChFi2d_Builder, AnaFilletAlgo, FilletAlgo, FilletAPI, ChamferAPI, the package statics, ConstructionError) and
+BRepFilletAPI_MakeFillet2d. Numbers from 5931 are placeholders, renumbered on merge; plan decisions are cited by their
+merged numbers (576–590), 5K2's by theirs (797–805).
+
+853. **ChFi2d_Builder and MakeFillet2d are working objects that publish what they hand out** (decisions 414, 454).
+      - Neither writes the face it is given: each fillet or chamfer builds a new face (BRepLib_MakeFace on the plane)
+        holding the face's untouched edges and vertices, the trimmed edges and the new one, as OCCT does.
+      - `AddFillet`, `AddChamfer`, `ModifyFillet`, `ModifyChamfer` return the new edge frozen, and freeze the face being
+        built with it; `RemoveFillet`/`RemoveChamfer` return the vertex frozen. Later operations build new faces
+        around frozen edges, which nothing writes (5933 is the one exception, handled).
+      - `Result()` (builder) and `Shape()` (maker) freeze the face; `FilletEdges`, `ChamferEdges`, `NewEdges` and
+        `Modified` are frozen `IBentoList`s; `DescendantEdge` freezes the face. Internal forms for ported code:
+        `InternalResult`, `InternalFilletEdges`, `InternalChamferEdges`, `InternalDescendantEdge`; the maker overrides
+        `InternalModified` and `BeforePublishingLists` (which freezes the face being built).
+      - `Modified(E)` keeps OCCT's behaviour for an edge without descendant: Standard_NoSuchObject (the history's
+        `Find`; occt-issues.md). `IsDeleted` stays false, as OCCT's.
+      - `ChFi2d` is a static class; `CommonVertex` and `FindConnectedEdges` take `ref` outputs (OCCT leaves them
+        unchanged on some failures). OCCT's two identical file-static `IsLineOrCircle` are one private method.
+      - FilletAPI, ChamferAPI, AnaFilletAlgo and FilletAlgo return their edges through `ref` (OCCT's `TopoDS_Edge&`);
+        their results come from BRepBuilderAPI_MakeEdge's public `Edge()` and are frozen. OCCT's helper class
+        `FilletPoint` (declared in ChFi2d_FilletAlgo.hxx as a private class) is internal.
+      - The history is a DataMap: its iteration order isn't OCCT's (a hash order there too), and `BasisEdge`, its only
+        iteration, looks for the one key whose value is the edge, so results don't depend on it.
+854. **`ChFi2d_Builder(F)` on a frozen face whose edges lack 3D curves builds them on a copy.** OCCT's constructor
+      (not `Init`, and not MakeFillet2d, which calls `Init`) runs `BRepLib::BuildCurves3d` on the face in place. The
+      port does that only when the face holds no frozen shape or every edge already has its curve (BuildCurve3d then
+      writes nothing); otherwise it works on `BRepLib.Curves3dBuilt(F)`, which stands for the face, so `BasisEdge` and
+      the history name the copy's edges for the edges that got curves. Faces from BRepBuilderAPI and build123d.NET
+      always have their 3D curves.
+855. **The chamfer's new vertices get their points on a frozen adjacent edge through a stand-in** (`// OCCT.NET:
+      frozen`). `BuildChamferEdge` calls `B.UpdateVertex(NewExtr, param, AdjEdge, tol)`: the new vertex isn't on the
+      edge, so OCCT appends the vertex's points on the edge's curve representations, raises its tolerance and sets the
+      edge's Modified flag. On a frozen edge (the caller's, or one the builder published) BRep_Builder throws
+      TopoDS_LockedShape; the port makes the same call on `AdjEdge.EmptyCopied()`, which has the edge's
+      representations and location, so the vertex gets OCCT's points; the frozen edge's Modified flag is left as it is
+      (the caller's edges usually have it set already). A degenerated edge, which EmptyCopied would treat differently,
+      goes to the original call. The oracle's chamfers are byte-identical.
+856. **Tests.** OCCT 8.0.1 has no GTests for ChFi2d or MakeFillet2d (TKFillet's GTests cover the 3D fillets and
+      chamfers). Unit tests (`ChFi2d_BuilderTests`): fillets and chamfers on frozen squares (areas, validity, the input
+      unchanged), the statuses (NoFace, NotPlanar, ConnexionError, ComputationError, ParametersError, NotAuthorized,
+      TangencyError), Modified/IsModified/BasisEdge/NewEdges, removal and modification, `Init(RefFace, ModFace)`, the
+      two APIs and their exceptions.
+      - **Native recordings: tools/chfi2drec** (as tools/gccrec, decision 780). ChFi2d_FilletAPI and ChamferAPI aren't
+        bound by build123d.NET: a C++ program built against its native OCCT runs them on random pairs of edges of a
+        plane (lines, arcs of circles and ellipses, cubic B-splines; sharing a vertex, meeting at a point, or a gap of
+        1e-8 to 1e-3 apart, so that FilletAPI takes both algorithms; reversed; the XY plane or a random one, a fifth of
+        them left-handed; tangent continuations and cusps), as a wire or two edges, and records Perform, NbResults,
+        Result (nearest, first, second solution) and the trimmed edges: each edge's curve type, range, points at its
+        ends and middle, orientation and vertices, every double in hex. `ChFi2d_NativeTests` rebuilds each case's edges
+        from the recorded bits: **1,200 cases (300 of each kind), every token identical**. A first recording differed
+        in 104 cases, all on tilted planes: the recorder used its unit directions as computed, the port re-normalised
+        the printed components (a last-bit change, as oracle-testing.md warns); the recorder now builds them as the
+        port reads them.
+      - **Oracle** (`BRepFilletAPIMakeFillet2dOracleTests`): native MakeFillet2d on faces both sides read from one BRep
+        file (the port's frozen). 400 random polygons and profiles of segments and arcs in random planes, with one to
+        four operations each (fillets, chamfers by two distances and by distance and angle, then sometimes a
+        modification or removal), 1,059 operations; and build123d.NET's two patterns on 120 rectangles (a quarter with a
+        hole): every corner filleted (`RectangleRounded`'s pattern) and every corner chamfered with the edges in
+        MapShapesAndAncestors' order (`Chamfer2D`'s). Every operation's status and returned edge, IsDone and the counts
+        identical; **all 489 results byte-identical BRep text, with no Free flag to mask**; every history (IsModified,
+        HasDescendant, Modified as indices, NewEdges, BasisEdge) identical; the inputs unchanged. Two-circle fillets
+        (5K2's GccAna `TheSame2` note, decision 805) appear in the arc profiles; none differed.
+      - **Draw-lite**: `chfi2d`, `fillet2d`, `chamfer2d` (BRepTest_Fillet2DCommands.cxx) as OCCT writes them;
+        `fillet2d` and `chamfer2d` read numbers with C's atof (Standard_Stream.Strtod), `chfi2d` with Draw::Atof. The
+        fillet2d group's end script calls `CheckTriArea`, defined nowhere in that group, only `if {[info exists
+        rel_tol]}`: DrawCorpus learns such variable branches (`VariableBranches`, as decision 589's data-file
+        branches), so a case that never sets `rel_tol` doesn't need it. Corpus (`DrawFillet2dCorpusTests`): 12 cases
+        use the commands; runnable before 5R: 0, after: 11: 10 OK (fillet2d/fillet2d A1 to A9, fillet2d/chamfer2d A1),
+        1 SKIPPED (bugs/moddata_1/bug20823: OCC20823.brep isn't public). bugs/modalg_2/bug22695 needs the 2D offset's
+        `offsetload` (unit 5O2).
+857. **Notes for 6M and build123d.NET.**
+      - build123d.NET's `Fillet2D` (and so `RectangleRounded`, and `fillet` of sketches and wires) doesn't call ChFi2d:
+        its `WireFillet.FilletCorner` solves each corner with Geom2dGcc_Circ2d2TanRad (5K2) and splices with
+        BOPAlgo_Splitter. Only `Chamfer2D` (`Wire.Chamfer2D`, `Face.Chamfer2D`, the `chamfer` operation on sketches)
+        uses BRepFilletAPI_MakeFillet2d, with `AddChamfer(E1, E2, d1, d2)` on a face from `MakeFaceFromWires`.
+      - With frozen inputs, `Chamfer2D`'s `TopoUtil.PrivateCopy(chamfered, copyGeometry: true)` before ShapeFix is no
+        longer needed (ShapeFix copies at its entry, decision 642). The chamfered face shares the input's untouched
+        edges by TShape, as native's does.
+      - `Modified` throws Standard_NoSuchObject for an edge MakeFillet2d didn't trim, as native does; build123d.NET's
+        `ShapeHistory.FromAlgorithm` already takes such an exception as no answer.
+      - MakeFillet2d puts every edge of a face into one wire (occt-issues.md), which is why build123d.NET chamfers each
+        wire of a face on its own; that stays necessary.

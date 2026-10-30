@@ -889,3 +889,16 @@ Phase 5 (part): surfaces from curves (unit 5L3).
   bindings exist): the fillings (tools/fillrec, 880 cases, 568,389 doubles), Gordon and NetworkSurface
   (tools/gordonrec, 380 cases) and the surfaces through sections (tools/appsurfrec, 400 cases), all bit-identical
   but 10 two-section smoothings where native and the port throw different exceptions past an AppDef bug.
+
+Phase 5 (part): 2D fillets and chamfers (unit 5R).
+
+- `OcctNet.ModelingAlgorithms`: ChFi2d, all of it (`ChFi2d_Builder`, the analytical and iterative fillet algorithms,
+  `ChFi2d_FilletAPI`, `ChFi2d_ChamferAPI`), and `BRepFilletAPI_MakeFillet2d`: fillets and chamfers on the vertices of
+  planar faces and between pairs of edges. Faces given are never written; results, fillets and chamfers are frozen;
+  `Modified` answers for the caller's edges.
+- Draw-lite: `chfi2d`, `fillet2d`, `chamfer2d`; the corpus scan knows branches on a case's variables.
+- Tools: `tools/chfi2drec`, the native recorder of ChFi2d_FilletAPI and ChamferAPI.
+- Tests: unit tests (OCCT has no GTests here); 1,200 recorded FilletAPI/ChamferAPI cases, every token identical to
+  native; oracle tests of MakeFillet2d on 520 faces (random polygons and arc profiles, build123d.NET's rounded
+  rectangle and chamfer patterns), every result byte-identical and every history identical; the corpus's fillet2d cases
+  (11 runnable, 10 OK, 1 missing its data).
