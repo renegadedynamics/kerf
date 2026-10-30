@@ -33,6 +33,10 @@ public class BOPAlgo_Builder : BOPAlgo_BuilderShape
     protected bool myNonDestructive;
     protected BOPAlgo_GlueEnum myGlue;
     protected bool myCheckInverted;
+    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myImages = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myShapesSD = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOrigins = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myInParts = new(TopTools_ShapeMapHasher.Instance);
 
     public BOPAlgo_Builder()
     {
@@ -322,4 +326,93 @@ public class BOPAlgo_Builder : BOPAlgo_BuilderShape
             }
         }
     }
+
+    // ---- 6F skeleton: OCCT's remaining members (filled by the port) ----
+
+    public virtual void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, TopAbs_State theObjState,
+                                 NCollection_List<TopoDS_Shape> theTools, TopAbs_State theToolsState,
+                                 Message_ProgressRange theRange, Message_Report? theReport = null)
+        => throw new NotImplementedException();
+
+    public void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, NCollection_List<TopoDS_Shape> theTools,
+                         BOPAlgo_Operation theOperation, Message_ProgressRange theRange, Message_Report? theReport = null)
+        => throw new NotImplementedException();
+
+    public NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Images() => myImages;
+
+    public NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Origins() => myOrigins;
+
+    public NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> ShapesSD() => myShapesSD;
+
+    protected enum BOPAlgo_PIOperation
+    {
+        PIOperation_TreatVertices = 0,
+        PIOperation_TreatEdges,
+        PIOperation_TreatWires,
+        PIOperation_TreatFaces,
+        PIOperation_TreatShells,
+        PIOperation_TreatSolids,
+        PIOperation_TreatCompsolids,
+        PIOperation_TreatCompounds,
+        PIOperation_FillHistory,
+        PIOperation_PostTreat,
+        PIOperation_Last,
+    }
+
+    protected sealed class NbShapes
+    {
+        private readonly int[] myNbShapesArr = new int[8];
+
+        public ref int NbVertices() => ref myNbShapesArr[0];
+        public ref int NbEdges() => ref myNbShapesArr[1];
+        public ref int NbWires() => ref myNbShapesArr[2];
+        public ref int NbFaces() => ref myNbShapesArr[3];
+        public ref int NbShells() => ref myNbShapesArr[4];
+        public ref int NbSolids() => ref myNbShapesArr[5];
+        public ref int NbCompsolids() => ref myNbShapesArr[6];
+        public ref int NbCompounds() => ref myNbShapesArr[7];
+    }
+
+    protected NbShapes getNbShapes() => throw new NotImplementedException();
+
+    protected override void fillPIConstants(double theWhole, BOPAlgo_PISteps theSteps) => throw new NotImplementedException();
+
+    protected override void fillPISteps(BOPAlgo_PISteps theSteps) => throw new NotImplementedException();
+
+    protected virtual void BuildResult(TopAbs_ShapeEnum theType) => throw new NotImplementedException();
+
+    protected void FillImagesVertices(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesEdges(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesContainers(TopAbs_ShapeEnum theType, Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesContainer(in TopoDS_Shape theS, TopAbs_ShapeEnum theType) => throw new NotImplementedException();
+
+    protected void FillImagesFaces(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected virtual void BuildSplitFaces(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillSameDomainFaces(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillInternalVertices(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesSolids(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void BuildDraftSolid(in TopoDS_Shape theSolid, ref TopoDS_Shape theDraftSolid, NCollection_List<TopoDS_Shape> theLIF)
+        => throw new NotImplementedException();
+
+    protected virtual void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, Message_ProgressRange theRange)
+        => throw new NotImplementedException();
+
+    protected void BuildSplitSolids(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, Message_ProgressRange theRange)
+        => throw new NotImplementedException();
+
+    protected void FillInternalShapes(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesCompounds(Message_ProgressRange theRange) => throw new NotImplementedException();
+
+    protected void FillImagesCompound(in TopoDS_Shape theS, NCollection_Map<TopoDS_Shape> theMF) => throw new NotImplementedException();
+
+    protected virtual void PostTreat(Message_ProgressRange theRange) => throw new NotImplementedException();
 }
