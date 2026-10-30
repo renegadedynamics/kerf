@@ -440,7 +440,6 @@ Phase 4 (part): the viewer's mesh extraction, benchmarks and the WebAssembly spi
   oracle against native `Extras.ExtractMesh`: every face and edge float-identical, on native's own meshes read back
   (1,738 faces, 9,724 edges), end to end on data/occ, the mesh group's 82 public files and native shapes (1,448 faces,
   6,509 edges), and on unmeshed shapes (4,786 edges by GCPnts_TangentialDeflection).
-
 Phase 5 (part): intersection of triangulated surfaces (unit 5E).
 
 - `OcctNet.ModelingAlgorithms`: the IntPolyh package, all of it. `IntPolyh_Intersection` intersects two surfaces
@@ -526,3 +525,28 @@ Phase 6 (part): BOP data and reports, the phase 6 pilot (unit 6A).
   - IntTools::RemoveIdenticalRoots skips roots;
   - BOPDS_FaceInfo::Clear and BOPDS_DS::Paves;
   - BOPAlgo_Builder::SetArguments.
+
+Phase 6 (part): healing foundations (unit 6H1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - ShapeExtend's rest: `ShapeExtend_CompositeSurface` (a geometry with `With*` twins), `Explorer`,
+    `MsgRegistrator`, `BasicMsgRegistrator`, `Parametrisation`.
+  - `ShapeBuild_ReShape`, Shape Healing's context.
+  - ShapeConstruct: the package statics, `Curve`, `ProjectCurveOnSurface` and `MakeTriangulation`, each with twins of
+    its in-place methods.
+  - ShapeAnalysis's rest: `FreeBounds`, `FreeBoundData`, `FreeBoundsProperties`, `Shell`, `ShapeContents`,
+    `ShapeTolerance`, `CheckSmallFace`, `WireVertex`, `Geom`, `BoxBndTree`, `CanonicalRecognition`.
+  - `Geom2dAPI_Interpolate` and `Geom2dAPI_PointsToBSpline`.
+  - What these classes hand out is frozen; they only read the shapes they are given, or copy before writing.
+- `OcctNet.ModelingData`: the copy at the entry of in-place healing, sewing and clean-up (internal; decision 583).
+  - It works on an exact copy of a frozen input and gives back the caller's sub-shapes wherever nothing changed.
+  - It re-keys the algorithm's reshaping context and histories onto the caller's shapes.
+- Draw-lite's `tolerance` command runs the ported ShapeAnalysis_ShapeTolerance.
+- Tests:
+  - OCCT's GTests: ShapeBuild_ReShape, ShapeConstruct_ProjectCurveOnSurface, ShapeAnalysis_FreeBounds,
+    ShapeAnalysis_CanonicalRecognition, Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline. One (ShapeFix_Shape's stability)
+    waits for unit 6H3.
+  - Unit tests of every class, most on frozen inputs checked unchanged; the copy-at-entry pattern on a toy healing
+    algorithm.
+  - Oracle tests of ShapeAnalysis_Shell and ShapeAnalysis_FreeBounds against native OCCT on the corpus's shells.
+    On 1,570 shapes, 89,646 values and shapes are all identical.

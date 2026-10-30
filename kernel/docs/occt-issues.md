@@ -679,3 +679,29 @@ Not bugs, but worth knowing:
   object reused for a second edge keeps the first edge's box. OCCT's callers make one object per pave block.
 - The BOPAlgo message file's key `BOPAlgo_AlertBOPIsNotSet` doesn't match the class `BOPAlgo_AlertBOPNotSet`, and
   `BOPAlgo_AlertNullFace` has no class.
+
+## Phase 6: unit 6H1, healing foundations
+
+Found while porting ShapeExtend's rest, ShapeBuild_ReShape, ShapeConstruct, ShapeAnalysis's rest and
+Geom2dAPI_Interpolate/PointsToBSpline. Each is reproduced in the port and marked `// OCCT`; "pinned" names the unit
+test that shows it. None of these classes but ShapeAnalysis_Shell and FreeBounds is bound natively, and those two
+showed no difference from native.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeExtend_CompositeSurface::Copy` | Initializes the copy with `Init(patches)`, whose parametrisation defaults to natural | A copy (and so `Transformed`, `Translated`, ...) loses uniform, unitary or custom joint values. Pinned by `CompositeSurface_Copy_LosesJointValues`; the port's `With*` twins keep them |
+| `ShapeConstruct::JoinPCurves` | Returns `i <= edges->Length()`: false when every pcurve was joined, true when the loop broke early (or on a plane) | The inverse of its documentation. No OCCT caller reads it. Pinned by `JoinPCurves_TwinJoinsTwoEdgesOnACylinder` |
+| `ShapeConstruct::ConvertSurfaceToBSpline`, the continuity-lowering loop | `if (cnt > 0) cnt--; continue;` retries C0 as long as GeomConvert_ApproxSurface throws | Can loop forever. By reading |
+| `ShapeAnalysis_ShapeTolerance::InTolerance` | Tests vertices with `tol >= valmax` where faces and edges test `<=` | `OverTolerance(s, 0)` returns every vertex and nothing else; a vertex inside [min, max] isn't found. Pinned |
+| `ShapeAnalysis_Geom::PositionTrsf` | `SetScale` resets the whole transformation | Any scale other than 1 discards the rotation computed before it. Pinned |
+| `ShapeAnalysis_WireVertex::Analyze` | Compares vertices with `V1 == V2`, orientation included | An edge's REVERSED last vertex never equals the next edge's FORWARD first one: status 0 ("same vertex") is never recorded, shared vertices get 1. Pinned |
+| `ShapeAnalysis_WireVertex::SetStart` | Stores the parameter on the preceding edge in `myUFol` instead of `myUPre` | The preceding parameter is lost. Pinned |
+| `ShapeAnalysis_WireVertex::NextCriter(1)` | Tests `stat > 0` where the documentation says `>= 0` | By reading |
+| `ShapeAnalysis_CheckSmallFace::CheckPin` | Reports `whatrow = nbu` when row 1 of U is the pin; the status and the DONE3 equal-poles check come from the last bound tested only | By reading |
+| `ShapeAnalysis_CheckSmallFace::CheckTwisted` | Computes the V step from the U range (`dv = (umax-umin)/nbint`) | The V sampling is wrong on non-square ranges. Pinned (a twist is still found) |
+| `ShapeAnalysis_CheckSmallFace::CheckPinEdges` | Tests `(M_PI - angle2)` twice; the second is probably meant for angle1 | By reading |
+| `ShapeAnalysis_CheckSmallFace` constructor | Leaves myStatus, myStatusPinFace, myStatusPinEdges and myPrecision uninitialised | The port starts them at OK and -1 |
+| `ShapeAnalysis_CheckSmallFace::IsSpotFace` | Returns 1 ("spot") for a face without wires and leaves spot and spotol unwritten | Pinned |
+| `ShapeAnalysis_CanonicalRecognition::GetSurface` (shell form) | The loop recomputes the parameters from the first face's surface instead of `anElemSurf1` | Every later face compares equal: any shell whose first face fits is accepted. By reading |
+| `ShapeAnalysis_CanonicalRecognition::GetCurve` | When the edge's 3D curve already is the target conic and the edge has a location, transforms the edge's own (shared) curve in place | Native OCCT changes shared geometry, and repeated calls accumulate the transformation. The port copies the curve first (decision 660). Pinned (three calls give the same result) |
+| `ShapeAnalysis_CanonicalRecognition`'s FillSolverData (cone) | The semi-angle's upper bound uses the radius step `aDR` instead of `aDAng` | By reading |

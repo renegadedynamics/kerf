@@ -3534,7 +3534,7 @@ tcopy, maxtolerance, purgeloc, checkloc, lprops, sprops, vprops, vpropsgk; SWDRA
       Standard_DomainError with Draw's warning. When 3K lands, the commands call the makers.
 409. **`tolerance` ports ShapeAnalysis_ShapeTolerance privately** (TKShHealing is phase 7): InitTolerance,
       AddTolerance, GlobalTolerance and InTolerance as OCCT (its vertex test included, occt-issues.md). The command
-      should call the package once it is ported.
+      should call the package once it is ported. *Done by unit 6H1 (decision 659): the private copy is deleted.*
 410. **Files.** Draw's file commands read the overlay first, then the disk, and write to the overlay only
       (decision 38), a character per byte (`TclFileSystem.TryReadBytes`, `WriteBytes`), so `binsave` and a later
       `binrestore` in the same script work, and `read [open ...]` sees the text.
@@ -5939,3 +5939,258 @@ canonical-comparison harnesses. Numbers from 6101 are placeholders, renumbered o
       - 6F and 6P: keep the shell's members listed in the stub files' headers. Later oracles compare with
         `BRepTextComparison`, then `CanonicalShapeComparer` and `HistoryComparison`, and check parallel runs with
         `DeterminismHarness`.
+
+## Phase 6: unit 6H1, healing foundations
+
+The rest of ShapeExtend (CompositeSurface, Explorer, MsgRegistrator, BasicMsgRegistrator, Parametrisation),
+ShapeBuild_ReShape, ShapeConstruct (package, Curve, ProjectCurveOnSurface, MakeTriangulation), the rest of
+ShapeAnalysis (FreeBounds, FreeBoundData, FreeBoundsProperties, Shell, ShapeContents, ShapeTolerance, CheckSmallFace,
+WireVertex, Geom, BoxBndTree, CanonicalRecognition), Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline, in
+OcctNet.ModelingAlgorithms; the copy-at-entry helper of all healing in OcctNet.ModelingData. Ported in three
+worktrees (ShapeConstruct and Geom2dAPI; six ShapeAnalysis classes; the rest and the design), merged. Numbers from 6201
+are placeholders, renumbered on merge; plan decisions are cited by their merged numbers (576–590), 6S's by 599–606.
+
+642. **`BRepTools_CopyAtEntry` is the copy at the entry of every in-place healing algorithm** (plan 2.7, decision
+      583). An internal sealed class in `BRepTools/BRepTools_CopyAtEntry.cs` (ModelingData, no OCCT file), over
+      decision 416's `ExactCopyForWrite` and `KeepUnchangedIn`:
+      - `new BRepTools_CopyAtEntry(input, context)` copies the input when its graph holds a frozen TShape
+        (`BRepTools.HoldsFrozen`, or always with `theToForce`). An unfrozen input, which only ported code holds, is
+        worked on in place, as in OCCT. Requests already recorded in the context for the input's sub-shapes are moved
+        onto their copies, so OCCT's `Context()->Apply(myShape)` at the start of an algorithm still applies them.
+      - The algorithm runs on `Shape()`. Arguments that refer to the input's sub-shapes are mapped with `Copied(s)`.
+      - `Finish(result, others)` gives back the input's own TShapes wherever the algorithm left a copy equal to its
+        original. This holds in the result, in the shapes the context records and in `others`. They are all walked
+        at once, through one unfrozen holder compound whose children are appended directly, so their Free flags
+        don't change. The result is returned unfrozen; the algorithm's public accessor freezes it.
+      - `Final(s)` maps any shape the algorithm worked with; `History()` lists the input's sub-shapes changed in place;
+        `Composed(h)` maps a history the algorithm keeps over the copy onto the input (removed, modified, generated;
+        a copy changed in place but not in `h` is modified into itself). Entries of `h` keyed by shapes the algorithm
+        made are not carried over.
+      - A changed result is the copy's TShapes holding the input's kept ones. A shape that needed nothing is the
+        input itself, after one copy.
+      - Unit 6S's sewing keeps its own copy and mapping (`fromWork`, decision 599), written before this helper; it
+        can move onto it later.
+643. **The context answers for the caller's shapes.** `Finish` composes the algorithm's `ShapeBuild_ReShape` (any
+      `BRepTools_ReShape`) with the copy:
+      - Recorded requests are re-keyed from the copy's sub-shapes to the input's, and their replacements are mapped to
+        the final shapes. This goes through `BRepTools_ReShape.ReplaceTShapes(keys, results)`, internal and new, which
+        keeps each request's order, kind, location and orientation. A new internal `InternalReplacements()` lists the
+        replacements.
+      - A sub-shape the algorithm changed in place without a request (a tolerance raised, a pcurve added) is recorded
+        as replaced by its changed copy.
+      - So `Value(s)`, `Apply(input)` and `History()` work for the shapes the caller holds: `Apply(input)` gives the
+        result.
+      - **Departure from native:** native OCCT's context has no entry for a sub-shape changed in place, because the
+        caller's own shape changed. The port's has one, and its `History()` lists that sub-shape as modified. The
+        oracle of 6H3 compares histories through decision 581's canonical match.
+644. **Rules for the units that use it (6H2, 6H3, 6U, 6S).**
+      - Between the entry and `Finish`, use only the internal, non-freezing forms: `InternalApply`, `InternalValue`,
+        `InternalStatus`, `InternalWire`, `InternalFreeEdges`, `InternalCopyReplaceVertices`, ... A public accessor
+        called on the copy freezes its graph, and `KeepUnchanged` then throws `Standard_ImmutableObject` on a frozen
+        copy it would complete.
+      - Copy at the entry of the public algorithm (`ShapeFix_Shape.Perform`, `ShapeFix_Face.Perform`, `Sewing.Perform`,
+        `UnifySameDomain.Build`) only. The algorithms it calls on its copy run in place, because their inputs are
+        unfrozen.
+      - A curve or surface reached from a representation is still frozen in the copy. Each in-place geometry edit
+        copies it first, as decision 583 says.
+645. **ShapeBuild_ReShape** is a public working object deriving from BRepTools_ReShape (decision 358).
+      - `Apply(shape, until, buildmode)` is public and freezes its result; `internal virtual InternalApply(shape, until,
+        buildmode)` doesn't.
+      - OCCT's `Apply(shape, until)` override is `internal override InternalApply`, so the base class's public
+        `Apply`, `Status(..., last)` and `CopyVertex` reach it.
+      - The private `applyImpl` hides the base class's (`new`) and reads `InternalValue`.
+      - `Status(ShapeExtend_Status)` is public virtual. Shapes are written only into what Apply builds: the
+        EmptyCopied parents, `ShapeBuild_Edge.CopyRanges` onto the rebuilt edge (which reads the source through
+        `Curves()`), and the Closed flag of new wires and shells. So it works on frozen shapes.
+      - OCCT's console line "NOT YET IMPLEMENTED" for other types isn't printed (decision 493).
+646. **ShapeExtend_Explorer, the message registrators and Parametrisation.**
+      - The explorer is a sealed stateless working object. `CompoundFromSeq` and `SortedCompound` freeze the compounds,
+        wires and shells they build; `InternalCompoundFromSeq` and `InternalSortedCompound` don't.
+      - `DispatchList`'s sequences are `ref` (created when null). `ListFromSeq` takes a nullable sequence.
+      - `ShapeExtend_BasicMsgRegistrator` is a public class whose `Send` overloads do nothing; the object is a nullable
+        `Standard_Transient`.
+      - `ShapeExtend_MsgRegistrator` keeps OCCT's two maps: transients by reference, shapes by TopTools_ShapeMapHasher.
+        `MapTransient()` and `MapShape()` return them, as OCCT's const references do. Null objects are ignored.
+647. **ShapeExtend_CompositeSurface is a geometry** (translation-rules.md, section 8).
+      - Internal mutators with `CheckMutable()`: both `Init`s, `SetUJointValues`, `SetVJointValues`, `SetUFirstValue`,
+        `SetVFirstValue`, `ComputeJointValues`, `CheckConnectivity` (it sets the closure flags) and `Transform`.
+      - Public twins on a copy that keeps the joint values: `WithUFirstValue`, `WithVFirstValue`,
+        `WithUJointValues(out bool)`, `WithVJointValues(out bool)`, `WithJointValues(param)`.
+      - OCCT keeps the caller's array of patches; the port keeps its own copy of the array, holding the same surfaces.
+        The patch accessors freeze the patch they hand out, as Geom_RectangularTrimmedSurface's `BasisSurface`.
+        `Patches()`, `UJointValues()` and `VJointValues()` return copies.
+      - `Transform` copies a frozen patch before transforming it (`// OCCT.NET: frozen`).
+      - `UIso` and `VIso` return null, as OCCT's null handles (`null!`). `LocateUVPoint` and
+        `GlobalToLocalTransformation` take `out`.
+      - `Copy()` gives natural joint values whatever the surface's own are, as OCCT's does (occt-issues.md).
+648. **ShapeAnalysis_Shell and ShapeAnalysis_BoxBndTreeSelector.**
+      - The shell analyser is a sealed working object over three indexed maps (TopTools_ShapeMapHasher), so edges come
+        in OCCT's order.
+      - `BadEdges` and `FreeEdges` freeze the compounds they build, and with them the edges. `InternalBadEdges` and
+        `InternalFreeEdges` don't, for ShapeFix_Shell on its copy.
+      - `CheckOrientedShells` counts a shell as bad whenever it has a bad edge. OCCT tests the index that
+        `IndexedMap::Add` returns, which is never 0.
+      - The selector derives from `NCollection_UBTree<int, Bnd_Box>.Selector`. OCCT's anonymous `First`/`Last` enum is
+        a pair of constants.
+649. **ShapeAnalysis_FreeBounds** is a sealed public working object. It writes only into the wires and compounds it
+      builds; edges whose vertices change are new (`InternalCopyReplaceVertices`, `InternalCombineVertex`).
+      - Public results freeze: `GetClosedWires`, `GetOpenWires`, and the wires of `ConnectEdgesToWires`,
+        `ConnectWiresToWires` (and the new vertices of its vertex map) and `SplitWires`. Each has an `Internal` form
+        for ported callers (BRepProj_Projection, 5P; BRepOffset's simple offset, phase 7; FreeBoundsProperties).
+      - As in OCCT, `ConnectEdgesToWires` reverses, in the caller's sequence, the edges it reversed, and
+        `ConnectWiresToWires` the wires: the sequences are working collections.
+      - `DispatchWires(wires, ref closed, ref open)` adds to the caller's compounds in OCCT. A public caller's compound
+        is frozen, so the port replaces it by a new compound holding its items and the added wires (copy-on-write,
+        `// OCCT.NET: frozen`), then freezes both. `InternalDispatchWires` adds in place.
+      - The deprecated `void` overloads are ported with `[Obsolete]`.
+      - **Sewing.** The tolerance form is OCCT's: `new BRepBuilderAPI_Sewing(toler, false, false)`, each child added,
+        `Perform`, then the non-degenerated `FreeEdge(i)` (frozen; the caller's own edges where sewing didn't cut
+        them). Sewing copies frozen inputs itself and builds no sewn shape in that mode (decision 599), so FreeBounds
+        needs no copy. `IsSectionBound` isn't read (6S's note: an OCCT bug clears it after sewing).
+650. **ShapeAnalysis_FreeBoundData and FreeBoundsProperties.**
+      - FreeBoundData is a public working object with OCCT's setters; its notches are keyed by TopTools_ShapeMapHasher.
+        `Notches()`, `ClosedFreeBounds()` and `OpenFreeBounds()` return the objects' own sequences, as OCCT's handles.
+      - FreeBoundsProperties is sealed. It stores the frozen wires of the public `GetClosedWires`/`GetOpenWires`.
+      - `CheckNotches(wire, num, out notch, out distMax, prec)` always builds the notch, and freezes it. `distMax` is 0
+        when it returns false, where OCCT leaves it unset.
+      - `CheckNotches` wraps from the last edge to the first even on an open wire, as OCCT does: a V-shaped open
+        polyline has two notches. This is a test, not a bug.
+651. **Tests (this part).**
+      - Ported GTests: ShapeBuild_ReShape_Test (3 of 4; the ShapeFix_Shape stability test is skipped, `TODO(6H3)`) and
+        ShapeAnalysis_FreeBounds_Test (11), with OCCT's names.
+      - Unit tests (28):
+        - BRepTools_CopyAtEntry (7): the pattern for later units, on a toy algorithm written as ShapeFix is. It
+          raises a vertex tolerance in place, replaces a face through the context and applies it.
+          - The frozen box is unchanged, and 2 of the result's 6 faces and 9 of its 12 edges are the caller's own.
+          - The context's `Value`, `Apply` and `History` answer for the caller's shapes.
+          - Composed histories work, and a no-op gives back the input itself.
+          - An unfrozen input runs in place.
+          - Requests recorded before the entry are applied.
+          - `Finish` runs once.
+        - ShapeExtend (7): the explorer, the internal forms, CompositeSurface (natural, uniform and bad joints, the
+          twins, Copy's lost joints, frozen patches and Transform, closure in U), the registrators.
+        - Shell, FreeBounds and FreeBoundsProperties (8): open and misoriented shells, the shell form with one and with
+          two adjacent faces removed, the statics (chaining by distance, the vertex map, DispatchWires
+          copy-on-write, SplitWires), properties and notches.
+652. **Oracle** (`tests/OcctNet.Oracle.Tests/ShapeAnalysis/ShapeAnalysisFreeBoundsOracleTests.cs`).
+      - ShapeAnalysis_Shell (CheckOrientedShells with and without INTERNAL edges counted, its flags and its BadEdges
+        and FreeEdges) and ShapeAnalysis_FreeBounds were compared with native OCCT. FreeBounds ran the shell form
+        with the four split options and with INTERNAL edges, plus ConnectEdgesToWires by distance (10^-4) on the free
+        edges, which makes new vertices and edges.
+      - Inputs: data/occ, the test dataset's .brep files (up to 1 MB and 50,000 sub-shape occurrences) and 72 random
+        native shapes, each also with every third face removed. Both sides read native OCCT's file.
+      - The tolerance form was compared too, sewing at 10^-6 and 10^-2.
+      - Shapes were compared as BRep text with the Free column masked; exceptions by OCCT type.
+      - Result: 1,570 shapes, 89,646 values and shapes, all identical, in 6 minutes. 126 shapes needed the Free mask:
+        free edges that sewing left untouched are the caller's frozen edges, which keep their Free flag. 33 cases
+        throw the same OCCT exception on both sides (data with a vertex without a point).
+653. **Geom2dAPI_Interpolate and Geom2dAPI_PointsToBSpline mirror the 3D ports** (decision 243).
+      - `Curve()` and the explicit conversion operator freeze. Geom2dAPI_Interpolate gains an internal `InternalCurve()`
+        (no freeze) for ShapeConstruct_ProjectCurveOnSurface.
+      - PointsToBSpline's graph form (YValues, X0, DX) is ported: the X poles come from IncreaseDegree and InsertKnots
+        on a line, so X(t) = t.
+      - Its Params form keeps the knots on [0, 1] as OCCT's 2D class does, where the 3D form reparametrises: a
+        difference between OCCT's two classes, noted in the code, not a bug.
+654. **ShapeConstruct's statics hand out frozen geometry.**
+      - Public, freezing: ConvertCurveToBSpline (3D and 2D), ConvertSurfaceToBSpline, JoinCurves (3D and 2D). Internal,
+        not freezing, for ShapeFix and ShapeUpgrade: `InternalConvertCurveToBSpline`, `InternalConvertSurfaceToBSpline`,
+        `InternalJoinCurves`, which read the approximators' `InternalCurve()` and CompCurve's `InternalBSplineCurve()`.
+      - A B-spline input to ConvertCurveToBSpline is returned itself, as OCCT returns its handle; it may be frozen.
+      - JoinCurves gives `out` null and false on OCCT's early false, where OCCT leaves its outputs unchanged. It copies
+        both inputs first (GetCurveCopy: `Copy()`/`Reversed()`), so it segments, reverses and moves poles on copies
+        only.
+      - `catch (Standard_Failure)` only, as decision 509.
+655. **ShapeConstruct.JoinPCurves is internal**: it writes UpdateEdge, Range, SameRange and SameParameter into the
+      given edge, and lets a frozen edge's exception through (decision 423). Its public twin `PCurvesJoined(edges,
+      face, edge, out bool)` runs it on `ExactCopyForWrite`, keeps what is unchanged and freezes (decision 420); on a
+      plane, where nothing is written, it returns the input edge.
+656. **ShapeConstruct_Curve** is a sealed stateless working object.
+      - AdjustCurve, AdjustCurveSegment and AdjustCurve2d stay public and edit the caller's curve in place, as
+        decision 506's ValidateRange: they throw `Standard_ImmutableObject` on a frozen curve. Their twins
+        `CurveAdjusted`, `CurveSegmentAdjusted` and `Curve2dAdjusted(..., out bool)` adjust a `Copy()` and freeze it; when
+        nothing applies they return the input.
+      - ConvertToBSpline (3D and 2D) freezes; `InternalConvertToBSpline` doesn't. FixKnots is static.
+657. **ShapeConstruct_ProjectCurveOnSurface** is a public working object.
+      - It keeps an end-point cache between calls, so a parallel loop needs one projector per body.
+      - `Perform(..., out Geom2d_Curve?)` is public, non-virtual and freezes the pcurve. OCCT's virtual is `internal
+        virtual InternalPerform` (decision 358's pattern). `AdjustOverDegenMode()` returns `ref int`.
+      - The protected helpers keep OCCT's names. The point, parameter and 2D point arrays are `ref` where OCCT
+        reassigns them (insertAdditionalPointOrAdjust, checkPoints, checkPoints2d). isAnIsoparametric's outputs are
+        `ref`, defaulted by the caller where OCCT leaves them unset.
+      - getLine's capturing lambda is a private method with `ref` state. SurfaceProjectorWithCache is a private nested
+        class over `List<>`, and the cache a 0- or 2-element array. NCollection_IncAllocator is dropped.
+      - InternalPerform's pcurve is unfrozen, but in the planar analytic case it is ProjLib's
+        `TrimmedCurve.BasisCurve()`, which the port freezes: callers copy a pcurve before editing it.
+658. **ShapeConstruct_MakeTriangulation** is a sealed BRepBuilderAPI_MakeShape (decisions 454, 455): Build and IsDone
+      are overridden; it uses MakePolygon's `InternalWire()` and MakeEdge's `InternalEdge()`. The facets hold the
+      caller's wire edges, which are only read. IsRightContour and MeanNormal are private statics.
+659. **ShapeAnalysis's healing-side analysers only read their shapes** (decision 21; the 4S conventions, 506–518).
+      - Covered: CanonicalRecognition, CheckSmallFace, ShapeContents, ShapeTolerance and WireVertex are sealed
+        working objects; ShapeAnalysis_Geom is a static class.
+      - Outputs are `ref` where OCCT may return without writing them:
+        - CanonicalRecognition's `Is*(tol, ref entity)`: the sample is read as a first guess, written only on success.
+        - CheckSmallFace's `IsSpotFace` spot and spotol (a face without wires returns 1 and writes neither),
+          `CheckPin`'s row and sense, `CheckTwisted`'s parameters, `CheckSingleStrip`'s and `CheckStripFace`'s E1 and E2,
+          `FindStripEdges`' dmax.
+        - `ShapeAnalysis_Geom.NearestPlane`'s plane.
+      - They are `out` where OCCT always writes them: CheckStripEdges' dmax, FindStripEdges' E1 and E2,
+        NearestPlane's dmax, PositionTrsf's trsf, `WireVertex.Data`.
+      - ShapeContents' mode flags are `ref bool` (`ModifyXxxMode()`); OCCT's misspelt `ModifyOffestSurfaceMode` is
+        kept, `[Obsolete]`. Its `*Sec()` sequences are the object's own, cleared by the next Perform, as OCCT's.
+        `ShapeTolerance.OverTolerance` and `InTolerance` return a new sequence.
+      - CheckSmallFace starts myStatus, myStatusPinFace and myStatusPinEdges at OK and myPrecision at -1 ("use local
+        tolerance zones", the documented default); OCCT leaves them uninitialised.
+      - Draw-lite's `tolerance` command runs the ported ShapeAnalysis_ShapeTolerance; decision 409's private copy is
+        deleted.
+660. **Writes into shapes in ShapeAnalysis.**
+      - `CheckSmallFace.CheckSplittingVertices` adds the splitting vertices to the caller's compound in OCCT. The public
+        form takes `ref TopoDS_Compound` and builds a new compound of the caller's items and the new vertices, frozen.
+        `InternalCheckSplittingVertices(..., in TopoDS_Compound)` is OCCT's in-place form for ShapeFix_FixSmallFace
+        (6H3), which owns its compound; it throws on a frozen one. The MapEdges, MapParam and mapEdges arguments are
+        the caller's working maps, created with TopTools_ShapeMapHasher.
+      - `CheckPinFace`'s reordered wire, built and never used, comes from `ShapeExtend_WireData.InternalWire`.
+      - `CanonicalRecognition.GetCurve` copies the edge's curve before transforming it by the edge's location
+        (`// OCCT.NET: frozen`): when the edge's 3D curve already is the target conic, GeomConvert_CurveToAnaCurve
+        returns that frozen curve and OCCT transforms the shared curve in place (occt-issues.md). GetSurface needs no
+        copy: SurfToAnaSurf always returns a new surface. IsCylinder, IsCone and IsSphere write only into the wire they
+        build around an edge.
+661. **Tests (the two other parts).**
+      - Ported GTests:
+        - Geom2dAPI_Interpolate_Test (1) and Geom2dAPI_PointsToBSpline_Test (2).
+        - ShapeConstruct_ProjectCurveOnSurface_Test (29). Bug27569_HighMultiplicityBSpline_M2's GTEST_SKIP is a
+          `return`: xUnit 2.9 has no runtime skip.
+        - ShapeAnalysis_CanonicalRecognition_Test (21). B5–B9 sew with BRepBuilderAPI_Sewing as OCCT's; B10 uses the
+          analytic ellipse GeomAPI_IntSS computes (`TODO(5G)`).
+      - Unit tests (30):
+        - ShapeConstruct (13): the statics on frozen inputs, JoinCurves, ShapeConstruct_Curve and its twins,
+          ProjectCurveOnSurface's freezing and statuses, PCurvesJoined, MakeTriangulation.
+        - ShapeAnalysisHealingTests (17), most on frozen inputs checked unchanged with ShapeSnapshot: ShapeContents,
+          ShapeTolerance, Geom, WireVertex, CheckSmallFace and CanonicalRecognition.
+      - Not bound natively: no oracle. ProjectCurveOnSurface gets its oracle through ShapeFix_Edge (6H2).
+662. **For later units.**
+      - **6H2, 6H3, 6U, 6S:** decision 644, and the worked example in `BRepTools_CopyAtEntryTests.ToyFix`:
+        - copy at the public entry: `var anEntry = new BRepTools_CopyAtEntry(myShape, Context());`;
+        - run OCCT's code on `anEntry.Shape()` with the internal forms;
+        - end with `myResult = anEntry.Finish(Context().InternalApply(work))`;
+        - `Shape()` freezes the result;
+        - a history kept by the algorithm goes through `anEntry.Composed(h)`.
+      - **6H2, ShapeFix_Edge::FixAddPCurve:**
+        - project with `ShapeConstruct_ProjectCurveOnSurface.InternalPerform` and attach the pcurve to the edge it
+          owns (a copy);
+        - copy the pcurve before editing it in place if it is frozen (the planar case), and record the site;
+        - use one projector per wire, as OCCT does for its seam cache, and one per loop body in parallel code.
+      - **ShapeFix and ShapeUpgrade** call ShapeConstruct's `Internal*` forms. Their results may be the caller's own
+        frozen B-spline: copy before SetPole or Segment.
+        - ShapeConstruct_Curve's Adjust* edit in place.
+        - JoinPCurves is internal, and its result is inverted (occt-issues.md).
+      - **6H3:**
+        - ShapeFix_Shell reads `ShapeAnalysis_Shell.InternalBadEdges`/`InternalFreeEdges`.
+        - ShapeFix_FixSmallFace calls `InternalCheckSplittingVertices`, and gets each splitting vertex twice, as in
+          OCCT.
+        - ShapeFix_ComposeShell's composite surfaces follow decision 647.
+        - ShapeFix_FreeBounds uses FreeBounds' internal forms.
+        - The ShapeFix_Shape stability GTest in ShapeBuild_ReShape_Test waits for it.
+      - **6L:** `statshape` counts a closed face's seam twice, as native does, because the explorer visits it FORWARD
+        and REVERSED.
+      - **6S** can move its copy at the entry onto `BRepTools_CopyAtEntry` (decision 642); FreeBounds needs nothing from
+        it.
