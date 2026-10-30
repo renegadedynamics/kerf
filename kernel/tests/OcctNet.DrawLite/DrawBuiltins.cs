@@ -47,6 +47,7 @@ internal static class DrawBuiltins
         GeometryTestCommands.Register(theInterpreter);
         GeometryTestIntersectCommands.Register(theInterpreter);
         GeometryTestBisecCommands.Register(theInterpreter);
+        GeometryTestFairCurveCommands.Register(theInterpreter);
         BRepTestMatCommands.Register(theInterpreter);
         GeometryTestProjCommands.Register(theInterpreter);
         GeometryTestPipeCommands.Register(theInterpreter);

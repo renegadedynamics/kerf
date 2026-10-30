@@ -56,6 +56,8 @@
     <EmbeddedResource Include="GeomFill\Recordings\appsurfrec.txt.gz" LogicalName="GeomFill.appsurfrec.txt.gz" />
     <!-- Native OCCT's ChFi2d_FilletAPI and ChFi2d_ChamferAPI on random pairs of edges, recorded by tools/chfi2drec (unit 5R) -->
     <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
+    <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
+    <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

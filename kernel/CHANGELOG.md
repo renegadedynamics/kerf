@@ -902,3 +902,16 @@ Phase 5 (part): 2D fillets and chamfers (unit 5R).
   native; oracle tests of MakeFillet2d on 520 faces (random polygons and arc profiles, build123d.NET's rounded
   rectangle and chamfer patterns), every result byte-identical and every history identical; the corpus's fillet2d cases
   (11 runnable, 10 OK, 1 missing its data).
+
+Phase 5 (part): fair curves (unit 5Q).
+
+- `OcctNet.ModelingAlgorithms`: the FairCurve package: `FairCurve_Batten` (curves simulating physical battens through
+  two points with tangency constraints, free or imposed sliding, height and slope) and `FairCurve_MinimalVariation`
+  (minimal variation of curvature, with curvature constraints and a physical ratio), working objects whose `Curve()`
+  returns a new, frozen 2D B-spline; the energies (`FairCurve_EnergyOfBatten`, `FairCurve_EnergyOfMVC`), the tension,
+  sagging and jerk distributions, `FairCurve_BattenLaw`, `FairCurve_Newton` and `FairCurve_AnalysisCode`.
+- Tests: native recordings (tools/fairrec, a C++ recorder built against native OCCT): 750 cases of battens, minimal
+  variation curves, Draw's command sequences and the energies' values, gradients and hessians, every result
+  bit-identical to native, exceptions included; unit tests (OCCT has no FairCurve GTests).
+- Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`, `setheight`,
+  `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. No corpus case uses them.
