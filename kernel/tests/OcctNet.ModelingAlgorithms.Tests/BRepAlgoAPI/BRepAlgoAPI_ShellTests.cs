@@ -8,9 +8,8 @@ using static Occt.TopAbs_ShapeEnum;
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
 /// <summary>
-/// The Boolean API shell of unit 6A (decision 579) over the stub builder (decision 638): publication, frozen
-/// inputs, histories, errors, the options struct and the functional twins. The stub handles arguments that don't
-/// interfere, whose results are OCCT's: the operations on disjoint boxes.
+/// The Boolean API shell of unit 6A (decision 579), now over unit 6F's builders: publication, frozen inputs,
+/// histories, errors, the options struct and the functional twins, on disjoint and overlapping boxes.
 /// </summary>
 public class BRepAlgoAPI_ShellTests
 {
@@ -19,6 +18,13 @@ public class BRepAlgoAPI_ShellTests
 
     private static TopoDS_Shape UnfrozenBox(double x) =>
         new BRepPrimAPI_MakeBox(new gp_Pnt(x, 0, 0), 1, 1, 1).InternalShape();
+
+    private static double Volume(in TopoDS_Shape theShape)
+    {
+        GProp_GProps aProps = new();
+        BRepGProp.VolumeProperties(theShape, aProps);
+        return aProps.Mass();
+    }
 
     private static NCollection_List<TopoDS_Shape> List(params TopoDS_Shape[] theShapes) => new(theShapes);
 
@@ -213,18 +219,25 @@ public class BRepAlgoAPI_ShellTests
     }
 
     [Fact]
-    public void InterferingArguments_StubBuilderFails()
+    public void InterferingArguments_FuseOverlappingBoxes()
     {
+        // unit 6E's pave filler intersects them and unit 6F's builders build the result
         TopoDS_Shape a = Box(0), b = Box(0.5);
+        ShapeSnapshot sa = ShapeSnapshot.Of(a), sb = ShapeSnapshot.Of(b);
         var aFuse = new BRepAlgoAPI_Fuse(a, b);
-        Assert.True(aFuse.HasErrors());
-        // unit 6E's pave filler intersects them; unit 6A's stub builder can't build their images yet
-        Assert.False(aFuse.DSFiller()!.HasErrors());
-        Assert.True(aFuse.HasError(typeof(BOPAlgo_AlertBuilderFailed)));
-        Assert.False(aFuse.IsDone());
-        using StringWriter aText = new();
-        aFuse.DumpErrors(aText);
-        Assert.Contains("BOPAlgo_AlertBuilderFailed", aText.ToString());
+        Assert.False(aFuse.HasErrors());
+        Assert.True(aFuse.IsDone());
+        TopoDS_Shape aResult = aFuse.Shape();
+        Assert.True(AllFrozen(aResult));
+        Assert.Equal(1.5, Volume(aResult), 1e-9);
+        Assert.Single(TShapes(aResult, TopAbs_SOLID));
+        // the frozen arguments are worked on non-destructively: unchanged
+        sa.AssertUnchanged(a);
+        sb.AssertUnchanged(b);
+        // the solids are split into the fused solid; a's face at x = 1 is inside b and is deleted
+        Assert.NotEmpty(aFuse.Modified(new TopExp_Explorer(a, TopAbs_SOLID).Current()));
+        Assert.True(aFuse.HasModified());
+        Assert.True(aFuse.HasDeleted());
     }
 
     [Fact]
@@ -272,7 +285,8 @@ public class BRepAlgoAPI_ShellTests
         Assert.False(new TopoDS_Iterator(s2.Shape()).More());
 
         var s2b = new BRepAlgoAPI_Section(a, new gp_Pln(new gp_Pnt(0, 0, 0.5), new gp_Dir(0, 0, 1)));
-        Assert.True(s2b.HasError(typeof(BOPAlgo_AlertBuilderFailed)));
+        Assert.True(s2b.IsDone());
+        Assert.Equal(4, TShapes(s2b.Shape(), TopAbs_EDGE).Count);
 
         var s3 = new BRepAlgoAPI_Section(new Geom_Plane(aFar), a);
         Assert.Equal(TopAbs_FACE, s3.Shape1().ShapeType());
@@ -353,10 +367,12 @@ public class BRepAlgoAPI_ShellTests
     [Fact]
     public void Twins_Errors_ThrowWithTheReport()
     {
+        // FUSE needs arguments of the same dimension (BOPAlgo_BOP::CheckData)
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(10, 10, 10), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).Shape();
         var anError = Assert.Throws<BRepAlgoAPI_Failure>(
-            () => Occt.BRepAlgoAPI.Fuse([Box(0)], [Box(0.5)], new BRepAlgoAPI_Options()));
-        Assert.Contains("BOPAlgo_AlertBuilderFailed", anError.Message);
-        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertBuilderFailed), Message_Gravity.Message_Fail));
+            () => Occt.BRepAlgoAPI.Fuse([Box(0)], [aFace], new BRepAlgoAPI_Options()));
+        Assert.Contains("BOPAlgo_AlertBOPNotAllowed", anError.Message);
+        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertBOPNotAllowed), Message_Gravity.Message_Fail));
         Assert.IsAssignableFrom<StdFail_NotDone>(anError);
 
         Assert.Throws<BRepAlgoAPI_Failure>(() => Occt.BRepAlgoAPI.Cut([Box(0)], [], new BRepAlgoAPI_Options()));
