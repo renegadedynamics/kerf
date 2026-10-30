@@ -1093,3 +1093,27 @@ bounds of Law_BSpline (decision 808).
 | `GeomFill_CurveAndTrihedron`, `LocationDraft`, `LocationGuide::GetAverageLaw` | The matrix's columns are (T, N, B), where D0 to D2 give (N, B, T) | The average law is not the average of M(t). Kept, pinned by a test (CurveAndTrihedron) |
 | `GeomFill_UniformSection::BarycentreOfSurf` | Starts at the section's first parameter but steps to the converted B-spline's last parameter | A wrong sample range when the two differ. By reading |
 | `GeomFill_LocFunction::DN` | Any order other than 0 to 2 dereferences a null pointer | Access violation natively; Standard_OutOfRange in the port (tested) |
+## Phase 5: unit 5M, medial axis
+
+Found while porting Bisector, MAT, MAT2d and BRepMAT2d. Each is ported as OCCT has it and marked `// OCCT` at the
+line; the native recordings (tools/bisrec, tools/matrec, decision 823) agree with the port wherever they reach.
+"Unset" means a local or field OCCT never writes on that path: uninitialised natively, 0 or false in the port.
+
+| Where | What | Effect |
+|---|---|---|
+| `Bisector_Inter::Perform` | Each piece is stored in SBis/SD at its interval index, but the loop runs from 1 to the piece count | When an interval outside the domain is skipped, it reads an unset slot (a null handle) and misses the last piece |
+| `Bisector_Inter::Perform` | The second bisector's end extension is tested with `IB2 == Bis1->NbIntervals()` (Bis2 meant) | Wrong extension test when the bisectors' interval counts differ |
+| `Bisector_Inter::NeighbourPerform` | UMax and UMin come from `BisecCC::ValueAndDist`, which can leave them unset | Unset bounds (0 in the port) |
+| `Bisector_BisecPC(Cu, P, Side, UMin, UMax)` | Leaves shiftParameter, distMax, isEmpty and currentInterval uninitialised, then evaluates `Value(UMin)` with the unset shiftParameter | Uses 0 and false in the port |
+| `Bisector_BisecPC::Values` | No case for N = 3 | EvalD3 returns the given point rather than the bisector's point, with zero derivatives |
+| `Bisector_BisecPC::ComputeIntervals` | The periodic branch is dead (one interval appended at that point) and would call `Period()`, which throws for a non-periodic bisector | None reachable |
+| `Bisector_BisecCC::Values` | No `return` after the extension when the polygon has at most one point; it then compares with `First()` of an empty polygon | Compares with a default point of parameter 0 |
+| `Bisector_BisecCC` (TestExtension) | On the branch testing the curve's last point, T1 isn't normalised before `T1·T2 > 1 - Confusion` | The tangency test depends on T1's length |
+| `Bisector_BisecAna::Perform` | Can leave `thebisector` unset: the circle/circle, circle/line and circle/point cases when no solution is kept, the point/point case when `!ok && oncurve` | Bisector_Bisec dereferences it: a native crash, a NullReferenceException in the port |
+| `Bisector_BisecCC::ValueAndDist`, `Extension`, `PointByInt` | Can leave U1, U2, Distance (UOnB, Dist) unwritten (reached from SupLastParameter) | Unset outputs (`ref` in the port, decision 817) |
+| `Bisector_BisecCC::ChangeGuide` | Shares curve1 and curve2 with the original (not a bug) | Transforming one changes the other |
+| `MAT2d_Mat2d::CreateMat` | A face bounded by one closed edge (a full circle): the main loop never runs and the roots come from the empty list of a bisector never built; `roots->Current()` is a null handle | Native: access violation in `BRepMAT2d_BisectingLocus::Compute`. Port: NullReferenceException (marked in `MAT2d_Mat2d.Roots`) |
+| `MAT2d_Tool2d::BisecFusion` | Assumes a bisector that isn't curve/curve is analytic: a Bisector_BisecPC gives a null `down_cast`, then `BAna->SetTrim` | Native crash, NullReferenceException in the port; reached when contours are merged, e.g. a holed face with Bézier sides (a matrec preset) |
+| `BRepMAT2d_BisectingLocus::RenumerationAndFusion` | Reads `MergeArc1`, `MergeArc2` and `GeomIndexArc1..4`, which `MAT_Graph::FusionOfBasicElts` leaves unset when the two elements are one, and `MergeArc2` unset when the start and end arcs are one | Uninitialised or stale values; the port starts them at false/0 and keeps OCCT's reuse of stale values |
+| `MAT_Bisector`, `MAT2d_Mat2d` | MAT_Bisector's index, issue and end points, vectors, sense and distance, and Mat2d's `intersectionpoint`, uninitialised until set | Harmless (always set before read on the recorded paths); 0 in the port |
+| `MAT2d_CutCurve` | `Perform(C, aSide)` and `PerformInf` declared, never defined; `thenumberofedges` never read | None |

@@ -821,3 +821,21 @@ Phase 5 (part): laws and trihedrons (unit 5L1).
   (frames and their first and second derivatives, intervals, sub-intervals, copies, the best mode): 2,082,140 values,
   all bit-identical (offsets of free-form curves left out of CorrectedFrenet's runs: OCCT's own sampling is very slow on
   them).
+
+Phase 5 (part): the medial axis (unit 5M).
+
+- `OcctNet.ModelingAlgorithms`:
+  - Bisector: the bisecting curves of two lines, circles, conics, B-splines or points (`Bisector_Bisec`, with the
+    analytic `Bisector_BisecAna`, point/curve `Bisector_BisecPC` and curve/curve `Bisector_BisecCC` kinds), their
+    intersections (`Bisector_Inter`) and the functions and polygons behind them.
+  - MAT: the bisecting locus's graph (`MAT_Graph`, arcs, nodes, basic elements), MAT's lists, edges, zones.
+  - MAT2d: the locus computation (`MAT2d_Mat2d`, `Tool2d`, `Circuit`, `MiniPath`, `Connexion`, `CutCurve`, `BiInt`).
+  - BRepMAT2d: the bisecting locus of a planar face or open wire (`BRepMAT2d_BisectingLocus`, `Explorer`,
+    `LinkTopoBilo`), which the 2D wire offset will use. The caller's face is never written.
+- `OcctNet.ModelingData`: `Geom2d_TrimmedCurve.ChangeBasisCurve` (internal).
+- Tests: native recordings (tools/bisrec, tools/matrec, C++ recorders built against native OCCT): 1,123 bisector and
+  bisector-intersection cases and 420 bisecting loci of polygons, arcs, Bézier sides, circles, holed faces and open
+  wires (both sides, both join types, open result on and off), every result bit-identical to native, exceptions
+  included (16,523 and 5,432 cases checked locally); unit tests on the bisectors, the loci's graphs and MAT's lists.
+- Draw-lite: `bisec`; `topoload`, `drawcont`, `side`, `mat`, `result`, `zone`. No corpus case uses `bisec`; the 8
+  that use `topoload` still need phase 7's offset commands.
