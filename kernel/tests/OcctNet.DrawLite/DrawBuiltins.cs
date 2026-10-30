@@ -18,7 +18,7 @@ internal static class DrawBuiltins
         "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
         "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -46,6 +46,7 @@ internal static class DrawBuiltins
         GeometryTestCommands.Register(theInterpreter);
         GeometryTestIntersectCommands.Register(theInterpreter);
         GeometryTestBisecCommands.Register(theInterpreter);
+        BRepTestMatCommands.Register(theInterpreter);
         GeometryTestProjCommands.Register(theInterpreter);
         SWDRAWShapeFixCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
