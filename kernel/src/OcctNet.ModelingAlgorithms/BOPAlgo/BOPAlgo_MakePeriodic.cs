@@ -18,8 +18,12 @@ namespace Occt;
 /// <para>
 /// A working object (decision 414's pattern). <see cref="Shape"/>, <see cref="RepeatShape"/>,
 /// <see cref="RepeatedShape"/>, <see cref="GetTwins"/> and <see cref="History"/> publish: they freeze the result
-/// graphs first. Ported code reads the <c>Internal*</c> forms. The input is never written: OCCT's own splits run
-/// non-destructively, and its trim is a Common, which leaves a frozen input alone (decision 577).
+/// graphs first. Ported code reads the <c>Internal*</c> forms. The input is never written. OCCT's splits run
+/// non-destructively, but its trim (a Common) and the gluing of the repetitions are destructive and natively write into
+/// the input and the periodic shape in place (tolerances, p-curves). The port replaces their frozen parts (the caller's
+/// input, results already handed out) by exact copies first (<c>BRepTools.CopyFrozenForWrite</c>), which the
+/// operations then write into, so results are native's; the history records each frozen shape as modified into its
+/// copy, and the twins of a replaced shape are its copy's.
 /// </para>
 /// <para>
 /// The twins of a repeated shape are grouped by iterating a shape-keyed map, which natively runs in address order: the

@@ -19,7 +19,9 @@ namespace Occt;
 /// A working object (decision 414's pattern). <see cref="Shape"/>, <see cref="PeriodicShape"/>, the materials, the
 /// origins, <see cref="GetModified"/> and <see cref="History"/> publish: they freeze the result graphs first. Ported
 /// code reads the <c>Internal*</c> forms. The gluing runs non-destructively, as in OCCT, so the arguments are never
-/// written. The materials map keys elements with their orientation (OCCT's default hasher).
+/// written. The periodicity natively writes into the connected shape in place, so its frozen parts (the arguments'
+/// untouched sub-shapes) are replaced by copies first, and the materials of a replaced shape are its copy's. The
+/// materials map keys elements with their orientation (OCCT's default hasher).
 /// </remarks>
 public class BOPAlgo_MakeConnected : BOPAlgo_Options
 {
