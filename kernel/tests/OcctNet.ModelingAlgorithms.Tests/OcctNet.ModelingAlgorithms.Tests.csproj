@@ -42,6 +42,8 @@
     <EmbeddedResource Include="BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" />
     <!-- Native OCCT's faces from wires (BRepAlgo_FaceRestrictor, TopOpeBRepBuild_WireToFace), recorded by tools/frrec (unit 5O1) -->
     <EmbeddedResource Include="BRepAlgo\FaceRestrictorRecordings.txt.gz" LogicalName="BRepAlgo.FaceRestrictorRecordings.txt.gz" />
+    <!-- Native OCCT's ChFi2d_FilletAPI and ChFi2d_ChamferAPI on random pairs of edges, recorded by tools/chfi2drec (unit 5R) -->
+    <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
