@@ -705,3 +705,19 @@ Phase 6 (part): edge intersectors (unit 6C).
     which agree within 5.2e-9 (sine and cosine).
   - A reused context gives fresh-context results in any order; serial = parallel through BOPTools_Parallel with edges
     of different tolerances on the same faces; known answers for lines, circles, planes, cylinders and spheres.
+
+Phase 5 (part): analytic constraints (unit 5K1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - GccEnt: qualified lines and circles (`GccEnt_QualifiedLin`, `GccEnt_QualifiedCirc`, immutable values), the
+    qualifiers and their names.
+  - GccInt: the bisecting curves (`GccInt_Bisec` and its line, circle, ellipse, hyperbola, parabola and point kinds).
+  - GccAna: circles tangent to three lines, circles or points (`GccAna_Circ2d3Tan`), to two with the centre on a line
+    or circle (`Circ2d2TanOn`), to two with a given radius (`Circ2d2TanRad`), to one with the centre on a curve and a
+    given radius (`Circ2dTanOnRad`), with a given centre (`Circ2dTanCen`); lines tangent to two circles or points
+    (`Lin2d2Tan`), at an angle to a line (`Lin2dTanObl`), parallel (`Lin2dTanPar`) or perpendicular (`Lin2dTanPer`);
+    the bisectors of points, lines and circles. Computed by their constructors, with OCCT's accessors.
+- Tests: unit tests of every solver and bisector on OCCT's documented configurations (solution counts, qualifier
+  filtering, tangency and pass-through of every solution). Native recordings (tools/gccrec, a C++ recorder built
+  against native OCCT): every constructor of every GccAna class on 6,618 random and hand-picked configurations, every
+  result bit-identical to native, exceptions included, except the results OCCT leaves uninitialised.

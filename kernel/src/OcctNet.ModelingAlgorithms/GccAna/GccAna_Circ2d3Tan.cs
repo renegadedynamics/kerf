@@ -180,7 +180,7 @@ public sealed partial class GccAna_Circ2d3Tan
         int i, j, k, l;
         NCollection_Array1<double> xSol = new(1, 64);
         NCollection_Array1<double> ySol = new(1, 64);
-        // OCCT: rSol has 16 slots where xSol/ySol have 64; more than 16 triplets would overrun it (native writes past it, the port throws)
+        // OCCT: rSol has 16 slots where xSol/ySol have 64; more than 16 triplets would overrun it (OCCT's range check and the port throw)
         NCollection_Array1<double> rSol = new(1, 16);
         NCollection_Array1<int> FirstSol = new(1, 9);
         NCollection_Array1<double> xSol1 = new(1, 32);

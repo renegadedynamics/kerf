@@ -104,8 +104,8 @@ public sealed partial class GccAna_Circ2d2TanOn
         //  Processing of boundary cases.                                           +
         //=========================================================================
 
-        // OCCT: up to four of these cases can hold together, but Radius has two elements (C++ writes past its end;
-        // the port throws Standard_OutOfRange).
+        // OCCT: up to four of these cases can hold together, but Radius has two elements: OCCT's range check throws
+        // Standard_OutOfRange past its end, as the port does (decision 5903).
         if (Math.Abs(d3 - d4) < Tol
             && (Qualified1.IsEnclosed() || Qualified1.IsOutside() || Qualified1.IsUnqualified())
             && (Qualified2.IsEnclosed() || Qualified2.IsOutside() || Qualified2.IsUnqualified()))
@@ -309,7 +309,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                                         if (Math.Abs(Rbid[isol] - RBid[jsol]) <= Tol)
                                         {
                                             nnsol++;
-                                            // OCCT: up to four matches for two elements (the port throws past the end)
+                                            // OCCT: up to four matches for two elements (OCCT and the port throw past the end)
                                             Radius[nnsol] = (RBid[jsol] + Rbid[isol]) / 2.0;
                                         }
                                     }
@@ -324,8 +324,8 @@ public sealed partial class GccAna_Circ2d2TanOn
                                         double distcc1 = Center.Distance(center1);
                                         double distcc2 = Center.Distance(center2);
                                         // OCCT: the qualifiers of unqualified arguments are computed with Radius(i),
-                                        // i the bisector's index, instead of Radius(k); past Radius's two elements C++
-                                        // reads beyond the array; with OCCT's range checks (on in native builds) both throw Standard_OutOfRange
+                                        // i the bisector's index, instead of Radius(k); past Radius's two elements
+                                        // OCCT's range check throws Standard_OutOfRange, as the port does
                                         if (!Qualified1.IsUnqualified())
                                         {
                                             qualifier1[NbrSol] = Qualified1.Qualifier();

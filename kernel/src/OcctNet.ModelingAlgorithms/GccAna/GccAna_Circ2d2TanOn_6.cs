@@ -287,7 +287,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                                     if (Math.Abs(Rbid[isol] - RBid[jsol]) <= Tol)
                                     {
                                         nnsol++;
-                                        // OCCT: up to four matches for two elements (the port throws past the end)
+                                        // OCCT: up to four matches for two elements (OCCT and the port throw past the end)
                                         Radius[nnsol] = (RBid[jsol] + Rbid[isol]) / 2.0;
                                     }
                                 }
