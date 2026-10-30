@@ -986,10 +986,9 @@ public partial class BOPAlgo_PaveFiller
                 //
                 TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV1));
                 BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
-                // OCCT.NET: frozen. OCCT writes the saved tolerance back even into a vertex it never raised (a
-                // vertex of both faces put on the curve as an existing pave): the port skips writing an unchanged
-                // value, so an argument vertex shared by several arguments (faces given separately to the volume
-                // maker or the cells builder) is not written. A raised argument vertex still throws.
+                // OCCT.NET: frozen. OCCT writes the saved tolerance back also when it is the vertex's own (a vertex
+                // only used as an existing pave keeps its tolerance): a no-op, which on a frozen argument vertex would
+                // throw, so it is skipped. A different value is written as OCCT writes it (decision 875).
                 if (TV.Tolerance() != aTol)
                 {
                     TV.Tolerance(aTol);

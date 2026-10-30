@@ -48,6 +48,18 @@
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
     <EmbeddedResource Include="BOPAlgo\Recordings\*.txt.gz" LogicalName="BOPAlgo.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
+    <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
+    <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
+    <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\gordonrec.txt.gz" LogicalName="GeomFill.gordonrec.txt.gz" />
+    <!-- Native OCCT's surfaces through sections (GeomFill_Generator, GeomFill_AppSurf), recorded by tools/appsurfrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\appsurfrec.txt.gz" LogicalName="GeomFill.appsurfrec.txt.gz" />
+    <!-- Native OCCT's ChFi2d_FilletAPI and ChFi2d_ChamferAPI on random pairs of edges, recorded by tools/chfi2drec (unit 5R) -->
+    <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
+    <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
+    <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

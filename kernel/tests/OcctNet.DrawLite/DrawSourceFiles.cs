@@ -26,6 +26,7 @@ internal static class DrawSourceFiles
           "viso", "svalue", "sderivative", "parameters", "bounds"]),
         ("src/Draw/TKTopTest/GeometryTest/GeometryTest_ConstraintCommands.cxx", ["cirtang", "lintan", "gcarc"]),
         ("src/Draw/TKTopTest/GeometryTest/GeometryTest_APICommands.cxx", ["extrema"]),
+        ("src/Draw/TKTopTest/GeometryTest/GeometryTest_SurfaceCommands.cxx", ["sweep", "tuyau"]),
         ("src/Draw/TKDraw/DrawTrSurf/DrawTrSurf.cxx",
          ["translate", "rotate", "pmirror", "lmirror", "smirror", "pscale", "2dtranslate", "2drotate", "2dpmirror",
           "2dlmirror", "2dpscale"]),
@@ -39,6 +40,7 @@ internal static class DrawSourceFiles
          ["nurbsconvert", "deform", "scalexyz", "sameparameter", "fsameparameter", "updatetolerance", "solidorientation",
           "mkedgecurve", "findplane", "compare", "issubshape", "wexplo"]),
         ("src/Draw/TKDraw/DBRep/DBRep.cxx", ["tclean"]),
+        ("src/Draw/TKTopTest/BRepTest/BRepTest_Fillet2DCommands.cxx", ["chfi2d", "fillet2d", "chamfer2d"]),
         ("src/Draw/TKTopTest/MeshTest/MeshTest.cxx", ["trinfo", "triepoints", "trmergenodes", "correctnormals"]),
         ("src/Draw/TKTopTest/MeshTest/MeshTest_PluginCommands.cxx", ["mpparallel", "triarea", "tricheck"]),
     ];

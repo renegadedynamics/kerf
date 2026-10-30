@@ -8236,3 +8236,617 @@ Numbers from 6951 are placeholders, renumbered on merge; merged decisions are ci
       - **6M** (build123d.NET's Booleans): build123d.NET runs `BRepAlgoAPI_*` with `SetRunParallel(true)`, then Clean
         (6U). Both are bit-identical to native on everything measured here, so the milestone's replay should compare
         bytes first; the twins (decision 640) freeze the inputs and give a frozen result and history.
+## Phase 5: unit 5L2, sections and sweep surfaces
+
+GeomFill's sweep half beyond 5L1's laws: the sweep function and GeomFill_Sweep, the sections EvolvedSection and
+NSections, CircularBlendFunc with the convertors (QuasiAngular, Polynomial), SweepSectionGenerator and AppSweep (the old
+pipe algorithm), GeomFill_Pipe, ApproxStyle and the package functions of `GeomFill` (GeomFill.cxx). In
+OcctNet.ModelingAlgorithms (`GeomFill/`). SectionLaw, UniformSection, SectionPlacement and Tensor came with 5L1. The
+branch is fast-forwarded onto unit 5L3's first commit (AppBlend_AppSurf, GeomFill_Line, Profiler, SectionGenerator,
+Generator), which NSections, AppSweep, SweepSectionGenerator and `GeomFill.Surface` call, so the two branches share it.
+Numbers from 5911 are placeholders, renumbered on merge.
+
+837. **The sweep classes keep 5951's split.**
+      - Working objects (decision 21): `GeomFill_SweepFunction` and `GeomFill_CircularBlendFunc` (the
+        `Approx_SweepFunction`s), `GeomFill_EvolvedSection` and `GeomFill_NSections` (section laws). They keep the
+        caller's laws and adaptors as OCCT keeps the handles; `SetInterval` trims into new adaptors (CircularBlendFunc)
+        or a trimmed copy of the law (EvolvedSection). EvolvedSection keeps the caller's B-spline section, read only,
+        as UniformSection does.
+      - Algorithms, sealed classes with OCCT's methods: `GeomFill_Sweep`, `GeomFill_Pipe`,
+        `GeomFill_SweepSectionGenerator`, the two convertors, `GeomFill_AppSweep`.
+      - Results are frozen when handed out, the same object each time (decision 132's pattern):
+        `GeomFill_Sweep.Surface`, `Restriction`, `Trace`; `GeomFill_Pipe.Surface`; `GeomFill_NSections.BSplineSurface`;
+        `GeomFill.Surface`. Ported callers read them unfrozen through `InternalSurface`, `InternalRestriction`,
+        `InternalTrace`, `InternalBSplineSurface` and `GeomFill.InternalSurface` (decision 455's pattern); the pipe keeps
+        the sweep's unfrozen surface. `ConstantSection` and `CirclSection` build new, unfrozen geometry, as in 5951.
+      - No law is copied: GeomFill_Sweep and GeomFill_Pipe use the caller's laws as OCCT does (a guided LocationGuide
+        after `Set(..., true, ...)` can't be copied anyway, 5958).
+838. **NSections reparametrises a copy of each B-spline section.** `ComputeSurface` calls `SetKnots` on the caller's
+      curve when the section is a B-spline: OCCT reparametrises the caller's curve in place. The port copies the curve
+      first and puts the copy in the law's own sequence (OCCT copies the sequence of handles, so its sequence then holds
+      the reparametrised curve): the law sees exactly what OCCT's sees, and the caller's curve, frozen or not, is
+      unchanged. Other sections are converted to new B-splines, as in OCCT. GeomFill_Pipe's `CheckSense` reverses
+      sections in place, but they are SectionPlacement's new curves (5951), so nothing is copied there. Found by the
+      frozen-input tests (every pipe construction on frozen paths and sections).
+
+      Rejected: writing into the caller's curve when it isn't frozen (a value the caller holds would change).
+839. **Signatures and small translations.**
+      - `GeomFill.GetShape` takes the conversion type `ref` (it turns Convert_TgtThetaOver2 into _1 to _3) and gives
+        the shape `out`; `GetCircle`'s vectors and points are `in`.
+      - `GeomFill_SweepSectionGenerator` implements 5L3's `IAppBlend_SectionGenerator<int>`, and `GeomFill_AppSweep` is
+        a sealed subclass of `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>` with OCCT's
+        constructors, as 5L3's GeomFill_AppSurf.
+      - The convertors' function-local static matrices are static readonly fields, copied into each convertor by
+        `Init` (OCCT's `operator=`).
+      - `GeomFill_NSections.SectionShape` writes zeros when there is no surface (OCCT leaves its outputs unwritten);
+        GeomFill_Sweep's evaluator starts the error code at 0 before LocFunction's DN (OCCT passes the caller's).
+      - OCCT's implicit gp_Vec to gp_Dir conversions are written out where they normalise
+        (`GeomFill::Surface`'s `D1.Crossed(gp_Dir(P1P2))`, KPartT4's `V1.Dot(gp_Dir(YRef))`, the axes built from
+        vectors). `GeomFill_Sweep::BuildProduct`, never called (OCCT comments out the call), is ported as it is.
+      - Left out: SweepSectionGenerator's `myIsDone` (written, never read), the `OCCT_DEBUG` blocks (NSections'
+        verifD1/verifD2, Pipe's section dumps).
+840. **Native comparison through recordings** (GeomFill_Pipe and GeomFill_Sweep are not bound). `tools/sweeprec`, an
+      MSVC program against build123d.NET's native OCCT, builds cases from a small deterministic generator (an LCG
+      whose doubles have 32 significant bits) and writes every result double as its 64 bits in hex;
+      `SweepRecordingCases` (tests) repeats the generator and the cases line for line, so each case compares as text
+      (`GeomFill_SweepNativeTests`, `GeomFill/Recordings/sweeprec.txt.gz`). Surfaces are written as their type, bounds,
+      a 5 x 5 grid of points, and for B-splines degrees, flags, knots and the FNV-1a hash of all poles and weights.
+      The cases: GeomFill_Pipe of constant radius, of a constant section with each trihedron (corrected Frenet,
+      Frenet, fixed, constant normal, Darboux on planes, cylinders and B-spline surfaces), with a fixed binormal, with
+      guides (by abscissa and by planes, with and without rotation), with two sections (3D paths and convex planar
+      ones), N sections, on edges (CircularBlendFunc, rational and polynomial, and the old AppSweep algorithm), and
+      the particular cases (planes, cylinders, cones, tori, extrusions, revolutions, conical laws); GeomFill_Sweep with
+      EvolvedSection (linear and S laws, C1 and C2, with and without particular cases, forced C1); the NSections law
+      (D0 to D2, intervals, minimal weights, constant and conical tests); CircularBlendFunc (D0 to D2, intervals,
+      tolerances); SweepSectionGenerator (types 1 to 6); the package functions (GetShape, Knots, Mults, GetTolerance,
+      GetMinimalWeights, the three GetCircle for the three conversions) and `GeomFill.Surface`.
+      **All 710 cases are identical**: 109,805 doubles and the poles of 474 B-spline surfaces (167,397 poles with
+      their weights), the 21 cases where native throws (the same exception type) and the 27 pipes native can't build.
+      No random case reached a sphere (BuildKPart's sphere branch is covered by the unit tests only).
+841. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests/GeomFill`): OCCT's GTest GeomFill_NSections (name kept);
+      `GeomFill_SweepTests`: the sweep function against the location law and central differences, the particular
+      cases, frozen results and frozen laws' inputs, EvolvedSection and NSections against their definitions and
+      differences, constant and conical laws, a reference surface, GetCircle's arcs and first derivatives for each
+      conversion, the convertors, ruled surfaces, CircularBlendFunc's arcs, SweepSectionGenerator's sections, pipes of
+      constant radius, pipes on edges (cylinder, torus), guided pipes, every pipe construction on frozen inputs, and
+      the OCCT failures of occt-issues.md, pinned.
+842. **Draw-lite: `sweep` and `tuyau`** (GeometryTest_SurfaceCommands.cxx, `GeometryTestPipeCommands`), registered in
+      DrawBuiltins with their source in `Draw_Files`. The file's other commands (`ruled`, `appsurf`, `fillcurves`,
+      ...) are not registered here. The corpus (`DrawPipeCommandsTests`): five cases use them, none runnable before
+      5L2, one after (pipe/bugs/bug31631, the old algorithm through AppSweep: OK). Three wait for
+      `offsetparameter`/`offsetload`/`offsetperform` and one (pipe/bugs/bug30003) for `convert`, `clpoles`, `clknots`
+      and `nbiso`.
+843. **For later units.**
+      - **5S1 (BRepFill laws and sections):** BRepFill_NSections builds GeomFill_NSections and reads
+        `BSplineSurface()`, which freezes the law's surface; `InternalBSplineSurface()` keeps OCCT's handle without
+        freezing. A B-spline section given to GeomFill_NSections is no longer reparametrised in place (5912): where
+        BRepFill reads the curve afterwards expecting the new knots, read the law's. BRepFill_ShapeLaw's
+        UniformSection and EvolvedSection only read the edge curves.
+      - **5S2 (pipe shells):** BRepFill_Sweep drives `GeomFill_Sweep` with its own location and section laws; use
+        `InternalSurface()`, `InternalRestriction()` and `InternalTrace()`, so the BRep builder stays the place that
+        freezes. `ErrorOnSurface`, `ErrorOnRestriction`, `ErrorOnTrace`, `ExchangeUV`, `UReversed` and `VReversed` are
+        OCCT's. GeomFill_Sweep calls `SetInterval` and `SetTolerance` on the caller's laws while approximating, as OCCT
+        does, so BRepFill's per-edge copies of the laws matter as in OCCT.
+      - **Blends (phase 7):** BlendFunc and BRepBlend call `GeomFill.GetCircle`, `GetShape`, `Knots`, `Mults`,
+        `GetTolerance` and `GetMinimalWeights`: all are here and recorded against native. GetCircle's rational branch
+        builds its interior poles for normals running from the centre to the ends, contrary to its documented "inward"
+        normals (occt-issues.md); it only matters for arcs of more than one span.
+## Phase 5: unit 5L3, surfaces from curves
+
+GeomFill's filling half: Profiler, Generator, SectionGenerator, Line, AppSurf; Filling, Coons, Curved, Stretch,
+FillingStyle, BSplineCurves, BezierCurves; the boundaries (Boundary, SimpleBound, BoundWithSurf, DegeneratedBound),
+CoonsAlgPatch, TgtOnCoons, CornerState, ConstrainedFilling; GordonUtilities, NetworkSurface and Gordon (new in OCCT 8);
+and AppBlend (Approx, the AppSurf generic, the context switches). In OcctNet.ModelingAlgorithms (`GeomFill/`,
+`AppBlend/`). Ported in two forked worktrees (the fillings and boundaries; Gordon) on a base of the profiler and
+AppBlend, then merged. Numbers from 5921 are placeholders, renumbered on merge.
+
+844. **Working objects; surfaces handed out frozen; the caller's curves never changed.**
+      - Every class of the unit is a working object (decision 21; decision 806 for the laws): OCCT's setters stay
+        public (`AddCurve`, `Perform`, `Init`, `SetParam`, `SetContinuity`, `SetParType`, `SetCriteriumWeight`,
+        `SetDomain`, `ReBuild`, `Tol3d`, `Tolang`, `Reparametrize`, `SetFunc`).
+      - `Surface()` of GeomFill_Generator, BSplineCurves, BezierCurves, ConstrainedFilling, NetworkSurface and Gordon
+        freezes the surface and returns the same object each time (decision 132's pattern); `InternalSurface()`
+        gives ported callers (BRepFill, 5S1/5T) the unfrozen one.
+      - GeomFill_Profiler converts each curve it is given into a B-spline of its own (GeomConvert copies; conics go
+        through GeomConvert_ApproxCurve's `InternalCurve()`) and changes only those. `Curve(i)` hands one out frozen,
+        `InternalCurve(i)` unfrozen; a `Perform` after `Curve(i)` first replaces frozen curves by copies (the one
+        copy-first site of the unit). Its arrays are copied into the caller's (`Poles`, `Weights`,
+        `KnotsAndMults`) with `Assign`, which takes the source's bounds as OCCT 8's `operator=` does.
+      - The boundaries keep the caller's adaptors, bounds and laws as OCCT keeps the handles (BoundWithSurf a
+        `ShallowCopy()` of the curve-on-surface adaptor, which OCCT copies by value); SimpleBound and BoundWithSurf
+        freeze the reparametrisation curves through `Law_BSpFunc.SetCurve`; ConstrainedFilling reparametrises the
+        caller's boundaries in place, as OCCT does, and its `Law.ScaleCub` results go unfrozen into
+        `TgtField.Scale`. GeomFill_SectionGenerator keeps the caller's parameter array (OCCT's handle) and writes
+        into it, as OCCT does (occt-issues.md).
+      - Gordon converts the caller's curves with GeomConvert (copies) and works on further copies; NetworkSurface
+        copies the arrays and reads the caller's curves through a Profiler. The interpolated curves GeomLib and
+        GeomAPI freeze on the way are only read afterwards.
+845. **AppBlend_AppSurf is one generic class over instance interfaces** (decisions 142, 202 and 607).
+      - `AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend_Approx`, `where TheSectionGenerator :
+        IAppBlend_SectionGenerator<ThePoint>` and `TheLine : class, IAppBlend_Line<ThePoint>`. The generator and the
+        line are objects the caller gives, so their members are instance interfaces (decision 607's rule for what a
+        generic reads from an object): GetShape (`out`), Knots, Mults, the two Section overloads and Parameter;
+        NbPoints and Point. `ThePoint` is what the line gives for a point: `int` for GeomFill_Line,
+        Blend_Point for BRepBlend_Line (phase 7).
+      - OCCT's instantiations are sealed subclasses with OCCT's constructors: GeomFill_AppSurf here; unit 5L2's
+        GeomFill_AppSweep is `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>` with
+        GeomFill_SweepSectionGenerator implementing `IAppBlend_SectionGenerator<int>`.
+      - AppBlend_Approx is an abstract class; the arrays its accessors return (`SurfPoles`, `SurfUKnots`,
+        `Curve2dPoles`, ...) are the object's own (decision 143: shared, don't modify), `Surface` and `Curve2d` copy
+        them into the caller's arrays; `SurfShape`, `Curves2dShape` and `TolReached` have `out` parameters.
+      - AppBlend_Debug.cxx's two switches (`AppBlend_Set/GetContextSplineApprox`, `...ApproxWithNoTgt`) are
+        process-wide statics with internal setters (decision 415); the gxx's `static bool scal = 1` is a constant
+        (its dead branch is kept). `AppDef_Compute theapprox = theAppDef` (a C++ object copy) is a reference
+        assignment: the first object is never used again.
+846. **BSplineCurves and BezierCurves leave the caller's curve unchanged.** In `Init(C1, C2, GeomFill_CurvedStyle)`,
+      when CC1's end is CC2's start, OCCT calls `C1->Reverse()` on the caller's curve, not on its copy CC1, then
+      builds from the unreversed copy (occt-issues.md). The port skips the write: the result is OCCT's, and a frozen
+      or shared curve stays as it was (natively a second call sees the curve reversed). Pinned by a test.
+847. **Signatures.**
+      - GeomFill_CornerState is a value struct (rules, section 3): public getters, internal setters `Gap(G)`,
+        `TgtAng`, `Constraint()`, `NorAng`, `DoKill` with twins `WithGap`, `WithTgtAng`, `Constrained`,
+        `WithNorAng`, `Killed`; `IEquatable`, `ToString`; `new()` has OCCT's defaults.
+      - `out` where always written: Boundary `D1`, `D1Norm`, `Bounds`, `Points`; `TgtOnCoons.D1(W, out, out)`;
+        `CoonsAlgPatch.Func(out, out)`; `CornerState.IsToKill(out)`; the AppSurf shape and tolerance queries.
+        `ConstrainedFilling.Eval(W, Ord, Span<double> Result)` replaces OCCT's `double&` used as an array; its
+        evaluator is a private nested `AdvApprox_EvaluatorFunction`. Bezier poles and weights are read through
+        Geom_BezierCurve's copying accessors.
+      - GeomFill_Gordon's enums are nested (`ResultStatus`, `ApproximationMode`, `BuildStage`;
+        `GeomFill_NetworkSurface.ResultStatus`); `BuildReport` is an equatable struct with OCCT's defaults and
+        `Report()` returns a copy. `Gordon.Init` takes `NCollection_Array1<Geom_Curve>`, `NetworkSurface.Init`
+        `NCollection_Array1<Geom_BSplineCurve?>`. GordonUtilities.pxx is the internal static class
+        `GordonUtilities` (OCCT's namespace) with its structs nested.
+      - `int&`/`bool&` outputs are `ref` where OCCT reads them and `out` otherwise; an `out` OCCT leaves unwritten
+        on a failure path is assigned null or 0 (GordonUtilities' `uniteKnots`, `DenominatorProductEvaluator`,
+        ConstrainedFilling's `nbnp`/`nbnk` after a failed `PrepareInsertKnots`, which OCCT reads uninitialised).
+      - Omissions: the OCCT_DEBUG chronometers and couts; `OCC_CATCH_SIGNALS` (each `try/catch (Standard_Failure)`
+        kept). ConstrainedFilling's `CheckTgteField`, `CheckApprox` and `CheckResult` write to an optional
+        `TextWriter` (Console.Out by default) with `G6` numbers, for cout. BezierCurves' `Arrange` result, which
+        OCCT's release build ignores, is checked (decision 9; native threw on the same inputs).
+848. **Gordon's parallel loop, sorts and views.**
+      - The one `OSD_Parallel::For` (`fillContactTable`) is `OSD_Parallel.For` with OCCT's sequential flag
+        `!theToUseParallel`; each pair writes only its own ContactSet, and `std::atomic<bool>` (an early exit on
+        failure) is an int read and written with `Volatile`. Parallel gives the serial result (decision 490): the
+        replay test runs 120 recorded cases in the other mode.
+      - The `std::sort` calls (doubles, contacts, ranked curves, which can tie, knot entries) go through `std_sort`
+        with MSVC's tie order (decision 491).
+      - `toMatrix` shares the table's storage as OCCT's math_Matrix over `&ChangeFirst()` does (an internal
+        `NCollection_Array2.Storage()` was added for it); `toOneBasedArrayView` returns a copy, its uses being
+        read-only.
+849. **Native recordings** (none of these classes is bound in build123d.NET, so there is no direct oracle; the
+      indirect one is 5T's ThruSections). Three MSVC recorders built against build123d.NET's native OCCT write
+      reproducible random inputs as round-trip decimals and every result double as its bits; the tests replay each
+      case on the port and compare every token.
+      - `tools/fillrec` (`GeomFill/Recordings/fillrec.txt.gz`): 880 cases, 568,389 doubles. BSplineCurves and
+        BezierCurves in each style on 2, 3 and 4 curves (degrees 1 to 5, rational or not, interior and double knots,
+        shuffled and reversed, degenerated sides; 9 Standard_ConstructionErrors on both sides); Coons, Curved,
+        Stretch and the two-row Curved directly; ConstrainedFilling with SimpleBound and BoundWithSurf, 3 and 4
+        sides, NoCheck, SetDomain and ReBuild, Eval, the boundaries' Value/D1/Norm/D1Norm/Reparametrize, the
+        CoonsAlgPatch and TgtOnCoons. **All bit-identical.**
+      - `tools/gordonrec` (`gordonrec.txt.gz`): 380 cases (310 Gordon: analytic networks, reversed and shuffled
+        curves, rational lines with and without the approximate fallback, closed and periodic profiles; 70
+        NetworkSurface), 353 done and 27 failing with the same status on both sides, a quarter in parallel mode.
+        **All bit-identical.**
+      - `tools/appsurfrec` (`appsurfrec.txt.gz`): 400 cases, 6,475 tokens. GeomFill_Profiler and Generator on 2 to 6
+        sections (B-splines, Beziers, circle arcs, segments, periodic B-splines among non-periodic ones); AppSurf on
+        2 to 8 sections in its four ways (Bezier pieces, B-spline least squares with each continuity and
+        parametrisation, the smoothing, pieces of at most NbMaxP sections), known parameters or not, and Draw's
+        `appsurf` settings. 80 generated surfaces and 208 approximations done; the other cases fail on both sides
+        with the same exception or `IsDone` false. **All bit-identical** but 10 smoothings of two sections, where
+        native throws Standard_OutOfRange after reading past AppDef_Variational's points and the port's range check
+        throws Standard_RangeError (its base) first (occt-issues.md, AppDef); the test attributes them by that
+        pattern. The recorder never asks for all-periodic sections, where the profiler's knot insertion can corrupt
+        native's heap (occt-issues.md). In two cases coin flips made them all periodic anyway: the profile came out
+        with unequal pole counts, the same on both sides, and like any unequal profile (on which OCCT's Generator
+        and AppSurf read and write past their arrays) the case stops after it.
+850. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests/GeomFill`).
+      - OCCT's GTests GeomFill_BSplineCurves (OCC28131_FillSurfaceFromBezierAndInterpolatedCurves; the two offset
+        cases need BRepOffset, phase 7) and GeomFill_Gordon (all 64; in InterpolatedPeriodicProfilesWithAlignedSeams
+        OCCT calls `SetOrigin` on an interpolated curve the port hands out frozen, so the test uses `WithOrigin`),
+        names kept.
+      - Unit tests: the fillings (boundaries kept, bilinear grids, weights, the three styles with 2 to 4 curves in
+        any order, frozen inputs unchanged and results frozen), the boundaries' derivatives against finite
+        differences, CoonsAlgPatch, TgtOnCoons, CornerState, ConstrainedFilling (3 and 4 sides, NoCheck, SetDomain,
+        ReBuild, the checks); GordonUtilities' helpers, NetworkSurface and Gordon (frozen inputs, repeatable
+        results, BuildReport); the profiler (common profile, shapes kept, frozen hand-out and copy-first, periodic
+        sections), Generator, SectionGenerator, Line and AppSurf (its four ways through the sections, state and
+        argument checks, repeatability). The OCCT bugs of occt-issues.md that change a result are pinned by tests.
+851. **Draw-lite** (decision 405's conventions). GeometryTest_SurfaceCommands.cxx's `appsurf` (SectionGenerator,
+      AppSurf(3, 8, Confusion, PConfusion, 0)) and `fillcurves` (GeomFill_BSplineCurves of the four curves converted
+      with Convert_RationalC1, style 1, 2 or 3) in `GeometryTestSurfaceCommands`. `ruled` needs `GeomFill::Surface`
+      (GeomFill.cxx, unit 5L2) and `sweep`/`tuyau` GeomFill_Pipe (5L2): left to 5L2 or 5W. Corpus
+      (`DrawSurfaceFromCurvesCorpusTests`, `Before5L3` removes the two commands): 5 cases use them; runnable 0
+      before, 4 after (bugs/filling bug13904, bug16119, bug16833, bug27775), all OK. The fifth needs `offsetload`,
+      `sewing` and the Booleans.
+852. **For later units.**
+      - **5T (lofts):** BRepFill_Generator and `BRepFill.Face/Shell` use GeomFill_Generator (call `Perform`, then
+        `InternalSurface()` if the surface is changed or stored unfrozen); BRepFill_NSections and ThruSections'
+        smooth lofts use GeomFill_SectionGenerator + GeomFill_Line + GeomFill_AppSurf (`SetParam` keeps the
+        caller's array; `Perform(Lin, Sec, true)` with SetContinuity/SetParType/SetCriteriumWeight, or
+        `PerformSmoothing`). The arrays AppSurf returns are its own: build the surface from them (a new
+        Geom_BSplineSurface copies). All-periodic sections throw Standard_RangeError in the profiler where native
+        corrupts its heap.
+      - **5L2:** GeomFill_AppSweep instantiates `AppBlend_AppSurf<GeomFill_SweepSectionGenerator, GeomFill_Line, int>`
+        (decision 845); `ruled` waits for `GeomFill::Surface`, which calls GeomFill_Generator.
+      - **5P (plates):** GeomFill_ConstrainedFilling and BoundWithSurf are ready (ChFi3d uses them in phase 7);
+        ConstrainedFilling reparametrises the boundaries it is given, so a caller reusing one builds a fresh one.
+      - **Phase 7 (BRepBlend):** BRepBlend_AppSurf is `AppBlend_AppSurf<Blend_AppFunction, BRepBlend_Line,
+        Blend_Point>` with Blend_AppFunction and BRepBlend_Line implementing the two interfaces; ChFi3d sets the
+        AppBlend context switches through the internal setters.
+## Phase 5: unit 5R, 2D fillets and chamfers
+
+ChFi2d (ChFi2d_Builder, AnaFilletAlgo, FilletAlgo, FilletAPI, ChamferAPI, the package statics, ConstructionError) and
+BRepFilletAPI_MakeFillet2d. Numbers from 5931 are placeholders, renumbered on merge; plan decisions are cited by their
+merged numbers (576–590), 5K2's by theirs (797–805).
+
+853. **ChFi2d_Builder and MakeFillet2d are working objects that publish what they hand out** (decisions 414, 454).
+      - Neither writes the face it is given: each fillet or chamfer builds a new face (BRepLib_MakeFace on the plane)
+        holding the face's untouched edges and vertices, the trimmed edges and the new one, as OCCT does.
+      - `AddFillet`, `AddChamfer`, `ModifyFillet`, `ModifyChamfer` return the new edge frozen, and freeze the face being
+        built with it; `RemoveFillet`/`RemoveChamfer` return the vertex frozen. Later operations build new faces
+        around frozen edges, which nothing writes (5933 is the one exception, handled).
+      - `Result()` (builder) and `Shape()` (maker) freeze the face; `FilletEdges`, `ChamferEdges`, `NewEdges` and
+        `Modified` are frozen `IBentoList`s; `DescendantEdge` freezes the face. Internal forms for ported code:
+        `InternalResult`, `InternalFilletEdges`, `InternalChamferEdges`, `InternalDescendantEdge`; the maker overrides
+        `InternalModified` and `BeforePublishingLists` (which freezes the face being built).
+      - `Modified(E)` keeps OCCT's behaviour for an edge without descendant: Standard_NoSuchObject (the history's
+        `Find`; occt-issues.md). `IsDeleted` stays false, as OCCT's.
+      - `ChFi2d` is a static class; `CommonVertex` and `FindConnectedEdges` take `ref` outputs (OCCT leaves them
+        unchanged on some failures). OCCT's two identical file-static `IsLineOrCircle` are one private method.
+      - FilletAPI, ChamferAPI, AnaFilletAlgo and FilletAlgo return their edges through `ref` (OCCT's `TopoDS_Edge&`);
+        their results come from BRepBuilderAPI_MakeEdge's public `Edge()` and are frozen. OCCT's helper class
+        `FilletPoint` (declared in ChFi2d_FilletAlgo.hxx as a private class) is internal.
+      - The history is a DataMap: its iteration order isn't OCCT's (a hash order there too), and `BasisEdge`, its only
+        iteration, looks for the one key whose value is the edge, so results don't depend on it.
+854. **`ChFi2d_Builder(F)` on a frozen face whose edges lack 3D curves builds them on a copy.** OCCT's constructor
+      (not `Init`, and not MakeFillet2d, which calls `Init`) runs `BRepLib::BuildCurves3d` on the face in place. The
+      port does that only when the face holds no frozen shape or every edge already has its curve (BuildCurve3d then
+      writes nothing); otherwise it works on `BRepLib.Curves3dBuilt(F)`, which stands for the face, so `BasisEdge` and
+      the history name the copy's edges for the edges that got curves. Faces from BRepBuilderAPI and build123d.NET
+      always have their 3D curves.
+855. **The chamfer's new vertices get their points on a frozen adjacent edge through a stand-in** (`// OCCT.NET:
+      frozen`). `BuildChamferEdge` calls `B.UpdateVertex(NewExtr, param, AdjEdge, tol)`: the new vertex isn't on the
+      edge, so OCCT appends the vertex's points on the edge's curve representations, raises its tolerance and sets the
+      edge's Modified flag. On a frozen edge (the caller's, or one the builder published) BRep_Builder throws
+      TopoDS_LockedShape; the port makes the same call on `AdjEdge.EmptyCopied()`, which has the edge's
+      representations and location, so the vertex gets OCCT's points; the frozen edge's Modified flag is left as it is
+      (the caller's edges usually have it set already). A degenerated edge, which EmptyCopied would treat differently,
+      goes to the original call. The oracle's chamfers are byte-identical.
+856. **Tests.** OCCT 8.0.1 has no GTests for ChFi2d or MakeFillet2d (TKFillet's GTests cover the 3D fillets and
+      chamfers). Unit tests (`ChFi2d_BuilderTests`): fillets and chamfers on frozen squares (areas, validity, the input
+      unchanged), the statuses (NoFace, NotPlanar, ConnexionError, ComputationError, ParametersError, NotAuthorized,
+      TangencyError), Modified/IsModified/BasisEdge/NewEdges, removal and modification, `Init(RefFace, ModFace)`, the
+      two APIs and their exceptions.
+      - **Native recordings: tools/chfi2drec** (as tools/gccrec, decision 780). ChFi2d_FilletAPI and ChamferAPI aren't
+        bound by build123d.NET: a C++ program built against its native OCCT runs them on random pairs of edges of a
+        plane (lines, arcs of circles and ellipses, cubic B-splines; sharing a vertex, meeting at a point, or a gap of
+        1e-8 to 1e-3 apart, so that FilletAPI takes both algorithms; reversed; the XY plane or a random one, a fifth of
+        them left-handed; tangent continuations and cusps), as a wire or two edges, and records Perform, NbResults,
+        Result (nearest, first, second solution) and the trimmed edges: each edge's curve type, range, points at its
+        ends and middle, orientation and vertices, every double in hex. `ChFi2d_NativeTests` rebuilds each case's edges
+        from the recorded bits: **1,200 cases (300 of each kind), every token identical**. A first recording differed
+        in 104 cases, all on tilted planes: the recorder used its unit directions as computed, the port re-normalised
+        the printed components (a last-bit change, as oracle-testing.md warns); the recorder now builds them as the
+        port reads them.
+      - **Oracle** (`BRepFilletAPIMakeFillet2dOracleTests`): native MakeFillet2d on faces both sides read from one BRep
+        file (the port's frozen). 400 random polygons and profiles of segments and arcs in random planes, with one to
+        four operations each (fillets, chamfers by two distances and by distance and angle, then sometimes a
+        modification or removal), 1,059 operations; and build123d.NET's two patterns on 120 rectangles (a quarter with a
+        hole): every corner filleted (`RectangleRounded`'s pattern) and every corner chamfered with the edges in
+        MapShapesAndAncestors' order (`Chamfer2D`'s). Every operation's status and returned edge, IsDone and the counts
+        identical; **all 489 results byte-identical BRep text, with no Free flag to mask**; every history (IsModified,
+        HasDescendant, Modified as indices, NewEdges, BasisEdge) identical; the inputs unchanged. Two-circle fillets
+        (5K2's GccAna `TheSame2` note, decision 805) appear in the arc profiles; none differed.
+      - **Draw-lite**: `chfi2d`, `fillet2d`, `chamfer2d` (BRepTest_Fillet2DCommands.cxx) as OCCT writes them;
+        `fillet2d` and `chamfer2d` read numbers with C's atof (Standard_Stream.Strtod), `chfi2d` with Draw::Atof. The
+        fillet2d group's end script calls `CheckTriArea`, defined nowhere in that group, only `if {[info exists
+        rel_tol]}`: DrawCorpus learns such variable branches (`VariableBranches`, as decision 589's data-file
+        branches), so a case that never sets `rel_tol` doesn't need it. Corpus (`DrawFillet2dCorpusTests`): 12 cases
+        use the commands; runnable before 5R: 0, after: 11: 10 OK (fillet2d/fillet2d A1 to A9, fillet2d/chamfer2d A1),
+        1 SKIPPED (bugs/moddata_1/bug20823: OCC20823.brep isn't public). bugs/modalg_2/bug22695 needs the 2D offset's
+        `offsetload` (unit 5O2).
+857. **Notes for 6M and build123d.NET.**
+      - build123d.NET's `Fillet2D` (and so `RectangleRounded`, and `fillet` of sketches and wires) doesn't call ChFi2d:
+        its `WireFillet.FilletCorner` solves each corner with Geom2dGcc_Circ2d2TanRad (5K2) and splices with
+        BOPAlgo_Splitter. Only `Chamfer2D` (`Wire.Chamfer2D`, `Face.Chamfer2D`, the `chamfer` operation on sketches)
+        uses BRepFilletAPI_MakeFillet2d, with `AddChamfer(E1, E2, d1, d2)` on a face from `MakeFaceFromWires`.
+      - With frozen inputs, `Chamfer2D`'s `TopoUtil.PrivateCopy(chamfered, copyGeometry: true)` before ShapeFix is no
+        longer needed (ShapeFix copies at its entry, decision 642). The chamfered face shares the input's untouched
+        edges by TShape, as native's does.
+      - `Modified` throws Standard_NoSuchObject for an edge MakeFillet2d didn't trim, as native does; build123d.NET's
+        `ShapeHistory.FromAlgorithm` already takes such an exception as no answer.
+      - MakeFillet2d puts every edge of a face into one wire (occt-issues.md), which is why build123d.NET chamfers each
+        wire of a face on its own; that stays necessary.
+## Phase 5: unit 5Q, fair curves
+
+FairCurve (all): FairCurve_Batten and FairCurve_MinimalVariation, the energies (FairCurve_Energy, EnergyOfBatten,
+EnergyOfMVC), the distributions (DistributionOfEnergy, Tension, Sagging, Jerk), FairCurve_BattenLaw, FairCurve_Newton
+and FairCurve_AnalysisCode, in OcctNet.ModelingAlgorithms (`FairCurve/`). Numbers from 5891 are placeholders,
+renumbered on merge.
+
+858. **FairCurve_BattenLaw is a class copied where OCCT copies it.** OCCT's law is a value (a math_Function held by
+      value), so each energy and distribution keeps its own copy. The port's is a class (math_Function is one) with a
+      copy constructor, called at each of OCCT's by-value sites: the energies' `MyBattenLaw` and the three
+      distributions' `MyLaw`. The copies stay independent as in OCCT: the energies' `MyBattenLaw.SetSliding` reaches
+      none of the distributions (occt-issues.md, 5Q). Its setters are public (a working object, decision 21).
+859. **Battens are working objects; the curves they hand out are frozen.**
+      - FairCurve_Batten and FairCurve_MinimalVariation keep OCCT's API: public setters recording the wanted ("new")
+        constraints, `Compute`, which deforms the current curve toward them by homotopy, and getters of the reached
+        ("old") ones. Their state is protected under OCCT's names, as OCCT's.
+      - `Curve()` builds a new Geom2d_BSplineCurve from the batten's arrays each time, as OCCT does, and freezes it:
+        computing again never changes a curve handed out (the batten's own arrays are replaced, not edited).
+      - The energies and distributions are working objects too (public constructors and setters, as OCCT exports
+        them). They keep the caller's knot and pole arrays as OCCT keeps the handles, and every evaluation of an
+        energy writes the poles of its variables into the caller's pole array, as OCCT does: the battens give them a
+        new array (`NPoles`) and adopt it after the minimisation. `FairCurve_Energy.Poles()` returns that array.
+860. **Signatures.** `Compute(out FairCurve_AnalysisCode, ...)` (OCCT's code is always written: its loop runs at least
+      once and the inner Compute writes the code first; the port also sets it before the loop, for C#'s definite
+      assignment). The energies' `Values(X, out E, G[, H])` set E to 0 when the computation fails, where OCCT leaves
+      the caller's variable unchanged (math's signatures are `out`); math_NewtonMinimum doesn't read it then.
+      `ComputePolesG1`/`G2` write their pole as `out`. The bool `WithAuxValue` that OCCT adds to integers is `? 1 : 0`.
+861. **Dumps.** `Dump(TextWriter)` writes OCCT's table: `o.width(7)` pads the next item only (`Standard_Stream.Setw`),
+      reals at the stream's precision (6 by default, 15 under Draw's `dump`), bools as 0 and 1. OCCT's
+      `operator<<` is `ToString()`.
+862. **Tests, recordings and Draw-lite.**
+      - tools/fairrec (C++ against build123d.NET's native OCCT, as tools/gccrec) records 150 random battens and 150
+        minimal variation curves (points, angles from multiples of 15° to beyond 90°, constraint orders 0 to 2, free or
+        imposed sliding, heights including non-positive ones, slopes, physical ratios including an invalid 1.5,
+        curvatures, iteration counts and tolerances), each computed, then edited (point, angle, height, slope, ratio)
+        and computed again; 150 of each through Draw's battencurve/minvarcurve sequence with up to three of Draw's
+        editing commands; and 75 of each energy (value, gradient and hessian at two points, and the poles written) on
+        random poles of one or two spans. The port replays every case bit for bit: return values, analysis codes,
+        getters, slidings of reference, curves' poles, knots and multiplicities, energies, gradients, hessians,
+        exceptions (FairCurve_NativeTests, 750 cases). The recorder zeros the vectors it passes, as the port's are.
+      - OCCT has no FairCurve GTests and the corpus no case using the fair curve commands; the unit tests check the
+        constraints met (points, angles, curvatures), symmetry, free angles and sliding, NullHeight, knot insertion,
+        frozen curves, the dumps, and the energies' gradients and hessians against finite differences.
+      - Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`,
+        `setheight`, `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. The drawable (`DrawFairCurve`)
+        keeps the batten and its latest curve; as Draw's DrawFairCurve_Batten, which derives from
+        DrawTrSurf_BSplineCurve2d, it is a 2D B-spline to the other commands, and `copy` gives a plain B-spline. Draw
+        computes twice on creation (the command with the defaults, then the drawable's constructor with 50 iterations
+        and 1.0e-2), and so does Draw-lite. Draw's 2D transformations change the drawable's curve in place; Draw-lite's
+        bind the transformed curve to the name, which then holds a plain B-spline.
+## Phase 5: unit 5P, plates and filling
+
+Plate, NLPlate, GeomPlate and LocalAnalysis (TKGeomAlgo); BRepFill_Filling, CurveConstraint, FaceAndOrder and
+EdgeFaceAndOrder (TKBool); BRepOffsetAPI_MakeFilling (TKOffset); Draw-lite's `plate`, `gplate`, `approxplate`,
+`filling` and `fillingparam`. In OcctNet.ModelingAlgorithms (`Plate/`, `NLPlate/`, `GeomPlate/`, `LocalAnalysis/`,
+`BRepFill/`, `BRepOffsetAPI/`). Plate with NLPlate and LocalAnalysis were ported in two forked worktrees, then merged.
+Numbers from 5941 are placeholders, renumbered on merge.
+
+863. **Plate's constraints: values and shared linear constraints.**
+      - `Plate_PinpointConstraint` (readonly) and `Plate_D1`/`D2`/`D3` are value types (rules, section 3). D1 to D3
+        keep OCCT's fields internal for the GtoC constraints, which transform local copies in place
+        (`rota.Transforms(ref D1T.Du)`); D2 and D3 have no public accessors, as in OCCT.
+      - `Plate_LinearXYZConstraint` and `Plate_LinearScalarConstraint` are classes and working objects (decision 21):
+        OCCT copies them by value, but their data are handles, so its copies share the arrays as C# references do.
+        `GetPPC()`/`Coeff()` return the held arrays.
+      - The Global, Line, Plane and SampledCurve constraints (each holding one of those) and `Plate_GtoCConstraint`/
+        `Plate_FreeGtoCConstraint` (fixed arrays) are classes too; GtoC keeps OCCT's copy constructor. The array
+        constructors copy with `Assign`, which takes the source's bounds as OCCT 8's `operator=` does (decision 808).
+864. **Plate_Plate and NLPlate_NLPlate are working objects** with OCCT's public API.
+      - `void*` buffers are typed arrays (`gp_XYZ[]`, `gp_XY[]`, `int[]`) behind private `ref` accessors.
+      - OCCT's copy constructor is `new Plate_Plate(other)` and its `operator=` is `Copy(other)`: both copy the solution
+        and the constraint sequences; the linear constraints in them stay shared, as in C++.
+      - `UVBox` takes `out`; `CoefPol()` returns a new `NCollection_HArray2<gp_XYZ>` and the deprecated `out` overload
+        is `[Obsolete]`; `SolveTI` keeps its progress range, the scopes are `using var`.
+      - NLPlate's stack of plates is a list of `Plate_Plate`s: OCCT prepends a copy of an empty plate and works on the
+        stored one; the port prepends a new plate. NLPlate_HGPPConstraint's `const&` getters return values.
+865. **C# scoping renames in Plate.** Where OCCT declares a local in an inner block and the same name later in the
+      enclosing block, the port hoists or renames: `i` in Plate_Plate::Evaluate/EvaluateDerivative, `j` and the final
+      `ksol`/`kSolution` (`ksolS`/`kSolutionS`) in SolveTI3, Plate_FreeGtoCConstraint's inner `du`/`dv`/`c`/`s`/`d`
+      (`du1`, ...). SolEm's closed forms are copied verbatim, integer products promoted as in C++. Arithmetic and its
+      order are unchanged.
+866. **LocalAnalysis's continuity analyses are working objects.**
+      - `LocalAnalysis_CurveContinuity` and `LocalAnalysis_SurfaceContinuity` are classes (decision 21): the
+        constructors compute and the queries read, with OCCT's names; the tolerances are fixed at construction.
+      - `ComputeAnalysis` may be called again on the same object, as GeomPlate_BuildPlateSurface does in a loop, and
+        keeps a failure (`IsDone` false) once one occurs, as in OCCT. Queries other than `IsDone` and `StatusError`
+        throw `StdFail_NotDone` after a failure.
+      - OCCT leaves `StatusError()` uninitialised after a successful analysis, and `ContinuityStatus()` before the first
+        `ComputeAnalysis`; the port returns `LocalAnalysis_NullFirstDerivative` and `GeomAbs_C0` (occt-issues.md).
+      - `LocalAnalysis.Dump` writes OCCT's text to a `TextWriter`. The order switch the two surface constructors repeat
+        is a private `Analyse` (decision 742's pattern).
+
+      Rejected: structs, because they are mutable results reused across calls.
+867. **GeomPlate's constraints and builders are working objects; what they hand out is frozen.**
+      - `GeomPlate_PointConstraint`, `GeomPlate_CurveConstraint` (and `BRepFill_CurveConstraint`) keep the caller's
+        surface, adaptors and laws (Law_Function, decision 806), read only, and their setters stay public: the builder
+        sets their 2D curves, numbers of points and projected points, as OCCT does. `LPropSurf` returns the
+        constraint's own `GeomLProp_SLProps` (OCCT's reference).
+      - `GeomPlate_BuildPlateSurface` keeps the caller's constraints, changes them as OCCT does, and reorders its list
+        of curve constraints. `Surface()`, `SurfInit()` and `Curves2d()` freeze what they return (the stored surfaces
+        and 2D curves). Its arrays of sequences (`myParCont`, `myPlateCont`, the intersection intervals) are filled with
+        new sequences, as OCCT default-constructs them.
+      - `GeomPlate_MakeApprox.Surface()` and `GeomPlate_BuildAveragePlane.Plane()`/`Line()` freeze the geometry they
+        return (the same object each time); `MakeApprox.InternalSurface()` serves ported code. The criteria keep copies
+        of the caller's sequences, as OCCT's members do.
+      - `GeomPlate_Aij` is a value type with internal fields, mutable because OCCT's friend `HalfSpace` re-indexes the
+        pairs it keeps (`B2set[k].Ind1 = ii` through the sequence's `ref` indexer).
+      - MakeApprox's surface evaluator is a private nested `AdvApp2Var_EvaluatorFunc2Var` (decision 193's signature).
+868. **GeomPlate_Surface is geometry** (rules, section 8).
+      - `SetBounds` is internal with `CheckMutable()`, with the public twin `WithBounds`; OCCT's empty `UReverse`,
+        `VReverse` and `Transform` check too. The builder sets the bounds of the surface it made before handing it out.
+      - The surface keeps its own copy of the plate (OCCT holds it by value), so a builder's later `Init` doesn't change
+        it; the initial surface is the caller's, read only.
+      - As in OCCT: `Copy()` doesn't keep the bounds; `UIso`/`VIso` return null, `Continuity` GeomAbs_C0, `UPeriod`/
+        `VPeriod` 0 (OCCT returns `false`); `IsCNu`/`IsCNv` throw Standard_Failure; D3 and DN throw
+        Geom_UndefinedDerivative. `Bounds` of a surface over another GeomPlate_Surface returns the inner one's, by exact
+        type as OCCT's `DynamicType() ==`.
+869. **Two OCCT faults the port turns into defined behaviour** (occt-issues.md).
+      - GeomPlate_BuildPlateSurface::Perform approximates `myGeomPlateSurface` when a curve can't be projected, but
+        Perform nulled it at its start and only ComputeSurfInit's non-linear branch sets it again: natively an access
+        violation (the corpus's bug23343, an OCCT TODO). The port throws `Standard_NullObject` there, so Draw's
+        "An exception was caught" appears as OCCT's TODO expects.
+      - `G0Error(Index)`, `G1Error(Index)` and `G2Error(Index)` size their arrays by NbPtsOnCur, but EcartContraintesMil
+        writes one value per interval of the curve's last discretisation. With more intervals both sides throw
+        Standard_OutOfRange (native keeps the check, decision 9). With fewer, native reads uninitialised memory, and its
+        value can change from call to call; the port's arrays are zeroed, so its value is the maximum over the
+        intervals, which native's is never below. The oracle attributes such values (decision 873).
+870. **Plate_Plate's evaluation doesn't cache.** OCCT's SolEm keeps the last point's U, V, U², R and log R in the plate
+      (through a `const_cast`) and reuses them when the next point is the same. The port computes them on every call:
+      the same arithmetic, so the same values (the only exception is a point at exactly (1e20, 1e20), which OCCT's
+      initial cache answers with 0). So a solved plate, and the GeomPlate_Surface over it, can be evaluated from
+      several threads at once, as frozen geometry must be in Bento. Rejected: a lock (it serialises every evaluation)
+      and a per-thread cache (it saves nothing measurable).
+871. **BRepFill_Filling and BRepOffsetAPI_MakeFilling never write the caller's shapes** (plan 2.8).
+      - OCCT already builds the result on new topology: each boundary edge is `EmptyCopied` (a new TShape, its
+        representations copied, sharing the frozen curves) on new vertices, then given its pcurve on the approximated
+        surface and SameParameter. The port follows it, with the makers' internal forms where OCCT goes on writing what
+        it made (`BRepLib_MakeVertex.InternalVertex()` before `UpdateVertex`, `BRepLib_MakeWire.InternalWire()`/
+        `InternalEdge()` in BuildWires, `BRepLib_MakeEdge.InternalEdge()` for the free constraints' edges,
+        `BRepLib_MakeFace.InternalFace()` for the result). No copy at entry is needed; the oracle checks that every
+        input's BRep text is unchanged.
+      - The maker follows decisions 414 and 454: `Shape()` freezes the face, `Generated` publishes frozen shapes (and
+        freezes the face first, the generated shapes being its sub-shapes); `InternalGenerated` returns the filling's
+        own list. `BRepFill_Filling.Face()` and `Generated` freeze too, with `InternalFace()`/`InternalGenerated()` for
+        ported code. OCCT's MakeFilling ignores the progress range and never calls `Done()`; `IsDone` is the filling's.
+      - **Rebuilding**, as build123d.NET's `MakeSurface` does (build, add points, build again): each `Build` starts a new
+        plate but keeps the old-to-new map, so a boundary edge is rebuilt from the previous build's edge, whose pcurve on
+        the previous surface its empty copy keeps; and the bounds found for free constraints stay in the boundary. The
+        port keeps both (the oracle compares the second builds' BRep text); the face handed out before doesn't change.
+      - `BRepFill_FaceAndOrder` and `BRepFill_EdgeFaceAndOrder` are value types with internal fields (OCCT's friend
+        reads them). Internal `BRepFill_Filling.InternalBuilder()`, `MakeFilling.InternalFilling()` and
+        `GeomPlate_BuildPlateSurface.NbIntervalsChecked(i)`/`NbPtsOnCur()` let the oracle attribute decision 869's
+        uninitialised reads.
+872. **Draw-lite's filling commands** (BRepTest_FillingCommands.cxx) are ported whole: `plate`, `gplate`,
+      `approxplate`, `filling`, `fillingparam`.
+      - fillingparam's settings are Draw's file statics; in Draw-lite they belong to the interpreter (a weak table), so
+        corpus cases running in parallel don't share them.
+      - The history `filling` records for `savehistory` isn't kept (Draw-lite has none, as for the sweeps), nor is
+        Draw's progress indicator. `plate` and `approxplate` take their edges' internal forms before updating their
+        vertices, as the ported algorithms do. A word read past the end of the command is an empty word.
+873. **Tests.**
+      - OCCT's GTests Plate_Plate (2) and GeomPlate_BuildPlateSurface (2), names kept. Unit tests: Plate (interpolation
+        at orders 2 to 5, anisotropy, derivatives against differences, the SolveTI2/SolveTI3 paths, copies, CoefPol),
+        NLPlate (G0, G1, incremental solves, sliding), LocalAnalysis (closed forms on circles, spheres, planes and lines,
+        each failure status, reuse, Dump), GeomPlate (constraints, the plate surface and its frozen bounds, evaluation
+        from several threads, the average plane and HalfSpace, the approximation with each criterion, the builder on
+        contours, points, an initial surface and G1 to a cylinder), BRepFill_Filling and MakeFilling (valid frozen faces,
+        inputs unchanged, Generated, a rebuild with a point, G1 to a half cylinder, indices, the value types).
+      - **Oracle** (`tests/OcctNet.Oracle.Tests/BRepOffsetAPI`): BRepOffsetAPI_MakeFilling against native OCCT, the
+        inputs built natively as one compound and read on both sides (the port's frozen), the same constraint calls
+        replayed: build123d.NET's `Face.MakeSurface` (60 random non-planar contours of lines, arcs and B-splines with its
+        parameters, 40 of them built again after adding one or two points), `MakeSurfacePatch`-like holes in boxes with
+        the side faces as G1 or G2 supports (30) and cylinder caps (20), contours with points (20), points on support
+        faces (15), free face constraints (10), an initial surface (10), and the corpus's bug23380. **All 206 builds of
+        166 cases give BRep text identical to native's, byte for byte** (no Free column to mask: the result is new
+        topology), counting the 10 both sides reject with the same exception and the 9 neither completes; all 5,463
+        `Generated` lists are identical; every input is unchanged; G0Error, G1Error and G2Error are bit-identical, and
+        the per-constraint errors too except where native reads uninitialised memory (decision 869), each of which is
+        attributed: the port's curve had fewer intervals than NbPtsOnCur and native's values are never below the
+        port's, or native varies between calls and gives the port's value. GeomPlate, Plate, NLPlate and LocalAnalysis
+        are not bound natively: they are compared through MakeFilling.
+      - **Corpus** (`DrawFillingCorpusTests`): 13 cases use the commands; 0 runnable before the unit, 6 after: 1 OK
+        (bug22786), 1 BAD as OCCT expects (bug23343: decision 869's exception), 3 skipped for missing data
+        (bug22783, bug27873, bug31558), and bug23380 fails its `checknbshapes` (3 edges for 4). Replaying bug23380's
+        calls as Draw reads its words (the faces `i` and `f` become free constraints) on native OCCT through
+        build123d.NET's binding gives the same 3-edge face, byte for byte (the oracle's test): the difference is native
+        OCCT 8.0.1's against the reference the script was written for, not the port's. The other 7 cases need XProgress
+        (4), vcomputehlr, build3d, top, savehistory, generated or xdistcc.
+874. **For later units.**
+      - **5S1/5S2 (BRepFill):** `BRepFill/` now holds Filling, CurveConstraint, FaceAndOrder and EdgeFaceAndOrder;
+        `BRepOffsetAPI/` holds MakeFilling. BRepFill_CurveConstraint is a GeomPlate_CurveConstraint.
+      - **5W (Draw-lite construction):** the filling commands are done; `XProgress` would unlock 4 more filling cases.
+      - **build123d.NET:** `MakeSurfacePatch` maps C2 to GeomAbs_G2, which MakeFilling rejects natively and in the port
+        (occt-issues.md); its C1 maps to G1, as it should.
+
+## Phase 6: unit 6P, BRepAlgoAPI and the public API
+
+BRepAlgoAPI (all ten classes but Check and Defeaturing, which unit 6G ports) was ported by 6A as a shell and made to
+give real results by 6F (decisions 638 to 640, 833). This unit fills in the public API of plan 2.3: `SimplifyResult`
+through unit 6U, the functional twins' `Simplify`, progress and cancellation, and runs the Boolean milestone's oracle
+(plan section 3, milestones 2 and 3). Numbers from 6981 are placeholders, renumbered on merge.
+
+875. **`SimplifyResult` runs on the unfrozen result** (decisions 579, 775).
+      - OCCT's code: `ShapeUpgrade_UnifySameDomain(myShape, theUnifyEdges, theUnifyFaces, true)` with the fuzzy value
+        as the linear tolerance, the angular tolerance, `SetSafeInputMode(myNonDestructive)` and
+        `AllowInternalEdges(false)`; `Build`, then the unifier's `InternalShape()` replaces the result and its
+        `InternalHistory()` is kept (`mySimplifierHistory`, read by `SectionEdges`) and merged into the operation's.
+      - The result shares the arguments' untouched sub-shapes, which are frozen, so the unifier copies the result at its
+        entry (decision 766) and the arguments are never written, whatever the non-destructive flag. Native writes into
+        its arguments there in the destructive mode (occt-issues.md). The sub-shapes it leaves unchanged are the result's
+        (and the arguments') own again; those it changed in place are its copies, which the history records as modified
+        (decision 643's in-place entries, where native has none).
+      - OCCT's default `theAngularTol = Precision::Angular()` isn't a constant: an overload `SimplifyResult(bool = true,
+        bool = true)` passes it (translation rules, section 4).
+876. **The twins simplify and take a progress range** (decisions 20, 640).
+      - `BRepAlgoAPI_Options.Simplify` runs `SimplifyResult()` with its defaults after a successful operation, as a
+        caller of the working object would; `Standard_NotImplemented` is gone.
+      - Every twin takes an optional last `Message_ProgressRange theRange = default`, as BRepTools' and BinTools' static
+        readers do, so Bento cancels a long Boolean with a `Message_ProgressIndicator(CancellationToken)`.
+      - A user break is OCCT's: the filler or builder adds `BOPAlgo_AlertUserBreak` and stops, not done. The working
+        object reports it as OCCT does; the twin throws `OperationCanceledException` (what a .NET caller of a cancellable
+        call expects), whose inner exception is the `BRepAlgoAPI_Failure` with the report. Any other failure throws
+        `BRepAlgoAPI_Failure` as before.
+      - Progress is OCCT's (`Performing ... operation`, 70/30 between the filler and the builder). A range handed out
+        and never used isn't counted (decision 20), so the indicator can end short of 1 (0.83 on a box cut by a
+        cylinder); it never moves backwards.
+877. **The pave filler's tolerance restore skips a no-op write** (BOPAlgo_PaveFiller_6's MakeBlocks, `// OCCT.NET:
+      frozen`). OCCT writes each saved tolerance back into the vertex, also when it is the vertex's own (a vertex only
+      used as an existing pave); on a frozen argument vertex the port threw and the whole intersection failed
+      (`BOPAlgo_AlertIntersectionFailed`). Found by OCCT's GTest `bcut_simple/M2` (a cut result cut again by its own
+      argument, which shares its vertices). A write of a different value is kept: on a frozen argument vertex it still
+      throws, where native grows its argument (occt-issues.md); not seen in any test.
+878. **OCCT's GTests** (tests/OcctNet.ModelingAlgorithms.Tests/BRepAlgoAPI): TKBO's BRepAlgoAPI_Cut_Test (82),
+      Cut_Test_1 (28), Fuse_Test (100), Common_Test (1), BuilderAlgo_Test (10) and TKBool's Cut, Fuse and Section tests
+      (11), with BOPTest_Utilities.pxx's helpers and `BRepAlgoAPI_TestBase` fixture (`BOPTest_Utilities.cs`). Fixtures
+      are nested classes in one outer class per file, so OCCT's suite and test names are kept. Seven Fuse tests (K3 to
+      K9) need `BOPTest_Utilities::CreateBlend` (BRepFilletAPI_MakeFillet, phase 7) and are skipped with that reason;
+      `CreateBlend` is left out. BuilderAlgo_Test checks that the algorithms aren't copyable: in C# a class has no copy,
+      so the tests check for a reference type without a copy constructor. Plus unit tests of `SimplifyResult` (faces
+      unified, arguments unchanged in both modes, history and section edges through the simplification), the twins'
+      `Simplify`, progress and cancellation (before the start and at 5%, 50% and 80% of the progress, serially and in
+      parallel: user break reported, arguments unchanged, a later run gives the uncancelled result).
+879. **The Boolean milestone's oracle** (tests/OcctNet.Oracle.Tests/BRepAlgoAPI/BRepAlgoAPIOracleTests.cs, through
+      6F's `BooleanOracleTests.Compare`, which now also takes `Simplify`, native's `NonDestructive` and
+      `CheckInverted`; the General Fuse and the Splitter simplified run through BRepAlgoAPI_BuilderAlgo and
+      BRepAlgoAPI_Splitter). Each case runs natively serially and in parallel, and in the port serially and at degrees 2,
+      3 and the processor count; results are compared as BRep text (Free masked), then canonically; histories (Modified,
+      Generated, IsDeleted of every argument sub-shape) through the results' indices, then without order, then without
+      decision 643's in-place entries (an argument sub-shape native's result holds by TShape, modified in the port into
+      the sub-shape with the same canonical key).
+      - `SimplifyResult` on 240 random primitive Booleans of the seven operations (glue, OBB, fuzzy on some): 240
+        byte-identical; histories 225 equal, 15 equal but for the order of an image list.
+      - `SimplifyResult` on every third of the boolean group's and data/occ's argument sets (6F's recording), each
+        case's own operation: 153 runs, 149 byte-identical, 4 canonically identical where native's own serial and
+        parallel results differ (UnifySameDomain's order on native's address-ordered maps); histories 125 equal, 22
+        equal but for the order, 6 equal but for in-place entries.
+      - Native's destructive mode on 160 random Booleans (every fourth simplified, every fifth without the
+        inverted-solid check): 92 byte-identical; 68 differ, and on each native's non-destructive result is the port's
+        byte for byte (decision 577: the port's frozen arguments are always non-destructive); histories 75 equal, 14 but
+        for in-place entries, 3 differing only as native's destructive history does.
+      - The corpus's `bfuzzyvalue` and `bglue` cases: the 48 scripts run in Draw-lite with recording stand-ins for
+        BOPTest's commands (the port's result bound so that the script goes on); 36 operations from the scripts whose
+        data is public (the others restore files the public dataset lacks, or stop at `bcbuild`, `mksweep` or
+        `testreadstep`): 32 byte-identical, 4 differing only by native's destructive mode (Draw's default), histories
+        equal.
+      - **Over the 589 comparisons: 513 byte-identical (87%), 72 attributed to native's destructive mode (the port is
+        non-destructive by design, and matches native's non-destructive result), 4 canonically identical where native
+        varies; no other difference.** Every port argument unchanged, every result frozen, every parallel run equal to
+        the serial run. 6F's 1,853 comparisons (the plain operations, fuzzy, glue, OBB) stay byte-identical.
+880. **Determinism** (decision 580, milestone 3). 96 random Booleans of every operation (a third simplified), each run by
+      the port three more times serially and three times at each of the degrees 2, 3, 4, 8 and the processor count
+      (1,728 runs): every run gave the serial run's BRep text and history. Native, run five times serially and five in
+      parallel in-process on the same cases, never varied there; it varied between serial and parallel on 4 simplified
+      data/occ cases above.
+881. **Notes for later units.**
+      - **6L** (Draw-lite's `bop*`, `bfuse`, `bcut`, `bcommon`, `bsection`, `bfuzzyvalue`, `bglue`): the oracle's
+        recording stand-ins (`BRepAlgoAPIOracleTests.Register`) show the command set the corpus's fuzzy and glue cases
+        use (`baddobjects`, `baddtools`, `bclear*`, `bfillds`, `bbop r op` with op 0 COMMON to 4 SECTION, `bbuild`,
+        `bsplit`, `bop`/`bopfuse`/..., `bfuse r a b`/..., the option commands, `setfillhistory`, `bapibop`). Draw's
+        default is destructive: on frozen variables the operation is non-destructive (decision 577), so expect results
+        that differ from DRAWEXE's where the destructive filler grows argument tolerances (the reference values in the
+        scripts are properties, which agree). Most of these cases restore files the public dataset lacks.
+      - **6M** (build123d.NET's Booleans and `Clean`): build123d.NET runs `BRepAlgoAPI_*` with `SetRunParallel(true)`
+        and default (destructive) options, then `Clean` through UnifySameDomain on the result: compare against native's
+        non-destructive result, or attribute differences to decision 577 by rerunning natively non-destructively as
+        `BooleanOracleTests.NonDestructiveAgrees` does. Histories after a simplification list the same images in
+        another order (BRepTools_History::Merge): compare them as sets; `Select.New`/`Select.Last` must not depend on
+        the order.
+      - **5S2/5T** (sweeps and lofts): `BRepAlgoAPI_Section` and the operations read `InternalShape()`,
+        `InternalHistory()` and `InternalSectionEdges()` while building (unfrozen; the arguments' untouched sub-shapes are
+        shared and frozen, so copy before writing into a result's sub-shape). BRepFill_TrimShellCorner runs a pave filler
+        and BRepAlgoAPI_Section on its own unfrozen shapes, so OCCT's destructive mode applies there as natively;
+        a frozen profile or spine reaching them is non-destructive by decision 577.
