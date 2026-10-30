@@ -1093,3 +1093,27 @@ bounds of Law_BSpline (decision 808).
 | `GeomFill_CurveAndTrihedron`, `LocationDraft`, `LocationGuide::GetAverageLaw` | The matrix's columns are (T, N, B), where D0 to D2 give (N, B, T) | The average law is not the average of M(t). Kept, pinned by a test (CurveAndTrihedron) |
 | `GeomFill_UniformSection::BarycentreOfSurf` | Starts at the section's first parameter but steps to the converted B-spline's last parameter | A wrong sample range when the two differ. By reading |
 | `GeomFill_LocFunction::DN` | Any order other than 0 to 2 dereferences a null pointer | Access violation natively; Standard_OutOfRange in the port (tested) |
+
+## Phase 5: unit 5P, plates and filling
+
+Found while porting Plate, NLPlate, GeomPlate, LocalAnalysis and BRepFill_Filling. Each is ported as OCCT has it,
+except the two of decision 5947 and the evaluation cache of decision 5948, which change nothing native computes
+reliably.
+
+| Where | What | Effect |
+|---|---|---|
+| `NLPlate_NLPlate::Solve`, `Solve2` | After the loop over constraint orders, `OK = true` overwrites the `OK = false` an iteration's failure set | `IsDone()` is true even when no plate was solved. Kept, pinned by a test (three constraints at one UV: every plate singular, the surface still the initial plane) |
+| `NLPlate_NLPlate::Solve2` | Solves its first, polynomial iteration with `ord`, not the `ordre` it raises to `maxOrder + 2` | Possibly intended. Kept |
+| `Plate_Plate::Init` | Leaves `OK = true` | An empty plate, and a GeomPlate_BuildPlateSurface with no constraint, report `IsDone()`. OCCT's own GTests pin it with a TODO (fixing it broke blend and filling Draw tests). Kept |
+| `Plate_GtoCConstraint` (G3 constructor with a direction) | `nP` is unused (its name commented out in the signature) | Equal to the constructor without it. Kept, pinned by a test |
+| `Plate_LinearXYZConstraint`, `Plate_LinearScalarConstraint` (from arrays) | OCCT 8's `operator=` copies the source's bounds | A pinpoint array not indexed from 1 makes Plate's 1-based reads go out of range: Standard_OutOfRange on both sides. No caller passes one |
+| `LocalAnalysis_CurveContinuity`, `LocalAnalysis_SurfaceContinuity` | `myErrorStatus` is never set on success; the tolerance-only surface constructor leaves `myTypeCont` unset until `ComputeAnalysis` | `StatusError()` after a successful analysis and `ContinuityStatus()` before one read indeterminate memory; the port returns `LocalAnalysis_NullFirstDerivative` and `GeomAbs_C0`. No OCCT caller reads them then |
+| `GeomPlate_BuildPlateSurface::Perform` | When a curve can't be projected on the initial surface, approximates `myGeomPlateSurface`, which Perform nulled at its start (ComputeSurfInit sets it only on its non-linear branch) | Access violation natively (the corpus's bug23343, an OCCT TODO); the port throws Standard_NullObject (decision 5947) |
+| `GeomPlate_BuildPlateSurface::G0Error(Index)`, `G1Error(Index)`, `G2Error(Index)` | Arrays of NbPtsOnCur values, of which EcartContraintesMil writes one per interval of the curve's last discretisation | More intervals (MakeFilling's usual case once Perform raised the points): Standard_OutOfRange on both sides. Fewer: native reads uninitialised memory, and returns values that change from call to call (seen on the oracle's 4- to 7-edge contours, several per test run); the port's arrays are zeroed (decision 5947) |
+| `GeomPlate_BuildPlateSurface::G0Error()`, `G1Error()`, `G2Error()` | Set only by VerifSurface, which runs only with curve constraints | With point constraints only, native returns uninitialised values; the port 0. BRepFill_Filling always has curves |
+| `GeomPlate_MakeApprox` (criterion order other than -1, 0, 1) | No branch approximates | A null surface, errors unset (the port's 0). Kept |
+| `GeomPlate_Surface::UPeriod`, `VPeriod` | Return `false` | 0. Harmless (never periodic) |
+| `BRepFill_Filling::AddConstraints` (through MakeFilling's `Add(edge, face, order)`) | Passes the GeomAbs_Shape value as the plate's order (0 G0, 1 G1, 2 G2) | GeomAbs_C1 (2) gives a G2 constraint, and GeomAbs_G2 (3) throws "BRepFill : The continuity is not G0 G1 or G2" (Standard_Failure, on both sides: 10 oracle cases). build123d.NET's `MakeSurfacePatch` maps its C2 level to G2, so it always fails natively |
+| `BRepFill_Filling::Build` | Adds the bounds it finds for free constraints to `myBoundary`, and keeps `myOldNewMap` from build to build | A second Build rebuilds each boundary edge from the first build's edge (its empty copy keeps the pcurve on the first surface) and keeps the free constraints' edges. Kept; the oracle compares second builds |
+| `BRepFill_Filling::G0Error()` and the others before `Build` | Dereference the null builder | Access violation natively; NullReferenceException in the port |
+| `tests/bugs/filling/bug23380` | Draw reads `i` and `f` (faces) as free constraints; the case expects 4 edges | Native OCCT 8.0.1, through build123d.NET's binding, gives 3 edges, as the port does (byte-identical face): the case fails in Draw-lite, and natively too unless DRAWEXE reads its words otherwise |

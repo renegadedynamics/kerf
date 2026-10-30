@@ -278,7 +278,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                               List<TopoDS_Shape> aPIn, int theNbConstraints)
     {
         myBuilds++;
-        string? aNErr = null, aPErr = null;
+        string? aNErr = null, aPErr = null, aNMessage = null;
         N.TopoDS_Shape? aNRes = null;
         TopoDS_Shape aPRes = new();
         try
@@ -289,6 +289,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         catch (N.OcctException e)
         {
             aNErr = ErrorOf(e);
+            aNMessage = e.Message;
         }
         try
         {
@@ -305,7 +306,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             {
                 myIdentical++;
                 myExceptions++;
-                myExceptionTypes[aNErr!] = myExceptionTypes.GetValueOrDefault(aNErr!) + 1;
+                myExceptionTypes[aNMessage!] = myExceptionTypes.GetValueOrDefault(aNMessage!) + 1;
             }
             else
             {
