@@ -1,0 +1,953 @@
+// Port of: src/ModelingAlgorithms/TKGeomAlgo/GeomFill/GeomFill_Pipe.hxx
+// Port of: src/ModelingAlgorithms/TKGeomAlgo/GeomFill/GeomFill_Pipe.lxx
+// Port of: src/ModelingAlgorithms/TKGeomAlgo/GeomFill/GeomFill_Pipe.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using static Occt.GeomAbs_CurveType;
+using static Occt.GeomAbs_Shape;
+using static Occt.GeomFill_ApproxStyle;
+using static Occt.GeomFill_PipeError;
+using static Occt.GeomFill_Trihedron;
+
+namespace Occt;
+
+/// <summary>
+/// Builds pipes: the surface swept by a section along a path. A circle of constant radius, a constant section (with
+/// a corrected Frenet, Frenet, fixed, constant-normal or Darboux trihedron, or a constant binormal), a section
+/// evolving between two or N sections, a section following a guide, or a pipe of constant radius between two guide
+/// lines (a pipe on an edge). Elementary surfaces are recognised where possible; otherwise the result is a B-spline
+/// surface. The u direction usually follows the section and v the path; <see cref="ExchangeUV"/> tells when an
+/// elementary surface is parametrised the other way.
+/// </summary>
+/// <remarks>
+/// A working object, as OCCT's: it keeps the caller's adaptors and builds its laws on copies of the caller's paths
+/// (where OCCT copies them) and on sections placed by <see cref="GeomFill_SectionPlacement"/> (new geometry).
+/// <see cref="Surface"/> hands out the surface frozen.
+/// </remarks>
+public sealed class GeomFill_Pipe
+{
+    private GeomFill_PipeError myStatus; //!< Execution status
+    private double myRadius;
+    private double myError;
+    private Adaptor3d_Curve? myAdpPath;
+    private Adaptor3d_Curve? myAdpFirstSect;
+    private Adaptor3d_Curve? myAdpLastSect;
+    private Geom_Surface? mySurface;
+    private GeomFill_LocationLaw? myLoc;
+    private GeomFill_SectionLaw? mySec;
+    private int myType;
+    private bool myExchUV;
+    private bool myKPart;
+    private bool myPolynomial;
+
+    private static bool CheckSense(NCollection_Sequence<Geom_Curve> Seq1, NCollection_Sequence<Geom_Curve> Seq2)
+    {
+        // initialisation
+        bool no_sing = true;
+        Seq2.Clear();
+
+        Geom_Curve C1 = Seq1.Value(1);
+        double f = C1.FirstParameter(), l = C1.LastParameter();
+        int iP, NP = 21;
+        NCollection_Array1<gp_Pnt> Tab = new(1, NP);
+        double u = f, h = Math.Abs(f - l) / 20.0;
+        for (iP = 1; iP <= NP; iP++)
+        {
+            C1.D0(u, out Tab[iP]);
+            u += h;
+            if ((u - f) * (u - l) > 0.0)
+            {
+                u = l;
+            }
+        }
+        gp_Ax2 AxeRef, Axe;
+        gp_Pnt Pos;
+        bool sing;
+        GeomLib.AxeOfInertia(Tab, out AxeRef, out sing);
+
+        // si la section est une droite, ca ne marche pas
+        if (sing)
+        {
+            no_sing = false;
+        }
+
+        Pos = AxeRef.Location();
+        double alpha1, alpha2, alpha3;
+        gp_Pnt P1, P2;
+        u = (f + l - h) / 2 - h;
+        C1.D0(u, out P1);
+        u += h;
+        C1.D0(u, out P2);
+        alpha1 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        P1 = P2;
+        u += h;
+        C1.D0(u, out P2);
+        alpha2 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        P1 = P2;
+        u += h;
+        C1.D0(u, out P2);
+        alpha3 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        Seq2.Append(C1);
+
+        for (int iseq = 2; iseq <= Seq1.Length(); iseq++)
+        {
+            // discretisation de C2
+            Geom_Curve C2 = Seq1.Value(iseq);
+            f = C2.FirstParameter();
+            l = C2.LastParameter();
+            u = f;
+            for (iP = 1; iP <= NP; iP++)
+            {
+                C2.D0(u, out Tab[iP]);
+                u += h;
+                if ((u - f) * (u - l) > 0.0)
+                {
+                    u = l;
+                }
+            }
+            GeomLib.AxeOfInertia(Tab, out Axe, out sing);
+
+            // si la section est une droite, ca ne marche pas
+            if (sing)
+            {
+                no_sing = false;
+            }
+
+            Pos = Axe.Location();
+            double beta1, beta2, beta3;
+            u = (f + l - h) / 2 - h;
+            C2.D0(u, out P1);
+            u += h;
+            C2.D0(u, out P2);
+            beta1 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+            P1 = P2;
+            u += h;
+            C2.D0(u, out P2);
+            beta2 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+            P1 = P2;
+            u += h;
+            C2.D0(u, out P2);
+            beta3 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+
+            // meme sens ?
+            bool ok = true,
+                 pasnul1 = (Math.Abs(alpha1) > Precision.Confusion()) && (Math.Abs(beta1) > Precision.Confusion()),
+                 pasnul2 = (Math.Abs(alpha2) > Precision.Confusion()) && (Math.Abs(beta2) > Precision.Confusion()),
+                 pasnul3 = (Math.Abs(alpha3) > Precision.Confusion()) && (Math.Abs(beta3) > Precision.Confusion());
+            if (pasnul1 && pasnul2 && pasnul3)
+            {
+                if (alpha1 * beta1 > 0.0)
+                {
+                    ok = (alpha2 * beta2 > 0.0) || (alpha3 * beta3 > 0.0);
+                }
+                else
+                {
+                    ok = (alpha2 * beta2 > 0.0) && (alpha3 * beta3 > 0.0);
+                }
+            }
+            else if (pasnul1 && pasnul2 && !pasnul3)
+            {
+                ok = (alpha1 * beta1 > 0.0) || (alpha2 * beta2 > 0.0);
+            }
+            else if (pasnul1 && !pasnul2 && pasnul3)
+            {
+                ok = (alpha1 * beta1 > 0.0) || (alpha3 * beta3 > 0.0);
+            }
+            else if (!pasnul1 && pasnul2 && pasnul3)
+            {
+                ok = (alpha2 * beta2 > 0.0) || (alpha3 * beta3 > 0.0);
+            }
+            else if (pasnul1)
+            {
+                ok = (alpha1 * beta1 > 0.0);
+            }
+            else if (pasnul2)
+            {
+                ok = (alpha2 * beta2 > 0.0);
+            }
+            else if (pasnul3)
+            {
+                ok = (alpha3 * beta3 > 0.0);
+            }
+
+            if (no_sing && !ok)
+            {
+                // The sections are the placed sections of SectionPlacement: new curves the pipe owns.
+                C2.Reverse();
+            }
+            Seq2.Append(C2);
+        }
+
+        return no_sing;
+    }
+
+    /// <summary>An empty algorithm; use an Init method.</summary>
+    public GeomFill_Pipe()
+    {
+        myStatus = GeomFill_PipeNotOk;
+        myExchUV = false;
+        myKPart = false;
+        Init();
+    }
+
+    /// <summary>A pipe of constant radius Radius along Path.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, double Radius)
+        : this()
+    {
+        Init(Path, Radius);
+    }
+
+    /// <summary>A pipe of the constant section FirstSect along Path, with the trihedron Option.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
+        : this()
+    {
+        Init(Path, FirstSect, Option);
+    }
+
+    /// <summary>A pipe of the constant section FirstSect along the curve Path on Support (Darboux trihedron).</summary>
+    public GeomFill_Pipe(Geom2d_Curve Path, Geom_Surface Support, Geom_Curve FirstSect)
+        : this()
+    {
+        Init(Path, Support, FirstSect);
+    }
+
+    /// <summary>A pipe of the constant section FirstSect along Path, with the fixed binormal Dir.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, in gp_Dir Dir)
+    {
+        myStatus = GeomFill_PipeNotOk;
+        myExchUV = false;
+        myKPart = false;
+        Init(Path, FirstSect, Dir);
+    }
+
+    /// <summary>A pipe whose section evolves from FirstSect to LastSect along Path.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+        : this()
+    {
+        Init(Path, FirstSect, LastSect);
+    }
+
+    /// <summary>A pipe through the sections NSections along Path.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, NCollection_Sequence<Geom_Curve> NSections)
+        : this()
+    {
+        Init(Path, NSections);
+    }
+
+    /// <summary>A pipe of constant radius Radius between the guide lines Curve1 and Curve2 around Path.</summary>
+    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve Curve1, Geom_Curve Curve2, double Radius)
+        : this()
+    {
+        GeomAdaptor_Curve AdpPath = new GeomAdaptor_Curve(Path);
+        GeomAdaptor_Curve AdpCurve1 = new GeomAdaptor_Curve(Curve1);
+        GeomAdaptor_Curve AdpCurve2 = new GeomAdaptor_Curve(Curve2);
+
+        Init(AdpPath, AdpCurve1, AdpCurve2, Radius);
+    }
+
+    /// <summary>A pipe of constant radius Radius between the guide lines Curve1 and Curve2 around Path.</summary>
+    public GeomFill_Pipe(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2, double Radius)
+        : this()
+    {
+        Init(Path, Curve1, Curve2, Radius);
+    }
+
+    /// <summary>
+    /// A pipe of the constant section FirstSect along Path following the guide Guide: by curvilinear abscissa if
+    /// ByACR, else by orthogonal planes; rotat lets the section rotate to follow the guide.
+    /// </summary>
+    public GeomFill_Pipe(Geom_Curve Path, Adaptor3d_Curve Guide, Geom_Curve FirstSect, bool ByACR, bool rotat)
+        : this()
+    // Path : trajectoire
+    // Guide : courbe guide
+    // FirstSect : section
+    // NbPt : nb de points pour le calcul du triedre
+    {
+        Init(Path, Guide, FirstSect, ByACR, rotat);
+    }
+
+    public void Init(Geom_Curve Path, Adaptor3d_Curve Guide, Geom_Curve FirstSect, bool byACR, bool rotat)
+    // Path : trajectoire
+    // Guide : courbe guide
+    // FirstSect : section
+    // rotat : vrai si on veu la rotation false sinon
+    // triedre : AC pour absc. curv. ou P pour plan ortho
+    {
+        double angle = 0;
+        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+
+        GeomFill_TrihedronWithGuide TLaw;
+
+        // loi de triedre
+        if (byACR)
+        {
+            TLaw = new GeomFill_GuideTrihedronAC(Guide);
+            TLaw.SetCurve(myAdpPath);
+        }
+        else
+        {
+            TLaw = new GeomFill_GuideTrihedronPlan(Guide);
+            TLaw.SetCurve(myAdpPath);
+        }
+
+        // loi de positionnement
+        GeomFill_LocationGuide TheLoc = new GeomFill_LocationGuide(TLaw);
+        TheLoc.SetCurve(myAdpPath);
+
+        GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(TheLoc, FirstSect);
+        Place.Perform(Precision.Confusion());
+
+        // loi de section
+        mySec = new GeomFill_UniformSection(Place.Section(false), myAdpPath.FirstParameter(),
+                                            myAdpPath.LastParameter());
+
+        if (rotat)
+        {
+            TheLoc.Set(mySec, rotat, myAdpPath.FirstParameter(), myAdpPath.LastParameter(), 0.0, ref angle);
+        }
+        myLoc = TheLoc;
+    }
+
+    private void Init()
+    {
+        myType = 0;
+        myError = 0;
+        myRadius = 0.0;
+        myKPart = true;
+        myPolynomial = false;
+        myAdpPath = null;
+        myAdpFirstSect = null;
+        myAdpLastSect = null;
+        myLoc = null;
+        mySec = null;
+    }
+
+    public void Init(Geom_Curve Path, double Radius)
+    {
+        // Ancienne methode
+        myType = 1;
+        myError = 0;
+        myRadius = Radius;
+
+        // Nouvelle methode
+        myAdpPath = new GeomAdaptor_Curve(Path);
+        Geom_Circle C = new Geom_Circle(gp.XOY(), Radius);
+        C.Rotate(gp.OZ(), M_PI / 2.0);
+
+        mySec = new GeomFill_UniformSection(C, Path.FirstParameter(), Path.LastParameter());
+        GeomFill_CorrectedFrenet TLaw = new GeomFill_CorrectedFrenet();
+        myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+        myLoc.SetCurve(myAdpPath);
+    }
+
+    public void Init(Geom_Curve Path, Geom_Curve FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
+    {
+        Geom_Curve Sect;
+        GeomFill_TrihedronLaw? TLaw = null;
+        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        double param = Path.FirstParameter();
+
+        // Construction de la loi de triedre
+        switch (Option)
+        {
+            case GeomFill_IsCorrectedFrenet:
+                {
+                    TLaw = new GeomFill_CorrectedFrenet();
+                    break;
+                }
+
+            case GeomFill_IsDarboux:
+            case GeomFill_IsFrenet:
+                {
+                    TLaw = new GeomFill_Frenet();
+                    break;
+                }
+
+            case GeomFill_IsFixed:
+                {
+                    double Eps = 1.0e-9;
+                    gp_Vec V1 = new gp_Vec(0, 0, 1), V2 = new gp_Vec(0, 1, 0);
+                    gp_Dir D;
+                    GeomLProp_CLProps CP = new GeomLProp_CLProps(Path, param, 2, Eps);
+                    if (CP.IsTangentDefined())
+                    {
+                        CP.Tangent(out D);
+                        V1.SetXYZ(D.XYZ());
+                        V1.Normalize();
+                        if (CP.Curvature() > Eps)
+                        {
+                            CP.Normal(out D);
+                            V2.SetXYZ(D.XYZ());
+                            V2.Normalize();
+                        }
+                        else
+                        {
+                            gp_Pnt P0 = new gp_Pnt(0.0, 0.0, 0.0);
+                            gp_Ax2 Axe = new gp_Ax2(P0, D);
+                            D = Axe.XDirection();
+                            V2.SetXYZ(D.XYZ());
+                            V2.Normalize();
+                        }
+                    }
+                    TLaw = new GeomFill_Fixed(V1, V2);
+                    break;
+                }
+
+            case GeomFill_IsConstantNormal:
+                {
+                    TLaw = new GeomFill_Frenet();
+                    myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+                    myLoc.SetCurve(myAdpPath);
+                    GeomFill_SectionPlacement Place0 = new GeomFill_SectionPlacement(myLoc, FirstSect);
+                    Place0.Perform(Precision.Confusion());
+                    double ponsec = Place0.ParameterOnSection();
+
+                    double Eps = 1.0e-9;
+                    gp_Vec V = new gp_Vec(0, 1, 0);
+                    gp_Dir D;
+                    GeomLProp_CLProps CP = new GeomLProp_CLProps(FirstSect, ponsec, 2, Eps);
+                    if (CP.IsTangentDefined())
+                    {
+                        CP.Tangent(out D);
+                        if (CP.Curvature() > Eps)
+                        {
+                            CP.Normal(out D);
+                            V.SetXYZ(D.XYZ());
+                            V.Normalize();
+                        }
+                        else
+                        {
+                            gp_Pnt P0 = new gp_Pnt(0.0, 0.0, 0.0);
+                            gp_Ax2 Axe = new gp_Ax2(P0, D);
+                            D = Axe.XDirection();
+                            V.SetXYZ(D.XYZ());
+                            V.Normalize();
+                        }
+                    }
+                    TLaw = new GeomFill_ConstantBiNormal(new gp_Dir(V));
+                    break;
+                }
+
+            default:
+                {
+                    throw new Standard_ConstructionError("GeomFill::Init : Unknown Option");
+                }
+        }
+
+        if (TLaw is not null)
+        {
+            myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+            myLoc.SetCurve(myAdpPath);
+            GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
+            Place.Perform(Precision.Confusion());
+            param = Place.ParameterOnPath();
+            Sect = Place.Section(false);
+
+            mySec = new GeomFill_UniformSection(Sect, Path.FirstParameter(), Path.LastParameter());
+        }
+    }
+
+    //=======================================================================
+    // function : Init
+    // purpose  : sweep using Darboux's trihedron
+    //=======================================================================
+
+    public void Init(Geom2d_Curve Path, Geom_Surface Support, Geom_Curve FirstSect)
+    {
+        Geom_Curve Sect;
+        GeomFill_TrihedronLaw TLaw = new GeomFill_Darboux();
+        myAdpPath = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(Path), new GeomAdaptor_Surface(Support));
+
+        myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+        myLoc.SetCurve(myAdpPath);
+        GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
+        Place.Perform(myAdpPath, Precision.Confusion());
+        Sect = Place.Section(false);
+
+        mySec = new GeomFill_UniformSection(Sect, myAdpPath.FirstParameter(), myAdpPath.LastParameter());
+    }
+
+    public void Init(Geom_Curve Path, Geom_Curve FirstSect, in gp_Dir Direction)
+    {
+        Init();
+
+        Geom_Curve Sect;
+        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        gp_Vec V = new gp_Vec();
+        V.SetXYZ(Direction.XYZ());
+        GeomFill_ConstantBiNormal TLaw = new GeomFill_ConstantBiNormal(new gp_Dir(V));
+
+        myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+        myLoc.SetCurve(myAdpPath);
+        GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
+        Place.Perform(Precision.Confusion());
+        Sect = Place.Section(false);
+
+        mySec = new GeomFill_UniformSection(Sect, Path.FirstParameter(), Path.LastParameter());
+    }
+
+    public void Init(Geom_Curve Path, NCollection_Sequence<Geom_Curve> NSections)
+    {
+        myType = 3;
+        myError = 0;
+        myRadius = 0;
+
+        GeomFill_TrihedronLaw? TLaw;
+        TLaw = new GeomFill_CorrectedFrenet();
+        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        if (TLaw is not null)
+        {
+            myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+            myLoc.SetCurve(myAdpPath);
+            NCollection_Sequence<Geom_Curve> SeqC = new();
+            NCollection_Sequence<double> SeqP = new();
+            SeqC.Clear();
+            SeqP.Clear();
+            int i;
+            for (i = 1; i <= NSections.Length(); i++)
+            {
+                GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, NSections[i]);
+                Place.Perform(Precision.Confusion());
+                SeqP.Append(Place.ParameterOnPath());
+                SeqC.Append(Place.Section(false));
+            }
+
+            // verification des orientations
+            NCollection_Sequence<Geom_Curve> NewSeq = new();
+            if (CheckSense(SeqC, NewSeq))
+            {
+                SeqC.Assign(NewSeq);
+            }
+
+            // verification des parametres
+            bool play_again = true;
+            while (play_again)
+            {
+                play_again = false;
+                for (i = 1; i <= NSections.Length(); i++)
+                {
+                    for (int j = i; j <= NSections.Length(); j++)
+                    {
+                        if (SeqP.Value(i) > SeqP.Value(j))
+                        {
+                            SeqP.Exchange(i, j);
+                            SeqC.Exchange(i, j);
+                            play_again = true;
+                        }
+                    }
+                }
+            }
+            for (i = 1; i < NSections.Length(); i++)
+            {
+                if (Math.Abs(SeqP.Value(i + 1) - SeqP.Value(i)) < Precision.PConfusion())
+                {
+                    throw new Standard_ConstructionError("GeomFill_Pipe::Init with NSections : invalid parameters");
+                }
+            }
+
+            // creation de la NSections
+            double first = Path.FirstParameter(), last = Path.LastParameter();
+            double deb, fin;
+            deb = SeqC.First().FirstParameter();
+            fin = SeqC.First().LastParameter();
+            mySec = new GeomFill_NSections(SeqC, SeqP, deb, fin, first, last);
+        }
+    }
+
+    public void Init(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+    {
+        myType = 3;
+        myError = 0;
+        myRadius = 0;
+        double first = Path.FirstParameter(), last = Path.LastParameter();
+        GeomFill_TrihedronLaw? TLaw;
+        TLaw = new GeomFill_CorrectedFrenet();
+        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+
+        if (TLaw is not null)
+        {
+            myLoc = new GeomFill_CurveAndTrihedron(TLaw);
+
+            if (!(myLoc.SetCurve(myAdpPath)))
+            {
+                myStatus = GeomFill_ImpossibleContact;
+                return;
+            }
+
+            NCollection_Sequence<Geom_Curve> SeqC = new();
+            NCollection_Sequence<double> SeqP = new();
+            SeqC.Clear();
+            SeqP.Clear();
+            // sequence of sections
+            GeomFill_SectionPlacement Pl1 = new GeomFill_SectionPlacement(myLoc, FirstSect);
+            Pl1.Perform(first, Precision.Confusion());
+            SeqC.Append(Pl1.Section(false));
+            GeomFill_SectionPlacement Pl2 = new GeomFill_SectionPlacement(myLoc, LastSect);
+            Pl2.Perform(first, Precision.Confusion());
+            SeqC.Append(Pl2.Section(false));
+            // sequence of associated parameters
+            SeqP.Append(first);
+            SeqP.Append(last);
+
+            // orientation verification
+            NCollection_Sequence<Geom_Curve> NewSeq = new();
+            if (CheckSense(SeqC, NewSeq))
+            {
+                SeqC.Assign(NewSeq);
+            }
+
+            // creation of the NSections
+            double deb, fin;
+            deb = SeqC.First().FirstParameter();
+            fin = SeqC.First().LastParameter();
+            mySec = new GeomFill_NSections(SeqC, SeqP, deb, fin, first, last);
+        }
+    }
+
+    public void Init(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2, double Radius)
+    {
+        myType = 4;
+        myError = 0;
+        myRadius = Radius;
+        myAdpPath = Path;
+        myAdpFirstSect = Curve1;
+        myAdpLastSect = Curve2;
+    }
+
+    /// <summary>
+    /// Builds the pipe (the old method): the laws' sweep at 1e-4 if they are set, else the pipe on an edge, with its
+    /// particular cases, by AppSweep. WithParameters makes the surface follow the path's parametrisation.
+    /// </summary>
+    public void Perform(bool WithParameters = false, bool Polynomial = false)
+    {
+        if ((myLoc is not null) && (mySec is not null))
+        {
+            Perform(1.0e-4, Polynomial);
+            return;
+        }
+
+        myPolynomial = Polynomial;
+        // on traite la cas tuyau sur arete Type = 4
+        if (myPolynomial)
+        {
+            ApproxSurf(WithParameters);
+            return;
+        }
+        if (!KPartT4())
+        {
+            ApproxSurf(WithParameters);
+        }
+    }
+
+    /// <summary>
+    /// Builds the pipe: a particular case where one is detected, else an approximation to Tol with the continuity
+    /// Conti, at most degree MaxDegree and NbMaxSegment spans.
+    /// </summary>
+    public void Perform(double Tol, bool Polynomial, GeomAbs_Shape Conti = GeomAbs_C1, int DegMax = 11,
+                        int NbMaxSegment = 30)
+    {
+        if (myStatus == GeomFill_ImpossibleContact)
+        {
+            return;
+        }
+
+        GeomAbs_Shape TheConti;
+        switch (Conti)
+        {
+            case GeomAbs_C0:
+                {
+                    TheConti = GeomAbs_C0;
+                }
+                break;
+            case GeomAbs_G1:
+            case GeomAbs_C1:
+                {
+                    TheConti = GeomAbs_C1;
+                }
+                break;
+            case GeomAbs_G2:
+            case GeomAbs_C2:
+                {
+                    TheConti = GeomAbs_C2;
+                }
+                break;
+            default:
+                TheConti = GeomAbs_C2; // On ne sait pas faire mieux !
+                break;
+        }
+        Approx_SweepFunction? Func;
+        Func = null;
+
+        if (myType == 4)
+        {
+            if (!KPartT4())
+            {
+                Func = new GeomFill_CircularBlendFunc(myAdpPath!, myAdpFirstSect!, myAdpLastSect!, myRadius, Polynomial);
+
+                Approx_SweepApproximation App = new Approx_SweepApproximation(Func);
+                App.Perform(myAdpPath!.FirstParameter(),
+                            myAdpPath.LastParameter(),
+                            Tol,
+                            Tol,
+                            0.0,
+                            0.01,
+                            TheConti,
+                            DegMax,
+                            NbMaxSegment);
+                if (App.IsDone())
+                {
+                    mySurface = new Geom_BSplineSurface(App.SurfPoles(),
+                                                        App.SurfWeights(),
+                                                        App.SurfUKnots(),
+                                                        App.SurfVKnots(),
+                                                        App.SurfUMults(),
+                                                        App.SurfVMults(),
+                                                        App.UDegree(),
+                                                        App.VDegree());
+                    myError = App.MaxErrorOnSurf();
+                    myStatus = GeomFill_PipeOk;
+                }
+                // else {
+                //   throw Standard_ConstructionError("GeomFill_Pipe::Perform : Cannot make a surface");
+                // }
+            }
+        }
+        else if ((myLoc is not null) && (mySec is not null))
+        {
+            GeomFill_Sweep Sweep = new GeomFill_Sweep(myLoc, myKPart);
+            Sweep.SetTolerance(Tol);
+            Sweep.Build(mySec, GeomFill_Location, TheConti, DegMax, NbMaxSegment);
+            if (Sweep.IsDone())
+            {
+                mySurface = Sweep.InternalSurface();
+                myError = Sweep.ErrorOnSurface();
+                myStatus = GeomFill_PipeOk;
+            }
+            // else {
+            //   throw Standard_ConstructionError("GeomFill_Pipe::Perform : Cannot make a surface");
+            // }
+        }
+        else
+        {
+            Perform(true, Polynomial);
+        }
+    }
+
+    //=======================================================================
+    // function : KPartT4
+    // purpose  : Pour gerer les cas particulier de type 4
+    //=======================================================================
+    private bool KPartT4()
+    {
+        bool Ok = false;
+        // -------    Cas du Cylindre  --------------------------
+        if (myAdpPath!.GetType() == GeomAbs_Line && myAdpFirstSect!.GetType() == GeomAbs_Line
+            && myAdpLastSect!.GetType() == GeomAbs_Line)
+        {
+            // try to generate a cylinder.
+            gp_Ax1 A0 = myAdpPath.Line().Position();
+            gp_Ax1 A1 = myAdpFirstSect.Line().Position();
+            gp_Ax1 A2 = myAdpLastSect.Line().Position();
+            // direction must be the same.
+            gp_Dir D0 = A0.Direction();
+            gp_Dir D1 = A1.Direction();
+            gp_Dir D2 = A2.Direction();
+            if (!D0.IsEqual(D1, Precision.Angular()) || !D1.IsEqual(D2, Precision.Angular()))
+            {
+                return Ok;
+            }
+
+            // the length of the line must be te same
+            double L0 = myAdpPath.LastParameter() - myAdpPath.FirstParameter();
+            double L1 = myAdpFirstSect.LastParameter() - myAdpFirstSect.FirstParameter();
+            double L2 = myAdpLastSect.LastParameter() - myAdpLastSect.FirstParameter();
+            if (Math.Abs(L1 - L0) > Precision.Confusion() || Math.Abs(L2 - L0) > Precision.Confusion())
+            {
+                return Ok;
+            }
+
+            // the first points must be normal to the path.
+            gp_Pnt P0 = myAdpPath.Value(myAdpPath.FirstParameter());
+            gp_Pnt P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
+            gp_Pnt P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
+            gp_Dir V1 = new gp_Dir(new gp_Vec(P0, P1));
+            gp_Dir V2 = new gp_Dir(new gp_Vec(P0, P2));
+            if (Math.Abs(V1.Dot(D0)) > Precision.Confusion() || Math.Abs(V2.Dot(D0)) > Precision.Confusion())
+            {
+                return Ok;
+            }
+
+            // the result is a cylindrical surface.
+            gp_Dir X = V1, Y = V2, ZRef;
+            ZRef = X.Crossed(Y);
+
+            gp_Ax3 Axis = new gp_Ax3(A0.Location(), D0, X);
+            if (ZRef.Dot(D0) < 0.0)
+            {
+                Axis.YReverse();
+            }
+
+            // rotate the surface to set the iso U = 0 not in the result.
+            Axis.Rotate(new gp_Ax1(P0, ZRef), -M_PI / 2.0);
+
+            mySurface = new Geom_CylindricalSurface(Axis, myRadius);
+            double Alpha = V1.AngleWithRef(V2, ZRef);
+            mySurface = new Geom_RectangularTrimmedSurface(mySurface,
+                                                           M_PI / 2.0,
+                                                           M_PI / 2.0 + Alpha,
+                                                           myAdpPath.FirstParameter(),
+                                                           myAdpPath.LastParameter());
+            Ok = true; // C'est bien un cylindre
+            myStatus = GeomFill_PipeOk;
+        }
+        // -----------    Cas du tore  ----------------------------------
+        else if (myAdpPath.GetType() == GeomAbs_Circle && myAdpFirstSect!.GetType() == GeomAbs_Circle
+                 && myAdpLastSect!.GetType() == GeomAbs_Circle)
+        {
+            // try to generate a toroidal surface.
+            // les 3 cercles doivent avoir meme angle d'ouverture
+            double Alp0 = myAdpPath.FirstParameter() - myAdpPath.LastParameter();
+            double Alp1 = myAdpFirstSect.FirstParameter() - myAdpFirstSect.LastParameter();
+            double Alp2 = myAdpLastSect.FirstParameter() - myAdpLastSect.LastParameter();
+
+            if (Math.Abs(Alp0 - Alp1) > Precision.Angular() || Math.Abs(Alp0 - Alp2) > Precision.Angular())
+            {
+                return Ok;
+            }
+
+            gp_Ax2 A0 = myAdpPath.Circle().Position();
+            gp_Ax2 A1 = myAdpFirstSect.Circle().Position();
+            gp_Ax2 A2 = myAdpLastSect.Circle().Position();
+            gp_Dir D0 = A0.Direction();
+            gp_Dir D1 = A1.Direction();
+            gp_Dir D2 = A2.Direction();
+            gp_Pnt P0 = myAdpPath.Value(myAdpPath.FirstParameter());
+            gp_Pnt P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
+            gp_Pnt P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
+
+            // les 3 directions doivent etre egales.
+            if (!D0.IsEqual(D1, Precision.Angular()) || !D1.IsEqual(D2, Precision.Angular()))
+            {
+                return Ok;
+            }
+
+            // les 3 ax1 doivent etre confondus.
+            gp_Lin L = new gp_Lin(A0.Axis());
+            if (!L.Contains(A1.Location(), Precision.Confusion()) || !L.Contains(A2.Location(), Precision.Confusion()))
+            {
+                return Ok;
+            }
+
+            // les 3 premiers points doivent etre dans la meme section.
+            gp_Dir V1 = new gp_Dir(new gp_Vec(P0, P1));
+            gp_Dir V2 = new gp_Dir(new gp_Vec(P0, P2));
+            gp_Circ Ci = myAdpPath.Circle();
+            gp_Vec YRef = ElCLib.CircleDN(myAdpPath.FirstParameter(), A0, Ci.Radius(), 1);
+            if (Math.Abs(V1.Dot(new gp_Dir(YRef))) > Precision.Confusion()
+                || Math.Abs(V2.Dot(new gp_Dir(YRef))) > Precision.Confusion())
+            {
+                return Ok;
+            }
+
+            // OK it`s a Toroidal Surface !!  OUF !!
+            gp_Torus T = new gp_Torus(new gp_Ax3(A0), Ci.Radius(), myRadius);
+            gp_Vec XRef = new gp_Vec(A0.Location(), P0);
+            // au maximum on fait un tore d`ouverture en V = PI
+            double VV1 = V1.AngleWithRef(new gp_Dir(XRef), new gp_Dir(YRef));
+            double VV2 = V2.AngleWithRef(new gp_Dir(XRef), new gp_Dir(YRef));
+            double deltaV = V2.AngleWithRef(V1, new gp_Dir(YRef));
+            if (deltaV < 0.0)
+            {
+                T.VReverse();
+                VV1 = -VV1;
+                VV2 = 2 * M_PI + VV1 - deltaV;
+            }
+            mySurface = new Geom_RectangularTrimmedSurface(new Geom_ToroidalSurface(T),
+                                                           myAdpPath.FirstParameter(),
+                                                           myAdpPath.LastParameter(),
+                                                           VV1,
+                                                           VV2);
+            myExchUV = true;
+            Ok = true;
+            myStatus = GeomFill_PipeOk;
+        }
+
+        return Ok;
+    }
+
+    private void ApproxSurf(bool WithParameters)
+    {
+        // Traitment of general case.
+        // generate a sequence of the section by <SweepSectionGenerator>
+        // and approximate this sequence.
+
+        if (myType != 4)
+        {
+            throw new Standard_ConstructionError("GeomFill_Pipe");
+        }
+        GeomFill_SweepSectionGenerator Section = new GeomFill_SweepSectionGenerator(myAdpPath!, myAdpFirstSect!,
+                                                                                    myAdpLastSect!, myRadius);
+
+        Section.Perform(myPolynomial);
+
+        GeomFill_Line Line = new GeomFill_Line(Section.NbSections());
+        int NbIt = 0;
+        double T3d = Precision.Approximation();
+        double T2d = Precision.PApproximation();
+        GeomFill_AppSweep App = new GeomFill_AppSweep(4, 8, T3d, T2d, NbIt, WithParameters);
+
+        App.Perform(Line, Section, 30);
+
+        if (!App.IsDone())
+        {
+            // throw StdFail_NotDone("Pipe : App not done");
+        }
+        else
+        {
+            App.SurfShape(out _, out _, out _, out _, out _, out _);
+
+            mySurface = new Geom_BSplineSurface(App.SurfPoles(),
+                                                App.SurfWeights(),
+                                                App.SurfUKnots(),
+                                                App.SurfVKnots(),
+                                                App.SurfUMults(),
+                                                App.SurfVMults(),
+                                                App.UDegree(),
+                                                App.VDegree());
+            App.TolReached(out myError, out _);
+            myStatus = GeomFill_PipeOk;
+        }
+    }
+
+    /// <summary>The surface built (frozen); null before it is built.</summary>
+    public Geom_Surface? Surface()
+    {
+        mySurface?.Freeze();
+        return mySurface;
+    }
+
+    /// <summary>The surface built, not frozen, for ported callers.</summary>
+    internal Geom_Surface? InternalSurface() => mySurface;
+
+    /// <summary>Whether the surface is parametrised with u along the path (some elementary surfaces).</summary>
+    public bool ExchangeUV() => myExchUV;
+
+    /// <summary>Sets whether particular cases (planes, cylinders, ...) are built where possible.</summary>
+    public void GenerateParticularCase(bool B)
+    {
+        myKPart = B;
+    }
+
+    /// <summary>Whether particular cases are built where possible.</summary>
+    public bool GenerateParticularCase() => myKPart;
+
+    /// <summary>The approximation error (0 for an elementary surface).</summary>
+    public double ErrorOnSurf() => myError;
+
+    /// <summary>Whether a surface was built.</summary>
+    public bool IsDone() => myStatus == GeomFill_PipeOk;
+
+    /// <summary>The execution status.</summary>
+    public GeomFill_PipeError GetStatus() => myStatus;
+}
