@@ -16,8 +16,8 @@ namespace Occt;
 /// <c>SetPolynomialPartOnly</c> change it. OCCT copies it by value; the port's copy is the copy constructor
 /// <c>new Plate_Plate(other)</c> or <c>Copy(other)</c> (OCCT's <c>operator=</c>), which copy the solution and the
 /// constraint lists (the linear constraints in the lists are shared, as their C++ copies share their arrays).
-/// Evaluation caches the last point's radius in the plate (OCCT's <c>const_cast</c>), so a plate is not safe to
-/// evaluate from several threads at once.
+/// Evaluation doesn't change the plate (OCCT caches the last point's radius in it; the port doesn't, decision 5948),
+/// so a solved plate can be evaluated from several threads at once, as GeomPlate_Surface is.
 /// </remarks>
 public class Plate_Plate
 {
@@ -36,11 +36,8 @@ public class Plate_Plate
     private readonly double[] ddv = new double[10];
     private int maxConstraintOrder;
     private bool PolynomialPartOnly;
-    private double Uold;
-    private double Vold;
-    private double U2;
-    private double R;
-    private double L;
+    // OCCT's SolEm caches the last point's U, V, U2, R and L in the plate (Uold, Vold, U2, R, L, through a
+    // const_cast); the port computes them on each call (decision 5948), which gives the same values.
 
     public Plate_Plate()
     {
@@ -53,11 +50,6 @@ public class Plate_Plate
         derv = null;
         OK = false;
         maxConstraintOrder = 0;
-        Uold = 1.0e20;
-        Vold = 1.0e20;
-        U2 = 0.0;
-        R = 0.0;
-        L = 0.0;
         PolynomialPartOnly = false;
     }
 
@@ -72,11 +64,6 @@ public class Plate_Plate
         deru = null;
         derv = null;
         OK = Ref.OK;
-        Uold = 1.0e20;
-        Vold = 1.0e20;
-        U2 = 0.0;
-        R = 0.0;
-        L = 0.0;
         int i;
         if (Ref.OK)
         {
@@ -1320,30 +1307,18 @@ public class Plate_Plate
             V = point2d.Y() * ddv[1];
         }
 
-        if ((U == Uold) && (V == Vold))
+        double U2 = U * U;
+        double R = U2 + V * V;
+        if (R < 1.0e-20)
         {
-            if (R < 1.0e-20)
-            {
-                return 0;
-            }
+            return 0;
         }
-        else
-        {
-            Uold = U;
-            Vold = V;
-            U2 = U * U;
-            R = U2 + V * V;
-            if (R < 1.0e-20)
-            {
-                return 0;
-            }
-            L = Math.Log(R);
-        }
+        double L = Math.Log(R);
         double DUV = 0;
 
         int m = order;
         int mm1 = m - 1;
-        ref double r = ref R;
+        double r = R;
 
         // double pr = pow(R, mm1 - IU - IV);
         //  this expression takes a lot of time
