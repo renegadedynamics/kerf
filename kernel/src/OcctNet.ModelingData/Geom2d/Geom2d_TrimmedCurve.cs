@@ -158,6 +158,12 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
         return basisCurve;
     }
 
+    /// <summary>
+    /// The basis curve, not frozen: for ported code that changes it in place through the trimmed curve, as OCCT does
+    /// (MAT2d's <c>Bisector_BisecAna::SetTrim</c> on a Bisector_Bisec's curve), and for reads that must not freeze it.
+    /// </summary>
+    internal Geom2d_Curve ChangeBasisCurve() => basisCurve;
+
     /// <summary>The basis curve's continuity.</summary>
     public sealed override GeomAbs_Shape Continuity() => basisCurve.Continuity();
 
