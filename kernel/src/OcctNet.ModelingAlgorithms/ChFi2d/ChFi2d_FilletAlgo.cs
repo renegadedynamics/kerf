@@ -188,7 +188,7 @@ public sealed class ChFi2d_FilletAlgo
             aPoint = anInter.Point(a);
             var aProjInt = new Geom2dAPI_ProjectPointOnCurve(aPoint, theCurve, theCurveMin, theCurveMax);
             // OCCT compares the parameter of the nearest projection, not its distance, with the tolerance
-            if (aProjInt.NbPoints() < 1 || aProjInt.LowerDistanceParameter() > Precision.Confusion())
+            if (aProjInt.NbPoints() < 1 || aProjInt.LowerDistanceParameter() > Precision.Confusion()) // OCCT: a parameter
             {
                 continue; // point is not on edge
             }
@@ -995,6 +995,7 @@ internal sealed class FilletPoint
                         }
                         else
                         { // remove the old 'near'
+                            // OCCT: b indexes myNear, used here to index myV, myD and myValid too
                             myV.Remove(b);
                             myD.Remove(b);
                             myValid.Remove(b);
@@ -1018,6 +1019,7 @@ internal sealed class FilletPoint
     //! warning: this is not the full copy! Copies only: myParam, myV, myD, myValid
     public FilletPoint Copy()
     {
+        // OCCT: myNear isn't copied (FilterPoints rebuilds it before PerformNewton reads it)
         var aCopy = new FilletPoint(myParam);
         int a;
         for (a = 1; a <= myV.Length(); a++)

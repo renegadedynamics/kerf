@@ -155,6 +155,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape E)
     {
         myGenerated.Clear();
+        // OCCT: DescendantEdge reads the history with Find, which throws Standard_NoSuchObject for an unmodified edge
         myGenerated.Append(myMakeChFi2d.InternalDescendantEdge(TopoDS.Edge(E)));
         return myGenerated;
     }

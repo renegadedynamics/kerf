@@ -224,7 +224,7 @@ public sealed partial class ChFi2d_Builder
     /// </summary>
     public TopoDS_Edge ModifyChamfer(in TopoDS_Edge Chamfer, in TopoDS_Edge E1, in TopoDS_Edge E2, double D1, double D2)
     {
-        _ = E1; // unused in OCCT
+        _ = E1; // OCCT: E1 is unused
         TopoDS_Vertex aVertex = InternalRemoveChamfer(Chamfer);
         TopoDS_Edge adjEdge1 = new(), adjEdge2 = new();
         status = ChFi2d.FindConnectedEdges(newFace, aVertex, ref adjEdge1, ref adjEdge2);
@@ -814,7 +814,8 @@ public sealed partial class ChFi2d_Builder
                                                 Precision.PIntersection());
         double paramOnLine = 1E300;
         gp_Pnt2d p2d = new();
-        Param = 0.0; // OCCT leaves it unset when nothing is found (the caller then reads an uninitialised value)
+        // OCCT: Param is left unset, and p2d at the origin of the plane, when the line meets nothing
+        Param = 0.0;
         if (Intersection.IsDone())
         {
             int i = 1;

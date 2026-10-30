@@ -52,6 +52,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     {
         double f = AC.FirstParameter();
         double l = AC.LastParameter();
+        // OCCT: the middle point is taken on the edge's curve without the edge's location, the ends with it
         Geom_Circle circle = (AC.Curve().Curve() as Geom_Circle)!; // OCCT dereferences down_cast's result unchecked
         gp_Pnt start = AC.Value(f);
         gp_Pnt end = AC.Value(l);
@@ -140,6 +141,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     public void Init(in TopoDS_Wire theWire, in gp_Pln thePlane)
     {
         plane = thePlane;
+        // OCCT: e1 and e2 aren't reset, so a second Init keeps the edges of the first
         var itr = new TopoDS_Iterator(theWire);
         for (; itr.More(); itr.Next())
         {
@@ -505,7 +507,7 @@ public sealed class ChFi2d_AnaFilletAlgo
 
                 // Right neighbour.
                 shrinke2.Nullify();
-                if (e1.Orientation() == TopAbs_FORWARD)
+                if (e1.Orientation() == TopAbs_FORWARD) // OCCT: e1's orientation decides e2's ends
                 {
                     p1 = pend;
                     p2 = AC2.Value(AC2.LastParameter());
@@ -888,7 +890,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             gp_Pnt2d p = intp.Value();
 
             double d2 = p.SquareDistance(pc);
-            if (Math.Abs(d2 - Rf2) < Precision.SquareConfusion())
+            if (Math.Abs(d2 - Rf2) < Precision.SquareConfusion()) // OCCT: SegmentFilletArc compares with Confusion
             {
                 p.Coord(out xstart, out ystart);
                 break;

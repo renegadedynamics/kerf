@@ -562,6 +562,8 @@ public sealed partial class ChFi2d_Builder
     {
         bool aClosedStatus = true;
 
+        // OCCT: every edge of the face goes into one wire, so a face with holes loses them as separate wires; the
+        // closed flag is the first wire's
         var Ex = new TopExp_Explorer(refFace, TopAbs_ShapeEnum.TopAbs_WIRE);
         while (Ex.More())
         {
@@ -1194,7 +1196,7 @@ public sealed partial class ChFi2d_Builder
                 var CC1 = (Geom2d_Line)basisC1;
                 gp_Lin2d lin2d = CC1.Lin2d();
                 double par = ElCLib.Parameter(lin2d, sommet);
-                vec1 = new gp_Vec2d(sommet.X() - somBid.X(), sommet.Y() - somBid.Y());
+                vec1 = new gp_Vec2d(sommet.X() - somBid.X(), sommet.Y() - somBid.Y()); // OCCT: overwritten at once
                 ElCLib.D1(par, lin2d, out _, out vec1);
             } // else if ...
 
