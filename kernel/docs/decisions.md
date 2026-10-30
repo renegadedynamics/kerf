@@ -7390,3 +7390,117 @@ from 6851 are placeholders, renumbered on merge; merged decisions are cited by t
       (unfrozen; `Lines()` copies and freezes) and the points through `Points()`. IntTools_Curve is a struct: keep
       OCCT's copies (a `ref` into the sequence where OCCT holds a non-const reference). `TangentFaces()` and the curves'
       `Tolerance()`/`TangentialTolerance()` are native's bit for bit. The faces are only read.
+## Phase 6: unit 6U, UnifySameDomain
+
+ShapeUpgrade_UnifySameDomain from TKShHealing (4,988 lines) in OcctNet.ModelingAlgorithms, with its copy at the entry
+(plan 2.7) and Draw-lite's `unifysamedom`. It needed no ShapeUpgrade or ShapeBuild piece beyond what 6H1 to 6H3 ported:
+its other dependencies (IntPatch_ImpImpIntersection, ShapeFix_Face, Wire and Shell, ShapeConstruct_ProjectCurveOnSurface,
+ShapeAnalysis, GeomConvert, Geom2dConvert, GeomLib_IsPlanarSurface, BRepLib, BRepTools_History) were all in place.
+Numbers from 6701 are placeholders, renumbered on merge; earlier decisions are cited by their merged numbers.
+
+765. **One public working object in three partial files by subject**, as decision 671 for ImpImp: the class, Build,
+      UnifyFaces, IntUnifyFaces, UnifyEdges and FillHistory (`ShapeUpgrade_UnifySameDomain.cs`); the file-static
+      functions of the faces (`.Faces.cs`); MergeEdges, MergeSeq, MergeSubSeq, UnionPCurves and theirs (`.Edges.cs`).
+      - File-static functions are private statics. OCCT's typedefs `DataMapOfFacePlane` and `DataMapOfShapeMapOfShape`
+        are `using` aliases (a derived map class can't pass OCCTNET0002), created with TopTools_ShapeMapHasher.
+      - `SubSequenceOfEdges` is a protected sealed class: OCCT copies the struct only where the copy is never reused.
+        FindCoordBounds' `std::pair<double, double>` sequence holds `double[2]`, so its items are written in place.
+      - OCCT's non-const `History()` (a reference to the place holder, assigned null to collect nothing) is the pair
+        `History()` / `History(BRepTools_History?)`, as `ModeConsiderLocation`. `Shape()` and `History()` freeze the
+        result; `InternalShape()` and `InternalHistory()` don't (unit 6P's `SimplifyResult`).
+766. **Build copies a frozen input at the entry** (decisions 583, 642–644). OCCT writes into the shape it works on even
+      in its safe input mode: TransformPCurves adds the reference surface's pcurves to the input's edges and resets
+      their ranges, ReconstructMissedSeam rewrites a removed seam's pcurves (occt-issues.md). So:
+      - `Build` copies an input holding frozen shapes with `BRepTools_CopyAtEntry` and its context, maps the shapes to
+        keep onto their copies, runs OCCT's Build on the copy and finishes: the copied sub-shapes left unchanged are the
+        caller's own again, and a shape needing nothing is the input itself.
+      - FillHistory fills OCCT's history over the copy; Build merges `Composed` of it into the place holder, so the
+        history answers for the caller's sub-shapes. An input sub-shape changed in place (a pcurve added) is modified
+        into its changed copy, where OCCT's history has no entry (decision 643).
+      - **`SetSafeInputMode(false)` on a frozen input**: the caller's shape is never written (the copy), and OCCT's
+        unsafe code path runs on the copy (pcurves on planes built in place, ShapeFix_Face without the context), so the
+        result is OCCT's for that mode. An unfrozen input (ported code's) is worked on in place in both modes.
+767. **Internal forms inside the algorithm** (decision 644): the context's `InternalApply` and `InternalHistory`;
+      ShapeFix_Face's `InternalFace` (OCCT's `Face()`) and ShapeFix_Shell's `InternalShell`, both running in place on
+      the unfrozen working faces and shells; ProjectCurveOnSurface's `InternalPerform`; the composite curves'
+      `InternalBSplineCurve`; BRepLib_MakeEdge's `InternalEdge`; BRepLib's internal SameParameter and
+      BuildPCurveForEdge(s)OnPlane. ShapeFix_Face and ShapeFix_Shell are made per face and per shell, as in OCCT; there
+      is no parallel loop in UnifySameDomain.
+768. **Geometry edits** (plan 2.7). OCCT edits curves it made itself, but the port's `BasisCurve()` freezes the basis it
+      hands out, so these sites copy a frozen curve first (`owned`, `// OCCT.NET: frozen`; they never trigger
+      otherwise): UnionPCurves' Reverse of the basis of a copied trimmed pcurve; its two Reparametrize sites (SetKnots
+      on CurveToBSplineCurve's result); GlueEdgesWith3DCurves' Reverse of a converted B-spline; the approximated
+      surface made periodic. Every other edit (Translate and Mirror of pcurves in TransformPCurves and
+      RelocatePCurvesToNewUorigin) is on a `Copy()`, as in OCCT.
+769. **The periodic reference surface.** With ConcatBSplines (build123d.NET's Clean), IntUnifyFaces makes a closed
+      B-spline surface periodic with `SetUPeriodic`/`SetVPeriodic` on the face's own surface, in place: every face
+      sharing it, the input's included, then sees a periodic surface (occt-issues.md). The port makes a periodic copy
+      and puts it in the original's place in every face and every curve on surface of the shape it works on (its copy
+      of the input, the faces the context made, the reference face), keeping the representations' order, ranges, UV
+      points and continuities (`ReplaceSurface`). That is what OCCT's edit does to that shape, so the result is OCCT's
+      byte for byte (`bowl_noremove.brep`), and the caller's surface stays non-periodic. When the face's surface is a
+      rectangular trimmed one, OCCT edits its basis (shared with the trimmed surface); the port copies the basis only
+      (not seen in the tests).
+770. **Translation notes.**
+      - C++ copies that C# would share are copies: the wire builder's `Elist = VEmap.FindFromKey(...)` copies the list;
+        `edges(ii).Orientation(INTERNAL)` read back through `const TopoDS_Shape&` is a `ref` local.
+      - UpdateMapOfShapes adds to the map it iterates; the port iterates a snapshot (the shapes added map to
+        themselves).
+      - IntUnifyFaces' locals that C# can't redeclare in nested scopes are renamed (`aMapEF0`, `F_RefFace0`,
+        `UsedEdges0`); `aPeriods`, `anIsSeamFound`, `aSurfMin` and `aSurfMax` are spans.
+      - `LastVertexOfSeam` and `StartOfNextEdge` are never set in OCCT, so their end-of-wire test never holds; kept and
+        marked `// OCCT`.
+      - `Standard_ASSERT_INVOKE` (an unclassified wire in InsertWiresIntoFaces) is a debug report: left out with a
+        comment. gp's `Raise_if` checks (a null vector in `gp_Vec::Angle`) throw in the port; native throws the same
+        exception on the tests' inputs that reach them.
+771. **Draw-lite's `unifysamedom`** (SWDRAW_ShapeUpgrade.cxx, all options). As OCCT writes into the input, the command
+      runs as decision 495's in-place commands: on a forced copy (`BRepTools_CopyAtEntry(shape, null, true)`),
+      unfrozen, which the algorithm works on in place as OCCT's does; `Finish` gives the input's TShapes back where
+      nothing changed, and every variable sharing a changed TShape is rebound (DrawShapeRebind). The shapes to keep are
+      mapped onto the copy. Draw's history (BRepTest_Objects) isn't kept: Draw-lite has no `savehistory`.
+772. **Tests.**
+      - OCCT's ShapeUpgrade_UnifySameDomain GTests (6, OCCT's names), built with the makers' internal results where
+        OCCT adds wires to a made face or pcurves to a made edge.
+      - Unit tests (7): a frozen shell of coplanar faces merged, the input unchanged and the history answering for the
+        caller's faces and removed edge; a box needing nothing given back as itself; the unsafe mode on a frozen input;
+        an unfrozen input worked on in place; KeepShape of the caller's edge and vertices; a null history and
+        `Initialize` reuse; the periodic surface of decision 769 on `bowl_noremove.brep`.
+      - Draw-lite: `unifysamedom` with its options; the corpus cases that use it.
+773. **Oracle** (`tests/OcctNet.Oracle.Tests/ShapeUpgrade/`). Native ShapeUpgrade_UnifySameDomain is bound. Native
+      Boolean results (Fuse, Cut, Common of boxes, cylinders, cones, spheres and tori at random placements, most placed
+      so that faces are coplanar or coaxial: boxes side by side, pockets, stepped blocks, three boxes in a row, turned
+      boxes, coaxial and partial cylinders, shafts, holes, cones, spheres, tori, half cylinders fused back) are written
+      by native OCCT and read by both sides (the port's frozen). Results are compared as BRep text with the Free column
+      masked, then canonically; histories through the canonical keys, both results read back from their texts (reading
+      a plane orthogonalises its axes, so a shape in memory and its text can differ in the last bits), and the in-place
+      entries of decision 643 identified exactly: the input sub-shapes that native's result holds by TShape.
+      - build123d.NET's Clean (`(shape, true, true, true)`, `AllowInternalEdges(false)`) on 480 Boolean results: all
+        480 byte-identical; histories 443 equal, 37 equal but for decision 643's in-place entries.
+      - Eight other option sets (defaults, faces only, edges only, internal edges, not safe, tolerances 1e-4 and 1°,
+        KeepShape of an edge, of a vertex) on 160 Boolean results: 1,280 runs, all byte-identical; histories 1,146
+        equal, 134 equal but for in-place entries.
+      - Clean, defaults and internal edges on the heal group's public inputs and data/occ (565 shapes up to 300 kB):
+        1,695 runs, 1,650 byte-identical, 33 Free-masked (faces that are the caller's own keep their Free flag), 12 the
+        same exception on both sides; histories 1,639 equal, 44 equal but for in-place entries.
+      - No canonical-only match and no difference; every input unchanged; every result frozen. The result's faces and
+        edges are the caller's own wherever nothing changed (68% of the faces and 80% of the edges over the Boolean
+        results).
+774. **Corpus.** `unifysamedom` is used by 969 cases (857 of them the offset grids, through their begin script).
+      Runnable: 0 before the unit, 51 after; they give OK 14 and SKIPPED 37 (data files the public dataset lacks), none
+      FAILED. The rest wait for `bsection`, the offset commands (phase 7), `bfuse`/`bcut` and `savehistory`.
+775. **For later units.**
+      - **6P (`BRepAlgoAPI_BuilderAlgo::SimplifyResult` and the twins' `Simplify`):** OCCT runs
+        `ShapeUpgrade_UnifySameDomain(myShape, theUnifyEdges, theUnifyFaces, true)` with `SetLinearTolerance(myFuzzyValue)`,
+        `SetAngularTolerance`, `SetSafeInputMode(myNonDestructive)`, `AllowInternalEdges(false)`, `Build`, then takes
+        `Shape()` and merges `History()` into the builder's. Port it on the builder's `InternalShape()` and read
+        `InternalShape()`/`InternalHistory()`. The Boolean result shares the arguments' untouched (frozen) sub-shapes, so
+        Build copies at its entry and the arguments are never written whatever the non-destructive flag; the history
+        answers for the result's own sub-shapes as OCCT's (composed through the copy) and merges as OCCT's.
+        `BRepAlgoAPI_Options.Simplify` can drop its Standard_NotImplemented.
+      - **6M (build123d.NET's `Clean`):** `new ShapeUpgrade_UnifySameDomain(shape, true, true, true)`,
+        `AllowInternalEdges(false)`, `Build()`, `Shape()`, `History()` on the frozen Boolean result: the caller's shape
+        is never written, and the history answers for its sub-shapes. Compare histories through the canonical keys:
+        sub-shapes changed in place show as modified in the port only (decision 643); the oracle's `WithoutInPlace`
+        identifies them exactly from native's result.
+      - **6G** (CellsBuilder, RemoveFeatures) runs UnifySameDomain on shapes it owns: the internal forms, as 6P.
+      - **6L**: `unifysamedom` is in Draw-lite already (decision 771).

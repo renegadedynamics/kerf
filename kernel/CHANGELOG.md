@@ -719,3 +719,23 @@ Phase 6 (part): face/face intersection (unit 6D).
   with the Boolean operations' and other parameters, 580 lines and 2 points, every value bit-identical; serial =
   parallel = repeat. Oracle: the analytic lines against native GeomAPI_IntSS where the parameters agree, 170 lines
   bit-identical.
+
+Phase 6 (part): UnifySameDomain (unit 6U).
+
+- `OcctNet.ModelingAlgorithms`: `ShapeUpgrade_UnifySameDomain` (build123d.NET's `Clean`): unification of faces on the
+  same surface (planes, elementary surfaces through IntPatch_ImpImpIntersection, cylinders made as swept surfaces),
+  with seams and periodic surfaces, internal and kept edges and vertices, and of edges on the same line, circle or
+  (ConcatBSplines) C1 B-splines; `AllowInternalEdges`, `KeepShape(s)`, `SetSafeInputMode`, the tolerances and the
+  history.
+  - Given a frozen shape it works on a copy, as native OCCT works on its input even in the safe input mode: the result
+    gives back the caller's own sub-shapes wherever nothing changed (a shape needing nothing is the input itself), is
+    frozen, and the history answers for the caller's sub-shapes. `InternalShape()` and `InternalHistory()` serve
+    ported callers.
+- Draw-lite (tests, not packaged): `unifysamedom` with all its options.
+- Tests:
+  - OCCT's ShapeUpgrade_UnifySameDomain GTests; unit tests on frozen and unfrozen inputs.
+  - Oracle tests against native OCCT on native Boolean results (boxes, cylinders, cones, spheres and tori, coplanar,
+    coaxial and at random), as build123d.NET's Clean and with eight other option sets, and on the heal group's and
+    data/occ's shapes: all 3,455 results equal native OCCT's, 3,410 byte-identical and 33 with the Free column masked
+    (12 the same exception); histories equal through the canonical match.
+  - The corpus: 51 cases that use `unifysamedom` are now runnable (none before): OK 14, SKIPPED 37 for data files.

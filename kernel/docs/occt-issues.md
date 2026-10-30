@@ -931,3 +931,20 @@ pair is bit-identical.
 | `IntTools_FaceFace.cxx`, `CheckPCurve` | The sample parameter runs on from the curve's first parameter by `(NPoints - 1) * dT` per interval | With several C∞ intervals the samples drift from the intervals and the end of the last one is never checked |
 | `IntTools_WLineTool.cxx`, `IsPointInDegeneratedZone` | Reads the first surface's bounds for the second (`aS1->Bounds(US21, ...)`), and compares V on both surfaces, and U on the second, with `aDelta` (1e-7) instead of the resolution `aD` it has just computed | The degenerated-zone test of the second surface uses the first's bounds and a 3D tolerance as a parametric one |
 | `IntTools_WLineTool::DecompositionOfWLine`, "correction of projected coordinates" | `X < umin && X > umax && Y < vmin && Y > vmax` can't hold (and uses the other surface's bounds) | The rough re-projection never runs |
+## Phase 6: unit 6U, UnifySameDomain
+
+Found while porting ShapeUpgrade_UnifySameDomain. Each is reproduced in the port (on its copy of the input) and marked
+`// OCCT` unless the table says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntUnifyFaces` → `AddPCurves` → `TransformPCurves` | Adds the reference surface's pcurves to the edges of the faces it unifies, and resets their ranges (`BRep_Builder::Range`), on the input's own edges, whatever `SetSafeInputMode` says ("the input shape can't be modified") | The caller's edges change in place, and the result shares them. The port runs on a copy (decision 766); its history lists those edges as modified into their changed copies, where native's has no entry (decision 643). Reproduced by the oracle (37 of the 480 Clean runs have such entries) |
+| `ReconstructMissedSeam` | `UpdateEdge` swaps the two pcurves of a removed seam edge of the input | The same in-place write into the input |
+| `IntUnifyFaces`, ConcatBSplines with an edge closed on the face but not a seam | `SetUPeriodic`/`SetVPeriodic` on the face's own B-spline surface | Every face sharing that surface, the input's included, becomes periodic. The port makes a periodic copy and puts it in the original's place in the shape it works on (decision 769), so its result is native's byte for byte (`bowl_noremove.brep`) and the caller's surface is unchanged. On a rectangular trimmed surface native edits the shared basis; the port copies the basis only |
+| `IntUnifyFaces`, the wire builder | `LastVertexOfSeam` and `StartOfNextEdge` are declared and tested but never set | The end-of-wire test after ReconstructMissedSeam never holds. Kept |
+| `UpdateMapOfShapes` | Adds to the NCollection_Map it iterates | Whether the new shapes are visited depends on the buckets; they map to themselves, so nothing changes. The port iterates a snapshot |
+| `UnifyEdges` with `mySafeInputMode` | `UpdateMapOfShapes(myKeepShapes, ...)` adds the context's images to the member map of shapes to keep | A second `Build` without `Initialize` keeps them too. The port restores the caller's map after Build (the images are of its copy) |
+| `SetSafeInputMode(false)` | Builds pcurves on planes in the input's edges and lets ShapeFix_Face edit them without a context | The documented behaviour; in the port it acts on the copy of a frozen input |
+
+Not bugs, but worth knowing: native UnifySameDomain iterates hashed maps only for membership (`myKeepShapes`, the shells of
+a face), so its result doesn't depend on addresses; every oracle run was byte-identical or Free-masked.
