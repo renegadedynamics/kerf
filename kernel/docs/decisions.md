@@ -5491,3 +5491,93 @@ Adaptor3d_Surface, Bnd_Box, the BVH box sets and IntCurveSurface_ThePolyhedronOf
       list removes in O(1). The lists hold at most a few thousand couples. The iterator copies of
       `CheckCoupleAndGetAngle2` (`theItCT11 = aIt`) are `Reset` to the same index, and stay valid because nothing is
       removed while start points are chained.
+## Phase 6: unit 6S, Sewing
+
+BRepBuilderAPI_Sewing, FastSewing, VertexInspector and BndBoxTreeSelector from TKTopAlgo (7,694 lines), in
+OcctNet.ModelingAlgorithms. Numbers from 6801 are placeholders, renumbered on merge; plan decisions are cited by their
+placeholders (5001–5015).
+
+599. **BRepBuilderAPI_Sewing is a public working object** (decision 21), a non-sealed Standard_Transient with OCCT's
+      protected fields and protected (virtual where OCCT's are) members, so a subclass can override them as in OCCT.
+      - Publication points freeze what they return (design 4.2): `SewedShape`, `FreeEdge`, `MultipleEdge`,
+        `ContigousEdge`, `ContigousEdgeCouple` (a new `IBentoList` of frozen shapes), `SectionToBoundary`,
+        `DegeneratedShape`, `DeletedFace`, `WhichFace`, `Modified`, `ModifiedSubShape`.
+      - Internal forms that don't freeze, for ported callers that go on building: `InternalSewedShape`,
+        `InternalFreeEdge`, `InternalContigousEdgeCouple` (the algorithm's own list), `InternalModifiedSubShape`,
+        `InternalWhichFace`.
+      - The context is used through `BRepTools_ReShape.InternalApply` everywhere OCCT calls `Apply`; `GetContext`
+        and `SetContext` are OCCT's.
+      - `Dump()` writes to the console as OCCT's does to `std::cout`; `Dump(TextWriter)` is added.
+      - `Perform`, `FaceAnalysis`, `VerticesAssembling`, `Cutting`, `Merging`, `EdgeProcessing` and `EdgeRegularity`
+        keep their `Message_ProgressRange` and OCCT's scopes (`using var`).
+600. **Sewing frozen shapes copies at the entry** (plan decision 583).
+      - `Perform` puts the context shape and every input into one compound; if it holds a frozen TShape
+        (`BRepTools.HoldsFrozen`), the algorithm runs on `BRepTools.ExactCopyForWrite` of that compound (one copy,
+        so sub-shapes shared between inputs stay shared), the inputs replaced by their copies; otherwise it runs on the
+        inputs in place, as OCCT does (ported callers with shapes they built).
+      - Afterwards `BRepTools.KeepUnchangedIn` gives back, in the sewn shape, the caller's own TShape for every copy
+        sewing left unchanged. Every answer goes through the same map (`fromWork`: the top TShape and the unfrozen
+        graph below it), and every query maps the caller's shapes to the working ones (`toWork`). So a face that
+        needed nothing is the caller's face, `Modified(face)` of an untouched input is the input itself, and
+        `IsModifiedSubShape` answers for the caller's sub-shapes.
+      - Sewing writes into what it was given only at a few places (BRepLib::SameParameter on every edge of the
+        result, EncodeRegularity on merged edges, DegeneratedSection on an edge without a 3D curve); on the copy those
+        writes reach copies, and a changed copy stays a copy (its history: the original is modified into it).
+      - The context records the working copies' sub-shapes when the inputs were copied (documented on `GetContext`).
+      - Unit 6H1's general copy-at-entry helper can replace this one; it needs nothing more than `toWork`,
+        `fromWork` and the two `beginWork`/`endWork` halves.
+601. **Determinism.** Sewing's results don't depend on hash order:
+      - every IndexedMap and IndexedDataMap OCCT iterates is iterated by index (its `Iterator` is in index order), and
+        `RemoveKey` moves the last key into the hole, as OCCT's does (GetFreeWires and CreateNewNodes rely on it);
+      - the only hash-ordered loop, EdgeRegularity's over `myMergedEdges`, encodes each edge on its own;
+      - Cutting's vertex tree is filled by `NCollection_UBTreeFiller` with OCCT's `std::mt19937` default seed, so the
+        tree and the order of the selected candidates are native's.
+602. **Signatures.** SameParameterEdge's `whichSec` is `ref`; ComputeToleranceVertex's new vertex is `ref` (the
+      builder's `MakeVertex(ref)`); IsMergedClosed's `int` flags made of comparisons are `bool`; Merging keeps OCCT's
+      unused `passage`. `try { ... } catch (Standard_Failure)` blocks catch Standard_Failure only (decision 509).
+      Where OCCT dereferences a handle that may be null (a pcurve, a 3D curve), the port does too (`!`), so a null
+      throws where OCCT would crash (occt-issues.md). OCCT's commented-out blocks are left out.
+603. **BRepBuilderAPI_VertexInspector and BndBoxTreeSelector** are public sealed classes: the inspector implements
+      `INCollection_CellFilter_Inspector<int, gp_XYZ>` (its points in an `NCollection_DynamicArray`), the selector
+      derives from `NCollection_UBTree<int, Bnd_Box>.Selector`. `ResInd()` returns their own lists.
+604. **BRepBuilderAPI_FastSewing** is a public working object. Its FS_Vertex, FS_Face and FS_Edge structs are protected
+      nested classes (OCCT changes them in place inside its vectors; as classes the vectors' elements change in
+      place); NodeInspector implements the cell-filter inspector; the IncAllocator is dropped. `FS_Statuses` is a
+      `uint` enum, `GetStatuses(TextWriter?)` returns the bits and writes OCCT's messages. It only reads its inputs
+      (the faces it builds are empty copies sharing the caller's surfaces); `GetResult` freezes the result.
+605. **Tests.**
+      - Ported GTest: BRepBuilderAPI_Sewing (TKOffset's, 5 tests, OCCT's names) on BRepPrimAPI's frozen box.
+      - Unit tests (12): exploded box faces sewn into a closed valid shell (inputs unchanged by ShapeSnapshot, every
+        answer frozen, the caller's surfaces), faces already sharing edges kept as the caller's, a gap within and
+        beyond the tolerance, cutting at a T-junction (sections, and OCCT's unbound sections after sewing pinned),
+        a cone's degenerated edge, analysis only, Init/Load/Dump and the defaults, sewing a sewn shell again,
+        unfrozen inputs sewn in place with the internal forms; FastSewing on Bézier patches (shared edges, frozen
+        result, input unchanged), its statuses and messages, a degenerated patch.
+      - Oracle (`tests/OcctNet.Oracle.Tests/BRepBuilderAPI/BRepBuilderAPISewingOracleTests.cs`), set up as Draw's
+        `sewing`, both sides reading native OCCT's file, the port's inputs frozen; compared as BRep text (Free column
+        masked where needed): the sewn shape; compounds of the free, multiple, contiguous and degenerated edges, the
+        deleted faces, `Modified` of every input and `ModifiedSubShape` of every input edge; every count, the
+        `IsModified`/`IsModifiedSubShape` flags and the number of bound sections; the port's inputs unchanged.
+        - The exploded faces of 35 data/occ shapes (each face copied apart natively) at 1e-6, 1e-2, 1 and 100: 140
+          sewings, 741 texts all equal, 727 byte-identical and 14 with the Free column masked; 9,156 counts and flags
+          equal; 126 sewings byte-identical in every text.
+        - The sewing group's 501 cases with public data at their grids' tolerances (0.01, 1, 100): 2,542 texts all
+          equal, 2,268 byte-identical, 274 with the Free column masked; 5,506 values equal. Its 499 distinct inputs
+          at 1e-6: 2,524 texts, 2,266 byte-identical, 258 masked; 5,486 values equal.
+        - Native OCCT varies from run to run on 2 sewings (tests/sewing Q5, CNP001_projoiei at 1e-6): the oracle
+          sews them seven times natively and the port's result is one of the native variants, the same on every
+          port run. On 5 sewings native OCCT writes into its inputs and then calls them unmodified; there the port
+          (which never writes them) calls them modified, and those flags aren't compared (occt-issues.md).
+        - The Free column: an input face or edge the port puts into the result keeps the Free flag it was frozen
+          with, where native clears it (open question 1).
+606. **For later units.**
+      - 6H1 (ShapeAnalysis_FreeBounds): construct `new BRepBuilderAPI_Sewing(toler, false, false)` (analysis only),
+        `Add` each child, `Perform`, then `NbFreeEdges` and the public `FreeEdge(i)` (frozen; the caller's own edges
+        where they weren't cut, so they can go into the new wires as they are). With `option1 = false` no sewn shape
+        is built. Frozen inputs are copied by Sewing itself, nothing to do in FreeBounds.
+      - 6H3 (ShapeFix_Shape reaches Sewing through ShapeFix_FaceConnect and ShapeUpgrade_ShellSewing): ported code
+        that sews shapes it is still building passes them unfrozen and reads `InternalSewedShape()`; a frozen input is
+        copied and its unchanged sub-shapes come back as the caller's. Don't rely on `IsSectionBound` after sewing
+        (occt-issues.md). `GetContext()` records the working copies when inputs were frozen.
+      - 6L (`sewing`, `fastsewing`): Draw's `sewing` calls `Init(tol, sewing, analysis, cutting, nonmanifold)`, the
+        mode setters and `SetMinTolerance(max(tol*1e-4, Confusion))`/`SetMaxTolerance`, as the oracle does.

@@ -453,3 +453,16 @@ Phase 5 (part): intersection of triangulated surfaces (unit 5E).
   contacts of refined triangles in BVH order, start points lie on both surfaces, every bit the same over repeated,
   fresh and serial runs; the advanced intersection on tangent surfaces; the enlarged-zone retry and the other OCCT
   bugs reproduced); the array, section line, couple hasher and dumps.
+Phase 6 (part): sewing (unit 6S).
+
+- `OcctNet.ModelingAlgorithms`: BRepBuilderAPI_Sewing (free, contiguous, multiple and degenerated edges, cutting of
+  bounds, non-manifold mode, `Modified`/`ModifiedSubShape`, the context), BRepBuilderAPI_FastSewing,
+  BRepBuilderAPI_VertexInspector and BRepBuilderAPI_BndBoxTreeSelector. What sewing hands out is frozen; given frozen
+  shapes it sews an exact copy and gives back the caller's own sub-shapes wherever it changed nothing, so the inputs
+  are never written.
+- Tests: OCCT's BRepBuilderAPI_Sewing GTests; unit tests of sewing and fast sewing; oracle tests against native
+  sewing, as Draw's `sewing` sets it up, on the exploded faces of 35 data/occ shapes at 1e-6, 1e-2, 1 and 100 (140
+  sewings) and on the sewing group's 501 public cases at their grids' tolerances and their 499 inputs at 1e-6:
+  every sewn shape, edge list, `Modified` and `ModifiedSubShape` equal through BRep text (5,261 of 5,807 texts
+  byte-identical, the rest but for the Free flag), every count equal; where native OCCT varies from run to run (2
+  sewings) the port gives one of its results.
