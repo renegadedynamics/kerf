@@ -1261,3 +1261,17 @@ Found by the native recordings of tools/borec and the unit tests. The port repro
 | `BOPAlgo_MakePeriodic::UpdateTwins` | Iterates `myRepeatedTwins` (shape-keyed: address order natively) and skips a group once any member is done; twins aren't transitive | The twin groups after a repetition depend on the iteration order; native isn't reproducible there. The port iterates in insertion order |
 | `BOPAlgo_MakePeriodic` trim and repetition, `BOPAlgo_MakeConnected::MakePeriodic` | The trim's Common and the repetition's gluing run destructively | Natively they change the caller's input, the periodic shape returned before and the connected shape in place (pcurves added to shared edges). The port copies frozen parts first (decision 891) |
 | `BOPAlgo_RemoveFeatures::RemoveInternalWires` | Removes INTERNAL wires and edges from the rebuilt solids' faces in place (`aF.Free(true); BRep_Builder::Remove`, through a `const_cast` of the explorer's face) | When the face is an untouched input face shared into the result, native changes the caller's input. The port copies (decision 892) |
+
+## Phase 5: unit 5S1, sweep laws and sections
+
+Found by the native recordings of tools/brepfillrec and tools/cwrec, the oracle and reading. The port reproduces each
+(`// OCCT` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_LocationLaw::Abscissa` | When the lengths aren't computed yet it calls `CurvilinearBounds(Index, bid, Length)` and starts from the edge's last bound instead of its first | The first call on a fresh law is too long by the edge's own length (a 4 + 3 polyline: `Abscissa(2, mid)` gives 8.5 the first time, 5.5 afterwards); reproduced natively, pinned by a test |
+| `BRepFill_ACRLaw` constructor | `OrigParam` is indexed over all the wire's edges, `ipath` counts only the non-degenerated ones | After a degenerated spine edge each edge gets an earlier edge's origin (found by reading, not reproduced) |
+| `BRepFill_LocationLaw::IsG1`, closed-path branch | The `D1` on law 1 isn't assigned to `Ok_D1`, unlike the inner branch | A failed evaluation there goes unseen |
+| `BRepFill_CompatibleWires` SearchRoot (from SameNumberByPolarMethod) | Returns the first key of RMap or MapVLV, iterated in TShape-address order, whose list holds the vertex | With looping sections (the first repeated last) native's result varies from run to run (five runs, five outputs: status Done or Failed, cuts moved); the port iterates in binding order and is deterministic |
+| `BRepFill_CompatibleWires::SearchOrigin`, `SameNumberByACR` | `newwire.Oriented(TopAbs_FORWARD);` discards its result; `double AllLengthsNull = true` holds a bool | No effect |
+| `BRepFill::Face`, `BRepFill::Shell`, `BRepFill_Pipe` | Write pcurves, ranges, flags and tolerances into the caller's edges and profile | Natively the caller's shapes change; the port writes into copies of frozen inputs (decisions 897, 910) |

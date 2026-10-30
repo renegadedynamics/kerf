@@ -308,8 +308,11 @@ public class DrawMeshingCommandsTests
     }
 }
 
-/// <summary>The tests that change the mesher's process-wide defaults (mpparallel, mpsetdefaultname) don't run in parallel with other mesh tests.</summary>
-[CollectionDefinition(Name)]
+/// <summary>
+/// The tests that change or read the mesher's process-wide defaults (mpparallel, mpsetdefaultname). The collection
+/// runs on its own, after every parallel test, because corpus cases and other tests may call mpparallel too.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class MeshDefaultsCollection
 {
     public const string Name = "Mesh defaults";

@@ -50,6 +50,10 @@
     <EmbeddedResource Include="BOPAlgo\Recordings\*.txt.gz" LogicalName="BOPAlgo.Recordings.%(Filename)%(Extension)" />
     <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
     <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
+    <!-- Native OCCT's BRepFill laws and sections and ShapeUpgrade_RemoveLocations, recorded by tools/brepfillrec (unit 5S1) -->
+    <EmbeddedResource Include="BRepFill\Recordings\brepfillrec.txt.gz" LogicalName="BRepFill.brepfillrec.txt.gz" />
+    <!-- Native OCCT's BRepFill_CompatibleWires, recorded by tools/cwrec (unit 5S1) -->
+    <EmbeddedResource Include="BRepFill\Recordings\cwrec.txt.gz" LogicalName="BRepFill.cwrec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->

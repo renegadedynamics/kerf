@@ -227,6 +227,13 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // an exception from the port that a command didn't turn into a Tcl error
             aLog.WriteLine("Tcl Exception: " + anError.GetType().Name + ": " + anError.Message);
         }
+        finally
+        {
+            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's process-wide defaults (mpparallel,
+            // mpsetdefaultname) don't carry over to the next case
+            Occt.BRepMesh_IncrementalMesh.SetParallelDefault(false);
+            Occt.BRepMesh_DiscretFactory.Get().SetDefaultName("FastDiscret");
+        }
 
         string aText = aLog.ToString();
         var aChecker = new DrawInterpreter();
