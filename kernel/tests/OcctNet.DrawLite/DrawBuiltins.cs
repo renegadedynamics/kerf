@@ -37,6 +37,8 @@ internal static class DrawBuiltins
         BOPTestClassifyCommands.Register(theInterpreter);
         BRepTestPrimitiveCommands.Register(theInterpreter);
         BRepTestSweepCommands.Register(theInterpreter);
+        BRepTestFillet2DCommands.Register(theInterpreter);
+        BRepTestFillingCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
         GeomliteTestCommands.Register(theInterpreter);
         BRepTestExtremaCommands.Register(theInterpreter);
@@ -46,12 +48,23 @@ internal static class DrawBuiltins
         GeometryTestCommands.Register(theInterpreter);
         GeometryTestIntersectCommands.Register(theInterpreter);
         GeometryTestBisecCommands.Register(theInterpreter);
+        GeometryTestFairCurveCommands.Register(theInterpreter);
         BRepTestMatCommands.Register(theInterpreter);
         GeometryTestProjCommands.Register(theInterpreter);
+        GeometryTestPipeCommands.Register(theInterpreter);
+        GeometryTestSurfaceCommands.Register(theInterpreter);
         SWDRAWShapeFixCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
         MeshTestCommands.Register(theInterpreter);
         SWDrawShapeUpgradeCommands.Register(theInterpreter);
+        BOPTestObjCommands.Register(theInterpreter);
+        BRepTestHistoryCommands.Register(theInterpreter);
+        BOPTestBOPCommands.Register(theInterpreter);
+        BOPTestCheckCommands.Register(theInterpreter);
+        BOPTestCellsCommands.Register(theInterpreter);
+        BOPTestMkConnectedCommands.Register(theInterpreter);
+        BOPTestPeriodicityCommands.Register(theInterpreter);
+        BOPTestRemoveFeaturesCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 

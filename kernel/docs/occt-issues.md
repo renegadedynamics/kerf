@@ -1117,3 +1117,161 @@ line; the native recordings (tools/bisrec, tools/matrec, decision 823) agree wit
 | `BRepMAT2d_BisectingLocus::RenumerationAndFusion` | Reads `MergeArc1`, `MergeArc2` and `GeomIndexArc1..4`, which `MAT_Graph::FusionOfBasicElts` leaves unset when the two elements are one, and `MergeArc2` unset when the start and end arcs are one | Uninitialised or stale values; the port starts them at false/0 and keeps OCCT's reuse of stale values |
 | `MAT_Bisector`, `MAT2d_Mat2d` | MAT_Bisector's index, issue and end points, vectors, sense and distance, and Mat2d's `intersectionpoint`, uninitialised until set | Harmless (always set before read on the recorded paths); 0 in the port |
 | `MAT2d_CutCurve` | `Perform(C, aSide)` and `PerformInf` declared, never defined; `thenumberofedges` never read | None |
+
+## Phase 6: unit 6F, builders and Booleans
+
+Found while porting the builders, by reading OCCT's code. The port reproduces each (`// OCCT` at the line). None shows
+in the oracle (decision 835).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_BOP::BuildSolid` | Scans the face-to-solids map with `for (i = 1; i < aNb; ++i)`: the last face is never checked for being shared by two argument solids | A solid whose only face shared with another is that last one is wrongly taken as possibly untouched |
+| `BOPAlgo_Builder::BuildDraftFace` (Builder_2) | Changes the orientation of the edge splits stored in `myImages` in place (`ChangeValue` through a const reference) | Later readers of the images see each edge split's last orientation |
+| `BOPAlgo_Builder::FillInternalVertices` (Builder_2) | Adds an internal vertex into a face split, which can be another argument's own face kept as its same-domain group's face | In the non-destructive mode an argument face can be changed in place. On a frozen argument the port throws (BOPAlgo_AlertBuilderFailed, decision 829). Not reached by the oracle |
+| `BOPAlgo_Builder::FillInternalShapes` (Builder_3) | Adds internal vertices and edges into a split solid, which can be an argument's solid kept as the same-domain solid | As above, for solids |
+| `BOPAlgo_Tools::WiresToFaces` | Adds p-curves and corrects tolerances on the input's edges | The input changes; the port copies a frozen input at the entry (decision 830) |
+| `BOPAlgo_ToolsProvider::SetTools` | Clears `myTools` but not the fence `myMapTools` (as 6A's SetArguments) | Setting again tools added before leaves none |
+
+**Order sites (decision 580).** Two builder loops iterate a shape-keyed map, in address order natively and in insertion
+order in the port: `FillSameDomainFaces` over `myImages` (to propagate each solid parent to its face pieces) and
+`BOPAlgo_Tools::FillInternals` over the solids' internal faces. Neither order is observable: each piece is bound under
+its own key, and each solid receives only its own shells. The builders' integer maps iterate in OCCT's order (decision
+784), and no map keyed by a pave block or common block is iterated, so native's builders are reproducible: native gave
+the same result serially and in parallel on every oracle case.
+
+## Phase 5: unit 5L2, sections and sweep surfaces
+
+Found while porting GeomFill's sweeps, sections and pipes. Each is ported as OCCT has it, except the in-place
+reparametrisation of NSections' sections (decision 838); the native recordings (decision 840) reproduce the ones that
+change a result.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Pipe::Init(Path, FirstSect, LastSect)` | Treats `myLoc->SetCurve(myAdpPath)`'s false as a failure, but CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction | Pipes evolving between two sections fail with GeomFill_ImpossibleContact on most 3D paths and on planar paths with inflections (27 of 30 random 3D B-spline paths; `tuyau r path s1 s2`). Kept, pinned by a test and the recordings |
+| `GeomFill_SweepSectionGenerator::Perform` (types 1 to 3) | `TR = Rot * Trans` sits in the branch for opposite tangents, so TR stays the identity otherwise | The rotations and translations between successive sections are dropped: every section of a circle, constant or evolving section along a non-circular path stays at the first one's place. Kept (GeomFill_Pipe uses only type 0) |
+| `GeomFill_SweepSectionGenerator::GetShape` (type 0) | Gives the quasi-angular shape (7 poles, degree 6) whatever `Perform(Polynomial)` asked; `Section` then assigns the polynomial conversion's 8 poles | `GeomFill_Pipe::Perform(WithParameters, Polynomial = true)` on a pipe on an edge throws Standard_OutOfRange natively and in the port. Kept, pinned |
+| `GeomFill_QuasiAngularConvertor::Section` (second derivatives) | `D2Vw(5)` has `(b + 11)` where the derivative of `beta^4 (2c + b^2)` needs `(b + 1)` | The weights' second derivative, and with it D2Poles, are wrong in the quasi-angular conversion (D2 of circular blends). Kept |
+| `GeomFill::GetCircle` (second derivatives, rational branch) | `d2np2 = d2nplan ^ ns1 + nplan ^ dn2w`, where the second derivative of `nplan ^ ns1` needs `nplan ^ d2n1w` | Wrong second derivatives of the interior poles of arcs of more than one span. Kept |
+| `GeomFill::GetCircle` (rational branch) | Builds the interior poles as `pts1 + R ((cos a - 1) ns1 + sin a (nplan ^ ns1))`, right for normals from the centre to the ends, while the header calls them inward normals ("Normal rentrente") and CircularBlendFunc passes inward ones | With inward normals, arcs of two or three spans (TgtThetaOver2_2/_3) get interior poles off the circle (radius 3.49 for 2 at 4.5 radians). CircularBlendFunc never asks for more than one span (it switches to quasi-angular above 0.65 pi). Kept; the test uses outward normals |
+| `GeomFill_NSections::ComputeSurface` | `SetKnots` on the caller's B-spline sections | Reparametrises the caller's curves in place. **The port reparametrises copies (decision 838)** |
+| `GeomFill_NSections::BarycentreOfSurf` | U is not reset for each V row | Only the first row samples the u range; the others evaluate past it. Kept |
+| `GeomFill_EvolvedSection::BarycentreOfSurf` | As UniformSection's: starts at the section's first parameter, steps to the converted B-spline's last | A wrong sample range when the two differ. By reading |
+| `GeomFill_Sweep::Build` | The call to `BuildProduct` (the approximation of the location law composed with the section's surface) is commented out, and BuildProduct's tensorial product too | `GeomFill_Location` approximates globally, as `GeomFill_Section` does. Kept |
+
+## Phase 5: unit 5L3, surfaces from curves
+
+Found while porting GeomFill's filling half and AppBlend. Each is ported as OCCT has it, except the reversal of the
+caller's curve in BSplineCurves and BezierCurves (decision 846). None was found in GordonUtilities, NetworkSurface or
+Gordon.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Coons::Init`, rational form | The poles put P2 in column 1 and P4 in column NU, the weights W4 in column 1 and W2 in column NU | Through BSplineCurves/BezierCurves, which pass (P1, P4, P3, P2, W1, W4, W3, W2), rational Coons fillings get the left and right boundary weights swapped. Kept, pinned by a test |
+| `GeomFill_CoonsAlgPatch::Value` | Evaluates bounds 0 and 2 at V instead of U | A wrong point; `D1U`, `D1V` and `DUV` are right, and ConstrainedFilling uses only those. Kept, pinned by a test |
+| `GeomFill_BSplineCurves::Init`, `GeomFill_BezierCurves::Init` (two curves, CurvedStyle) | When CC1's end is CC2's start, calls `C1->Reverse()` on the caller's curve, not on its copy | The result is built from the unreversed copy, so it is right, but the caller's curve is reversed (a second call sees it so). The port leaves the caller's curve alone (decision 846) |
+| `GeomFill_ConstrainedFilling::MatchKnots` | After SetDomain, the `ind[]` searches compare `dom` with the multiplicities `nm[]->Value(i)` instead of the knots `nk[]` | The knot is not found and the tangency mixing index keeps its default. Kept |
+| `GeomFill_ConstrainedFilling` | `stcor`, `tgalg` and `dom` are never reset by Init | A second Init on the same object starts sortbounds from the previous corner gaps and keeps tangency fields of bounds that no longer have normals. Kept |
+| `GeomFill_ConstrainedFilling::MatchKnots` | Reads `nbnp`/`nbnk` after `PrepareInsertKnots` returns false | Uninitialised natively; the port's out parameters are assigned |
+| `GeomFill_Profiler::UnifyByInsertingAllKnots` | Inserts every curve's knots into the others with `Add = false`; on periodic sections `BSplCLib::PrepareInsertKnots` mispredicts the pole count (Phase 1's entry above) | Natively `BSplCLib::InsertKnots` writes past its arrays: heap corruption, a crash in the recorder; the port throws Standard_RangeError. Reached by every Generator, SectionGenerator and loft whose sections are all periodic B-splines with different knots |
+| `GeomFill_Profiler::Perform` | When knot insertion does not unify the curves, `UnifyBySettingMiddleKnots` only moves knots | The curves keep different numbers of poles; `Poles`, GeomFill_Generator and AppBlend_AppSurf then read and write past arrays sized for the first curve natively (unchecked) where the port throws. Seen with all-periodic sections |
+| `GeomFill_SectionGenerator::SetParam` | Keeps the caller's array, then writes `myParams(i) = Params(Lower() + i - 1)` into it for i from 1 | For an array not indexed from 1 the caller's values are shifted and the last write is past the end (unchecked natively; Standard_OutOfRange in the port, tested) |
+| `GeomFill_SectionGenerator` constructor | Sets default parameters only if `mySequence` has curves, which it never has there | `Parameter` without `SetParam` dereferences a null handle (an access violation natively, NullReferenceException in the port) |
+| `AppBlend_AppSurf::InternalPerform`, spline approximation | `if (C0) SetContinuity(0); if (C1) ... else if (C2) ... else SetContinuity(3)` | GeomAbs_C0 ends as continuity 3. Kept (recorded) |
+| `AppBlend_AppSurf::InternalPerform`, Bezier pieces (not SpApprox) | Computes the tolerances reached but never stores them | `TolReached` and `TolCurveOnSurf` give the previous run's values (0 at first). Kept |
+| `AppBlend_AppSurf` (both Perform) | The two-section rule (IFV occ13904) writes `dmin = 1` and possibly `dmax = 1` into the object's settings | They stay for the next pieces of `Perform(..., NbMaxP)` and for later runs: a piece of two sections lowers every later piece's degrees, and later pieces can fail (StdFail_NotDone). Kept (recorded) |
+| `AppBlend_AppSurf::Perform(..., NbMaxP)`, known parameters | Measures each Bezier piece by `mucu.Pole(Index, 1)` to `Pole(Index, NbPoles)`, Index being the piece's number | The distances, hence the interior knots, come from the wrong curve of the multi-curve. Kept |
+| `AppBlend_AppSurf::Curves2dShape` | `NbPoles = tabPoles->ColLength()`, the number of U poles | The 2d curves have the V poles. Kept |
+| `AppDef_Variational::InitCriterionEstimations` through `AppBlend_AppSurf::PerformSmoothing` | The entry above (EstTangent past a two-point line) | Smoothing two sections: native reads past the points and throws Standard_OutOfRange later; the port's range check throws Standard_RangeError first (decision 849) |
+## Phase 5: unit 5R, 2D fillets and chamfers
+
+ChFi2d and BRepFilletAPI_MakeFillet2d, reproduced as OCCT has them (decision 10), each marked `// OCCT`. None made
+the port differ from native in the oracle or the recordings (decision 856).
+
+| Where | What | Effect |
+|---|---|---|
+| `ChFi2d_Builder.cxx`, `BuildNewWire` | Every edge of the face being built goes into one new wire, closed as the face's first wire | A face with holes comes back with one wire holding the outer and inner edges (build123d.NET chamfers each wire on its own for this reason) |
+| `BRepFilletAPI_MakeFillet2d.cxx`, `Modified` | `DescendantEdge` reads the history with `Find` | Standard_NoSuchObject for any edge MakeFillet2d didn't trim, where BRepBuilderAPI_MakeShape's contract is an empty list |
+| `ChFi2d_Builder.cxx`, `BuildFilletEdge` | `vec1` built from the vertices and overwritten at once; `Ebid1`/`Ebid2` built and unused; the basis curves down-cast to Geom2d_Line unchecked | Dead code; a curve neither line nor circle would be a null dereference (IsLineOrCircle rejects it first) |
+| `ChFi2d_Builder_0.cxx`, `ComputePoint(F, L, E, Param)` | `Param` unset and the point at the plane's origin when the chamfer's line meets nothing | An angle chamfer that misses its second edge ends at the origin of the plane with an uninitialised parameter (0 in the port) |
+| `ChFi2d_Builder_0.cxx`, `ModifyChamfer(Chamfer, E1, E2, D1, D2)` | `E1` unused | Only `E2` orients the new chamfer |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Init(wire)` | `e1` and `e2` are only set when null | A second Init (ChFi2d_FilletAPI reuses its algorithm) keeps the first wire's edges |
+| `ChFi2d_AnaFilletAlgo.cxx`, `isCW` | The middle point is evaluated on the edge's curve without the edge's location, the ends with it | Wrong orientation for an arc edge with a location |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Perform` | The right neighbour's ends are chosen by `e1.Orientation()` | Wrong trimming when the two edges have different orientations |
+| `ChFi2d_AnaFilletAlgo.cxx`, `ArcFilletSegment` | Compares a squared distance difference with `SquareConfusion`, where SegmentFilletArc uses `Confusion` | The arc's end point is found less often; the parameter path is used instead |
+| `ChFi2d_FilletAlgo.cxx`, `IsRadiusIntersected` | `LowerDistanceParameter()` (a parameter) compared with `Precision::Confusion()` as if it were a distance | Intersections are judged on the edge by their parameter |
+| `ChFi2d_FilletAlgo.cxx`, `FilletPoint::Copy`, `FilterPoints` | `Copy` doesn't copy `myNear`; FilterPoints removes `myV(b)` with `b` an index into `myNear` | Values and their near indices can fall out of step |
+## Phase 5: unit 5Q, fair curves
+
+Found while porting FairCurve. Each is ported as OCCT has it and marked `// OCCT` at the line; the native recordings
+(tools/fairrec, decision 862) agree with the port bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `FairCurve_EnergyOfBatten::Compute`, `FairCurve_EnergyOfMVC::Compute` | `MyBattenLaw.SetSliding(MyLengthSliding)` updates the energy's own copy of the law, which nothing reads; the distributions keep their copies with the initial sliding | With free sliding and a non-zero slope, the height law `H(t) = h + (t - 0.5) slope L` keeps the initial L while the sliding changes. Kept |
+| `FairCurve_Energy::Hessian1` | Sets the terms between the first end's and the second end's constraint variables to 0 ("correct if there are less than 3 nodes") | With the battens' single-span degree 9 curves every pole interacts, so those hessian terms are wrong (finite differences give 1e-3 to 2e-2); the Newton steps are approximate, the minimum is the same. Kept, pinned by a test |
+| `FairCurve_Energy::Value` | Reads `Energie(0)` of a fresh `math_Vector(0, 0)` that Compute leaves unwritten when it stops on an infinite sliding | Uninitialised natively, 0 in the port; math_NewtonMinimum's step halving and its step reduction (which ignores the return value) read it. No case of the recordings differs. Kept |
+| `FairCurve_EnergyOfBatten::Compute` | When a sagging integration fails, goes on to the next interval and returns that interval's result | With more than 12 poles, a failure on one interval can be lost. By reading |
+
+## Phase 5: unit 5P, plates and filling
+
+Found while porting Plate, NLPlate, GeomPlate, LocalAnalysis and BRepFill_Filling. Each is ported as OCCT has it,
+except the two of decision 869 and the evaluation cache of decision 870, which change nothing native computes
+reliably.
+
+| Where | What | Effect |
+|---|---|---|
+| `NLPlate_NLPlate::Solve`, `Solve2` | After the loop over constraint orders, `OK = true` overwrites the `OK = false` an iteration's failure set | `IsDone()` is true even when no plate was solved. Kept, pinned by a test (three constraints at one UV: every plate singular, the surface still the initial plane) |
+| `NLPlate_NLPlate::Solve2` | Solves its first, polynomial iteration with `ord`, not the `ordre` it raises to `maxOrder + 2` | Possibly intended. Kept |
+| `Plate_Plate::Init` | Leaves `OK = true` | An empty plate, and a GeomPlate_BuildPlateSurface with no constraint, report `IsDone()`. OCCT's own GTests pin it with a TODO (fixing it broke blend and filling Draw tests). Kept |
+| `Plate_GtoCConstraint` (G3 constructor with a direction) | `nP` is unused (its name commented out in the signature) | Equal to the constructor without it. Kept, pinned by a test |
+| `Plate_LinearXYZConstraint`, `Plate_LinearScalarConstraint` (from arrays) | OCCT 8's `operator=` copies the source's bounds | A pinpoint array not indexed from 1 makes Plate's 1-based reads go out of range: Standard_OutOfRange on both sides. No caller passes one |
+| `LocalAnalysis_CurveContinuity`, `LocalAnalysis_SurfaceContinuity` | `myErrorStatus` is never set on success; the tolerance-only surface constructor leaves `myTypeCont` unset until `ComputeAnalysis` | `StatusError()` after a successful analysis and `ContinuityStatus()` before one read indeterminate memory; the port returns `LocalAnalysis_NullFirstDerivative` and `GeomAbs_C0`. No OCCT caller reads them then |
+| `GeomPlate_BuildPlateSurface::Perform` | When a curve can't be projected on the initial surface, approximates `myGeomPlateSurface`, which Perform nulled at its start (ComputeSurfInit sets it only on its non-linear branch) | Access violation natively (the corpus's bug23343, an OCCT TODO); the port throws Standard_NullObject (decision 869) |
+| `GeomPlate_BuildPlateSurface::G0Error(Index)`, `G1Error(Index)`, `G2Error(Index)` | Arrays of NbPtsOnCur values, of which EcartContraintesMil writes one per interval of the curve's last discretisation | More intervals (MakeFilling's usual case once Perform raised the points): Standard_OutOfRange on both sides. Fewer: native reads uninitialised memory, and returns values that change from call to call (seen on the oracle's 4- to 7-edge contours, several per test run); the port's arrays are zeroed (decision 869) |
+| `GeomPlate_BuildPlateSurface::G0Error()`, `G1Error()`, `G2Error()` | Set only by VerifSurface, which runs only with curve constraints | With point constraints only, native returns uninitialised values; the port 0. BRepFill_Filling always has curves |
+| `GeomPlate_MakeApprox` (criterion order other than -1, 0, 1) | No branch approximates | A null surface, errors unset (the port's 0). Kept |
+| `GeomPlate_Surface::UPeriod`, `VPeriod` | Return `false` | 0. Harmless (never periodic) |
+| `BRepFill_Filling::AddConstraints` (through MakeFilling's `Add(edge, face, order)`) | Passes the GeomAbs_Shape value as the plate's order (0 G0, 1 G1, 2 G2) | GeomAbs_C1 (2) gives a G2 constraint, and GeomAbs_G2 (3) throws "BRepFill : The continuity is not G0 G1 or G2" (Standard_Failure, on both sides: 10 oracle cases). build123d.NET's `MakeSurfacePatch` maps its C2 level to G2, so it always fails natively |
+| `BRepFill_Filling::Build` | Adds the bounds it finds for free constraints to `myBoundary`, and keeps `myOldNewMap` from build to build | A second Build rebuilds each boundary edge from the first build's edge (its empty copy keeps the pcurve on the first surface) and keeps the free constraints' edges. Kept; the oracle compares second builds |
+| `BRepFill_Filling::G0Error()` and the others before `Build` | Dereference the null builder | Access violation natively; NullReferenceException in the port |
+| `tests/bugs/filling/bug23380` | Draw reads `i` and `f` (faces) as free constraints; the case expects 4 edges | Native OCCT 8.0.1, through build123d.NET's binding, gives 3 edges, as the port does (byte-identical face): the case fails in Draw-lite, and natively too unless DRAWEXE reads its words otherwise |
+## Phase 6: unit 6P, BRepAlgoAPI and the public API
+
+Found by OCCT's GTests and the Boolean oracle. The port reproduces each, or says where it can't (`// OCCT` or
+`// OCCT.NET: frozen` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::MakeBlocks` (PaveFiller_6, "back to previous tolerance values for unused vertices") | Writes each saved tolerance back into the vertex's TShape, also when it is the vertex's own (a vertex only used as an existing pave) and also for an argument's vertex in the non-destructive mode. `UpdateSavedTolerance` can raise a saved value to a section edge's tolerance, and then the write grows an argument vertex in place | The no-op write is skipped in the port (it would throw on a frozen vertex: GTest `bcut_simple/M2`, a cut of a cut result by its own argument, failed with BOPAlgo_AlertIntersectionFailed). A real change of a frozen argument vertex still throws there (not seen; decision 877) |
+| `BRepTools_History::Merge` | Appends the composed images from a hashed `NCollection_Map` (`add(aL12, aAdditions[aI])`), so the order of a merged Modified or Generated list is the map's address order natively, insertion order in the port | `SimplifyResult`'s merged history lists the same images as native's, in another order, on 37 of the oracle's 393 simplified Booleans (and on different cases from one native run to the next); the sets are equal |
+| `BRepAlgoAPI_BuilderAlgo::SimplifyResult` | Runs UnifySameDomain with `SetSafeInputMode(myNonDestructive)`: in OCCT's default (destructive) mode the unifier writes into the result in place, and the result shares the arguments' untouched sub-shapes, so the caller's arguments change (pcurves added, ranges reset) | Native writes into its arguments; the port's are frozen and the unifier copies at its entry (decision 766), so they never change. Results are the same bytes; the history has decision 643's in-place entries where native has none |
+| OCCT's destructive mode (`SetNonDestructive(false)`, Draw's default) | The pave filler grows tolerances and adds pcurves on the arguments' own sub-shapes, which the result then shares | The port's frozen arguments always run non-destructively (decision 577); where native's destructive result differs, native's non-destructive result is the port's (oracle) |
+
+## Phase 6: unit 6G, checks and the other builders
+
+Found by the native recordings of tools/borec and the unit tests. The port reproduces each, or says where it can't
+(`// OCCT` or `// OCCT.NET: frozen` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_CheckerSI` (through PaveFiller_6's `PutPaveOnCurve` and `MakeBlocks`) | The self-check sets the non-destructive mode, but the filler still raises the tolerance of argument vertices a face/face section curve passes through (`BRep_Builder::UpdateVertex`), and MakeBlocks writes saved values back | Native `bopcheck`/`bopargcheck` can leave their input with raised vertex tolerances (bottle, hammer, CrankArm against a moved copy). The port checks a copy of a frozen argument (decision 884) |
+| `BOPAlgo_PaveFiller::FilterPavesOnCurves` (as MakeBlocks, unit 6P) | Writes a vertex tolerance even when it equals the current value, for an argument vertex used as an existing pave (every self-check of a box) | A no-op natively; skipped in the port, where it would throw on a frozen vertex (decision 885) |
+| `bopapicheck` (BOPTest_CheckCommands.cxx) | `-op` as the last word reads `a[n]`, a null pointer, through `strcmp` | DRAWEXE crashes; Draw-lite treats the missing operation as unknown |
+| `BOPAlgo_MakePeriodic::SetXTrimmed/SetYTrimmed/SetZTrimmed` | `(bool theIsTrimmed, const bool theFirst = 0.0)` declares the period's start as a `bool` | The start can only be 0 or 1; reproduced with a bool parameter |
+| `BOPAlgo_MakePeriodic::UpdateTwins` | Iterates `myRepeatedTwins` (shape-keyed: address order natively) and skips a group once any member is done; twins aren't transitive | The twin groups after a repetition depend on the iteration order; native isn't reproducible there. The port iterates in insertion order |
+| `BOPAlgo_MakePeriodic` trim and repetition, `BOPAlgo_MakeConnected::MakePeriodic` | The trim's Common and the repetition's gluing run destructively | Natively they change the caller's input, the periodic shape returned before and the connected shape in place (pcurves added to shared edges). The port copies frozen parts first (decision 891) |
+| `BOPAlgo_RemoveFeatures::RemoveInternalWires` | Removes INTERNAL wires and edges from the rebuilt solids' faces in place (`aF.Free(true); BRep_Builder::Remove`, through a `const_cast` of the explorer's face) | When the face is an untouched input face shared into the result, native changes the caller's input. The port copies (decision 892) |
+
+## Phase 5: unit 5S1, sweep laws and sections
+
+Found by the native recordings of tools/brepfillrec and tools/cwrec, the oracle and reading. The port reproduces each
+(`// OCCT` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_LocationLaw::Abscissa` | When the lengths aren't computed yet it calls `CurvilinearBounds(Index, bid, Length)` and starts from the edge's last bound instead of its first | The first call on a fresh law is too long by the edge's own length (a 4 + 3 polyline: `Abscissa(2, mid)` gives 8.5 the first time, 5.5 afterwards); reproduced natively, pinned by a test |
+| `BRepFill_ACRLaw` constructor | `OrigParam` is indexed over all the wire's edges, `ipath` counts only the non-degenerated ones | After a degenerated spine edge each edge gets an earlier edge's origin (found by reading, not reproduced) |
+| `BRepFill_LocationLaw::IsG1`, closed-path branch | The `D1` on law 1 isn't assigned to `Ok_D1`, unlike the inner branch | A failed evaluation there goes unseen |
+| `BRepFill_CompatibleWires` SearchRoot (from SameNumberByPolarMethod) | Returns the first key of RMap or MapVLV, iterated in TShape-address order, whose list holds the vertex | With looping sections (the first repeated last) native's result varies from run to run (five runs, five outputs: status Done or Failed, cuts moved); the port iterates in binding order and is deterministic |
+| `BRepFill_CompatibleWires::SearchOrigin`, `SameNumberByACR` | `newwire.Oriented(TopAbs_FORWARD);` discards its result; `double AllLengthsNull = true` holds a bool | No effect |
+| `BRepFill::Face`, `BRepFill::Shell`, `BRepFill_Pipe` | Write pcurves, ranges, flags and tolerances into the caller's edges and profile | Natively the caller's shapes change; the port writes into copies of frozen inputs (decisions 897, 910) |

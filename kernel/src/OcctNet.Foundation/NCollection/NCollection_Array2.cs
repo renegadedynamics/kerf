@@ -217,6 +217,9 @@ public class NCollection_Array2<T>
     /// <summary>The elements row by row, without copying.</summary>
     public Span<T> AsSpan() => new(myData, myOffset, mySizeRow * mySizeCol);
 
+    /// <summary>The storage (row by row from the offset), for views sharing it (OCCT's <c>&amp;ChangeFirst()</c>).</summary>
+    internal (T[] Data, int Offset) Storage() => (myData, myOffset);
+
     /// <summary>One row, without copying.</summary>
     public Span<T> Row(int theRow) => new(myData, Position(theRow, myLowerCol), mySizeCol);
 

@@ -25,9 +25,6 @@ namespace Occt;
 /// <see cref="InternalHistory"/> and <see cref="InternalSectionEdges"/>. The functional twins are in
 /// <see cref="BRepAlgoAPI"/>.
 /// </para>
-/// <para>
-/// Left out until unit 6P: <c>SimplifyResult</c>, which needs ShapeUpgrade_UnifySameDomain (unit 6U).
-/// </para>
 /// </remarks>
 public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
 {
@@ -117,7 +114,57 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         BuildResult(aPS.Next(30));
     }
 
-    // SimplifyResult (ShapeUpgrade_UnifySameDomain on the result) is added by unit 6P with unit 6U.
+    /// <summary>
+    /// Simplifies the result by unifying the tangential edges and faces (ShapeUpgrade_UnifySameDomain). The fuzzy value
+    /// of the operation is the unifier's linear tolerance; the non-destructive mode is its safe input mode. The history
+    /// of the simplification is merged into the history of the operation, so <c>Modified</c>, <c>Generated</c> and
+    /// <see cref="IsDeleted"/> take it into account.
+    /// </summary>
+    /// <remarks>
+    /// Runs on the unfrozen result (decision 579). The result shares the arguments' untouched sub-shapes, which are
+    /// frozen: the unifier copies its input at the entry (decision 766), so the arguments are never written, whatever the
+    /// non-destructive flag, and the sub-shapes it leaves unchanged are the result's (and the arguments') own.
+    /// </remarks>
+    /// <param name="theUnifyEdges">Controls the edges unification (true by default).</param>
+    /// <param name="theUnifyFaces">Controls the faces unification (true by default).</param>
+    public void SimplifyResult(bool theUnifyEdges = true, bool theUnifyFaces = true) =>
+        SimplifyResult(theUnifyEdges, theUnifyFaces, Precision.Angular());
+
+    /// <inheritdoc cref="SimplifyResult(bool, bool)"/>
+    /// <param name="theUnifyEdges">Controls the edges unification.</param>
+    /// <param name="theUnifyFaces">Controls the faces unification.</param>
+    /// <param name="theAngularTol">Angular criteria for tangency of edges and faces (Precision::Angular() by default).</param>
+    public void SimplifyResult(bool theUnifyEdges, bool theUnifyFaces, double theAngularTol)
+    {
+        if (HasErrors())
+        {
+            return;
+        }
+
+        if (!theUnifyEdges && !theUnifyFaces)
+        {
+            return;
+        }
+
+        // Simplification tool
+        ShapeUpgrade_UnifySameDomain anUnifier = new(myShape, theUnifyEdges, theUnifyFaces, true);
+        // Pass options
+        anUnifier.SetLinearTolerance(myOptions.myFuzzyValue);
+        anUnifier.SetAngularTolerance(theAngularTol);
+        anUnifier.SetSafeInputMode(myNonDestructive);
+        anUnifier.AllowInternalEdges(false);
+        // Perform simplification
+        anUnifier.Build();
+        // Overwrite result with simplified shape
+        myShape = anUnifier.InternalShape();
+        // Keep simplification history
+        mySimplifierHistory = anUnifier.InternalHistory();
+        if (myFillHistory)
+        {
+            // Merge simplification history into result history
+            myHistory!.Merge(mySimplifierHistory!);
+        }
+    }
 
     /// <summary>The algorithm's own list behind <c>Modified</c>: the splits of <paramref name="theS"/> in the result.</summary>
     internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape theS)

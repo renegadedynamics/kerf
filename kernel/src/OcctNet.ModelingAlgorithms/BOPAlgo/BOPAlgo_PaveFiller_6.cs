@@ -986,7 +986,13 @@ public partial class BOPAlgo_PaveFiller
                 //
                 TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV1));
                 BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
-                TV.Tolerance(aTol);
+                // OCCT.NET: frozen. OCCT writes the saved tolerance back also when it is the vertex's own (a vertex
+                // only used as an existing pave keeps its tolerance): a no-op, which on a frozen argument vertex would
+                // throw, so it is skipped. A different value is written as OCCT writes it (decision 875).
+                if (TV.Tolerance() != aTol)
+                {
+                    TV.Tolerance(aTol);
+                }
                 // reset bnd box
                 BOPDS_ShapeInfo aSIDS = myDS.ChangeShapeInfo(nV1);
                 ref Bnd_Box aBoxDS = ref aSIDS.ChangeBox();
@@ -2405,7 +2411,11 @@ public partial class BOPAlgo_PaveFiller
                     TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
                     double aRealTol = Max(pTol, Math.Sqrt(aMaxDistKept) + Precision.Confusion());
                     // OCCT writes the tolerance into the vertex's TShape directly (a frozen vertex throws).
-                    ((BRep_TVertex)aV.TShape()!).Tolerance(aRealTol);
+                    // OCCT.NET: an identical write is skipped, as in MakeBlocks (unit 6G).
+                    if (((BRep_TVertex)aV.TShape()!).Tolerance() != aRealTol)
+                    {
+                        ((BRep_TVertex)aV.TShape()!).Tolerance(aRealTol);
+                    }
                 }
             }
         }

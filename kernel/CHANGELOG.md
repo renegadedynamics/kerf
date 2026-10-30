@@ -839,3 +839,154 @@ Phase 5 (part): the medial axis (unit 5M).
   included (16,523 and 5,432 cases checked locally); unit tests on the bisectors, the loci's graphs and MAT's lists.
 - Draw-lite: `bisec`; `topoload`, `drawcont`, `side`, `mat`, `result`, `zone`. No corpus case uses `bisec`; the 8
   that use `topoload` still need phase 7's offset commands.
+Phase 6 (part): builders and Booleans (unit 6F).
+
+- `OcctNet.ModelingAlgorithms`: the building part of the Boolean operations: `BOPAlgo_Builder` (the General Fuse:
+  images of vertices, edges, faces, solids and containers, same-domain faces, internal parts, the history),
+  `BOPAlgo_BuilderFace` and `BOPAlgo_WireSplitter` (faces from split edges), `BOPAlgo_BuilderSolid` and
+  `BOPAlgo_ShellSplitter` (solids from split faces), `BOPAlgo_BuilderArea`, `BOPAlgo_WireEdgeSet`, `BOPAlgo_BOP`
+  (FUSE, COMMON, CUT, CUT21), `BOPAlgo_Section`, `BOPAlgo_Splitter`, and the rest of `BOPAlgo_Tools` (EdgesToWires,
+  WiresToFaces, ClassifyFaces, FillInternals). They replace unit 6A's stub builders: `BRepAlgoAPI_Fuse`, `Cut`,
+  `Common`, `Section`, `Splitter`, `BuilderAlgo` and the functional twins now give real results, frozen, with
+  histories; frozen arguments are never written.
+- Tests: OCCT's GTests of BOPAlgo_BOP, and the PaveFiller GTests' result checks; unit tests of every builder. Against
+  native OCCT (live, through build123d.NET's bindings): Fuse, Cut, Cut21, Common, Section, Splitter and the General
+  Fuse on the boolean group's simple grids, data/occ's shapes, random primitive pairs and triples (with glue, OBB and
+  fuzzy values) and near-coincident primitives over a sweep of fuzzy values: 1,853 of 1,853 results byte-identical
+  to native, histories equal, serial = parallel on every case.
+Phase 5 (part): sections and sweep surfaces (unit 5L2).
+
+- `OcctNet.ModelingAlgorithms`:
+  - GeomFill's sweeps: `GeomFill_Sweep` (elementary surfaces where it can, else a B-spline surface approximated by
+    `Approx_SweepApproximation`) over `GeomFill_SweepFunction`; the section laws `GeomFill_EvolvedSection` and
+    `GeomFill_NSections`; `GeomFill_Pipe` (pipes of constant radius, of a constant section with each trihedron, with a
+    fixed binormal, along a curve on a surface, with guides, through two or N sections, and pipes on edges);
+    `GeomFill_CircularBlendFunc`, `GeomFill_QuasiAngularConvertor`, `GeomFill_PolynomialConvertor`,
+    `GeomFill_SweepSectionGenerator` and `GeomFill_AppSweep`; the package functions of `GeomFill` (ruled surfaces,
+    circular sections for blends).
+  - Surfaces and curves the sweeps hand out are frozen; GeomFill_NSections leaves the caller's sections unchanged
+    (OCCT reparametrises them in place).
+- Draw-lite: `sweep` and `tuyau`.
+- Tests: OCCT's GTest GeomFill_NSections; unit tests of every class, with frozen inputs. Native recordings
+  (tools/sweeprec, a C++ recorder built against native OCCT): 710 cases of pipes, sweeps, section laws, blend functions,
+  section generators and package functions, 109,805 doubles and the poles of 474 surfaces, all bit-identical.
+Phase 5 (part): surfaces from curves (unit 5L3).
+
+- `OcctNet.ModelingAlgorithms`:
+  - Surfaces through sections: `GeomFill_Profiler` (a common B-spline profile), `GeomFill_Generator` (the ruled
+    surface through the sections), `GeomFill_SectionGenerator`, `GeomFill_Line` and `GeomFill_AppSurf` (the
+    approximated surface: Bezier pieces, B-spline least squares, variational smoothing, pieces of NbMaxP sections),
+    over AppBlend: `AppBlend_Approx` and the generic `AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint>`.
+  - Fillings: `GeomFill_Coons`, `Curved`, `Stretch`, `GeomFill_BSplineCurves` and `GeomFill_BezierCurves` (two, three
+    or four curves, three styles), and the constrained filling `GeomFill_ConstrainedFilling` with its boundaries
+    (`GeomFill_SimpleBound`, `BoundWithSurf`, `DegeneratedBound`), `GeomFill_CoonsAlgPatch`, `GeomFill_TgtOnCoons`
+    and `GeomFill_CornerState`.
+  - Gordon surfaces (new in OCCT 8): `GeomFill_Gordon` and `GeomFill_NetworkSurface` over a network of profiles and
+    guides, with a parallel contact search that gives the serial result.
+  - Surfaces are handed out frozen; the caller's curves are never changed.
+- Draw-lite: `appsurf` and `fillcurves`; the four corpus cases they make runnable pass.
+- Tests: OCCT's GTests GeomFill_BSplineCurves and GeomFill_Gordon; unit tests of every class. Native recordings (no
+  bindings exist): the fillings (tools/fillrec, 880 cases, 568,389 doubles), Gordon and NetworkSurface
+  (tools/gordonrec, 380 cases) and the surfaces through sections (tools/appsurfrec, 400 cases), all bit-identical
+  but 10 two-section smoothings where native and the port throw different exceptions past an AppDef bug.
+
+Phase 5 (part): 2D fillets and chamfers (unit 5R).
+
+- `OcctNet.ModelingAlgorithms`: ChFi2d, all of it (`ChFi2d_Builder`, the analytical and iterative fillet algorithms,
+  `ChFi2d_FilletAPI`, `ChFi2d_ChamferAPI`), and `BRepFilletAPI_MakeFillet2d`: fillets and chamfers on the vertices of
+  planar faces and between pairs of edges. Faces given are never written; results, fillets and chamfers are frozen;
+  `Modified` answers for the caller's edges.
+- Draw-lite: `chfi2d`, `fillet2d`, `chamfer2d`; the corpus scan knows branches on a case's variables.
+- Tools: `tools/chfi2drec`, the native recorder of ChFi2d_FilletAPI and ChamferAPI.
+- Tests: unit tests (OCCT has no GTests here); 1,200 recorded FilletAPI/ChamferAPI cases, every token identical to
+  native; oracle tests of MakeFillet2d on 520 faces (random polygons and arc profiles, build123d.NET's rounded
+  rectangle and chamfer patterns), every result byte-identical and every history identical; the corpus's fillet2d cases
+  (11 runnable, 10 OK, 1 missing its data).
+
+Phase 5 (part): fair curves (unit 5Q).
+
+- `OcctNet.ModelingAlgorithms`: the FairCurve package: `FairCurve_Batten` (curves simulating physical battens through
+  two points with tangency constraints, free or imposed sliding, height and slope) and `FairCurve_MinimalVariation`
+  (minimal variation of curvature, with curvature constraints and a physical ratio), working objects whose `Curve()`
+  returns a new, frozen 2D B-spline; the energies (`FairCurve_EnergyOfBatten`, `FairCurve_EnergyOfMVC`), the tension,
+  sagging and jerk distributions, `FairCurve_BattenLaw`, `FairCurve_Newton` and `FairCurve_AnalysisCode`.
+- Tests: native recordings (tools/fairrec, a C++ recorder built against native OCCT): 750 cases of battens, minimal
+  variation curves, Draw's command sequences and the energies' values, gradients and hessians, every result
+  bit-identical to native, exceptions included; unit tests (OCCT has no FairCurve GTests).
+- Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`, `setheight`,
+  `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. No corpus case uses them.
+Phase 5 (part): plates and filling (unit 5P).
+
+- `OcctNet.ModelingAlgorithms`:
+  - Plate (the thin-plate solver `Plate_Plate` and its pinpoint, linear, G1 to G3 and free constraints), NLPlate
+    (non-linear plates over a surface), LocalAnalysis (curve and surface continuity analyses).
+  - GeomPlate: the plate surface builder `GeomPlate_BuildPlateSurface` with point and curve constraints, the plate
+    surface `GeomPlate_Surface` (geometry, immutable to callers, with `WithBounds`), its B-spline approximation
+    `GeomPlate_MakeApprox` with the G0 and G1 criteria, and `GeomPlate_BuildAveragePlane`.
+  - N-sided filling: `BRepFill_Filling` with its constraint classes, and the maker `BRepOffsetAPI_MakeFilling`
+    (build123d.NET's `Face.MakeSurface` and `MakeSurfacePatch`). The face is new topology; the caller's edges and faces
+    are never written; `Shape()` and `Generated` publish frozen shapes; a built filling can take more constraints and be
+    built again, as build123d.NET does.
+  - A solved plate and the plate surface over it evaluate from several threads at once (OCCT's evaluation cache
+    dropped; same values).
+- Draw-lite: `plate`, `gplate`, `approxplate`, `filling`, `fillingparam`.
+- Tests: OCCT's GTests Plate_Plate and GeomPlate_BuildPlateSurface; unit tests of every class. Oracle: MakeFilling
+  against native OCCT on build123d.NET's MakeSurface (random contours of lines, arcs and B-splines, rebuilt with
+  points), holes in boxes with G1 and G2 supports, cylinder caps, points, points on faces, free constraints and an
+  initial surface: all 206 builds byte-identical as BRep text, every Generated list identical, every value
+  bit-identical but where native reads uninitialised memory. Corpus: the filling cases (6 runnable, from none; 1 OK, 1
+  known problem as OCCT, 3 missing their data, 1 failing as native OCCT 8 does).
+
+Phase 6 (part): BRepAlgoAPI and the public API, the Boolean milestone (unit 6P).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `BRepAlgoAPI_BuilderAlgo.SimplifyResult` (and so every Boolean operation's): UnifySameDomain on the result, its
+    history merged into the operation's; the arguments are never written, whatever the non-destructive flag.
+  - The functional twins (`BRepAlgoAPI.Fuse`, `Common`, `Cut`, `Section`, `Split`): `BRepAlgoAPI_Options.Simplify`
+    now works, and each takes an optional `Message_ProgressRange`; a cancelled operation throws
+    `OperationCanceledException` over the `BRepAlgoAPI_Failure` that carries OCCT's `BOPAlgo_AlertUserBreak`.
+  - `BOPAlgo_PaveFiller` no longer fails when it would write a frozen argument vertex's own tolerance back into it (a
+    shape cut again by one of its arguments).
+- Tests: OCCT's GTests of BRepAlgoAPI_Fuse, Cut, Common, BuilderAlgo (TKBO) and Cut, Fuse, Section (TKBool), 232
+  tests, 7 skipped for fillets (phase 7); unit tests of the simplification, progress and cancellation. Against native
+  OCCT: SimplifyResult on random primitives and on the boolean group's and data/occ's arguments, native's destructive
+  mode, the inverted-solid check, and the corpus's `bfuzzyvalue`/`bglue` cases (589 comparisons: 513 byte-identical,
+  72 where native's destructive mode differs and its non-destructive result is the port's, 4 canonically identical where
+  native varies); the determinism test (1,728 repeated and parallel runs at degrees 2 to the processor count, all equal
+  to the serial run).
+
+Phase 6 (part): checks and the other builders (unit 6G).
+
+- `OcctNet.ModelingAlgorithms`: BOPAlgo_CheckerSI, ArgumentAnalyzer and CheckResult (self-interference and argument
+  checks) with `BRepAlgoAPI_Check`; BOPAlgo_MakerVolume (solids from faces); BOPAlgo_CellsBuilder (cells, materials,
+  internal boundaries); BOPAlgo_MakePeriodic and BOPAlgo_MakeConnected (periodic and connected shapes, repetitions,
+  twins, materials); BOPAlgo_RemoveFeatures with `BRepAlgoAPI_Defeaturing`. Inputs are never written (a frozen input is
+  copied where OCCT writes into it); results, histories and check results hand out frozen shapes. `BOPDS_DS`'s
+  interference table iterates in OCCT's order.
+- Draw-lite: `bopcheck`, `bopargcheck`, `bopapicheck`, `xdistef`, `checkcurveonsurf`, `mkvolume`, `bcbuild`, `bcadd`,
+  `bcaddall`, `bcremove`, `bcremoveall`, `bcremoveint`, `bcmakecontainers`, `makeperiodic`, `periodictwins`,
+  `repeatshape`, `clearrepetitions`, `makeconnected`, `cmaterialson`, `cmakeperiodic`, `crepeatshape`,
+  `cperiodictwins`, `cclearrepetitions`, `removefeatures`; the Boolean session (`baddobjects`, `baddtools`, `bclear*`,
+  `bfillds`, the option commands) and the history commands (`setfillhistory`, `savehistory`, `modified`, `generated`,
+  `isdeleted`); `unifysamedom` records its history.
+- Tests: unit tests of every class. Against native OCCT (tools/borec, on the corpus's inputs captured by Draw-lite and
+  on random primitives and data/occ shapes): checks 488 of 488 identical; volumes and cells 797 of 801 byte-identical,
+  4 with the Free flag masked; periodic and connected shapes 488 of 499 byte-identical, 11 with Free masked; feature
+  removal 220 of 225 byte-identical, 5 the same error; parallel runs equal to serial ones. Corpus: of the cases using these commands, none
+  runnable before; now check commands 97 (OK 84, 1 known problem, 12 missing data), `mkvolume`/`bc*` 152 (OK 142, 1
+  known problem, 9 missing data), periodicity and connection 9 (OK 7, 2 missing data), `removefeatures` 42 (OK 25, 17
+  missing data); none failing.
+
+Phase 5 (part): sweep laws and sections (unit 5S1).
+
+- `OcctNet.ModelingAlgorithms`: BRepFill's package statics (`Face`, `Shell`: build123d's ruled surfaces; `Axe`,
+  `ComputeACR`, `InsertACR`), the location laws (LocationLaw, ACRLaw, Edge3DLaw, EdgeOnSurfLaw), the section laws
+  (SectionLaw, ShapeLaw, NSections), Section, SectionPlacement, CompatibleWires, Pipe, TransitionStyle, TypeOfContact,
+  ThruSectionErrorStatus; ShapeUpgrade_RemoveLocations; BRepOffsetAPI_MakePipe. Frozen inputs are never written
+  (copies where OCCT writes into them). BRepFill_Pipe and MakePipe run BRepFill_Sweep, which unit 5S2 ports: until
+  then they throw Standard_NotImplemented through a placeholder.
+- Draw-lite: `pipe` (its 58 runnable corpus cases wait for 5S2).
+- Tests: unit tests of every class. Against native OCCT: `BRepFill.Face`, `Shell`, `Axe`, `ComputeACR` and `InsertACR`
+  through build123d.NET's bindings, 1,900 cases all identical (byte-identical BRep text; 23 Axe cases throwing on both
+  sides); the laws, sections, placement and RemoveLocations (tools/brepfillrec) 460 cases all identical;
+  CompatibleWires (tools/cwrec) 385 of 390 identical, the other 5 looping sections where native varies from run to run.

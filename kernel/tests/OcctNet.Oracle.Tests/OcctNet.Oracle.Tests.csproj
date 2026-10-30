@@ -38,6 +38,8 @@
     <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\CanonicalShapeComparer.cs" Link="Harness\CanonicalShapeComparer.cs" />
     <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\DeterminismHarness.cs" Link="Harness\DeterminismHarness.cs" />
     <Compile Include="..\OcctNet.ModelingAlgorithms.Tests\Harness\HistoryComparison.cs" Link="Harness\HistoryComparison.cs" />
+    <!-- The arguments of tools/pfrec's recording (decision 785), which the Boolean oracle reuses -->
+    <EmbeddedResource Include="..\OcctNet.ModelingAlgorithms.Tests\BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" Link="BOPAlgo\PaveFillerRecordings.txt.gz" />
   </ItemGroup>
 
 </Project>

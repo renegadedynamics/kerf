@@ -54,6 +54,16 @@ public sealed class DrawCorpus(string theTestsDirectory)
         ("mesh", ["stepread", "tpcompound"], new Regex(@"\.(brep|rle)", RegexOptions.CultureInvariant)),
     ];
 
+    /// <summary>
+    /// Commands a group's scripts call only when the case sets a variable (unit 5R): the fillet2d group's end script
+    /// runs <c>CheckTriArea</c>, which nothing in that group defines, only <c>if {[info exists rel_tol]}</c>. A case
+    /// that never sets the variable doesn't need the commands.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string[] Commands, string Variable)> VariableBranches { get; } =
+    [
+        ("fillet2d", ["CheckTriArea"], "rel_tol"),
+    ];
+
     private static readonly Regex s_theFileName = new(@"^\s*set\s+TheFileName\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     private readonly ConcurrentDictionary<string, IReadOnlySet<string>> myProcCalls = new(StringComparer.Ordinal);
@@ -217,6 +227,13 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // an exception from the port that a command didn't turn into a Tcl error
             aLog.WriteLine("Tcl Exception: " + anError.GetType().Name + ": " + anError.Message);
         }
+        finally
+        {
+            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's process-wide defaults (mpparallel,
+            // mpsetdefaultname) don't carry over to the next case
+            Occt.BRepMesh_IncrementalMesh.SetParallelDefault(false);
+            Occt.BRepMesh_DiscretFactory.Get().SetDefaultName("FastDiscret");
+        }
 
         string aText = aLog.ToString();
         var aChecker = new DrawInterpreter();
@@ -292,6 +309,15 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 {
                     aMissing.ExceptWith(aBranchCommands);
                 }
+            }
+        }
+
+        foreach ((string aGroup, string[] aBranchCommands, string aVariable) in VariableBranches)
+        {
+            if (aGroup == theCase.Group
+                && !Regex.IsMatch(File.ReadAllText(theCase.Path), @"\bset\s+" + Regex.Escape(aVariable) + @"\b", RegexOptions.CultureInvariant))
+            {
+                aMissing.ExceptWith(aBranchCommands);
             }
         }
 
