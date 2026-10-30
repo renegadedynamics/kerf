@@ -771,3 +771,20 @@ Phase 6 (part): the pave filler (unit 6E).
   native (recorded): 457 cases (the boolean group's simple scripts, some with a fuzzy value; primitives at random
   placements; data/occ shapes), each destructive and non-destructive, 914 of 914 runs bit-identical. Serial =
   parallel on every case; frozen and non-destructive arguments are never written.
+
+Phase 5 (part): faces from wires (unit 5O1).
+
+- `OcctNet.ModelingAlgorithms`:
+  - BRepAlgo: `BRepAlgo_FaceRestrictor` (the faces closed wires bound on a face's surface, with or without orientation
+    correction), `BRepAlgo_Loop`, `BRepAlgo_Image`, `BRepAlgo_AsDes`, and `BRepAlgo`'s ConvertWire, ConvertFace,
+    ConcatenateWire, ConcatenateWireC0, IsValid and IsTopologicallyValid.
+  - The face maker the restrictor uses, `TopOpeBRepBuild_WireToFace`, with the part of the legacy Booleans it runs:
+    TopOpeBRepBuild's area and loop builders, classifiers, shape sets and face builder; `Builder.MakeFaces`; the
+    TopOpeBRepDS_BuildTool and TopOpeBRepTool members they reach (pcurves, shape classifiers, tangents). The Boolean
+    algorithm itself is not ported.
+  - Given frozen wires, the restrictor and WireToFace work on copies where OCCT writes into them (closed flags,
+    pcurves) and give the caller's own wires back where nothing changed; the faces they hand out are frozen.
+- Tools: `tools/frrec`, the native recorder of the tests.
+- Tests: against native OCCT (recorded): 602 face restrictor and WireToFace cases (nested, disjoint, crossing and
+  wrongly oriented wires of lines, arcs, circles and B-splines on three planes, four modes, random sets) and 30 cases of
+  the other BRepAlgo tools, all byte-identical; repeatable, serial = parallel, the caller's wires unchanged.
