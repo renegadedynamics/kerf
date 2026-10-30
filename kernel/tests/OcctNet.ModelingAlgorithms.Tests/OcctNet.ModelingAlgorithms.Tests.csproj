@@ -35,6 +35,8 @@
     <EmbeddedResource Include="IntPatch\Recordings\*.txt" LogicalName="IntPatch.Recordings.%(Filename)%(Extension)" />
     <!-- Native OCCT's edge intersectors on data/occ shapes, recorded by tools/edgerec (unit 6C, decision 754) -->
     <EmbeddedResource Include="IntTools\Recordings\edgerec.txt.gz" LogicalName="IntTools.edgerec.txt.gz" />
+    <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
