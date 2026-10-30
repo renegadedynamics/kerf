@@ -1,3 +1,5 @@
 * text=auto
 *.sh text eol=lf
 *.sed text eol=lf
+*.pl text eol=lf
+tools/merge/decision-map.txt text eol=lf
