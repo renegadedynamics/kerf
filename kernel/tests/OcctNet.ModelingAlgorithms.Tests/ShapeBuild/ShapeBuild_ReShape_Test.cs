@@ -75,13 +75,36 @@ public class ShapeBuild_ReShapeTest
 
     // Regression test for the originally reported symptom: running shape healing
     // repeatedly on the same shape must not cause the edge count to grow.
-    [Fact(Skip = "TODO(6H3): needs ShapeFix_Shape")]
+    // (ShapeFix_ShapeStabilityTest in OCCT's file.)
+    // Before the UpdateWire/Apply fixes, repeated ShapeFix_Shape::Perform on
+    // shapes with shared sub-shapes produced geometrically growing edge counts
+    // from cascading replacement chains.
+    [Fact]
     public void RepeatedPerformDoesNotMultiplyEdges()
     {
-        // ShapeFix_ShapeStabilityTest in OCCT's file: five ShapeFix_Shape passes over a box keep 6 faces, 12 edges
-        // and 8 vertices. Ported with ShapeFix_Shape (unit 6H3).
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
-        Assert.Equal(12, CountSubShapes(aBox, TopAbs_EDGE));
+        var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        TopoDS_Shape aBox = aMakeBox.Shape();
+        Assert.True(aMakeBox.IsDone());
+
+        int aNbEdgesInitial = CountSubShapes(aBox, TopAbs_EDGE);
+        int aNbVerticesInitial = CountSubShapes(aBox, TopAbs_VERTEX);
+        int aNbFacesInitial = CountSubShapes(aBox, TopAbs_FACE);
+        Assert.Equal(12, aNbEdgesInitial);
+
+        TopoDS_Shape aCurrent = aBox;
+        for (int anIter = 0; anIter < 5; ++anIter)
+        {
+            var aFixer = new ShapeFix_Shape(aCurrent);
+            aFixer.Perform();
+            aCurrent = aFixer.Shape();
+            Assert.False(aCurrent.IsNull(), $"iteration {anIter}");
+
+            // Counts must remain identical across every iteration - no multiplication,
+            // no loss of shapes on a valid input.
+            Assert.Equal(aNbFacesInitial, CountSubShapes(aCurrent, TopAbs_FACE));
+            Assert.Equal(aNbEdgesInitial, CountSubShapes(aCurrent, TopAbs_EDGE));
+            Assert.Equal(aNbVerticesInitial, CountSubShapes(aCurrent, TopAbs_VERTEX));
+        }
     }
 
     // Diamond sharing through ShapeBuild_ReShape: two compounds share a vertex

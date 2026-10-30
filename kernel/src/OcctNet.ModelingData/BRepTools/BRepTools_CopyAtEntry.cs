@@ -106,6 +106,12 @@ internal sealed class BRepTools_CopyAtEntry
     public TopoDS_Shape Copied(in TopoDS_Shape theShape) => withImage(theShape, myCopies);
 
     /// <summary>
+    /// The input's sub-shape a copy was made from, at the copy's location and orientation (the shape itself when the
+    /// input wasn't copied, or when it isn't a copy). The inverse of <see cref="Copied"/>.
+    /// </summary>
+    public TopoDS_Shape Original(in TopoDS_Shape theShape) => withImage(theShape, myOriginals);
+
+    /// <summary>
     /// After <see cref="Finish"/>: what stands for a shape the algorithm worked with: for a copied sub-shape, its
     /// original if the algorithm left it unchanged, else the changed copy; any other shape is itself (its sub-shapes
     /// were already replaced in place by <see cref="Finish"/> where it reached them).
