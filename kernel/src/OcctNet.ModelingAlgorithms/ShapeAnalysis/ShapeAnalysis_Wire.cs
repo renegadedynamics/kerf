@@ -2445,7 +2445,23 @@ public class ShapeAnalysis_Wire : Standard_Transient
     /// </remarks>
     public bool CheckTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
                           double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
-                          ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22)
+                          ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22) =>
+        checkTail(theEdge1, theEdge2, theMaxSine, theMaxWidth, theMaxTolerance, ref theEdge11, ref theEdge12, ref theEdge21,
+                  ref theEdge22, true);
+
+    /// <summary>
+    /// <see cref="CheckTail"/> without freezing the edge parts it cuts, for ShapeFix_Wire.FixTails, which puts them
+    /// into the wire it goes on fixing (the parts share the vertices of its working edges).
+    /// </summary>
+    internal bool InternalCheckTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
+                                    double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
+                                    ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22) =>
+        checkTail(theEdge1, theEdge2, theMaxSine, theMaxWidth, theMaxTolerance, ref theEdge11, ref theEdge12, ref theEdge21,
+                  ref theEdge22, false);
+
+    private bool checkTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
+                           double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
+                           ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22, bool theToFreeze)
     {
         TopoDS_Edge[] aEs = [theEdge1, theEdge2];
         if (!IsReady() || BRep_Tool.Degenerated(aEs[0]) || BRep_Tool.Degenerated(aEs[1]))
@@ -2673,8 +2689,11 @@ public class ShapeAnalysis_Wire : Standard_Transient
             aSATPP.TransferRange(aEParts2[0], aLs[aEI, 0], aParams[aEI], false);
             aSATPP.TransferRange(aEParts2[1], aParams[aEI], aLs[aEI, 1], false);
             // OCCT.NET: the new parts are published frozen (design 4.2)
-            aEParts2[0].TShape()!.FreezeGraph();
-            aEParts2[1].TShape()!.FreezeGraph();
+            if (theToFreeze)
+            {
+                aEParts2[0].TShape()!.FreezeGraph();
+                aEParts2[1].TShape()!.FreezeGraph();
+            }
             GProp_GProps aLinProps = new GProp_GProps();
             BRepGProp.LinearProperties(aEParts2[1 - aVIs[aEI]], aLinProps);
             if (aLinProps.Mass() <= Occt.Precision.Confusion())
