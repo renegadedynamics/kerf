@@ -804,6 +804,54 @@ which the port matches bit for bit.
 | `IntPatch_PrmPrmIntersection::Perform` (the sampled one, the branch for more than 2,500 samples) | Doesn't clear the lines, whatever `ClearFlag` says (the other branch clears them when it is true) | A second sampled Perform on the same object keeps the first one's lines. IntPatch_Intersection uses a fresh object (or wants them kept). Kept |
 | `IntPatch_PrmPrmIntersection::Perform` (with the list of points; a property) | Appends the points' images across the seams of closed surfaces to the caller's list | The caller's list grows. Kept |
 | `IntPatch_PrmPrmIntersection::PointDepart` (lines 3689-3718; a property) | Converts `(P.X() - x0 + dx2) / dx` to `int` without a range check (undefined behaviour in C++ out of range; MSVC gives `INT_MIN`) | Out of range and NaN samples fall outside the grid. The port reproduces MSVC's result (decision 708) |
+## Phase 6: unit 6B, context and BOP tools
+
+Found while porting IntTools_Context, FClass2d, TopolTool and Tools and BOPTools' AlgoTools (all three files),
+AlgoTools2D and AlgoTools3D, and auditing the context's caches (plan 2.4, decision 714). Each is marked `// OCCT` at the
+line (or commented) and ported as OCCT has it; "pinned" names the unit test that shows it.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_FClass2d::Init` | Doesn't clear TabClass/TabOrien or reset the face explorer | A second Init appends the new face's polygons to the old ones, and a point the polygons can't decide is classified against the old face. IntTools_Context never re-initialises a classifier. By reading |
+| `IntTools_FClass2d::Init` | Returns on an edge without a pcurve, with the classifier half built (the wires sampled so far, partial bounds, U1..V2 unset) | The classifier answers from the partial polygons. The port's unset fields are 0 |
+| `IntTools_FClass2d::Init`, refinement loop | Never recomputes the polygon's area and perimeter, so `anExpThick` stays the first polygon's | By reading |
+| `IntTools_FClass2d::IsHole` | Reports the orientation of the last wire with a non-zero area | A face whose hole is drawn after its outer wire reports `true`. Pinned |
+| `IntTools_TopolTool::SamplePoint` | Maps index 1 to the second sample in U (`iu = 1 + Index - (iv-1)*n`, as if the index started at 0) | Index n·m gives `v = vsup`, on the boundary, and the first grid node is never sampled. Pinned |
+| `IntTools_Tools::IsVertex(Edge, t)` | Computes the vertex tolerance, then overwrites it with 1e-12 (squared) | The vertex's tolerance is ignored. By reading |
+| `IntTools_Tools::RejectLines` | Writes into its const input through a const_cast (a trimmed curve replaced by its basis) | The caller's sequence changes. Kept |
+| `BOPTools_AlgoTools::ComputeStateByOnePoint` | Discards the state of the recursive call on a container's first sub-shape | Returns TopAbs_UNKNOWN for any compound, shell, solid. Pinned |
+| `BOPTools_AlgoTools_1.cxx`, `IntersectCurves2d` | `aLen2 = MapEdgeLength(*theEData1.Edge, …)` uses the first edge twice | The distance threshold ignores the second edge's length. By reading |
+| `BOPTools_AlgoTools2D_1.cxx`, file-static `IsClosed` | The loop condition `(aExp.More() \|\| iCnt == 2)` keeps going once a seam is counted twice at the end; `TopExp_Explorer::Next()` on an empty stack pushes the face's iterator again, so the count reaches 4 | A true seam gives false, so `AttachExistingPCurve` never calls `UpdateClosedPCurve`, and the split of a seam gets one pcurve. Pinned (`IsClosed_of_AlgoTools2D_1_reproduces_OCCTs_restarting_loop`) |
+| `BOPTools_AlgoTools3D::GetNormalToSurface` | Calls `IsDirsCoinside(aDD1U, aDD1U)`, comparing DU with itself | That check always passes. By reading |
+| `BOPTools_AlgoTools3D.cxx`, `HasGeometry` (IsEmptyShape) | Calls `CR->Polygon3D()` on every representation that isn't a 3D curve, curve on surface or regularity; the base class throws Standard_DomainError | An edge whose first such representation is a polygon on triangulation or on surface throws instead of reporting geometry. By reading |
+
+**Call-history and thread-timing dependence (plan 2.4, decisions 580 and 714).**
+
+- **IntTools_SurfaceRangeLocalizeData's box cache** (the context's `SurfaceData(face)`). IntTools_BeanFaceIntersector's
+  `ComputeLocalized` resets the out ranges and the grid at each run (`RemoveRangeOutAll`, `ClearGrid`) but not the
+  boxes. They are keyed by sample range (depth and indices), not by parameters or tolerance, and enlarged by
+  `myCriteria` (the edge's tolerance plus the face's, BeanFaceIntersector.cxx lines 177 and 199; `GetSurfaceBox` and
+  `BndLib_AddSurface::Add` at lines 1532–1569, and the root box at 1832–1869 for B-spline faces). So the first edge
+  intersected with a face decides the enlargement of the boxes every later edge on that face uses, and the boxes
+  only reject (`IsOut`): a box made with a smaller tolerance can reject a range where a later, more tolerant edge
+  touches. Native's per-thread contexts make that order thread-dependent, so native's parallel edge/face results
+  can differ from its serial ones. Unit 6C decides how the port keeps serial = parallel (decision 723).
+- **BRepClass3d_SolidClassifier reused by the context** (`SolidClassifier`, `ComputeState`). BRepClass3d_SolidExplorer's
+  `myParamOnEdge` advances when a whole pass over the faces finds no ray and is never reset (Segment resets only
+  `myFirstFace`); that pass also replaces cached face intersectors whose infinite point is IN with unrestricted ones,
+  permanently. IntCurvesFace_Intersector's `myIsParallel` is set only when the line meets nothing and never reset, so
+  SClassifier's parallel-line ON check can read a flag left by an earlier line. A reused classifier can then answer
+  differently from a fresh one. Rare paths; none was hit on the tests' solids, and the oracle (same call order) matched
+  native.
+- **BOPTools_AlgoTools' tolerance corrections in parallel** (CorrectPointOnCurve, CorrectCurveOnSurface,
+  CorrectShapeTolerances with `bRunParallel`). Parallel items share vertices and edges and update their tolerances with
+  unsynchronised read-compare-writes whose outcome depends on the tolerance read first (CheckEdge's `0.1 * Tol` margin,
+  CorrectWires', CorrectEdgeTolerance's comparisons). A vertex whose two faces need √dA < √dB < 1.01√dA ends with
+  1.01√dA or 1.01√dB depending on which face runs first, and a concurrent max can be lost. Native's parallel result
+  depends on thread timing; the port runs these loops serially (decision 720).
+
+Not bugs, but worth knowing: `BOPTools_AlgoTools::GetFaceDir`'s `Standard_ASSERT_RETURN(aProjPL.IsDone(), …, false)`
+returns false in release builds, and the port does the same.
 
 ## Phase 5: unit 5G, surface/surface intersection
 

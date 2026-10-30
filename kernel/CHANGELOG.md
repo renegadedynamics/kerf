@@ -637,3 +637,26 @@ Phase 5 (part): parametric intersections (unit 5D).
   IntPolyh, polyhedra and the voxel search, an offset surface, a start point, a list of points on a closed surface,
   a self-intersection): every walking step, interference point and line bit-identical; lines on both surfaces, the
   same serially and in parallel.
+
+Phase 6 (part): context and BOP tools (unit 6B).
+
+- `OcctNet.ModelingAlgorithms`:
+  - `IntTools_Context` complete: the per-face and per-edge caches of point classifiers, projectors, solid
+    classifiers, hatchers, surface adaptors and localization data, and the computations on them (`ComputePE`,
+    `ComputeVE`, `ComputeVF`, `IsPointInFace`, `IsValidPointForFace`, `IsValidBlockForFace(s)`, `IsVertexOnLine`,
+    ...). Its cached tools were audited for state carried between calls.
+  - `IntTools_FClass2d` (the 2D point classifier of a face), `IntTools_TopolTool`, the rest of `IntTools_Tools`;
+    `GeomInt.AdjustPeriodic`.
+  - BOPTools: `BOPTools_AlgoTools` (states, orientation of splits, faces off an edge, connexity blocks, pcurves,
+    edges and vertices, tolerance corrections, dimensions), `AlgoTools2D` (pcurves on faces and their periodic
+    adjustment), `AlgoTools3D` (points in faces through the hatcher, normals, seams), `Set`, `ConnexityBlock`,
+    `CoupleOfShape`.
+  - BOPTools' tolerance corrections run serially whatever their parallel flag says, because native's parallel result
+    depends on thread timing.
+- Tests:
+  - Unit tests of every class: known answers on primitives and data/occ shapes, a reused context answering as fresh
+    ones, writes into frozen shapes throwing, and serial = parallel through BOPTools_Parallel.
+  - Oracle tests against native OCCT:
+    - IntTools_FClass2d on 3,072 faces: 338,880 comparisons, all identical.
+    - `ComputeState` against BRepClass3d_SolidClassifier: 4,968 points, all identical.
+    - The context's surface and curve projectors: 66,160 values, all bit-identical.
