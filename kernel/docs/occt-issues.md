@@ -1138,3 +1138,22 @@ order in the port: `FillSameDomainFaces` over `myImages` (to propagate each soli
 its own key, and each solid receives only its own shells. The builders' integer maps iterate in OCCT's order (decision
 784), and no map keyed by a pave block or common block is iterated, so native's builders are reproducible: native gave
 the same result serially and in parallel on every oracle case.
+
+## Phase 5: unit 5L2, sections and sweep surfaces
+
+Found while porting GeomFill's sweeps, sections and pipes. Each is ported as OCCT has it, except the in-place
+reparametrisation of NSections' sections (decision 838); the native recordings (decision 840) reproduce the ones that
+change a result.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Pipe::Init(Path, FirstSect, LastSect)` | Treats `myLoc->SetCurve(myAdpPath)`'s false as a failure, but CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction | Pipes evolving between two sections fail with GeomFill_ImpossibleContact on most 3D paths and on planar paths with inflections (27 of 30 random 3D B-spline paths; `tuyau r path s1 s2`). Kept, pinned by a test and the recordings |
+| `GeomFill_SweepSectionGenerator::Perform` (types 1 to 3) | `TR = Rot * Trans` sits in the branch for opposite tangents, so TR stays the identity otherwise | The rotations and translations between successive sections are dropped: every section of a circle, constant or evolving section along a non-circular path stays at the first one's place. Kept (GeomFill_Pipe uses only type 0) |
+| `GeomFill_SweepSectionGenerator::GetShape` (type 0) | Gives the quasi-angular shape (7 poles, degree 6) whatever `Perform(Polynomial)` asked; `Section` then assigns the polynomial conversion's 8 poles | `GeomFill_Pipe::Perform(WithParameters, Polynomial = true)` on a pipe on an edge throws Standard_OutOfRange natively and in the port. Kept, pinned |
+| `GeomFill_QuasiAngularConvertor::Section` (second derivatives) | `D2Vw(5)` has `(b + 11)` where the derivative of `beta^4 (2c + b^2)` needs `(b + 1)` | The weights' second derivative, and with it D2Poles, are wrong in the quasi-angular conversion (D2 of circular blends). Kept |
+| `GeomFill::GetCircle` (second derivatives, rational branch) | `d2np2 = d2nplan ^ ns1 + nplan ^ dn2w`, where the second derivative of `nplan ^ ns1` needs `nplan ^ d2n1w` | Wrong second derivatives of the interior poles of arcs of more than one span. Kept |
+| `GeomFill::GetCircle` (rational branch) | Builds the interior poles as `pts1 + R ((cos a - 1) ns1 + sin a (nplan ^ ns1))`, right for normals from the centre to the ends, while the header calls them inward normals ("Normal rentrente") and CircularBlendFunc passes inward ones | With inward normals, arcs of two or three spans (TgtThetaOver2_2/_3) get interior poles off the circle (radius 3.49 for 2 at 4.5 radians). CircularBlendFunc never asks for more than one span (it switches to quasi-angular above 0.65 pi). Kept; the test uses outward normals |
+| `GeomFill_NSections::ComputeSurface` | `SetKnots` on the caller's B-spline sections | Reparametrises the caller's curves in place. **The port reparametrises copies (decision 838)** |
+| `GeomFill_NSections::BarycentreOfSurf` | U is not reset for each V row | Only the first row samples the u range; the others evaluate past it. Kept |
+| `GeomFill_EvolvedSection::BarycentreOfSurf` | As UniformSection's: starts at the section's first parameter, steps to the converted B-spline's last | A wrong sample range when the two differ. By reading |
+| `GeomFill_Sweep::Build` | The call to `BuildProduct` (the approximation of the location law composed with the section's surface) is commented out, and BuildProduct's tensorial product too | `GeomFill_Location` approximates globally, as `GeomFill_Section` does. Kept |
