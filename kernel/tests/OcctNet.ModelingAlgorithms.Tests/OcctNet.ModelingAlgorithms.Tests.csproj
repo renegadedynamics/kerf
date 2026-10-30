@@ -46,6 +46,8 @@
     <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
+    <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
+    <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

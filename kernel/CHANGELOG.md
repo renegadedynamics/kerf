@@ -839,3 +839,16 @@ Phase 5 (part): the medial axis (unit 5M).
   included (16,523 and 5,432 cases checked locally); unit tests on the bisectors, the loci's graphs and MAT's lists.
 - Draw-lite: `bisec`; `topoload`, `drawcont`, `side`, `mat`, `result`, `zone`. No corpus case uses `bisec`; the 8
   that use `topoload` still need phase 7's offset commands.
+
+Phase 5 (part): fair curves (unit 5Q).
+
+- `OcctNet.ModelingAlgorithms`: the FairCurve package: `FairCurve_Batten` (curves simulating physical battens through
+  two points with tangency constraints, free or imposed sliding, height and slope) and `FairCurve_MinimalVariation`
+  (minimal variation of curvature, with curvature constraints and a physical ratio), working objects whose `Curve()`
+  returns a new, frozen 2D B-spline; the energies (`FairCurve_EnergyOfBatten`, `FairCurve_EnergyOfMVC`), the tension,
+  sagging and jerk distributions, `FairCurve_BattenLaw`, `FairCurve_Newton` and `FairCurve_AnalysisCode`.
+- Tests: native recordings (tools/fairrec, a C++ recorder built against native OCCT): 750 cases of battens, minimal
+  variation curves, Draw's command sequences and the energies' values, gradients and hessians, every result
+  bit-identical to native, exceptions included; unit tests (OCCT has no FairCurve GTests).
+- Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`, `setheight`,
+  `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. No corpus case uses them.

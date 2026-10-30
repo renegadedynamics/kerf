@@ -1117,3 +1117,15 @@ line; the native recordings (tools/bisrec, tools/matrec, decision 823) agree wit
 | `BRepMAT2d_BisectingLocus::RenumerationAndFusion` | Reads `MergeArc1`, `MergeArc2` and `GeomIndexArc1..4`, which `MAT_Graph::FusionOfBasicElts` leaves unset when the two elements are one, and `MergeArc2` unset when the start and end arcs are one | Uninitialised or stale values; the port starts them at false/0 and keeps OCCT's reuse of stale values |
 | `MAT_Bisector`, `MAT2d_Mat2d` | MAT_Bisector's index, issue and end points, vectors, sense and distance, and Mat2d's `intersectionpoint`, uninitialised until set | Harmless (always set before read on the recorded paths); 0 in the port |
 | `MAT2d_CutCurve` | `Perform(C, aSide)` and `PerformInf` declared, never defined; `thenumberofedges` never read | None |
+
+## Phase 5: unit 5Q, fair curves
+
+Found while porting FairCurve. Each is ported as OCCT has it and marked `// OCCT` at the line; the native recordings
+(tools/fairrec, decision 5895) agree with the port bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `FairCurve_EnergyOfBatten::Compute`, `FairCurve_EnergyOfMVC::Compute` | `MyBattenLaw.SetSliding(MyLengthSliding)` updates the energy's own copy of the law, which nothing reads; the distributions keep their copies with the initial sliding | With free sliding and a non-zero slope, the height law `H(t) = h + (t - 0.5) slope L` keeps the initial L while the sliding changes. Kept |
+| `FairCurve_Energy::Hessian1` | Sets the terms between the first end's and the second end's constraint variables to 0 ("correct if there are less than 3 nodes") | With the battens' single-span degree 9 curves every pole interacts, so those hessian terms are wrong (finite differences give 1e-3 to 2e-2); the Newton steps are approximate, the minimum is the same. Kept, pinned by a test |
+| `FairCurve_Energy::Value` | Reads `Energie(0)` of a fresh `math_Vector(0, 0)` that Compute leaves unwritten when it stops on an infinite sliding | Uninitialised natively, 0 in the port; math_NewtonMinimum's step halving and its step reduction (which ignores the return value) read it. No case of the recordings differs. Kept |
+| `FairCurve_EnergyOfBatten::Compute` | When a sagging integration fails, goes on to the next interval and returns that interval's result | With more than 12 poles, a failure on one interval can be lost. By reading |

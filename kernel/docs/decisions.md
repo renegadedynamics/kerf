@@ -8135,3 +8135,54 @@ by their merged numbers (576–590), 5K1's as 776–783.
       - The port throws where native throws (Standard_OutOfRange from `Compute` on some holed faces with side Right or
         Intersection joins) and a NullReferenceException where native crashes (a face bounded by one closed edge;
         BisecFusion on a BisecPC; occt-issues.md).
+
+## Phase 5: unit 5Q, fair curves
+
+FairCurve (all): FairCurve_Batten and FairCurve_MinimalVariation, the energies (FairCurve_Energy, EnergyOfBatten,
+EnergyOfMVC), the distributions (DistributionOfEnergy, Tension, Sagging, Jerk), FairCurve_BattenLaw, FairCurve_Newton
+and FairCurve_AnalysisCode, in OcctNet.ModelingAlgorithms (`FairCurve/`). Numbers from 5891 are placeholders,
+renumbered on merge.
+
+5891. **FairCurve_BattenLaw is a class copied where OCCT copies it.** OCCT's law is a value (a math_Function held by
+      value), so each energy and distribution keeps its own copy. The port's is a class (math_Function is one) with a
+      copy constructor, called at each of OCCT's by-value sites: the energies' `MyBattenLaw` and the three
+      distributions' `MyLaw`. The copies stay independent as in OCCT: the energies' `MyBattenLaw.SetSliding` reaches
+      none of the distributions (occt-issues.md, 5Q). Its setters are public (a working object, decision 21).
+5892. **Battens are working objects; the curves they hand out are frozen.**
+      - FairCurve_Batten and FairCurve_MinimalVariation keep OCCT's API: public setters recording the wanted ("new")
+        constraints, `Compute`, which deforms the current curve toward them by homotopy, and getters of the reached
+        ("old") ones. Their state is protected under OCCT's names, as OCCT's.
+      - `Curve()` builds a new Geom2d_BSplineCurve from the batten's arrays each time, as OCCT does, and freezes it:
+        computing again never changes a curve handed out (the batten's own arrays are replaced, not edited).
+      - The energies and distributions are working objects too (public constructors and setters, as OCCT exports
+        them). They keep the caller's knot and pole arrays as OCCT keeps the handles, and every evaluation of an
+        energy writes the poles of its variables into the caller's pole array, as OCCT does: the battens give them a
+        new array (`NPoles`) and adopt it after the minimisation. `FairCurve_Energy.Poles()` returns that array.
+5893. **Signatures.** `Compute(out FairCurve_AnalysisCode, ...)` (OCCT's code is always written: its loop runs at least
+      once and the inner Compute writes the code first; the port also sets it before the loop, for C#'s definite
+      assignment). The energies' `Values(X, out E, G[, H])` set E to 0 when the computation fails, where OCCT leaves
+      the caller's variable unchanged (math's signatures are `out`); math_NewtonMinimum doesn't read it then.
+      `ComputePolesG1`/`G2` write their pole as `out`. The bool `WithAuxValue` that OCCT adds to integers is `? 1 : 0`.
+5894. **Dumps.** `Dump(TextWriter)` writes OCCT's table: `o.width(7)` pads the next item only (`Standard_Stream.Setw`),
+      reals at the stream's precision (6 by default, 15 under Draw's `dump`), bools as 0 and 1. OCCT's
+      `operator<<` is `ToString()`.
+5895. **Tests, recordings and Draw-lite.**
+      - tools/fairrec (C++ against build123d.NET's native OCCT, as tools/gccrec) records 150 random battens and 150
+        minimal variation curves (points, angles from multiples of 15° to beyond 90°, constraint orders 0 to 2, free or
+        imposed sliding, heights including non-positive ones, slopes, physical ratios including an invalid 1.5,
+        curvatures, iteration counts and tolerances), each computed, then edited (point, angle, height, slope, ratio)
+        and computed again; 150 of each through Draw's battencurve/minvarcurve sequence with up to three of Draw's
+        editing commands; and 75 of each energy (value, gradient and hessian at two points, and the poles written) on
+        random poles of one or two spans. The port replays every case bit for bit: return values, analysis codes,
+        getters, slidings of reference, curves' poles, knots and multiplicities, energies, gradients, hessians,
+        exceptions (FairCurve_NativeTests, 750 cases). The recorder zeros the vectors it passes, as the port's are.
+      - OCCT has no FairCurve GTests and the corpus no case using the fair curve commands; the unit tests check the
+        constraints met (points, angles, curvatures), symmetry, free angles and sliding, NullHeight, knot insertion,
+        frozen curves, the dumps, and the energies' gradients and hessians against finite differences.
+      - Draw-lite: `battencurve`, `minvarcurve`, `setpoint`, `setangle`, `setslide`, `freeangle`, `freeslide`,
+        `setheight`, `setslope`, `setcurvature`, `freecurvature`, `setphysicalratio`. The drawable (`DrawFairCurve`)
+        keeps the batten and its latest curve; as Draw's DrawFairCurve_Batten, which derives from
+        DrawTrSurf_BSplineCurve2d, it is a 2D B-spline to the other commands, and `copy` gives a plain B-spline. Draw
+        computes twice on creation (the command with the defaults, then the drawable's constructor with 50 iterations
+        and 1.0e-2), and so does Draw-lite. Draw's 2D transformations change the drawable's curve in place; Draw-lite's
+        bind the transformed curve to the name, which then holds a plain B-spline.
