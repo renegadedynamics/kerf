@@ -10,7 +10,7 @@ namespace Occt;
 /// intersection (OCCT's instantiation of IntImp_ZerImpFunc.gxx over Adaptor3d_Surface, decision 607).
 /// </summary>
 public sealed class IntPatch_TheSurfFunction
-    : IntImp_ZerImpFunc<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>, IIntStart_SurfFunction<Adaptor3d_Surface>
+    : IntImp_ZerImpFunc<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>, IIntWalk_IWFunction
 {
     public IntPatch_TheSurfFunction()
     {
