@@ -5581,3 +5581,128 @@ placeholders (5001–5015).
         (occt-issues.md). `GetContext()` records the working copies when inputs were frozen.
       - 6L (`sewing`, `fastsewing`): Draw's `sewing` calls `Init(tol, sewing, analysis, cutting, nonmanifold)`, the
         mode setters and `SetMinTolerance(max(tol*1e-4, Confusion))`/`SetMaxTolerance`, as the oracle does.
+## Phase 5: unit 5A, intersection foundations
+
+IntSurf's rest (PntOn2S, LineOn2S, PathPoint(Tool), InteriorPoint(Tool), Transition, Couple, TypeTrans, Situation,
+the package), IntImp's Int2S, ZerImpFunc and ZerParFunc, IntStart (SearchOnBoundaries, SearchInside, SITopolTool),
+and IntPatch's data model and tools (Point, Line, PointLine, GLine, ALine, WLine, RLine, IType, SpecPntType,
+SearchPnt, HInterTool, HCurve2dTool, ArcFunction, CSFunction, CurvIntSurf, TheSOnBounds and its path point and
+segment, TheSearchInside, TheSurfFunction, Polygo, PolyArc, PolyLine, RstInt), in OcctNet.ModelingAlgorithms. Numbers
+from 5101 are placeholders, renumbered on merge; the plan's decisions are cited as 50xx.
+
+607. **The generic-instantiation pattern of phases 5 and 6** (decision 587; decisions 142, 202, 337 and 338
+      applied to IntPatch, IntWalk, GeomInt and BRepApprox).
+      - **One generic class per `.gxx`**, named as the file: `IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool>`,
+        `IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool>`, `IntImp_Int2S<ThePSurface, ThePSurfaceTool>`,
+        `IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>`,
+        `IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegment>`.
+      - **A macro that is the same type in every instantiation OCCT makes is named in the body, not a parameter**:
+        TheISurface/TheISurfaceTool (IntSurf_Quadric/QuadricTool in IntPatch, GeomInt and BRepApprox), TheVertex,
+        TheArc and TheTopolTool (Adaptor3d_HVertex, Adaptor2d_Curve2d, Adaptor3d_TopolTool in IntPatch and Contap),
+        and Int2S's function (always ZerParFunc over the same surface and tool). A macro the body never uses is
+        dropped (SearchOnBoundaries' TheArcTool, SearchInside's TheSITool).
+      - **Static tools are `readonly struct`s with static members implementing interfaces of static abstract
+        members**, so the JIT specialises each instantiation (decision 338). The surface generics all take
+        `IIntImp_ZerCSParPSurfaceTool<S>` (bounds, resolutions, Value, D1); over Adaptor3d_Surface the tool is
+        `IntCurveSurface_TheHSurfaceTool` (Adaptor3d_HSurfaceTool can't implement this assembly's interfaces).
+        IntPatch_HCurve2dTool implements `IIntImp_CurveTool<Adaptor2d_Curve2d>`; IntPatch_HInterTool (a mutable
+        struct: OCCT's class has sampling state) implements `IIntStart_SOBTool`.
+      - **What a generic reads from an object it is given is an instance interface**: `IIntStart_ArcFunction`
+        (IntPatch_ArcFunction, later Contap_ArcFunction) and `IIntStart_SurfFunction<S>` (IntPatch_TheSurfFunction,
+        later Contap_SurfFunction), with the base class as a second constraint (`math_FunctionWithDerivative`,
+        `math_FunctionSetWithDerivatives`).
+      - **Value types the generic builds** are `struct` type parameters: `new()` is OCCT's default constructor, the
+        other constructors are static abstract `Create` members (`IIntStart_PathPoint<TSelf>`), and their internal
+        mutators are reached through explicitly implemented interface members (`IIntStart_PathPoint.SetValue`,
+        `IIntStart_Segment.SetLimitPoint`), so they stay internal on the struct.
+      - **OCCT's instantiations are sealed subclasses** with OCCT's constructors forwarded: IntPatch_TheSOnBounds,
+        IntPatch_TheSearchInside, IntPatch_TheSurfFunction, IntPatch_CurvIntSurf. An instantiation that only another
+        generic builds (IntWalk_TheFunctionOfTheInt2S inside IntWalk_TheInt2S) needs no class: `Function()` returns
+        the generic type, which is what its callers use (a math function). Port-status counts its files with the
+        generic's.
+      - **Example for later units.** `IntWalk_TheInt2S` (5C) is `public sealed class IntWalk_TheInt2S :
+        IntImp_Int2S<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>` with its two constructors forwarded.
+        BRepApprox (5F) writes `public readonly struct BRepApprox_SurfaceTool : IIntImp_ZerCSParPSurfaceTool<BRepAdaptor_Surface>`
+        (static members over BRepAdaptor_Surface, plus what ApproxInt's generic needs in a derived interface), then
+        `BRepApprox_TheInt2SOfThePrmPrmSvSurfacesOfApprox : IntImp_Int2S<BRepAdaptor_Surface, BRepApprox_SurfaceTool>`
+        and `BRepApprox_TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox : IntImp_ZerImpFunc<BRepAdaptor_Surface, BRepApprox_SurfaceTool>`;
+        GeomInt the same over Adaptor3d_Surface and IntCurveSurface_TheHSurfaceTool.
+608. **Functions keep what OCCT points to.** OCCT's ZerImpFunc, ZerParFunc and IntPatch_CSFunction keep `void*`
+      pointers to the caller's surface and curve handles and (ZerImpFunc) to the caller's IntSurf_Quadric. The port
+      keeps the adaptors (by reference, as the handles) and a copy of the quadric (a struct). OCCT would also see a
+      later reassignment of the caller's handle variable or a later change of its quadric; no caller ported so far
+      does either (IntPatch_ImpPrmIntersection builds its quadric before `SetImplicitSurface` and keeps it; RstInt
+      builds a CSFunction per point on the current arc). 5C and 5F check IntWalk's and ApproxInt's uses.
+609. **Lines and points are working objects, not frozen values** (plan, notes for porters).
+      - IntPatch_Line and its subclasses and IntSurf_LineOn2S are classes with OCCT's public mutators, never frozen;
+        sequences and maps hold them by reference.
+      - C++ value classes (IntSurf_PntOn2S, Transition, PathPoint, InteriorPoint, Couple; IntPatch_Point; the
+        boundary search's path point and segment) are structs with internal mutators, `IEquatable` (handles compared
+        by reference) and ToString; constructors (and `WithValue` for PntOn2S) are the twins. `new()` is OCCT's
+        default; where `default` differs (Transition, Point, PathPoint, the path point) the remarks say so.
+      - IntSurf_PathPoint's parameters are a shared handle to a sequence, as in OCCT: `AddUV` on a copy is seen by
+        the original.
+      - Accessors that return `const&` return copies (`Vertex`, `Point`, `FirstPoint`, ALine's `Curve()`); the
+        non-const ones return `ref` (`ChangeVertex`, `IntImp_Int2S.ChangePoint`). A `ref` into an NCollection_Sequence
+        must not live across Append, Prepend, Insert or Remove (it is List-backed, unlike OCCT's linked sequence):
+        where OCCT holds references across an Append (WLine.ComputeVertexParameters) the port indexes at each access.
+      - `IntSurf.MakeTransition` takes its transitions by `ref`, as OCCT's references: an in/out transition keeps the
+        caller's situation and opposite flag.
+610. **IntStart_SearchOnBoundaries sorts its roots as MSVC's `std::sort` does on up to 32 elements**: MSVC's
+      `_Insertion_sort_unchecked` (`_ISORT_MAX` is 32), which keeps tied parameters in their order. The port uses it
+      for any number of roots; beyond 32 roots MSVC's introsort may order ties differently (two roots at the same
+      parameter on one arc among more than 32: not met). Listed in occt-issues.md as a site.
+611. **Omissions.** OCCT_DEBUG blocks (the debug curve of the arc in BoundedArc; the vertex tolerance warning that
+      also clamps tolerances in debug builds only); ZerParFunc's `compute` (written, never read); RLine's
+      `SetParamOnS1/2` (declared, never defined) and `ParamInf/Sup1/2` (never read); PolyLine's unused `pnt`; RstInt's
+      unread `p2dFirst`/`p2dLast` (the D0 calls kept); BoundedArc's copy of a local CurveOnSurface into a handle (the
+      local is used). IntSurf_Allocator arguments are dropped. IntImp_Int2S keeps its four vectors and its parameter
+      array in the object (OCCT's stack buffers), since Perform runs once per walking step.
+612. **Dumps write to a TextWriter**, as OCCT prints them: IntPatch_Point.Dump (printf's `%+10.20f` as "F20" with
+      a sign; addresses as identity hash codes), WLine's and RLine's `Dump(int theMode, TextWriter)`, IntPatch_Polygo's
+      `Dump` (its function-static counter a static field). IntPatch_Point's `ToString` is its dump.
+613. **GLine and ALine** (unit 5B's lines). Both derive from IntPatch_Line, as in OCCT, so their `AddVertex`,
+      `Vertex` and `NbVertex` are not PointLine's virtuals. GLine keeps OCCT's `gp_Ax2 pos` and `par1/par2` (a line's
+      position is the plane through it, normal to it); it has no ChangeVertex (OCCT has none). ALine keeps a copy of
+      its IntAna_Curve (a struct) and returns copies; `FirstParameter`/`LastParameter` take `out bool IsIncluded`.
+      Code that OCCT repeats verbatim is a private helper (GLine's `RemoveDuplicate` and `ExchangeIndices`).
+614. **The comparison of decision 578** is `IntersectionComparison` in the oracle project
+      (`tests/OcctNet.Oracle.Tests/IntPatch/`), for 5B to 5G.
+      - `CompareLines(native, port, what)`: the number of lines; each line as the BRep text (version 3) of an edge on
+        it, written by each side. The curve type (record code) and the record's shape (degree, numbers of poles and
+        knots) must match; every value is compared bit for bit (BRep text's 17 digits round-trip); where a record
+        differs, the largest distance between the two curves at the same parameters (65 samples; an infinite curve
+        on [-10, 10], since a hyperbola's points grow as cosh). `CompareLine2d` does the same for pcurves through an
+        edge on a fixed plane. `Report` gives lines and values bit-identical and the largest deviation.
+      - Reading a BRep text normalises directions again, on both sides alike: a native line read back is not always
+        the line written (last bits of a direction). Compare the lines each side writes, or native's line read back
+        by native (`NativeRoundTrip`) with the port's reading of the same text (`PortCurve`).
+      - Its self-test runs native GeomAPI_IntSS (bound) on 60 random analytic pairs: 133 lines, 32,620 values, all
+        bit-identical through the round trip; moved by 3e-9, the deviation found is 3.03e-9.
+615. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests`, 59 new; oracle 3 new).
+      - OCCT's GTest IntSurf_LineOn2S (3, names kept). The walking-line containers: LineOn2S insertion past the end,
+        removal, reversal, splitting at both ends, SetUV, the lazy boxes (1% of the largest side, grown by additions,
+        forgotten by replacements); WLine's and RLine's vertex lists and ComputeVertexParameters traced through the
+        C++ (substitution, insertion, merges, renumbering, periods, the end vertices); GLine's and ALine's vertices.
+      - IntStart's boundary search on a cylinder's and a sphere's lateral faces cut by planes: new points on the seams
+        and circles, vertex points, the base circle, both seams and the sphere's degenerated edge as segments, all
+        arcs on the plane (AllArcSolution), and the transitions ImpPrm makes from them; SearchInside's interior points
+        on the circle; ZerImpFunc's tangency; Int2S on a plane and a cylinder and on parallel planes; CurvIntSurf;
+        HInterTool's sampling; PolyArc and PolyLine; RstInt on a square face.
+      - No class of this unit is bound natively: the oracle is indirect (5G), through decision 614's comparison.
+616. **For later units.**
+      - 5B (ImpImpIntersection): GLine's and ALine's `AddVertex(in IntPatch_Point)` is non-virtual; vertices are built
+        with IntPatch_Point's internal mutators (SetValue, SetParameter, SetArc, SetVertex, SetMultiple); GLine's
+        `ComputeVertexParameters` ignores Tol, as OCCT's; build an IntAna_Curve fully before the ALine (it keeps a
+        copy); IntPatch_TheSOnBounds' `Point(i)` and `Segment(i)` return copies.
+      - 5C (walking): IntWalk_TheInt2S per decision 607; IntPatch_TheSurfFunction and IntPatch_TheSearchInside are
+        ready; IntSurf_PathPointTool and InteriorPointTool are readonly structs (add an interface if IWalking's
+        generic needs one); WLine keeps the LineOn2S it is given; `ComputeVertexParameters(Tol)` raises Tol to the
+        largest vertex tolerance.
+      - 5D and 5G (PrmPrm, WLineTool, LineConstructor): edit lines in place through `Curve()` (the shared LineOn2S),
+        `RemoveVertex`, `InsertVertexBefore`, `ClearVertexes`, `SetPoint(i, vtx)`; RLine's `Curve()` may be null
+        (`HasPolygon`); `IntPatch_RstInt.PutVertexOnLine(line, surf, domain, otherSurf, onFirst, tol)` takes a WLine or
+        an RLine and ends with SetPeriod and ComputeVertexParameters; arcs compare by reference, so pass the domain's
+        own Adaptor2d_Curve2d objects. Compare GeomAPI_IntSS with decision 614's helper.
+      - 5F (approximation): the generics over BRepAdaptor_Surface as in decision 607's example; check decision 608
+        on ApproxInt_ImpPrmSvSurfaces' use of `ISurface()` and `PSurface()` (a copy and a reference).

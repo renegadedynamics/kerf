@@ -466,3 +466,18 @@ Phase 6 (part): sewing (unit 6S).
   every sewn shape, edge list, `Modified` and `ModifiedSubShape` equal through BRep text (5,261 of 5,807 texts
   byte-identical, the rest but for the Free flag), every count equal; where native OCCT varies from run to run (2
   sewings) the port gives one of its results.
+Phase 5 (part): intersection foundations (unit 5A).
+
+- `OcctNet.ModelingAlgorithms`: the rest of IntSurf (IntSurf_PntOn2S, IntSurf_LineOn2S, path and interior points
+  and their tools, transitions, the package's MakeTransition and SetPeriod); IntImp's surface/surface generics
+  (`IntImp_Int2S`, `IntImp_ZerParFunc`, `IntImp_ZerImpFunc`) and IntStart's (`IntStart_SearchOnBoundaries`,
+  `IntStart_SearchInside`), each one generic class over struct tools with static abstract members, which sets the
+  pattern for IntPatch, IntWalk, GeomInt and BRepApprox; IntPatch's data model and tools: IntPatch_Point, the lines
+  (Line, PointLine, GLine, ALine, WLine, RLine), HInterTool, HCurve2dTool, ArcFunction, CSFunction, CurvIntSurf,
+  TheSOnBounds with its path point and segment, TheSearchInside, TheSurfFunction, the polygons (Polygo, PolyArc,
+  PolyLine) and RstInt. Lines are working objects with OCCT's mutators; points are values.
+- Tests: OCCT's IntSurf_LineOn2S GTest; unit tests of the walking-line containers (insertion, splitting, the lazy
+  boxes, WLine's and RLine's vertex parameters), of the boundary search on cylinders and spheres cut by planes
+  (points, segments, transitions), the interior search, Int2S and CurvIntSurf, GLine and ALine, the polygons and
+  RstInt; the oracle's comparison of intersection lines with native OCCT (decision 5003), checked on native
+  GeomAPI_IntSS results.
