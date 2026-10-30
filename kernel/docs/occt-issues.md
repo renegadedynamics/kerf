@@ -722,3 +722,19 @@ it through IntTools_Context and BOPTools.
 | `Geom2dHatch_Element` default constructor | Leaves the orientation uninitialised | The port's is FORWARD |
 | `Hatch_Hatcher::StartIndex`, `EndIndex` | Don't check the oriented mode where `Start` and `End` do | On an unoriented hatcher, a line without intersections gives index 0 and parameter 0 for interval 1 where `Start` throws. Kept |
 | `GeomAPI_PointsToBSplineSurface::Init` (all forms) | Sets each multi-point at the grid's own row index (`MP.SetPoint(i, Points(i, j))` from `LowerRow()`) and each line entry at its column index (`Line.SetValue(j, MP)` from `LowerCol()`); the periodic form closes with `Points(1, j)` | A grid not indexed from 1 throws Standard_OutOfRange (or closes on the wrong point). Kept |
+
+## Phase 5: unit 5B, analytic intersections
+
+Found while porting IntPatch_ImpImpIntersection, by reading OCCT's code; the port reproduces each (`// OCCT` at the
+line). The conics are confirmed bit-identical by the early oracle (decision 676); the rest is 5G's to confirm.
+
+| Where | What | Effect |
+|---|---|---|
+| `Perform`, the cone/torus case (`case 35`/`53`) | Doesn't set `bEmpty = empt` after IntCoTo, as every other pair does | An empty cone/torus intersection still runs the boundary search; with points on the boundaries it reports a non-empty result. Kept |
+| `IntCyCo`, the `IntAna_Point` case | `Quad1.Parameters(psol, U2, V2)` where Quad2 is meant | The isolated point's parameters on the second surface are those on the first. Kept |
+| `ProcessBounds` | The loop over `slin` advances `j` only on analytic lines | A non-analytic line in `slin` while a bound is still unprocessed loops forever. Its callers put only ALines in `slin` first, so it isn't reached. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB < 0` | Tests `mB <= -mB - 1` where its comment's derivation gives `mB <= -mC - 1` | The U1 range for that sign of B is chosen on a wrong bound. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB > 0` | `mB + |mC| < -1` can never be true for `mB > 0` | The "no solution" branch is dead. Kept |
+| `ProcessSegments` (a property) | `ptvtx` lives across the segments and the vertex loop; an end point no line carries is built from the last vertex read, setting only its value, parameters and (for a vertex) one arc | The vertex can keep the arc, vertex and multiple flag of an unrelated vertex on the other surface. Kept |
+| `IntCyCo`, `IntCoCo`, `IntCoSp` (a property) | `ptf`/`ptl` are declared outside the loop over the IntAna curves | Where a curve's bound is open, ProcessBounds gets the previous curve's end point (unused while that bound is open). Kept |
+| `CyCyAnalyticalIntersect` (a property) | Doesn't reset `Multpoint` | Harmless: IntCyCy resets it before |

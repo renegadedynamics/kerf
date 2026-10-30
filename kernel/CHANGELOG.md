@@ -563,3 +563,15 @@ Phase 5 (part): hatching and the API remainder (unit 5H).
   both hatchers on squares, holes, vertices and circles, of the classifier, of HatchGen's points and domains and of
   the surface approximation's forms; oracle tests of GeomAPI_PointsToBSplineSurface against native OCCT on 700
   random grids, every method and continuity: 653 surfaces, all 378,088 values bit-identical.
+Phase 5 (part): analytic intersections (unit 5B).
+
+- `OcctNet.ModelingAlgorithms`: IntPatch_ImpImpIntersection, the intersection of two bounded planes, cylinders, cones,
+  spheres or tori: conics (IntPatch_GLine), analytic curves (IntPatch_ALine), restrictions lying on the other surface
+  (IntPatch_RLine), isolated points and tangent faces, with the coaxial, parallel, tangent and through-the-apex cases
+  and OCCT 7.x's cylinder/cylinder walking lines; the points of the domains' boundaries are put on the lines with
+  their transitions. `GetStatus` tells a failure from an intersection curve too long to compute
+  (`IntStatus_InfiniteSectionCurve`).
+- Tests: unit tests of every quadric pair it treats apart and of OCCT's lowalgos/intss bug cases (buc60815, bug20766,
+  bug21750, bug23163, bug23177, bug23178, bug24648, bug25782, bug26894, bug28222, bug29807), each line checked to lie
+  on both surfaces; an oracle against native GeomAPI_IntSS on 504 random analytic pairs: all 375 conic lines are
+  bit-identical to the port's.
