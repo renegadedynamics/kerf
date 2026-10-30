@@ -28,6 +28,12 @@ public abstract class IntPatch_PointLine : IntPatch_Line
     {
     }
 
+    /// <summary>A member-wise copy of <paramref name="theOther"/> (OCCT's implicit copy constructor).</summary>
+    protected IntPatch_PointLine(IntPatch_PointLine theOther)
+        : base(theOther)
+    {
+    }
+
     /// <summary>A line whose transitions are undecided.</summary>
     protected IntPatch_PointLine(bool Tang)
         : base(Tang)

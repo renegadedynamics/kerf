@@ -63,6 +63,21 @@ public class IntPatch_Line : Standard_Transient
         vS2 = false;
     }
 
+    /// <summary>A member-wise copy of <paramref name="theOther"/> (OCCT's implicit copy constructor).</summary>
+    protected IntPatch_Line(IntPatch_Line theOther)
+    {
+        typ = theOther.typ;
+        tg = theOther.tg;
+        tS1 = theOther.tS1;
+        tS2 = theOther.tS2;
+        sit1 = theOther.sit1;
+        sit2 = theOther.sit2;
+        uS1 = theOther.uS1;
+        vS1 = theOther.vS1;
+        uS2 = theOther.uS2;
+        vS2 = theOther.vS2;
+    }
+
     /// <summary>A line whose transitions are undecided.</summary>
     protected IntPatch_Line(bool Tang)
     {
