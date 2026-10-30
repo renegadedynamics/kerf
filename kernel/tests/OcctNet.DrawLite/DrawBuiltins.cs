@@ -46,6 +46,7 @@ internal static class DrawBuiltins
         GeometryTestCommands.Register(theInterpreter);
         GeometryTestIntersectCommands.Register(theInterpreter);
         GeometryTestProjCommands.Register(theInterpreter);
+        GeometryTestSurfaceCommands.Register(theInterpreter);
         SWDRAWShapeFixCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
         MeshTestCommands.Register(theInterpreter);
