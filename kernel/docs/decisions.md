@@ -7594,3 +7594,114 @@ decisions are cited by their merged numbers (576–590).
       bit-identical to native on 1,500 random cases each (concentric, tangent, secant, apart and same-radius circles,
       points on and at the centre of circles, points on lines). Pnt2dBisec throws GccAna_NoSolution for coincident
       points; CircPnt2dBisec's single-argument constructor uses a tolerance of 1e-10.
+
+## Phase 5: unit 5M, medial axis
+
+MAT, MAT2d, Bisector and BRepMAT2d: the bisecting locus (medial axis) of planar faces and open wires, which feeds the
+2D wire offset (5O2) and `evolved`. Numbers from 5981 are placeholders, renumbered on merge; plan decisions are cited
+by their merged numbers (576–590), 5K1's as 776–783.
+
+5981. **Bisector: the bisector curves are geometry.**
+      - Bisector_BisecAna, BisecPC and BisecCC derive from the abstract Bisector_Curve, itself a Geom2d_Curve. Their
+        mutators (`Perform`, `Init`, `SetTrim`; BisecCC's setters stay private under OCCT's names) are internal and
+        start with `CheckMutable()`. Each owns copies of the curves it is given, as in OCCT; a frozen curve of its
+        own is copied before it changes.
+      - Bisector_PolyBis (OCCT: a value holding 30 points) is a sealed class with a copy constructor and internal
+        `Append`/`Transform`; BisecCC's `Polygon(P)` setter copies it. Bisector_PointOnBis is a struct with internal
+        setters, `With*` copies, exact equality and `ToString`.
+      - `Reverse` throws Standard_NotImplemented on BisecPC and BisecCC, as in OCCT. `ChangeGuide()` shares
+        curve1/curve2 with the original, as OCCT's handles do.
+      - Left out: the Dump methods, BisecPC's `CuspFilter` (throws, never called), BisecCC's `currentInterval` (read by
+        Dump only), OCCT's "Not yet implemented" lines to std::cout.
+5982. **Bisector: Bisector_Bisec is a working object of the medial axis.** `Value()` and `ChangeValue()` hand out its
+      Geom2d_TrimmedCurve unfrozen, because MAT2d_Tool2d trims bisectors in place afterwards
+      (`BAna->SetTrim(UF1, UL1)` on `Bisector1->BasisCurve()`, MAT2d_Tool2d.cxx:1245). Callers outside the port still
+      can't change it: the curve's mutators are internal.
+5983. **`Geom2d_TrimmedCurve.ChangeBasisCurve()`** (internal) reads the basis curve without freezing it. The public
+      `BasisCurve()` freezes what it hands out; ChangeBasisCurve is used where OCCT later changes the basis curve in
+      place (Bisector_Inter, Bisector_Bisec, BisecAna, MAT2d_Tool2d). `BisecAna.Geom2dCurve()` freezes the conic it
+      returns.
+5984. **Outputs OCCT sometimes leaves unwritten are `ref`**, not `out` (BisecCC's `ValueAndDist`, `ValueByInt`,
+      `PointByInt`; MAT_Graph's `FusionOfBasicElts`; MAT2d_Tool2d's `IntersectBisector` index); the port's locals start
+      at 0/false where OCCT's are uninitialised (occt-issues.md, 5M). Outputs always written are `out`.
+5985. **MAT: one generic list.** MAT_TList.gxx is ported once as `MAT_TList<TItem>` with its node
+      `MAT_TListNode<TItem>`; OCCT's instantiations MAT_ListOfBisector and MAT_ListOfEdge are sealed subclasses, the
+      node instantiations (MAT_TListNodeOfListOf*) need no class (decision 607). Items are compared by reference.
+      OCCT's `operator()(i)` is `this[int]`; the mutators are internal. Dump and the destructor's cycle-breaking go.
+5986. **MAT and MAT2d: graph and working objects** (decision 21).
+      - MAT_Arc, MAT_Node, MAT_BasicElt, MAT_Bisector, MAT_Edge, MAT_Zone, MAT_Graph: queries public, setters
+        internal. OCCT's `void*` back-pointers (arc to node, node to arc) are references. `Neighbour`, `StartArc` and
+        `EndArc` can return null. MAT_Graph's `Perform`, `FusionOfBasicElts`, `CompactArcs`, `CompactNodes` and
+        `ChangeBasicElts` are internal; `ChangeBasicElt` is public.
+      - MAT2d_BiInt is a struct with exact equality, internal setters and `With*` copies.
+      - The graph's integer-keyed maps are only looked up, never iterated, so their order can't matter. MAT2d_Circuit's
+        map keyed by BiInt is iterated once and each entry sorted on its own: order doesn't matter there either.
+      - MAT2d_Circuit inserts points into the figure it is given, as OCCT does; the curves it reverses are copies.
+      - `MAT2d_Tool2d.Dump` throws Standard_NotImplemented, as OCCT's release build does.
+      - `MAT2d_CutCurve::Perform(C, aSide)` and `PerformInf` are declared in OCCT but never defined: not ported.
+5987. **MAT2d_Mat2d: the blocks CreateMat and CreateMatOpen share are private helpers** (`CancelBisectors`,
+      `ParamSigns`, `AddToArea`, `RemoveArea`, `LastTwoEdges`, `Roots`). OCCT's two long methods repeat them
+      textually, the same statements in the same order. This is the unit's one departure from line-by-line porting;
+      a diff of OCCT's two methods against each other shows where each helper is called. The recordings (5990) cover
+      both paths (closed and open contours) bit for bit.
+5988. **BRepMAT2d: the Explorer never writes the caller's face.**
+      - `BRepMAT2d_Explorer::Perform` builds a new face from the face's wires (`BRepBuilderAPI_MakeFace(...)`'s
+        `InternalFace()`, because wires are added to it: the unit's one copy site, marked `OCCT.NET`), and
+        `BRepLib::BuildCurves3d` on it writes only edges without a 3D curve, which are its new ones. A caller's frozen
+        edge without a 3D curve would throw Standard_ImmutableObject; none does on planar faces built by
+        BRepBuilderAPI.
+      - `ModifiedShape(face)` hands out that new face unfrozen (5O2 freezes what it publishes).
+      - `Contour(int)` and `GetIsClosed()` return the explorer's own sequences.
+5989. **BRepMAT2d: map orders and GeomBis.**
+      - BRepMAT2d_LinkTopoBilo iterates an integer map, whose order is the order of the basic elements linked to a
+        vertex: it is `NCollection_IntDataMap<int>`, which keeps OCCT's buckets (decision 543). Its other maps use
+        TopTools_ShapeMapHasher or ReferenceEqualityComparer.
+      - `BRepMAT2d_BisectingLocus.GeomBis(arc, out Reverse)` returns the tool's own Bisector_Bisec; OCCT returns a
+        copy of the object sharing the same curve handle. `Value()` is that shared curve in both, so only the
+        identity of the Bisector_Bisec differs.
+      - `GeomElt(MAT_BasicElt)` returns Geom2d_Geometry, `GeomElt(MAT_Node)` a gp_Pnt2d.
+5990. **Native recordings: tools/bisrec and tools/matrec** (as tools/gccrec, decision 780; compiled with /EHa, so a
+      native access violation is recorded as `!SEH`).
+      - **bisrec** records `Bisector_Bisec::Perform` as MAT2d_Tool2d calls it (two joined curves; a curve and the
+        point at its end, and the reverse; two points; free elements with `oncurve` false) on lines, circular and
+        elliptic arcs and cubic B-splines, both senses, Arc and Intersection joins, tolerances 1e-7 and 1e-3; and
+        `Bisector_Inter` between the bisectors of neighbouring corners of three-element chains on MAT2d's domains,
+        `ComunElement` true and false. Hand-picked: square corners, concentric, tangent and identical circles, a
+        line tangent to a circle, parallel and collinear lines, coincident points, a point at a circle's centre,
+        chains of B-splines and ellipses. Each case: the bisector's kind (and BisecAna's conic), bounds, intervals,
+        extension flags, 7 points and first derivatives, the parameter of its middle point; for chains, the
+        intersection points with both parameters. **1,123 committed cases (1,059 BisecAna, all five conic kinds; 211
+        BisecCC; 57 BisecPC), every token identical**; a local run of 16,523 cases also identical.
+      - **matrec** builds a planar face from a text description both sides parse (coordinates on a 1/64 grid):
+        convex and non-convex polygons, circular arcs, cubic Bézier sides, full circles, faces with one or two holes,
+        open polylines; each runs on both sides, both join types, open result on and off. Recorded: the explorer's
+        contours; the locus's elements, sections and graph counts; each arc's indices, elements, nodes, Reverse flag,
+        bisector kind and conic, bounds and 5 points; each node and basic element; LinkTopoBilo's links for every
+        edge and vertex and every element's GeneratingShape; exceptions by class. **420 committed cases, every token
+        identical** (all three bisector kinds reached); a local run of 5,432 also identical.
+      - Both recorders build their inputs from the same text as the port, so native-computed inputs (chain end
+        points) are exact. Determinism tests replay a sample twice.
+      - OCCT V8_0_1 has no GTests for MAT, MAT2d, Bisector or BRepMAT2d.
+5991. **Draw-lite** (decision 405's conventions).
+      - `bisec` is GeometryTest_CurveCommands.cxx's (it uses GccAna only, not Bisector), with its `solution` helper,
+        including OCCT's missing `return` after " the second arg must be line/circle/point ", so "There is 0
+        Solution." follows it.
+      - BRepTest_MatCommands.cxx's `topoload`, `drawcont`, `side`, `mat [i [o]]`, `result`, `zone`: OCCT's file
+        statics are kept per interpreter; curves are computed, not drawn. `topoload -approx` fails until 5O2 ports
+        `BRepOffsetAPI_MakeOffset::ConvertFace`. `2dfit` joins the ignored viewer commands.
+      - Corpus: no case uses `bisec` (0 runnable before and after; a test asserts the scan finds none). 8 cases use
+        `topoload` (buc60830_1–3, bug745_2/3/5/11/13): 0 runnable before and after; they no longer miss a 5M command,
+        only `offsetparameter`, `offsetload`, `offsetperform` (phase 7), `mkoffset` in one and `coordload`/`axo` in two.
+5992. **Notes for unit 5O2** (BRepFill_OffsetWire, BRepFill_Evolved).
+      - `BRepMAT2d_BisectingLocus.Compute(Exp, 1, MAT_Left, myJoinType, myIsOpenResult)`, BRepMAT2d_LinkTopoBilo's
+        constructor and `Perform`, and `GeomBis(arc, out Reverse)` work as OCCT's; everything OffsetWire and Evolved
+        call is public (MAT_Graph's counts and accessors, MAT_Arc/Node/BasicElt queries, `ChangeBasicElt`).
+      - `Exp.ModifiedShape(mySpine)` is a new, unfrozen face: freeze anything 5O2 hands out from it.
+      - `GeomBis(...).Value()` is the live trimmed curve of the locus: copy it before trimming or reversing, and
+        freeze or copy it before it goes into an edge.
+      - Maps keyed by MAT objects (OffsetWire's map from MAT_Node to vertex, Evolved's maps keyed by MAT_BasicElt)
+        need ReferenceEqualityComparer; where OCCT iterates one, native's order is by address (decision 580's rule:
+        record the site in occt-issues.md).
+      - The port throws where native throws (Standard_OutOfRange from `Compute` on some holed faces with side Right or
+        Intersection joins) and a NullReferenceException where native crashes (a face bounded by one closed edge;
+        BisecFusion on a BisecPC; occt-issues.md).
