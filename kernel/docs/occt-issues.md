@@ -642,3 +642,19 @@ is confirmed by the oracle yet (5G).
 | `IntStart_SearchOnBoundaries.gxx`, `BoundedArc` (a site, decision 610) | `std::sort` of the roots (SolInfo) by parameter: ties keep their order with MSVC on up to 32 roots (insertion sort) | The port sorts as MSVC on up to 32; with more roots, tied parameters could come out in another order than native's |
 | `IntImp_ZerImpFunc`, `IntImp_ZerParFunc`, `IntPatch_CSFunction` (a property, decision 608) | Keep `void*` pointers to the caller's handles (and quadric) | A later reassignment of the caller's handle variable would change the function's surface in OCCT; the port keeps the object. No caller does it |
 | `IntSurf_Transition::SetValue()` and `SetValue(Tangent, Type)` (a property) | Leave the other fields (situation, opposite flag, tangency) as they were | Two in transitions can differ in fields their queries don't show; MakeTransition passes the caller's objects (`ref` in the port). Kept |
+
+## Phase 5: unit 5C, walking
+
+Found while porting IntWalk, IntPatch_ImpPrmIntersection and IntPatch_SpecialPoints. By reading OCCT's code; the port
+reproduces each (`// OCCT` at the line). None changes the nine walks recorded natively (decision 5302), which the port
+matches bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntWalk_IWalking::Perform(Pnts1, Func, S, Reversed)` (the overload without interior points) | Doesn't call `Clear()`, unlike the other overload: the previous lines are kept, and on a new object the vectors lack their dummy item 0 | The walking reads start point I + 1's state as point I's, and past the vectors' end for the last one (out of bounds in OCCT; Standard_OutOfRange in the port). No OCCT caller uses this overload |
+| `IntWalk_IWalking::TestArretCadre` (IntWalk_IWalking.gxx, at a stop found on the line) | Computes the function's direction, orients it against the line, then sets the line's tangent to the previous direction instead | The computed direction is unused; `Direction3d` still throws at a tangent point. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `ToSmooth` (line 2422) | The loop runs `ip` from `startp` to `NbTestPnts`, where `startp + NbTestPnts` is meant | At the end of a line (`startp = NbPoints - NbTestPnts - 2`) the loop is empty unless the line is short; the averages stay 0, so AddVertices never adds the last vertex. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (line 3716) | The adaptor `anArc->Trim(...)` returns is discarded | The arc is never trimmed. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `ComputeTangency` (lines 365–373) | On an INTERNAL or EXTERNAL arc, the complex-transition branch never assigns the vertex handle `vtx` | It keeps an earlier point's vertex, or is null, which would crash OCCT in `Identical` (a NullReferenceException in the port). Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (lines 3188–3195; a property) | `aSSLine` is a second handle to the input line's points | AdjustLine and InsertSeamVertices edit the input line in place, even when it is replaced afterwards. Kept |
+| `IntWalk_PWalking` (the constructor with the bounds; a property) | Leaves `tgfirst`, `tglast`, `myTangentIdx` and `previoustg` uninitialised | Perform writes them before reading them; harmless |

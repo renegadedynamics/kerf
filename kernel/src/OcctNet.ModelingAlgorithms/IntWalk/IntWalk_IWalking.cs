@@ -396,9 +396,10 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
 
     /// <summary>Searches the lines starting on a point of <paramref name="Pnts1"/>.</summary>
     /// <remarks>
-    /// As OCCT's, this overload doesn't clear the results of a previous Perform, and doesn't put the dummy item at
-    /// index 0 of the vectors before the first one (occt-issues.md, unit 5C): on a new object the first start point
-    /// is then the vectors' item 0, which the walking never reads. No OCCT caller uses it.
+    /// As OCCT's, this overload doesn't call <see cref="Clear"/> (occt-issues.md, unit 5C): it keeps the lines of a
+    /// previous Perform, and on a new object the vectors lack their dummy item 0, so the walking reads start point
+    /// I + 1's data as point I's and, for the last one, past the vectors' end (out of bounds in OCCT; the port throws
+    /// Standard_OutOfRange). No OCCT caller uses it (ImpPrm and Contap give interior points).
     /// </remarks>
     public void Perform(NCollection_Sequence<IntSurf_PathPoint> Pnts1, TheIWFunction Func, Adaptor3d_Surface Caro,
                         bool Reversed = false)
@@ -408,6 +409,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         int nbPnts1 = Pnts1.Length();
         double U, V;
 
+        // OCCT: no Clear() here, unlike the other overload (see the remarks).
         reversed = Reversed;
 
         // Loading of etat1 as well as ustart1 and vstart1.
