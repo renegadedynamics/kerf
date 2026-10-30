@@ -8850,3 +8850,133 @@ through unit 6U, the functional twins' `Simplify`, progress and cancellation, an
         shared and frozen, so copy before writing into a result's sub-shape). BRepFill_TrimShellCorner runs a pave filler
         and BRepAlgoAPI_Section on its own unfrozen shapes, so OCCT's destructive mode applies there as natively;
         a frozen profile or spine reaching them is non-destructive by decision 577.
+
+## Phase 6: unit 6G, checks and the other builders
+
+BOPAlgo_CheckResult, CheckerSI (and `_1`), ArgumentAnalyzer, MakerVolume, CellsBuilder, MakeConnected, MakePeriodic and
+RemoveFeatures, with BRepAlgoAPI_Check and BRepAlgoAPI_Defeaturing over them, in OcctNet.ModelingAlgorithms; their
+Draw-lite commands and the Boolean session they need; tools/borec, the native recorder. Ported in four worktrees
+(checks; volumes and cells; connected and periodic shapes; feature removal) over a base holding MakerVolume, the
+Draw-lite session and the recorder's skeleton, and merged. Numbers from 6971 are placeholders, renumbered on merge;
+merged decisions are cited by their numbers.
+
+6971. **The oracle: tools/borec, and the corpus's inputs captured by Draw-lite.** None of these classes is bound
+      (open question 20), so native results are recorded once, as tools/pfrec does (decision 785):
+      - `tools/borec` is one MSVC program linking build123d.NET's native TKBO, with a shared header (BRep text as
+        `BRepTextComparison.Write` writes it, the history as `DeterminismHarness.HistoryText` writes it, alerts, the
+        random primitives) and one source file per area (`check`, `volume`, `connected`, `defeature`), each writing
+        `tests/OcctNet.ModelingAlgorithms.Tests/BOPAlgo/Recordings/<area>.txt.gz`, embedded by a wildcard.
+      - The corpus's inputs are made by Draw-lite, not by a Tcl evaluator in C++: `DrawCapture` (DrawLite.Tests) runs a
+        case with chosen commands wrapped, recording each call's words and the BRep text of every word naming a shape;
+        native replays the calls from that text. The capture tests write only when `OCCTNET_BOREC_CAPTURE` names a
+        directory. Commands whose arguments are sub-shapes of another argument (`removefeatures`) add the faces'
+        indices in the input's `MapShapes` numbering as an extra word, because separate BRep texts share no TShape.
+      - Random primitive configurations are generated natively, written as BRep text and read back by both sides.
+      - Results are compared byte for byte (Free masked where needed), then canonically; histories through
+        `HistoryText`, as sets where native's lists follow address-ordered maps.
+6972. **Draw-lite's Boolean session and history.** BOPTest_Objects' session (objects, tools, the pave filler of
+      `bfillds`, the current builder, the options) is per interpreter (`BOPTestObjects`, a partial class so that each
+      unit adds the builders it keeps: the cells builder here, BOP, Section and Splitter in 6L), with `baddobjects`,
+      `baddtools`, `baddcompound`, `baddctools`, `bclear*`, `bfillds`, the option commands but `bsimplify`, and
+      BOPTest::ReportAlerts. BRepTest_Objects' history session and `setfillhistory`, `savehistory`, `modified`,
+      `generated`, `isdeleted` (`BRepTestHistoryCommands`, with BRepTest_DrawableHistory as `DrawHistory`). OCCT's
+      template `SetHistory(arguments, algorithm)` goes through `BOPTestBuilderHistory`, an `IAlgorithm` adapter over a
+      BOPAlgo builder. `unifysamedom` now records its history (composed with its copy at the entry), as SWDRAW's does.
+      Draw-lite has no help texts: a usage error returns 1 with an empty result.
+6973. **The self-check copies a frozen argument at the entry.** OCCT's CheckerSI sets the non-destructive mode, but
+      the filler still raises argument vertices' tolerances (occt-issues.md). `BOPAlgo_CheckerSI.Perform` runs on
+      `BRepTools_CopyAtEntry` of its single argument when that holds frozen TShapes, and restores `myArguments`
+      afterwards; the internal `Original(shape)` maps the data structure's shapes back to the argument's own, and the
+      analyzer and `bopcheck` report the argument's sub-shapes through it. The copy is exact, so the result is native's
+      byte for byte. An unfrozen argument (ported code's) is checked in place, as in OCCT.
+6974. **Identical tolerance writes are skipped** (decision 875's site, and FilterPavesOnCurves'). Units 6P and 6G found
+      the MakeBlocks site independently (a cut by an argument; the self-check of a box; faces given separately to the
+      volume maker, which share vertices); one skip and one comment are kept. 6G adds the same guard in
+      FilterPavesOnCurves. A real change of a frozen argument vertex still throws there (decision 787).
+6975. **`BOPDS_MapOfPair` is OCCT's map of pairs.** `NCollection_Map<BOPDS_Pair>` with OCCT's hash (MurmurHash64A of the
+      two sorted indices, seed 0xA329F1D3A586) and OCCT's buckets, which grow and survive `Clear` as
+      `NCollection_IntMap`'s do (decision 784), starting at 100 buckets. The data structure's interference table uses
+      it (`BOPDS_DS.Interferences()` returns it), so the analyzer's result order and bopcheck's listing are native's.
+      The filler only queries the table, so its results are unchanged (6E's 914 recorded runs still identical).
+6976. **Check results.** `BOPAlgo_CheckResult` is a sealed class with internal setters; its public getters freeze the
+      shapes they hand out, as an alert's `GetShape` (decision 625), and `GetFaultyShapes1/2` return frozen lists; the
+      `Internal*` getters don't freeze. `GetCheckResult()` and `BRepAlgoAPI_Check.Result()` return lists;
+      `InternalGetCheckResult`/`InternalResult` the algorithms' own. The analyzer's mode and operation accessors are
+      `public ref` returns (OCCT's modifiable references). `TestMergeSubShapes`' empty `NCollection_Array2` is a
+      `bool[,]`. `BOPAlgo_FaceSelfIntersect` derives from `IntTools_FaceFace` and holds a `BOPAlgo_Options`, as 6E's
+      `BOPAlgo_FaceFace`; VertexSolid, ShapeSolid and SolidSolid are internal solvers run through BOPTools_Parallel.
+      BRepAlgoAPI_Check derives from `BOPAlgo_Options`, as OCCT's does.
+6977. **MakerVolume.** The covering box is the box maker's `InternalSolid()`; `Box()` publishes it frozen,
+      `InternalBox()` serves ported code. As in OCCT, `PerformInternal1` doesn't take the fuzzy value and the
+      non-destructive flag from the filler.
+6978. **CellsBuilder is a public working object.** `myMaterials` is an `NCollection_IntDataMap` (RemoveInternalBoundaries
+      iterates it) and `IndexParts`' dimension map an `NCollection_IntMap`. `GetAllParts()` freezes,
+      `InternalGetAllParts()` doesn't. OCCT adds parts into `myShape` in place; once `Shape()` has published it,
+      AddToResult adds into a new compound holding the same parts (`// OCCT.NET: frozen`), so a published result never
+      changes and the next one is OCCT's. RemoveInternals runs UnifySameDomain on a container of the parts (its Build
+      copies frozen sub-shapes at the entry, decision 766) and reads `InternalShape()`/`InternalHistory()`; its solid
+      branch adds internal parts to the solid BuilderSolid made. In Draw-lite the cells builder is per session and
+      never reset by `bclear`, as OCCT's static; `bcadd` with an odd word count reads the missing flag as 0 (OCCT reads
+      past `argv`).
+6979. **MakePeriodic and MakeConnected are working objects.** `Shape()`, `RepeatShape()`/`RepeatedShape()`, `GetTwins`,
+      `History()`, `PeriodicShape()`, `MaterialsOn*`, `GetModified` and `GetOrigins` publish (freezing the result
+      graphs first) and return `IBentoList`s; ported code uses the `Internal*` forms. `PeriodicityParams` is a struct with
+      OCCT's public fields over `[InlineArray(3)]` values; `new()` gives OCCT's defaults, `default` zeros. The materials
+      map keys by orientation (`EqualityComparer<TopoDS_Shape>.Default`, OCCT's default hasher). OCCT's template history
+      constructor and `Merge(args, algo)` go through internal adapters (`MakeShapeHistory`, `BuilderHistory`).
+6980. **Frozen parts are copied before MakePeriodic's and MakeConnected's destructive writes.** OCCT's trim Common, its
+      repetition gluing and `MakeConnected.MakePeriodic` write in place into their input and earlier results
+      (occt-issues.md). Before each, the new internal `BRepTools.CopyFrozenForWrite(shape, history)` replaces every
+      frozen sub-graph by an exact copy inside its unfrozen parents (a frozen root is copied whole); the writes then
+      reach every unfrozen holder as natively, the frozen originals stay untouched, and the copy relations are merged
+      into the histories, twins and materials. So `Shape()` after a repetition returns the copy, not the shape handed
+      out before. Making these operations non-destructive instead gave other structures and `TopoDS_LockedShape` on
+      mixed frozen and unfrozen arguments (PaveFiller_10 checks only the argument's own `Locked()`).
+6981. **RemoveFeatures.** It reads `InternalShape()`/`InternalHistory()` of its builders, MakerVolume and
+      UnifySameDomain, and extends faces with `BRepLib.InternalExtendFace`. FillGap is a private nested solver run through
+      `BOPTools_Parallel.Perform(myRunParallel, ...)`, sharing the connection maps read-only. OCCT's
+      `RemoveInternalWires` removes internal wires from the rebuilt solids' faces in place; a frozen input face (one
+      MakerVolume shared into the result) is replaced by an `EmptyCopied` copy without them, put into the unfrozen
+      containers in the same place, and merged into the history as Modified (decision 643's departure).
+      SimplifyResult's UnifySameDomain copies at its entry (decision 766). The shape maps iterated (GetOriginalFaces,
+      FindExtraShapes) iterate in insertion order, which doesn't change the outcome. `FindShape`'s face output also
+      receives edges, so the port calls the `TopoDS_Shape` overload of `IsSplitToReverse`, as C++ overload resolution
+      does. MakerVolume and the trimming General Fuse run non-destructively (frozen implies locked).
+6982. **BRepAlgoAPI_Defeaturing** derives from the `BRepAlgoAPI_Algo` shell: `Modified`/`Generated` through
+      `InternalModified`/`InternalGenerated` over the tool's history, `BeforePublishingLists` freezes the result,
+      `History()` freezes and `InternalHistory()` doesn't. OCCT's protected `Clear` is public, as the base class's.
+6983. **Native comparison.**
+      - Checks: 488 runs (183 CheckerSI at every level 0 to 9, some fuzzy; 166 ArgumentAnalyzer and 139 BRepAlgoAPI_Check
+        over the six operations and every mode, including the copied second shape bopargcheck uses; 37 of them the
+        corpus's captured calls over 31 cases; data/occ shapes alone and against moved copies): alerts, the
+        interference table in iteration order, pfrec's data-structure dump, every result with its status, shapes and
+        hex distances. **488 of 488 identical.**
+      - Volumes and cells: 222 cases (142 captured from volumemaker and cells_test, 40 random mkvolume, 40 random cells
+        sequences), 801 calls with output: **797 byte-identical, 4 identical with Free masked** (unsplit argument faces
+        in result shells, plan 2.3); histories equal.
+      - Connected and periodic: 126 cases (6 captured, 60 periodic, 60 connected sequences), 499 steps: **488
+        byte-identical, 11 with Free masked.** Histories: equal as sets, or differing by decision 643's in-place entries
+        (and repeat counts through the extra copy level); twins differ by grouping on 74 steps after a repetition, where
+        native depends on address order (occt-issues.md). Replayed with each result published first, as Draw-lite does,
+        mkconnected/A2's steps 4–5 are only canonically identical: the published connected shape can't receive native's
+        in-place writes, which native's later trim sees.
+      - Feature removal: 225 cases (29 captured from the removefeatures grid, 160 random boxes and cylinders with holes,
+        bosses, pockets and cross holes, 36 single faces of data/occ shapes): **220 byte-identical, 5 the same error**;
+        histories equal as multisets on 215, the rest by decision 643's in-place entries (on 2, native lists one split
+        edge twice, FORWARD and REVERSED, where the port's copy at the unifier's entry gives one image). Native's own
+        history order varied between its serial and parallel runs on 36 cases.
+      - In all four, the port's parallel runs (degrees 2 and the processor count, every fourth case) gave the serial
+        output, the port's inputs never changed, and its results were frozen.
+6984. **Corpus.** Measured with every command of the unit merged (none was runnable before): the 351 cases using the check commands, 97 runnable (OK 84, BAD 1 known problem, SKIPPED 12 for missing data); the 207 using `mkvolume` or `bc*`, 152 (OK 142, BAD 1, SKIPPED 9); the 11 using the periodicity and connection commands, 9 (OK 7, SKIPPED 2); the 59 using `removefeatures`, 42 (OK 25, SKIPPED 17).
+      None FAILED. What still blocks the rest: the offset commands (phase 7), 6L's `bbop`, `bbuild`, `bop`, `bfuse`, `bcut`, `bcommon`, `bsection`, `edgestofaces`, and `stepread` (phase 8).
+6985. **Notes for later units.**
+      - **6P:** BRepAlgoAPI_Check and Defeaturing needed nothing in 6P's files; a functional twin for Defeaturing
+        (`BRepAlgoAPI.Defeature(shape, faces, ...)`) would belong with 6P's twins. A BooleanOperation argument check
+        uses `new BOPAlgo_ArgumentAnalyzer()` and reads `InternalGetCheckResult()`. `BOPDS_DS.Interferences()` returns
+        `BOPDS_MapOfPair`.
+      - **6L:** add BOP, Section and Splitter to `BOPTestObjects` as further partial files, as `BOPTestObjects.Cells.cs`;
+        use `BOPTestBuilderHistory` for the builders' histories; the check commands read the session's fuzzy value and
+        parallel flag; `bopcheck` names its shapes `x<index>` after the input's own sub-shapes (through
+        `CheckerSI.Original`). Re-run the unit's corpus tests after 6L, and recapture with `OCCTNET_BOREC_CAPTURE` to
+        grow the recordings' corpus share. `BRepTools.CopyFrozenForWrite` may suit other destructive steps on mixed
+        frozen and unfrozen graphs.
