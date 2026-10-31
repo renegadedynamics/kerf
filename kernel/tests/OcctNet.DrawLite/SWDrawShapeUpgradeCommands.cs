@@ -5,7 +5,8 @@ using Occt;
 namespace OcctNet.DrawLite;
 
 /// <summary>
-/// The commands of SWDRAW_ShapeUpgrade.cxx that are ported: <c>unifysamedom</c> (ShapeUpgrade_UnifySameDomain).
+/// The commands of SWDRAW_ShapeUpgrade.cxx that are ported: <c>unifysamedom</c> (ShapeUpgrade_UnifySameDomain); unit
+/// 6L's <c>removeloc</c>, <c>copytranslate</c> and <c>reshape</c>.
 /// </summary>
 /// <remarks>
 /// OCCT's UnifySameDomain writes into the shape it is given, even in its safe input mode (it adds the pcurves of the
@@ -15,12 +16,21 @@ namespace OcctNet.DrawLite;
 /// (DrawShapeRebind); the copy's sub-shapes left unchanged are the input's again (BRepTools_CopyAtEntry's Finish), so
 /// only the variables holding a changed one are rebound. The shapes to keep are taken on the copy. The history is
 /// recorded in the session (BRepTest_Objects), composed with the copy's.
+/// <para>
+/// Left out (phase 7, ShapeUpgrade's divide and convert tools, ShapeCustom and ShapeProcess): the <c>DT_*</c>
+/// commands, <c>splitface</c>, <c>offset2dcurve</c>, <c>offsetcurve</c>, <c>RemoveIntWires</c>; from SWDRAW's other
+/// files <c>expshape</c>, <c>directfaces</c>, <c>scaleshape</c>, <c>bsplres</c>, <c>convtorevol</c> (ShapeCustom),
+/// <c>SPApply</c> and <c>DT_ApplySeq</c> (ShapeProcess).
+/// </para>
 /// </remarks>
 internal static class SWDrawShapeUpgradeCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
     {
         DrawCxx.Add(theInterpreter, "unifysamedom", UnifySameDom);
+        DrawCxx.Add(theInterpreter, "removeloc", RemoveLoc);
+        DrawCxx.Add(theInterpreter, "copytranslate", CopyTranslate);
+        DrawCxx.Add(theInterpreter, "reshape", ReShape);
     }
 
     private static int UnifySameDom(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
@@ -138,8 +148,251 @@ internal static class SWDrawShapeUpgradeCommands
         // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the copy so it answers for the input's shapes
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            BRepTestHistoryCommands.SetHistory(theDI, anEntry.Composed(aUnifier.InternalHistory()));
+            BRepTestHistoryCommands.SetHistory(theDI, ReboundHistory(aShape, anEntry, aUnifier.InternalHistory()));
         }
+        return 0;
+    }
+
+    /// <summary>
+    /// The history of an algorithm run on <paramref name="theEntry"/>'s copy of <paramref name="theInput"/>, answering
+    /// both for the input's sub-shapes (<see cref="BRepTools_CopyAtEntry.Composed"/>) and for the changed copies that
+    /// the rebound variables now hold in their place (unit 6L). In DRAWEXE a sub-shape changed in place is still the
+    /// same TShape, so a variable exploded after the command (the unify_same_domain grid's end script explodes the
+    /// input again) asks the history about it; here it holds the changed copy, whose entries are its copy's own: removed,
+    /// modified and generated as the algorithm says, and not modified when the algorithm says nothing (natively the
+    /// shape itself is in the result).
+    /// </summary>
+    private static BRepTools_History ReboundHistory(in TopoDS_Shape theInput, BRepTools_CopyAtEntry theEntry, BRepTools_History? theHistory)
+    {
+        BRepTools_History aComposed = theEntry.Composed(theHistory);
+        if (theHistory is null || !theEntry.IsCopied())
+        {
+            return aComposed;
+        }
+        var aSubShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(theInput, aSubShapes);
+        foreach (TopoDS_Shape aSub in aSubShapes)
+        {
+            if (!BRepTools_History.IsSupportedType(aSub))
+            {
+                continue;
+            }
+            TopoDS_Shape aCopy = theEntry.Copied(aSub);
+            TopoDS_Shape aNow = theEntry.Final(aCopy);
+            if (ReferenceEquals(aNow.TShape(), aSub.TShape()))
+            {
+                continue;
+            }
+            if (theHistory.IsRemoved(aCopy))
+            {
+                aComposed.Remove(aNow);
+                continue;
+            }
+            foreach (TopoDS_Shape aModified in theHistory.Modified(aCopy))
+            {
+                TopoDS_Shape aFinal = theEntry.Final(aModified);
+                if (!aFinal.IsSame(aNow))
+                {
+                    aComposed.AddModified(aNow, aFinal);
+                }
+            }
+            foreach (TopoDS_Shape aGenerated in theHistory.Generated(aCopy))
+            {
+                aComposed.AddGenerated(aNow, theEntry.Final(aGenerated));
+            }
+        }
+        return aComposed;
+    }
+
+    /// <summary><c>removeloc res shape [remove_level]</c>: ShapeUpgrade_RemoveLocations (unit 6L).</summary>
+    private static int RemoveLoc(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
+    {
+        int argc = argv.Count;
+        if (argc < 3)
+        {
+            di.Append("bad number of arguments. Should be:  removeloc res shape [remove_level(see ShapeEnum)]\n");
+            return 1;
+        }
+
+        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull())
+        {
+            return 1;
+        }
+        var aRemLoc = new ShapeUpgrade_RemoveLocations();
+        if (argc > 3)
+        {
+            aRemLoc.SetRemoveLevel((TopAbs_ShapeEnum)theDI.Atoi(argv[3]));
+        }
+        aRemLoc.Remove(aShape);
+        TopoDS_Shape aNewShape = aRemLoc.GetResult();
+
+        theDI.SetShape(argv[1], aNewShape);
+        return 0;
+    }
+
+    /// <summary><c>copytranslate res shape dx dy dz</c>: a translated copy (BRepBuilderAPI_Transform), unit 6L.</summary>
+    private static int CopyTranslate(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
+    {
+        if (argv.Count < 6)
+        {
+            di.Append("bad number of arguments. Should be:  copytranslate res shape dx dy dz\n");
+            return 1;
+        }
+        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull())
+        {
+            return 1;
+        }
+        double aDx = theDI.Atof(argv[3]);
+        double aDy = theDI.Atof(argv[4]);
+        double aDz = theDI.Atof(argv[5]);
+        var aTrsf = new gp_Trsf();
+        aTrsf.SetTranslation(new gp_Vec(aDx, aDy, aDz));
+        var builderTransform = new BRepBuilderAPI_Transform(aTrsf);
+        builderTransform.Perform(aShape, true);
+        TopoDS_Shape aNewShape = builderTransform.Shape();
+        theDI.SetShape(argv[1], aNewShape);
+        return 0;
+    }
+
+    /// <summary>
+    /// <c>reshape result shape [-replace what with] [-remove what] [-until level]</c>: BRepTools_ReShape (unit 6L).
+    /// OCCT reports its errors with Message::SendFail, which DRAWEXE's printer writes into the command's result.
+    /// </summary>
+    private static int ReShape(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgv)
+    {
+        int theArgc = theArgv.Count;
+        if (theArgc < 4)
+        {
+            theResult.Append("Error: wrong number of arguments. Type 'help ").Append(theArgv[0]).Append("'\n");
+            return 1;
+        }
+
+        TopoDS_Shape aSource = theDI.GetShape(theArgv[2]);
+        if (aSource.IsNull())
+        {
+            theResult.Append("Error: source shape ('").Append(theArgv[2]).Append("') is null\n");
+            return 1;
+        }
+
+        var aReShaper = new BRepTools_ReShape();
+
+        TopAbs_ShapeEnum aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHAPE;
+
+        // Record the requested modifications
+        for (int i = 3; i < theArgc; ++i)
+        {
+            string anOpt = theArgv[i].ToLowerInvariant();
+
+            if (anOpt == "-replace")
+            {
+                if (theArgc - i < 3)
+                {
+                    theResult.Append("Error: not enough arguments for replacement\n");
+                    return 1;
+                }
+
+                TopoDS_Shape aWhat = theDI.GetShape(theArgv[++i]);
+                if (aWhat.IsNull())
+                {
+                    theResult.Append("Error: argument shape ('").Append(theArgv[i]).Append("') is null\n");
+                    return 1;
+                }
+
+                TopoDS_Shape aWith = theDI.GetShape(theArgv[++i]);
+                if (aWith.IsNull())
+                {
+                    theResult.Append("Error: replacement shape ('").Append(theArgv[i]).Append("') is null\n");
+                    return 1;
+                }
+
+                aReShaper.Replace(aWhat, aWith);
+            }
+            else if (anOpt == "-remove")
+            {
+                if (theArgc - i < 2)
+                {
+                    theResult.Append("Error: not enough arguments for removal\n");
+                    return 1;
+                }
+
+                TopoDS_Shape aWhat = theDI.GetShape(theArgv[++i]);
+                if (aWhat.IsNull())
+                {
+                    theResult.Append("Error: shape to remove ('").Append(theArgv[i]).Append("') is null\n");
+                    return 1;
+                }
+
+                aReShaper.Remove(aWhat);
+            }
+            else if (anOpt == "-until")
+            {
+                if (theArgc - i < 2)
+                {
+                    theResult.Append("Error: not enough arguments for level specification\n");
+                    return 1;
+                }
+
+                string aLevelStr = theArgv[++i].ToLowerInvariant();
+                if (aLevelStr == "compound" || aLevelStr == "cd")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_COMPOUND;
+                }
+                else if (aLevelStr == "compsolid" || aLevelStr == "c")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_COMPSOLID;
+                }
+                else if (aLevelStr == "solid" || aLevelStr == "so")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SOLID;
+                }
+                else if (aLevelStr == "shell" || aLevelStr == "sh")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHELL;
+                }
+                else if (aLevelStr == "face" || aLevelStr == "f")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_FACE;
+                }
+                else if (aLevelStr == "wire" || aLevelStr == "w")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_WIRE;
+                }
+                else if (aLevelStr == "edge" || aLevelStr == "e")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_EDGE;
+                }
+                else if (aLevelStr == "vertex" || aLevelStr == "v")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_VERTEX;
+                }
+                else if (aLevelStr == "shape" || aLevelStr == "s")
+                {
+                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHAPE;
+                }
+                else
+                {
+                    theResult.Append("Error: unknown shape type '").Append(theArgv[i]).Append("'\n");
+                    return 1;
+                }
+            }
+            else
+            {
+                theResult.Append("Error: invalid syntax at ").Append(anOpt).Append("\n");
+                return 1;
+            }
+        }
+
+        // Apply all the recorded modifications
+        TopoDS_Shape aResult = aReShaper.Apply(aSource, aShapeLevel);
+        if (aResult.IsNull())
+        {
+            theResult.Append("Error: result shape is null\n");
+            return 1;
+        }
+
+        theDI.SetShape(theArgv[1], aResult);
         return 0;
     }
 }

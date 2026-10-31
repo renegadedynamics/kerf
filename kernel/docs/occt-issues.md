@@ -1340,3 +1340,22 @@ are byte-identical with native, and native repeated itself on every one.
 | Where | What | Effect |
 |---|---|---|
 | `BRepProj_Projection::BuildSection` (through build123d.NET's `Project` and `ProjectToShape`) | Never sets the section non-destructive, so any unlocked target, not only the compound of 5T's entry, is sectioned destructively | Natively the caller's target changes: in build123d.NET's ProjectEdge case a box edge on the projection cylinder's seam had its tolerance raised (1e-7 to 1.00000000666e-07) and a pcurve added. The port's frozen targets keep the section non-destructive (decision 939), so its split edge is a copy whose vertices come in the other order: canonically identical, byte-identical on unfrozen operands (decision 953) |
+## Phase 6: unit 6L, Draw-lite Booleans and healing
+
+Found by porting BOPTest's and SWDRAW's commands and running the corpus. Draw-lite reproduces each (`// OCCT` at the
+line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BOPTest_TolerCommands `ReduceFaceTolerance` (`btolx`) | The edge map isn't cleared between faces | A face's tolerance is the smallest of its own edges' and every earlier face's edges' |
+| BOPTest_TolerCommands `breducetolerance` | The usage message says `bupdatetolerance` | Text only |
+| BOPTest_DebugCommands `bopfsd` | Adds the face itself to the compound, not its same-domain face | `f_sd` holds copies of `f`; the count is right |
+| BOPTest_DebugCommands `bopindex` | Index 0 (the first argument) counts as "not found" (`ind > 0`) | " DS does not contain the shape" for the first argument |
+| BOPTest_DebugCommands `bopwho`, `bopsd`, `bopfon`/`bopfin`/`bopfsc`, `bopfav` | The range check `ind > NbShapes()` (or `NbSourceShapes()`) lets the one-past-the-end index through | Natively reads past the table; in Draw-lite the index check of the port's table throws, and the case logs the exception |
+| SWDRAW_ShapeAnalysis `fbclose` | Reads `a[3]` for splitclosed and `a[4]` for splitopen (off by one) | The options shift |
+| SWDRAW_ShapeAnalysis `statshape` | `strstr("bigspl", arg3)`: the option matches as a substring of the keyword | An empty or one-letter word turns modes on |
+| SWDRAW_ShapeAnalysis `fbprops` | Labels the open wires "closed wires"; its usage message says `freeprops` | Text only |
+| SWDRAW `settolerance` (argc equal to premarg), `samerange` (prints `argv[2]` with 2 words), `fastsewing -tol` without a value | Read past `argv` | Natively undefined; Draw-lite reads an empty word |
+| SWDRAW_ShapeFix `fixshape +?` | Lists its message counts in NCollection_DataMap hash order | Draw-lite lists them in first-seen order |
+| SWDRAW_ShapeAnalysis `fbprops` on a 10×10 square | `1-16k` comes out marginally negative, so ratio and width print 0 (the formula gives 1 and 10) | Reproduced; not checked against native |
+| bugs/heal/bug29382_3 (UnifySameDomain with `+b` on a Bézier prism's common with a box) | The script expects 5 vertices | The port and native OCCT (build123d.NET's build, on the port's input and on its own Boolean) both give 6; the case fails on both |

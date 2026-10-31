@@ -95,6 +95,13 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
         output.WriteLine($"{aScans.Count} cases use mkvolume or bc*: {aRunnableBefore} runnable before, {aRunnable.Count} after");
+        // the cases that also need unit 6L's Boolean commands (the boolean grids' mkvolume cases) are run by
+        // DrawBooleanCorpusTests and DrawCorpusTests; this test keeps to those 6G's commands made runnable
+        DrawInterpreter aWithout6L = Load();
+        DrawBooleanCorpusTests.Before6LBop(aWithout6L);
+        int aWith6L = aRunnable.Count;
+        aRunnable = aRunnable.Where(c => aCorpus.Scan(c, aWithout6L).IsRunnable).ToList();
+        output.WriteLine($"  of which {aWith6L - aRunnable.Count} need 6L's Boolean commands too; running the other {aRunnable.Count}");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()).Take(12))
         {

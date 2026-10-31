@@ -9528,3 +9528,77 @@ placeholders, renumbered on merge.
       - Native's section runs destructively and updates the box's edge in place.
       - The port's frozen box keeps the section non-destructive, so it splits a copy, and `MakeSplitEdge` adds the
         copy's vertices in the other order (occt-issues.md, unit 6M).
+## Phase 6: unit 6L, Draw-lite Booleans and healing
+
+The rest of BOPTest (BOPCommands, PartitionCommands, APICommands, `bsimplify`, UtilityCommands, TolerCommands,
+DebugCommands), `sewing` and `fastsewing`, and SWDRAW's ShapeAnalysis, ShapeFix, ShapeTool and ShapeUpgrade commands
+whose algorithms are ported, in Draw-lite (tests/OcctNet.DrawLite). Ported in two worktrees (the Boolean commands; the
+healing commands) and merged. Numbers from 7401 are placeholders, renumbered on merge; merged decisions are cited by
+their numbers.
+
+954. **The Boolean session's builders.** `BOPTestObjects.BOP.cs` adds BOPTest_Objects' BOP, Section and Splitter
+      (made on first use, as OCCT's statics, and not reset by `bclear`) and the pave filler of `bop`, OCCT's file-static
+      `pPF` in BOPTest_BOPCommands.cxx: per interpreter, as the rest of the session (decision 883), so corpus cases run
+      in parallel. `bbop` and `bsplit` set the session's current builder, which `buildbop`, `bopimage`, `boporigin` and
+      `bopfsd` read. BOPTest::GetOperationType keeps TCollection_AsciiString's IsIntegerValue (a strtol prefix with no
+      '.' after it). Draw_ProgressIndicator goes; the `-t` timers print OSD_Timer's `  Tps: %7.2lf`. Histories go
+      through `BOPTestBuilderHistory` (the builders) or the algorithm's own `History()` (the API commands, `bopsmt`,
+      `bsection`), as OCCT's two SetHistory forms.
+955. **Booleans of Draw variables are non-destructive.** Draw's variables hold frozen shapes, so every Boolean command
+      runs non-destructively whatever `bnondestructive` says (decision 577), where DRAWEXE's default is destructive.
+      Where the corpus sees the difference it is attributed: boolean/bcut_complex/F2 looks for the argument face
+      `part_2` among the faces `mkvolume` built (`compare`); natively the destructive maker uses the face itself, the
+      port's a copy, so the script cuts the wrong solid. No other runnable case was found to differ for this reason.
+956. **BOPTest's in-place tools run on a copy and rebind.** `btolx`, `breducetolerance`, `bopaddpcs`, `attachpcurve`
+      and `buildpcurvesonplane` write tolerances and pcurves into the shape they are given. They run through the healing
+      commands' `SWDRAWShapeFixCommands.InPlace` (decision 960): on a forced `BRepTools_CopyAtEntry` copy, with the
+      unchanged sub-shapes given back and every variable sharing a changed one rebound (DrawShapeRebind), as DRAWEXE's
+      variables see the in-place change. `edgestowire` builds a new wire and needs nothing.
+957. **The debug commands show the data structure's shapes as plain variables.** BOPTest_DrawableShape (a shape drawn
+      with its name) is a shape variable, frozen as every Draw-lite shape (decision 272). The data structure's shapes
+      (`bopds`, `bopnews`, `bopsc`, `bopsp`) are then frozen while the session still holds the filler; a builder run
+      after them on the same filler would throw if it wrote into one of them. The corpus's and the unit tests' sequences
+      (`bopds` or `bopnews` after `bfillds`, then `bbuild`) don't. What OCCT prints with printf (`boppb`, `bopcb`,
+      `bopfon`, `bopfin`, `bopfsc`) goes to the interpreter's output, as std::cout does elsewhere. `bopfsd` iterates the
+      SD map in insertion order (OCCT's: hash order); it only counts.
+958. **`unifysamedom`'s history answers for the rebound shapes.** Draw-lite runs UnifySameDomain on a copy and rebinds
+      the variables holding sub-shapes it changed in place (decision 883). A script that explodes the input again after
+      the command (heal/unify_same_domain's end script) then holds the changed copies, which the composed history
+      didn't know: "not modified" for faces that natively are modified, so heal/unify_same_domain/A9 failed its history
+      check. The session's history now also gives each rebound copy its copy's own entries (removed, modified into,
+      generated), and nothing where the algorithm says nothing (natively that shape itself is in the result). A Draw-lite
+      fix in 6G's command; the algorithm is unchanged.
+959. **SWDRAW's commands.** `sewing`, `fastsewing` (BRepTest_SurfaceCommands); ShapeAnalysis's `projface`,
+      `projcurve`, `projpcurve`, `statshape`, `comptol`, `freebounds`, `fbprops`, `fbclose`, `getareacontour`,
+      `checkselfintersection`, `checkedge`, `getanasurf`, `getanacurve`; ShapeFix's `edgesameparam`, `settolerance`,
+      `reface`, `fixshape`, `fixwgaps`, `fixsmall`, `fixsmalledges`, `fixsmallfaces`, `checkfclass2d`, `connectedges`
+      (with the existing `checkoverlapedges`); ShapeTool's `anaedges`, `expwire`, `ssolid`, `samerange`; ShapeExtend's
+      `sortcompound`; ShapeUpgrade's `removeloc`, `copytranslate`, `reshape` (with 6U's `unifysamedom`). What OCCT
+      writes to std::cout (the sewing's Dump, FastSewing's statuses) goes to the interpreter's output; `reshape`'s
+      Message::SendFail text goes into the result, as DRAWEXE's Draw_Printer writes it. The existing `tolerance` is kept.
+960. **In-place healing commands run on a copy and rebind.** `settolerance`, `edgesameparam`, `fixshape`, `fixwgaps`,
+      `fixsmall`, `fixsmalledges`, `fixsmallfaces` and `samerange` run through `SWDRAWShapeFixCommands.InPlace`: a forced
+      `BRepTools_CopyAtEntry` of the input, the tool run in place on it as OCCT's, `Finish` giving back the unchanged
+      sub-shapes, and `DrawShapeRebind` rebinding every variable that shares a changed one (decision 495's pattern, as
+      `unifysamedom`). `fixshape`'s precision and maximal tolerance are set after its arguments are read; they don't
+      depend on Init. `fbclose`, `reface` and `freebounds` rely on the algorithms' own copy at the entry (decision 583);
+      DRAWEXE's in-place vertex replacements by `fbclose` don't reach other variables. `ssolid` adds a frozen shell as it
+      is, leaving its Free flag (OCCT clears it).
+961. **Left out.** Ported but not registered: `anaface` and `stwire`, French debugging commands no corpus case calls
+      (`stwire`'s vertex fix writes into the edges it explores). Waiting for phase 7: ShapeCustom's `expshape`,
+      `directfaces`, `scaleshape`, `bsplres`, `convtorevol`; ShapeUpgrade's divide and convert tools (`DT_*`,
+      `splitface`, `offset2dcurve`, `offsetcurve`, `RemoveIntWires`); ShapeProcess's `SPApply` and `DT_ApplySeq`. They
+      block the heal group's split, convert and surface-to-revolution grids (DT_SplitAngle 800 cases, DT_ShapeDivide
+      783, DT_ShapeConvertRev 754, expshape 753).
+962. **Corpus.** Two tests, as the earlier units' (`DrawBooleanCorpusTests`, `DrawHealCorpusTests`), report the cases
+      using the unit's commands, runnable before and after, and the statuses by OCCT's `_check_log`, and fail on any
+      unattributed FAILED. The Boolean set is about 4,400 cases (3.9 minutes in Debug on 12 workers); since
+      `DrawCorpusTests` already runs every runnable case, its default run takes every fourth case by id, and
+      `OCCTNET_CORPUS_FULL=1` runs all (`OCCTNET_CORPUS_LOGS=dir` keeps the logs of the cases that don't pass). The
+      healing set (903 cases, 20 s) runs whole. Measured with everything merged:
+      - Boolean commands: 7,203 cases use them; runnable 621 before the unit, 4,385 after: OK 3,687, BAD 84 (OCCT's
+        TODOs: 77 in the offset group's wire grids, which `bsection` made runnable, and 7 others), SKIPPED 612 (data not
+        public), FAILED 2, both attributed: boolean/bcut_complex/F2 (decision 955) and bugs/heal/bug29382_3 (native
+        OCCT gives the same 6 vertices; occt-issues.md). heal/unify_same_domain/A9 failed until decision 958.
+      - Healing commands: 3,623 cases use them; runnable 0 before, 903 after: OK 602, BAD 12 (TODOs), SKIPPED 289,
+        FAILED 0.

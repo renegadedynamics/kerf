@@ -80,9 +80,9 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         Assert.Empty(aRunnableBefore);
         Assert.NotEmpty(aRunnable);
         // After 5S2: OK 53, BAD 1 (pipe/standard/B1, OCCT's own TODO OCC22741: faulty shapes), SKIPPED 4 (data files
-        // missing); none failing.
+        // missing); none failing. After 6L (the Boolean commands its scripts call): 61 runnable, OK 56.
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
-        Assert.Equal(53, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(56, aRuns.Count(r => r.Status == "OK"));
     }
 }
