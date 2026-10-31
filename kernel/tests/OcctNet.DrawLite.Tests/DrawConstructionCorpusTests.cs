@@ -45,8 +45,8 @@ public class DrawConstructionCorpusTests(ITestOutputHelper output)
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
         // procedures count only once called: the bugs group's modalg grids define OFFSETSHAPE (phase 7's offset) for a few
         // of their cases
-        var aCorpus = new DrawCorpus(TestsDirectory) { FollowsCalledProcsOnly = true };
-        var aFormerCorpus = new DrawCorpus(TestsDirectory);
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        var aFormerCorpus = new DrawCorpus(TestsDirectory) { FollowsCalledProcsOnly = false };
         DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5W(aBefore);

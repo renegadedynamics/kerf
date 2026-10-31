@@ -98,13 +98,14 @@ public class DrawMatCommandsTests(ITestOutputHelper output)
             }
         }
 
-        // The 8 cases (bugs/modalg_1 buc60830_*, bugs/modalg_4 bug745_*) also run the offset commands (phase 7's
-        // offsetparameter/offsetload/offsetperform, 5O2's mkoffset) and the viewer's coordload/axo: none of 5M's
-        // commands is missing any more, the cases become runnable with the 2D offset.
+        // The 8 cases (bugs/modalg_1 buc60830_*, bugs/modalg_4 bug745_*) are in grids whose begin script defines
+        // OFFSETSHAPE (phase 7's offsetparameter/offsetload/offsetperform) but don't call it, so since procedures count
+        // only once called (open question 29) phase 7's offset doesn't block them; some still need the viewer's
+        // coordload/axo. None of 5M's commands is missing any more.
         Assert.Equal(8, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.All(aScans, s => Assert.Empty(s.Missing.Intersect(Unit5MCommands)));
-        Assert.All(aScans, s => Assert.Contains("offsetperform", s.Missing));
+        Assert.All(aScans, s => Assert.DoesNotContain("offsetperform", s.Missing));
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal));
     }
 }

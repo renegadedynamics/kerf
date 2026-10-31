@@ -9689,3 +9689,14 @@ placeholders, renumbered on merge; earlier decisions are cited by their merged n
         runnable for the Boolean commands too.
       - **Phase 7:** 50 cases of 5W's commands wait for `offsetparameter`/`offsetload`/`offsetperform`; the helix group
         waits for TKHelix's commands.
+
+## Phase 7: preparation (31 October 2026)
+
+972. **The corpus scan counts a case's procedures only where something calls them, by default** (open question 29,
+     the owner's answer). `DrawCorpus.FollowsCalledProcsOnly`, added off by unit 5W, is now on: the modalg grids'
+     begin scripts define `OFFSETSHAPE` (phase 7's offset commands) for a few cases, and no longer block the rest.
+     Runnable cases go from 8,347 to 10,106. The pipe corpus test now runs 103 cases (OK 69); 5M's eight MAT cases no
+     longer wait for `offsetperform`. Four newly runnable cases fail and are not yet attributed: bugs/modalg_5/bug23881
+     (a section of a sewn shell), bugs/modalg_7/bug26034 (`bopcheck` reports faults after `ttranslate`), bug29333_2
+     and bug29586 (an empty result). They are listed apart from the attributed failures, in
+     `DrawBooleanCorpusTests.NotYetAttributed`, and unit 7W investigates them first.
