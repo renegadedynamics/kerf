@@ -1332,3 +1332,11 @@ Found by full Oracle runs (test classes in parallel).
 | Where | What | Effect |
 |---|---|---|
 | `FEmTool_LinearFlexion`, `FEmTool_LinearJerk` and `FEmTool_LinearTension` constructors (FEmTool_Linear*.cxx) | Keep the reference integrals of the last constraint order in function statics `Order` and `MatrixElemts`, unsynchronised; `Order` is set before `MatrixElemts` is recomputed | Concurrent AppDef_Variational runs with different continuities (GeomAPI_PointsToBSpline and PointsToBSplineSurface with weights, ThruSections with smoothing) read the other order's integrals: 2 of 32 C2 approximations run beside C1 ones gave other poles (1e-4 relative), one of them the value a full Oracle run failed on. The port caches per order under a lock (decision 148); the oracle serialises these native calls (decision 945) |
+## Phase 6: unit 6M, build123d.NET's Booleans
+
+Found by replaying build123d.NET's own tests' operations. The Booleans and cleans showed no new issue: all 497 calls
+are byte-identical with native, and native repeated itself on every one.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepProj_Projection::BuildSection` (through build123d.NET's `Project` and `ProjectToShape`) | Never sets the section non-destructive, so any unlocked target, not only the compound of 5T's entry, is sectioned destructively | Natively the caller's target changes: in build123d.NET's ProjectEdge case a box edge on the projection cylinder's seam had its tolerance raised (1e-7 to 1.00000000666e-07) and a pcurve added. The port's frozen targets keep the section non-destructive (decision 939), so its split edge is a copy whose vertices come in the other order: canonically identical, byte-identical on unfrozen operands (decision 953) |

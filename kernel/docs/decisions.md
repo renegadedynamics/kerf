@@ -9436,3 +9436,95 @@ their merged numbers.
      serial, 32 concurrent and 40 runs beside other sewings. Seven runs (the first and 6 more) all missed the port's
      variant once, about 1 in 130 if each run is even. The reruns now stop as soon as one matches the port, up to 16
      in all; they sew from the file both sides read, so they are the same inputs at other addresses.
+## Phase 6: unit 6M, build123d.NET's Booleans
+
+The phase 6 milestone harness (plan section 5, milestones 4, 6's build123d.NET half and 7), in
+`tests/OcctNet.Oracle.Tests/Build123d/` and `benchmarks/OcctNet.Benchmarks/Booleans.cs`. Numbers from 7501 are
+placeholders, renumbered on merge.
+
+947. **Operands from build123d.NET's public API, not a capture hook.** Open question 20's hook isn't agreed, so the
+      oracle project (and the benchmarks, when native is there) reference build123d.NET's `Build123d` project besides
+      `Build123d.Occt`. That builds `src/Build123d`'s `bin`/`obj` in the build123d.NET checkout, as `Build123d.Occt`'s
+      already were; nothing else there is written. It needed no other change: Build123d's types live in their own
+      namespace, and the port's are OCCT-named. The tests' constructions are transcribed as scenarios
+      (`Build123dBooleanCapture.Scenarios`): OperationsGeneric, Part and Sketch tests; SkipClean, Clean, History,
+      Shape, Compound, Shape3D and Solid tests; and the solids, faces, shells, edges and wires of IntersectionTests'
+      1D, 2D, 3D and compound matrices (with their planes and axes as shapes). When the hook comes, the same comparison
+      takes captured calls instead.
+948. **The capture mirrors build123d.NET's Boolean dispatch.** `Sub` is a cut of `[a]` by `b`'s top-level shapes;
+      `Add` is a fuse of a Part's, Sketch's or plain compound's first top-level shape with the rest of its own and
+      `b`'s, fuzzy at `Constants.Tolerance`, or of `[a]` with `b`'s for a solid or face. `And` and `Intersect` follow
+      IntersectCore per element: a common for a solid; a common and a section for two faces or shells; a section for
+      a face and an edge, or an edge and a plane's face; a common and a section for two edges; then CommonWith's clean.
+      `Fuse` and `Cut` are `[a]` against the shapes given (glue shift, fuzzy value), and `Split` a BRepAlgoAPI_Splitter
+      by the plane's face or the tool, not cleaned. Every Boolean is parallel and non-destructive; each cleaned one is
+      followed by `UnifySameDomain(shape, true, true, true)` without internal edges. Extrude both ways, Revolve, Loft,
+      Section, Thicken and Trace are rebuilt from their public pieces (`Solid.Extrude`, `clean: false`...). Left out:
+      1D joins and shell sewing, which make no Boolean; the touches `includeTouched` adds, which repeat the same
+      Booleans; and the Booleans inside Extrude-until, Loft's hole cuts, Offset's inner-wire cuts and the half-space
+      common of a split by a shape. **Checked**: every operator or method that makes one Boolean records build123d.NET's
+      own result, and native's replay of the call and its clean must have the same numbers of solids, faces, edges and
+      vertices, volume and area. All 67 such results agree.
+949. **The comparison reuses units 6F, 6P and 6U.** Each Boolean goes through `BooleanOracleTests.Compare`. That covers
+      bytes with the Free column masked, then canonically; the histories of every argument sub-shape; and the port at
+      parallel degrees 2, 3 and the processor count, against its serial run. Each clean, of native's serial result,
+      goes through the UnifySameDomain oracle's `Compare` with its history. Native's repeatability is measured on
+      every call: five serial and five parallel runs, and ten cleans. A canonical-only result where native repeats
+      itself fails the test unless listed as attributed. `Run.Api` runs the Splitter through BRepAlgoAPI_Splitter, as
+      build123d.NET does, rather than BOPAlgo_Splitter.
+      **Result:** 497 native calls (244 Booleans: 100 commons, 63 sections, 39 fuses, 28 cuts, 14 splits; 253
+      cleans), all byte-identical. None needed the Free column masked, none needed attribution, and native never
+      varied. All 497 histories are equal, and the port's parallel runs equal its serial runs. About 25 s.
+950. **The Booleans benchmark** (`-- booleans [filter]`, plan 2.9). It has three groups:
+      - build123d.NET's 244 Booleans, from the linked capture;
+      - the 407 `bopfuse_simple` cases of tools/pfrec's recording;
+      - the 193 `b{fuse,cut,common}_complex` cases that restore two public data files and run one Boolean.
+      Both sides read the same text; the port's arguments are frozen and native's operation is non-destructive. It
+      times the median of Build, serial and parallel, and the clean, after a warm-up, and reports the port's
+      allocation of one Boolean and one clean. `-- booleans-profile` splits the port's serial time between the pave
+      filler and the builder.
+951. **Performance against open question 22's 2× target** (Release, 24 logical processors, other units' test suites
+      running at the same time, so the parallel figures are noisy):
+
+      | group | port/native serial (sum) | geometric mean | port/native parallel | port, native speed-up | clean | MB per Boolean |
+      |---|---:|---:|---:|---:|---:|---:|
+      | build123d | 1.03× | 0.83× | 0.78× | 1.12, 0.84 | 0.98× | 2.1 |
+      | simple | 0.93× | 0.83× | 1.32× | 0.54, 0.77 | 0.64× | 10.3 |
+      | complex | 1.04× | 0.83× | 1.19× | 0.90, 1.03 | 0.68× | 13.0 |
+
+      **The serial target is met.** The clean is faster than native's. Single cases still go over 2×:
+      - splits by an unbounded plane face (SplitBox and SplitSolid, 4.3× to 4.7×; native under 3 ms);
+      - a few revolved and fused sketches (3.3× to 3.7×);
+      - five simple-grid fuses (2.1× to 3.3×).
+      The profile of the build123d group puts the port's time about half in the pave filler (253 ms) and half in the
+      builder (246 ms). That builder share is larger than native's whole operation suggests. Its likely sources are
+      allocation (about 2 MB per small Boolean) and the classification of the unbounded faces. These are left for an
+      optimisation unit.
+      **Neither side gains much from parallelism on these small Booleans:** the port's parallel runs are slower than
+      its serial ones on the simple grid. The parallel target ("a comparable speed-up") isn't met on the simple and
+      complex grids; with the machine loaded, this is to be measured again on a quiet machine before any work.
+952. **Construction replay** (`Build123dConstructionOracleTests`, milestone 6's build123d.NET half). It rebuilds
+      build123d.NET's test operands with its public API and transcribes the native call sequences from its source:
+      Solid.Sweep, SweepMulti, ExtrudeLinearWithRotation, Face.Sweep, Shell.Sweep, MakeLoft, the Loft operation's
+      hole matching, MakeSurface (both builds compared), MakeSurfacePatch, MakeSurfaceFromArrayOfPoints,
+      MakeSurfaceFromCurves, Project and ProjectToShape, the Geom2dGcc dispatch in ConstrainedLines, Chamfer2D through
+      EditWires, and Offset2D's normal, winding sign and one-edge split. The Geom2dGcc oracle's records, solver
+      adapters and runners became internal for reuse.
+      **Result:** 179 cases. 177 are byte-identical with the Free column masked: 31 MakePipeShell, 18 ThruSections,
+      8 MakeFilling, 6 PointsToBSplineSurface, 3 BRepFill Face/Shell, 6 projections, 39 solver runs token for
+      token, 8 MakeFillet2d and 42 MakeOffset. Two MakeFilling cases give the same error on both sides, and one
+      projection is attributed (decision 953).
+      **Left out:**
+      - Face.ProjectToShape and SplitByPerimeter, which project through BRepAlgoAPI_Common;
+      - MakeSurface's holes (MakeFace);
+      - Wire.Fillet2D (build123d.NET's own WireFillet over BOPAlgo_Splitter);
+      - Bézier surfaces and the `sweep_circle` reference case;
+      - the cleans after sweeps and lofts (the Boolean harness covers Loft's).
+953. **Attributing a construction case that is only canonically identical where native repeats itself.** Such a
+      case counts as attributed only if the port, run on unfrozen copies (`BRepTools.ExactCopyForWrite`), gives
+      native's bytes. Shapes read from BRep text are frozen, so reading them again isn't enough.
+      One case qualified, ProjectEdge:
+      - The box's vertical edge lies on the projection cylinder's seam.
+      - Native's section runs destructively and updates the box's edge in place.
+      - The port's frozen box keeps the section non-destructive, so it splits a copy, and `MakeSplitEdge` adds the
+        copy's vertices in the other order (occt-issues.md, unit 6M).

@@ -19,12 +19,12 @@ namespace OcctNet.Oracle.Tests;
 public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
 {
     /// <summary>The options of one run, as build123d.NET's Clean or Draw's unifysamedom set them.</summary>
-    private sealed record Options(string Name, bool UnifyEdges = true, bool UnifyFaces = true, bool ConcatBSplines = false,
+    internal sealed record Options(string Name, bool UnifyEdges = true, bool UnifyFaces = true, bool ConcatBSplines = false,
                                   bool AllowInternal = false, bool SafeInput = true, double LinTol = 0, double AngTol = 0,
                                   bool KeepAnEdge = false, bool KeepAVertex = false);
 
     // build123d.NET's Clean: new ShapeUpgrade_UnifySameDomain(shape, true, true, true); AllowInternalEdges(false)
-    private static readonly Options s_clean = new("clean", true, true, true, false);
+    internal static readonly Options s_clean = new("clean", true, true, true, false);
 
     private static readonly Options[] s_others =
     [
@@ -38,7 +38,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         new("keep a vertex", ConcatBSplines: true, KeepAVertex: true),
     ];
 
-    private sealed class Tally
+    internal sealed class Tally
     {
         public int Cases, Compared, Identical, FreeMasked, CheckedMasked, Canonical, Exceptions, Unchanged, NotFrozen,
                    Histories, HistoriesSame, HistoriesSameButInPlace, KeptFaces, ResultFaces, KeptEdges, ResultEdges,
@@ -111,7 +111,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         Assert.Empty(theTally.Differences);
     }
 
-    private void Compare(ShapeFixOracleRun theRun, Tally theTally, string theName, N.TopoDS_Shape theNative,
+    internal void Compare(ShapeFixOracleRun theRun, Tally theTally, string theName, N.TopoDS_Shape theNative,
                          Options[] theOptions, Oracle theOracle)
     {
         if (theNative.IsNull())

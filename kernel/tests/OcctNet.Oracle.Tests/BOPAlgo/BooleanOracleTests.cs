@@ -32,11 +32,13 @@ public class BooleanOracleTests(ITestOutputHelper output)
     /// One comparison. Unit 6P added <paramref name="Simplify"/> (<c>SimplifyResult()</c> after the operation; the General
     /// Fuse and the Splitter then run through BRepAlgoAPI_BuilderAlgo and BRepAlgoAPI_Splitter),
     /// <paramref name="NonDestructive"/> (native's flag: the port's arguments are frozen, so its operation is
-    /// non-destructive whatever the flag, decision 577) and <paramref name="CheckInverted"/>.
+    /// non-destructive whatever the flag, decision 577) and <paramref name="CheckInverted"/>. Unit 6M added
+    /// <paramref name="Api"/>: the Splitter and the General Fuse through BRepAlgoAPI even when not simplified, as
+    /// build123d.NET runs its splits.
     /// </summary>
     internal sealed record Run(string Name, string ArgsText, int NbObjects, Op Op, double Fuzzy = 0.0,
                                BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff, bool UseOBB = false,
-                               bool Simplify = false, bool NonDestructive = true, bool CheckInverted = true);
+                               bool Simplify = false, bool NonDestructive = true, bool CheckInverted = true, bool Api = false);
 
     internal sealed class Tally
     {
@@ -475,7 +477,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         {
             switch (theCase.Op)
             {
-                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify:
+                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify && !theCase.Api:
                 {
                     using N.BOPAlgo_Builder aB = theCase.Op == Op.GeneralFuse ? new N.BOPAlgo_Builder() : new N.BOPAlgo_Splitter();
                     if (aB is N.BOPAlgo_Splitter aSplitter)
@@ -569,7 +571,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         {
             switch (theCase.Op)
             {
-                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify:
+                case Op.GeneralFuse or Op.Splitter when !theCase.Simplify && !theCase.Api:
                 {
                     BOPAlgo_Builder aB = theCase.Op == Op.GeneralFuse ? new BOPAlgo_Builder() : new BOPAlgo_Splitter();
                     if (aB is BOPAlgo_Splitter aSplitter)

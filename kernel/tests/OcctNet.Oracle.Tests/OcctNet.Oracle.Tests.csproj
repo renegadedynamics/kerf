@@ -18,6 +18,8 @@
     <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
     <ProjectReference Include="..\OcctNet.DrawLite\OcctNet.DrawLite.csproj" />
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
+    <!-- build123d.NET itself, whose public API rebuilds the operands of its tests' Booleans (unit 6M, decision 947) -->
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasOracle)' == 'true'" />
     <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OcctSourceDir</_Parameter1>

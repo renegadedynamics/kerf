@@ -55,3 +55,23 @@ angles), and say why.
 - Build native axes and directions from the same raw components as the port's, rather than converting the port's
   normalised `gp_Dir` with `Oracle.ToNative`: native OCCT normalises the unit direction again, which can change its
   last bit (GProp's oracle tests saw it on about 700 values).
+
+## build123d.NET's own operations (unit 6M)
+
+`tests/OcctNet.Oracle.Tests/Build123d` replays the native calls build123d.NET's own tests make (plan section 5,
+milestones 4 and 6). Open question 20's capture hook in build123d.NET isn't there, so the project references
+build123d.NET's `Build123d` project (as well as `Build123d.Occt`) and rebuilds the tests' operands with its public API
+(decision 947):
+
+- `Build123dBooleanCapture.cs` transcribes the tests' constructions as scenarios. Its `Sub`, `Add`, `And`, `Fuse`,
+  `Cut`, `Intersect`, `Split` and `Clean` record the `BRepAlgoAPI_*` calls and the `UnifySameDomain` clean that
+  build123d.NET's Boolean path makes for each (its dispatch mirrored, decision 948), then return build123d.NET's own
+  result so the scenario goes on. The benchmarks link the same file.
+- `Build123dBooleanOracleTests` runs each recorded call through the Boolean oracle's `Compare` (unit 6F/6P: bytes with
+  the Free column masked, canonically, histories, the port's parallel runs) and each clean through the UnifySameDomain
+  oracle's (unit 6U), measures native's repeatability on every call, and checks the transcription against
+  build123d.NET's own results.
+- `Build123dConstructionOracleTests` does the same for the sweeps, lofts, filling, projections, constraint solvers,
+  `Chamfer2D` and `Offset2D` (decision 952).
+
+A new build123d.NET test with Booleans is added to the replay by transcribing its construction as one more scenario.
