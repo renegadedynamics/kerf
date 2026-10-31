@@ -148,9 +148,60 @@ internal static class SWDrawShapeUpgradeCommands
         // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the copy so it answers for the input's shapes
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            BRepTestHistoryCommands.SetHistory(theDI, anEntry.Composed(aUnifier.InternalHistory()));
+            BRepTestHistoryCommands.SetHistory(theDI, ReboundHistory(aShape, anEntry, aUnifier.InternalHistory()));
         }
         return 0;
+    }
+
+    /// <summary>
+    /// The history of an algorithm run on <paramref name="theEntry"/>'s copy of <paramref name="theInput"/>, answering
+    /// both for the input's sub-shapes (<see cref="BRepTools_CopyAtEntry.Composed"/>) and for the changed copies that
+    /// the rebound variables now hold in their place (unit 6L). In DRAWEXE a sub-shape changed in place is still the
+    /// same TShape, so a variable exploded after the command (the unify_same_domain grid's end script explodes the
+    /// input again) asks the history about it; here it holds the changed copy, whose entries are its copy's own: removed,
+    /// modified and generated as the algorithm says, and not modified when the algorithm says nothing (natively the
+    /// shape itself is in the result).
+    /// </summary>
+    private static BRepTools_History ReboundHistory(in TopoDS_Shape theInput, BRepTools_CopyAtEntry theEntry, BRepTools_History? theHistory)
+    {
+        BRepTools_History aComposed = theEntry.Composed(theHistory);
+        if (theHistory is null || !theEntry.IsCopied())
+        {
+            return aComposed;
+        }
+        var aSubShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(theInput, aSubShapes);
+        foreach (TopoDS_Shape aSub in aSubShapes)
+        {
+            if (!BRepTools_History.IsSupportedType(aSub))
+            {
+                continue;
+            }
+            TopoDS_Shape aCopy = theEntry.Copied(aSub);
+            TopoDS_Shape aNow = theEntry.Final(aCopy);
+            if (ReferenceEquals(aNow.TShape(), aSub.TShape()))
+            {
+                continue;
+            }
+            if (theHistory.IsRemoved(aCopy))
+            {
+                aComposed.Remove(aNow);
+                continue;
+            }
+            foreach (TopoDS_Shape aModified in theHistory.Modified(aCopy))
+            {
+                TopoDS_Shape aFinal = theEntry.Final(aModified);
+                if (!aFinal.IsSame(aNow))
+                {
+                    aComposed.AddModified(aNow, aFinal);
+                }
+            }
+            foreach (TopoDS_Shape aGenerated in theHistory.Generated(aCopy))
+            {
+                aComposed.AddGenerated(aNow, theEntry.Final(aGenerated));
+            }
+        }
+        return aComposed;
     }
 
     /// <summary><c>removeloc res shape [remove_level]</c>: ShapeUpgrade_RemoveLocations (unit 6L).</summary>

@@ -1036,3 +1036,19 @@ Phase 5 (part): lofts and projection (unit 5T).
   through build123d.NET, 630 random lofts and 248 cases of OCCT's thrusection corpus (every built result, first and
   last shape and history byte-identical; lofts whose first section is also the last vary natively from run to run),
   266 projections (every wire identical, one canonically through decision 577's non-destructive Booleans).
+
+Phase 6 (part): Draw-lite Booleans and healing, the phase 6 corpus milestone (unit 6L).
+
+- Draw-lite: the rest of BOPTest (`bop`, `bopcommon`, `bopfuse`, `bopcut`, `boptuc`, `bopsection`, `bcommon`, `bfuse`,
+  `bcut`, `btuc`, `bsection`, `bopcurves`, `bbuild`, `bbop`, `bsplit`, `buildbop`, `bapibuild`, `bapibop`,
+  `bapisplit`, `bsimplify`, `edgestofaces`, `edgestowire`, `attachpcurve`, `buildpcurvesonplane`, `btolx`,
+  `breducetolerance`, `bopaddpcs` and the data-structure debug commands), `sewing`, `fastsewing`, and SWDRAW's
+  ShapeAnalysis, ShapeFix, ShapeTool and ShapeUpgrade commands whose algorithms are ported (`fixshape`, `fixwgaps`,
+  `fixsmall`, `fixsmallfaces`, `settolerance`, `freebounds`, `fbclose`, `statshape`, `getanasurf`, `removeloc`,
+  `reshape`, ...). Commands that OCCT runs in place work on a copy of Draw's frozen variables and rebind the variables
+  that share a changed sub-shape; Booleans of Draw variables are non-destructive. `unifysamedom`'s history now also
+  answers for the rebound shapes.
+- Corpus: 4,385 cases using the Boolean commands are runnable (621 before): OK 3,687, BAD 84 (OCCT's TODOs), 612
+  missing data, 2 failing for attributed reasons (one through DRAWEXE's destructive default, one that native OCCT
+  fails too); 903 using the healing commands (none before): OK 602, BAD 12, 289 missing data, none failing. The heal
+  group's split and convert grids wait for phase 7's ShapeUpgrade and ShapeCustom.

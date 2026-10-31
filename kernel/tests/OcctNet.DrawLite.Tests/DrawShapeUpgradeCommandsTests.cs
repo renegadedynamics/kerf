@@ -114,6 +114,8 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
         }
 
         Assert.True(aRunnable.Count > aRunnableBefore);
-        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal));
+        // after 6L, cases that also use its Boolean commands run too; their attributed failures are 6L's
+        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal)
+                                          && !DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id));
     }
 }

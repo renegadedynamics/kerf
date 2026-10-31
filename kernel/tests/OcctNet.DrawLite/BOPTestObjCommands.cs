@@ -8,8 +8,8 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// The session commands of BOPTest that the builders of unit 6G need: BOPTest_ObjCommands.cxx (<c>baddobjects</c>,
 /// <c>bclearobjects</c>, <c>baddtools</c>, <c>bcleartools</c>, <c>baddcompound</c>, <c>baddctools</c>,
-/// <c>bclear</c>), <c>bfillds</c> of BOPTest_PartitionCommands.cxx and BOPTest_OptionCommands.cxx but
-/// <c>bsimplify</c> (BRepAlgoAPI's SimplifyResult, unit 6P).
+/// <c>bclear</c>), <c>bfillds</c> of BOPTest_PartitionCommands.cxx and BOPTest_OptionCommands.cxx (<c>bsimplify</c>, unit
+/// 6L).
 /// </summary>
 /// <remarks>
 /// The session is the interpreter's (<see cref="BOPTestObjects"/>). Draw-lite has no help texts, so PrintHelp's
@@ -36,6 +36,43 @@ internal static class BOPTestObjCommands
         DrawCxx.Add(theInterpreter, "bdrawwarnshapes", BDrawWarnShapes);
         DrawCxx.Add(theInterpreter, "bcheckinverted", BCheckInverted);
         DrawCxx.Add(theInterpreter, "buseobb", BUseOBB);
+        DrawCxx.Add(theInterpreter, "bsimplify", BSimplify);
+    }
+
+    /// <summary><c>bsimplify [-e 0/1] [-f 0/1] [-a tol]</c>: the simplification of the API commands' results (unit 6L).</summary>
+    private static int BSimplify(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n == 1 || n % 2 == 0)
+        {
+            return 1;
+        }
+
+        BOPTestObjects aSession = BOPTestObjects.Of(theDI);
+        for (int i = 1; i < n - 1; ++i)
+        {
+            if (a[i] == "-e")
+            {
+                int iUnifyEdges = theDI.Atoi(a[++i]);
+                aSession.UnifyEdges = iUnifyEdges != 0;
+            }
+            else if (a[i] == "-f")
+            {
+                int iUnifyFaces = theDI.Atoi(a[++i]);
+                aSession.UnifyFaces = iUnifyFaces != 0;
+            }
+            else if (a[i] == "-a")
+            {
+                double anAngTol = theDI.Atof(a[++i]) * (Math.PI / 180.0);
+                aSession.Angular = anAngTol;
+            }
+            else
+            {
+                di.Append("Wrong key option.\n");
+                return 1;
+            }
+        }
+        return 0;
     }
 
     private static int BAddCompound(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

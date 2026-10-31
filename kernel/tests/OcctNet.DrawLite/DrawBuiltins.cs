@@ -68,6 +68,11 @@ internal static class DrawBuiltins
         BOPTestMkConnectedCommands.Register(theInterpreter);
         BOPTestPeriodicityCommands.Register(theInterpreter);
         BOPTestRemoveFeaturesCommands.Register(theInterpreter);
+        BOPTestPartitionCommands.Register(theInterpreter);
+        BOPTestAPICommands.Register(theInterpreter);
+        BOPTestUtilityCommands.Register(theInterpreter);
+        BOPTestTolerCommands.Register(theInterpreter);
+        BOPTestDebugCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 
