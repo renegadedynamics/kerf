@@ -103,10 +103,10 @@ public sealed class DrawCorpus(string theTestsDirectory)
     /// <summary>
     /// Whether a procedure the case's scripts define counts its body's commands only when something calls it (unit 5W).
     /// The bugs group's modalg grids define <c>OFFSETSHAPE</c> in their begin script, which calls phase 7's offset
-    /// commands, and only a few of their cases call it. False (the default) counts every defined procedure's body, as
-    /// before.
+    /// commands, and only a few of their cases call it. The default since phase 7's plan (open question 29); false counts
+    /// every defined procedure's body, as before.
     /// </summary>
-    public bool FollowsCalledProcsOnly { get; init; }
+    public bool FollowsCalledProcsOnly { get; init; } = true;
 
     /// <summary>
     /// The directory a grid's cases are in: the grid's own, or the one the first line of its <c>cases.list</c> names

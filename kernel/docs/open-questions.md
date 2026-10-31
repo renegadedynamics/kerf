@@ -138,23 +138,35 @@ The numbers in brackets are the plan's (section 7).
     TopOpeBRepDS and `TopOpeBRepBuild_HBuilder`, with no other path. *Provisional:* port the TopOpeBRepBuild, DS and
     Tool classes they reach, whole (about 79,000 lines, 72,000 new), extending phase 5's slice. Alternatives: a
     member-level slice (perhaps 10 to 25% smaller), or fillets rebuilt on BOPAlgo (not a port).
+    **Owner (31 October):** asked for an estimate of the rebuild on the Boolean engine. *Given in phase7-plan.md
+    2.1:* the data structure's core and the fillet code are needed either way, so the plan ports those first and
+    decides between TopOpeBRepBuild and a rebuild when they are done, with measurements.
 25. **HLR and helix in phase 7** (phase7-plan.md 1.5). build123d.NET uses neither. *Provisional:* helix in phase 7
     (small, with OCCT 8's GTests); HLR in phase 7 but last, deferrable if Bento has no use for drawings.
+    **Owner (31 October):** asked what HLR is; explained (phase7-plan.md 1.5). Still open; HLR stays last.
 26. **ShapeProcess's resource files** (phase7-plan.md 2.3). *Provisional:* OCCT's default resource files embedded;
     other files read only when the caller gives a path, not through OCCT's `CSF_*` environment variables.
+    **Owner (31 October):** OCCT's defaults are fine for now.
 27. **Bindings to widen phase 7's oracle** (phase7-plan.md 3). Bind in build123d.NET: ShapeUpgrade's
     ShapeDivideAngle, ShapeDivideContinuity, ShapeDivideClosed and ShapeConvertToBezier;
     `ShapeProcessAPI_ApplySequence`; BRepFeat's MakePrism, MakeRevol and MakeLinearForm; `LocOpe_SplitShape`;
     `HLRBRep_Algo`, `PolyAlgo`, `HLRToShape`; `HelixBRep_BuilderHelix`; `BiTgte_Blend`; `FilletSurf_Builder`;
     `BRepOffsetAPI_MakeDraft`. *Provisional:* until then, native recorders (`tools/<name>rec`) and the corpus.
+    **Owner (31 October):** yes. Each unit adds the bindings it needs to build123d.NET's `bindings/occt.txt`, on a
+    branch there that the owner merges; the native recorders remain for anything the shim can't bind.
 28. **Draw-lite's cheap gaps** (phase7-plan.md 1.6). *Provisional:* unit 7W adds the non-phase-7 commands that
     unblock 885 corpus cases (`lastrep` as a stub, `proj`, `shape`, `project`, `convert`, `projonplane`...) and the
     viewer no-ops a few cases use for setup (`vzfit`, `top`, `axo`, `front`, `v2d`); no other viewer commands.
+    **Owner (31 October):** yes.
 29. **The corpus scan's default** (phase7-plan.md 1.6). *Provisional:* `DrawCorpus.FollowsCalledProcsOnly` (unit 5W)
     becomes the default at the start of phase 7, and the tests' expected counts are updated with it.
+    **Owner (31 October):** yes; done.
 30. **Order of phase 7's stages** (phase7-plan.md 4). *Provisional:* start every unit of wave 1 at once and give
     spare porters to the fillet path (the critical path, and build123d.NET's most used phase 7 call). Alternative:
     healing, features and helix first, for the corpus.
+    **Owner (31 October):** prioritise token use over speed: some parallel work, but not six helpers at once with
+    the merge work that brings. *Now:* at most two units at a time, on disjoint parts of the tree (phase7-plan.md
+    4, "Running order").
 
 ## Earlier judgement calls worth a look
 

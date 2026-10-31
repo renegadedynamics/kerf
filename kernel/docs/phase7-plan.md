@@ -115,6 +115,14 @@ build123d.NET's shim, so each has a direct oracle.
 | `BRepFeat_SplitShape` | `Shape2D.SplitByPerimeter` | a sequence of edges |
 | `ShapeCustom::BSplineRestriction` | `Shape.ToSplines` | default restriction parameters |
 
+**HLR** (hidden-line removal, TKHLR) turns a 3D shape and a viewing direction into a 2D line drawing: the edges
+visible from that direction, the hidden ones (drawn dashed in technical drawings), and the silhouettes where a curved
+surface turns away from the viewer, which are not edges of the model at all. It works on the exact geometry
+(`HLRBRep_Algo`) or, faster and approximately, on the mesh (`HLRBRep_PolyAlgo`). It is what makes engineering
+drawings and SVG or DXF views of a part; a viewer doesn't need it, because the GPU's depth buffer hides lines on
+screen. Python build123d uses it for `project_to_viewport` and its SVG and DXF export; build123d.NET has not ported
+that feature yet.
+
 **Not used by build123d.NET:** HLR, TKHelix (its `Helix` is built from a cylinder, a 2D line and
 `BRepLib::BuildCurves3d`, all ported), ShapeProcess, ShapeUpgrade's divide tools, LocOpe directly, BiTgte, FilletSurf,
 `BRepFill_Draft`, AdvancedEvolved. They are in phase 7 for the corpus, for Bento and for completeness.
@@ -166,19 +174,62 @@ STEP and IGES (586, and the `de` grids' 1,073), QA test commands (137), and the 
 
 ## 2. Design questions
 
-### 2.1 The legacy data structure: port the classes the fillets reach
+### 2.1 The legacy data structure, or the fillets' reconstruction on the Boolean engine
 
-Phase 5 ported a member-level slice of TopOpeBRepBuild, DS and Tool for `WireToFace::MakeFaces` (phase5-6-plan.md
-2.11). The fillets need far more of it: `HBuilder::Perform` and `MergeSolid` reach the grid, `ffsfs`, `fctwes`,
-`makefaces`/`makesolids`, the regularisations (`SREGU`/`FREGU`) and the KPart files.
+**How the fillets use it.** ChFi3d computes each fillet's surfaces, their boundary curves with pcurves, and the points
+where they meet the solid's edges, and records them in a `TopOpeBRepDS_DataStructure` as interferences: this face
+is cut by this curve, this edge by this point, this new surface is bounded by these curves, on this side
+(transitions). It never builds a face itself. `TopOpeBRepBuild_HBuilder::Perform` does all the topology: it splits
+the original faces along the trimming curves and keeps the side the transitions say, builds the fillet faces from
+the new surfaces and curves, splits edges at the points, and `MergeSolid` assembles the result. ChFi3d then reads the
+builder back: `IsSplit`, `Splits` and `Merged` for the result and the vertex tolerances, `NewFaces` for the history
+and for `SetRegul` (`ChFi3d_Builder.cxx:406–574`, `ChFi3d_FilBuilder.cxx:2606–2624`).
 
-**Recommendation: port the classes the fillets reach, whole** (about 79,000 lines, 72,000 new), extending phase 5's
-files where they exist, as phase 6 did for ShapeFix (question 16). The alternatives:
+So the data structure's **core** is ChFi3d's and ChFiKPart's own data model and is needed whatever happens:
+`DataStructure`, `HDataStructure`, `Curve`, `Point`, `Surface`, the interferences (`Interference`,
+`CurvePointInterference`, `SurfaceCurveInterference`, `SolidSurfaceInterference` and their bases), `Transition`,
+`Kind`, the iterators and explorers, and a handful of TopOpeBRepTool functions (`TOOL::Nt`, `GeomTool`, `BSPLINE1`).
+That is about 8,000 to 10,000 lines. The other **≈ 69,000 lines** of the closure (TopOpeBRepBuild 37,300 and the
+parts of DS and Tool only the builder uses: EXPORT, the filters, reducers and interference processors, CORRISO,
+REGUW/REGUS, FuseEdges, PURGE...) serve only `Perform` and `MergeSolid`. Those are what a rebuild would replace.
 
-- **A member-level slice**, as 2.11. It saves perhaps 10 to 25% of TopOpeBRepBuild and Tool, but every member needs
-  a trace, a later caller may need what was left out, and the slice is hard to review against OCCT.
-- **Fillets on BOPAlgo instead** (a rewrite of ChFi3d's Compute). Not a port: results would differ from native in
-  ways the oracle couldn't attribute, and upstream fixes would no longer carry across.
+**The three options for that part:**
+
+| | A. Port it, whole | B. Port a traced slice | C. Rebuild on the Boolean engine |
+|---|---|---|---|
+| Work | ≈ 69,000 lines ported mechanically (≈ 65,000 new): four or five units | 10 to 25% less, plus a trace of what native fillets call | ≈ 4,000 to 6,000 lines of new C#, designed rather than ported: one design unit and one or two of debugging |
+| Tokens (phases 5 and 6's helpers used 0.3 to 0.5 million per unit) | ≈ 2 million | ≈ 1.6 to 1.8 million | ≈ 1 to 1.5 million, with an open-ended tail (below) |
+| Fillet results against native | byte-identical where native is repeatable, as the Booleans | the same | geometrically equal at best; face, edge and vertex order, splits and tolerances differ, so no byte comparison |
+| History (`Generated`, `Modified`) | native's | native's | the same faces, in another order; build123d.NET's selections by history usually agree, by index may not |
+| Upstream fixes | carry across | carry across, unless they reach a member left out | ChFi3d's do; the builder's are irrelevant |
+
+**What option C would be.** A `ChFi3d_Reconstruction` that reads the same data structure and answers the same
+questions (`Perform`, `MergeSolid`, `IsSplit`, `Splits`, `Merged`, `NewFaces`), so ChFi3d stays a faithful port:
+
+1. **Edges** from the DS curves and points, with their pcurves on the fillet surfaces and the support faces (≈ 600
+   lines).
+2. **Fillet faces** from the DS surfaces bounded by those edges (`BOPAlgo_BuilderFace`, ≈ 500).
+3. **Split support faces** by the trimming edges and the split original edges (`BOPAlgo_BuilderFace` again), keeping
+   the pieces on the side the interferences' transitions give, dropping the strip under the fillet (≈ 1,000).
+4. **Assemble** the shells and solids with shared edges and vertices (`BOPAlgo_ShellSplitter`, `MakeConnexityBlocks`),
+   one solid per input solid, shells kept as shells (≈ 800).
+5. **The history and the queries** ChFi3d makes afterwards (≈ 300), tolerances and `SetRegul`'s input (≈ 200).
+6. **The cases that make TopOpeBRepBuild long:** seams and closed edges, faces touched by several stripes, corners
+   with three or more faces, chamfers, fillets on shells and compounds of solids, degenerate DS curves, fillets ending
+   inside a face, `badShape` for partial results (≈ 1,000 to 2,000).
+
+The tail is the risk. Without a line-by-line reference, every difference from native in the blend and chamfer grids
+(849 corpus cases) and in build123d.NET's tests needs judging: is it equal geometry in another order, or a
+reconstruction bug? That triage, not the first 5,000 lines, is where C's tokens would go, and it continues as each
+new case appears. C also makes the port's fillets differ from native permanently, which phase 9's switch-over would
+have to accept.
+
+**Recommendation: decide late, with measurements.** Everything up to the builder is needed by all three options:
+Blend, BlendFunc, BRepBlend, ChFiDS, the data structure's core, ChFiKPart and ChFi3d_Builder (section 4's fillet
+path, about 100,000 lines). Port those first, testing ChFi3d by comparing its data structure before `Perform` with
+native's (a recorder dumps it). Then decide (question 24), knowing exactly which interference kinds and builder paths
+the corpus and build123d.NET reach, and with a working fillet front end to try C's first four steps on cheaply. As of
+today A remains the safer choice: it costs more tokens once and none in triage afterwards.
 
 Either way the data structure's shared state changes form:
 
@@ -298,7 +349,7 @@ tests can use corpus inputs).
 | **7E** Offset foundations (the offset pilot) | BRepOffset but MakeOffset: Analyse, Tool, Inter2d, Inter3d, Offset, Interval, the package, MakeSimpleOffset and its writers; ChFi3d's package functions (`DefineConnectType`, `IsTangentFaces`, `ConcaveSide`...) with `ChFi3d_Coefficient`, `TopOpeBRepTool_TOOL::Nt` and `ChFiDS_TypeOfConcavity`. **Design:** copy at entry for the offset family (2.2, `Locked(false)`) | 16.4 | 7A (ShapeCustom_Curve2d) | Unit tests: BRepOffset_Analyse's edge types on primitives and Boolean results against recorded native types; BRepOffset_Offset's faces. Oracle: indirect (7F) |
 | **7H** LocOpe | All of LocOpe (SplitShape, WiresOnShape, Spliter, Generator, Gluer, SplitDrafts, DPrism, Prism, Revol, Pipe, LinearForm, RevolutionForm, the finders and builders) | 15.8 | phase 6 | Recorded: LocOpe_SplitShape and Spliter on faces of data/occ shapes; frozen inputs (2.2) |
 | **7J** Blend functions | Blend, BlendFunc, ChFiDS | 23.2 | phase 6 | Unit tests: BlendFunc's functions (ConstRad, EvolRad, Chamfer, ConstThroat, Ruled, CSConstRad...) value and derivatives against finite differences and recorded native values; ChFiDS's data |
-| **7L1** TopOpeBRepTool (the legacy-DS pilot) | The 21 classes of TopOpeBRepTool the fillets reach (TOOL, TOPOLOGY, CORRISO, REGUW, REGUS, CurveTool, FuseEdges, PURGE, makeTransition, ShapeTool, CLASSI, 2d, PROJECT, GEOMETRY, tol, HBoxTool, connexity, face, box...), extending phase 5's files. **Design:** the context for the data structure's shared state (2.1) | 19.0 | phase 6 | Unit tests on OCCT's own uses (classification, regularisation of faces and wires from the blend group's inputs) against recorded native results |
+| **7L** The data structure's core (the legacy-DS pilot) | The TopOpeBRepDS classes ChFi3d and ChFiKPart use themselves (DataStructure, HDataStructure, Curve, Point, Surface, the interferences, Transition, Kind, the iterators and explorers, BuildTool's members they call) and TopOpeBRepTool's `TOOL::Nt`, `GeomTool`, `BSPLINE1`, extending phase 5's files (2.1). **Design:** the context for the data structure's shared state | ≈ 10 | phase 6 | Unit tests: a data structure filled by hand, its interferences and iterators against OCCT's semantics; a recorder that dumps a native fillet's DS before `Perform`, for 7N1 and 7N2 |
 | **7P** HLR foundations | Intrv, TopBas, TopCnx, HLRAlgo, Contap | 15.3 | phase 6 | Unit tests: HLRAlgo's projector and edge status; Contap's contours on quadrics and B-splines against recorded native points |
 
 ### Wave 2
@@ -309,7 +360,6 @@ tests can use corpus inputs).
 | **7F** The 3D offset | `BRepOffset_MakeOffset` (15,500 lines in four files), `BRepOffsetAPI_MakeOffsetShape`, `MakeThickSolid` | 16.5 | 7E | GT: BRepOffset_MakeOffset (1,029 lines), BRepOffsetAPI_MakeThickSolid. Oracle: MakeThickSolid, MakeOffsetShape, MakeOffset (bound), section 3's cases |
 | **7I** BRepFeat | All of BRepFeat (MakePrism, MakeDPrism, MakeRevol, MakePipe, MakeLinearForm, MakeRevolutionForm, MakeCylindricalHole, SplitShape, Gluer, Builder, Form, RibSlot...) | 16.8 | 7H | Oracle: `BRepFeat_MakeDPrism`, `SplitShape` (bound). Recorded: the other makers on the feat group's inputs |
 | **7K** BRepBlend | All of BRepBlend (Walking, the lines, the surface and restriction tools, AppSurf/AppFunc, the CS and RS walkers, Extremity, PointOnRst...) | 19.3 | 7J | Unit tests: walking a constant-radius blend between two planes, a plane and a cylinder, two B-splines, step by step against recorded native steps |
-| **7L2** TopOpeBRepDS | The 49 classes the fillets reach (DataStructure, HDataStructure, the interferences, Curve/Point/Surface data, the EXPORT, filters, reducers and processors, BuildTool, the iterators) | 23.0 | 7L1 | Unit tests: a data structure built by hand, its interference reduction against recorded native results |
 | **7Q1** HLR data | HLRTopoBRep (all), HLRBRep's data model, curves, surfaces and intersector | 14.7 | 7P | Recorded: HLRBRep_Data on the hlr group's shapes |
 
 ### Wave 3
@@ -318,27 +368,29 @@ tests can use corpus inputs).
 |---|---|---:|---|---|
 | **7C** ShapeProcess | ShapeProcess, ShapeProcessAPI, `Resource_Manager`; the operator library; OCCT's default resource files embedded (2.3) | 4.1 | 7B | Recorded: `ShapeProcessAPI_ApplySequence` with OCCT's default sequences on the heal group's inputs |
 | **7G** Drafts and the rest of TKOffset | Draft, `BRepOffsetAPI_DraftAngle`, `MakeDraft`, `NormalProjection`, `FindContigousEdges`; `BRepFill_Draft`, `DraftLaw`, `AdvancedEvolved` (MakeEvolved's volume mode); `BRepAlgo_NormalProjection`; BiTgte | 13.2 | 7E | Oracle: DraftAngle (bound) on section 3's cases and build123d.NET's Draft and ExtrudeTaper inputs. Recorded: MakeDraft, BiTgte_Blend, AdvancedEvolved |
-| **7M1** TopOpeBRepBuild's tools | GTopo, GTool, GIter, Pave, PaveSet, PaveClassifier, Area1d/3dBuilder, EdgeBuilder, FaceBuilder, SolidBuilder, ShellFaceSet, ShellFaceClassifier, ShellToSolid, Tools, Tools2d, FuseFace, CorrectFace2d, VertexInfo, extending phase 5's files | 9.7 | 7L2 | Unit tests: face and solid building from hand-made shape sets against recorded native results |
+| **7M1** The rest of DS and Tool (option A or B of 2.1) | The TopOpeBRepDS and TopOpeBRepTool classes only the builder uses: EXPORT, the filters, reducers and interference processors, EIR, Check; TOOL's rest, TOPOLOGY, CORRISO, REGUW, REGUS, CurveTool, FuseEdges, PURGE, makeTransition, ShapeTool, CLASSI, 2d, PROJECT, GEOMETRY, tol, HBoxTool, connexity, face, box | ≈ 31 | 7L, question 24 | Unit tests: interference reduction and the regularisations on the DS dumps of 7L's recorder |
+| **7M2** TopOpeBRepBuild's tools (option A or B) | GTopo, GTool, GIter, Pave, PaveSet, PaveClassifier, Area1d/3dBuilder, EdgeBuilder, FaceBuilder, SolidBuilder, ShellFaceSet, ShellFaceClassifier, ShellToSolid, Tools, Tools2d, FuseFace, CorrectFace2d, VertexInfo, extending phase 5's files | 9.7 | 7M1 | Unit tests: face and solid building from hand-made shape sets against recorded native results |
 | **7Q2** HLR algorithms | The rest of HLRBRep (Algo, InternalAlgo, PolyAlgo, Hider, HLRToShape, PolyHLRToShape, the shape bounds and tools), HLRAppli | 14.2 | 7Q1 | Recorded: exact and polygonal HLR of the hlr group's shapes; the visible, hidden, outline and iso compounds compared as BRep text |
 
 ### Wave 4
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **7M2** TopOpeBRepBuild's builder | Builder (19,300 lines, its grid, merge, section, KPart, regularisation files), Builder1, BuilderON, HBuilder. Probably forked in two | 27.6 | 7M1 | Unit tests: HBuilder's Perform and MergeSolid on data structures recorded from native fillet runs (a recorder dumps the DS before `Perform`), the merged faces and solids compared with native's |
-| **7N1** Fillet construction data | ChFiKPart (the analytic cases: plane/plane, plane/cylinder, cylinder/cylinder, cone, torus, sphere...), `ChFi3d_Builder_0` | 12.5 | 7K, 7L2 | Unit tests: each ChFiKPart case's surfaces and data written into the DS against recorded native data |
+| **7M3** TopOpeBRepBuild's builder (option A or B) | Builder (19,300 lines, its grid, merge, section, KPart, regularisation files), Builder1, BuilderON, HBuilder. Probably forked in two | 27.6 | 7M2 | Unit tests: HBuilder's Perform and MergeSolid on data structures recorded from native fillet runs (a recorder dumps the DS before `Perform`), the merged faces and solids compared with native's |
+| **7N1** Fillet construction data | ChFiKPart (the analytic cases: plane/plane, plane/cylinder, cylinder/cylinder, cone, torus, sphere...), `ChFi3d_Builder_0` | 12.5 | 7K, 7L | Unit tests: each ChFiKPart case's surfaces and data written into the DS against recorded native data |
 
 ### Wave 5
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **7N2** The fillet builder | `ChFi3d_Builder` (its `_1`, `_2`, `_6`, `_C1`, `_C2`, `_CnCrn`, `_SpKP` files), `BRepAlgo_NormalProjection` if 7G hasn't merged | 21.8 | 7M2, 7N1 | Oracle: indirect (7N3); unit tests on stripes and corners from recorded native runs |
+| **7N2** The fillet builder | `ChFi3d_Builder` (its `_1`, `_2`, `_6`, `_C1`, `_C2`, `_CnCrn`, `_SpKP` files), `BRepAlgo_NormalProjection` if 7G hasn't merged; `Compute` stops before `Perform` until 7M3 or 7R | 21.8 | 7N1 | Unit tests: the DS before `Perform` against 7L's native dumps, over the blend and chamfer grids' inputs and build123d.NET's fillets; stripes and corners. **Then question 24 is decided**, with these measurements |
+| **7R** The reconstruction (option C of 2.1, instead of 7M1 to 7M3) | A new `ChFi3d_Reconstruction` on BOPAlgo answering `Perform`, `MergeSolid`, `IsSplit`, `Splits`, `Merged`, `NewFaces` | ≈ 5 (C#, new) | 7N2, question 24 | Geometric comparison with native (volumes, areas, face and edge counts, validity, history as sets) |
 
 ### Wave 6
 
 | Unit | Content | k lines | Needs | Tests |
 |---|---|---:|---|---|
-| **7N3** Fillets and chamfers | `ChFi3d_FilBuilder`, `ChFi3d_ChBuilder`, `BRepFilletAPI_MakeFillet`, `MakeChamfer`, `LocalOperation`; FilletSurf | 12.8 | 7N2 | GT: BRepFilletAPI_MakeFillet (535 lines), MakeChamfer (249). Oracle: MakeFillet and MakeChamfer (bound), section 3's cases, histories and diagnostics (2.6) |
+| **7N3** Fillets and chamfers | `ChFi3d_FilBuilder`, `ChFi3d_ChBuilder`, `BRepFilletAPI_MakeFillet`, `MakeChamfer`, `LocalOperation`; FilletSurf | 12.8 | 7N2, and 7M3 or 7R | GT: BRepFilletAPI_MakeFillet (535 lines), MakeChamfer (249). Oracle: MakeFillet and MakeChamfer (bound), section 3's cases, histories and diagnostics (2.6) |
 
 ### Wave 7: harnesses
 
@@ -355,24 +407,51 @@ tests can use corpus inputs).
 | Helix | 7D | 2.1 |
 | Offsets and drafts | 7E, 7F, 7G | 46.1 |
 | Features | 7H, 7I | 32.6 |
-| Fillets | 7J, 7K, 7N1, 7N2, 7N3 | 89.6 |
-| The legacy data structure | 7L1, 7L2, 7M1, 7M2 | 79.3 (≈ 72 new) |
+| Fillets, and the data structure's core | 7J, 7K, 7L, 7N1, 7N2, 7N3 | ≈ 100 |
+| The rest of the data structure (option A; B a little less) | 7M1, 7M2, 7M3 | ≈ 69 (≈ 65 new) |
+| *or* the reconstruction (option C) | 7R | ≈ 5 (C#, new) |
 | HLR | 7P, 7Q1, 7Q2 | 44.2 |
 | Draw-lite, harnesses | 7W, 7X | ≈ 5 (C#) |
 
-That is about **317,000 lines in 21 units** (about 310,000 new), plus the two harness units.
+With option A that is about **317,000 lines in 21 units** (about 310,000 new), plus the two harness units; with
+option C, about 250,000 lines and a new reconstruction of about 5,000.
 
-**The critical path** is the fillets: 7L1 → 7L2 → 7M1 → 7M2 → 7N2 → 7N3 → 7X. 7J → 7K → 7N1 run beside it. It is
-also the path to build123d.NET's most used phase 7 call.
+**The critical path** is the fillets: 7J → 7K → 7N1 → 7N2 → (question 24) → 7M1 → 7M2 → 7M3 (or 7R) → 7N3 → 7X, with
+7L beside 7J and 7K. It is also the path to build123d.NET's most used phase 7 call.
 
-- **7A, 7E and 7L1 are the pilots.** Healing's copy-at-entry audit lands in 7A, the offset family's copy at entry
-  (with `Locked(false)`) in 7E, and the data structure's context in 7L1. Each should be reviewed before 7B, 7F and
-  7L2.
-- **Six units can start at once:** 7A, 7D, 7H, 7J, 7L1 and 7P. 7E follows as soon as 7A has ported
-  `ShapeCustom_Curve2d`, which 7A does first.
-- **Off the critical path** and startable early: everything but the fillets. Healing, features and helix unblock the
-  most corpus cases per line (1.6); offsets and drafts the most build123d.NET operations after fillets. HLR is last in
-  value (no build123d.NET use, 157 corpus cases) and can run whenever a porter is free.
+- **7A, 7E and 7L are the pilots.** Healing's copy-at-entry audit lands in 7A, the offset family's copy at entry
+  (with `Locked(false)`) in 7E, and the data structure's context in 7L. Each should be reviewed before 7B, 7F and
+  7N1.
+- **Off the critical path:** everything but the fillets. Healing, features and helix unblock the most corpus cases
+  per line (1.6); offsets and drafts the most build123d.NET operations after fillets. HLR is last in value (no
+  build123d.NET use, 157 corpus cases).
+
+### Running order: tokens before speed
+
+The owner's answer to question 30: prefer fewer tokens to a shorter elapsed time. Phases 5 and 6 ran up to six
+helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on overlapping files add merge work. So:
+
+- **At most two units at a time,** chosen to touch disjoint parts of the tree (one in `src`, one in Draw-lite or a
+  different package), so a merge never needs more than the merge tool's own resolutions.
+- **No forks inside units** unless a unit is over about 25,000 lines (7M3).
+- **Each stage's Draw-lite commands go with the stage's last unit,** done by the helper that already has the
+  context, instead of a separate Draw-lite unit at the end. 7W keeps only the cheap gaps of 1.6.
+- **Helpers run their own test projects; the full suite runs once, at the merge gate.**
+- **Briefs carry the earlier units' notes,** so helpers don't spend tokens rediscovering conventions.
+
+| Step | Units (at most two at once) | Notes |
+|---:|---|---|
+| 1 | 7W (the cheap Draw-lite gaps, question 28) ‖ 7A ShapeCustom | 7W first fixes or attributes the four modalg cases the new scan default exposed (`DrawBooleanCorpusTests.NotYetAttributed`, decision 972) |
+| 2 | 7B ShapeUpgrade ‖ 7D helix | 7D ends with the helix commands |
+| 3 | 7C ShapeProcess, with the healing commands ‖ 7E offset foundations | healing's corpus (2,604 cases) runs here |
+| 4 | 7F MakeOffset ‖ 7H LocOpe | |
+| 5 | 7G drafts, with the offset and draft commands ‖ 7I BRepFeat, with the feature commands | |
+| 6 | 7X's first part (build123d.NET's healing, offset, draft and feature operations; `Quantity_Color`) ‖ 7J blend functions | |
+| 7 | 7K BRepBlend ‖ 7L the data structure's core | |
+| 8 | 7N1, then 7N2 | one at a time: the fillet front end |
+| 9 | **Report and decide question 24** | with 7N2's measurements |
+| 10 | 7M1 → 7M2 → 7M3, or 7R; then 7N3 with the fillet and chamfer commands; then 7X's fillet part | one at a time |
+| 11 | 7P → 7Q1 → 7Q2 with the HLR commands, if question 25 keeps HLR | |
 
 ## 5. Milestones
 
@@ -405,27 +484,15 @@ also the path to build123d.NET's most used phase 7 call.
 
 ## 7. Questions for the owner
 
-These are in [open-questions.md](open-questions.md) as 24 to 30, with the provisional answers the units would follow.
+These are in [open-questions.md](open-questions.md) as 24 to 30. The owner answered on 31 October:
 
-1. **The legacy data structure for fillets** (24). Port the TopOpeBRepBuild, DS and Tool classes the fillets reach,
-   whole (about 79,000 lines, 72,000 new)? The alternatives are a member-level slice (perhaps 10 to 25% smaller, as
-   2.11 of phases 5 and 6) or fillets rebuilt on BOPAlgo (not a port). Recommended: whole classes.
-2. **HLR and helix** (25). build123d.NET uses neither (its helix is built from ported pieces). Keep both in phase 7?
-   Recommended: helix yes (small, OCCT 8's GTests, 60 corpus cases); HLR yes but last, and deferrable if Bento has no
-   use for drawings.
-3. **ShapeProcess's resource files** (26). Embed OCCT's default resource files and read others only when given a path,
-   rather than OCCT's environment variables? Recommended: yes.
-4. **Bindings to widen the oracle** (27). Bind in build123d.NET (your repository): ShapeUpgrade's ShapeDivideAngle,
-   ShapeDivideContinuity, ShapeDivideClosed and ShapeConvertToBezier; `ShapeProcessAPI_ApplySequence`; BRepFeat's
-   MakePrism, MakeRevol and MakeLinearForm; `LocOpe_SplitShape`; `HLRBRep_Algo`, `PolyAlgo`, `HLRToShape`;
-   `HelixBRep_BuilderHelix`; `BiTgte_Blend`; `FilletSurf_Builder`; `BRepOffsetAPI_MakeDraft`? Without them those are
-   checked by native recorders and the corpus.
-5. **Draw-lite's cheap gaps** (28). Add the non-phase-7 commands that would unblock 885 corpus cases (`lastrep` as a
-   stub, `proj`, `shape`, `project`, `convert`, `projonplane`...) in 7W? Viewer commands stay out but for the setup
-   no-ops a few cases need (`vzfit`, the Draw view commands). Recommended: yes.
-6. **The corpus scan's default** (29). Make `FollowsCalledProcsOnly` (unit 5W) the default at the start of phase 7?
-   It counts a case's procedures only where they are called, so the modalg grids' unused `OFFSETSHAPE` stops blocking
-   them; it changes several existing tests' expected counts. This plan's counts assume it. Recommended: yes.
-7. **Order of the stages** (30). The fillets are the critical path and build123d.NET's most used phase 7 call, but
-   healing, features and helix unblock more corpus cases sooner. Start everything that can start (section 4's wave
-   1), and give spare porters to the fillet path? Recommended: yes.
+1. **The legacy data structure for fillets** (24). *Open.* The owner asked for an estimate of rebuilding the fillets'
+   reconstruction on the Boolean engine; it is in 2.1. The plan ports what all three options need first, and the
+   question is decided at step 9 of the running order, with measurements. Leaning: option A.
+2. **HLR and helix** (25). *Open for HLR* (explained in 1.5); it runs last, at step 11. Helix stays in phase 7.
+3. **ShapeProcess's resource files** (26). *Answered:* OCCT's defaults, embedded.
+4. **Bindings to widen the oracle** (27). *Answered: yes.* Each unit adds the bindings it needs to build123d.NET's
+   `bindings/occt.txt` on a branch there, for the owner to merge; recorders cover what the shim can't bind.
+5. **Draw-lite's cheap gaps** (28). *Answered: yes,* in 7W at step 1.
+6. **The corpus scan's default** (29). *Answered: yes,* and done before phase 7 starts.
+7. **Order of the stages** (30). *Answered:* tokens before speed. The running order in section 4.
