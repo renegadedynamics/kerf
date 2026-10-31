@@ -9403,3 +9403,13 @@ their merged numbers.
         w2 ...` → `BRepFill_Generator`: `AddWire` each, `Perform`, `Shell()`. `ruled result e1 e2` / `ruled result w1
         w2` → `BRepFill.Face` / `BRepFill.Shell` (5S1). The corpus's 120 `specific` thrusection cases need vertex,
         edge, polyline, circle, pbsplinecurve, beziercurve, ellipse and mkedge.
+
+## Phases 5 and 6: integration (31 October 2026)
+
+944. **Looping lofts get 40 native reruns in the ThruSections oracle, not 16.** `Looping_sections_first_also_last`
+     failed once in a full-suite run (case 12, a tilted smooth loft whose first section is also its last): the port's
+     poles differed from native's around the 13th significant digit, and no native rerun on new TShapes matched within
+     16. Run alone it passes on the first native run, twice. Native's result there depends on TShape addresses
+     (decision 908), and after the rest of the Oracle suite native's heap is fragmented enough that the ballast takes
+     more reruns to reach a matching layout. A rerun costs well under a second. If 40 also proves flaky, compare these
+     cases with a tolerance instead.

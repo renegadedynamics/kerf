@@ -123,7 +123,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     }
 
     // Runs one loft on both sides: the sections are indices into the inputs (a looping section repeats the first). When
-    // they differ, native is run again (up to 5 times, 16 for looping sections) on new TShapes: native varies from run to run where CompatibleWires and
+    // they differ, native is run again (up to 5 times, 40 for looping sections, decision 944) on new TShapes: native varies from run to run where CompatibleWires and
     // SearchRoot read maps in TShape-address order (decision 908); a case the port matches on another native run is
     // counted as such, with its name.
     private void Run(string theName, N.TopoDS_Shape[] theNIn, TopoDS_Shape[] thePIn, int[] theSections, Options theO)
@@ -146,7 +146,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 return;
             }
             bool isLooping = theSections.Length > 1 && theSections[0] == theSections[^1];
-            if (anAttempt == (isLooping ? 15 : 4))
+            if (anAttempt == (isLooping ? 39 : 4))
             {
                 // A looping loft whose status alone differs on every native run here: native's status there depends on
                 // TShape addresses (decision 908), and other processes have given the port's; attributed, listed
