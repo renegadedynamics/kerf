@@ -1324,3 +1324,17 @@ line), unless the last column says otherwise.
 | `BRepOffsetAPI_ThruSections` (mutable input, the default) and `BRepFill_Generator` | Write pcurves, ranges, flags and tolerances into the caller's section edges and vertices | Natively the caller's sections change. The port copies frozen sections at Build and gives back the unchanged sub-shapes (decisions 936, 937) |
 | `BRepFill_CompatibleWires` through ThruSections | Maps keyed by shapes iterated in TShape-address order | Native's status and result vary from run to run on lofts whose first section is also the last, and rarely otherwise (1 of 630 random cases); the port is deterministic (decision 940) |
 | `BRepProj_Projection::BuildSection` | A compound target's faces go into a new, unlocked compound, so the section runs destructively and writes pcurves into the caller's target edges | Natively the target changes. On frozen targets the port's section ran destructively into frozen edges and failed (IntersectionFailed); it now runs non-destructively when the target holds frozen shapes (`// OCCT.NET`, decision 939) |
+
+## Phase 5: unit 5W, Draw-lite construction
+
+Found by reading Draw's command sources while porting them. Draw-lite reproduces each, unless the last column says
+otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `qcircle`, `qline` (GeometryTest_CurveTanCommands.cxx) | The help gives the qualifier as `-enclosing`, `-enclosed`...; `GccEnt::PositionFromString` matches only the names without the dash | A qualifier written as the help shows is ignored: the curve is unqualified. Reproduced |
+| `geompipe` (BRepTest_SweepCommands.cxx) | The first edge (`spineedge`) is used as the guide and the second (`profileedge`) as the path; the circle's frame is taken on the path at the guide's first parameter (`ProfileCurve->D1(aSpFirst, ...)`) | The arguments mean the opposite of their names, and the section is misplaced when the two edges' ranges differ. Reproduced |
+| `mksweep` | Accepts 2 or 5 words, so `mksweep wire -C` without tolerances (the help's `[-C [AngTol LinTol]]`) fails with no message | Only `mksweep wire -C AngTol LinTol` corrects the spine. Reproduced |
+| `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
+| `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
+| `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |

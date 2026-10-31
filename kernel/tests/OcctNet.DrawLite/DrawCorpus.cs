@@ -101,6 +101,14 @@ public sealed class DrawCorpus(string theTestsDirectory)
     public bool ReadCaseLists { get; init; } = true;
 
     /// <summary>
+    /// Whether a procedure the case's scripts define counts its body's commands only when something calls it (unit 5W).
+    /// The bugs group's modalg grids define <c>OFFSETSHAPE</c> in their begin script, which calls phase 7's offset
+    /// commands, and only a few of their cases call it. False (the default) counts every defined procedure's body, as
+    /// before.
+    /// </summary>
+    public bool FollowsCalledProcsOnly { get; init; }
+
+    /// <summary>
     /// The directory a grid's cases are in: the grid's own, or the one the first line of its <c>cases.list</c> names
     /// relative to it (TestCommands.tcl's <c>test</c>: "check if this grid is aliased to another one"); null if the
     /// grid has a cases.list and <see cref="ReadCaseLists"/> is off.
@@ -284,9 +292,27 @@ public sealed class DrawCorpus(string theTestsDirectory)
     {
         var aCommands = new HashSet<string>(StringComparer.Ordinal);
         var aDefined = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, string>? aBodies = FollowsCalledProcsOnly ? new(StringComparer.Ordinal) : null;
         try
         {
-            Collect(Script(theCase), aCommands, aDefined, theDepth: 0);
+            Collect(Script(theCase), aCommands, aDefined, theDepth: 0, aBodies);
+            // the case's own procedures, once called (FollowsCalledProcsOnly)
+            var aCalled = new Stack<string>(aCommands);
+            var aDone = new HashSet<string>(StringComparer.Ordinal);
+            while (aBodies is not null && aCalled.TryPop(out string? aCall))
+            {
+                if (!aDone.Add(aCall) || !aBodies.TryGetValue(aCall, out string? aBody))
+                {
+                    continue;
+                }
+
+                var aBodyCommands = new HashSet<string>(StringComparer.Ordinal);
+                Collect(aBody, aBodyCommands, aDefined, theDepth: 1, aBodies);
+                foreach (string aNew in aBodyCommands.Where(aCommands.Add))
+                {
+                    aCalled.Push(aNew);
+                }
+            }
         }
         catch (DrawException)
         {
@@ -410,7 +436,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
         "dputs", "lassign", "linsert", "lreplace", "global", "upvar", "variable", "unset", "info", "file", "source",
     };
 
-    private static void Collect(string theScript, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth)
+    private static void Collect(string theScript, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth,
+                                Dictionary<string, string>? theProcBodies = null)
     {
         if (theDepth > 20)
         {
@@ -452,7 +479,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 // Bracketed parts always run
                 foreach (WordPart aPart in aWord.Parts)
                 {
-                    CollectSubstitutions(aPart, theCommands, theDefined, theDepth);
+                    CollectSubstitutions(aPart, theCommands, theDefined, theDepth, theProcBodies);
                 }
 
                 if (i == 0 || aWord.Literal is not { } aText)
@@ -460,15 +487,22 @@ public sealed class DrawCorpus(string theTestsDirectory)
                     continue;
                 }
 
+                // a procedure's body, kept until something calls it (FollowsCalledProcsOnly)
+                if (theProcBodies is not null && aName == "proc" && i == 3 && aWords[1].Literal is { } aProcName)
+                {
+                    theProcBodies[aProcName.TrimStart(':')] = aText;
+                    continue;
+                }
+
                 switch (Role(aName, aWords, i))
                 {
                     case ArgumentRole.Script:
-                        Collect(aText, theCommands, theDefined, theDepth + 1);
+                        Collect(aText, theCommands, theDefined, theDepth + 1, theProcBodies);
                         break;
                     case ArgumentRole.Expression:
                         foreach (WordPart aPart in TclParser.ParseSubst(aText, theBackslashes: false))
                         {
-                            CollectSubstitutions(aPart, theCommands, theDefined, theDepth);
+                            CollectSubstitutions(aPart, theCommands, theDefined, theDepth, theProcBodies);
                         }
 
                         break;
@@ -477,7 +511,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
                         IReadOnlyList<string> aPairs = TclList.IsList(aText) ? TclList.Parse(aText) : [];
                         for (int k = 1; k < aPairs.Count; k += 2)
                         {
-                            Collect(aPairs[k], theCommands, theDefined, theDepth + 1);
+                            Collect(aPairs[k], theCommands, theDefined, theDepth + 1, theProcBodies);
                         }
 
                         break;
@@ -485,24 +519,25 @@ public sealed class DrawCorpus(string theTestsDirectory)
 
                     case ArgumentRole.Unknown when aWord.IsBraced && aText.Contains('\n'):
                         // A braced multi-line argument of an unknown command is most likely a script
-                        Collect(aText, theCommands, theDefined, theDepth + 1);
+                        Collect(aText, theCommands, theDefined, theDepth + 1, theProcBodies);
                         break;
                 }
             }
         }
     }
 
-    private static void CollectSubstitutions(WordPart thePart, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth)
+    private static void CollectSubstitutions(WordPart thePart, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth,
+                                             Dictionary<string, string>? theProcBodies = null)
     {
         switch (thePart)
         {
             case WordPart.Command aBracketed:
-                Collect(aBracketed.Script, theCommands, theDefined, theDepth + 1);
+                Collect(aBracketed.Script, theCommands, theDefined, theDepth + 1, theProcBodies);
                 break;
             case WordPart.Variable { Index: { } anIndex }:
                 foreach (WordPart anIndexPart in anIndex)
                 {
-                    CollectSubstitutions(anIndexPart, theCommands, theDefined, theDepth);
+                    CollectSubstitutions(anIndexPart, theCommands, theDefined, theDepth, theProcBodies);
                 }
 
                 break;

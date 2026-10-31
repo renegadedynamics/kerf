@@ -7,10 +7,15 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// GeometryTest_ConstraintCommands.cxx's <c>gcarc</c> (segments and arcs of circles through points, GC),
-/// <c>cirtang</c> and <c>lintan</c> (circles and lines under constraints, Geom2dGcc), and
-/// GeometryTest_APICommands.cxx's <c>extrema</c> (GeomAPI_ExtremaCurveCurve, CurveSurface, SurfaceSurface).
+/// <c>cirtang</c> and <c>lintan</c> (circles and lines under constraints, Geom2dGcc), <c>interpol</c> and
+/// <c>tanginterpol</c> (GeomAPI_Interpolate and Geom2dAPI_Interpolate, unit 5W), and GeometryTest_APICommands.cxx's
+/// <c>extrema</c> (GeomAPI_ExtremaCurveCurve, CurveSurface, SurfaceSurface).
 /// </summary>
-/// <remarks>Draw's curve colour changes around the constraint commands' results are left out (no viewer).</remarks>
+/// <remarks>
+/// Draw's curve colour changes around the constraint commands' results are left out (no viewer). <c>interpol</c>'s
+/// interactive mode (<c>interpol name</c>: points picked in a view) prints its prompt and makes nothing, as when no
+/// view is picked; its file mode is ported.
+/// </remarks>
 internal static class GeometryTestCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
@@ -18,7 +23,170 @@ internal static class GeometryTestCommands
         DrawCxx.Add(theInterpreter, "cirtang", Cirtang);
         DrawCxx.Add(theInterpreter, "lintan", Lintang);
         DrawCxx.Add(theInterpreter, "gcarc", GcArc);
+        DrawCxx.Add(theInterpreter, "interpol", interpol);
+        DrawCxx.Add(theInterpreter, "tanginterpol", tanginterpol);
         DrawCxx.Add(theInterpreter, "extrema", Extrema);
+    }
+
+    private static int interpol(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n == 1)
+        {
+            di.Append("give a name to your curve !\n");
+            return 0;
+        }
+        if (n == 2)
+        {
+            di.Append("Pick points \n");
+            // dout.Select: Draw-lite has no view, so nothing is picked (id < 0)
+            return 0;
+        }
+        else if (n == 3)
+        {
+            // lecture du fichier.
+            // nbpoints, 2d ou 3d, puis valeurs.
+            string nomfic = a[2];
+            if (!theDI.Files.TryReadBytes(nomfic, out byte[] aBytes))
+            {
+                return 1;
+            }
+            using var iFile = new StringReader(System.Text.Encoding.Latin1.GetString(aBytes));
+            int nbp = 0, i;
+            double x, y, z;
+            Standard_Stream.Read(iFile, ref nbp);
+            const int aBufferSize = 3;
+            string dimen = Standard_Stream.ReadWord(iFile, aBufferSize) ?? "";
+            if (dimen == "3d")
+            {
+                var Point = new NCollection_HArray1<gp_Pnt>(1, nbp);
+                for (i = 1; i <= nbp; i++)
+                {
+                    GeomTools.GetReal(iFile, out x);
+                    GeomTools.GetReal(iFile, out y);
+                    GeomTools.GetReal(iFile, out z);
+                    Point.SetValue(i, new gp_Pnt(x, y, z));
+                }
+                var anInterpolator = new GeomAPI_Interpolate(Point, false, 1.0e-5);
+                anInterpolator.Perform();
+                if (anInterpolator.IsDone())
+                {
+                    Geom_BSplineCurve C = anInterpolator.Curve();
+                    DrawTrSurf.Set(theDI, a[1], C);
+                }
+            }
+            else if (dimen == "2d")
+            {
+                var PointPtr = new NCollection_HArray1<gp_Pnt2d>(1, nbp);
+                for (i = 1; i <= nbp; i++)
+                {
+                    GeomTools.GetReal(iFile, out x);
+                    GeomTools.GetReal(iFile, out y);
+                    PointPtr.SetValue(i, new gp_Pnt2d(x, y));
+                }
+                var a2dInterpolator = new Geom2dAPI_Interpolate(PointPtr, false, 1.0e-5);
+                a2dInterpolator.Perform();
+                if (a2dInterpolator.IsDone())
+                {
+                    Geom2d_BSplineCurve C = a2dInterpolator.Curve();
+                    DrawTrSurf.Set(theDI, a[1], C);
+                }
+            }
+        }
+        return 0;
+    }
+
+    private static int tanginterpol(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 4)
+        {
+            return 1;
+        }
+
+        int ii, jj, num_tangents, num_read, num_start, num_parameters;
+
+        double tolerance;
+
+        bool periodic_flag = false;
+        gp_Pnt a_point = new();
+        gp_Vec a_vector = new();
+        tolerance = 1.0e-5;
+
+        Geom_BSplineCurve NewCurvePtr;
+
+        num_read = 2;
+        if (a[num_read] == "p")
+        {
+            periodic_flag = true;
+            num_read += 1;
+        }
+        num_parameters = theDI.Atoi(a[num_read]);
+
+        if (num_parameters < 2)
+        {
+            num_parameters = 2;
+        }
+        if (n < num_parameters * 3 + num_read)
+        {
+            return 1;
+        }
+        var PointsArrayPtr = new NCollection_HArray1<gp_Pnt>(1, num_parameters);
+
+        num_tangents = ((n - num_read) / 3) - num_parameters;
+        num_tangents = Math.Max(0, num_tangents);
+        num_tangents = Math.Min(num_parameters, num_tangents);
+        ii = 1;
+        num_start = num_read;
+        num_read += 1;
+        while (num_read <= num_parameters * 3 + num_start)
+        {
+            for (jj = 1; jj <= 3; jj++)
+            {
+                a_point.SetCoord(jj, theDI.Atof(a[num_read]));
+                num_read += 1;
+            }
+            PointsArrayPtr.SetValue(ii, a_point);
+            ii += 1;
+        }
+        var anInterpolator = new GeomAPI_Interpolate(PointsArrayPtr, periodic_flag, tolerance);
+
+        if (num_tangents > 0)
+        {
+            var TangentsArray = new NCollection_Array1<gp_Vec>(1, num_parameters);
+            var TangentFlagsPtr = new NCollection_HArray1<bool>(1, num_parameters);
+
+            for (ii = 1; ii <= num_tangents; ii++)
+            {
+                TangentFlagsPtr.SetValue(ii, true);
+            }
+            for (ii = num_tangents + 1; ii <= num_parameters; ii++)
+            {
+                TangentFlagsPtr.SetValue(ii, false);
+            }
+            ii = 1;
+            while (ii <= num_tangents)
+            {
+                for (jj = 1; jj <= 3; jj++)
+                {
+                    a_vector.SetCoord(jj, theDI.Atof(a[num_read]));
+                    num_read += 1;
+                }
+                TangentsArray.SetValue(ii, a_vector);
+                ii += 1;
+            }
+
+            anInterpolator.Load(TangentsArray, TangentFlagsPtr);
+        }
+        anInterpolator.Perform();
+        if (anInterpolator.IsDone())
+        {
+            NewCurvePtr = anInterpolator.Curve();
+
+            DrawTrSurf.Set(theDI, a[1], NewCurvePtr);
+            di.Append(a[2]).Append(" ");
+        }
+        return 0;
     }
 
     private static int Extrema(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

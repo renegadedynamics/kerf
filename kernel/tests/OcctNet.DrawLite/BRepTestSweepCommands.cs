@@ -6,13 +6,13 @@ namespace OcctNet.DrawLite;
 
 /// <summary>BRepTest's sweep commands (BRepTest_SweepCommands.cxx): prism, revol, pipe and evolved.</summary>
 /// <remarks>
-/// <para>Draw records each sweep's history (BRepTest_Objects::SetHistory) for <c>savehistory</c>, which Draw-lite
-/// doesn't have; the history isn't kept.</para>
+/// <para>Draw records the prism's and the revolution's history (BRepTest_Objects::SetHistory) for <c>savehistory</c>;
+/// Draw-lite records only the pipe's (unit 5W).</para>
 /// <para><c>pipe</c> runs BRepOffsetAPI_MakePipe (unit 5S1, with unit 5S2's BRepFill_Sweep).</para>
 /// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved as far as units 5O2 and 5S2 port it: <c>-v</c> (volume mode)
 /// throws Standard_NotImplemented.</para>
-/// <para>Not here: pruled, gener, thrusections, the sweep commands
-/// (BRepOffsetAPI_MakePipeShell), geompipe and middlepath, which need TKOffset, TKFillet or GeomFill.</para>
+/// <para>The file's other commands (pruled, gener, thrusections, the sweep commands, geompipe and middlepath) are
+/// <see cref="BRepTestPipeShellCommands"/>.</para>
 /// </remarks>
 internal static class BRepTestSweepCommands
 {
@@ -277,7 +277,14 @@ internal static class BRepTestSweepCommands
 
         theDI.SetShape(a[1], S);
 
-        // Draw saves the pipe's history (BRepTest_Objects::SetHistory), which Draw-lite doesn't keep
+        // Save history of pipe
+        if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
+        {
+            var aList = new NCollection_List<TopoDS_Shape>();
+            aList.Append(Profile);
+            aList.Append(Spine);
+            BRepTestHistoryCommands.SetHistory(theDI, aList, PipeBuilder);
+        }
 
         return 0;
     }

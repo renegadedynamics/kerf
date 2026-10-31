@@ -39,6 +39,10 @@ internal static class DrawBuiltins
         BRepTestSweepCommands.Register(theInterpreter);
         BRepTestFillet2DCommands.Register(theInterpreter);
         BRepTestFillingCommands.Register(theInterpreter);
+        BRepTestPipeShellCommands.Register(theInterpreter);
+        BRepTestProjectionCommands.Register(theInterpreter);
+        GeometryTestContinuityCommands.Register(theInterpreter);
+        GeometryTestCurveTanCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
         GeomliteTestCommands.Register(theInterpreter);
         BRepTestExtremaCommands.Register(theInterpreter);

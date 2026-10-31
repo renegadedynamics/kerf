@@ -1,4 +1,4 @@
-// Port of: src/Draw/TKTopTest/GeometryTest/GeometryTest_SurfaceCommands.cxx (sweep, tuyau)
+// Port of: src/Draw/TKTopTest/GeometryTest/GeometryTest_SurfaceCommands.cxx (sweep, tuyau, partuyau)
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
@@ -11,7 +11,7 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// GeometryTest_SurfaceCommands.cxx's pipes (unit 5L2): <c>sweep</c> (a section swept along a path with a chosen
 /// trihedron, GeomFill_Pipe) and <c>tuyau</c> (pipes of constant radius, of a constant or evolving section, through N
-/// sections, or on an edge between two guide lines).
+/// sections, or on an edge between two guide lines); <c>partuyau</c> is <c>tuyau</c> under another name (unit 5W).
 /// </summary>
 /// <remarks>
 /// The file's other commands (<c>ruled</c>, <c>appsurf</c>, <c>fillcurves</c>, ...) are not registered here. A null
@@ -23,6 +23,7 @@ internal static class GeometryTestPipeCommands
     {
         DrawCxx.Add(theInterpreter, "sweep", Sweep);
         DrawCxx.Add(theInterpreter, "tuyau", Tuyau);
+        DrawCxx.Add(theInterpreter, "partuyau", Tuyau);
     }
 
     private static int Sweep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
