@@ -8,7 +8,7 @@ namespace OcctNet.DrawLite.Tests;
 /// <summary>
 /// Unit 5O2's <c>evolved</c> (BRepTest_SweepCommands.cxx) on hand-made spines and profiles, and on OCCT's corpus: the
 /// cases that use it, runnable before and after the unit, and how they end (most need the parts unit 5O2 leaves for
-/// later: BRepFill_Pipe for slanted profile edges, BRepFill_AdvancedEvolved for <c>-v</c>).
+/// later: BRepFill_Sweep (unit 5S2) for slanted profile edges, BRepFill_AdvancedEvolved for <c>-v</c>).
 /// </summary>
 public class DrawEvolvedCommandsTests(ITestOutputHelper output)
 {
@@ -24,7 +24,12 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
-    [Fact(Skip = "Unit 5O2 paused: the script hits a Draw-lite Tcl error (Option local_value requires argument); not yet investigated")]
+    // sprops' or vprops' mass (checkprops needs a value to check against with each option)
+    private static double Mass(DrawInterpreter theDI, string theCommand)
+        => double.Parse(System.Text.RegularExpressions.Regex.Match(theDI.Eval(theCommand), @"Mass :\s+(\S+)").Groups[1].Value,
+                        System.Globalization.CultureInfo.InvariantCulture);
+
+    [Fact]
     public void Evolved_builds_walls_and_solids()
     {
         DrawInterpreter aDI = NewInterpreter();
@@ -32,13 +37,13 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
         aDI.Eval("polyline s 0 0 0 10 0 0 10 10 0 0 10 0 0 0 0");
         aDI.Eval("polyline p 0 0 0 0 0 5");
         Assert.Equal("", aDI.Eval("evolved r -s s -p p"));
-        Assert.Contains("200", aDI.Eval("checkprops r -s"));
+        Assert.Equal(200.0, Mass(aDI, "sprops r"), 1e-9);
         Assert.Equal("", aDI.Eval("evolved r -s s -p p -solid"));
-        Assert.Contains("500", aDI.Eval("checkprops r -v"));
+        Assert.Equal(500.0, Mass(aDI, "vprops r"), 1e-9);
         aDI.Eval("mkplane f s");
         aDI.Eval("polyline q 5 0 0 5 0 4");
         Assert.Equal("", aDI.Eval("evolved r -s f -p q -a"));
-        Assert.Contains("160", aDI.Eval("checkprops r -s"));
+        Assert.Equal(160.0, Mass(aDI, "sprops r"), 1e-9);
         Assert.Contains("This shape seems to be valid", aDI.Eval("checkshape r"));
         // a wrong option, a missing profile, and the unported modes
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r s p"));

@@ -25,8 +25,8 @@ namespace Occt;
 /// </para>
 /// <para>
 /// Not available in this unit: the profile parts that are neither horizontal nor vertical (OCCT's
-/// <c>ElementaryPerform</c>) sweep each spine edge with BRepFill_Pipe, which phase 5's sweep units port;
-/// <see cref="MakePipe"/> throws <see cref="Standard_NotImplemented"/> until then.
+/// <c>ElementaryPerform</c>) sweep each spine edge with BRepFill_Pipe, whose BRepFill_Sweep unit 5S2 ports: until
+/// then they throw <see cref="Standard_NotImplemented"/>.
 /// </para>
 /// </remarks>
 public sealed class BRepFill_Evolved
@@ -2012,12 +2012,56 @@ public sealed class BRepFill_Evolved
         }
     }
 
-    // OCCT.NET: BRepFill_Pipe (phase 5's sweep units) is not ported yet. OCCT sweeps the profile, placed at the start of
-    // the spine edge SE, along SE with BRepFill_Pipe, and records the pipe's edges and faces in myMap(SE). Only
-    // ElementaryPerform (a profile part neither horizontal nor vertical) calls it.
     private void MakePipe(in TopoDS_Edge SE, in gp_Ax3 AxeRef)
     {
-        throw new Standard_NotImplemented("BRepFill_Evolved.MakePipe needs BRepFill_Pipe (unit 5S1)");
+        BRepTools_WireExplorer ProfExp = new();
+
+        gp_Trsf trsf = new();
+        if (Side(myProfile, BRepFill_Confusion()) > 3)
+        { // side right
+            trsf.SetRotation(gp.OZ(), Math.PI);
+        }
+        TopLoc_Location DumLoc = new(trsf);
+        TopoDS_Shape aLocalShape = myProfile.Moved(DumLoc);
+        TopoDS_Wire DummyProf = PutProfilAt(TopoDS.Wire(aLocalShape), AxeRef, SE, mySpine, true);
+
+        // Copy of the profile to avoid the accumulation of
+        // locations on the Edges of myProfile!
+
+        BRepTools_TrsfModification TrsfMod = new(new gp_Trsf());
+        BRepTools_Modifier Modif = new(DummyProf, TrsfMod);
+
+        TopoDS_Wire GenProf = TopoDS.Wire(Modif.InternalModifiedShape(DummyProf));
+
+        // OCCT.NET: BRepFill_Pipe sweeps with BRepFill_Sweep, a placeholder that throws Standard_NotImplemented until
+        // unit 5S2 ports it (decision 7106)
+        BRepFill_Pipe Pipe = new(new BRepLib_MakeWire(SE).InternalWire(), GenProf);
+
+        //---------------------------------------------
+        // Arrangement of Tubes in myMap.
+        //---------------------------------------------
+
+        BRepTools_WireExplorer GenProfExp = new();
+        bool FirstVertex = true;
+
+        myMap.Bind(SE, NewProfMap());
+
+        for (ProfExp.Init(myProfile), GenProfExp.Init(GenProf); ProfExp.More(); ProfExp.Next(), GenProfExp.Next())
+        {
+            EdgeVertices(ProfExp.Current(), out TopoDS_Vertex VF, out TopoDS_Vertex VL);
+            EdgeVertices(GenProfExp.Current(), out TopoDS_Vertex VFG, out TopoDS_Vertex VLG);
+
+            if (FirstVertex)
+            {
+                myMap[SE].Bind(VF, new NCollection_List<TopoDS_Shape>());
+                myMap[SE][VF].Append(Pipe.InternalEdge(SE, VFG));
+                FirstVertex = false;
+            }
+            myMap[SE].Bind(VL, new NCollection_List<TopoDS_Shape>());
+            myMap[SE][VL].Append(Pipe.InternalEdge(SE, VLG));
+            myMap[SE].Bind(ProfExp.Current(), new NCollection_List<TopoDS_Shape>());
+            myMap[SE][ProfExp.Current()].Append(Pipe.InternalFace(SE, GenProfExp.Current()));
+        }
     }
 
     private void MakeRevol(in TopoDS_Edge SE, in TopoDS_Vertex VLast, in gp_Ax3 AxeRef)

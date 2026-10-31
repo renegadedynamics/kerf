@@ -474,8 +474,11 @@ public sealed class BRepFill_OffsetWire
                 PerformWithBiLo(myWorkSpine, Offset, myBilo, myLink, myJoinType, Alt);
             }
         }
-        catch (Standard_Failure)
+        catch (Exception anException) when (anException is Standard_Failure or NullReferenceException
+                                            && anException is not (Standard_ImmutableObject or TopoDS_LockedShape))
         {
+            // OCC_CATCH_SIGNALS turns OCCT's access violations (a null bisector, occt-issues.md) into failures caught
+            // here: the port's NullReferenceException (decision 7104)
             myShape.Nullify();
             myIsDone = false;
 

@@ -40,8 +40,7 @@ internal static class BRepTestMatCommands
         DrawCxx.Add(theInterpreter, "zone", Zone);
     }
 
-    // topoload face [-approx]. The -approx form converts the face with BRepOffsetAPI_MakeOffset::ConvertFace,
-    // which comes with the 2D offset (unit 5O2): until then it fails.
+    // topoload face [-approx]. The -approx form converts the face with BRepOffsetAPI_MakeOffset::ConvertFace.
     private static int Topoload(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         int argc = argv.Count;
@@ -60,8 +59,8 @@ internal static class BRepTestMatCommands
 
         if (argc >= 3 && argv[2] == "-approx")
         {
-            di.Append("topoload -approx needs BRepOffsetAPI_MakeOffset::ConvertFace, not ported yet (unit 5O2)\n");
-            return 1;
+            double aTol = 0.1;
+            aFace = BRepOffsetAPI_MakeOffset.ConvertFace(aFace, aTol);
         }
 
         Get(theDI).anExplo.Perform(aFace);
