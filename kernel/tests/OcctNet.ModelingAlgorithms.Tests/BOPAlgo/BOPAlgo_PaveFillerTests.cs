@@ -12,8 +12,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 /// <remarks>
 /// OCCT's tests run BRepAlgoAPI_Fuse, whose crash they guard against was in the pave filler (degenerated edges
-/// without p-curves). With unit 6F's builders, OCCT's IsDone and volume checks are back. The two loft tests need
-/// BRepOffsetAPI_ThruSections, not ported yet.
+/// without p-curves). With unit 6F's builders, OCCT's IsDone and volume checks are back; the two loft tests run since
+/// unit 5T ported BRepOffsetAPI_ThruSections.
 /// </remarks>
 public class BOPAlgo_PaveFillerTests
 {
@@ -60,9 +60,48 @@ public class BOPAlgo_PaveFillerTests
         return aProps.Mass();
     }
 
-    [Fact(Skip = "BRepOffsetAPI_ThruSections (the loft) is not ported yet")]
+    private static TopoDS_Wire CreateCircularWire(double theRadius, double theZ)
+    {
+        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, theZ), new gp_Dir(0, 0, 1)), theRadius);
+        BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCircle);
+        BRepBuilderAPI_MakeWire aWireMaker = new(anEdgeMaker.Edge());
+        return aWireMaker.Wire();
+    }
+
+    [Fact]
     public void FuseConeLoftWithBox_DegeneratedEdge()
     {
+        // Create a loft from a circular wire to a point (apex)
+        // This creates a cone-like shape with a degenerated edge at the top
+        TopoDS_Wire aBaseWire = CreateCircularWire(10.0, 0.0);
+        TopoDS_Vertex anApex = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 20.0)).Vertex();
+
+        BRepOffsetAPI_ThruSections aLoftMaker = new(true, true); // solid, ruled
+        aLoftMaker.AddWire(aBaseWire);
+        aLoftMaker.AddVertex(anApex);
+        aLoftMaker.Build();
+
+        Assert.True(aLoftMaker.IsDone()); // Loft operation should succeed
+        TopoDS_Shape aLoft = aLoftMaker.Shape();
+        Assert.False(aLoft.IsNull());
+
+        // Create a box that intersects the loft
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, 5), 10.0, 10.0, 10.0).Shape();
+
+        // Perform Boolean fuse - this should not crash even if there are
+        // degenerated edges without pcurves
+        BRepAlgoAPI_Fuse aFuser = new(aLoft, aBox);
+
+        Assert.True(aFuser.IsDone()); // Boolean fuse should succeed for loft with degenerated edges
+        Assert.False(aFuser.Shape().IsNull());
+
+        // Verify the result has reasonable volume (both shapes contribute)
+        double aLoftVolume = GetVolume(aLoft);
+        double aBoxVolume = GetVolume(aBox);
+        double aResultVolume = GetVolume(aFuser.Shape());
+
+        Assert.True(aResultVolume > 0.0);
+        Assert.True(aResultVolume < aLoftVolume + aBoxVolume);
     }
 
     [Fact]
@@ -84,9 +123,47 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(aResultVolume > 0.0); // Result should have positive volume
     }
 
-    [Fact(Skip = "BRepOffsetAPI_ThruSections (the loft) is not ported yet")]
+    private static TopoDS_Wire Quadrilateral(params gp_Pnt[] thePoints)
+    {
+        BRepBuilderAPI_MakeWire aWireMaker = new();
+        for (int i = 0; i < 4; i++)
+        {
+            aWireMaker.Add(new BRepBuilderAPI_MakeEdge(thePoints[i], thePoints[(i + 1) % 4]).Edge());
+        }
+        return aWireMaker.Wire();
+    }
+
+    [Fact]
     public void FuseTwoLofts_RobustnessCheck()
     {
+        // Create first loft: quadrilateral wire to quadrilateral wire
+        TopoDS_Wire aBottom1 = Quadrilateral(new gp_Pnt(10, -10, 0), new gp_Pnt(100, -10, 0), new gp_Pnt(100, -100, 0), new gp_Pnt(10, -100, 0));
+        TopoDS_Wire aTop1 = Quadrilateral(new gp_Pnt(0, 0, 10), new gp_Pnt(100, 0, 10), new gp_Pnt(100, -100, 10), new gp_Pnt(0, -100, 10));
+
+        BRepOffsetAPI_ThruSections aLoft1 = new(true, true);
+        aLoft1.AddWire(aBottom1);
+        aLoft1.AddWire(aTop1);
+        aLoft1.Build();
+        Assert.True(aLoft1.IsDone()); // First loft should succeed
+
+        // Create second loft
+        TopoDS_Wire aBottom2 = Quadrilateral(new gp_Pnt(0, 0, 10), new gp_Pnt(100, 0, 10), new gp_Pnt(100, -100, 10), new gp_Pnt(0, -100, 10));
+        TopoDS_Wire aTop2 = Quadrilateral(new gp_Pnt(0, 0, 250), new gp_Pnt(100, 0, 250), new gp_Pnt(100, -100, 250), new gp_Pnt(0, -100, 250));
+
+        BRepOffsetAPI_ThruSections aLoft2 = new(true, true);
+        aLoft2.AddWire(aBottom2);
+        aLoft2.AddWire(aTop2);
+        aLoft2.Build();
+        Assert.True(aLoft2.IsDone()); // Second loft should succeed
+
+        // Fuse the two lofts - this is the operation that could crash
+        BRepAlgoAPI_Fuse aFuser = new(aLoft1.Shape(), aLoft2.Shape());
+
+        Assert.True(aFuser.IsDone()); // Boolean fuse of two lofts should succeed
+        Assert.False(aFuser.Shape().IsNull());
+
+        double aResultVolume = GetVolume(aFuser.Shape());
+        Assert.True(aResultVolume > 0.0);
     }
 
     [Fact]

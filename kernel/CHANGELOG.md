@@ -1025,3 +1025,14 @@ Phase 5 (part): pipe shells (unit 5S2).
   MakePipeShell, 522 random cases (every mode and transition, solids, several and punctual sections, build123d.NET's
   sweeps): every built result, first and last shape and history byte-identical; MakePipe and MiddlePath through
   tools/piperec, 270 cases all identical; MakeEvolved's slanted profiles against tools/evorec.
+
+Phase 5 (part): lofts and projection (unit 5T).
+
+- `OcctNet.ModelingAlgorithms`: `BRepOffsetAPI_ThruSections` (ruled and smoothed lofts, shells and solids, point end
+  sections, CompatibleWires on or off, smoothing, weights, parametrisation, continuity, maximal degree, the history),
+  BRepFill_Generator and `BRepProj_Projection` (cylindrical and conical). The caller's sections are never written:
+  they are copied at Build where OCCT writes into them, and their unchanged sub-shapes are given back in the result.
+- Tests: OCCT's BRepOffsetAPI_ThruSections GTests and the two loft GTests of BOPAlgo_PaveFiller; against native OCCT
+  through build123d.NET, 630 random lofts and 248 cases of OCCT's thrusection corpus (every built result, first and
+  last shape and history byte-identical; lofts whose first section is also the last vary natively from run to run),
+  266 projections (every wire identical, one canonically through decision 577's non-destructive Booleans).
