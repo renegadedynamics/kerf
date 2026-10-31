@@ -1,5 +1,8 @@
 # Handover: finishing phases 5 and 6
 
+> **Done, 31 October 2026.** Every unit below is merged, and `phase5/construction` is merged into `main`. The rest of this
+> document is kept as the record of how phases 5 and 6 were finished. Phase 7 is not started, at the owner's request.
+
 For the agent taking over OCCT.NET from 2026-10-30. Read this, then `docs/phase5-6-plan.md`, `docs/translation-rules.md`
 and the decisions it points to.
 
@@ -33,16 +36,16 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
 
 ## State
 
-- `main`: phases 0–4.
+- `main`: phases 0–6.
 - `phase5/construction`: the integration branch for phases 5 and 6. Merged so far:
   - **Intersections:** 5A, 5B, 5C, 5D, 5E, 5F, 5G.
-  - **Construction:** 5H, 5K1, 5K2, 5L1, 5L2, 5L3, 5M, 5O1, 5P, 5Q, 5R, 5S1.
-  - **Booleans:** 6A, 6B, 6C, 6D, 6E, 6F, 6G, 6P.
+  - **Construction:** 5H, 5K1, 5K2, 5L1, 5L2, 5L3, 5M, 5O1, 5P, 5Q, 5R, 5S1, 5S2, 5T, 5O2, 5W.
+  - **Booleans:** 6A, 6B, 6C, 6D, 6E, 6F, 6G, 6P, 6L, 6M.
   - **Healing and sewing:** 6H1, 6H2, 6H3, 6S, 6U.
-- **Tests:** the full suite passes (about 9,900 tests).
+- **Tests:** the full suite passes (10,008 tests, 9 skipped).
 - **Native comparison:** everything the oracle reaches is bit-identical or attributed. Booleans are byte-identical
   with native on all 1,853 cases.
-- **Decisions:** the last real number is 913.
+- **Decisions:** the last real number is 971.
 
 ## Remaining units
 

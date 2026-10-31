@@ -1077,3 +1077,11 @@ Phase 5 (part): Draw-lite construction, the phase 5 corpus milestone (unit 5W).
   321 without their data files; none failing. With the earlier units, 1,807 cases using phase 5's construction
   commands run.
 - Tests: the commands on hand-made shapes and curves, their inputs left unchanged.
+
+Phases 5 and 6 complete (integration).
+
+- Oracle tests: the loft and projection oracles' native reruns read the same bytes as the port, so a rerun can't loft
+  inputs one ulp apart (decision 944); native calls that reach `AppDef_Variational` are serialised, because OCCT's
+  FEmTool criteria share unlocked caches between threads (decision 945, occt-issues.md); the sewing oracle sews
+  natively until it meets the port's variant, up to 16 times (decision 946).
+- The full suite: 10,008 tests passing, 9 skipped.
