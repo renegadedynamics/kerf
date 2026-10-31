@@ -64,6 +64,23 @@ public sealed class DrawCorpus(string theTestsDirectory)
         ("fillet2d", ["CheckTriArea"], "rel_tol"),
     ];
 
+    /// <summary>
+    /// Commands a group's scripts call only for some values of a variable the grid or the case sets (unit 5O2): the
+    /// offset group's end script checks a <c>mkoffset</c> result in one branch (<c>if {$command == "mkoffset"}</c>), a
+    /// <c>withintersect</c> one in another, and the solid offset of every other grid in the last, which its begin
+    /// script's <c>OFFSETSHAPE</c> procedure builds. Each entry: the commands called only where the variable has one of
+    /// the values (null: where it is unset or has another value than those of the group's other entries). A case
+    /// whose own script calls a command still needs it.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string Variable, string?[] Values, string[] Commands)> ValueBranches { get; } =
+    [
+        ("offset", "command", ["mkoffset"], ["mkoffset", "renamevar", "tolerance", "checksection", "mkplane", "whatis"]),
+        ("offset", "command", ["withintersect", null], ["offsetparameter", "offsetload", "offsetperform", "vprops", "sprops", "bsection"]),
+    ];
+
+    /// <summary>Whether the scan knows the branches of <see cref="ValueBranches"/> (unit 5O2).</summary>
+    public bool KnowsValueBranches { get; init; } = true;
+
     private static readonly Regex s_theFileName = new(@"^\s*set\s+TheFileName\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     private readonly ConcurrentDictionary<string, IReadOnlySet<string>> myProcCalls = new(StringComparer.Ordinal);
@@ -318,6 +335,30 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 && !Regex.IsMatch(File.ReadAllText(theCase.Path), @"\bset\s+" + Regex.Escape(aVariable) + @"\b", RegexOptions.CultureInvariant))
             {
                 aMissing.ExceptWith(aBranchCommands);
+            }
+        }
+
+        if (KnowsValueBranches)
+        {
+            foreach (IGrouping<(string Group, string Variable), (string Group, string Variable, string?[] Values, string[] Commands)> aBranches
+                     in ValueBranches.Where(b => b.Group == theCase.Group).GroupBy(b => (b.Group, b.Variable)))
+            {
+                // the value the grid's begin script or the case sets (the last set wins)
+                string aGridBegin = ReadIfExists(Path.Combine(TestsDirectory, theCase.Group, theCase.Grid, "begin"));
+                string aCaseText = File.ReadAllText(theCase.Path);
+                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+""?([^""\s]*)""?", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+                string aText = aGridBegin + "\n" + aCaseText;
+                string? aValue = aSetRegex.Matches(aText).LastOrDefault()?.Groups[1].Value;
+                bool isKnown = aBranches.Any(b => b.Values.Contains(aValue));
+                IReadOnlySet<string> anOwn = CommandsCalledBy(aText);
+                foreach ((string _, string _, string?[] aValues, string[] aBranchCommands) in aBranches)
+                {
+                    bool isTaken = aValues.Contains(aValue) || (!isKnown && aValues.Contains(null));
+                    if (!isTaken)
+                    {
+                        aMissing.ExceptWith(aBranchCommands.Where(c => !anOwn.Contains(c)));
+                    }
+                }
             }
         }
 

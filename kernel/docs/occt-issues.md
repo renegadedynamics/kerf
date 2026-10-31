@@ -1275,3 +1275,17 @@ Found by the native recordings of tools/brepfillrec and tools/cwrec, the oracle 
 | `BRepFill_CompatibleWires` SearchRoot (from SameNumberByPolarMethod) | Returns the first key of RMap or MapVLV, iterated in TShape-address order, whose list holds the vertex | With looping sections (the first repeated last) native's result varies from run to run (five runs, five outputs: status Done or Failed, cuts moved); the port iterates in binding order and is deterministic |
 | `BRepFill_CompatibleWires::SearchOrigin`, `SameNumberByACR` | `newwire.Oriented(TopAbs_FORWARD);` discards its result; `double AllLengthsNull = true` holds a bool | No effect |
 | `BRepFill::Face`, `BRepFill::Shell`, `BRepFill_Pipe` | Write pcurves, ranges, flags and tolerances into the caller's edges and profile | Natively the caller's shapes change; the port writes into copies of frozen inputs (decisions 897, 910) |
+
+## Phase 5: unit 5O2, the 2D wire offset
+
+Found by the MakeOffset oracle, tools/evorec and reading. The port reproduces each (`// OCCT` at the line), unless the
+last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_OffsetWire::GeneratedShapes` | Merges the lists of `myMap` by iterating `myMapSpine`, a map keyed by shapes and hashed by TShape address | The shapes in a generated list come in an address-dependent order natively; the port iterates in insertion order. MakeOffset's `Generated` held the same shapes in another order in 74 of 1,124 oracle results |
+| `BRepFill_OffsetWire` constructors | Leave `myCallGen` uninitialised; only `Perform` sets it, and `GeneratedShapes` reads it | After `PerformWithBiLo` alone native reads garbage; harmless since `myMapSpine` is then empty. The port starts it false |
+| `BRepFill_TrimSurfaceTool::IntersectWith` | `SetTrim` on the trimmed bisector it is given, which is the medial axis's own curve | The locus's bisector stays lengthened by the tolerance at both ends for every later call |
+| `BRepFill_Evolved` (`ElementaryPerform`, `PrepareProfile`, `Add`, `Transfert`) | Iterates `myMap` and `MapVevo`, keyed by shapes, in TShape-address order | Natively the parallel edges are built, and the result's faces listed, in an address-dependent order; the port uses insertion order. The bindings don't depend on it |
+| `BRepOffsetAPI_MakeOffset::BuildDomains` (via BRepFill_OffsetWire and the medial axis) | Bisector_BisecAna can leave its curve unset (5M) and Bisector_Bisec dereferences it, on some arc profiles with intersection joins | An access violation: with OCCT's signal translator (DRAWEXE, build123d.NET) a Standard_Failure caught as "not done"; without it a crash. The port: a NullReferenceException caught as "not done" (decision 917) |
+| `BRepOffsetAPI_MakeOffset::BuildDomains` | `double Found = false` holds a bool | No effect |

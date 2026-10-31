@@ -4,13 +4,16 @@ using Occt;
 
 namespace OcctNet.DrawLite;
 
-/// <summary>BRepTest's sweep commands (BRepTest_SweepCommands.cxx): prism, revol and pipe.</summary>
+/// <summary>BRepTest's sweep commands (BRepTest_SweepCommands.cxx): prism, revol, pipe and evolved.</summary>
 /// <remarks>
 /// <para>Draw records each sweep's history (BRepTest_Objects::SetHistory) for <c>savehistory</c>, which Draw-lite
 /// doesn't have; the history isn't kept.</para>
 /// <para><c>pipe</c> (BRepOffsetAPI_MakePipe, unit 5S1) throws Standard_NotImplemented until unit 5S2 ports
 /// BRepFill_Sweep.</para>
-/// <para>Not here: evolved, pruled, gener, thrusections, the sweep commands
+/// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved as far as unit 5O2 ports it: <c>-v</c> (volume mode) and
+/// profiles with parts neither horizontal nor vertical (BRepFill_Pipe, hence BRepFill_Sweep) throw
+/// Standard_NotImplemented.</para>
+/// <para>Not here: pruled, gener, thrusections, the sweep commands
 /// (BRepOffsetAPI_MakePipeShell), geompipe and middlepath, which need TKOffset, TKFillet or GeomFill.</para>
 /// </remarks>
 internal static class BRepTestSweepCommands
@@ -20,6 +23,118 @@ internal static class BRepTestSweepCommands
         DrawCxx.Add(theInterpreter, "prism", Prism);
         DrawCxx.Add(theInterpreter, "revol", Revol);
         DrawCxx.Add(theInterpreter, "pipe", Pipe);
+        DrawCxx.Add(theInterpreter, "evolved", Evolved);
+    }
+
+    // evolved result -s spine -p profile [-solid] [-v] [-a] [-t toler] [-parallel]
+    private static int Evolved(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n == 1)
+        {
+            di.Append(" evolved result -s spine -p profile [-solid] [-v] [-a] [-t toler] [-parallel] : \n");
+            di.Append("   Make evolved profile on spine.\n");
+            di.Append("   -solid means make closed solid.\n");
+            di.Append("   -v means use alternative algorithm (volume mode).\n");
+            di.Append("   -a means referential CS is automatically computed, otherwise global CS is used. \n");
+            di.Append("   -t sets the tolerance.\n");
+            di.Append("   -parallel turns on parallel execution.\n");
+            return 0;
+        }
+
+        if (n < 4)
+        {
+            return 1;
+        }
+        bool Solid = false;
+        bool isVolume = false;
+        bool hasToComputeAxes = false;
+        double aTolerance = 0.0;
+        TopoDS_Shape Base = new();
+        TopoDS_Wire Prof = new();
+        bool isParallel = true;
+
+        for (int i = 2; i < n; i++)
+        {
+            if (First(a[i]) != '-')
+            {
+                di.Append("Error: wrong option!\n");
+                return 1;
+            }
+
+            if (!Solid && a[i] == "-solid")
+            {
+                Solid = true;
+                continue;
+            }
+
+            if (a[i] == "-stm")
+            {
+                isParallel = false;
+                continue;
+            }
+
+            switch (a[i].Length > 1 ? a[i][1] : '\0')
+            {
+                case 's':
+                    {
+                        Base = theDI.GetShape(a[++i], TopAbs_ShapeEnum.TopAbs_WIRE, false);
+                        if (Base.IsNull())
+                        {
+                            Base = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_FACE, false);
+                        }
+                    }
+                    break;
+
+                case 'p':
+                    {
+                        Prof = TopoDS.Wire(theDI.GetShape(a[++i], TopAbs_ShapeEnum.TopAbs_WIRE, false));
+                    }
+                    break;
+
+                case 'v':
+                    {
+                        isVolume = true;
+                    }
+                    break;
+
+                case 'a':
+                    {
+                        hasToComputeAxes = true;
+                    }
+                    break;
+
+                case 't':
+                    {
+                        aTolerance = theDI.Atof(a[++i]);
+                    }
+                    break;
+
+                default:
+                    di.Append("Error: Unknown option!\n");
+                    break;
+            }
+        }
+
+        if (Base.IsNull() || Prof.IsNull())
+        {
+            di.Append("spine (face or wire) and profile (wire) are expected\n");
+            return 1;
+        }
+
+        TopoDS_Shape Volevo = (TopoDS_Shape)new BRepOffsetAPI_MakeEvolved(Base,
+                                                                           Prof,
+                                                                           GeomAbs_JoinType.GeomAbs_Arc,
+                                                                           !hasToComputeAxes,
+                                                                           Solid,
+                                                                           false,
+                                                                           aTolerance,
+                                                                           isVolume,
+                                                                           isParallel);
+
+        theDI.SetShape(a[1], Volevo);
+
+        return 0;
     }
 
     // *a[i]: the word's first character, '\0' for an empty word

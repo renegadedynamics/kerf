@@ -9103,3 +9103,111 @@ and merged. Numbers from 5851 are placeholders, renumbered on merge.
         BRepFill_Generator must copy before writing pcurves or tolerances into them. Lofts whose first section is also
         the last aren't repeatable natively (5876): compare those canonically. BRepFill_NSections reads
         `InternalBSplineSurface`; ThruSections duplicates `EdgeToBSpline` (a private static here).
+
+## Phase 5: unit 5O2, the 2D wire offset
+
+BRepFill's offset and evolved classes (OffsetWire, TrimEdgeTool, OffsetAncestors, MultiLine, ComputeCLine,
+ApproxSeewing, TrimSurfaceTool, Evolved), `BRepOffsetAPI_MakeOffset` and `BRepOffsetAPI_MakeEvolved` without its volume
+mode; Draw-lite's `mkoffset`, `openoffset`, `evolved` and `topoload -approx`; `tools/evorec`. In
+OcctNet.ModelingAlgorithms (`BRepFill/`, `BRepOffsetAPI/`). The evolved part was ported in a forked worktree
+(phase5/u5o2-evolved) and merged. Numbers from 7101 are placeholders, renumbered on merge; earlier decisions are cited by
+their merged numbers (5M's 814-825, 5O1's 791-796, 5S1's 909-913).
+
+914. **BRepOffsetAPI_MakeOffset never writes the caller's face or wires.** `BuildDomains` follows 5O1's notes:
+      `FR.Init(face, true)`, then `Perform`, which copies frozen wires at the entry and gives the caller's back
+      (decision 793), and `InternalCurrent`, so the faces stay unfrozen: the open wires are added to them before each
+      domain's BRepFill_OffsetWire is built. A null face is made from the first wire (`MakeFace(...).Face()`, frozen;
+      only read and `EmptyCopied`).
+      - OCCT passes `myWires` and `myFace` by reference: `WorkWires = LWires` (the wires reversed when the face's first
+        wire has the orientation the sign rejects) writes the maker's own list, so a later `Perform` of the other sign
+        starts from the reversed wires. The port keeps that with `WorkWires.Assign(LWires)` and `ref myFace`. Reused
+        makers give the same parallels as fresh ones (unit test, and the oracle's second offsets).
+      - OCCT copies each BRepFill_OffsetWire into `myLeft`/`myRight` and drops the original; the port appends the
+        instance itself, which is the same. `Generated` copies each algorithm's list before appending it (OCCT's
+        `L = OW.GeneratedShapes(...)` is a copy; the port's `Append(list)` moves).
+      - Publication: `Shape` and `Generated` freeze the whole result (`BeforePublishingLists`, decision 414); the
+        algorithms' results are read through `InternalShape` until then.
+915. **`ConvertFace` and the approximation option.** `ConvertFace` is public and freezes its face;
+      `InternalConvertFace` (for `Perform`) doesn't. Both convert through `BRepAlgo.InternalConvertWire` (5O1's note),
+      so `BRepLib.BuildCurves3d` writes 3D curves only into the new wires. Wires that need no conversion (lines and
+      circles) are the caller's, and `BuildCurves3d` returns at once on their edges, which have 3D curves; a caller's
+      line or circle edge with a pcurve only would throw TopoDS_LockedShape there (OCCT would write into it; not met).
+      Draw-lite's `topoload -approx` (5M) now runs.
+916. **A port error in IntCurve_IntConicConic (decision 325) fixed: the line/circle angle.**
+      `LineCircleGeometricIntersection` computed `dAngle1` with `gp_Vec2d.Angle` where OCCT calls `gp_Dir2d::Angle`;
+      the two round differently in the last bits. Found by the MakeOffset oracle, whose results on arcs differed from
+      native by one or two ulps (8 of 806 random offsets, all on profiles with arcs, and 39 of 60 approximated
+      curves, where the error was amplified into tolerances). Before the fix 88 of 2,000 random line/circle intersections through Geom2dAPI_InterCurveCurve
+      differed from native; after it all 2,000 (and circle/circle) are bit-identical, and so is every MakeOffset result.
+      .NET's `Math.Atan2`, `Acos`, `Cos` and `Sin` were checked against ucrtbase's on a million inputs first (both
+      processes call ucrtbase: identical), so transcendentals were ruled out. The other `gp_Vec2d.Angle` calls of the
+      port match OCCT's.
+917. **Native access violations under signal handling.** Bisector_BisecAna can leave its curve unset and
+      Bisector_Bisec dereferences it (5M, occt-issues.md); the medial axis reaches it on some arc profiles with
+      intersection joins. DRAWEXE and build123d.NET install OCCT's signal translator (`OSD::SetSignal`, per thread), so
+      the access violation arrives as a Standard_Failure: MakeOffset's `catch` (BuildDomains builds the medial axis)
+      and OffsetWire's `OCC_CATCH_SIGNALS` block turn it into "not done" (4 random cases of the oracle). The port
+      catches NullReferenceException with Standard_Failure at those two sites (decision 534's rule), but never
+      Standard_ImmutableObject or TopoDS_LockedShape (decision 423).
+918. **The MakeOffset oracle** (`tests/OcctNet.Oracle.Tests/BRepOffsetAPI/BRepOffsetAPIMakeOffsetOracleTests.cs`;
+      MakeOffset is bound in build123d.NET). Inputs built by the port and read by both sides from one BRep file (the
+      port's frozen): random closed polygons and profiles with arcs in random planes, as faces (some holed) or wires;
+      random open polylines and arc chains, closed around or open (IsOpenResult), a lone segment through a plane face;
+      single arcs; build123d.NET's `Offset2D` pattern (an empty maker, `Init(join)`, `AddWire`; an outer wire outwards
+      and a hole inwards; a straight line through `Init(plane face, join)`), its slots (two collinear segments; an arc
+      split in two halves) and rectangles; ellipses and closed B-splines through `SetApprox`, and `ConvertFace`. Both
+      join types, both signs, some at an altitude, some with a second offset on the same maker. Compared: IsDone, the
+      result's BRep text, Generated for every input edge and vertex (as result indices), the input unchanged.
+      **All identical:** 1,228 offsets, 1,124 results byte-identical (no Free flag masked, none only canonically
+      equal), 104 not done on both sides, 16 empty on both; ConvertFace 30 of 30; Generated identical everywhere, in
+      another order in 74 cases (native's lists follow addresses, occt-issues.md).
+919. **BRepFill_Evolved.MakePipe is ported against 5S1's BRepFill_Pipe** (OCCT's code, reading the pipe's
+      `InternalEdge` and `InternalFace`). The pipe runs BRepFill_Sweep, still 5S1's throwing placeholder (decision
+      909), so profiles with parts neither horizontal nor vertical keep throwing Standard_NotImplemented until 5S2;
+      nothing else changes. The volume mode (BRepFill_AdvancedEvolved, Booleans) waits for phase 7.
+920. **Evolved's tests use native values.** `tools/evorec` (frrec's pattern: MSVC, build123d.NET's TKOffset; MakeEvolved
+      isn't bound) prints validity, volume, top and bottom areas and face counts of vertical profiles off the spine;
+      the port gives the same to 1e-12, including the L shape's parallel 2 inside, which is invalid natively too (the
+      earlier test expected a valid result). `DrawEvolvedCommandsTests` failed on `checkprops r -s`: checkprops needs a
+      value after each option ("Option local_value requires argument" is DrawResources' own error), a test error; it
+      reads `sprops`/`vprops` now. Both tests are unskipped.
+921. **Draw-lite `mkoffset` and `openoffset`** (BRepTest_CurveCommands.cxx), with OCCT's argument parsing (`-approx`,
+      `a`/`i`, the altitude), results bound as `<name>_<i>`, and " Error: Offset is not done." on failure.
+      - DrawCorpus learns value branches (`ValueBranches`, `KnowsValueBranches`): the offset group's end script checks
+        a `mkoffset` result only if the grid sets `command` to "mkoffset", a `withintersect` one in another branch, and
+        the solid offset (OFFSETSHAPE's `offsetparameter`, `offsetload`, `offsetperform`, `vprops`, `sprops`,
+        `bsection`) otherwise. A case needs a branch's commands only if it takes it, or calls them itself.
+      - Corpus: 752 cases use `mkoffset` or `openoffset` (621 in the offset group's nine wire grids). Runnable before
+        5O2: 0; after: 626 (the 621 and 5 bug cases). Run: OK 477, BAD 77 (OCCT's known problems), SKIPPED 72 (data
+        files missing); none failing. The other 126 miss phase 7's BRepOffset commands (117) and viewer commands.
+      - `evolved`: 29 cases; runnable 0 before, 2 after (both skipped for missing data). 22 miss only `lastrep`, which
+        DrawResources' `disp` (called by `don`) uses interactively; 11 miss phase 7's offset commands.
+922. **The offset classes as ported** (OffsetWire, TrimEdgeTool, OffsetAncestors; Evolved's helpers).
+      - OffsetWire, TrimEdgeTool, OffsetAncestors, TrimSurfaceTool, MultiLine, ComputeCLine and ApproxSeewing are
+        working objects (decision 21). OffsetWire's `Shape`, `Spine` and `GeneratedShapes` freeze (the result with a
+        generated shape); `InternalShape`, `InternalSpine` and `InternalGeneratedShapes` don't, for MakeOffset, Evolved
+        and OffsetAncestors. It works on BRepMAT2d_Explorer's new face and on cut copies, never the caller's face.
+      - Maps keyed by MAT objects compare by reference (OffsetWire's node-to-vertex map; Evolved's maps of basic
+        elements), as 5M asked; maps OCCT iterates by address iterate in insertion order (OffsetWire's `myMapSpine` in
+        `GeneratedShapes`, Evolved's `myMap` and `MapVevo` in ElementaryPerform, PrepareProfile, Add and Transfert), each
+        logged in occt-issues.md. The Generated lists then hold the same shapes as native's in another order
+        (decision 918); no result shape depends on it.
+      - TrimEdgeTool reads the locus's live bisector through `ChangeBasisCurve` (decision 816) and never changes it;
+        TrimSurfaceTool lengthens it in place, as OCCT does (occt-issues.md).
+      - `myCallGen` is uninitialised in OCCT until `Perform`; the port starts it false, which is what matters only
+        after `PerformWithBiLo` alone, where `myMapSpine` is empty.
+      - BRepFill_Evolved copies a frozen spine at the entry (decisions 642-644) and runs BRepAlgo_Loop and the
+        restrictor (`InternalPerform`) on its own shapes (5O1's notes).
+923. **For later units.**
+      - **5S2 (pipe shells):** when BRepFill_Sweep replaces the placeholder, BRepFill_Evolved's slanted profiles start
+        working: unskip nothing, but turn `BRepFill_EvolvedTests.Unported_modes_throw`'s first assertion and
+        `DrawEvolvedCommandsTests`' `evolved r -s s -p t` into results (extend `tools/evorec` for native values). Evolved
+        calls `new BRepFill_Pipe(new BRepLib_MakeWire(SE).InternalWire(), GenProf)` and reads `InternalEdge(SE, V)` and
+        `InternalFace(SE, E)`: keep those.
+      - **5W (Draw-lite construction):** `mkoffset`, `openoffset` and `evolved` are done; 22 `evolved` cases wait only
+        for `lastrep` (interactive picking in `disp`/`don`: a viewer command to ignore, or a non-interactive answer).
+        DrawCorpus's `ValueBranches` is the place for other groups' `if {$command == ...}` branches.
+      - **6L and phase 7:** 117 corpus cases use `mkoffset` with `offsetparameter`/`offsetload`/`offsetperform`
+        (BRepOffset), and the offset group's other grids need the same.
+      - **Any unit with a line/circle intersection:** results through IntCurve_IntConicConic changed in the last bits
+        (decision 916); oracles that compared such intersections canonically may now be byte-identical.

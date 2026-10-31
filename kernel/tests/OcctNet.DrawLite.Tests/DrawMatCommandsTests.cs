@@ -52,7 +52,8 @@ public class DrawMatCommandsTests(ITestOutputHelper output)
         Assert.Equal("", aDI.Eval("mat i o"));
         // a shape that isn't a face
         Assert.ThrowsAny<Exception>(() => aDI.Eval("topoload w"));
-        Assert.ThrowsAny<Exception>(() => aDI.Eval("topoload f -approx"));
+        // -approx converts the face first (BRepOffsetAPI_MakeOffset.ConvertFace, unit 5O2)
+        Assert.Equal("", aDI.Eval("topoload f -approx"));
     }
 
     [Fact]

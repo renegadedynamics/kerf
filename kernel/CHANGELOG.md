@@ -990,3 +990,23 @@ Phase 5 (part): sweep laws and sections (unit 5S1).
   through build123d.NET's bindings, 1,900 cases all identical (byte-identical BRep text; 23 Axe cases throwing on both
   sides); the laws, sections, placement and RemoveLocations (tools/brepfillrec) 460 cases all identical;
   CompatibleWires (tools/cwrec) 385 of 390 identical, the other 5 looping sections where native varies from run to run.
+
+Phase 5 (part): the 2D wire offset (unit 5O2).
+
+- `OcctNet.ModelingAlgorithms`: `BRepOffsetAPI_MakeOffset` (the offset of a planar face's or planar wires' contours in
+  their plane, arc or intersection joins, closed or open results, `ConvertFace` and the approximation option, as
+  build123d's `offset_2d` and slots use it) over BRepFill_OffsetWire, TrimEdgeTool and OffsetAncestors;
+  `BRepOffsetAPI_MakeEvolved` over BRepFill_Evolved, TrimSurfaceTool, MultiLine, ComputeCLine and ApproxSeewing (walls
+  and faces of horizontal and vertical profile parts; slanted parts wait for unit 5S2's BRepFill_Sweep, the volume mode
+  for phase 7). The caller's shapes are never written; results hand out frozen shapes.
+- Fixed: line/circle intersections (IntCurve_IntConicConic) differed from OCCT's in the last bits on about 4% of
+  inputs; they are now bit-identical.
+- Draw-lite: `mkoffset`, `openoffset`, `evolved`; `topoload -approx`. DrawCorpus knows the offset group's `command`
+  branches. Corpus: of the 752 cases using `mkoffset` or `openoffset`, none runnable before, 626 now (621 of the offset
+  group's wire grids): OK 477, 77 known problems, 72 missing data, none failing. `evolved`: 2 of 29 runnable (missing
+  data); 22 wait only for `lastrep`.
+- Tests: unit tests of the offset and evolved classes; against native OCCT through build123d.NET's MakeOffset (random
+  closed and open profiles with segments and arcs in random planes, holed faces, both joins and signs, build123d.NET's
+  `Offset2D` and slot patterns, approximated ellipses and B-splines, `ConvertFace`): 1,228 offsets, every result
+  byte-identical (104 not done on both sides), the generated lists the same (74 in another order: native's follow
+  addresses); MakeEvolved's values against tools/evorec.
