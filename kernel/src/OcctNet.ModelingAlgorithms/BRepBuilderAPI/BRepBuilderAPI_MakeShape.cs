@@ -56,7 +56,11 @@ public abstract class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command, BRepToo
     public static explicit operator TopoDS_Shape(BRepBuilderAPI_MakeShape theMaker) => theMaker.Shape();
 
     /// <summary>The shapes generated from the shape <paramref name="S"/> (frozen).</summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape S) => PublishedList(InternalGenerated(S));
+    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    {
+        BeforePublishingLists();
+        return PublishedList(InternalGenerated(S));
+    }
 
     /// <summary>The algorithm's own list behind <see cref="Generated"/>, unfrozen (OCCT's virtual).</summary>
     internal virtual NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
@@ -66,7 +70,20 @@ public abstract class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command, BRepToo
     }
 
     /// <summary>The shapes modified from the shape <paramref name="S"/> (frozen).</summary>
-    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape S) => PublishedList(InternalModified(S));
+    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape S)
+    {
+        BeforePublishingLists();
+        return PublishedList(InternalModified(S));
+    }
+
+    /// <summary>
+    /// Called by <see cref="Generated"/> and <see cref="Modified"/> before they publish: an algorithm whose lists hold
+    /// sub-shapes of its result freezes the whole result here (decision 414: a sub-shape accessor freezes the whole
+    /// result with it). Does nothing by default.
+    /// </summary>
+    private protected virtual void BeforePublishingLists()
+    {
+    }
 
     /// <summary>The algorithm's own list behind <see cref="Modified"/>, unfrozen (OCCT's virtual).</summary>
     internal virtual NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape S)

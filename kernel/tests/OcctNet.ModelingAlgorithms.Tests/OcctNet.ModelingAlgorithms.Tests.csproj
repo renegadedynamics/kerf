@@ -12,6 +12,11 @@
       <_Parameter1>OcctSourceDir</_Parameter1>
       <_Parameter2>$(OcctSourceDir)</_Parameter2>
     </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1), for ShapeFix's tests on the heal group's inputs -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +24,48 @@
     <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\TestShapes.cs" Link="TestShapes.cs" />
     <!-- A record of a shape graph, to check that the in-place statics' twins leave their inputs unchanged -->
     <Compile Include="..\OcctNet.ModelingData.Tests\TopoDS\ShapeSnapshot.cs" Link="ShapeSnapshot.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Native OCCT's walking lines and their approximations, recorded once (unit 5F, decision 680) -->
+    <EmbeddedResource Include="ApproxInt\ApproxIntRecordings.txt.gz" LogicalName="ApproxIntRecordings.txt.gz" />
+    <!-- Native OCCT's walking steps, recorded by tools/walkrec (decision 687) -->
+    <EmbeddedResource Include="IntWalk\Recordings\*.txt" LogicalName="IntWalk.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's parametric intersections step by step, recorded by tools/walkrec (unit 5D) -->
+    <EmbeddedResource Include="IntPatch\Recordings\*.txt" LogicalName="IntPatch.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's edge intersectors on data/occ shapes, recorded by tools/edgerec (unit 6C, decision 754) -->
+    <EmbeddedResource Include="IntTools\Recordings\edgerec.txt.gz" LogicalName="IntTools.edgerec.txt.gz" />
+    <!-- Native OCCT's face/face intersections, recorded by tools/ffrec (unit 6D) -->
+    <EmbeddedResource Include="IntTools\FaceFaceRecordings.txt.gz" LogicalName="IntTools.FaceFaceRecordings.txt.gz" />
+    <!-- Native OCCT's analytic constraint solvers on random configurations, recorded by tools/gccrec (unit 5K1) -->
+    <EmbeddedResource Include="GccAna\Recordings\gccrec.txt.gz" LogicalName="GccAna.gccrec.txt.gz" />
+    <EmbeddedResource Include="BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" />
+    <!-- Native OCCT's faces from wires (BRepAlgo_FaceRestrictor, TopOpeBRepBuild_WireToFace), recorded by tools/frrec (unit 5O1) -->
+    <EmbeddedResource Include="BRepAlgo\FaceRestrictorRecordings.txt.gz" LogicalName="BRepAlgo.FaceRestrictorRecordings.txt.gz" />
+    <!-- Native OCCT's bisectors (Bisector_Bisec, Bisector_Inter), recorded by tools/bisrec (unit 5M) -->
+    <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
+    <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
+    <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
+    <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
+    <EmbeddedResource Include="BOPAlgo\Recordings\*.txt.gz" LogicalName="BOPAlgo.Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
+    <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
+    <!-- Native OCCT's BRepFill laws and sections and ShapeUpgrade_RemoveLocations, recorded by tools/brepfillrec (unit 5S1) -->
+    <EmbeddedResource Include="BRepFill\Recordings\brepfillrec.txt.gz" LogicalName="BRepFill.brepfillrec.txt.gz" />
+    <!-- Native OCCT's BRepFill_CompatibleWires, recorded by tools/cwrec (unit 5S1) -->
+    <EmbeddedResource Include="BRepFill\Recordings\cwrec.txt.gz" LogicalName="BRepFill.cwrec.txt.gz" />
+    <!-- Native OCCT's BRepOffsetAPI_MakePipe and MiddlePath, recorded by tools/piperec (unit 5S2) -->
+    <EmbeddedResource Include="BRepOffsetAPI\Recordings\piperec.txt.gz" LogicalName="BRepOffsetAPI.piperec.txt.gz" />
+    <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
+    <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\gordonrec.txt.gz" LogicalName="GeomFill.gordonrec.txt.gz" />
+    <!-- Native OCCT's surfaces through sections (GeomFill_Generator, GeomFill_AppSurf), recorded by tools/appsurfrec (unit 5L3) -->
+    <EmbeddedResource Include="GeomFill\Recordings\appsurfrec.txt.gz" LogicalName="GeomFill.appsurfrec.txt.gz" />
+    <!-- Native OCCT's ChFi2d_FilletAPI and ChFi2d_ChamferAPI on random pairs of edges, recorded by tools/chfi2drec (unit 5R) -->
+    <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
+    <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
+    <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

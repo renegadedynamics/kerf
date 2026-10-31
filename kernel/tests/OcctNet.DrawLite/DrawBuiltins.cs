@@ -18,7 +18,7 @@ internal static class DrawBuiltins
         "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
         "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -37,6 +37,12 @@ internal static class DrawBuiltins
         BOPTestClassifyCommands.Register(theInterpreter);
         BRepTestPrimitiveCommands.Register(theInterpreter);
         BRepTestSweepCommands.Register(theInterpreter);
+        BRepTestFillet2DCommands.Register(theInterpreter);
+        BRepTestFillingCommands.Register(theInterpreter);
+        BRepTestPipeShellCommands.Register(theInterpreter);
+        BRepTestProjectionCommands.Register(theInterpreter);
+        GeometryTestContinuityCommands.Register(theInterpreter);
+        GeometryTestCurveTanCommands.Register(theInterpreter);
         DrawChronoCommands.Register(theInterpreter);
         GeomliteTestCommands.Register(theInterpreter);
         BRepTestExtremaCommands.Register(theInterpreter);
@@ -44,8 +50,33 @@ internal static class DrawBuiltins
         BRepTestSurfaceCommands.Register(theInterpreter);
         BRepTestModifyCommands.Register(theInterpreter);
         GeometryTestCommands.Register(theInterpreter);
+        GeometryTestIntersectCommands.Register(theInterpreter);
+        GeometryTestBisecCommands.Register(theInterpreter);
+        GeometryTestFairCurveCommands.Register(theInterpreter);
+        BRepTestMatCommands.Register(theInterpreter);
+        GeometryTestProjCommands.Register(theInterpreter);
+        GeometryTestPipeCommands.Register(theInterpreter);
+        GeometryTestSurfaceCommands.Register(theInterpreter);
+        SWDRAWShapeFixCommands.Register(theInterpreter);
+        SWDRAWShapeAnalysisCommands.Register(theInterpreter);
+        SWDRAWShapeToolCommands.Register(theInterpreter);
+        BRepTestSewingCommands.Register(theInterpreter);
         DrawTrSurfCommands.Register(theInterpreter);
         MeshTestCommands.Register(theInterpreter);
+        SWDrawShapeUpgradeCommands.Register(theInterpreter);
+        BOPTestObjCommands.Register(theInterpreter);
+        BRepTestHistoryCommands.Register(theInterpreter);
+        BOPTestBOPCommands.Register(theInterpreter);
+        BOPTestCheckCommands.Register(theInterpreter);
+        BOPTestCellsCommands.Register(theInterpreter);
+        BOPTestMkConnectedCommands.Register(theInterpreter);
+        BOPTestPeriodicityCommands.Register(theInterpreter);
+        BOPTestRemoveFeaturesCommands.Register(theInterpreter);
+        BOPTestPartitionCommands.Register(theInterpreter);
+        BOPTestAPICommands.Register(theInterpreter);
+        BOPTestUtilityCommands.Register(theInterpreter);
+        BOPTestTolerCommands.Register(theInterpreter);
+        BOPTestDebugCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 

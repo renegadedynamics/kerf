@@ -54,6 +54,33 @@ public sealed class DrawCorpus(string theTestsDirectory)
         ("mesh", ["stepread", "tpcompound"], new Regex(@"\.(brep|rle)", RegexOptions.CultureInvariant)),
     ];
 
+    /// <summary>
+    /// Commands a group's scripts call only when the case sets a variable (unit 5R): the fillet2d group's end script
+    /// runs <c>CheckTriArea</c>, which nothing in that group defines, only <c>if {[info exists rel_tol]}</c>. A case
+    /// that never sets the variable doesn't need the commands.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string[] Commands, string Variable)> VariableBranches { get; } =
+    [
+        ("fillet2d", ["CheckTriArea"], "rel_tol"),
+    ];
+
+    /// <summary>
+    /// Commands a group's scripts call only for some values of a variable the grid or the case sets (unit 5O2): the
+    /// offset group's end script checks a <c>mkoffset</c> result in one branch (<c>if {$command == "mkoffset"}</c>), a
+    /// <c>withintersect</c> one in another, and the solid offset of every other grid in the last, which its begin
+    /// script's <c>OFFSETSHAPE</c> procedure builds. Each entry: the commands called only where the variable has one of
+    /// the values (null: where it is unset or has another value than those of the group's other entries). A case
+    /// whose own script calls a command still needs it.
+    /// </summary>
+    public static IReadOnlyList<(string Group, string Variable, string?[] Values, string[] Commands)> ValueBranches { get; } =
+    [
+        ("offset", "command", ["mkoffset"], ["mkoffset", "renamevar", "tolerance", "checksection", "mkplane", "whatis"]),
+        ("offset", "command", ["withintersect", null], ["offsetparameter", "offsetload", "offsetperform", "vprops", "sprops", "bsection"]),
+    ];
+
+    /// <summary>Whether the scan knows the branches of <see cref="ValueBranches"/> (unit 5O2).</summary>
+    public bool KnowsValueBranches { get; init; } = true;
+
     private static readonly Regex s_theFileName = new(@"^\s*set\s+TheFileName\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     private readonly ConcurrentDictionary<string, IReadOnlySet<string>> myProcCalls = new(StringComparer.Ordinal);
@@ -72,6 +99,14 @@ public sealed class DrawCorpus(string theTestsDirectory)
     /// scan skipped them; false gives that former set of cases.
     /// </summary>
     public bool ReadCaseLists { get; init; } = true;
+
+    /// <summary>
+    /// Whether a procedure the case's scripts define counts its body's commands only when something calls it (unit 5W).
+    /// The bugs group's modalg grids define <c>OFFSETSHAPE</c> in their begin script, which calls phase 7's offset
+    /// commands, and only a few of their cases call it. False (the default) counts every defined procedure's body, as
+    /// before.
+    /// </summary>
+    public bool FollowsCalledProcsOnly { get; init; }
 
     /// <summary>
     /// The directory a grid's cases are in: the grid's own, or the one the first line of its <c>cases.list</c> names
@@ -217,6 +252,13 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // an exception from the port that a command didn't turn into a Tcl error
             aLog.WriteLine("Tcl Exception: " + anError.GetType().Name + ": " + anError.Message);
         }
+        finally
+        {
+            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's process-wide defaults (mpparallel,
+            // mpsetdefaultname) don't carry over to the next case
+            Occt.BRepMesh_IncrementalMesh.SetParallelDefault(false);
+            Occt.BRepMesh_DiscretFactory.Get().SetDefaultName("FastDiscret");
+        }
 
         string aText = aLog.ToString();
         var aChecker = new DrawInterpreter();
@@ -250,9 +292,27 @@ public sealed class DrawCorpus(string theTestsDirectory)
     {
         var aCommands = new HashSet<string>(StringComparer.Ordinal);
         var aDefined = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, string>? aBodies = FollowsCalledProcsOnly ? new(StringComparer.Ordinal) : null;
         try
         {
-            Collect(Script(theCase), aCommands, aDefined, theDepth: 0);
+            Collect(Script(theCase), aCommands, aDefined, theDepth: 0, aBodies);
+            // the case's own procedures, once called (FollowsCalledProcsOnly)
+            var aCalled = new Stack<string>(aCommands);
+            var aDone = new HashSet<string>(StringComparer.Ordinal);
+            while (aBodies is not null && aCalled.TryPop(out string? aCall))
+            {
+                if (!aDone.Add(aCall) || !aBodies.TryGetValue(aCall, out string? aBody))
+                {
+                    continue;
+                }
+
+                var aBodyCommands = new HashSet<string>(StringComparer.Ordinal);
+                Collect(aBody, aBodyCommands, aDefined, theDepth: 1, aBodies);
+                foreach (string aNew in aBodyCommands.Where(aCommands.Add))
+                {
+                    aCalled.Push(aNew);
+                }
+            }
         }
         catch (DrawException)
         {
@@ -291,6 +351,39 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 if (aSet is null || aSet.Groups[1].Value is "\"\"" or "{}" || aSkippedFor.IsMatch(aSet.Groups[1].Value))
                 {
                     aMissing.ExceptWith(aBranchCommands);
+                }
+            }
+        }
+
+        foreach ((string aGroup, string[] aBranchCommands, string aVariable) in VariableBranches)
+        {
+            if (aGroup == theCase.Group
+                && !Regex.IsMatch(File.ReadAllText(theCase.Path), @"\bset\s+" + Regex.Escape(aVariable) + @"\b", RegexOptions.CultureInvariant))
+            {
+                aMissing.ExceptWith(aBranchCommands);
+            }
+        }
+
+        if (KnowsValueBranches)
+        {
+            foreach (IGrouping<(string Group, string Variable), (string Group, string Variable, string?[] Values, string[] Commands)> aBranches
+                     in ValueBranches.Where(b => b.Group == theCase.Group).GroupBy(b => (b.Group, b.Variable)))
+            {
+                // the value the grid's begin script or the case sets (the last set wins)
+                string aGridBegin = ReadIfExists(Path.Combine(TestsDirectory, theCase.Group, theCase.Grid, "begin"));
+                string aCaseText = File.ReadAllText(theCase.Path);
+                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+""?([^""\s]*)""?", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+                string aText = aGridBegin + "\n" + aCaseText;
+                string? aValue = aSetRegex.Matches(aText).LastOrDefault()?.Groups[1].Value;
+                bool isKnown = aBranches.Any(b => b.Values.Contains(aValue));
+                IReadOnlySet<string> anOwn = CommandsCalledBy(aText);
+                foreach ((string _, string _, string?[] aValues, string[] aBranchCommands) in aBranches)
+                {
+                    bool isTaken = aValues.Contains(aValue) || (!isKnown && aValues.Contains(null));
+                    if (!isTaken)
+                    {
+                        aMissing.ExceptWith(aBranchCommands.Where(c => !anOwn.Contains(c)));
+                    }
                 }
             }
         }
@@ -343,7 +436,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
         "dputs", "lassign", "linsert", "lreplace", "global", "upvar", "variable", "unset", "info", "file", "source",
     };
 
-    private static void Collect(string theScript, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth)
+    private static void Collect(string theScript, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth,
+                                Dictionary<string, string>? theProcBodies = null)
     {
         if (theDepth > 20)
         {
@@ -385,7 +479,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 // Bracketed parts always run
                 foreach (WordPart aPart in aWord.Parts)
                 {
-                    CollectSubstitutions(aPart, theCommands, theDefined, theDepth);
+                    CollectSubstitutions(aPart, theCommands, theDefined, theDepth, theProcBodies);
                 }
 
                 if (i == 0 || aWord.Literal is not { } aText)
@@ -393,15 +487,22 @@ public sealed class DrawCorpus(string theTestsDirectory)
                     continue;
                 }
 
+                // a procedure's body, kept until something calls it (FollowsCalledProcsOnly)
+                if (theProcBodies is not null && aName == "proc" && i == 3 && aWords[1].Literal is { } aProcName)
+                {
+                    theProcBodies[aProcName.TrimStart(':')] = aText;
+                    continue;
+                }
+
                 switch (Role(aName, aWords, i))
                 {
                     case ArgumentRole.Script:
-                        Collect(aText, theCommands, theDefined, theDepth + 1);
+                        Collect(aText, theCommands, theDefined, theDepth + 1, theProcBodies);
                         break;
                     case ArgumentRole.Expression:
                         foreach (WordPart aPart in TclParser.ParseSubst(aText, theBackslashes: false))
                         {
-                            CollectSubstitutions(aPart, theCommands, theDefined, theDepth);
+                            CollectSubstitutions(aPart, theCommands, theDefined, theDepth, theProcBodies);
                         }
 
                         break;
@@ -410,7 +511,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
                         IReadOnlyList<string> aPairs = TclList.IsList(aText) ? TclList.Parse(aText) : [];
                         for (int k = 1; k < aPairs.Count; k += 2)
                         {
-                            Collect(aPairs[k], theCommands, theDefined, theDepth + 1);
+                            Collect(aPairs[k], theCommands, theDefined, theDepth + 1, theProcBodies);
                         }
 
                         break;
@@ -418,24 +519,25 @@ public sealed class DrawCorpus(string theTestsDirectory)
 
                     case ArgumentRole.Unknown when aWord.IsBraced && aText.Contains('\n'):
                         // A braced multi-line argument of an unknown command is most likely a script
-                        Collect(aText, theCommands, theDefined, theDepth + 1);
+                        Collect(aText, theCommands, theDefined, theDepth + 1, theProcBodies);
                         break;
                 }
             }
         }
     }
 
-    private static void CollectSubstitutions(WordPart thePart, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth)
+    private static void CollectSubstitutions(WordPart thePart, HashSet<string> theCommands, HashSet<string> theDefined, int theDepth,
+                                             Dictionary<string, string>? theProcBodies = null)
     {
         switch (thePart)
         {
             case WordPart.Command aBracketed:
-                Collect(aBracketed.Script, theCommands, theDefined, theDepth + 1);
+                Collect(aBracketed.Script, theCommands, theDefined, theDepth + 1, theProcBodies);
                 break;
             case WordPart.Variable { Index: { } anIndex }:
                 foreach (WordPart anIndexPart in anIndex)
                 {
-                    CollectSubstitutions(anIndexPart, theCommands, theDefined, theDepth);
+                    CollectSubstitutions(anIndexPart, theCommands, theDefined, theDepth, theProcBodies);
                 }
 
                 break;

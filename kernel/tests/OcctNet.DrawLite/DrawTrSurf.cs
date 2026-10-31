@@ -47,7 +47,15 @@ internal static class DrawTrSurf
     /// <summary>DrawTrSurf::Set(name, gp_Pnt2d).</summary>
     public static void Set(DrawInterpreter theDI, string theName, in gp_Pnt2d thePoint) => theDI.SetDrawable(theName, DrawGeometry.Of(thePoint));
 
-    private static object? Geometry(DrawInterpreter theDI, string theName) => (theDI.GetDrawable(theName) as DrawGeometry)?.Geometry;
+    // a batten (DrawFairCurve_Batten derives from DrawTrSurf_BSplineCurve2d) and a qualified curve
+    // (GeometryTest_DrawableQualifiedCurve2d, from DrawTrSurf_Curve2d) are their curves
+    private static object? Geometry(DrawInterpreter theDI, string theName) => theDI.GetDrawable(theName) switch
+    {
+        DrawGeometry aGeometry => aGeometry.Geometry,
+        DrawFairCurve aBatten => aBatten.Curve,
+        DrawQualifiedCurve2d aQualified => aQualified.Curve,
+        _ => null,
+    };
 
     /// <summary>DrawTrSurf::Get: the curve or surface of the name, or null.</summary>
     public static Geom_Geometry? Get(DrawInterpreter theDI, string theName) => Geometry(theDI, theName) as Geom_Geometry;

@@ -56,25 +56,25 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 62 / 470 | 20,296 / 132,410 | 15.3 |
-| ModelingAlgorithms | TKBO | 0 / 201 | 0 / 71,242 | 0.0 |
-| ModelingAlgorithms | TKBool | 0 / 464 | 0 / 152,788 | 0.0 |
+| FoundationClasses | TKernel | 83 / 470 | 22,565 / 132,410 | 17.0 |
+| ModelingAlgorithms | TKBO | 196 / 201 | 71,137 / 71,242 | 99.9 |
+| ModelingAlgorithms | TKBool | 132 / 464 | 51,912 / 152,788 | 34.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
 | ModelingAlgorithms | TKFeat | 0 / 96 | 0 / 32,591 | 0.0 |
-| ModelingAlgorithms | TKFillet | 0 / 261 | 0 / 97,078 | 0.0 |
-| ModelingAlgorithms | TKGeomAlgo | 186 / 868 | 39,663 / 218,548 | 18.1 |
+| ModelingAlgorithms | TKFillet | 18 / 261 | 6,194 / 97,078 | 6.4 |
+| ModelingAlgorithms | TKGeomAlgo | 866 / 868 | 218,256 / 218,548 | 99.9 |
 | ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
 | ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
 | ModelingAlgorithms | TKMesh | 156 / 156 | 19,930 / 19,930 | 100.0 |
-| ModelingAlgorithms | TKOffset | 0 / 74 | 0 / 46,245 | 0.0 |
+| ModelingAlgorithms | TKOffset | 14 / 74 | 5,292 / 46,245 | 11.4 |
 | ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
-| ModelingAlgorithms | TKShHealing | 32 / 258 | 14,100 / 88,297 | 16.0 |
-| ModelingAlgorithms | TKTopAlgo | 212 / 340 | 52,739 / 84,336 | 62.5 |
+| ModelingAlgorithms | TKShHealing | 136 / 258 | 66,422 / 88,297 | 75.2 |
+| ModelingAlgorithms | TKTopAlgo | 336 / 340 | 83,733 / 84,336 | 99.3 |
 | ModelingAlgorithms | TKXMesh | 2 / 2 | 100 / 100 | 100.0 |
-| ModelingData | TKBRep | 169 / 277 | 33,900 / 90,279 | 37.6 |
+| ModelingData | TKBRep | 173 / 277 | 34,131 / 90,279 | 37.8 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
 | ModelingData | TKG3d | 237 / 237 | 70,301 / 70,301 | 100.0 |
-| ModelingData | TKGeomBase | 704 / 720 | 316,887 / 317,408 | 99.8 |
+| ModelingData | TKGeomBase | 719 / 720 | 317,319 / 317,408 | 100.0 |
 | Visualization | TKD3DHost | 0 / 8 | 0 / 1,375 | 0.0 |
 | Visualization | TKIVtk | 0 / 39 | 0 / 5,038 | 0.0 |
 | Visualization | TKMeshVS | 0 / 54 | 0 / 10,653 | 0.0 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 1 / 380 | 28 / 69,480 | 0.0 |
 | Visualization | TKV3d | 5 / 493 | 2,282 / 112,071 | 2.0 |
-| **All** |  | 2380 | 744,062 / 2,897,781 | 25.7 |
+| **All** |  | 3688 | 1,143,438 / 2,897,781 | 39.5 |
 
 ## TKMath
 
@@ -116,7 +116,7 @@ broken down by package.
 |---|---:|---:|---:|
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
-| Message | 24 / 50 | 4,552 / 7,261 | 62.7 |
+| Message | 45 / 50 | 6,821 / 7,261 | 93.9 |
 | NCollection | 30 / 81 | 13,941 / 26,993 | 51.6 |
 | OSD | 2 / 94 | 646 / 19,678 | 3.3 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
@@ -132,41 +132,77 @@ broken down by package.
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
 
+## TKBO
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BOPAlgo | 74 / 79 | 34,926 / 35,031 | 99.7 |
+| BOPDS | 36 / 36 | 7,225 / 7,225 | 100.0 |
+| BOPTools | 17 / 17 | 7,980 / 7,980 | 100.0 |
+| BRepAlgoAPI | 20 / 20 | 2,748 / 2,748 | 100.0 |
+| IntTools | 49 / 49 | 18,258 / 18,258 | 100.0 |
+
+## TKBool
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepAlgo | 11 / 13 | 3,764 / 4,562 | 82.5 |
+| BRepFill | 62 / 68 | 30,750 / 33,916 | 90.7 |
+| BRepProj | 3 / 3 | 407 / 407 | 100.0 |
+| TopOpeBRep | 0 / 81 | 0 / 23,561 | 0.0 |
+| TopOpeBRepBuild | 33 / 112 | 8,646 / 42,632 | 20.3 |
+| TopOpeBRepDS | 2 / 114 | 1,768 / 25,098 | 7.0 |
+| TopOpeBRepTool | 21 / 73 | 6,577 / 22,612 | 29.1 |
+
+## TKFillet
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepBlend | 0 / 75 | 0 / 19,287 | 0.0 |
+| BRepFilletAPI | 3 / 8 | 545 / 2,248 | 24.2 |
+| Blend | 0 / 24 | 0 / 2,722 | 0.0 |
+| BlendFunc | 0 / 44 | 0 / 14,650 | 0.0 |
+| ChFi2d | 15 / 15 | 5,649 / 5,649 | 100.0 |
+| ChFi3d | 0 / 26 | 0 / 38,964 | 0.0 |
+| ChFiDS | 0 / 34 | 0 / 5,826 | 0.0 |
+| ChFiKPart | 0 / 28 | 0 / 5,989 | 0.0 |
+| FilletSurf | 0 / 7 | 0 / 1,743 | 0.0 |
+
 ## TKGeomAlgo
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| AppBlend | 0 / 5 | 0 / 1,463 | 0.0 |
-| ApproxInt | 0 / 9 | 0 / 4,210 | 0.0 |
-| FairCurve | 0 / 30 | 0 / 4,481 | 0.0 |
-| GccAna | 0 / 61 | 0 / 16,486 | 0.0 |
-| GccEnt | 0 / 8 | 0 / 556 | 0.0 |
-| GccInt | 0 / 15 | 0 / 670 | 0.0 |
-| Geom2dAPI | 9 / 13 | 1,021 / 2,706 | 37.7 |
-| Geom2dGcc | 0 / 54 | 0 / 15,966 | 0.0 |
-| Geom2dHatch | 0 / 16 | 0 / 3,936 | 0.0 |
+| AppBlend | 5 / 5 | 1,463 / 1,463 | 100.0 |
+| ApproxInt | 9 / 9 | 4,210 / 4,210 | 100.0 |
+| FairCurve | 30 / 30 | 4,481 / 4,481 | 100.0 |
+| GccAna | 61 / 61 | 16,486 / 16,486 | 100.0 |
+| GccEnt | 8 / 8 | 556 / 556 | 100.0 |
+| GccInt | 15 / 15 | 670 / 670 | 100.0 |
+| Geom2dAPI | 13 / 13 | 2,706 / 2,706 | 100.0 |
+| Geom2dGcc | 54 / 54 | 15,966 / 15,966 | 100.0 |
+| Geom2dHatch | 16 / 16 | 3,936 / 3,936 | 100.0 |
 | Geom2dInt | 26 / 26 | 2,240 / 2,240 | 100.0 |
-| GeomAPI | 23 / 27 | 4,454 / 5,792 | 76.9 |
-| GeomFill | 0 / 127 | 0 / 33,355 | 0.0 |
-| GeomInt | 0 / 60 | 0 / 9,217 | 0.0 |
-| GeomPlate | 0 / 18 | 0 / 6,566 | 0.0 |
-| Hatch | 0 / 8 | 0 / 805 | 0.0 |
-| HatchGen | 0 / 12 | 0 / 1,368 | 0.0 |
+| GeomAPI | 27 / 27 | 5,792 / 5,792 | 100.0 |
+| GeomFill | 127 / 127 | 33,355 / 33,355 | 100.0 |
+| GeomInt | 58 / 60 | 8,925 / 9,217 | 96.8 |
+| GeomPlate | 18 / 18 | 6,566 / 6,566 | 100.0 |
+| Hatch | 8 / 8 | 805 / 805 | 100.0 |
+| HatchGen | 12 / 12 | 1,368 / 1,368 | 100.0 |
 | IntCurve | 29 / 29 | 11,757 / 11,757 | 100.0 |
 | IntCurveSurface | 35 / 35 | 7,635 / 7,635 | 100.0 |
-| IntImp | 5 / 11 | 538 / 1,568 | 34.3 |
+| IntImp | 11 / 11 | 1,568 / 1,568 | 100.0 |
 | IntImpParGen | 6 / 6 | 1,446 / 1,446 | 100.0 |
-| IntPatch | 0 / 91 | 0 / 42,474 | 0.0 |
-| IntPolyh | 0 / 26 | 0 / 7,806 | 0.0 |
+| IntPatch | 91 / 91 | 42,474 / 42,474 | 100.0 |
+| IntPolyh | 26 / 26 | 7,806 / 7,806 | 100.0 |
 | IntRes2d | 18 / 18 | 1,932 / 1,932 | 100.0 |
-| IntStart | 0 / 6 | 0 / 1,716 | 0.0 |
-| IntSurf | 6 / 32 | 919 / 2,743 | 33.5 |
-| IntWalk | 0 / 12 | 0 / 8,124 | 0.0 |
+| IntStart | 6 / 6 | 1,716 / 1,716 | 100.0 |
+| IntSurf | 32 / 32 | 2,743 / 2,743 | 100.0 |
+| IntWalk | 12 / 12 | 8,124 / 8,124 | 100.0 |
 | Intf | 23 / 23 | 5,951 / 5,951 | 100.0 |
-| Law | 0 / 22 | 0 / 5,410 | 0.0 |
-| LocalAnalysis | 0 / 7 | 0 / 2,193 | 0.0 |
-| NLPlate | 0 / 18 | 0 / 1,464 | 0.0 |
-| Plate | 0 / 37 | 0 / 4,742 | 0.0 |
+| Law | 22 / 22 | 5,410 / 5,410 | 100.0 |
+| LocalAnalysis | 7 / 7 | 2,193 / 2,193 | 100.0 |
+| NLPlate | 18 / 18 | 1,464 / 1,464 | 100.0 |
+| Plate | 37 / 37 | 4,742 / 4,742 | 100.0 |
 | TopClass | 2 / 2 | 405 / 405 | 100.0 |
 | TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
 
@@ -178,6 +214,15 @@ broken down by package.
 | BRepMeshData | 12 / 12 | 919 / 919 | 100.0 |
 | IMeshData | 22 / 22 | 1,077 / 1,077 | 100.0 |
 | IMeshTools | 20 / 20 | 1,108 / 1,108 | 100.0 |
+
+## TKOffset
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepOffset | 0 / 28 | 0 / 30,765 | 0.0 |
+| BRepOffsetAPI | 14 / 27 | 5,292 / 7,762 | 68.2 |
+| BiTgte | 0 / 7 | 0 / 3,745 | 0.0 |
+| Draft | 0 / 12 | 0 / 3,973 | 0.0 |
 
 ## TKPrim
 
@@ -195,23 +240,23 @@ broken down by package.
 |---|---:|---:|---:|
 | SHMessage | 0 / 2 | 0 / 572 | 0.0 |
 | ShapeAlgo | 0 / 7 | 0 / 1,048 | 0.0 |
-| ShapeAnalysis | 18 / 44 | 11,359 / 19,056 | 59.6 |
-| ShapeBuild | 6 / 8 | 1,233 / 1,692 | 72.9 |
-| ShapeConstruct | 0 / 8 | 0 / 5,043 | 0.0 |
+| ShapeAnalysis | 44 / 44 | 19,056 / 19,056 | 100.0 |
+| ShapeBuild | 8 / 8 | 1,692 / 1,692 | 100.0 |
+| ShapeConstruct | 8 / 8 | 5,043 / 5,043 | 100.0 |
 | ShapeCustom | 0 / 27 | 0 / 6,081 | 0.0 |
-| ShapeExtend | 8 / 18 | 1,508 / 3,427 | 44.0 |
-| ShapeFix | 0 / 53 | 0 / 31,777 | 0.0 |
+| ShapeExtend | 18 / 18 | 3,427 / 3,427 | 100.0 |
+| ShapeFix | 53 / 53 | 31,777 / 31,777 | 100.0 |
 | ShapeProcess | 0 / 13 | 0 / 2,983 | 0.0 |
 | ShapeProcessAPI | 0 / 2 | 0 / 254 | 0.0 |
-| ShapeUpgrade | 0 / 76 | 0 / 16,364 | 0.0 |
+| ShapeUpgrade | 5 / 76 | 5,427 / 16,364 | 33.2 |
 
 ## TKTopAlgo
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| BRepApprox | 0 / 52 | 0 / 5,269 | 0.0 |
+| BRepApprox | 50 / 52 | 4,977 / 5,269 | 94.5 |
 | BRepBndLib | 3 / 3 | 1,430 / 1,430 | 100.0 |
-| BRepBuilderAPI | 43 / 52 | 6,340 / 14,345 | 44.2 |
+| BRepBuilderAPI | 50 / 52 | 14,034 / 14,345 | 97.8 |
 | BRepCheck | 19 / 19 | 7,467 / 7,467 | 100.0 |
 | BRepClass | 14 / 14 | 1,909 / 1,909 | 100.0 |
 | BRepClass3d | 15 / 15 | 3,428 / 3,428 | 100.0 |
@@ -219,12 +264,12 @@ broken down by package.
 | BRepGProp | 30 / 30 | 7,451 / 7,451 | 100.0 |
 | BRepIntCurveSurface | 2 / 2 | 443 / 443 | 100.0 |
 | BRepLib | 41 / 41 | 13,241 / 13,241 | 100.0 |
-| BRepMAT2d | 0 / 6 | 0 / 1,642 | 0.0 |
+| BRepMAT2d | 6 / 6 | 1,642 / 1,642 | 100.0 |
 | BRepTopAdaptor | 8 / 8 | 2,140 / 2,140 | 100.0 |
-| Bisector | 0 / 22 | 0 / 7,520 | 0.0 |
+| Bisector | 22 / 22 | 7,520 / 7,520 | 100.0 |
 | IntCurvesFace | 5 / 5 | 1,172 / 1,172 | 100.0 |
-| MAT | 0 / 25 | 0 / 3,179 | 0.0 |
-| MAT2d | 0 / 14 | 0 / 5,982 | 0.0 |
+| MAT | 25 / 25 | 3,179 / 3,179 | 100.0 |
+| MAT2d | 14 / 14 | 5,982 / 5,982 | 100.0 |
 
 ## TKXMesh
 
@@ -245,7 +290,7 @@ broken down by package.
 | BinTools | 24 / 25 | 7,308 / 7,330 | 99.7 |
 | TopExp | 4 / 4 | 883 / 883 | 100.0 |
 | TopTools | 8 / 9 | 1,699 / 1,722 | 98.7 |
-| TopoDS | 40 / 44 | 2,546 / 2,777 | 91.7 |
+| TopoDS | 44 / 44 | 2,777 / 2,777 | 100.0 |
 
 ## TKG2d
 
@@ -286,7 +331,7 @@ broken down by package.
 | ExtremaPC | 18 / 18 | 3,990 / 3,990 | 100.0 |
 | FEmTool | 18 / 18 | 3,115 / 3,115 | 100.0 |
 | GC | 65 / 65 | 5,462 / 5,462 | 100.0 |
-| GCE2d | 0 / 15 | 0 / 432 | 0.0 |
+| GCE2d | 15 / 15 | 432 / 432 | 100.0 |
 | GCPnts | 19 / 19 | 5,022 / 5,022 | 100.0 |
 | GProp | 18 / 18 | 2,776 / 2,776 | 100.0 |
 | Geom2dConvert | 14 / 14 | 4,160 / 4,160 | 100.0 |

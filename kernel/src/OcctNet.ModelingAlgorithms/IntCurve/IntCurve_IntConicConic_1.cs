@@ -491,7 +491,7 @@ public sealed partial class IntCurve_IntConicConic
         //--    Les calculs ont ete fait dans le repere x1,y1, (O1,O2)
         //--    On se ramene au repere propre a C1
 
-        double dAngle1 = new gp_Vec2d(Circle.XAxis().Direction()).Angle(new gp_Vec2d(Line.Direction()));
+        double dAngle1 = Circle.XAxis().Direction().Angle(Line.Direction());
 
         double a, b, c, d;
         Line.Coefficients(out a, out b, out c);

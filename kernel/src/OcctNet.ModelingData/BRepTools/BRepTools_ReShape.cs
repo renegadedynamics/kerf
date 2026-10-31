@@ -55,6 +55,9 @@ public class BRepTools_ReShape : Standard_Transient
         // Returns the result of the relation.
         public TopoDS_Shape RelationResult() => myResult;
 
+        // OCCT.NET: the kind, for ReplaceTShapes.
+        public TReplacementKind Kind() => myKind;
+
         // Returns the kind of the relation
         // between an initial shape and the result of the replacement.
         public BRepTools_History.TRelationType RelationKind() => (myKind == TReplacementKind.TReplacementKind_Remove)
@@ -676,6 +679,59 @@ public class BRepTools_ReShape : Standard_Transient
         // of recursing.
         myShapeToReplacement.Bind(shape, new TReplacement(newshape, theKind));
         myNewShapes.Add(newshape);
+    }
+
+    /// <summary>
+    /// OCCT.NET (decision 583, <c>BRepTools_CopyAtEntry</c>): replaces, in every recorded request, the TShape of the
+    /// recorded shape by its image in <paramref name="theKeys"/> and the TShape of the replacement (and of the
+    /// recorded replacements, <see cref="IsNewShape"/>) by its image in <paramref name="theResults"/>, keeping their
+    /// locations and orientations; TShapes without an image stay. The requests keep their order and kinds; if two
+    /// recorded shapes get the same image, the later request wins. So a context filled by an algorithm working on a
+    /// copy answers for the shapes the copy was made from, and the other way round.
+    /// </summary>
+    internal void ReplaceTShapes(IReadOnlyDictionary<TopoDS_TShape, TopoDS_TShape> theKeys,
+                                 IReadOnlyDictionary<TopoDS_TShape, TopoDS_TShape> theResults)
+    {
+        var anEntries = new List<KeyValuePair<TopoDS_Shape, TReplacement>>(myShapeToReplacement);
+        myShapeToReplacement.Clear();
+        foreach (KeyValuePair<TopoDS_Shape, TReplacement> anEntry in anEntries)
+        {
+            TopoDS_Shape aKey = withImage(anEntry.Key, theKeys);
+            TopoDS_Shape aResult = withImage(anEntry.Value.RelationResult(), theResults);
+            myShapeToReplacement.Bind(aKey, new TReplacement(aResult, anEntry.Value.Kind()));
+        }
+
+        var aNewShapes = new List<TopoDS_Shape>(myNewShapes);
+        myNewShapes.Clear();
+        foreach (TopoDS_Shape aNew in aNewShapes)
+        {
+            myNewShapes.Add(withImage(aNew, theResults));
+        }
+    }
+
+    /// <summary>
+    /// OCCT.NET: the replacements recorded (the results of the requests, null for removals), unfrozen, for
+    /// <c>BRepTools_CopyAtEntry</c>.
+    /// </summary>
+    internal IEnumerable<TopoDS_Shape> InternalReplacements()
+    {
+        foreach (KeyValuePair<TopoDS_Shape, TReplacement> anEntry in myShapeToReplacement)
+        {
+            yield return anEntry.Value.RelationResult();
+        }
+    }
+
+    // The shape with the image of its TShape, if it has one.
+    private static TopoDS_Shape withImage(in TopoDS_Shape theShape, IReadOnlyDictionary<TopoDS_TShape, TopoDS_TShape> theImages)
+    {
+        TopoDS_TShape? aTShape = theShape.TShape();
+        if (aTShape is null || !theImages.TryGetValue(aTShape, out TopoDS_TShape? anImage))
+        {
+            return theShape;
+        }
+        TopoDS_Shape aShape = theShape;
+        aShape.TShape(anImage);
+        return aShape;
     }
 
     // OCCT's private isOrdinaryMerged is never called and isn't ported.

@@ -6,13 +6,14 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// The commands of BRepTest_CurveCommands.cxx that need only BRepBuilderAPI's makers and BRepLib: vertex, edge,
-/// mkedge, wire, polyline, polyvertex, mkcurve, mkoricurve, mkpoint, mk2dcurve, uisoedge, visoedge and profile.
+/// mkedge, wire, polyline, polyvertex, mkcurve, mkoricurve, mkpoint, mk2dcurve, uisoedge, visoedge and profile; and
+/// mkoffset and openoffset (BRepOffsetAPI_MakeOffset, unit 5O2).
 /// </summary>
 /// <remarks>
 /// The makers' results are read through their internal accessors where OCCT writes into them before binding
 /// (isoedge's pcurve, profile's 3D curves on a non-planar face); <see cref="DrawInterpreter.SetShape"/> freezes what
 /// is bound. Not here: range, etrim and transfert (they change a bound edge in place), bsplineprof and 2dprofile
-/// (Geom2dAPI_Interpolate and friends), mkoffset and openoffset (BRepOffsetAPI), edgeintersector (TopOpeBRep),
+/// (Geom2dAPI_Interpolate and friends), edgeintersector (TopOpeBRep),
 /// arclinconvert, concatwire, build3d and reducepcurves.
 /// </remarks>
 internal static class BRepTestCurveCommands
@@ -32,6 +33,8 @@ internal static class BRepTestCurveCommands
         DrawCxx.Add(theInterpreter, "uisoedge", IsoEdge);
         DrawCxx.Add(theInterpreter, "visoedge", IsoEdge);
         DrawCxx.Add(theInterpreter, "profile", Profile);
+        DrawCxx.Add(theInterpreter, "mkoffset", MkOffset);
+        DrawCxx.Add(theInterpreter, "openoffset", OpenOffset);
     }
 
     private static int Vertex(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
@@ -954,5 +957,165 @@ internal static class BRepTestCurveCommands
     badargs:
         di.Append("profile : bad number of arguments");
         return 1;
+    }
+
+    // mkoffset result face/compound of wires nboffset stepoffset [-approx] [jointype(a/i) [alt]]
+    private static int MkOffset(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 5)
+        {
+            return 1;
+        }
+
+        BRepOffsetAPI_MakeOffset Paral = new();
+        bool ToApprox = false;
+        GeomAbs_JoinType theJoinType = GeomAbs_JoinType.GeomAbs_Arc;
+
+        int anIndArg = 6;
+        if (n >= 6)
+        {
+            if (a[5] == "-approx")
+            {
+                ToApprox = true;
+                anIndArg++;
+            }
+
+            if (n >= anIndArg && a[anIndArg - 1] == "i")
+            {
+                theJoinType = GeomAbs_JoinType.GeomAbs_Intersection;
+            }
+        }
+
+        TopoDS_Shape Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
+
+        if (Base.IsNull())
+        {
+            Base = theDI.GetShape(a[2]);
+            if (Base.IsNull())
+            {
+                return 1;
+            }
+            Paral.Init(theJoinType);
+            TopExp_Explorer exp = new();
+            for (exp.Init(Base, TopAbs_ShapeEnum.TopAbs_WIRE); exp.More(); exp.Next())
+            {
+                TopoDS_Wire aLocalShape = TopoDS.Wire(exp.Current());
+                Paral.AddWire(aLocalShape);
+            }
+        }
+        else
+        {
+            Base = Base.Oriented(TopAbs_Orientation.TopAbs_FORWARD);
+            Paral.Init(TopoDS.Face(Base), theJoinType);
+        }
+
+        Paral.SetApprox(ToApprox);
+
+        double U, dU;
+        int Nb;
+        dU = theDI.Atof(a[4]);
+        Nb = theDI.Atoi(a[3]);
+
+        double Alt = 0.0;
+        if (n > anIndArg)
+        {
+            Alt = theDI.Atof(a[anIndArg]);
+        }
+
+        int Compt = 1;
+
+        for (int i = 1; i <= Nb; i++)
+        {
+            U = i * dU;
+            Paral.Perform(U, Alt);
+
+            if (!Paral.IsDone())
+            {
+                di.Append(" Error: Offset is not done.\n");
+                return 1;
+            }
+            else
+            {
+                theDI.SetShape($"{a[1]}_{Compt++}", Paral.Shape());
+            }
+        }
+
+        return 0;
+    }
+
+    // openoffset result face/wire nboffset stepoffset [-approx] [jointype(a/i)]
+    private static int OpenOffset(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 5)
+        {
+            return 1;
+        }
+
+        BRepOffsetAPI_MakeOffset Paral = new();
+        bool ToApprox = false;
+        GeomAbs_JoinType theJoinType = GeomAbs_JoinType.GeomAbs_Arc;
+
+        int anIndArg = 6;
+        if (n >= 6)
+        {
+            if (a[5] == "-approx")
+            {
+                ToApprox = true;
+                anIndArg++;
+            }
+
+            if (n >= anIndArg && a[anIndArg - 1] == "i")
+            {
+                theJoinType = GeomAbs_JoinType.GeomAbs_Intersection;
+            }
+        }
+
+        TopoDS_Shape Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
+
+        if (Base.IsNull())
+        {
+            Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
+            if (Base.IsNull())
+            {
+                return 1;
+            }
+            Paral.Init(theJoinType, true);
+            Paral.AddWire(TopoDS.Wire(Base));
+        }
+        else
+        {
+            Base = Base.Oriented(TopAbs_Orientation.TopAbs_FORWARD);
+            Paral.Init(TopoDS.Face(Base), theJoinType, true);
+        }
+
+        Paral.SetApprox(ToApprox);
+
+        double U, dU;
+        int Nb;
+        dU = theDI.Atof(a[4]);
+        Nb = theDI.Atoi(a[3]);
+
+        double Alt = 0.0;
+        int Compt = 1;
+
+        for (int i = 1; i <= Nb; i++)
+        {
+            U = i * dU;
+            Paral.Perform(U, Alt);
+
+            if (!Paral.IsDone())
+            {
+                di.Append(" Error: Offset is not done.\n");
+                return 1;
+            }
+            else
+            {
+                theDI.SetShape($"{a[1]}_{Compt++}", Paral.Shape());
+            }
+        }
+
+        return 0;
     }
 }

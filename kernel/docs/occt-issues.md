@@ -589,3 +589,786 @@ float-identical to native's on every compared face and edge.
 |---|---|---|
 | build123d.NET's 3d_mesh_extract (not OCCT) | Calls BRepLib_ToolTriangulatedShape::ComputeNormals on the face's attached triangulation, which writes the normals into the meshed shape | Harmless there (the shape is build123d.NET's private meshed copy). The port computes them on an unattached copy (decision 569), with the same values |
 | BRepLib_ToolTriangulatedShape::ComputeNormals (a property) | Normals are stored in single precision (Poly_Triangulation::SetNormal), then read back as gp_Dir (normalised again in double) before the location's rotation | The viewer's normals go through float twice. Kept: the port must give native's floats |
+
+## Phase 5: unit 5E, IntPolyh
+
+All reproduced. The ones that change results are parity-sensitive for units 5D and 5G (IntPatch_PrmPrmIntersection
+starts its walking lines from IntPolyh's section lines and tangent zones).
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPolyh_Intersection::PerformMaillage` (standard), enlarged-zone retry | When no couple is found, the retry refills the points on the enlarged sampling and recomputes everything on the same `IntPolyh_MaillageAffinage`. `IntPolyh_Array::Init` keeps the items already there, and `FillArrayOfTriangles` only ever clears the intersection-possible flag | The first pass's triangles keep their flags (out of the common box, split, non-interfering), their cached bounding boxes (computed from the unenlarged points), deflections and edges; triangles beyond the first pass's count are reused with stale state when refining. A first pass that rejected everything (disjoint boxes, the usual reason for no couple) makes the retry find nothing; a fresh object on the enlarged sampling would. Reproduced; test `BSplinesBeyondBounds_EnlargedRetry_KeepsTheFirstPassTriangles` |
+| `IntPolyh_MaillageAffinage::FillArrayOfPnt(SurfID, isShiftFwd, Upars, Vpars, theDeflTol)` | Calls the point-normal overload with `1` instead of `SurfID` | Always fills the first surface's points. IntPolyh_Intersection doesn't call it (it uses the point-normal overload directly); `FillArrayOfPnt(SurfID, isShiftFwd)` does. Test `FillArrayOfPnt_ShiftedWithSampling_FillsTheFirstSurface` |
+| `IsDegenerated` (IntPolyh_MaillageAffinage.cxx) | Samples the isoline at `i * dU` (and `i * dV`), not `aU1 + i * dU` | The middle sample is off the surface's range unless it starts at 0, so a degenerated bound isoline can be missed (its points then aren't flagged, and its triangles get a deflection instead of being degenerated) |
+| `CalculPtsInterTriEdgeCoplanaires`, the edge not parallel to the side, second point, `TriSurfID == 2` | Takes the side's orientation from `Tri1` where the first point's branch reads `Tri2` | The second start point's `Lambda2` may be `1 - alpha` instead of `alpha` |
+| `CalculPtsInterTriEdgeCoplanaires`, the edge parallel to the side | For `TriSurfID == 2`, `SetUV1(PEP.U(), PTP.V())` and `SetUV2(PTP.U(), PEP.V())` mix the two points' U and V; one branch builds `PEP2` from `PE2 + Edge * lambda2` where the others start from `PE1`; the second point takes `alpha1` and `lambda1`, not `alpha2` and `lambda2`, and for `TriSurfID == 2` the orientations from the other triangles | Coplanar overlapping edges give start points with wrong parameters and positions on the edges (the GTest's sphere/plane and sphere/cylinder cases only check that they are finite) |
+| `IntPolyh_MaillageAffinage::TriangleEdgeContact`, coplanar case | One of the duplicate checks compares `SP1.V2()` with `SP2.V1()` | Two distinct points can be merged, or a duplicate kept |
+| `IntPolyh_MaillageAffinage::TriangleEdgeContact`, `TriSurfID == 2`, on the second side (alpha 1) | Sets `Lambda2` from `alpha`, where the first surface's branch uses `beta` | The start point's position on the edge is 1 (or 0) whatever beta is |
+| `IntPolyh_MaillageAffinage::TriContact` | Leaves the angle unchanged when a triangle's normal vanishes; TriangleCompare passes one variable for all couples | Such a couple gets the previous couple's angle (or -2), which feeds `IsAdvRequired`, `AnalyzeIntersection` and the start points' incidence |
+| `IntPolyh_StartPoint::CheckSameSP` | Prints both points and "Can't Check" to standard output when both edges are unknown; TriangleEdgeContact prints "Cote PT2PT3 nul1" | Debug output in a release library. Left out of the port (decision 596) |
+| `IntPolyh_MaillageAffinage::CommonBox(B1, B2, ...)` | Ignores its box arguments and uses its own | Harmless (its only caller passes its own boxes) |
+| `IntPolyh_MaillageAffinage::GetFinTE`, `GetFinTT` | Declared, never defined | A link error for a caller; left out (decision 597) |
+## Phase 6: unit 6S, Sewing
+
+Found while porting BRepBuilderAPI_Sewing and FastSewing. Reproduced in the port, each marked `// OCCT`.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepBuilderAPI_Sewing::Perform` → `EdgeRegularity` (BRepBuilderAPI_Sewing.cxx) | EdgeRegularity ends with `myMergedEdges.Clear()`, and CreateOutputInformations, called after it, binds a section to its boundary only if the section is in `myMergedEdges` | With sewing on (the default), `IsSectionBound` is always false and `SectionToBoundary` always throws; they work only in analysis mode (`option1 = false`). Pinned by `A_bound_is_cut_at_a_T_junction_and_its_sections_know_their_boundary`; the oracle compares the number of bound sections with native's |
+| `BRepBuilderAPI_Sewing::SameParameterEdge` (the two-edge form) | When the second edge has only the reversed pcurve of a seam on a face (`c2d2` null, `c2d21` not), dereferences the null `c2d2` | A crash in native OCCT; a NullReferenceException in the port. By reading |
+| `FreeEdge`, `MultipleEdge`, `ContigousEdge`, `ContigousEdgeCouple`, `DeletedFace`, `DegeneratedShape` | The range checks accept index 0 (`index < 0 \|\| index > Nb...`) | Index 0 then fails in the map (Standard_OutOfRange) instead of the method's own check. Kept |
+| `BRepBuilderAPI_Sewing::EdgeRegularity` | Iterates `myMergedEdges` (a map keyed by shapes) in address order | Harmless: each edge's regularity is encoded on its own. The port iterates in insertion order |
+| `BRepBuilderAPI_Sewing::Dump` | Writes to `std::cout` only | The port adds `Dump(TextWriter)` |
+| `BRepBuilderAPI_Sewing` (native runs, found by the oracle) | The sewn shape's sub-shapes come out in an order that can change from run to run of the same sewing in one process (address-ordered maps; plan 2.4) | tests/sewing tol_0_01/Q5 and CNP001_projoiei.rle at 1e-6 gave two native orders over seven runs; the port's order is one of them, the same every run. The oracle compares with every native variant |
+| `BRepBuilderAPI_Sewing` (in place, found by the oracle) | Sews its inputs in place: in a few cases (tests/sewing G3, G4 at 0.01, Y7 at 100; CCH_propag.rle, CCH_r2.rle at 1e-6) it writes into input edges or vertices (SameParameterShape runs BRepLib::SameParameter on every edge of the result, the inputs' own edges included), and then answers that they aren't modified (`IsModified`, `IsModifiedSubShape`) | The port never writes a frozen input: it sews a copy (decision 600) and answers that those inputs are modified, giving the changed copy. Expected; the oracle detects the native write and compares everything else |
+## Phase 5: unit 5A, intersection foundations
+
+Found while porting IntSurf, IntImp, IntStart and IntPatch's data model and tools. By reading OCCT's code unless a
+test is named; the port reproduces each (`// OCCT` at the line). No class of this unit is bound natively, so none
+is confirmed by the oracle yet (5G).
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_GLine::ComputeVertexParameters`, the third filter (points on S2 only) | Tests `VTXi.IsVertexOnS1()` where `IsVertexOnS2` is meant; always false for these points | Of two coincident points on S2, point i is always the one removed, even when it is the vertex. Kept |
+| `IntPatch_GLine::Replace` | Appends the point and ignores Index (the replacement is commented out) | A "replaced" vertex is added at the end and the old one stays. Kept; pinned by `IntPatch_GLineTests` |
+| `IntPatch_GLine::ComputeVertexParameters` (a property) | Sets `indf = 1` and `indl = nbvtx` without setting `fipt`/`lapt` | HasFirstPoint/HasLastPoint stay as they were. Kept; pinned |
+| `IntPatch_ALine::ComputeVertexParameters`, the periodic-line block | The `Prepend` branch is inside `VTX0 == ParamMinOnLine` but requires `VTX0 != ParamMinOnLine` (and measures from VTX0 where VTXN seems meant) | A closed line whose last vertex is at its end never gets the matching vertex at its start. Kept |
+| `IntPatch_WLine::ComputeVertexParameters`, the insertion of a vertex before the line | The loop that shifts the other vertices tests `j != 1` where `j != i` is meant | Vertex 1 keeps parameter 1 while its point moves to index 2. Kept; pinned by `ComputeVertexParameters_reproduces_OCCTs_unshifted_vertex_before_the_line` |
+| `IntPatch_WLine::ComputeVertexParameters`, the seam phase | The S2 creation block runs even after the S1 block has appended a vertex; its search loop is skipped and its else branch resets `encoreunefois` | The loops continue past the new vertex. Kept |
+| `IntPatch_WLine::Dump`, `IntPatch_RLine::Dump`, mode 0 | Print `Vertex(pol)` instead of `Point(pol)`, and only while `pol <= NbVertex` | The dump shows vertices where points are announced. Kept |
+| `IntPatch_RstInt.cxx`, `Recadre`, torus case | The V2 loop compares `V2 < V1p - 1.5π` where V2p is meant | A torus's V2 can be left a period off. Kept |
+| `IntPatch_PolyArc::SetOffset` | `Get` returns the bounds with the gap, and the box is reset to the unshifted bounds before the shifted ones are added | The box covers both positions and grows by the gap on each call. Kept |
+| `IntPatch_HInterTool::SamplePoint`, perturbation 1 | `dv *= 1.001; dv *= 0.999;` scales dv twice (du was presumably meant first) | The sample is moved by a factor 0.999999 in v only. Kept; pinned by `IntPatch_HInterToolTests` |
+| `IntStart_SearchOnBoundaries.gxx`, `BoundedArc` (a site, decision 610) | `std::sort` of the roots (SolInfo) by parameter: ties keep their order with MSVC on up to 32 roots (insertion sort) | The port sorts as MSVC on up to 32; with more roots, tied parameters could come out in another order than native's |
+| `IntImp_ZerImpFunc`, `IntImp_ZerParFunc`, `IntPatch_CSFunction` (a property, decision 608) | Keep `void*` pointers to the caller's handles (and quadric) | A later reassignment of the caller's handle variable would change the function's surface in OCCT; the port keeps the object. No caller does it |
+| `IntSurf_Transition::SetValue()` and `SetValue(Tangent, Type)` (a property) | Leave the other fields (situation, opposite flag, tangency) as they were | Two in transitions can differ in fields their queries don't show; MakeTransition passes the caller's objects (`ref` in the port). Kept |
+## Phase 6: unit 6A, BOP data and reports
+
+Each bug is reproduced by a test and marked `// OCCT` at the line, and ported as OCCT has it unless the entry says
+otherwise.
+
+| Where | What | Effect | Test |
+|---|---|---|---|
+| Message_Report::AddAlert | When `Message_CompositeAlerts::AddAlert` merges the new alert into one of the same type, it returns false. The report then tests `anAlerts.Extent() > myLimit`, which is always true with the default limit of -1, and removes the first alert of that gravity. The limit is never applied to an appended alert | Simple alerts merge by default, so adding the same simple alert twice with the same gravity leaves none; a third add appends it again. In BOPAlgo, `AddError(new BOPAlgo_AlertTooFewArguments)` twice gives `HasErrors() == false`, and merging two reports that hold the same simple alert type loses alerts. If another alert is first in the list, that one is removed instead | `AddAlert_MergingRemovesTheFirstAlert_OcctIssue`, `AddAlert_LimitAppliesOnlyOnMerge_OcctIssue`, `SimpleErrorAddedTwice_OcctIssue` |
+| Message_CompositeAlerts::Clear(type) | The loop's else branch calls `anIt.More()` instead of `anIt.Next()` | An alert not of the cleared type makes the loop run forever, so `Message_Report::Clear(type)` hangs. **Fixed minimally** (`Next()`), because a hang can't be shipped | `Clear_AllGravityAndType` |
+| IntTools_Curve::D0 | The bounds test is `thePar >= First \|\| thePar <= Last`, where `&&` is meant | Every parameter counts as inside the curve and is evaluated | `Curve_D0_OcctBug_EvaluatesOutsideTheBounds` |
+| IntTools_CommonPrt copy constructor | Sets `myAllNullFlag(false)` instead of copying it (`Assign` does copy it) | A copied common part loses its all-null flag | `CommonPrt_OcctBug_CopyConstructorDropsTheFlag` |
+| IntTools_CommonPrt::Assign | Appends the other part's Ranges2 to its own instead of replacing them | `a = b` accumulates ranges. BOPDS_InterfEE/EF::SetCommonPart goes through it, so setting a common part twice accumulates the second edge's ranges | `CommonPrt_OcctBug_AssignAppendsTheRanges`, `InterfEE_SetCommonPartTwice_AccumulatesTheSecondEdgeRanges` |
+| IntTools::RemoveIdenticalRoots | After `aSR.Remove(k)` the loop goes on at k+1, so the root moved into slot k is never compared with root j | With roots 1.0, 1.0001 and 1.0002 and eps 1, the result is 1.0 and 1.0002, though 1.0002 is within eps of 1.0 | `RemoveIdenticalRoots_OcctBug_SkipsTheRootAfterARemoval` |
+| BOPDS_FaceInfo::Clear | Clears the In and On maps but not the Sc maps | A cleared face info keeps its section pave blocks and vertices | a BOPDS_DSTests case |
+| BOPDS_DS::Paves | Sizes its array as the number of pave blocks plus one. If fewer distinct paves are found, the default paves left in the array (index -1, parameter 99) are sorted and appended too; OCCT's assert only fires in debug builds | Spurious paves in the list for an edge whose pave blocks share paves | — (kept; reached by 6E) |
+| BOPDS_DS::BuildBndBoxSolid | Called after `Init` with one argument, it returns a void box: `prepareSolids` has already replaced the solid's shells by faces, edges and vertices, so no shell is found | A void box for such a solid | a BOPDS_DSTests case |
+| BOPAlgo_Builder::SetArguments (stub, OCCT's code) | Clears `myArguments` but not the fence map `myMapFence` | Setting again arguments that were added before leaves none | `BuilderSetArguments_Twice_KeepsNothing_OcctIssue` |
+| BOPAlgo_ToolsProvider::SetTools | The same, with `myMapTools` | As above, for tools | — (ported, not yet marked or tested) |
+
+**Order sites (decisions 580 and 633).** Native's NCollection_Map iterates in hash-bucket order. For integer and
+pair keys that order is deterministic but scrambled; the port iterated in insertion order. Unit 6E's measurements
+showed it decides the pave filler's results, and BOPDS's integer maps now iterate in OCCT's order (decision 784). It
+decided:
+
+- `BOPDS_DS::prepareFaces`/`prepareSolids`: the order of each face's and solid's sub-shape list, and through it
+  FaceInfoOn, SharedEdges and AloneVertices;
+- `UpdateFaceInfoIn/On(NCollection_Map<int>)`;
+- `UpdateCommonBlock`: the order in which the new common blocks are made (a `DataMap<BOPDS_Pair, …>`);
+- `IntTools_CurveRangeLocalizeData`/`SurfaceRangeLocalizeData::ListRangeOut` (hash order of samples).
+
+In BOPDS, no map keyed by pave block's address is iterated: FaceInfo's In/On/Sc maps are indexed maps (insertion
+order in native too), and `myMapPBCB` is only looked up.
+
+Not bugs, but worth knowing:
+
+- IntTools_ShrunkRange never resets its bounding box. `SetData`, `Perform` and `SetShrunkRange` only add to it, so an
+  object reused for a second edge keeps the first edge's box. OCCT's callers make one object per pave block.
+- The BOPAlgo message file's key `BOPAlgo_AlertBOPIsNotSet` doesn't match the class `BOPAlgo_AlertBOPNotSet`, and
+  `BOPAlgo_AlertNullFace` has no class.
+
+## Phase 6: unit 6H1, healing foundations
+
+Found while porting ShapeExtend's rest, ShapeBuild_ReShape, ShapeConstruct, ShapeAnalysis's rest and
+Geom2dAPI_Interpolate/PointsToBSpline. Each is reproduced in the port and marked `// OCCT`; "pinned" names the unit
+test that shows it. None of these classes but ShapeAnalysis_Shell and FreeBounds is bound natively, and those two
+showed no difference from native.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeExtend_CompositeSurface::Copy` | Initializes the copy with `Init(patches)`, whose parametrisation defaults to natural | A copy (and so `Transformed`, `Translated`, ...) loses uniform, unitary or custom joint values. Pinned by `CompositeSurface_Copy_LosesJointValues`; the port's `With*` twins keep them |
+| `ShapeConstruct::JoinPCurves` | Returns `i <= edges->Length()`: false when every pcurve was joined, true when the loop broke early (or on a plane) | The inverse of its documentation. No OCCT caller reads it. Pinned by `JoinPCurves_TwinJoinsTwoEdgesOnACylinder` |
+| `ShapeConstruct::ConvertSurfaceToBSpline`, the continuity-lowering loop | `if (cnt > 0) cnt--; continue;` retries C0 as long as GeomConvert_ApproxSurface throws | Can loop forever. By reading |
+| `ShapeAnalysis_ShapeTolerance::InTolerance` | Tests vertices with `tol >= valmax` where faces and edges test `<=` | `OverTolerance(s, 0)` returns every vertex and nothing else; a vertex inside [min, max] isn't found. Pinned |
+| `ShapeAnalysis_Geom::PositionTrsf` | `SetScale` resets the whole transformation | Any scale other than 1 discards the rotation computed before it. Pinned |
+| `ShapeAnalysis_WireVertex::Analyze` | Compares vertices with `V1 == V2`, orientation included | An edge's REVERSED last vertex never equals the next edge's FORWARD first one: status 0 ("same vertex") is never recorded, shared vertices get 1. Pinned |
+| `ShapeAnalysis_WireVertex::SetStart` | Stores the parameter on the preceding edge in `myUFol` instead of `myUPre` | The preceding parameter is lost. Pinned |
+| `ShapeAnalysis_WireVertex::NextCriter(1)` | Tests `stat > 0` where the documentation says `>= 0` | By reading |
+| `ShapeAnalysis_CheckSmallFace::CheckPin` | Reports `whatrow = nbu` when row 1 of U is the pin; the status and the DONE3 equal-poles check come from the last bound tested only | By reading |
+| `ShapeAnalysis_CheckSmallFace::CheckTwisted` | Computes the V step from the U range (`dv = (umax-umin)/nbint`) | The V sampling is wrong on non-square ranges. Pinned (a twist is still found) |
+| `ShapeAnalysis_CheckSmallFace::CheckPinEdges` | Tests `(M_PI - angle2)` twice; the second is probably meant for angle1 | By reading |
+| `ShapeAnalysis_CheckSmallFace` constructor | Leaves myStatus, myStatusPinFace, myStatusPinEdges and myPrecision uninitialised | The port starts them at OK and -1 |
+| `ShapeAnalysis_CheckSmallFace::IsSpotFace` | Returns 1 ("spot") for a face without wires and leaves spot and spotol unwritten | Pinned |
+| `ShapeAnalysis_CanonicalRecognition::GetSurface` (shell form) | The loop recomputes the parameters from the first face's surface instead of `anElemSurf1` | Every later face compares equal: any shell whose first face fits is accepted. By reading |
+| `ShapeAnalysis_CanonicalRecognition::GetCurve` | When the edge's 3D curve already is the target conic and the edge has a location, transforms the edge's own (shared) curve in place | Native OCCT changes shared geometry, and repeated calls accumulate the transformation. The port copies the curve first (decision 660). Pinned (three calls give the same result) |
+| `ShapeAnalysis_CanonicalRecognition`'s FillSolverData (cone) | The semi-angle's upper bound uses the radius step `aDR` instead of `aDAng` | By reading |
+
+## Phase 5: unit 5H, hatching
+
+Found while porting Hatch, HatchGen, Geom2dHatch and GeomAPI_PointsToBSplineSurface. By reading OCCT's code unless a
+test is named; the port reproduces each (`// OCCT` at the line). The hatcher has no native binding: unit 6B checks
+it through IntTools_Context and BOPTools.
+
+| Where | What | Effect |
+|---|---|---|
+| `Geom2dHatch_Hatcher::RemElement` | `HatchGen_PointOnHatching PntH = Hatching.ChangePoint(IPntH);` copies the point, so the element's points on element are removed from the copy | The hatching's points keep the removed element's points on element; only a point that had no other element is removed. As the trimming stays done, a later `ComputeDomains` reuses those points and their transitions. Kept; pinned by `RemElement_KeepsTheOtherElementsPointsOnHatching` |
+| `Geom2dHatch_Elements` copy constructor ("magic constructor") | Copies nothing: the new set is empty, with current edge 0 and probing parameter 0 (the default constructor sets 1 and 0.123) | A copied set of elements classifies as if it had none. Kept; pinned by `Elements_CopyConstructorCopiesNothing` |
+| `Geom2dHatch_Hatcher::GlobalTransition` | The parameter chosen from the point's position on the element (its first or last parameter at an end) is overwritten by the point's parameter (OCCT's own "TODO: finding #25") | The local geometry at an element's end is taken at the intersection's parameter, not at the end. Kept |
+| `Geom2dHatch_Hatcher::Trim(IndH, IndE)` | Writes " Intersector -> Done = False " to std::cout when an intersection fails | Output from a library; left out of the port (decision 666) |
+| `Geom2dHatch_Hatcher::IsDone()` (no index) | Declared, never defined | A link error for a caller; left out |
+| `Geom2dHatch_Element` default constructor | Leaves the orientation uninitialised | The port's is FORWARD |
+| `Hatch_Hatcher::StartIndex`, `EndIndex` | Don't check the oriented mode where `Start` and `End` do | On an unoriented hatcher, a line without intersections gives index 0 and parameter 0 for interval 1 where `Start` throws. Kept |
+| `GeomAPI_PointsToBSplineSurface::Init` (all forms) | Sets each multi-point at the grid's own row index (`MP.SetPoint(i, Points(i, j))` from `LowerRow()`) and each line entry at its column index (`Line.SetValue(j, MP)` from `LowerCol()`); the periodic form closes with `Points(1, j)` | A grid not indexed from 1 throws Standard_OutOfRange (or closes on the wrong point). Kept |
+
+## Phase 5: unit 5B, analytic intersections
+
+Found while porting IntPatch_ImpImpIntersection, by reading OCCT's code; the port reproduces each (`// OCCT` at the
+line). The conics are confirmed bit-identical by the early oracle (decision 676); the rest is 5G's to confirm.
+
+| Where | What | Effect |
+|---|---|---|
+| `Perform`, the cone/torus case (`case 35`/`53`) | Doesn't set `bEmpty = empt` after IntCoTo, as every other pair does | An empty cone/torus intersection still runs the boundary search; with points on the boundaries it reports a non-empty result. Kept |
+| `IntCyCo`, the `IntAna_Point` case | `Quad1.Parameters(psol, U2, V2)` where Quad2 is meant | The isolated point's parameters on the second surface are those on the first. Kept |
+| `ProcessBounds` | The loop over `slin` advances `j` only on analytic lines | A non-analytic line in `slin` while a bound is still unprocessed loops forever. Its callers put only ALines in `slin` first, so it isn't reached. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB < 0` | Tests `mB <= -mB - 1` where its comment's derivation gives `mB <= -mC - 1` | The U1 range for that sign of B is chosen on a wrong bound. Kept |
+| `WorkWithBoundaries::BoundariesComputing`, `mB > 0` | `mB + |mC| < -1` can never be true for `mB > 0` | The "no solution" branch is dead. Kept |
+| `ProcessSegments` (a property) | `ptvtx` lives across the segments and the vertex loop; an end point no line carries is built from the last vertex read, setting only its value, parameters and (for a vertex) one arc | The vertex can keep the arc, vertex and multiple flag of an unrelated vertex on the other surface. Kept |
+| `IntCyCo`, `IntCoCo`, `IntCoSp` (a property) | `ptf`/`ptl` are declared outside the loop over the IntAna curves | Where a curve's bound is open, ProcessBounds gets the previous curve's end point (unused while that bound is open). Kept |
+| `CyCyAnalyticalIntersect` (a property) | Doesn't reset `Multpoint` | Harmless: IntCyCy resets it before |
+
+## Phase 5: unit 5F, approximating intersection lines
+
+Found while porting ApproxInt, GeomInt_WLApprox and BRepApprox. The port reproduces each (`// OCCT` at the line), and
+a native program built against OCCT 8.0.1 (decision 680) confirmed the first and the third; `ApproxIntTests` pins
+the native values.
+
+| Where | What | Effect |
+|---|---|---|
+| `ApproxInt_PrmPrmSvSurfaces::Compute`, `ApproxInt_ImpPrmSvSurfaces::Compute`, the two-entry cache | On a hit (the same parameters as one of the last two computations) they return the cached flag without writing their outputs: the point, the tangents and the refined parameters stay as the caller gave them | PrmPrm's `SeekPoint` called twice at the same parameters gives the origin with the unrefined parameters the second time, as a valid point (native: `(0, 0, 0)`); `MakeMLBetween` would insert a stale point if a resampled parameter set repeated one of the last two. Kept; pinned by `PrmPrmSvSurfaces_SeekPointTwice_ReturnsTheOriginTheSecondTime` and `ImpPrmSvSurfaces_ComputeTwice_LeavesTheOutputsTheSecondTime` |
+| `ApproxInt_ImpPrmSvSurfaces::Compute`, the parametric surface first | Stores the cache key `MyParOnS2.SetCoord(tu2, tu2)` where `(tu2, tv2)` is meant | The point is never found in the cache (unless tu2 = tv2) and is computed again: the same values, more work. Kept |
+| `ApproxInt_Approx::Perform(line, ...)` (the line alone) | With two knots and more than 2·NbPntMax points it adds a middle knot `(indicemax - indicemin) / 2`, an index count rather than `indicemin + ...` | From a first index above 1 the knots go backwards: on a straight line of 300 points, `Perform(WL, ..., 150, 300)` gives a curve from point 75, and from 200 a curve from point 50 (native too). Harmless from index 1 (BRepApprox's callers). Kept; pinned by `WLApprox_PerformLine_MiddleKnotIsAnIndexCount` |
+
+## Phase 5: unit 5C, walking
+
+Found while porting IntWalk, IntPatch_ImpPrmIntersection and IntPatch_SpecialPoints. By reading OCCT's code; the port
+reproduces each (`// OCCT` at the line). None changes the nine walks recorded natively (decision 687), which the port
+matches bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntWalk_IWalking::Perform(Pnts1, Func, S, Reversed)` (the overload without interior points) | Doesn't call `Clear()`, unlike the other overload: the previous lines are kept, and on a new object the vectors lack their dummy item 0 | The walking reads start point I + 1's state as point I's, and past the vectors' end for the last one (out of bounds in OCCT; Standard_OutOfRange in the port). No OCCT caller uses this overload |
+| `IntWalk_IWalking::TestArretCadre` (IntWalk_IWalking.gxx, at a stop found on the line) | Computes the function's direction, orients it against the line, then sets the line's tangent to the previous direction instead | The computed direction is unused; `Direction3d` still throws at a tangent point. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `ToSmooth` (line 2422) | The loop runs `ip` from `startp` to `NbTestPnts`, where `startp + NbTestPnts` is meant | At the end of a line (`startp = NbPoints - NbTestPnts - 2`) the loop is empty unless the line is short; the averages stay 0, so AddVertices never adds the last vertex. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (line 3716) | The adaptor `anArc->Trim(...)` returns is discarded | The arc is never trimmed. Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `ComputeTangency` (lines 365–373) | On an INTERNAL or EXTERNAL arc, the complex-transition branch never assigns the vertex handle `vtx` | It keeps an earlier point's vertex, or is null, which would crash OCCT in `Identical` (a NullReferenceException in the port). Kept |
+| `IntPatch_ImpPrmIntersection.cxx`, `DecomposeResult` (lines 3188–3195; a property) | `aSSLine` is a second handle to the input line's points | AdjustLine and InsertSeamVertices edit the input line in place, even when it is replaced afterwards. Kept |
+| `IntWalk_PWalking` (the constructor with the bounds; a property) | Leaves `tgfirst`, `tglast`, `myTangentIdx` and `previoustg` uninitialised | Perform writes them before reading them; harmless |
+## Phase 6: unit 6H2, ShapeFix edges and wires
+
+Found while porting ShapeFix's statics, Root, Edge, EdgeProjAux, Wire, WireSegment, WireVertex, IntersectionTool,
+ShapeTolerance, SplitCommonVertex, EdgeConnect and SplitTool. Each is reproduced in the port and marked `// OCCT`
+unless the table says otherwise; "pinned" names the unit test that shows it. Native ShapeFix_Shape on wires and edges
+(the oracle) showed no difference from native.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeFix_ShapeTolerance::LimitTolerance`, TopAbs_WIRE | The edges' result isn't added to `fait` | A change to the edges' tolerances alone returns false. Pinned by `LimitTolerance_Wire_DoesntCountTheEdges` |
+| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port reverses a copy and never writes the edge (the reversed curve isn't read afterwards) |
+| `ShapeFix_Edge::FixReversed2d` | Reverses the stored pcurve in place | Other edges sharing the pcurve are reversed too. The port puts a reversed copy in place of the curve on this edge only (decision 700) |
+| `ShapeFix_WireVertex::FixSame` | Compares `V1 == V2` (orientation included); `B.Add`s the shared vertex without removing the edges' old ones; doesn't make the edges Free first, as `Fix` does | A shared vertex is never detected; the edges end with three or four vertices; on the edges of a wire `Add` throws `TopoDS_FrozenShape`. Pinned |
+| `ShapeFix_IntersectionTool::FixIntersectingWires` | Calls `sewd->Wire()` three times per modified wire | The face gets one new wire, the context records a second as the replacement and the loop goes on with a third: `Context()->Value(oldWire)` isn't the face's wire |
+| `ShapeFix_Wire::FixTails` | Ends with `myStatusNotches = myLastFixStatus` | `StatusFixTails()` always reports OK, and the notches' status is overwritten by the tails' |
+| `ShapeFix_Wire::FixGap2d`, clipping an extended pcurve at the surface's bounds | Uses `jj` (which end of the segment) where `j` (which curve) is meant to pick `reversed1`/`!reversed2` and `cfirst1`/`clast2` | The segment ends are clipped on the wrong curve's side. By reading |
+| `ShapeFix_Edge::FixAddPCurve`, seam branch | Dereferences the projected pcurve, which can be null | Inside OCC_CATCH_SIGNALS it ends as FAIL2. The port throws `Standard_NullObject` inside the same `try`, with the same status |
+
+Map order: `ShapeFix_EdgeConnect::Build` walks `myLists` (a DataMap keyed by vertex) in native's hash order; the port
+walks it in insertion order (decision 18). Each shared vertex is computed on its own, so only the order of the writes
+changes.
+
+## Phase 5: unit 5D, parametric intersections
+
+Found while porting IntPatch_PrmPrmIntersection, the polyhedra and their interference. By reading OCCT's code; the
+port reproduces each (`// OCCT` at the line). None changes the seven intersections recorded natively (decision 711),
+which the port matches bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_InterferencePolyhedron::Perform(const IntPatch_Polyhedron&)` | Calls the self-interference `Interference(Obje)`, whose body is empty; the constructor of the self-interference calls `Interference(Obje, Obje)` instead | `Perform` on one polyhedron finds nothing (only the mode and tolerance are set). OCCT's own callers use the constructor. Kept, and pinned by a test |
+| `IntPatch_Polyhedron.hxx` | Declares `Perform`, `UMinSingularity`... (the four setters) and `HasUMinSingularity`... (the four getters), which no .cxx defines | A caller would fail to link. Left out of the port |
+| `IntPatch_Polyhedron::PlaneEquation` | On a triangle with an edge shorter than 1e-7, sets the normal to (1, 0, 0) and returns without writing `PolarDistance` | The caller's variable keeps its value (uninitialised in a typical caller). Nothing in OCCT calls it; kept (`ref` in the port) |
+| `IntPatch_Polyhedron::TriConnex` (the end; OCCT's own "BUG NON CORRIGE") | When the other point of the connected triangle coincides with `Pedge`, returns 0 instead of looking further, with `TriCon` and `OtherP` set | InterferencePolyhedron reads `TriCon` (into `pivo`) to tell whether the neighbouring triangle has already given the segment of an edge lying in the other triangle's plane; at such a vertex it decides on the triangle found so far. Kept |
+| `IntPatch_PrmPrmIntersection::NewLine` (line 1555) | Tests `nab > ds`, where `nab = 1 / (a + b)` is the inverse of the segment's length and `ds` the arc-length step | A point is inserted only in segments shorter than `1 / ds` (in parameter units, so the test depends on the parametrisation's scale). Nothing in OCCT calls NewLine. Kept |
+| `IntPatch_PrmPrmIntersection::Perform` (the sampled one, the branch for more than 2,500 samples) | Doesn't clear the lines, whatever `ClearFlag` says (the other branch clears them when it is true) | A second sampled Perform on the same object keeps the first one's lines. IntPatch_Intersection uses a fresh object (or wants them kept). Kept |
+| `IntPatch_PrmPrmIntersection::Perform` (with the list of points; a property) | Appends the points' images across the seams of closed surfaces to the caller's list | The caller's list grows. Kept |
+| `IntPatch_PrmPrmIntersection::PointDepart` (lines 3689-3718; a property) | Converts `(P.X() - x0 + dx2) / dx` to `int` without a range check (undefined behaviour in C++ out of range; MSVC gives `INT_MIN`) | Out of range and NaN samples fall outside the grid. The port reproduces MSVC's result (decision 708) |
+## Phase 6: unit 6B, context and BOP tools
+
+Found while porting IntTools_Context, FClass2d, TopolTool and Tools and BOPTools' AlgoTools (all three files),
+AlgoTools2D and AlgoTools3D, and auditing the context's caches (plan 2.4, decision 714). Each is marked `// OCCT` at the
+line (or commented) and ported as OCCT has it; "pinned" names the unit test that shows it.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_FClass2d::Init` | Doesn't clear TabClass/TabOrien or reset the face explorer | A second Init appends the new face's polygons to the old ones, and a point the polygons can't decide is classified against the old face. IntTools_Context never re-initialises a classifier. By reading |
+| `IntTools_FClass2d::Init` | Returns on an edge without a pcurve, with the classifier half built (the wires sampled so far, partial bounds, U1..V2 unset) | The classifier answers from the partial polygons. The port's unset fields are 0 |
+| `IntTools_FClass2d::Init`, refinement loop | Never recomputes the polygon's area and perimeter, so `anExpThick` stays the first polygon's | By reading |
+| `IntTools_FClass2d::IsHole` | Reports the orientation of the last wire with a non-zero area | A face whose hole is drawn after its outer wire reports `true`. Pinned |
+| `IntTools_TopolTool::SamplePoint` | Maps index 1 to the second sample in U (`iu = 1 + Index - (iv-1)*n`, as if the index started at 0) | Index n·m gives `v = vsup`, on the boundary, and the first grid node is never sampled. Pinned |
+| `IntTools_Tools::IsVertex(Edge, t)` | Computes the vertex tolerance, then overwrites it with 1e-12 (squared) | The vertex's tolerance is ignored. By reading |
+| `IntTools_Tools::RejectLines` | Writes into its const input through a const_cast (a trimmed curve replaced by its basis) | The caller's sequence changes. Kept |
+| `BOPTools_AlgoTools::ComputeStateByOnePoint` | Discards the state of the recursive call on a container's first sub-shape | Returns TopAbs_UNKNOWN for any compound, shell, solid. Pinned |
+| `BOPTools_AlgoTools_1.cxx`, `IntersectCurves2d` | `aLen2 = MapEdgeLength(*theEData1.Edge, …)` uses the first edge twice | The distance threshold ignores the second edge's length. By reading |
+| `BOPTools_AlgoTools2D_1.cxx`, file-static `IsClosed` | The loop condition `(aExp.More() \|\| iCnt == 2)` keeps going once a seam is counted twice at the end; `TopExp_Explorer::Next()` on an empty stack pushes the face's iterator again, so the count reaches 4 | A true seam gives false, so `AttachExistingPCurve` never calls `UpdateClosedPCurve`, and the split of a seam gets one pcurve. Pinned (`IsClosed_of_AlgoTools2D_1_reproduces_OCCTs_restarting_loop`) |
+| `BOPTools_AlgoTools3D::GetNormalToSurface` | Calls `IsDirsCoinside(aDD1U, aDD1U)`, comparing DU with itself | That check always passes. By reading |
+| `BOPTools_AlgoTools3D.cxx`, `HasGeometry` (IsEmptyShape) | Calls `CR->Polygon3D()` on every representation that isn't a 3D curve, curve on surface or regularity; the base class throws Standard_DomainError | An edge whose first such representation is a polygon on triangulation or on surface throws instead of reporting geometry. By reading |
+
+**Call-history and thread-timing dependence (plan 2.4, decisions 580 and 714).**
+
+- **IntTools_SurfaceRangeLocalizeData's box cache** (the context's `SurfaceData(face)`). IntTools_BeanFaceIntersector's
+  `ComputeLocalized` resets the out ranges and the grid at each run (`RemoveRangeOutAll`, `ClearGrid`) but not the
+  boxes. They are keyed by sample range (depth and indices), not by parameters or tolerance, and enlarged by
+  `myCriteria` (the edge's tolerance plus the face's, BeanFaceIntersector.cxx lines 177 and 199; `GetSurfaceBox` and
+  `BndLib_AddSurface::Add` at lines 1532–1569, and the root box at 1832–1869 for B-spline faces). So the first edge
+  intersected with a face decides the enlargement of the boxes every later edge on that face uses, and the boxes
+  only reject (`IsOut`): a box made with a smaller tolerance can reject a range where a later, more tolerant edge
+  touches. Native's per-thread contexts make that order thread-dependent, so native's parallel edge/face results
+  can differ from its serial ones. Unit 6C decides how the port keeps serial = parallel (decision 723).
+- **BRepClass3d_SolidClassifier reused by the context** (`SolidClassifier`, `ComputeState`). BRepClass3d_SolidExplorer's
+  `myParamOnEdge` advances when a whole pass over the faces finds no ray and is never reset (Segment resets only
+  `myFirstFace`); that pass also replaces cached face intersectors whose infinite point is IN with unrestricted ones,
+  permanently. IntCurvesFace_Intersector's `myIsParallel` is set only when the line meets nothing and never reset, so
+  SClassifier's parallel-line ON check can read a flag left by an earlier line. A reused classifier can then answer
+  differently from a fresh one. Rare paths; none was hit on the tests' solids, and the oracle (same call order) matched
+  native.
+- **BOPTools_AlgoTools' tolerance corrections in parallel** (CorrectPointOnCurve, CorrectCurveOnSurface,
+  CorrectShapeTolerances with `bRunParallel`). Parallel items share vertices and edges and update their tolerances with
+  unsynchronised read-compare-writes whose outcome depends on the tolerance read first (CheckEdge's `0.1 * Tol` margin,
+  CorrectWires', CorrectEdgeTolerance's comparisons). A vertex whose two faces need √dA < √dB < 1.01√dA ends with
+  1.01√dA or 1.01√dB depending on which face runs first, and a concurrent max can be lost. Native's parallel result
+  depends on thread timing; the port runs these loops serially (decision 720).
+
+Not bugs, but worth knowing: `BOPTools_AlgoTools::GetFaceDir`'s `Standard_ASSERT_RETURN(aProjPL.IsDone(), …, false)`
+returns false in release builds, and the port does the same.
+## Phase 6: unit 6H3, ShapeFix faces to shapes
+
+Found while porting ShapeFix_Face, ComposeShell, Shell, Solid, Shape, Wireframe, FixSmallFace, FixSmallSolid,
+FaceConnect and FreeBounds. Each is reproduced in the port and marked `// OCCT` unless the table says otherwise;
+"pinned" names the test that shows it.
+
+| Where | What | Effect |
+|---|---|---|
+| `ShapeFix_Face::FixMissingSeam`, two open wires of the same orientation | `isdeg2 = isdeg` stores the flag (1) where the other branch stores the wire's index | A later `ws.Remove(isdeg ? i : isdeg2 ? isdeg2 : isdeg1)` can remove wire 1 instead of the degenerated one. By reading |
+| `ShapeFix_Face::FixSmallAreaWire` | Tests `ShapeType() != WIRE && Orientation() != FORWARD && != REVERSED` where `\|\|` is meant | FORWARD/REVERSED vertices and INTERNAL wires reach `TopoDS::Wire`; OCCT's release build reinterprets a vertex as a wire without edges, which is kept. The port does the same instead of throwing. Pinned by a ShapeFix_FaceTests case |
+| `ShapeFix_Face::Perform` (a property) | `BRepTools::Update` sets the Checked bit of the caller's face in place | The port never writes the caller's face; the oracle masks the Checked column with the Free one |
+| `ShapeFix_Wireframe::FixWireGaps`, `FixSmallEdges` on a compound | Each recursive call resets the status | The statuses are the last child's only. Reproduced by the oracle |
+| `ShapeFix_Wireframe::MergeSmallEdges`, the free-wire block | Reads `anExpf2.Current()` after that face explorer is exhausted | It yields the explored shape; the port has the same semantics |
+| `ShapeFix_Shell::Perform` | When FixFaceOrientation gives up (Möbius-like faces) it sets FAIL but not DONE2, and the new shell isn't recorded in the context | Perform returns false. Pinned by the Möbius band test |
+| `ShapeFix_Shell::FixFaceOrientation` | Always rebuilds the shell, even when nothing is reoriented, and then records nothing | `Shape()` is a new shell holding the same faces, while the context maps the input to itself |
+| `ShapeFix_Shape::Perform` | The early return (a shape already fixed or made by the context) and the abort paths don't restore the face tool's FixSmallAreaWireMode | A later Perform on a non-face can keep the forced mode |
+| `ShapeFix_FreeBounds::Perform` | Removes and adds an edge's vertices while a TopoDS_Iterator walks them | The list iterator reads a freed node; the vertex order inside the edge then depends on freed memory. The port walks a snapshot (the same vertices) |
+| `ShapeFix_FreeBounds::Perform` | `BRep_Builder::Remove`/`Add` on edges that sit in wires (not Free) | `TopoDS_FrozenShape` is compiled out in OCCT's release build but raised by its debug build and by the port. The port sets the Free flag around the edit, as ShapeFix_EdgeConnect does in OCCT |
+| `ShapeFix_FixSmallFace::SplitOneFace` | Removes and adds edges of `wireonface` while a TopExp_Explorer walks it | The same freed-node read; the port explores a snapshot first |
+
+Map order (decision 18; native iterates hashed maps in address order, the port in insertion order):
+ShapeFix_Shell's GlueClosedCandidate, AddMultiConexityFaces and CreateNonManifoldShells (`mapmerge`; the result can't
+change there, `IndexedDataMap::Add` keeps the first value), ShapeFix_Solid's CollectSolids, ShapeFix_Wireframe's edge
+maps, ShapeFix_FixSmallSolid's MergeShells (the face order in the merged shell) and ShapeFix_FaceConnect's
+`theFreeEdges`, `myConnected`, `myOriFreeEdges`, `theRepEdges` and `theNewVertices` (the order of the sewing inputs and
+replacements). Only the order of faces, shells or writes can differ; the oracle saw no case.
+
+## Phase 5: unit 5G, surface/surface intersection
+
+Found while porting IntPatch_Intersection, ALineToWLine, WLineTool, LineConstructor, GeomInt and Draw's `intersect`. By
+reading OCCT's code; the port reproduces each (`// OCCT` at the line). None shows in the oracle's GeomAPI_IntSS
+comparisons (decision 748), where every pair is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntPatch_Intersection::Perform(S1, D1, S2, D2, TolArc, TolTang, ...)`, two tori | `bToCheck = aTor2.MajorRadius() > aTor2.MinorRadius()` overwrites the first torus's test; the list-of-points Perform combines both and also accepts equal radii within TolTang | A self-crossing first torus is sent to ImpImp by one overload and not by the other. Kept |
+| `IntPatch_Intersection.cxx`, `FUN_GetUiso` (offset surface whose basis U-iso is a line, parabola or hyperbola) | `Geom_RectangularTrimmedSurface(gos, VmTr, VMTr, true)` gives the V range as a U trim; `FUN_GetViso`'s call is right | The U-iso of the trimmed offset keeps its infinite V range. Kept |
+| `IntPatch_Intersection.cxx`, `FUN_NewFirstLast` | The second test isn't `else if` | A line, parabola or hyperbola range on the positive side (both ends ≥ 0) falls to the final `else` and is replaced by the symmetric [-TrVal, TrVal]; a hyperbola then also misses the `Fst > 4` early return. Kept |
+| `IntPatch_LineConstructor::Perform`, the GLine branch and the "RLine on S2" branch | `myDom1->Init(); if (myDom2->More())` tests the other domain's iteration state | The restriction loop runs, or not, on the state myDom2 was left in. Kept |
+| `IntPatch_LineConstructor::Perform`, the same branches | Read `Tol3d(...)` from the domain, which a plain `Adaptor3d_TopolTool` doesn't have (Standard_DomainError) | LineConstructor on GLines or one-sided RLines works only with a face's topology tool. OCCT reaches the class only from TopOpeBRep (and `IntPatch_Intersection::Dump`, compiled out). Pinned by a test |
+| `IntPatch_LineConstructor::Perform`, GLine branch, closed conics | The arc from the last vertex to the first is classified with the `Tol` of the loop's last iteration | Kept |
+| `IntPatch_WLineTool::ComputePurgedWLine` | `nb` is reassigned inside the equal-points loop; the later `nb < aNbSingleBezier` test uses the count before the last removal | Kept |
+| `GeomInt_IntSS::InternalPerform` | Clears `sline` but not `slineS1`/`slineS2` | On a GeomInt_IntSS performed twice, `LineOnS1/S2(i)` and `HasLineOnS1/S2(i)` return the first Perform's 2D curves. GeomAPI_IntSS never asks for them. Kept |
+| `GeomInt_IntSS::InternalPerform`, start-point mode | Skips `myIntersector.Perform` when the start point is outside a domain | `IsDone()` and the lines come from the previous Perform on the same object (or "not done"). Kept |
+| `GeomInt_IntSS::BuildPCurves` (GeomInt_IntSS_1.cxx) | Calls `theCurve2d->DynamicType()` after a second `GeomProjLib::Curve2d` that may return null | Access violation in OCCT, NullReferenceException in the port. Kept |
+| `GeomInt_LineTool::DecompositionOfWLine` | Its two neighbour searches step one index past a part before testing | When all points of an end part coincide in UV, `Point(i)` is read past the line (unchecked in OCCT's release build; Standard_OutOfRange in the port). Kept |
+| Draw's `intersect`, curve/surface branch (GeometryTest_CurveCommands.cxx) | The points' loop calls `Inters.Point(i)` with `i` running from `nblines + 1` | With segments and points both, the points read are past the last one (Standard_OutOfRange, reported by Draw) and the first points are skipped. Kept in Draw-lite |
+
+## Phase 6: unit 6C, edge intersectors
+
+Found while porting IntTools_EdgeEdge, IntTools_EdgeFace and IntTools_BeanFaceIntersector. Each is ported as OCCT has
+it, except the first (decision 753).
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_BeanFaceIntersector::LocalizeSolutions`, `ComputeLocalized` with `IntTools_Context::SurfaceData` | The face's sample boxes are cached across runs, keyed by sample only, enlarged by the first edge's criteria, and a cached box skips the check against the run's main curve box (6B's entry) | A run's result depends on what its context computed before, so native's parallel edge/face results depend on thread order. Measured (tools/edgerec `study`): 1 run in 25,308 (8,436 pairs on localising faces, in order, reversed and with alternating fuzzy values) differs from a fresh context, by 32 ulps in a range. **The port keys the cache and checks cached boxes as fresh ones (decision 753)**, so it always gives the fresh-context result; that run is the residual difference from native's serial result |
+| `IntTools_BeanFaceIntersector`, `myMinSqDistance` | Only `ComputeAroundExactIntersection` and `ComputeUsingExtremum` update it; the line/plane path, `FastComputeAnalytic`, the coincidence test and `ComputeLocalized` never do | `IntTools_EdgeFace::MinimalDistance()` is RealLast for edges on B-spline faces even with common parts (all 177 such recorded runs), and BOPAlgo_PaveFiller_5's distance check is skipped for them. Recorded |
+| `IntTools_EdgeFace::CheckTouchVertex` | Builds its surface adaptor on the surface's natural bounds (`Surface->Bounds`), where `CheckTouch` uses the face's | On a plane or another infinite surface the extrema run on an unbounded surface. By reading |
+| `IntTools_EdgeFace::CheckData` | Sets status 2 for a degenerated edge, then overwrites it with 3 if the edge has no geometry | The degenerated status is lost for such edges. By reading |
+| `IntTools_BeanFaceIntersector::ComputeAroundExactIntersection` | With more than one exact intersection point it lowers `myCriteria` to 3·Confusion for the rest of the run (meant for the range search) | The extremum and boundary passes that follow use the lowered criteria too. By reading |
+| `IntTools_CurveRangeLocalizeData::ListRangeOut` (decision 629) | Native lists the curve's out ranges in hash order, the port in insertion order; `ComputeLocalized` inserts them into the range manager with flag 1 | The ranges are disjoint and share one flag, so only zero-length ranges at shared ends can come out in a different order. No difference in the 1,562 recorded runs on localising faces |
+## Phase 6: unit 6D, face/face intersection
+
+Found while porting IntTools_FaceFace and IntTools_WLineTool. By reading OCCT's code unless said; the port reproduces
+each (`// OCCT` at the line). None shows in the comparison with native IntTools_FaceFace (decision 761), where every
+pair is bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntTools_FaceFace::Perform` | Clears the curves but never `myPnts` (5G's `InternalPerform` bug in FaceFace's form) | A second Perform on the same object appends its points to the first's. Pinned by a test. The pave filler makes one object per face pair, so no Boolean is affected |
+| `IntTools_FaceFace.cxx`, `PerformPlanes` | Without the second 2D curve (`theApprox2` false) it clears the first (`SetFirstCurve2d(H1)` in the second branch) | A plane/plane line asked for with the first 2D curve only has none. The pave filler asks for both or neither. Pinned by a test |
+| `IntTools_FaceFace.cxx`, `PerformPlanes` | Two planar faces without wires (unbounded) give `ClassifyLin2d` the infinite bounds; `Geom_TrimmedCurve` on the resulting parameters throws | Standard_ConstructionError, natively too (three such pairs in the recordings). Pinned by a test |
+| `IntTools_FaceFace::MakeCurve`, walking lines | `myTolApprox = 1.e-5` (cylinder/sphere pairs where `ApproxWithPCurves` is false, and the re-approximation after an invalid 2D curve) writes the member | The looser tolerance stays for the following lines and for later Performs on the object (until SetParameters) |
+| `IntTools_FaceFace::MakeCurve`, `goto reapprox` | Restarts the whole line although the curves of its earlier parts (or multicurves) are already appended | Those curves are appended twice. Kept |
+| `IntTools_FaceFace::MakeCurve`, lines, parabolas, hyperbolas | Checks `C2d.IsNull()` after `GeomInt_IntSS::BuildPCurves`, which has already dereferenced a null second projection (5G's issue) | The check can't help: OCCT crashes, the port throws NullReferenceException. Kept |
+| `IntTools_FaceFace::SetList` and Perform | The start points are kept between Performs; on a reversed pair Perform swaps each point's parameters in place | A second reversed Perform swaps them back to the wrong order; the list also grows (decision 706) |
+| `IntTools_FaceFace.cxx`, `CheckPCurve` | The sample parameter runs on from the curve's first parameter by `(NPoints - 1) * dT` per interval | With several C∞ intervals the samples drift from the intervals and the end of the last one is never checked |
+| `IntTools_WLineTool.cxx`, `IsPointInDegeneratedZone` | Reads the first surface's bounds for the second (`aS1->Bounds(US21, ...)`), and compares V on both surfaces, and U on the second, with `aDelta` (1e-7) instead of the resolution `aD` it has just computed | The degenerated-zone test of the second surface uses the first's bounds and a 3D tolerance as a parametric one |
+| `IntTools_WLineTool::DecompositionOfWLine`, "correction of projected coordinates" | `X < umin && X > umax && Y < vmin && Y > vmax` can't hold (and uses the other surface's bounds) | The rough re-projection never runs |
+## Phase 6: unit 6U, UnifySameDomain
+
+Found while porting ShapeUpgrade_UnifySameDomain. Each is reproduced in the port (on its copy of the input) and marked
+`// OCCT` unless the table says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `IntUnifyFaces` → `AddPCurves` → `TransformPCurves` | Adds the reference surface's pcurves to the edges of the faces it unifies, and resets their ranges (`BRep_Builder::Range`), on the input's own edges, whatever `SetSafeInputMode` says ("the input shape can't be modified") | The caller's edges change in place, and the result shares them. The port runs on a copy (decision 766); its history lists those edges as modified into their changed copies, where native's has no entry (decision 643). Reproduced by the oracle (37 of the 480 Clean runs have such entries) |
+| `ReconstructMissedSeam` | `UpdateEdge` swaps the two pcurves of a removed seam edge of the input | The same in-place write into the input |
+| `IntUnifyFaces`, ConcatBSplines with an edge closed on the face but not a seam | `SetUPeriodic`/`SetVPeriodic` on the face's own B-spline surface | Every face sharing that surface, the input's included, becomes periodic. The port makes a periodic copy and puts it in the original's place in the shape it works on (decision 769), so its result is native's byte for byte (`bowl_noremove.brep`) and the caller's surface is unchanged. On a rectangular trimmed surface native edits the shared basis; the port copies the basis only |
+| `IntUnifyFaces`, the wire builder | `LastVertexOfSeam` and `StartOfNextEdge` are declared and tested but never set | The end-of-wire test after ReconstructMissedSeam never holds. Kept |
+| `UpdateMapOfShapes` | Adds to the NCollection_Map it iterates | Whether the new shapes are visited depends on the buckets; they map to themselves, so nothing changes. The port iterates a snapshot |
+| `UnifyEdges` with `mySafeInputMode` | `UpdateMapOfShapes(myKeepShapes, ...)` adds the context's images to the member map of shapes to keep | A second `Build` without `Initialize` keeps them too. The port restores the caller's map after Build (the images are of its copy) |
+| `SetSafeInputMode(false)` | Builds pcurves on planes in the input's edges and lets ShapeFix_Face edit them without a context | The documented behaviour; in the port it acts on the copy of a frozen input |
+
+Not bugs, but worth knowing: native UnifySameDomain iterates hashed maps only for membership (`myKeepShapes`, the shells of
+a face), so its result doesn't depend on addresses; every oracle run was byte-identical or Free-masked.
+
+## Phase 5: unit 5K1, analytic constraints
+
+Found while porting GccAna. Each is ported as OCCT has it and marked `// OCCT` at the line; the native recordings
+(tools/gccrec, decision 780) agree with the port on all of them. "Unset" means an NCollection_Array1 element OCCT
+never writes: uninitialised natively, 0 in the port (decision 781). Out-of-range indices throw Standard_OutOfRange
+natively and in the port (decision 778).
+
+| Where | What | Effect |
+|---|---|---|
+| `GccAna_Circ2d3Tan.cxx` (three circles) | `distcc2` and `distcc3` are measured from `center1` | WhichQualifier's computed qualifiers 2 and 3 are wrong for unqualified circles |
+| `GccAna_Circ2d3Tan.cxx` (three circles) | `rSol` has 16 slots where `xSol`/`ySol` have 64 | More than 16 candidate triplets throw Standard_OutOfRange |
+| `GccAna_Circ2d3Tan_1.cxx` (circle, circle, line) | `ok` is not reset when the second circle's check fails, and the distance to the line is never compared with the radius | Qualified runs return circles tangent to the first circle only (56 of 144 qualifier combinations in a sweep). Pinned by a test |
+| `GccAna_Circ2d3Tan_1.cxx` | The line's qualifier branches test `Qualified2` where `Qualified3` is meant; `distcc2` is measured from `center1`; the second tangency's guard tests `pnttg1sol` and writes `par1sol` | Wrong computed qualifiers and tangency parameters |
+| `GccAna_Circ2d3Tan_3.cxx` (three lines) | `cote2` assigned where `cote3` is meant (all unqualified: harmless, that branch returns every solution); `cote3(1)` assigned twice and `cote3(2)` never, in the branches (unqualified, enclosed, unqualified) and (enclosed, unqualified, unqualified) | The solutions of those two branches are filtered with an uninitialised side: native's count varies (the recordings skip those cases) |
+| `GccAna_Circ2d3Tan_3.cxx` | The qualified filtering moves the circle to its new slot but not `qualifier1..3` | Wrong qualifiers after filtering |
+| `GccAna_Circ2d3Tan_4.cxx` (circle, circle, point) | The duplicate-removal loop doesn't shift `TheSame1..3` | IsTheSame of the solutions after a removed duplicate is that of their predecessors |
+| `GccAna_Circ2d3Tan_5.cxx` (circle, line, point) | A 1999 change reversed `dc` | The first tangency point is on the far side of the solution unless the solution is enclosed in C1. Pinned by a test |
+| `GccAna_Circ2d2TanOn.cxx` (two circles, centre on a line) | Up to four boundary cases or matches write `Radius(3..4)` into a 2-element array; the qualifiers of unqualified circles use `Radius(i)`, `i` the bisector's index, instead of `Radius(k)`; `Rbid(1)` is written twice and `Rbid(2)` never; `pararg1` is computed from `pnttg2sol` | Standard_OutOfRange in 189 of 1,500 random cases; otherwise wrong qualifiers and parameter |
+| `GccAna_Circ2d2TanOn.cxx` | `CenterOn3` returns `pnttg1sol` (a tangency point), not the centre; `ThisSolution` checks neither IsDone nor the index, `NbSolutions` not IsDone | Callers reading the centre get a tangency point |
+| `GccAna_Circ2d2TanOn_1.cxx` (circle, line, centre on a line) | The "other side" retry for `pinterm` recomputes the same point | The other side is never tried |
+| `GccAna_Circ2d2TanOn_3.cxx` (circle, point, centre on a line) | `if (std::abs(popradius - dist1))` tests a double as a boolean; `pararg1(i)` uses the bisector's index; `pararg2` is unset on the boundary path; with C1 qualified the radius follows the qualifier whichever hyperbola branch the centre is on | Some solutions don't pass through the point (pinned by a test); unset and misplaced parameters |
+| `GccAna_Circ2d2TanOn_6.cxx` (two circles, centre on a circle) | As `GccAna_Circ2d2TanOn.cxx`: `Rbid(2)` unset, `Radius` overrun | As above |
+| `GccAna_Circ2d2TanOn_7.cxx` (circle, line, centre on a circle) | The retry uses the same `distcco - Ron` point and doesn't recompute `d1`/`d2`; the boundary test checks `Qualified1` against the line's side, with the same sign for enclosed and outside; the boundary case never sets `pntcen` | Missed solutions; `parcen3` is the parameter of the default origin |
+| `GccAna_Circ2d2TanOn_8.cxx` (circle, point, centre on a circle) | The radius follows `Qualified1` only (both radii when unqualified), whichever branch the centre is on; `SameCenter` is always false | Some solutions don't pass through the point (pinned by a test) |
+| `GccAna_Circ2d2TanOn_9.cxx` (two lines, centre on a circle) | `D1.Angle(D2) <= Resolution` is signed, so lines turning clockwise take the "parallel" branch, where the second line's qualifier test overwrites the first's; the centre is `Intp.Point(i)` (the first bisector's index) instead of `Point(l)`; the tolerance is unused | Wrong branch for half the line pairs; Standard_OutOfRange when that point doesn't exist |
+| `GccAna_Circ2d2TanOn_10.cxx` (line, point, centre on a circle) | The boundary `pinterm` is `distpc + Ron` from the point but compared with `distpc - Ron`; `parcen3` is computed then overwritten with 0; tangency point 1 is at distance `dist1` instead of `Radius` | Wrong boundary detection, centre parameter and tangency point |
+| `GccAna_Circ2d2TanOn_11.cxx` (two points, centre on a circle) | The `C1` enlargement branch repeats conditions that returned earlier | Dead code |
+| `GccAna_Circ2d2TanRad.cxx` (two circles) | `C2 = gp_Circ2d(C1)` overwrites C2 in the enclosed/enclosed boundary case | `pararg2` is a parameter on C1 |
+| `GccAna_Circ2d2TanRad.cxx` | `std::abs(R1 - dist - R2) > 0.0` (meant `<= Tol`) always holds | Enclosing + unqualified always returns one circle, not tangent to the second; `TheSame2(1)` unset when the solution is the first circle only |
+| `GccAna_Circ2d2TanRad.cxx` | Outside + unqualified builds `C(2)` on `C(1).Location()` | The pair is concentric and 2 solutions are lost |
+| `GccAna_Circ2d2TanRad_4.cxx` (two lines) | `normL1`/`normL2` are the lines' directions, not their normals | Wrong computed qualifiers for unqualified lines |
+| `GccAna_Circ2dTanOnRad.cxx` (circle, centre on a line) | `CenterOn3` returns `pnttg1sol`, not `pntcen3`; the tangency point's sign is swapped in the general branch | The tangency point is diametrically opposite; enclosed with R1 = 2R puts it at C1's centre, whose parameter throws Standard_ConstructionError |
+| `GccAna_Circ2dTanOnRad_1.cxx` (line, centre on a line) | `pntcen3(NbrSol) = cirsol(1).Location()` | Solution 2 reports solution 1's centre |
+| `GccAna_Circ2dTanOnRad_2.cxx` (point, centre on a line) | With the point on OnLine, 2 solutions are found but WellDone stays false; `qualifier1` unset there | The accessors throw StdFail_NotDone |
+| `GccAna_Circ2dTanOnRad_3.cxx` (circle, centre on a circle) | `qualifier1(NbrSol)` written while NbrSol = 0 | Standard_OutOfRange (a hand-picked recorded case) |
+| `GccAna_Circ2dTanOnRad_4.cxx` (line, centre on a circle) | `sign = (int)dc1.Dot(normL1)` truncates to 0, so the tangency point is the centre | Every generic case throws Standard_ConstructionError (the parameter of the centre): 44 of 120 recorded cases |
+| `GccAna_Circ2dTanOnRad_5.cxx` (point, centre on a circle) | `Location - signe * Point1` is a sum when `signe = -1`; the loop writes index 1, not NbrSol | Wrong boundary circle; solution 2's qualifier, IsTheSame and tangency data unset |
+| `GccAna_Lin2d2Tan.cxx` (two circles) | `qualifier2(...) = Qualified1.Qualifier()` in almost every branch; for unqualified circles WhichQualifier returns GccEnt_unqualified, not a computed qualifier (also circle + point); the mixed branches write solution 2's qualifiers into `qualifier1(1)`/`qualifier2(1)`; unqualified/enclosing gives solution 2 the first's tangency point | Wrong or unset qualifiers; a wrong tangency point (pinned by a test) |
+| `GccAna_Lin2dTanObl.cxx` | The second intersection is computed again with `linsol(1)`; a solution parallel to TheLine gets the intersection data of a default point | Intersection2(2) = Intersection2(1); (0, 0) data for parallel solutions |
+| `GccAna_Lin2dTanPer.cxx` | `qualifier1` never set by the (point, line), (point, circle) and (circle, line) constructors; `maxdist = RealLast()` never lowered, so the last intersection point is kept, not the nearest; (circle, circle) always gives 2 solutions whatever the qualifier, tangent to C1 and perpendicular to the line of centres (they don't pass through TheCircle's centre); no BadQualifier check for noqualifier; ThisSolution throws Standard_RangeError | Unset qualifiers; wrong lines in the circle/circle case (pinned by a test) |
+
+## Phase 6: unit 6E, the pave filler
+
+Found while porting BOPAlgo_PaveFiller, by reading OCCT's code. The port reproduces each (`// OCCT` at the line) except
+where the entry says otherwise. None shows in the comparison with native (decision 785), where all 914 runs are
+bit-identical.
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::PutPaveOnCurve` (PaveFiller_6), new-pave branch | Raises the tolerance of the vertex put on a section curve with `BRep_Builder::UpdateVertex`, without the `IsNewShape`/same-domain check `UpdateVertex(nV, tol)` makes in the non-destructive mode; `PutPavesOnCurve` lets the common vertices of the two faces through | In the non-destructive mode an argument vertex's tolerance can be raised in place. On a frozen argument the port throws (BOPAlgo_AlertIntersectionFailed, decision 787). Not reached by the recordings |
+| `BOPAlgo_PaveFiller::FilterPavesOnCurves` and `MakeBlocks` (PaveFiller_6) | Write the saved tolerances of the vertices of `theMVTol` straight into their TShapes (`BRep_TVertex::Tolerance`) | As above: the vertices of site 1 and the vertices of used paves, argument ones included |
+| `BOPAlgo_PaveFiller::CorrectToleranceOfSE` (PaveFiller_6), step 2.2 | Lowers the tolerance of vertices connected to section edges whose tolerance was reduced, whether or not the vertex is new | In the non-destructive mode an argument vertex can be changed (lowered) in place; the port throws on a frozen one. Not reached by the recordings |
+| `BOPAlgo_MPC::Perform` / file-static `UpdateVertices` (PaveFiller_7) | Raises the tolerances of the vertices of section edges in place, from parallel solvers, on vertices several section edges share; `BRep_TVertex::UpdateTolerance` is an unsynchronised read-compare-write | Natively a larger tolerance can be lost to a concurrent smaller one, so the parallel result can differ from the serial one. **Fixed** (decision 789): the port takes a lock around the update, which gives the serial result. In the non-destructive mode the vertex can be an argument's whose tolerance didn't grow before (the port throws on a frozen one, caught as BOPAlgo_AlertBuildingPCurveFailed) |
+| `BOPAlgo_PaveFiller::PutClosingPaveOnCurve` (PaveFiller_6) | Sets the index of a local copy of the pave (`aPave.SetIndex(nVn)`) that is never used again | No effect. Kept, not marked |
+| `BOPAlgo_PaveFiller::PerformVF` (PaveFiller_4) | Adds to the face's VerticesIn only the last same-domain vertex `nVx` of the loop over a pair's vertices | Possibly intended. Kept, not marked (matches native in every recorded case) |
+
+**Order sites** (decisions 580, 633, 784). The filler iterates integer maps (the faces' sub-shape and vertex sets,
+`ShapesSD`, MakeBlocks' maps of vertices and their tolerances, the same-domain maps of MakeSDVerticesFF, PostTreatFF,
+UpdateFaceInfo and UpdatePaveBlocks, ProcessExistingPaveBlocks' `aDMBV`) in OCCT's bucket order, which decides the
+indices of new shapes; the port reproduces it with `NCollection_IntMap` and `NCollection_IntDataMap` (decision 784). It
+iterates no map keyed by address, so native's filler is reproducible.
+## Phase 5: unit 5O1, faces from wires
+
+Found while porting BRepAlgo and the TopOpeBRepBuild/DS/Tool members `TopOpeBRepBuild_WireToFace::MakeFaces` runs.
+Each is reproduced in the port and marked `// OCCT` unless the table says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepAlgo_FaceRestrictor::Perform`, `ChangePCurve` | Returns `C2.IsNull()` (true when the edge has *no* pcurve), which the caller stores as `YaPCurve` and tests `if (!YaPCurve)` | Without projection, an edge without a pcurve on the surface but with one elsewhere gets that pcurve moved onto the surface, then its 3D curve projected as well; without a 3D curve Perform returns not done, having written the pcurve into the caller's edge. Reproduced by the recordings (scenario 14: done 0, no face) |
+| `BRepAlgo_FaceRestrictor::PerformWithCorrection`, `IsInside` | Evaluates the first edge's pcurve on the face without checking it | Native crashes on an edge without a pcurve on the face (and not on a plane with a 3D curve); the port throws NullReferenceException |
+| `BRepAlgo_FaceRestrictor` | The default constructor leaves `myDone`, `modeProj` and `myCorrection` uninitialised | `IsDone` before `Perform` reads garbage; the port's are false |
+| `TopOpeBRepTool_2d.cxx`, `FC2D_FancestorE` | Without a 3D curve, looks the edge's face up in a map only `FC2D_Prepare` (the Booleans) creates, dereferencing a null pointer otherwise | Native crashes when WireToFace meets an edge with neither a pcurve on the face nor a 3D curve; the port throws Standard_NullObject (decision 792) |
+| `TopOpeBRepTool_2d.cxx`, the pcurve cache | Kept in `thread_local` statics that survive between calls; `FC2D_FancestorE` allocates the cache map before crashing | In a native process that ran a legacy Boolean on the thread, WireToFace may find pcurves cached by it. The port never has the cache (decision 792) |
+| `TopOpeBRepTool_ShapeClassifier` | The default constructor leaves `mySameDomain`, `mymren`, `mymredone`, `myState` and `myPAvLS` uninitialised; the shared classifier (`FSC_GetPSC`) is made with it | Its callers set them before reading; the port's are zero, false and null |
+| `TopOpeBRepBuild_WireEdgeSet::MakeNeighboursList` | `VertexConnectsEdges` leaves its orientations unwritten when the vertex isn't shared, and the caller reads `oVE` | Undefined on closing edges at a vertex they don't share; the port reads FORWARD |
+| `TopOpeBRepBuild_Merge.cxx`, `CorrectUnclosedWire` | Removes a wire's children while a TopoDS_Iterator is on them (the iterator's node is freed) | Undefined; in practice the next child is visited. The port iterates a snapshot. Only new wires (blocks of edges) get there, never WireToFace's |
+| `TopOpeBRepBuild_Builder::MakeFaces` | `myBuildTool.Closed(newWire, true)` on old wires too, and `AddFaceWire` | WireToFace flags the caller's wires closed (and not free). The port works on copies of frozen wires and gives the caller's back where nothing changed (decision 793) |
+| `BRepAlgo_Image::Image` | For a shape without images, appends it to a function-level `static` list and returns the list | The list keeps every shape so asked for: the second call returns two shapes. Shared between threads natively (racy); per thread in the port |
+| `BRepAlgo_AsDes::Ascendant`, `Descendant`, `ChangeDescendant` | Return a function-level `static` empty list for an unknown shape; `ChangeDescendant` hands it out writable | A caller filling it changes what every later call returns for unknown shapes. Per thread in the port |
+## Phase 5: unit 5K2, geometric constraints
+
+Found while porting Geom2dGcc. Each is ported as OCCT has it and marked `// OCCT` at the line (58 sites). "Unset"
+means an NCollection_Array1 element or a local OCCT never writes: uninitialised natively, 0 in the port (decision
+781). The oracle (decision 802) masks or attributes every one whose native value depends on memory.
+
+| Where | What | Effect |
+|---|---|---|
+| `Geom2dGcc_FunctionTanCuCuCu.cxx` | `Derivatives` and `Values` compute nothing and return true | Circ2d3TanIter solves with math_FunctionSetRoot, which calls `Values`: the search starts from the solver's own F and DF, uninitialised natively (stack and heap bytes), zeros in the port, which stops at the starting point. Native's results on free-form Circ2d3Tan (curve, curve, point) vary from run to run: 323 of 2,000 oracle cases differ, none repeating on a second native run |
+| `Geom2dGcc_FunctionTanCuCuOnCu.cxx` | The (circle, curve, centre on a circle) constructor sets `Geom2dGcc_CuCuOnCi`, not `CiCuOnCi` | `InitDerivative` evaluates the curveless `Curv1`: a null dereference natively, NullReferenceException in the port. Only the public `Geom2dGcc_Circ2d2TanOnIter(QualifiedCirc, QCurve, gp_Circ2d, ...)` reaches it; Geom2dGcc_Circ2d2TanOn's dispatch never does |
+| `Geom2dGcc_Circ2d2TanOn.cxx` (two curves, centre on a line or circle) | No `else`: the generic Iter on the OnCurve adaptor always runs after the line or circle Iter and replaces its result; the circle branch never calls WhichQualifier | The specialised Iter's work is discarded |
+| `Geom2dGcc_Circ2d2TanOn.cxx` (every Iter branch) | CenterOn3 isn't copied | `parcen3(1)` unset, `pntcen(1)` the origin (the oracle masks CenterOn3's parameter on these paths) |
+| `Geom2dGcc_Circ2d2TanOn.cxx` (curve, point, centre on a line or circle) | `TheSame2(1)` not set | Read by Tangency2 and IsTheSame2; unreachable in practice (the Iter throws, below) |
+| `Geom2dGcc_Circ2d2TanOnIter.cxx` (curve, point, on a line, circle or curve) | math_FunctionSetRoot is given 3-vectors for the 4-variable FunctionTanCuCuOnCu | Every `Geom2dGcc_Circ2d2TanOn(free-form curve, point, ...)` throws. Natively Standard_DimensionError: math_FunctionSetRoot.cxx defines `No_Standard_OutOfRange`, so SetTolerance reads past the vector unchecked and Perform rejects the length. In the port Standard_OutOfRange at SetTolerance (decision 803) |
+| `Geom2dGcc_Circ2d2TanOnIter.cxx` | Tangency1, Tangency2 and CenterOn3 return 0 for ParSol, ParArg and the centre's parameter instead of the stored values; IsTheSame2 always false | Through Geom2dGcc_Circ2d2TanOn, every Iter parameter is 0 |
+| `Geom2dGcc_Circ2d2TanOnIter.cxx` (circle, curve, line) | The centre is `ElCLib::Value(Ufirst(1), OnLine)`, Ufirst(1) being the parameter on C1 | Wrong centre (public constructor only) |
+| `Geom2dGcc_Circ2d2TanOnIter.cxx` (curve, curve, circle or curve) | `par1sol = 0`, `par2sol` the distance between the tangency points | Hidden by the accessors returning 0 |
+| `Geom2dGcc_Circ2d2TanOnIter.cxx` (point constructors) | `parcen3` is the radius `Ufirst(3)`; the line case stores the centre's line parameter as `pararg2` | Moot: these constructors throw |
+| `Geom2dGcc_Circ2d2TanOnGeo.cxx` (two circles, centre on a curve) | For an unqualified first circle `Rbid(1)` is overwritten and `Rbid(2)` never set; `RBid(2)` set only for an unqualified second circle; both read whenever nbsol is 2 | Native's radii depend on memory: 11 of 2,000 oracle cases differ (9 repeating natively) |
+| `Geom2dGcc_Circ2d2TanOnGeo.cxx` | `Radius(nnsol)` reaches 4 in an array of 2; the qualifier tests use `Radius(i)` with the bisector's index | Standard_OutOfRange, natively too |
+| `Geom2dGcc_Circ2d2TanRad.cxx`, `Results(GccAna_Circ2d2TanRad)` | Asks for Tangency1 and Tangency2 even when IsTheSame, where GccAna's accessors throw StdFail_NotDone | The constructor throws for any analytic case whose solution is an argument circle; with GccAna's unset `TheSame2(1)` (decision 781) it may throw natively only. No oracle case did |
+| `Geom2dGcc_Circ2d2TanRadGeo.cxx` (curve, curve) | `qualifier1(NbrSol)` assigned twice, `qualifier2` never | WhichQualifier's second qualifier unset when neither argument is a line or circle (not bound natively, so not compared) |
+| `Geom2dGcc_Circ2d3TanIter.cxx` | `IsTheSame3` always returns true once done; `IsTheSame2` reads TheSame3 | Every iterative Circ2d3Tan solution reports IsTheSame3 and its Tangency3 throws StdFail_NotDone (cirtang and callers asking for the third tangency of a free-form case get the exception natively too) |
+| `Geom2dGcc_Circ2d3TanIter.cxx` (curve, curve, point), (circle, circle, curve) | The second qualifier test checks Qualified1 again | Wrong qualifier filtering |
+| `Geom2dGcc_Circ2d3TanIter.cxx` (line, line, curve), (line, curve, point), (circle, line, curve) | The side of a line is `centre · normal` from the origin, not from a point of the line | Wrong qualifier filtering unless the line passes through the origin |
+| `Geom2dGcc_Circ2d3TanIter.cxx` (line, curve, point), (circle, curve, point) | Cu2 is evaluated at `Ufirst(2)` (the line's or the point-circle's parameter) instead of `Ufirst(3)`; the point-circle's tangent at `Ufirst(3)` | Wrong tangency checks (public constructors only) |
+| `Geom2dGcc_Circ2dTanCenGeo.cxx` | The `Index` array is never written, and `Index(1) == Index(2)` decides between one solution (the nearest extremum) and two (the farthest too) | Native has one or two solutions depending on memory (the port always one): 387 of 2,000 oracle cases differ, 251 repeating natively, native always the port's solutions plus others |
+| `Geom2dGcc_Circ2dTanOnRadGeo.cxx` (all six constructors) | `par1sol` is `ElCLib::Parameter(cirsol(n), pnttg1sol(n))` before `pnttg1sol(n)` is set | The parameter of the default point (0, 0); Standard_ConstructionError when the solution is centred at the origin |
+| `Geom2dGcc_Circ2dTanOnRadGeo.cxx` | `CenterOn3` returns `pnttg1sol`, not `pntcen3` | As GccAna_Circ2dTanOnRad's: a tangency point for the centre |
+| `Geom2dGcc_Circ2dTanOnRadGeo.cxx` (curve, centre on a curve) | `Adaptor2d_OffsetCurve(HOnCurv)` without an offset has the range [0, 0] | The curve to centre on is one point: no solution |
+| `Geom2dGcc_Circ2dTanOnRadGeo.cxx` (line, centre on a curve) | The offset line goes through `dir1.XY() + cote * norm1`, the direction, not the origin; `pararg1` is a parameter on that line evaluated on L1 | Wrong solutions unless the line passes through its direction vector |
+| `Geom2dGcc_Lin2dTanObl.cxx` (curve, line, param, angle) | Passes TolAng to the Iter as the start parameter and Param1 as the angular tolerance | Draw's `lintan` with an angle starts from TolAng |
+| `Geom2dGcc_Lin2dTanObl.cxx` (free-form curve) | `Add` calls the Iter's Intersection2, which throws Geom2dGcc_IsParallel when the angle is 0 or π | The constructor throws |
+| `Geom2dGcc_Lin2dTanObl.hxx` | `IsParallel2` declared, not defined (build123d.NET's binding excludes it) | Left out with its write-only `Paral2` |
+
+## Phase 5: unit 5L1, laws and trihedrons
+
+Found while porting Law and GeomFill's trihedron and location laws. Each is ported as OCCT has it, except the array
+bounds of Law_BSpline (decision 808).
+
+| Where | What | Effect |
+|---|---|---|
+| `Law_BSpline::IncreaseMultiplicity` (both overloads), `IncrementMultiplicity` | Call `InsertKnots` with the default `Add = false`; Geom_BSplineCurve passes true | The multiplicity becomes Max(old, M - old) instead of M (or Max(old, Step) instead of old + Step), so `SetKnot(Index, K, M)` misses M. Kept, pinned by a test |
+| `Law_BSpline::Segment` | Locates the end at `NewU1 + (U2 - U1)`, which can round one ulp below the knot just inserted at U2; the strict `< Eps` test misses it | The segment ends at the previous knot and keeps poles of a span whose end knot is not of multiplicity Degree: a wrong curve, in a few percent of random segments. Kept, pinned by a test |
+| `Law_BSpline` constructors and `SetPeriodic` | OCCT 8's `NCollection_Array1::operator=` copies the source's bounds into the (1, n) arrays they allocate | Arrays given with other bounds, and the knots after `SetNotPeriodic` then `SetPeriodic` with FirstUKnotIndex > 1, keep their bounds; later 1-based reads are out of bounds (undefined behaviour). **The port copies into 1-based arrays (decision 808)** |
+| `Law_BSpline` (`Rational(W)`), `Law_Interpolate::BuildParameters` | Read W from index 1, and index the parameters by the points' index, whatever the arrays' lower bounds | Wrong only for arrays not indexed from 1. Kept |
+| `GeomFill_CorrectedFrenet::Copy` | Copies with the default constructor | The copy of a law made `ForEvaluation` searches the mean plane again (it is not "for evaluation"). Kept |
+| `GeomFill_CorrectedFrenet.cxx`, `smoothlaw` | After a successful first pass `Law = BS` shares the handle, and the second pass removes more knots from BS | The returned law is the second pass's even when that pass's control fails. Kept |
+| `GeomFill_CorrectedFrenet::InitInterval` | The next step is `max(|S(t)| / 2, LengthMin) / |S'(t)|` with S = C' ^ C'' (GeomFill_SnglrFunc), capped by the default step but not bounded below | On offset curves the steps fall near 1e-6, so one SetCurve takes hundreds of thousands of Frenet evaluations: seconds to over ten minutes natively on random offsets of B-splines and Bezier curves (the port, in a Debug build, about 30 times longer). Kept; the oracle leaves those spines out (decision 811) |
+| `GeomFill_CorrectedFrenet::Intervals` | No `return` after `EvolAroundT->Intervals(T, S)` when Frenet has one interval | The fusion that follows overwrites T with the same values. Harmless. Kept |
+| `GeomFill_GuideTrihedronAC::D2` | Uses `TN2 = |TN|^2` (= 1) where the second derivative of a unit vector needs `|DTN|^2` | D2BiNormal, and with it D2Tangent, are off by (|DTN|^2 - 1) BiNormal. Kept, pinned by a test |
+| `GeomFill_GuideTrihedronAC::D0/D1` | No guard against zero magnitudes (OCCT's own TODO "finding #8") | Division by zero where the path meets the guide. Kept |
+| `GeomFill_DiscreteTrihedron::Init` | Appends to myKnots and myTrihedrons without clearing them | A second SetCurve on a free-form curve keeps the first curve's samples. Kept |
+| `GeomFill_GuideTrihedronPlan` | Declares its own `myTrimmed`, hiding the base's, so the inherited `GetInterval` reads a null handle; `D2` computes only the path's Frenet frame and returns false | Access violation natively, NullReferenceException in the port; no second derivatives. Kept |
+| `GeomFill_LocationGuide::Copy` | Runs `Set(..., rotation, ...)` before the copy has a path; passes `myPoles2d(1,1).X()` (the first path parameter) as the start angle, as SetCurve does | Copying a law with a rotation throws Standard_ConstructionError. Kept, pinned by a test |
+| `GeomFill_LocationGuide::D2` | Multiplies the caller's incoming matrices by the transformation before setting them from the trihedron | D2 never applies SetTrsf, while D0 and D1 do. Kept, pinned by a test |
+| `GeomFill_LocationGuide::GetAverageLaw` | Averages myNbPts + 1 points with a step of a tenth of the interval | Most of the 22 points lie past the interval's end. Kept, pinned by a test |
+| `GeomFill_LocationGuide::SetRotation` | After the "rescue" solve `Pc` is still the default point | w = 0 is stored. By reading |
+| `GeomFill_FunctionDraft::DerivT` | Omits the w cos(a) B' term | LocationDraft's D1/D2 trace derivatives are wrong where the binormal turns (about 1.6 times the finite difference along a circle; exact along a line). Kept, pinned by a test |
+| `GeomFill_LocationDraft`, the seed search of D0/D1/D2 | For a parameter before the first milestone reads the poles at indices -1 and 0 | Out of bounds natively; Standard_OutOfRange in the port |
+| `GeomFill_CurveAndTrihedron`, `LocationDraft`, `LocationGuide::GetAverageLaw` | The matrix's columns are (T, N, B), where D0 to D2 give (N, B, T) | The average law is not the average of M(t). Kept, pinned by a test (CurveAndTrihedron) |
+| `GeomFill_UniformSection::BarycentreOfSurf` | Starts at the section's first parameter but steps to the converted B-spline's last parameter | A wrong sample range when the two differ. By reading |
+| `GeomFill_LocFunction::DN` | Any order other than 0 to 2 dereferences a null pointer | Access violation natively; Standard_OutOfRange in the port (tested) |
+## Phase 5: unit 5M, medial axis
+
+Found while porting Bisector, MAT, MAT2d and BRepMAT2d. Each is ported as OCCT has it and marked `// OCCT` at the
+line; the native recordings (tools/bisrec, tools/matrec, decision 823) agree with the port wherever they reach.
+"Unset" means a local or field OCCT never writes on that path: uninitialised natively, 0 or false in the port.
+
+| Where | What | Effect |
+|---|---|---|
+| `Bisector_Inter::Perform` | Each piece is stored in SBis/SD at its interval index, but the loop runs from 1 to the piece count | When an interval outside the domain is skipped, it reads an unset slot (a null handle) and misses the last piece |
+| `Bisector_Inter::Perform` | The second bisector's end extension is tested with `IB2 == Bis1->NbIntervals()` (Bis2 meant) | Wrong extension test when the bisectors' interval counts differ |
+| `Bisector_Inter::NeighbourPerform` | UMax and UMin come from `BisecCC::ValueAndDist`, which can leave them unset | Unset bounds (0 in the port) |
+| `Bisector_BisecPC(Cu, P, Side, UMin, UMax)` | Leaves shiftParameter, distMax, isEmpty and currentInterval uninitialised, then evaluates `Value(UMin)` with the unset shiftParameter | Uses 0 and false in the port |
+| `Bisector_BisecPC::Values` | No case for N = 3 | EvalD3 returns the given point rather than the bisector's point, with zero derivatives |
+| `Bisector_BisecPC::ComputeIntervals` | The periodic branch is dead (one interval appended at that point) and would call `Period()`, which throws for a non-periodic bisector | None reachable |
+| `Bisector_BisecCC::Values` | No `return` after the extension when the polygon has at most one point; it then compares with `First()` of an empty polygon | Compares with a default point of parameter 0 |
+| `Bisector_BisecCC` (TestExtension) | On the branch testing the curve's last point, T1 isn't normalised before `T1·T2 > 1 - Confusion` | The tangency test depends on T1's length |
+| `Bisector_BisecAna::Perform` | Can leave `thebisector` unset: the circle/circle, circle/line and circle/point cases when no solution is kept, the point/point case when `!ok && oncurve` | Bisector_Bisec dereferences it: a native crash, a NullReferenceException in the port |
+| `Bisector_BisecCC::ValueAndDist`, `Extension`, `PointByInt` | Can leave U1, U2, Distance (UOnB, Dist) unwritten (reached from SupLastParameter) | Unset outputs (`ref` in the port, decision 817) |
+| `Bisector_BisecCC::ChangeGuide` | Shares curve1 and curve2 with the original (not a bug) | Transforming one changes the other |
+| `MAT2d_Mat2d::CreateMat` | A face bounded by one closed edge (a full circle): the main loop never runs and the roots come from the empty list of a bisector never built; `roots->Current()` is a null handle | Native: access violation in `BRepMAT2d_BisectingLocus::Compute`. Port: NullReferenceException (marked in `MAT2d_Mat2d.Roots`) |
+| `MAT2d_Tool2d::BisecFusion` | Assumes a bisector that isn't curve/curve is analytic: a Bisector_BisecPC gives a null `down_cast`, then `BAna->SetTrim` | Native crash, NullReferenceException in the port; reached when contours are merged, e.g. a holed face with Bézier sides (a matrec preset) |
+| `BRepMAT2d_BisectingLocus::RenumerationAndFusion` | Reads `MergeArc1`, `MergeArc2` and `GeomIndexArc1..4`, which `MAT_Graph::FusionOfBasicElts` leaves unset when the two elements are one, and `MergeArc2` unset when the start and end arcs are one | Uninitialised or stale values; the port starts them at false/0 and keeps OCCT's reuse of stale values |
+| `MAT_Bisector`, `MAT2d_Mat2d` | MAT_Bisector's index, issue and end points, vectors, sense and distance, and Mat2d's `intersectionpoint`, uninitialised until set | Harmless (always set before read on the recorded paths); 0 in the port |
+| `MAT2d_CutCurve` | `Perform(C, aSide)` and `PerformInf` declared, never defined; `thenumberofedges` never read | None |
+
+## Phase 6: unit 6F, builders and Booleans
+
+Found while porting the builders, by reading OCCT's code. The port reproduces each (`// OCCT` at the line). None shows
+in the oracle (decision 835).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_BOP::BuildSolid` | Scans the face-to-solids map with `for (i = 1; i < aNb; ++i)`: the last face is never checked for being shared by two argument solids | A solid whose only face shared with another is that last one is wrongly taken as possibly untouched |
+| `BOPAlgo_Builder::BuildDraftFace` (Builder_2) | Changes the orientation of the edge splits stored in `myImages` in place (`ChangeValue` through a const reference) | Later readers of the images see each edge split's last orientation |
+| `BOPAlgo_Builder::FillInternalVertices` (Builder_2) | Adds an internal vertex into a face split, which can be another argument's own face kept as its same-domain group's face | In the non-destructive mode an argument face can be changed in place. On a frozen argument the port throws (BOPAlgo_AlertBuilderFailed, decision 829). Not reached by the oracle |
+| `BOPAlgo_Builder::FillInternalShapes` (Builder_3) | Adds internal vertices and edges into a split solid, which can be an argument's solid kept as the same-domain solid | As above, for solids |
+| `BOPAlgo_Tools::WiresToFaces` | Adds p-curves and corrects tolerances on the input's edges | The input changes; the port copies a frozen input at the entry (decision 830) |
+| `BOPAlgo_ToolsProvider::SetTools` | Clears `myTools` but not the fence `myMapTools` (as 6A's SetArguments) | Setting again tools added before leaves none |
+
+**Order sites (decision 580).** Two builder loops iterate a shape-keyed map, in address order natively and in insertion
+order in the port: `FillSameDomainFaces` over `myImages` (to propagate each solid parent to its face pieces) and
+`BOPAlgo_Tools::FillInternals` over the solids' internal faces. Neither order is observable: each piece is bound under
+its own key, and each solid receives only its own shells. The builders' integer maps iterate in OCCT's order (decision
+784), and no map keyed by a pave block or common block is iterated, so native's builders are reproducible: native gave
+the same result serially and in parallel on every oracle case.
+
+## Phase 5: unit 5L2, sections and sweep surfaces
+
+Found while porting GeomFill's sweeps, sections and pipes. Each is ported as OCCT has it, except the in-place
+reparametrisation of NSections' sections (decision 838); the native recordings (decision 840) reproduce the ones that
+change a result.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Pipe::Init(Path, FirstSect, LastSect)` | Treats `myLoc->SetCurve(myAdpPath)`'s false as a failure, but CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction | Pipes evolving between two sections fail with GeomFill_ImpossibleContact on most 3D paths and on planar paths with inflections (27 of 30 random 3D B-spline paths; `tuyau r path s1 s2`). Kept, pinned by a test and the recordings |
+| `GeomFill_SweepSectionGenerator::Perform` (types 1 to 3) | `TR = Rot * Trans` sits in the branch for opposite tangents, so TR stays the identity otherwise | The rotations and translations between successive sections are dropped: every section of a circle, constant or evolving section along a non-circular path stays at the first one's place. Kept (GeomFill_Pipe uses only type 0) |
+| `GeomFill_SweepSectionGenerator::GetShape` (type 0) | Gives the quasi-angular shape (7 poles, degree 6) whatever `Perform(Polynomial)` asked; `Section` then assigns the polynomial conversion's 8 poles | `GeomFill_Pipe::Perform(WithParameters, Polynomial = true)` on a pipe on an edge throws Standard_OutOfRange natively and in the port. Kept, pinned |
+| `GeomFill_QuasiAngularConvertor::Section` (second derivatives) | `D2Vw(5)` has `(b + 11)` where the derivative of `beta^4 (2c + b^2)` needs `(b + 1)` | The weights' second derivative, and with it D2Poles, are wrong in the quasi-angular conversion (D2 of circular blends). Kept |
+| `GeomFill::GetCircle` (second derivatives, rational branch) | `d2np2 = d2nplan ^ ns1 + nplan ^ dn2w`, where the second derivative of `nplan ^ ns1` needs `nplan ^ d2n1w` | Wrong second derivatives of the interior poles of arcs of more than one span. Kept |
+| `GeomFill::GetCircle` (rational branch) | Builds the interior poles as `pts1 + R ((cos a - 1) ns1 + sin a (nplan ^ ns1))`, right for normals from the centre to the ends, while the header calls them inward normals ("Normal rentrente") and CircularBlendFunc passes inward ones | With inward normals, arcs of two or three spans (TgtThetaOver2_2/_3) get interior poles off the circle (radius 3.49 for 2 at 4.5 radians). CircularBlendFunc never asks for more than one span (it switches to quasi-angular above 0.65 pi). Kept; the test uses outward normals |
+| `GeomFill_NSections::ComputeSurface` | `SetKnots` on the caller's B-spline sections | Reparametrises the caller's curves in place. **The port reparametrises copies (decision 838)** |
+| `GeomFill_NSections::BarycentreOfSurf` | U is not reset for each V row | Only the first row samples the u range; the others evaluate past it. Kept |
+| `GeomFill_EvolvedSection::BarycentreOfSurf` | As UniformSection's: starts at the section's first parameter, steps to the converted B-spline's last | A wrong sample range when the two differ. By reading |
+| `GeomFill_Sweep::Build` | The call to `BuildProduct` (the approximation of the location law composed with the section's surface) is commented out, and BuildProduct's tensorial product too | `GeomFill_Location` approximates globally, as `GeomFill_Section` does. Kept |
+
+## Phase 5: unit 5L3, surfaces from curves
+
+Found while porting GeomFill's filling half and AppBlend. Each is ported as OCCT has it, except the reversal of the
+caller's curve in BSplineCurves and BezierCurves (decision 846). None was found in GordonUtilities, NetworkSurface or
+Gordon.
+
+| Where | What | Effect |
+|---|---|---|
+| `GeomFill_Coons::Init`, rational form | The poles put P2 in column 1 and P4 in column NU, the weights W4 in column 1 and W2 in column NU | Through BSplineCurves/BezierCurves, which pass (P1, P4, P3, P2, W1, W4, W3, W2), rational Coons fillings get the left and right boundary weights swapped. Kept, pinned by a test |
+| `GeomFill_CoonsAlgPatch::Value` | Evaluates bounds 0 and 2 at V instead of U | A wrong point; `D1U`, `D1V` and `DUV` are right, and ConstrainedFilling uses only those. Kept, pinned by a test |
+| `GeomFill_BSplineCurves::Init`, `GeomFill_BezierCurves::Init` (two curves, CurvedStyle) | When CC1's end is CC2's start, calls `C1->Reverse()` on the caller's curve, not on its copy | The result is built from the unreversed copy, so it is right, but the caller's curve is reversed (a second call sees it so). The port leaves the caller's curve alone (decision 846) |
+| `GeomFill_ConstrainedFilling::MatchKnots` | After SetDomain, the `ind[]` searches compare `dom` with the multiplicities `nm[]->Value(i)` instead of the knots `nk[]` | The knot is not found and the tangency mixing index keeps its default. Kept |
+| `GeomFill_ConstrainedFilling` | `stcor`, `tgalg` and `dom` are never reset by Init | A second Init on the same object starts sortbounds from the previous corner gaps and keeps tangency fields of bounds that no longer have normals. Kept |
+| `GeomFill_ConstrainedFilling::MatchKnots` | Reads `nbnp`/`nbnk` after `PrepareInsertKnots` returns false | Uninitialised natively; the port's out parameters are assigned |
+| `GeomFill_Profiler::UnifyByInsertingAllKnots` | Inserts every curve's knots into the others with `Add = false`; on periodic sections `BSplCLib::PrepareInsertKnots` mispredicts the pole count (Phase 1's entry above) | Natively `BSplCLib::InsertKnots` writes past its arrays: heap corruption, a crash in the recorder; the port throws Standard_RangeError. Reached by every Generator, SectionGenerator and loft whose sections are all periodic B-splines with different knots |
+| `GeomFill_Profiler::Perform` | When knot insertion does not unify the curves, `UnifyBySettingMiddleKnots` only moves knots | The curves keep different numbers of poles; `Poles`, GeomFill_Generator and AppBlend_AppSurf then read and write past arrays sized for the first curve natively (unchecked) where the port throws. Seen with all-periodic sections |
+| `GeomFill_SectionGenerator::SetParam` | Keeps the caller's array, then writes `myParams(i) = Params(Lower() + i - 1)` into it for i from 1 | For an array not indexed from 1 the caller's values are shifted and the last write is past the end (unchecked natively; Standard_OutOfRange in the port, tested) |
+| `GeomFill_SectionGenerator` constructor | Sets default parameters only if `mySequence` has curves, which it never has there | `Parameter` without `SetParam` dereferences a null handle (an access violation natively, NullReferenceException in the port) |
+| `AppBlend_AppSurf::InternalPerform`, spline approximation | `if (C0) SetContinuity(0); if (C1) ... else if (C2) ... else SetContinuity(3)` | GeomAbs_C0 ends as continuity 3. Kept (recorded) |
+| `AppBlend_AppSurf::InternalPerform`, Bezier pieces (not SpApprox) | Computes the tolerances reached but never stores them | `TolReached` and `TolCurveOnSurf` give the previous run's values (0 at first). Kept |
+| `AppBlend_AppSurf` (both Perform) | The two-section rule (IFV occ13904) writes `dmin = 1` and possibly `dmax = 1` into the object's settings | They stay for the next pieces of `Perform(..., NbMaxP)` and for later runs: a piece of two sections lowers every later piece's degrees, and later pieces can fail (StdFail_NotDone). Kept (recorded) |
+| `AppBlend_AppSurf::Perform(..., NbMaxP)`, known parameters | Measures each Bezier piece by `mucu.Pole(Index, 1)` to `Pole(Index, NbPoles)`, Index being the piece's number | The distances, hence the interior knots, come from the wrong curve of the multi-curve. Kept |
+| `AppBlend_AppSurf::Curves2dShape` | `NbPoles = tabPoles->ColLength()`, the number of U poles | The 2d curves have the V poles. Kept |
+| `AppDef_Variational::InitCriterionEstimations` through `AppBlend_AppSurf::PerformSmoothing` | The entry above (EstTangent past a two-point line) | Smoothing two sections: native reads past the points and throws Standard_OutOfRange later; the port's range check throws Standard_RangeError first (decision 849) |
+## Phase 5: unit 5R, 2D fillets and chamfers
+
+ChFi2d and BRepFilletAPI_MakeFillet2d, reproduced as OCCT has them (decision 10), each marked `// OCCT`. None made
+the port differ from native in the oracle or the recordings (decision 856).
+
+| Where | What | Effect |
+|---|---|---|
+| `ChFi2d_Builder.cxx`, `BuildNewWire` | Every edge of the face being built goes into one new wire, closed as the face's first wire | A face with holes comes back with one wire holding the outer and inner edges (build123d.NET chamfers each wire on its own for this reason) |
+| `BRepFilletAPI_MakeFillet2d.cxx`, `Modified` | `DescendantEdge` reads the history with `Find` | Standard_NoSuchObject for any edge MakeFillet2d didn't trim, where BRepBuilderAPI_MakeShape's contract is an empty list |
+| `ChFi2d_Builder.cxx`, `BuildFilletEdge` | `vec1` built from the vertices and overwritten at once; `Ebid1`/`Ebid2` built and unused; the basis curves down-cast to Geom2d_Line unchecked | Dead code; a curve neither line nor circle would be a null dereference (IsLineOrCircle rejects it first) |
+| `ChFi2d_Builder_0.cxx`, `ComputePoint(F, L, E, Param)` | `Param` unset and the point at the plane's origin when the chamfer's line meets nothing | An angle chamfer that misses its second edge ends at the origin of the plane with an uninitialised parameter (0 in the port) |
+| `ChFi2d_Builder_0.cxx`, `ModifyChamfer(Chamfer, E1, E2, D1, D2)` | `E1` unused | Only `E2` orients the new chamfer |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Init(wire)` | `e1` and `e2` are only set when null | A second Init (ChFi2d_FilletAPI reuses its algorithm) keeps the first wire's edges |
+| `ChFi2d_AnaFilletAlgo.cxx`, `isCW` | The middle point is evaluated on the edge's curve without the edge's location, the ends with it | Wrong orientation for an arc edge with a location |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Perform` | The right neighbour's ends are chosen by `e1.Orientation()` | Wrong trimming when the two edges have different orientations |
+| `ChFi2d_AnaFilletAlgo.cxx`, `ArcFilletSegment` | Compares a squared distance difference with `SquareConfusion`, where SegmentFilletArc uses `Confusion` | The arc's end point is found less often; the parameter path is used instead |
+| `ChFi2d_FilletAlgo.cxx`, `IsRadiusIntersected` | `LowerDistanceParameter()` (a parameter) compared with `Precision::Confusion()` as if it were a distance | Intersections are judged on the edge by their parameter |
+| `ChFi2d_FilletAlgo.cxx`, `FilletPoint::Copy`, `FilterPoints` | `Copy` doesn't copy `myNear`; FilterPoints removes `myV(b)` with `b` an index into `myNear` | Values and their near indices can fall out of step |
+## Phase 5: unit 5Q, fair curves
+
+Found while porting FairCurve. Each is ported as OCCT has it and marked `// OCCT` at the line; the native recordings
+(tools/fairrec, decision 862) agree with the port bit for bit.
+
+| Where | What | Effect |
+|---|---|---|
+| `FairCurve_EnergyOfBatten::Compute`, `FairCurve_EnergyOfMVC::Compute` | `MyBattenLaw.SetSliding(MyLengthSliding)` updates the energy's own copy of the law, which nothing reads; the distributions keep their copies with the initial sliding | With free sliding and a non-zero slope, the height law `H(t) = h + (t - 0.5) slope L` keeps the initial L while the sliding changes. Kept |
+| `FairCurve_Energy::Hessian1` | Sets the terms between the first end's and the second end's constraint variables to 0 ("correct if there are less than 3 nodes") | With the battens' single-span degree 9 curves every pole interacts, so those hessian terms are wrong (finite differences give 1e-3 to 2e-2); the Newton steps are approximate, the minimum is the same. Kept, pinned by a test |
+| `FairCurve_Energy::Value` | Reads `Energie(0)` of a fresh `math_Vector(0, 0)` that Compute leaves unwritten when it stops on an infinite sliding | Uninitialised natively, 0 in the port; math_NewtonMinimum's step halving and its step reduction (which ignores the return value) read it. No case of the recordings differs. Kept |
+| `FairCurve_EnergyOfBatten::Compute` | When a sagging integration fails, goes on to the next interval and returns that interval's result | With more than 12 poles, a failure on one interval can be lost. By reading |
+
+## Phase 5: unit 5P, plates and filling
+
+Found while porting Plate, NLPlate, GeomPlate, LocalAnalysis and BRepFill_Filling. Each is ported as OCCT has it,
+except the two of decision 869 and the evaluation cache of decision 870, which change nothing native computes
+reliably.
+
+| Where | What | Effect |
+|---|---|---|
+| `NLPlate_NLPlate::Solve`, `Solve2` | After the loop over constraint orders, `OK = true` overwrites the `OK = false` an iteration's failure set | `IsDone()` is true even when no plate was solved. Kept, pinned by a test (three constraints at one UV: every plate singular, the surface still the initial plane) |
+| `NLPlate_NLPlate::Solve2` | Solves its first, polynomial iteration with `ord`, not the `ordre` it raises to `maxOrder + 2` | Possibly intended. Kept |
+| `Plate_Plate::Init` | Leaves `OK = true` | An empty plate, and a GeomPlate_BuildPlateSurface with no constraint, report `IsDone()`. OCCT's own GTests pin it with a TODO (fixing it broke blend and filling Draw tests). Kept |
+| `Plate_GtoCConstraint` (G3 constructor with a direction) | `nP` is unused (its name commented out in the signature) | Equal to the constructor without it. Kept, pinned by a test |
+| `Plate_LinearXYZConstraint`, `Plate_LinearScalarConstraint` (from arrays) | OCCT 8's `operator=` copies the source's bounds | A pinpoint array not indexed from 1 makes Plate's 1-based reads go out of range: Standard_OutOfRange on both sides. No caller passes one |
+| `LocalAnalysis_CurveContinuity`, `LocalAnalysis_SurfaceContinuity` | `myErrorStatus` is never set on success; the tolerance-only surface constructor leaves `myTypeCont` unset until `ComputeAnalysis` | `StatusError()` after a successful analysis and `ContinuityStatus()` before one read indeterminate memory; the port returns `LocalAnalysis_NullFirstDerivative` and `GeomAbs_C0`. No OCCT caller reads them then |
+| `GeomPlate_BuildPlateSurface::Perform` | When a curve can't be projected on the initial surface, approximates `myGeomPlateSurface`, which Perform nulled at its start (ComputeSurfInit sets it only on its non-linear branch) | Access violation natively (the corpus's bug23343, an OCCT TODO); the port throws Standard_NullObject (decision 869) |
+| `GeomPlate_BuildPlateSurface::G0Error(Index)`, `G1Error(Index)`, `G2Error(Index)` | Arrays of NbPtsOnCur values, of which EcartContraintesMil writes one per interval of the curve's last discretisation | More intervals (MakeFilling's usual case once Perform raised the points): Standard_OutOfRange on both sides. Fewer: native reads uninitialised memory, and returns values that change from call to call (seen on the oracle's 4- to 7-edge contours, several per test run); the port's arrays are zeroed (decision 869) |
+| `GeomPlate_BuildPlateSurface::G0Error()`, `G1Error()`, `G2Error()` | Set only by VerifSurface, which runs only with curve constraints | With point constraints only, native returns uninitialised values; the port 0. BRepFill_Filling always has curves |
+| `GeomPlate_MakeApprox` (criterion order other than -1, 0, 1) | No branch approximates | A null surface, errors unset (the port's 0). Kept |
+| `GeomPlate_Surface::UPeriod`, `VPeriod` | Return `false` | 0. Harmless (never periodic) |
+| `BRepFill_Filling::AddConstraints` (through MakeFilling's `Add(edge, face, order)`) | Passes the GeomAbs_Shape value as the plate's order (0 G0, 1 G1, 2 G2) | GeomAbs_C1 (2) gives a G2 constraint, and GeomAbs_G2 (3) throws "BRepFill : The continuity is not G0 G1 or G2" (Standard_Failure, on both sides: 10 oracle cases). build123d.NET's `MakeSurfacePatch` maps its C2 level to G2, so it always fails natively |
+| `BRepFill_Filling::Build` | Adds the bounds it finds for free constraints to `myBoundary`, and keeps `myOldNewMap` from build to build | A second Build rebuilds each boundary edge from the first build's edge (its empty copy keeps the pcurve on the first surface) and keeps the free constraints' edges. Kept; the oracle compares second builds |
+| `BRepFill_Filling::G0Error()` and the others before `Build` | Dereference the null builder | Access violation natively; NullReferenceException in the port |
+| `tests/bugs/filling/bug23380` | Draw reads `i` and `f` (faces) as free constraints; the case expects 4 edges | Native OCCT 8.0.1, through build123d.NET's binding, gives 3 edges, as the port does (byte-identical face): the case fails in Draw-lite, and natively too unless DRAWEXE reads its words otherwise |
+## Phase 6: unit 6P, BRepAlgoAPI and the public API
+
+Found by OCCT's GTests and the Boolean oracle. The port reproduces each, or says where it can't (`// OCCT` or
+`// OCCT.NET: frozen` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_PaveFiller::MakeBlocks` (PaveFiller_6, "back to previous tolerance values for unused vertices") | Writes each saved tolerance back into the vertex's TShape, also when it is the vertex's own (a vertex only used as an existing pave) and also for an argument's vertex in the non-destructive mode. `UpdateSavedTolerance` can raise a saved value to a section edge's tolerance, and then the write grows an argument vertex in place | The no-op write is skipped in the port (it would throw on a frozen vertex: GTest `bcut_simple/M2`, a cut of a cut result by its own argument, failed with BOPAlgo_AlertIntersectionFailed). A real change of a frozen argument vertex still throws there (not seen; decision 877) |
+| `BRepTools_History::Merge` | Appends the composed images from a hashed `NCollection_Map` (`add(aL12, aAdditions[aI])`), so the order of a merged Modified or Generated list is the map's address order natively, insertion order in the port | `SimplifyResult`'s merged history lists the same images as native's, in another order, on 37 of the oracle's 393 simplified Booleans (and on different cases from one native run to the next); the sets are equal |
+| `BRepAlgoAPI_BuilderAlgo::SimplifyResult` | Runs UnifySameDomain with `SetSafeInputMode(myNonDestructive)`: in OCCT's default (destructive) mode the unifier writes into the result in place, and the result shares the arguments' untouched sub-shapes, so the caller's arguments change (pcurves added, ranges reset) | Native writes into its arguments; the port's are frozen and the unifier copies at its entry (decision 766), so they never change. Results are the same bytes; the history has decision 643's in-place entries where native has none |
+| OCCT's destructive mode (`SetNonDestructive(false)`, Draw's default) | The pave filler grows tolerances and adds pcurves on the arguments' own sub-shapes, which the result then shares | The port's frozen arguments always run non-destructively (decision 577); where native's destructive result differs, native's non-destructive result is the port's (oracle) |
+
+## Phase 6: unit 6G, checks and the other builders
+
+Found by the native recordings of tools/borec and the unit tests. The port reproduces each, or says where it can't
+(`// OCCT` or `// OCCT.NET: frozen` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BOPAlgo_CheckerSI` (through PaveFiller_6's `PutPaveOnCurve` and `MakeBlocks`) | The self-check sets the non-destructive mode, but the filler still raises the tolerance of argument vertices a face/face section curve passes through (`BRep_Builder::UpdateVertex`), and MakeBlocks writes saved values back | Native `bopcheck`/`bopargcheck` can leave their input with raised vertex tolerances (bottle, hammer, CrankArm against a moved copy). The port checks a copy of a frozen argument (decision 884) |
+| `BOPAlgo_PaveFiller::FilterPavesOnCurves` (as MakeBlocks, unit 6P) | Writes a vertex tolerance even when it equals the current value, for an argument vertex used as an existing pave (every self-check of a box) | A no-op natively; skipped in the port, where it would throw on a frozen vertex (decision 885) |
+| `bopapicheck` (BOPTest_CheckCommands.cxx) | `-op` as the last word reads `a[n]`, a null pointer, through `strcmp` | DRAWEXE crashes; Draw-lite treats the missing operation as unknown |
+| `BOPAlgo_MakePeriodic::SetXTrimmed/SetYTrimmed/SetZTrimmed` | `(bool theIsTrimmed, const bool theFirst = 0.0)` declares the period's start as a `bool` | The start can only be 0 or 1; reproduced with a bool parameter |
+| `BOPAlgo_MakePeriodic::UpdateTwins` | Iterates `myRepeatedTwins` (shape-keyed: address order natively) and skips a group once any member is done; twins aren't transitive | The twin groups after a repetition depend on the iteration order; native isn't reproducible there. The port iterates in insertion order |
+| `BOPAlgo_MakePeriodic` trim and repetition, `BOPAlgo_MakeConnected::MakePeriodic` | The trim's Common and the repetition's gluing run destructively | Natively they change the caller's input, the periodic shape returned before and the connected shape in place (pcurves added to shared edges). The port copies frozen parts first (decision 891) |
+| `BOPAlgo_RemoveFeatures::RemoveInternalWires` | Removes INTERNAL wires and edges from the rebuilt solids' faces in place (`aF.Free(true); BRep_Builder::Remove`, through a `const_cast` of the explorer's face) | When the face is an untouched input face shared into the result, native changes the caller's input. The port copies (decision 892) |
+
+## Phase 5: unit 5S1, sweep laws and sections
+
+Found by the native recordings of tools/brepfillrec and tools/cwrec, the oracle and reading. The port reproduces each
+(`// OCCT` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_LocationLaw::Abscissa` | When the lengths aren't computed yet it calls `CurvilinearBounds(Index, bid, Length)` and starts from the edge's last bound instead of its first | The first call on a fresh law is too long by the edge's own length (a 4 + 3 polyline: `Abscissa(2, mid)` gives 8.5 the first time, 5.5 afterwards); reproduced natively, pinned by a test |
+| `BRepFill_ACRLaw` constructor | `OrigParam` is indexed over all the wire's edges, `ipath` counts only the non-degenerated ones | After a degenerated spine edge each edge gets an earlier edge's origin (found by reading, not reproduced) |
+| `BRepFill_LocationLaw::IsG1`, closed-path branch | The `D1` on law 1 isn't assigned to `Ok_D1`, unlike the inner branch | A failed evaluation there goes unseen |
+| `BRepFill_CompatibleWires` SearchRoot (from SameNumberByPolarMethod) | Returns the first key of RMap or MapVLV, iterated in TShape-address order, whose list holds the vertex | With looping sections (the first repeated last) native's result varies from run to run (five runs, five outputs: status Done or Failed, cuts moved); the port iterates in binding order and is deterministic |
+| `BRepFill_CompatibleWires::SearchOrigin`, `SameNumberByACR` | `newwire.Oriented(TopAbs_FORWARD);` discards its result; `double AllLengthsNull = true` holds a bool | No effect |
+| `BRepFill::Face`, `BRepFill::Shell`, `BRepFill_Pipe` | Write pcurves, ranges, flags and tolerances into the caller's edges and profile | Natively the caller's shapes change; the port writes into copies of frozen inputs (decisions 897, 910) |
+
+## Phase 5: unit 5O2, the 2D wire offset
+
+Found by the MakeOffset oracle, tools/evorec and reading. The port reproduces each (`// OCCT` at the line), unless the
+last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_OffsetWire::GeneratedShapes` | Merges the lists of `myMap` by iterating `myMapSpine`, a map keyed by shapes and hashed by TShape address | The shapes in a generated list come in an address-dependent order natively; the port iterates in insertion order. MakeOffset's `Generated` held the same shapes in another order in 74 of 1,124 oracle results |
+| `BRepFill_OffsetWire` constructors | Leave `myCallGen` uninitialised; only `Perform` sets it, and `GeneratedShapes` reads it | After `PerformWithBiLo` alone native reads garbage; harmless since `myMapSpine` is then empty. The port starts it false |
+| `BRepFill_TrimSurfaceTool::IntersectWith` | `SetTrim` on the trimmed bisector it is given, which is the medial axis's own curve | The locus's bisector stays lengthened by the tolerance at both ends for every later call |
+| `BRepFill_Evolved` (`ElementaryPerform`, `PrepareProfile`, `Add`, `Transfert`) | Iterates `myMap` and `MapVevo`, keyed by shapes, in TShape-address order | Natively the parallel edges are built, and the result's faces listed, in an address-dependent order; the port uses insertion order. The bindings don't depend on it |
+| `BRepOffsetAPI_MakeOffset::BuildDomains` (via BRepFill_OffsetWire and the medial axis) | Bisector_BisecAna can leave its curve unset (5M) and Bisector_Bisec dereferences it, on some arc profiles with intersection joins | An access violation: with OCCT's signal translator (DRAWEXE, build123d.NET) a Standard_Failure caught as "not done"; without it a crash. The port: a NullReferenceException caught as "not done" (decision 917) |
+| `BRepOffsetAPI_MakeOffset::BuildDomains` | `double Found = false` holds a bool | No effect |
+
+## Phase 5: unit 5S2, pipe shells
+
+Found by the MakePipeShell oracle, tools/piperec and reading. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| MakePipeShell with an auxiliary spine and `BRepFill_Contact` on polyline spines (the site not isolated) | Dereferences a null handle | An access violation natively; Standard_NullObject in the port (4 oracle cases, decision 930) |
+| `BRepFill_Pipe::Edge` (through `BRepOffsetAPI_MakePipe::Generated(spine edge, profile vertex)`) | Reads `myEdges`, which is null when the profile is a vertex | An access violation natively (OSD_Exception_ACCESS_VIOLATION under OSD::SetSignal, 18 of tools/piperec's cases); NullReferenceException in the port |
+| `BRepFill_PipeShell::Set(bool IsFrenet)` | Both branches set `myTrihedron = GeomFill_IsFrenet`; the corrected Frenet one is labelled Frenet | No effect seen (`myTrihedron` only chooses the continuity for the discrete trihedron and the contact laws) |
+| `BRepFill_PipeShell::Prepare` | Clears `WSeq` and `myEdgeNewEdges` but not `myIndOfSec` | After a second Prepare (a section added or removed after a build) the history reads the first build's section indices |
+| `BRepFill_PipeShell::BuildHistory` | The loop looking for the section's inde-th edge tests `Degenerated(anEdge)` (the section's edge) instead of `theEdge` | Degenerated edges of the placed wire are counted; no effect on the oracle's sections |
+| `BRepFill_PipeShell` constructor | `mySpine.Closed(true)` on the caller's wire when its ends meet | Natively the caller's spine changes; the port closes a new wire of the caller's edges (decision 926) |
+| `BRepFill_PipeShell::MakeSolid` | Adds the end faces to the shell `Shape()` already returned | Natively the shape the caller holds changes; the port adds them to a new shell of the same faces when the shell was published (decision 926) |
+| `BRepFill_Sweep` BuildFace | `BRepLib_FindSurface` can return the plane of a face already built (the four edges' pcurves lie on it), and BuildFace calls `UReverse` on it | The other face's surface is reversed too, natively. **Fixed** in the port: it reverses a copy (decision 929); the results differ from native's there |
+| `BRepFill_Sweep::BuildWire` | With a last bound, stores `FirstShape` (a wire) at column NbPath of the vertex table instead of the last vertex | Unreachable: the pipes give no bounds to a vertex's sweep |
+| `BRepFill_Sweep::PerformCorner`, tangent case | Evaluates the next law's frame at its last parameter instead of its first | The corner of a tangent but twisted junction is placed with the next edge's end frame |
+| `BRepFill_Sweep::Build` | Substitutes the edges of `myVEdgesModified`, a map keyed by shapes, in TShape-address order; the first substitution of a shared vertex wins | Natively the order can change which new vertex replaces a shared one; the port iterates in insertion order. Not observed in the oracle |
+| `BRepFill_TrimShellCorner::HasSection` | `myHasSection` is set nowhere | Always false; the sweep's fallback for a failed right corner depends only on the transition |
+| `BRepOffsetAPI_MiddlePath::Build` | Writes "Interpolation failed" to `std::cout` when GeomAPI_Interpolate fails, then calls `Curve()` | StdFail_NotDone on both sides; the port doesn't print |
+
+## Phase 5: unit 5T, lofts and projection
+
+Found by the ThruSections and BRepProj_Projection oracles and reading. The port reproduces each (`// OCCT` at the
+line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_Generator::Perform` | `anOrEdge1`/`anOrEdge2` are references to the wire explorers' current edge; after `ex1.Next()` they name the next edge (a null edge after the last), and `myMap` is keyed by it | `GeneratedShapes(E)` gives the face built on the edge before E; the last face is keyed by a null edge. ThruSections doesn't read this map. Reproduced (decision 936) |
+| `BRepOffsetAPI_ThruSections::Init` | Sets the maximal degree to 6 where the constructor sets 8 | A loft re-initialised approximates with a lower degree. Reproduced |
+| `BRepOffsetAPI_ThruSections::SetCriteriumWeight` | A negative weight sets the status to Failed; `Build` resets the status | No effect but a transient status. Reproduced |
+| `BRepOffsetAPI_ThruSections` (mutable input, the default) and `BRepFill_Generator` | Write pcurves, ranges, flags and tolerances into the caller's section edges and vertices | Natively the caller's sections change. The port copies frozen sections at Build and gives back the unchanged sub-shapes (decisions 936, 937) |
+| `BRepFill_CompatibleWires` through ThruSections | Maps keyed by shapes iterated in TShape-address order | Native's status and result vary from run to run on lofts whose first section is also the last, and rarely otherwise (1 of 630 random cases); the port is deterministic (decision 940) |
+| `BRepProj_Projection::BuildSection` | A compound target's faces go into a new, unlocked compound, so the section runs destructively and writes pcurves into the caller's target edges | Natively the target changes. On frozen targets the port's section ran destructively into frozen edges and failed (IntersectionFailed); it now runs non-destructively when the target holds frozen shapes (`// OCCT.NET`, decision 939) |
+
+## Phases 5 and 6: integration
+
+Found by full Oracle runs (test classes in parallel).
+
+| Where | What | Effect |
+|---|---|---|
+| `FEmTool_LinearFlexion`, `FEmTool_LinearJerk` and `FEmTool_LinearTension` constructors (FEmTool_Linear*.cxx) | Keep the reference integrals of the last constraint order in function statics `Order` and `MatrixElemts`, unsynchronised; `Order` is set before `MatrixElemts` is recomputed | Concurrent AppDef_Variational runs with different continuities (GeomAPI_PointsToBSpline and PointsToBSplineSurface with weights, ThruSections with smoothing) read the other order's integrals: 2 of 32 C2 approximations run beside C1 ones gave other poles (1e-4 relative), one of them the value a full Oracle run failed on. The port caches per order under a lock (decision 148); the oracle serialises these native calls (decision 945) |
+## Phase 6: unit 6M, build123d.NET's Booleans
+
+Found by replaying build123d.NET's own tests' operations. The Booleans and cleans showed no new issue: all 497 calls
+are byte-identical with native, and native repeated itself on every one.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepProj_Projection::BuildSection` (through build123d.NET's `Project` and `ProjectToShape`) | Never sets the section non-destructive, so any unlocked target, not only the compound of 5T's entry, is sectioned destructively | Natively the caller's target changes: in build123d.NET's ProjectEdge case a box edge on the projection cylinder's seam had its tolerance raised (1e-7 to 1.00000000666e-07) and a pcurve added. The port's frozen targets keep the section non-destructive (decision 939), so its split edge is a copy whose vertices come in the other order: canonically identical, byte-identical on unfrozen operands (decision 953) |
+## Phase 6: unit 6L, Draw-lite Booleans and healing
+
+Found by porting BOPTest's and SWDRAW's commands and running the corpus. Draw-lite reproduces each (`// OCCT` at the
+line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BOPTest_TolerCommands `ReduceFaceTolerance` (`btolx`) | The edge map isn't cleared between faces | A face's tolerance is the smallest of its own edges' and every earlier face's edges' |
+| BOPTest_TolerCommands `breducetolerance` | The usage message says `bupdatetolerance` | Text only |
+| BOPTest_DebugCommands `bopfsd` | Adds the face itself to the compound, not its same-domain face | `f_sd` holds copies of `f`; the count is right |
+| BOPTest_DebugCommands `bopindex` | Index 0 (the first argument) counts as "not found" (`ind > 0`) | " DS does not contain the shape" for the first argument |
+| BOPTest_DebugCommands `bopwho`, `bopsd`, `bopfon`/`bopfin`/`bopfsc`, `bopfav` | The range check `ind > NbShapes()` (or `NbSourceShapes()`) lets the one-past-the-end index through | Natively reads past the table; in Draw-lite the index check of the port's table throws, and the case logs the exception |
+| SWDRAW_ShapeAnalysis `fbclose` | Reads `a[3]` for splitclosed and `a[4]` for splitopen (off by one) | The options shift |
+| SWDRAW_ShapeAnalysis `statshape` | `strstr("bigspl", arg3)`: the option matches as a substring of the keyword | An empty or one-letter word turns modes on |
+| SWDRAW_ShapeAnalysis `fbprops` | Labels the open wires "closed wires"; its usage message says `freeprops` | Text only |
+| SWDRAW `settolerance` (argc equal to premarg), `samerange` (prints `argv[2]` with 2 words), `fastsewing -tol` without a value | Read past `argv` | Natively undefined; Draw-lite reads an empty word |
+| SWDRAW_ShapeFix `fixshape +?` | Lists its message counts in NCollection_DataMap hash order | Draw-lite lists them in first-seen order |
+| SWDRAW_ShapeAnalysis `fbprops` on a 10×10 square | `1-16k` comes out marginally negative, so ratio and width print 0 (the formula gives 1 and 10) | Reproduced; not checked against native |
+| bugs/heal/bug29382_3 (UnifySameDomain with `+b` on a Bézier prism's common with a box) | The script expects 5 vertices | The port and native OCCT (build123d.NET's build, on the port's input and on its own Boolean) both give 6; the case fails on both |
+## Phase 5: unit 5W, Draw-lite construction
+
+Found by reading Draw's command sources while porting them. Draw-lite reproduces each, unless the last column says
+otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `qcircle`, `qline` (GeometryTest_CurveTanCommands.cxx) | The help gives the qualifier as `-enclosing`, `-enclosed`...; `GccEnt::PositionFromString` matches only the names without the dash | A qualifier written as the help shows is ignored: the curve is unqualified. Reproduced |
+| `geompipe` (BRepTest_SweepCommands.cxx) | The first edge (`spineedge`) is used as the guide and the second (`profileedge`) as the path; the circle's frame is taken on the path at the guide's first parameter (`ProfileCurve->D1(aSpFirst, ...)`) | The arguments mean the opposite of their names, and the section is misplaced when the two edges' ranges differ. Reproduced |
+| `mksweep` | Accepts 2 or 5 words, so `mksweep wire -C` without tolerances (the help's `[-C [AngTol LinTol]]`) fails with no message | Only `mksweep wire -C AngTol LinTol` corrects the spine. Reproduced |
+| `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
+| `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
+| `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |

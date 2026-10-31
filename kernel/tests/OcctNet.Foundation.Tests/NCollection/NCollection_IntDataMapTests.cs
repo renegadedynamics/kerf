@@ -104,4 +104,17 @@ public class NCollection_IntDataMapTests
         // Both in bucket 2 of 1009: the newest first.
         Assert.Equal([1, 1010], Keys(aMap));
     }
+
+    [Fact]
+    public void Bound_TryBound_and_the_enumerator_follow_OCCTs_order()
+    {
+        NCollection_IntDataMap<int> aMap = new(10);
+        aMap.Bound(5, 1) += 10;
+        aMap.TryBound(5, 99) += 100;  // already bound: the item is kept
+        aMap.TryBound(106, 2);
+        aMap.Bound(3, 3);
+        Assert.Equal(111, aMap.Find(5));
+        Assert.Equal([3, 106, 5], aMap.Keys.ToList());
+        Assert.Equal([(3, 3), (106, 2), (5, 111)], aMap.Select(kv => (kv.Key, kv.Value)).ToList());
+    }
 }
