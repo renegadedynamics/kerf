@@ -9211,3 +9211,111 @@ their merged numbers (5M's 814-825, 5O1's 791-796, 5S1's 909-913).
         (BRepOffset), and the offset group's other grids need the same.
       - **Any unit with a line/circle intersection:** results through IntCurve_IntConicConic changed in the last bits
         (decision 916); oracles that compared such intersections canonically may now be byte-identical.
+
+## Phase 5: unit 5S2, pipe shells
+
+BRepFill_Sweep, BRepFill_TrimShellCorner, BRepFill_PipeShell; BRepOffsetAPI_MakePipeShell and BRepOffsetAPI_MiddlePath;
+`tools/piperec` and the extension of `tools/evorec`. In OcctNet.ModelingAlgorithms (`BRepFill/`, `BRepOffsetAPI/`). The
+placeholder sweep of 5S1 (decision 909) is replaced, so BRepOffsetAPI_MakePipe, Draw-lite's `pipe` and BRepFill_Evolved's
+slanted profiles now build. Numbers from 7201 are placeholders, renumbered on merge; earlier decisions are cited by their
+merged numbers.
+
+924. **BRepFill_Sweep and BRepFill_TrimShellCorner are internal working objects.** Neither is bound in build123d.NET
+      and only the pipes call them. The sweep keeps the constructor and the members BRepFill_Pipe calls with their
+      signatures (decision 913), and hands out its unfrozen result and tables (`Shape`, `SubShape`, `InterFaces`,
+      `Sections`, `Tape`), which the pipes build on. As in OCCT it writes into the shapes it is given: the bounds'
+      edges and vertices (SameRange flags, pcurves, tolerances, `RebuildTopOrBottomEdge`, `ReverseEdgeInFirstOrLastWire`),
+      the section law's vertices, and the corner edges. Its callers give it shapes they own: BRepOffsetAPI_MakePipe
+      copies a frozen profile (decision 910), BRepFill_PipeShell sweeps transformed copies (decision 926); a frozen
+      shape reaching a write throws Standard_ImmutableObject, never silently. It calls SetInterval and SetTolerance
+      through GeomFill_Sweep on the location law's elementary laws, BRepFill's per-edge copies (decision 900). It reads
+      `GeomFill_Sweep.InternalSurface` (it extends the surfaces by `GeomLib.ExtendSurfByLength`), `InternalPerformVertex`
+      and a new `BRepLib_FindSurface.InternalSurface` (it reverses the plane found). `Couture` reads `BRep_TEdge.Curves()`
+      where OCCT calls `ChangeCurves()`. BuildFace's three "add the edge, bind the one the wire maker made" blocks are one
+      helper, `AddAndBind`; FindFromVEdge's three "get split" blocks one helper, `BoundSplit`.
+925. **TrimShellCorner on its own shapes.** Its pave filler runs on the sweep's unfrozen faces, so OCCT's destructive
+      mode applies as it does natively (6P's notes). It reads the filler's DS directly (`InterfFF`, `InterfEE`,
+      `InterfVV`, `Paves`, `PaveBlocks`) and BRepTools_ReShape through `InternalApply` and `InternalValue`, so nothing
+      it builds is frozen before the sweep assembles the shell. Outputs OCCT leaves unwritten when FindCommonVertex
+      finds nothing are `out` initialised to null shapes and zero parameters, which is what every caller starts with.
+926. **BRepFill_PipeShell and MakePipeShell never write into the caller's shapes.**
+      - The sections are placed by `BRepBuilderAPI_Transform(..., copy = true)` (`InternalShape`), so the sweep writes
+        into copies, as natively. The first and last shapes come from a new `BRepFill_LocationLaw.InternalD0` (`D0`
+        freezes its copy, decision 900) and are swept and bounded unfrozen.
+      - OCCT's constructor sets the closed flag on the caller's spine when its ends meet: for a frozen spine the port
+        closes a new wire of the caller's edges (same edges, so the history is keyed by the caller's edges and
+        vertices); `Spine()` returns that wire.
+      - OCCT's MakeSolid adds the end faces to the shell `Shape()` already returned (OCCT's own GTest takes the shell's
+        face before MakeSolid). When the shell was published (frozen), the port adds them to a new shell of the same
+        faces; the shape the caller holds stays what it was.
+      - The class is public, a Standard_Transient as in OCCT; `Shape`, `FirstShape`, `LastShape`, `Generated`, `Spine`
+        and `Simulate`'s sections freeze; `InternalShape`, `InternalFirstShape`, `InternalLastShape` and
+        `InternalGenerated` don't, for MakePipeShell. MakePipeShell keeps OCCT's API (`SetMode` overloads, `Add`,
+        `SetLaw`, `Delete`, `Simulate`, `MakeSolid`, `Profiles`, `Spine`, the history flag); its FirstShape, LastShape and
+        Generated are BRepPrimAPI_MakeSweep's publication points.
+927. **Address-ordered maps.** BRepFill_Sweep::Build substitutes the edges of `myVEdgesModified` (keyed by shapes)
+      in address order natively; the port in insertion order (decision 18). The first substitution of a shared vertex
+      wins, so the order could matter; the oracle never saw it (occt-issues.md). The pipe shell's history maps are only
+      looked up, never iterated.
+928. **BRepOffsetAPI_MiddlePath** reads its shape: UnifySameDomain copies a frozen input at the entry (6-series
+      decisions) and every edge the middle path builds is new (`InternalEdge`, `InternalWire`, `InternalFace`). OCCT's
+      "Interpolation failed" line on std::cout is left out; `Curve()` then throws StdFail_NotDone on both sides. The
+      sequences of sections OCCT copies by value (`SectionsEdges.Append(EdgeSeq)`) are appended as copies.
+929. **One OCCT write into shared geometry fixed: BuildFace's plane.** When the four edges of a planar swept face lie
+      on the plane of a face already built, `BRepLib_FindSurface` returns that plane, and BuildFace `UReverse`s it in
+      place when its normal disagrees with the swept surface's: natively the other face's surface turns over too. In
+      the port the plane is frozen (BRep_Builder stored it), so the write threw Standard_ImmutableObject (one oracle
+      case: a square spine, an open arc profile, a constant binormal); the port now reverses a copy (`// OCCT.NET`,
+      occt-issues.md). The case's result is byte-identical to native's. FindSurface gets an internal
+      `InternalSurface()` for this caller.
+930. **The MakePipeShell oracle** (`tests/OcctNet.Oracle.Tests/BRepOffsetAPI/BRepOffsetAPIMakePipeShellOracleTests.cs`;
+      MakePipeShell is bound in build123d.NET; inputs built by the port, written to one BRep file both sides read, the
+      port's frozen). Random spines (polylines with corners, G1 lines and tangent arcs, B-splines, closed circles and
+      squares, helices) and profiles in the plane normal to the start (circles, ellipses, rectangles, polygons,
+      periodic B-splines, open polylines and arcs); every mode (default and `SetMode(false)` corrected Frenet, Frenet,
+      discrete, fixed, constant binormal, Darboux on box faces, boxes and a cylinder's face, auxiliary spines with
+      curvilinear equivalence or plane, without contact, with contact, with contact on border); every transition, with
+      sharp corners of 20 to 120 degrees; shells and solids; several sections at vertices or along the spine, off it
+      with contact and correction, punctual sections; build123d.NET's sweep, binormal sweep, auxiliary-wire sweep and
+      twisted extrusion; `Simulate`. Compared: exceptions, status, IsDone, ErrorOnSurface bits, the result, FirstShape
+      and LastShape as BRep text, MakeSolid, Generated of every sub-shape of the profiles and the spine, Simulate's
+      sections; the inputs unchanged. **All identical:** 522 cases; 479 built (214 solids), every result, first and
+      last shape byte-identical (Free flags included) with identical histories; 65 Simulate runs identical; 30 not done
+      on both sides; 13 exceptions on both sides, of which 4 are native access violations met as Standard_NullObject in
+      the port (auxiliary spine with contact on polylines: a null handle; occt-issues.md). The fixed and binormal modes
+      take their axes as native builds them (`gp_Ax2(P, N, Vx)` and `gp_Dir(x, y, z)` normalise again; built otherwise
+      they differ from native's in the last bit). Contact along polyline spines is left out of the random auxiliary
+      cases: one case takes 370 s natively (3,280 s in a Debug port).
+931. **MakePipe and MiddlePath against native through recordings** (`tools/piperec`, embedded as
+      `BRepOffsetAPI.piperec.txt.gz`; neither is bound). 240 pipes (straight, polyline, G1, B-spline, circle and square
+      spines; vertex, edge, open and closed wire, circle, face, holed face, two-face shell and compound profiles, at
+      the start or off it; the three trihedrons, with and without ForceApproxC1) and 30 middle paths (pipes of polygon
+      faces and wires along polylines and arc chains). The recorder runs under `OSD::SetSignal` (built with /EHa), as
+      DRAWEXE. Compared: exception, IsDone, ErrorOnSurface bits, result, first and last shapes, Generated of every
+      sub-shape, Generated(spine edge, profile edge or vertex). **All 270 byte-identical** (Free flags included); the
+      104 exceptions agree (Standard_DomainError, OutOfRange and NullObject from Generated's queries; 18 native access
+      violations in `BRepFill_Pipe::Edge` for a vertex profile, a NullReferenceException in the port, occt-issues.md).
+932. **Performance.** Release build, the slowest case the oracle met (build123d.NET's sweep with an auxiliary wire,
+      curvilinear, along a polyline): native 7.8 s, port 16.0 s (Debug: 104.7 s). A corrected Frenet pipe along an
+      offset B-spline (the oracle's timing fact): native 0.01 s, port 0.20 s in Release; the pathological offsets of
+      5L1 (seconds to minutes natively, decision 811) weren't met by the spines tried. Contact along a polyline with an
+      auxiliary spine: 370 s natively in one case.
+933. **What now builds.** Draw-lite's `pipe`: 58 runnable corpus cases, OK 53, BAD 1 (pipe/standard/B1, OCCT's own
+      TODO OCC22741), SKIPPED 4 (data missing), none failing (all 54 run cases failed on the placeholder before).
+      BRepFill_Evolved's slanted profiles (MakePipe path): 8 cases against `tools/evorec` (extended) equal to 1e-9 in
+      area and volume, valid, same face counts; `evolved r -s s -p t` builds. The `evolved` corpus is unchanged (2
+      runnable, both missing data; 22 wait for `lastrep`). OCCT's GTests BRepFill_PipeShell (2) and
+      BRepOffsetAPI_MakePipeShell (Bug332) are ported and pass, with tests of frozen inputs and the history.
+934. **For later units.**
+      - **5T (lofts):** BRepFill_Generator and ThruSections don't use the sweep; `BRepFill_LocationLaw.InternalD0` and
+        `BRepLib_FindSurface.InternalSurface` exist if needed. BRepFill_NSections works as the pipe shell's section law
+        (several sections are oracle-checked here).
+      - **5W (Draw-lite construction):** the sweep commands can call `BRepOffsetAPI_MakePipeShell` directly:
+        `mksweep` → new maker on the spine; `setsweep -FR/-CF/-DT/-FX/-CN/-G` → `SetMode(true)`, `SetMode(false)`,
+        `SetDiscreteMode()`, `SetMode(gp_Ax2)`, `SetMode(gp_Dir)`, `SetMode(wire, curvilinear, contact)`, and
+        `SetMode(shape)` for a support; `addsweep` → `Add(profile[, vertex], contact, correction)` or `SetLaw(profile,
+        Law_Function[, vertex], ...)`; `deletesweep` → `Delete`; `settolsweep` → `SetTolerance`; `transition` →
+        `SetTransitionMode`; `buildsweep [-S]` → `Build`, `MakeSolid`; `simulsweep` → `Simulate(n, list)`;
+        `middlepath` → `new BRepOffsetAPI_MiddlePath(shape, start, end).Build()`; `geompipe` is GeomFill_Pipe (5L2).
+        `IsReady`, `GetStatus`, `ErrorOnSurface`, `Generated`, `FirstShape`, `LastShape` and `Profiles` are there for
+        the commands' checks. Expect long runs where an auxiliary spine with contact follows a polyline.

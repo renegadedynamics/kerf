@@ -8,11 +8,9 @@ namespace OcctNet.DrawLite;
 /// <remarks>
 /// <para>Draw records each sweep's history (BRepTest_Objects::SetHistory) for <c>savehistory</c>, which Draw-lite
 /// doesn't have; the history isn't kept.</para>
-/// <para><c>pipe</c> (BRepOffsetAPI_MakePipe, unit 5S1) throws Standard_NotImplemented until unit 5S2 ports
-/// BRepFill_Sweep.</para>
-/// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved as far as unit 5O2 ports it: <c>-v</c> (volume mode) and
-/// profiles with parts neither horizontal nor vertical (BRepFill_Pipe, hence BRepFill_Sweep) throw
-/// Standard_NotImplemented.</para>
+/// <para><c>pipe</c> runs BRepOffsetAPI_MakePipe (unit 5S1, with unit 5S2's BRepFill_Sweep).</para>
+/// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved as far as units 5O2 and 5S2 port it: <c>-v</c> (volume mode)
+/// throws Standard_NotImplemented.</para>
 /// <para>Not here: pruled, gener, thrusections, the sweep commands
 /// (BRepOffsetAPI_MakePipeShell), geompipe and middlepath, which need TKOffset, TKFillet or GeomFill.</para>
 /// </remarks>

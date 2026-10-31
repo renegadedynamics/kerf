@@ -7,14 +7,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// Unit 5S1's BRepFill_Pipe and BRepOffsetAPI_MakePipe (decisions 909-911). The topological sweep (BRepFill_Sweep)
-/// is unit 5S2's: until then every pipe throws Standard_NotImplemented, which these tests pin, with what Perform does
-/// before it sweeps (the location law, the placement of the profile, the first and last shapes, the solid check), and
-/// that frozen inputs are never written.
+/// is unit 5S2's (decision 924). These tests check pipes of every kind of profile against their measures, what Perform
+/// does before it sweeps (the location law, the placement of the profile, the first and last shapes, the solid check),
+/// and that frozen inputs are never written.
 /// </summary>
 public class BRepFill_PipeTests
 {
-    private const string NotPorted = "BRepFill_Sweep is ported by unit 5S2";
-
     private static TopoDS_Wire Polyline(params gp_Pnt[] thePoints)
     {
         BRepBuilderAPI_MakePolygon aP = new();
@@ -49,28 +47,51 @@ public class BRepFill_PipeTests
     }
 
     [Fact]
-    public void MakePipe_waits_for_the_sweep_of_5S2_and_leaves_its_inputs_unchanged()
+    public void MakePipe_sweeps_every_kind_of_profile_and_leaves_its_inputs_unchanged()
     {
         TopoDS_Wire aSpine = Polyline(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 0, 10));
-        TopoDS_Shape[] aProfiles =
+        (TopoDS_Shape Profile, TopAbs_ShapeEnum Type, double Measure)[] aCases =
         [
-            Circle(1),
-            new BRepBuilderAPI_MakeFace(Circle(2)).Face(),
-            new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 0, 0)).Vertex(),
-            Polyline(new gp_Pnt(1, 0, 0), new gp_Pnt(2, 0, 0)),
+            (Circle(1), TopAbs_SHELL, 2 * Math.PI * 10),                                    // lateral area
+            (new BRepBuilderAPI_MakeFace(Circle(2)).Face(), TopAbs_SOLID, Math.PI * 4 * 10), // volume
+            (new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 0, 0)).Vertex(), TopAbs_EDGE, 10),  // length
+            (Polyline(new gp_Pnt(1, 0, 0), new gp_Pnt(2, 0, 0)), TopAbs_SHELL, 10),         // area
         ];
         string aSpineText = Text(aSpine);
-        foreach (TopoDS_Shape aProfile in aProfiles)
+        foreach ((TopoDS_Shape aProfile, TopAbs_ShapeEnum aType, double aMeasure) in aCases)
         {
             Assert.True(aProfile.TShape()!.IsFrozen());
             string aText = Text(aProfile);
             foreach (GeomFill_Trihedron aMode in new[] { GeomFill_IsCorrectedFrenet, GeomFill_IsFrenet, GeomFill_IsDiscreteTrihedron })
             {
-                var anError = Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakePipe(aSpine, aProfile, aMode));
-                Assert.Contains(NotPorted, anError.Message, StringComparison.Ordinal);
+                BRepOffsetAPI_MakePipe aPipe = new(aSpine, aProfile, aMode);
+                Assert.True(aPipe.IsDone());
+                TopoDS_Shape aResult = aPipe.Shape();
+                Assert.True(aResult.TShape()!.IsFrozen());
+                TopoDS_Shape aBody = aResult;
+                if (aType != TopAbs_EDGE)
+                {
+                    TopExp_Explorer anExp = new(aResult, aType);
+                    Assert.True(anExp.More());
+                    aBody = anExp.Current();
+                }
+                GProp_GProps aProps = new();
+                switch (aType)
+                {
+                    case TopAbs_SOLID:
+                        BRepGProp.VolumeProperties(aBody, aProps);
+                        break;
+                    case TopAbs_SHELL:
+                        BRepGProp.SurfaceProperties(aBody, aProps);
+                        break;
+                    default:
+                        BRepGProp.LinearProperties(aBody, aProps);
+                        break;
+                }
+                Assert.Equal(aMeasure, aProps.Mass(), 1e-6 * aMeasure);
+                Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+                Assert.Equal(aText, Text(aProfile));
             }
-            Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakePipe(aSpine, aProfile));
-            Assert.Throws<Standard_NotImplemented>(() => new BRepFill_Pipe(aSpine, aProfile));
             Assert.Equal(aText, Text(aProfile));
         }
         Assert.Equal(aSpineText, Text(aSpine));
@@ -137,8 +158,10 @@ public class BRepFill_PipeTests
         // a spine vertex: OCCT reads the sections the sweep would have made
         TopoDS_Vertex aSpineVertex = TopExp.FirstVertex(aSpineEdge);
         Assert.ThrowsAny<Exception>(() => aPipe.Section(aSpineVertex));
-        // PipeLine sweeps a point
-        Assert.Throws<Standard_NotImplemented>(() => aPipe.PipeLine(new gp_Pnt(0, 0, 0)));
+        // PipeLine sweeps a point along the spine (the location law was made before the profile was refused)
+        TopoDS_Wire aLine = aPipe.PipeLine(new gp_Pnt(0, 0, 0));
+        Assert.Equal(TopAbs_WIRE, aLine.ShapeType());
+        Assert.True(aLine.TShape()!.IsFrozen());
 
         NCollection_List<TopoDS_Shape> aList = new();
         aList.Append(aBox);

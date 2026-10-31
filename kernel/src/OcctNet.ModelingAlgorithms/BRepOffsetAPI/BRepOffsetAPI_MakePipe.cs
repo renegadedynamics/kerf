@@ -19,8 +19,6 @@ namespace Occt;
 /// profile is never changed.</para>
 /// <para>The result, <see cref="BRepPrimAPI_MakeSweep.FirstShape()"/>, <see cref="BRepPrimAPI_MakeSweep.LastShape()"/>
 /// and the history are frozen when returned (design 4.2).</para>
-/// <para>OCCT.NET: the topological sweep (BRepFill_Sweep) is ported by unit 5S2; until then the constructors throw
-/// <see cref="Standard_NotImplemented"/> (decision 909).</para>
 /// </remarks>
 public class BRepOffsetAPI_MakePipe : BRepPrimAPI_MakeSweep
 {

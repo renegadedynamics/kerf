@@ -3,6 +3,8 @@
 // evorec: native values of BRepOffsetAPI_MakeEvolved (unit 5O2) for BRepFill_EvolvedTests, which native OCCT doesn't
 // bind for the oracle. Vertical profiles off the spine, solid, on a square and an L-shaped spine: whether it is done,
 // whether the result is valid, its volume, the bottom's and top's areas, and its number of faces (%.17g).
+// Unit 5S2 adds profiles with slanted segments (Evolved's MakePipe path through BRepFill_Pipe and BRepFill_Sweep),
+// open and solid: validity, area, volume (solids), number of faces.
 // Usage: evorec > values.txt
 
 #include <BRepBuilderAPI_MakePolygon.hxx>
@@ -79,6 +81,41 @@ int main()
       catch (const Standard_Failure& e)
       {
         std::printf("exception %s\n", e.ExceptionType());
+      }
+    }
+  }
+  // Slanted profiles (unit 5S2): BRepFill_Evolved sweeps them with BRepFill_Pipe
+  const char* aProfNames[2] = {"slant", "zigzag"};
+  TopoDS_Wire aProfs[2] = {Polygon(false, {0, 0, 0, 0, 1, 1}),
+                           Polygon(false, {0, 0, 0, 0, 1, 1, 0, 1, 2, 0, 2, 3})};
+  for (int p = 0; p < 2; p++)
+  {
+    for (int s = 0; s < 2; s++)
+    {
+      for (int aSolid = 0; aSolid < 2; aSolid++)
+      {
+        std::printf("%s %s solid %d ", aNames[s], aProfNames[p], aSolid);
+        try
+        {
+          BRepOffsetAPI_MakeEvolved aMaker(aSpines[s], aProfs[p], GeomAbs_Arc, true, aSolid != 0);
+          if (!aMaker.IsDone())
+          {
+            std::printf("notdone\n");
+            continue;
+          }
+          const TopoDS_Shape& aResult = aMaker.Shape();
+          NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aFaces;
+          TopExp::MapShapes(aResult, TopAbs_FACE, aFaces);
+          std::printf("valid %d area %.17g volume %.17g faces %d\n",
+                      BRepCheck_Analyzer(aResult).IsValid() ? 1 : 0,
+                      Area(aResult),
+                      aSolid != 0 ? Volume(aResult) : 0.0,
+                      aFaces.Extent());
+        }
+        catch (const Standard_Failure& e)
+        {
+          std::printf("exception %s\n", e.ExceptionType());
+        }
       }
     }
   }

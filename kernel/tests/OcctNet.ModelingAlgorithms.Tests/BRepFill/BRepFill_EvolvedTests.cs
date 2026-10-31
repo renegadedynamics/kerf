@@ -5,12 +5,12 @@ using Bento.Collections;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Unit tests of BRepFill_Evolved and BRepOffsetAPI_MakeEvolved (unit 5O2) on the profiles this unit can sweep: vertical
-/// segments (walls on the spine's parallels) and horizontal ones (faces between two parallels), on square and
-/// L-shaped spines given as a wire or a face, open and solid. The results are checked valid, with their exact areas and
-/// volumes; the caller's frozen spine and profile are never written; profiles with slanted parts (BRepFill_Sweep) and the
-/// volume mode throw Standard_NotImplemented. OCCT V8_0_1 has no GTests for these classes, and native
-/// BRepOffsetAPI_MakeEvolved isn't bound for the oracle.
+/// Unit tests of BRepFill_Evolved and BRepOffsetAPI_MakeEvolved (unit 5O2): vertical segments (walls on the spine's
+/// parallels) and horizontal ones (faces between two parallels), on square and L-shaped spines given as a wire or a
+/// face, open and solid. The results are checked valid, with their exact areas and volumes; the caller's frozen spine
+/// and profile are never written. Profiles with slanted parts are swept by BRepFill_Pipe (unit 5S2) and compared with
+/// native values; the volume mode throws Standard_NotImplemented. OCCT V8_0_1 has no GTests for these classes, and
+/// native BRepOffsetAPI_MakeEvolved isn't bound for the oracle (tools/evorec records its values).
 /// </summary>
 public class BRepFill_EvolvedTests
 {
@@ -133,6 +133,38 @@ public class BRepFill_EvolvedTests
         Assert.Equal(theNbFaces, Count(aResult, TopAbs_ShapeEnum.TopAbs_FACE));
     }
 
+    // Native OCCT V8_0_1's values (tools/evorec, unit 5S2): profiles with slanted segments, which BRepFill_Evolved sweeps
+    // with BRepFill_Pipe (BRepFill_Sweep): validity, area, volume of the solids, number of faces.
+    [Theory]
+    [InlineData("square", "slant", false, 50.911688245431428, 0.0, 4)]
+    [InlineData("square", "slant", true, 214.91168824543141, 81.333333333333357, 6)]
+    [InlineData("lshape", "slant", false, 50.608195417597926, 0.0, 7)]
+    [InlineData("lshape", "slant", true, 142.82279725420048, 45.40486727886752, 9)]
+    [InlineData("square", "zigzag", false, 122.50966799187806, 0.0, 12)]
+    [InlineData("square", "zigzag", true, 258.50966799187802, 194.66666666666666, 14)]
+    [InlineData("lshape", "zigzag", false, 112.38123708894452, 0.0, 21)]
+    [InlineData("lshape", "zigzag", true, 177.23964443535272, 85.833479293348191, 23)]
+    public void Slanted_profiles_are_swept_by_the_pipe(string theSpine, string theProfile, bool theIsSolid, double theArea,
+                                                       double theVolume, int theNbFaces)
+    {
+        TopoDS_Wire aSpine = theSpine == "square" ? Square() : LShape();
+        TopoDS_Wire aProfile = theProfile == "slant" ? Polygon(false, 0, 0, 0, 0, 1, 1)
+                                                     : Polygon(false, 0, 0, 0, 0, 1, 1, 0, 1, 2, 0, 2, 3);
+        string aSpineText = Text(aSpine), aProfileText = Text(aProfile);
+        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, GeomAbs_JoinType.GeomAbs_Arc, true, theIsSolid);
+        Assert.True(aMaker.IsDone());
+        TopoDS_Shape aResult = aMaker.Shape();
+        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.Equal(theArea, Area(aResult), 1.0e-9);
+        if (theIsSolid)
+        {
+            Assert.Equal(theVolume, Volume(aResult), 1.0e-9);
+        }
+        Assert.Equal(theNbFaces, Count(aResult, TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(aSpineText, Text(aSpine));
+        Assert.Equal(aProfileText, Text(aProfile));
+    }
+
     [Fact]
     public void Horizontal_profile_gives_the_face_between_two_parallels()
     {
@@ -164,8 +196,7 @@ public class BRepFill_EvolvedTests
     public void Unported_modes_throw()
     {
         TopoDS_Wire aSpine = Square();
-        // a slanted profile needs BRepFill_Pipe's BRepFill_Sweep (unit 5S2)
-        Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 1, 1)));
+        // (a slanted profile, swept by BRepFill_Pipe, works since unit 5S2: Slanted_profiles_are_swept_by_the_pipe)
         // the volume mode needs BRepFill_AdvancedEvolved
         Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
                                                                                     GeomAbs_JoinType.GeomAbs_Arc, true, false, false, 1e-7, true));

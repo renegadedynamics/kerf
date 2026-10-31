@@ -31,7 +31,7 @@ failing project's tests, and commit the merge with a message that says what was 
 
 Helpers number their decisions with placeholders of 1000 or more (one range per unit, e.g. 7201…). This script gives
 every placeholder heading in `docs/decisions.md` the next real number in file order, and rewrites every reference to
-them ("decision 7203", "decisions 7201, 7202 and 7205–7207") in `docs`, `src`, `tests`, `tools`, `samples` and
+them ("decision 926", "decisions 924, 925 and 928–930") in `docs`, `src`, `tests`, `tools`, `samples` and
 `benchmarks` (`.md .cs .csproj .props .targets .ps1 .py .cpp .sh .sed`).
 
 ## `decision-map.txt`

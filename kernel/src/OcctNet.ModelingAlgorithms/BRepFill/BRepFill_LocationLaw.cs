@@ -689,6 +689,13 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     /// </summary>
     public void D0(double Abcissa, ref TopoDS_Shape W)
     {
+        InternalD0(Abcissa, ref W);
+        W.TShape()?.FreezeGraph();
+    }
+
+    /// <summary><see cref="D0"/> without freezing the copy, for the pipe shell that sweeps it (BRepFill_PipeShell).</summary>
+    internal void InternalD0(double Abcissa, ref TopoDS_Shape W)
+    {
         double u = 0;
         gp_Mat M = new();
         gp_Vec V = new();
@@ -713,7 +720,7 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
                            V.Z());
             // TopLoc_Location Loc(fila);
             // W.Location(Loc.Multiplied(W.Location()));
-            W = new BRepBuilderAPI_Transform(W, fila, true).Shape(); // copy
+            W = new BRepBuilderAPI_Transform(W, fila, true).InternalShape(); // copy
             ///////////////////////////////////////////
         }
         else

@@ -22,9 +22,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// Not available in this unit: the volume mode (theIsVolume, BRepFill_AdvancedEvolved, which removes
-/// self-intersections with the Boolean operations; phase 7) throws <see cref="Standard_NotImplemented"/>; and so does a
-/// profile with parts neither horizontal nor vertical, which BRepFill_Pipe sweeps with BRepFill_Sweep (unit 5S2; see
-/// <see cref="BRepFill_Evolved"/>).
+/// self-intersections with the Boolean operations; phase 7) throws <see cref="Standard_NotImplemented"/>.
 /// </para>
 /// <para>
 /// A maker (decisions 414 and 454): <see cref="BRepBuilderAPI_MakeShape.Shape"/>, <see cref="Top"/>,

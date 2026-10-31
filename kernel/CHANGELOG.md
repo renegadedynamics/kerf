@@ -1010,3 +1010,18 @@ Phase 5 (part): the 2D wire offset (unit 5O2).
   `Offset2D` and slot patterns, approximated ellipses and B-splines, `ConvertFace`): 1,228 offsets, every result
   byte-identical (104 not done on both sides), the generated lists the same (74 in another order: native's follow
   addresses); MakeEvolved's values against tools/evorec.
+
+Phase 5 (part): pipe shells (unit 5S2).
+
+- `OcctNet.ModelingAlgorithms`: `BRepOffsetAPI_MakePipeShell` over BRepFill_PipeShell (one or more sections or a
+  section with a scaling law, every trihedron mode, transformed, right or round corners, shells and solids,
+  `Simulate`, the history), BRepFill_Sweep and BRepFill_TrimShellCorner; `BRepOffsetAPI_MiddlePath`. With the sweep in
+  place, `BRepOffsetAPI_MakePipe` and `BRepOffsetAPI_MakeEvolved`'s slanted profiles now build. The caller's profiles
+  and spine are never written; results hand out frozen shapes.
+- Fixed in the port, against OCCT: a swept planar face no longer reverses the plane of a face already built.
+- Draw-lite: `pipe` runs; its 58 runnable corpus cases: OK 53, one known problem, 4 missing data, none failing.
+  `evolved` builds slanted profiles.
+- Tests: OCCT's BRepFill_PipeShell and BRepOffsetAPI_MakePipeShell GTests; against native OCCT through build123d.NET's
+  MakePipeShell, 522 random cases (every mode and transition, solids, several and punctual sections, build123d.NET's
+  sweeps): every built result, first and last shape and history byte-identical; MakePipe and MiddlePath through
+  tools/piperec, 270 cases all identical; MakeEvolved's slanted profiles against tools/evorec.

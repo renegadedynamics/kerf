@@ -7,14 +7,11 @@ namespace OcctNet.DrawLite.Tests;
 
 /// <summary>
 /// Unit 5S1's <c>pipe</c> (BRepTest_SweepCommands.cxx, BRepOffsetAPI_MakePipe) and the corpus's cases that use it.
-/// BRepFill_Sweep is ported by unit 5S2: until then every pipe throws Standard_NotImplemented, which these tests pin
-/// as the expected failure (unit 5S2 turns them into passing runs).
+/// BRepFill_Sweep is unit 5S2's (decision 933): every runnable corpus case passes, or is a known problem of OCCT's.
 /// </summary>
 public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
-
-    private const string NotPorted = "BRepFill_Sweep is ported by unit 5S2";
 
     /// <summary>Draw-lite before unit 5S1: without <c>pipe</c>.</summary>
     internal static void Before5S1(DrawInterpreter theInterpreter) => theInterpreter.Eval("rename pipe {}");
@@ -27,7 +24,7 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void Pipe_prints_its_help_checks_its_arguments_and_waits_for_5S2()
+    public void Pipe_prints_its_help_checks_its_arguments_and_sweeps()
     {
         var i = new DrawInterpreter(new StringWriter { NewLine = "\n" });
         Assert.StartsWith("pipe result Wire_spine Profile [Mode [Approx]]\n", i.Eval("pipe"), StringComparison.Ordinal);
@@ -40,8 +37,8 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         i.Eval("wire w e");
         foreach (string aMode in new[] { "", " 0", " 1", " 2", " 2 1" })
         {
-            var anError = Assert.ThrowsAny<DrawException>(() => i.Eval("pipe r sp w" + aMode));
-            Assert.Contains(NotPorted, anError.Message, StringComparison.Ordinal);
+            Assert.Equal("", i.Eval("pipe r sp w" + aMode));
+            Assert.Contains("This shape seems to be valid", i.Eval("checkshape r"), StringComparison.Ordinal);
         }
     }
 
@@ -71,8 +68,7 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
                                                                 .Select(g => $"{g.Key} {g.Count()}")));
         foreach (DrawCaseRun aRun in aRuns)
         {
-            output.WriteLine($"  {aRun.Case.Id}: {aRun.Status}"
-                             + (aRun.Log.Contains(NotPorted, StringComparison.Ordinal) ? " (waits for 5S2's BRepFill_Sweep)" : ""));
+            output.WriteLine($"  {aRun.Case.Id}: {aRun.Status}");
         }
         output.WriteLine("Commands the other cases using pipe miss (cases):");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
@@ -83,9 +79,10 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
 
         Assert.Empty(aRunnableBefore);
         Assert.NotEmpty(aRunnable);
-        // The expected failure until unit 5S2: every runnable case reaches the placeholder sweep.
-        // (cases the corpus skips, for missing data, never reach it)
-        Assert.All(aRuns.Where(r => !r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)),
-                   r => Assert.Contains(NotPorted, r.Log, StringComparison.Ordinal));
+        // After 5S2: OK 53, BAD 1 (pipe/standard/B1, OCCT's own TODO OCC22741: faulty shapes), SKIPPED 4 (data files
+        // missing); none failing.
+        Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
+                                           || r.Status.StartsWith("BAD", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
+        Assert.Equal(53, aRuns.Count(r => r.Status == "OK"));
     }
 }

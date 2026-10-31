@@ -564,6 +564,9 @@ public class BRepLib_FindSurface
         return mySurface;
     }
 
+    /// <summary><see cref="Surface"/> without freezing, for ported code that edits it (BRepFill_Sweep).</summary>
+    internal Geom_Surface? InternalSurface() => mySurface;
+
     /// <summary>The tolerance: the larger of the given one and the edges' largest.</summary>
     public double Tolerance()
     {
