@@ -307,7 +307,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
     // ---------------------------------------------------------------------------------------------------------------
     // Results as tokens
 
-    private sealed class Rec
+    internal sealed class Rec
     {
         public readonly List<(string Name, string Value)> T = [];
 
@@ -395,19 +395,19 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private delegate void NTan(int theI, ref double theParSol, ref double theParArg, N.gp_Pnt2d thePnt);
+    internal delegate void NTan(int theI, ref double theParSol, ref double theParArg, N.gp_Pnt2d thePnt);
 
-    private delegate void PTan(int theI, out double theParSol, out double theParArg, out gp_Pnt2d thePnt);
+    internal delegate void PTan(int theI, out double theParSol, out double theParArg, out gp_Pnt2d thePnt);
 
-    private delegate void NCen(int theI, ref double theParArg, N.gp_Pnt2d thePnt);
+    internal delegate void NCen(int theI, ref double theParArg, N.gp_Pnt2d thePnt);
 
-    private delegate void PCen(int theI, out double theParArg, out gp_Pnt2d thePnt);
+    internal delegate void PCen(int theI, out double theParArg, out gp_Pnt2d thePnt);
 
     /// <summary>The accessors of one native solver, as the bindings give them.</summary>
-    private sealed record NSolver(Func<bool> IsDone, Func<int> NbSolutions, Action<Rec, int> Solution, NTan[] Tangency,
+    internal sealed record NSolver(Func<bool> IsDone, Func<int> NbSolutions, Action<Rec, int> Solution, NTan[] Tangency,
                                   Func<int, bool>[] IsTheSame, NCen? CenterOn3);
 
-    private sealed record PSolver(Func<bool> IsDone, Func<int> NbSolutions, Action<Rec, int> Solution, PTan[] Tangency,
+    internal sealed record PSolver(Func<bool> IsDone, Func<int> NbSolutions, Action<Rec, int> Solution, PTan[] Tangency,
                                   Func<int, bool>[] IsTheSame, PCen? CenterOn3);
 
     private static void Record(Rec theR, NSolver theS)
@@ -521,7 +521,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         public Func<List<string>, bool> Explained = _ => true;
     }
 
-    private static Rec RunNative(Func<NSolver> theCtor)
+    internal static Rec RunNative(Func<NSolver> theCtor)
     {
         var aR = new Rec();
         NSolver? aS = null;
@@ -533,7 +533,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return aR;
     }
 
-    private static Rec RunPort(Func<PSolver> theCtor)
+    internal static Rec RunPort(Func<PSolver> theCtor)
     {
         var aR = new Rec();
         PSolver? aS = null;
@@ -571,58 +571,58 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
     private static (double X, double Y) RandomPoint(Oracle theO) => (theO.Real(-8, 8), theO.Real(-8, 8));
 
-    private static NSolver NCirc2d2TanRad(N.Geom2dGcc_Circ2d2TanRad s)
+    internal static NSolver NCirc2d2TanRad(N.Geom2dGcc_Circ2d2TanRad s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
-    private static PSolver PCirc2d2TanRad(Geom2dGcc_Circ2d2TanRad s)
+    internal static PSolver PCirc2d2TanRad(Geom2dGcc_Circ2d2TanRad s)
         => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
-    private static NSolver NCirc2d2TanOn(N.Geom2dGcc_Circ2d2TanOn s)
+    internal static NSolver NCirc2d2TanOn(N.Geom2dGcc_Circ2d2TanOn s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
-    private static PSolver PCirc2d2TanOn(Geom2dGcc_Circ2d2TanOn s)
+    internal static PSolver PCirc2d2TanOn(Geom2dGcc_Circ2d2TanOn s)
         => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
-    private static NSolver NCirc2d3Tan(N.Geom2dGcc_Circ2d3Tan s)
+    internal static NSolver NCirc2d3Tan(N.Geom2dGcc_Circ2d3Tan s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
-    private static PSolver PCirc2d3Tan(Geom2dGcc_Circ2d3Tan s)
+    internal static PSolver PCirc2d3Tan(Geom2dGcc_Circ2d3Tan s)
         => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
-    private static NSolver NCirc2dTanCen(N.Geom2dGcc_Circ2dTanCen s)
+    internal static NSolver NCirc2dTanCen(N.Geom2dGcc_Circ2dTanCen s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
-    private static PSolver PCirc2dTanCen(Geom2dGcc_Circ2dTanCen s)
+    internal static PSolver PCirc2dTanCen(Geom2dGcc_Circ2dTanCen s)
         => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
-    private static NSolver NCirc2dTanOnRad(N.Geom2dGcc_Circ2dTanOnRad s)
+    internal static NSolver NCirc2dTanOnRad(N.Geom2dGcc_Circ2dTanOnRad s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
-    private static PSolver PCirc2dTanOnRad(Geom2dGcc_Circ2dTanOnRad s)
+    internal static PSolver PCirc2dTanOnRad(Geom2dGcc_Circ2dTanOnRad s)
         => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
-    private static NSolver NLin2d2Tan(N.Geom2dGcc_Lin2d2Tan s)
+    internal static NSolver NLin2d2Tan(N.Geom2dGcc_Lin2d2Tan s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
         {
             using N.gp_Lin2d aL = s.ThisSolution(i);
             r.Lin($"s.{i}", aL);
         }, [s.Tangency1, s.Tangency2], [], null);
 
-    private static PSolver PLin2d2Tan(Geom2dGcc_Lin2d2Tan s)
+    internal static PSolver PLin2d2Tan(Geom2dGcc_Lin2d2Tan s)
         => new(s.IsDone, s.NbSolutions, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Tangency2], [], null);
 
-    private static NSolver NLin2dTanObl(N.Geom2dGcc_Lin2dTanObl s)
+    internal static NSolver NLin2dTanObl(N.Geom2dGcc_Lin2dTanObl s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
         {
             using N.gp_Lin2d aL = s.ThisSolution(i);
             r.Lin($"s.{i}", aL);
         }, [s.Tangency1, s.Intersection2], [], null);
 
-    private static PSolver PLin2dTanObl(Geom2dGcc_Lin2dTanObl s)
+    internal static PSolver PLin2dTanObl(Geom2dGcc_Lin2dTanObl s)
         => new(s.IsDone, s.NbSolutions, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Intersection2], [], null);
 
     private static bool Starts(string theName, params string[] thePrefixes) => thePrefixes.Any(p => theName.StartsWith(p, StringComparison.Ordinal));
@@ -1012,7 +1012,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
     // The comparison
 
     /// <summary>The names whose values differ (masked names excluded), or that one side has and the other hasn't.</summary>
-    private static List<string> Differences(Rec theNative, Rec thePort, Func<string, bool> theMasked, out int theCompared, out int theMaskedCount)
+    internal static List<string> Differences(Rec theNative, Rec thePort, Func<string, bool> theMasked, out int theCompared, out int theMaskedCount)
     {
         var aN = theNative.T.ToDictionary(t => t.Name, t => t.Value);
         var aP = thePort.T.ToDictionary(t => t.Name, t => t.Value);
