@@ -13,7 +13,7 @@ namespace OcctNet.Oracle.Tests;
 /// <summary>
 /// Milestone 6's build123d.NET half (unit 6M, plan section 5): the construction calls build123d.NET's own tests make,
 /// replayed on the port. The operands are rebuilt with build123d.NET's public API exactly as its tests build them
-/// (decision 7521); the native calls are those build123d.NET's source makes, with its arguments and options, in its
+/// (decision 7506); the native calls are those build123d.NET's source makes, with its arguments and options, in its
 /// order: <c>BRepOffsetAPI_MakePipeShell</c> (Solid.Sweep, SweepMulti, ExtrudeLinearWithRotation, Face.Sweep,
 /// Shell.Sweep), <c>BRepOffsetAPI_ThruSections</c> (MakeLoft and the Loft operation), <c>BRepOffsetAPI_MakeFilling</c>
 /// (Face.MakeSurface, MakeSurfacePatch), <c>GeomAPI_PointsToBSplineSurface</c> (MakeSurfaceFromArrayOfPoints),

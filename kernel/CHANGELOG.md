@@ -1036,3 +1036,17 @@ Phase 5 (part): lofts and projection (unit 5T).
   through build123d.NET, 630 random lofts and 248 cases of OCCT's thrusection corpus (every built result, first and
   last shape and history byte-identical; lofts whose first section is also the last vary natively from run to run),
   266 projections (every wire identical, one canonically through decision 577's non-destructive Booleans).
+
+Phase 6 (part): build123d.NET's Booleans (unit 6M, the phase 6 milestone).
+
+- Tests: build123d.NET's own tests' operations replayed against native OCCT, their operands rebuilt with
+  build123d.NET's public API.
+  - 244 Booleans (fuse, cut, common, section, split, with build123d.NET's options) and 253 cleans
+    (UnifySameDomain): all 497 are byte-identical with native, histories included. Native was repeatable on every
+    one, and the port's parallel runs equal its serial ones.
+  - 179 construction cases (MakePipeShell, ThruSections, MakeFilling, BRepFill, BRepProj_Projection, the Geom2dGcc
+    solvers, MakeFillet2d, MakeOffset, PointsToBSplineSurface): 177 are byte-identical, 2 give the same error on both
+    sides, and 1 is identical once the port's operands are unfrozen.
+- Benchmarks: a Booleans suite (`-- booleans`, `-- booleans-profile`) over build123d.NET's Booleans and the corpus's
+  simple and complex grids. Serially the port takes 0.93× to 1.04× native's time (geometric mean 0.83×), within the
+  2× target. The clean takes 0.64× to 0.98×. The parallel speed-up on these small Booleans is below native's.

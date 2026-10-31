@@ -1324,3 +1324,12 @@ line), unless the last column says otherwise.
 | `BRepOffsetAPI_ThruSections` (mutable input, the default) and `BRepFill_Generator` | Write pcurves, ranges, flags and tolerances into the caller's section edges and vertices | Natively the caller's sections change. The port copies frozen sections at Build and gives back the unchanged sub-shapes (decisions 936, 937) |
 | `BRepFill_CompatibleWires` through ThruSections | Maps keyed by shapes iterated in TShape-address order | Native's status and result vary from run to run on lofts whose first section is also the last, and rarely otherwise (1 of 630 random cases); the port is deterministic (decision 940) |
 | `BRepProj_Projection::BuildSection` | A compound target's faces go into a new, unlocked compound, so the section runs destructively and writes pcurves into the caller's target edges | Natively the target changes. On frozen targets the port's section ran destructively into frozen edges and failed (IntersectionFailed); it now runs non-destructively when the target holds frozen shapes (`// OCCT.NET`, decision 939) |
+
+## Phase 6: unit 6M, build123d.NET's Booleans
+
+Found by replaying build123d.NET's own tests' operations. The Booleans and cleans showed no new issue: all 497 calls
+are byte-identical with native, and native repeated itself on every one.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepProj_Projection::BuildSection` (through build123d.NET's `Project` and `ProjectToShape`) | Never sets the section non-destructive, so any unlocked target, not only the compound of 5T's entry, is sectioned destructively | Natively the caller's target changes: in build123d.NET's ProjectEdge case a box edge on the projection cylinder's seam had its tolerance raised (1e-7 to 1.00000000666e-07) and a pcurve added. The port's frozen targets keep the section non-destructive (decision 939), so its split edge is a copy whose vertices come in the other order: canonically identical, byte-identical on unfrozen operands (decision 7507) |
