@@ -240,7 +240,10 @@ public class AppDefOracleTests(ITestOutputHelper output)
             try
             {
                 // OCCT catches failures in Approximate only: the setup (WorkDegree too small for the continuity) throws
-                aNative = new(aNPoints, W1, W2, W3, aDegMax, (N.GeomAbs_Shape)(int)aCont, aTol3D);
+                lock (Oracle.NativeVariational)
+                {
+                    aNative = new(aNPoints, W1, W2, W3, aDegMax, (N.GeomAbs_Shape)(int)aCont, aTol3D);
+                }
             }
             catch (N.OcctException)
             {

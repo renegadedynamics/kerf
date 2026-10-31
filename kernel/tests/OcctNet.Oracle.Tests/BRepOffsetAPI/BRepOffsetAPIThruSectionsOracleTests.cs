@@ -67,8 +67,9 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         return aText;
     }
 
-    // Writes the port's shapes in one compound and reads it on both sides (the port's frozen); the children in order
-    private (N.TopoDS_Shape[] N, TopoDS_Shape[] P) Both(params TopoDS_Shape[] theShapes)
+    // Writes the port's shapes in one compound and reads it on both sides (the port's frozen); the children in order.
+    // Again reads the same text natively once more: new TShapes of the same inputs, bit for bit (decision 944).
+    private (N.TopoDS_Shape[] N, TopoDS_Shape[] P, Func<N.TopoDS_Shape[]> Again) Both(params TopoDS_Shape[] theShapes)
     {
         BRep_Builder aB = new();
         TopoDS_Compound aComp = new();
@@ -79,25 +80,54 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         }
         string aFile = NewFile();
         Assert.True(BRepTools.Write(aComp, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
-        var aNShape = new N.TopoDS_Shape();
-        using (var aBuilder = new N.BRep_Builder())
-        {
-            Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
-        }
+        string aText = File.ReadAllText(aFile);
+        N.TopoDS_Shape[] aN = NativeChildren(NativeRead(aFile));
         Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
         File.Delete(aFile);
         aPShape.TShape()!.FreezeGraph();
-        var aN = new List<N.TopoDS_Shape>();
-        for (var anIt = new N.TopoDS_Iterator(aNShape); anIt.More(); anIt.Next())
-        {
-            aN.Add(anIt.Value());
-        }
         var aP = new List<TopoDS_Shape>();
         for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {
             aP.Add(anIt.Value());
         }
-        return ([.. aN], [.. aP]);
+        return (aN, [.. aP], () =>
+        {
+            string anAgainFile = NewFile();
+            File.WriteAllText(anAgainFile, aText);
+            N.TopoDS_Shape[] anAgain = NativeChildren(NativeRead(anAgainFile));
+            File.Delete(anAgainFile);
+            return anAgain;
+        });
+    }
+
+    private static N.TopoDS_Shape NativeRead(string theFile)
+    {
+        var aShape = new N.TopoDS_Shape();
+        using var aBuilder = new N.BRep_Builder();
+        Assert.True(N.BRepTools.Read(aShape, theFile, aBuilder));
+        return aShape;
+    }
+
+    private static N.TopoDS_Compound NativeCompound(N.TopoDS_Shape[] theShapes)
+    {
+        var aComp = new N.TopoDS_Compound();
+        using var aB = new N.BRep_Builder();
+        aB.MakeCompound(aComp);
+        foreach (N.TopoDS_Shape aS in theShapes)
+        {
+            aB.Add(aComp, aS);
+        }
+        return aComp;
+    }
+
+    private static N.TopoDS_Shape[] NativeChildren(N.TopoDS_Shape theShape)
+    {
+        var aList = new List<N.TopoDS_Shape>();
+        for (var anIt = new N.TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        {
+            aList.Add(anIt.Value());
+        }
+        return [.. aList];
     }
 
     // ---- the options of a case ----
@@ -123,15 +153,19 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     }
 
     // Runs one loft on both sides: the sections are indices into the inputs (a looping section repeats the first). When
-    // they differ, native is run again (up to 5 times, 40 for looping sections, decision 944) on new TShapes: native varies from run to run where CompatibleWires and
-    // SearchRoot read maps in TShape-address order (decision 908); a case the port matches on another native run is
-    // counted as such, with its name.
-    private void Run(string theName, N.TopoDS_Shape[] theNIn, TopoDS_Shape[] thePIn, int[] theSections, Options theO)
+    // they differ, native is run again (up to 5 times, 16 for looping sections) on new TShapes of the same inputs:
+    // native varies from run to run where CompatibleWires and SearchRoot read maps in TShape-address order (decision
+    // 908); a case the port matches on another native run is counted as such, with its name. theNativeAgain makes the
+    // new TShapes from the inputs' source, bit for bit (the text both sides read, or the corpus script replayed), never
+    // by writing and reading native's shapes: that moves curve and surface directions by an ulp (decision 944).
+    private void Run(string theName, N.TopoDS_Shape[] theNIn, TopoDS_Shape[] thePIn, Func<N.TopoDS_Shape[]> theNativeAgain,
+                     int[] theSections, Options theO)
     {
         myCases++;
         int[] aSaved = Counters();
         Dictionary<string, int> aSavedStatuses = new(myStatuses);
         N.TopoDS_Shape[] aNIn = theNIn;
+        string anInputsText = NativeText(NativeCompound(theNIn)); // before native's first run, which may write into them
         List<N.TopoDS_Shape> aBallast = [];
         for (int anAttempt = 0; ; anAttempt++)
         {
@@ -146,7 +180,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 return;
             }
             bool isLooping = theSections.Length > 1 && theSections[0] == theSections[^1];
-            if (anAttempt == (isLooping ? 39 : 4))
+            if (anAttempt == (isLooping ? 15 : 4))
             {
                 // A looping loft whose status alone differs on every native run here: native's status there depends on
                 // TShape addresses (decision 908), and other processes have given the port's; attributed, listed
@@ -166,7 +200,13 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             {
                 aBallast.Add(new N.BRepBuilderAPI_MakeVertex(new N.gp_Pnt(i, anAttempt, 0)).Vertex());
             }
-            aNIn = NativeReread(theNIn);
+            aNIn = theNativeAgain();
+            if (anAttempt == 0)
+            {
+                // the rerun's inputs must be the first run's, bit for bit (decision 944)
+                BRepTextDiff anInputsDiff = BRepTextComparison.Compare(anInputsText, NativeText(NativeCompound(aNIn)));
+                Assert.True(anInputsDiff.IsIdenticalMaskingFree, $"{theName}: native's rerun inputs differ: {anInputsDiff}");
+            }
             Counters(aSaved);
             myStatuses.Clear();
             foreach (KeyValuePair<string, int> aP in aSavedStatuses)
@@ -177,29 +217,6 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     }
 
     private readonly List<string> myNativeVaries = [];
-
-    // The native shapes written in one compound and read back: new TShapes, sharing, locations and orientations kept
-    private N.TopoDS_Shape[] NativeReread(N.TopoDS_Shape[] theShapes)
-    {
-        var aComp = new N.TopoDS_Compound();
-        using var aB = new N.BRep_Builder();
-        aB.MakeCompound(aComp);
-        foreach (N.TopoDS_Shape aS in theShapes)
-        {
-            aB.Add(aComp, aS);
-        }
-        string aFile = NewFile();
-        Assert.True(N.BRepTools.Write(aComp, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
-        var aRead = new N.TopoDS_Shape();
-        Assert.True(N.BRepTools.Read(aRead, aFile, aB));
-        File.Delete(aFile);
-        var aList = new List<N.TopoDS_Shape>();
-        for (var anIt = new N.TopoDS_Iterator(aRead); anIt.More(); anIt.Next())
-        {
-            aList.Add(anIt.Value());
-        }
-        return [.. aList];
-    }
 
     private int[] Counters() => [myBuilt, myNotDone, myExceptions, myIdentical, myFreeMasked, myCanonical, mySolids, myHistory, myLooping, myBoundsIdentical];
 
@@ -258,7 +275,17 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     aN.AddWire(N.TopoDS.Wire(theNIn[k]));
                 }
             }
-            aN.Build();
+            if (theO.Smoothing)
+            {
+                lock (Oracle.NativeVariational) // decision 945
+                {
+                    aN.Build();
+                }
+            }
+            else
+            {
+                aN.Build();
+            }
         }
         catch (N.OcctException e)
         {
@@ -716,7 +743,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 anInputs.Add(Varied(anOracle, aW));
                 aKinds.Add(aK);
             }
-            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both([.. anInputs]);
+            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn, Func<N.TopoDS_Shape[]> anAgain) = Both([.. anInputs]);
             int[] aSections = [.. Enumerable.Range(0, aNbSect)];
             if (theLooping)
             {
@@ -731,7 +758,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             {
                 aO.Check = true;
             }
-            Run($"case {aCase} [{string.Join(", ", aKinds)}]{(isTilted ? " tilted" : "")}{(theLooping ? " looping" : "")}", aNIn, aPIn, aSections, aO);
+            Run($"case {aCase} [{string.Join(", ", aKinds)}]{(isTilted ? " tilted" : "")}{(theLooping ? " looping" : "")}", aNIn, aPIn, anAgain, aSections, aO);
         }
     }
 
@@ -792,8 +819,8 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 (TopoDS_Shape aW, _) = Section(anOracle, i == anOpen ? anOracle.Int(7, 9) : anOracle.Int(0, 6), Plane(anOracle, i, false), anOracle.Real(0.8, 2));
                 anInputs.Add(aW);
             }
-            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both([.. anInputs]);
-            Run($"mixed {aCase} open at {anOpen}", aNIn, aPIn, [.. Enumerable.Range(0, aNb)], RandomOptions(anOracle, false));
+            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn, Func<N.TopoDS_Shape[]> anAgain) = Both([.. anInputs]);
+            Run($"mixed {aCase} open at {anOpen}", aNIn, aPIn, anAgain, [.. Enumerable.Range(0, aNb)], RandomOptions(anOracle, false));
         }
         Report("inconsistent profiles");
         Assert.Empty(myDifferences);
@@ -822,8 +849,8 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 (TopoDS_Shape aW, _) = Section(anOracle, aKind, new gp_Ax2(new gp_Pnt(0, 0, 3.0 * i), new gp_Dir(0, 0, 1)), anOracle.Real(1, 3));
                 anInputs.Add(aW);
             }
-            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both([.. anInputs]);
-            Run($"build123d loft {aCase}", aNIn, aPIn, [.. Enumerable.Range(0, aNb)], new Options { Solid = aFilled, Ruled = aRuled });
+            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn, Func<N.TopoDS_Shape[]> anAgain) = Both([.. anInputs]);
+            Run($"build123d loft {aCase}", aNIn, aPIn, anAgain, [.. Enumerable.Range(0, aNb)], new Options { Solid = aFilled, Ruled = aRuled });
         }
         Report("build123d lofts");
         Assert.Empty(myDifferences);
@@ -864,10 +891,14 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         Assert.Empty(myDifferences);
     }
 
-    // A small interpreter of the corpus's restore, ttranslate, orientation, explode, setflags and thrusections
+    // A small interpreter of the corpus's restore, ttranslate, orientation, explode, setflags and thrusections. Each
+    // name also keeps how native makes it again (a replay of the script's native side, each restore read once per
+    // replay), for the native reruns (decision 944).
     private bool RunScript(string theName, string[] theLines, Dictionary<string, string> theFiles)
     {
         var aShapes = new Dictionary<string, (N.TopoDS_Shape N, TopoDS_Shape P)>(StringComparer.Ordinal);
+        var anAgain = new Dictionary<string, Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape>>(StringComparer.Ordinal);
+        int aNbRestores = 0;
         bool aRan = false;
         foreach (string aRawLine in theLines)
         {
@@ -903,6 +934,8 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     }
                     aP.TShape()!.FreezeGraph();
                     aShapes[t[3]] = (aN, aP);
+                    int aRestore = aNbRestores++;
+                    anAgain[t[3]] = g => g.TryGetValue(aRestore, out N.TopoDS_Shape? aRead) ? aRead : g[aRestore] = NativeRead(aPath);
                     break;
                 }
                 case "ttranslate":
@@ -918,6 +951,13 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                         gp_Trsf aPT = new();
                         aPT.SetTranslation(new gp_Vec(x, y, z));
                         aShapes[t[i]] = (aN.Moved(new N.TopLoc_Location(aNT)), aP.Moved(new TopLoc_Location(aPT)));
+                        Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape> aBefore = anAgain[t[i]];
+                        anAgain[t[i]] = g =>
+                        {
+                            var aT = new N.gp_Trsf();
+                            aT.SetTranslation(new N.gp_Vec(x, y, z));
+                            return aBefore(g).Moved(new N.TopLoc_Location(aT));
+                        };
                     }
                     break;
                 }
@@ -927,6 +967,8 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     bool isF = t[2] == "F";
                     aShapes[t[1]] = (aN.Oriented(isF ? N.TopAbs_Orientation.TopAbs_FORWARD : N.TopAbs_Orientation.TopAbs_REVERSED),
                                      aP.Oriented(isF ? TopAbs_Orientation.TopAbs_FORWARD : TopAbs_Orientation.TopAbs_REVERSED));
+                    Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape> aBefore = anAgain[t[1]];
+                    anAgain[t[1]] = g => aBefore(g).Oriented(isF ? N.TopAbs_Orientation.TopAbs_FORWARD : N.TopAbs_Orientation.TopAbs_REVERSED);
                     break;
                 }
                 case "explode":
@@ -941,6 +983,17 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     for (TopExp_Explorer aPE = new(aP, TopAbs_WIRE); aPE.More(); aPE.Next(), aNE.Next(), i++)
                     {
                         aShapes[$"{t[1]}_{i}"] = (aNE.Current(), aPE.Current());
+                        Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape> aParent = anAgain[t[1]];
+                        int anIndexInParent = i;
+                        anAgain[$"{t[1]}_{i}"] = g =>
+                        {
+                            var anExp = new N.TopExp_Explorer(aParent(g), N.TopAbs_ShapeEnum.TopAbs_WIRE);
+                            for (int k = 1; k < anIndexInParent; k++)
+                            {
+                                anExp.Next();
+                            }
+                            return anExp.Current();
+                        };
                     }
                     break;
                 }
@@ -956,6 +1009,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     aO.Solid = t[anIndex] == "1";
                     aO.Ruled = t[anIndex + 1] == "1";
                     var aList = new List<(N.TopoDS_Shape, TopoDS_Shape)>();
+                    var aListAgain = new List<Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape>>();
                     var aIndices = new List<int>();
                     bool aSameNumber = true, isFirstWire = false;
                     int aNbEdges = 0;
@@ -981,6 +1035,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                         {
                             aPos = aList.Count;
                             aList.Add(aS);
+                            aListAgain.Add(anAgain[t[i]]);
                         }
                         aIndices.Add(aPos);
                         if (isWire)
@@ -1002,7 +1057,11 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                         }
                     }
                     aO.Check = !aNoCheck || !aSameNumber;
-                    Run(theName, [.. aList.Select(p => p.Item1)], [.. aList.Select(p => p.Item2)], [.. aIndices], aO);
+                    Run(theName, [.. aList.Select(p => p.Item1)], [.. aList.Select(p => p.Item2)], () =>
+                    {
+                        var aReads = new Dictionary<int, N.TopoDS_Shape>();
+                        return [.. aListAgain.Select(f => f(aReads))];
+                    }, [.. aIndices], aO);
                     aRan = true;
                     break;
                 }

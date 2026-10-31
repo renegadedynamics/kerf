@@ -403,9 +403,11 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         if (MaskFree(aNSewed) != MaskFree(aPSewed))
         {
             // Native OCCT's sewn shape can vary from run to run (address-ordered maps; plan 2.4): sew again natively
-            // and, if a run differs, compare the port with every native variant; the port must repeat itself.
+            // and, if a run differs, compare the port with every native variant; the port must repeat itself. Up to
+            // 16 runs, stopping at the port's: tol_0_01/Q5 has two native variants, about even serially, and once
+            // all 7 runs of the earlier limit missed the port's (decision 946).
             var aVariants = new List<string> { aNSewed };
-            for (int aRun = 0; aRun < 6; aRun++)
+            for (int aRun = 0; aRun < 15 && !aVariants.Any(v => MaskFree(v) == MaskFree(aPSewed)); aRun++)
             {
                 string aText = NativeSewedText(theF1, theChildren, aTolerance, aMinTol);
                 if (!aVariants.Any(v => MaskFree(v) == MaskFree(aText)))

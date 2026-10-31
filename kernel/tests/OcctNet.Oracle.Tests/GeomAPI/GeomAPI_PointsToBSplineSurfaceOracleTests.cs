@@ -239,11 +239,22 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                     aTolerance = 1.0e-6;
                     aOk = aReuse
                         ? Both(anOracle,
-                               () => aN.Init(aNPoints!, W1, W2, W3, aDeg, aNVCont, aTol3D),
+                               () =>
+                               {
+                                   lock (Oracle.NativeVariational)
+                                   {
+                                       aN.Init(aNPoints!, W1, W2, W3, aDeg, aNVCont, aTol3D);
+                                   }
+                               },
                                () => aPort.Init(aPoints!, W1, W2, W3, aDeg, aVCont, aTol3D), aW)
                         : Both(anOracle,
-                               () => aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNPoints!, W1, W2, W3, aDeg, aNVCont,
-                                                                                    aTol3D),
+                               () =>
+                               {
+                                   lock (Oracle.NativeVariational)
+                                   {
+                                       aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNPoints!, W1, W2, W3, aDeg, aNVCont, aTol3D);
+                                   }
+                               },
                                () => aPort = new GeomAPI_PointsToBSplineSurface(aPoints!, W1, W2, W3, aDeg, aVCont,
                                                                                 aTol3D), aW);
                     break;

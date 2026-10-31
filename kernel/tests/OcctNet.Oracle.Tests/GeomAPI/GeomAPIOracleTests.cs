@@ -445,8 +445,13 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 aW = $"#{c} variational {W1:R} {W2:R} {W3:R} {aDegMax} {aCont} {aTol3D}";
                 aTolerance = 1.0e-6;
                 if (!Both(anOracle,
-                        () => aN = new N.GeomAPI_PointsToBSpline(aNPoints, W1, W2, W3, aDegMax, (N.GeomAbs_Shape)(int)aCont,
-                                                                 aTol3D),
+                        () =>
+                        {
+                            lock (Oracle.NativeVariational)
+                            {
+                                aN = new N.GeomAPI_PointsToBSpline(aNPoints, W1, W2, W3, aDegMax, (N.GeomAbs_Shape)(int)aCont, aTol3D);
+                            }
+                        },
                         () => aPort = new GeomAPI_PointsToBSpline(aPoints, W1, W2, W3, aDegMax, aCont, aTol3D), aW))
                 {
                     aN?.Dispose();

@@ -69,6 +69,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         }
         string aFile = NewFile();
         Assert.True(BRepTools.Write(aComp, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        string aText = File.ReadAllText(aFile);
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
@@ -87,8 +88,13 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         {
             aP.Add(anIt.Value());
         }
-        return ([.. aN], [.. aP]);
+        N.TopoDS_Shape[] aNIn = [.. aN];
+        mySourceTexts[aNIn] = aText;
+        return (aNIn, [.. aP]);
     }
+
+    // The text each native input array was read from, for the native reruns (decision 944)
+    private readonly Dictionary<N.TopoDS_Shape[], string> mySourceTexts = new(ReferenceEqualityComparer.Instance);
 
     // 0: identical text, 1: Free masked, 2: canonical, -1: different
     private int Compare(N.TopoDS_Shape theN, in TopoDS_Shape theP, out string theDiff)
@@ -270,7 +276,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     private readonly List<string> myCanonicalCases = [];
 
     // Native run again on new TShapes of the same inputs, at other heap addresses: true if one run gives the port's
-    // wires as BRep text, in order
+    // wires as BRep text, in order. The new TShapes are read from the text both sides read, not from a write of
+    // native's shapes, which moves curve and surface directions by an ulp (decision 944).
     private bool NativeRerunMatches(N.TopoDS_Shape[] theNIn, List<TopoDS_Wire> thePW, gp_Dir? theDir, gp_Pnt? thePnt)
     {
         List<N.TopoDS_Shape> aBallast = [];
@@ -280,15 +287,9 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             {
                 aBallast.Add(new N.BRepBuilderAPI_MakeVertex(new N.gp_Pnt(i, anAttempt, 0)).Vertex());
             }
-            var aComp = new N.TopoDS_Compound();
             using var aB = new N.BRep_Builder();
-            aB.MakeCompound(aComp);
-            foreach (N.TopoDS_Shape aS in theNIn)
-            {
-                aB.Add(aComp, aS);
-            }
             string aFile = NewFile();
-            Assert.True(N.BRepTools.Write(aComp, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+            File.WriteAllText(aFile, mySourceTexts[theNIn]);
             var aRead = new N.TopoDS_Shape();
             Assert.True(N.BRepTools.Read(aRead, aFile, aB));
             File.Delete(aFile);
