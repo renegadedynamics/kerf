@@ -134,6 +134,27 @@ The numbers in brackets are the plan's (section 7).
     dependency on the Booleans (constraints 5K1/5K2, laws and GeomFill 5L1 to 5L3, plates 5P, fair curves 5Q, the
     medial axis 5M, the face maker 5O1) may start when a porter would otherwise wait. Alternative: strictly after
     the Boolean milestone.
+24. **The legacy data structure for fillets** (phase7-plan.md 2.1). OCCT's 3D fillets build their result through
+    TopOpeBRepDS and `TopOpeBRepBuild_HBuilder`, with no other path. *Provisional:* port the TopOpeBRepBuild, DS and
+    Tool classes they reach, whole (about 79,000 lines, 72,000 new), extending phase 5's slice. Alternatives: a
+    member-level slice (perhaps 10 to 25% smaller), or fillets rebuilt on BOPAlgo (not a port).
+25. **HLR and helix in phase 7** (phase7-plan.md 1.5). build123d.NET uses neither. *Provisional:* helix in phase 7
+    (small, with OCCT 8's GTests); HLR in phase 7 but last, deferrable if Bento has no use for drawings.
+26. **ShapeProcess's resource files** (phase7-plan.md 2.3). *Provisional:* OCCT's default resource files embedded;
+    other files read only when the caller gives a path, not through OCCT's `CSF_*` environment variables.
+27. **Bindings to widen phase 7's oracle** (phase7-plan.md 3). Bind in build123d.NET: ShapeUpgrade's
+    ShapeDivideAngle, ShapeDivideContinuity, ShapeDivideClosed and ShapeConvertToBezier;
+    `ShapeProcessAPI_ApplySequence`; BRepFeat's MakePrism, MakeRevol and MakeLinearForm; `LocOpe_SplitShape`;
+    `HLRBRep_Algo`, `PolyAlgo`, `HLRToShape`; `HelixBRep_BuilderHelix`; `BiTgte_Blend`; `FilletSurf_Builder`;
+    `BRepOffsetAPI_MakeDraft`. *Provisional:* until then, native recorders (`tools/<name>rec`) and the corpus.
+28. **Draw-lite's cheap gaps** (phase7-plan.md 1.6). *Provisional:* unit 7W adds the non-phase-7 commands that
+    unblock 885 corpus cases (`lastrep` as a stub, `proj`, `shape`, `project`, `convert`, `projonplane`...) and the
+    viewer no-ops a few cases use for setup (`vzfit`, `top`, `axo`, `front`, `v2d`); no other viewer commands.
+29. **The corpus scan's default** (phase7-plan.md 1.6). *Provisional:* `DrawCorpus.FollowsCalledProcsOnly` (unit 5W)
+    becomes the default at the start of phase 7, and the tests' expected counts are updated with it.
+30. **Order of phase 7's stages** (phase7-plan.md 4). *Provisional:* start every unit of wave 1 at once and give
+    spare porters to the fillet path (the critical path, and build123d.NET's most used phase 7 call). Alternative:
+    healing, features and helix first, for the corpus.
 
 ## Earlier judgement calls worth a look
 
