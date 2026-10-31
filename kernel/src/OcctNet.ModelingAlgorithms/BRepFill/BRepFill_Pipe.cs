@@ -29,8 +29,6 @@ namespace Occt;
 /// The accessors hand out frozen shapes; ported callers that keep building (BRepFill_Evolved) use the
 /// <c>Internal</c> forms (decision 911).
 /// </para>
-/// <para>OCCT.NET: the topological sweep (BRepFill_Sweep) is ported by unit 5S2; until then every pipe construction
-/// throws <see cref="Standard_NotImplemented"/> (decision 909).</para>
 /// </remarks>
 public sealed class BRepFill_Pipe
 {
@@ -478,7 +476,7 @@ public sealed class BRepFill_Pipe
         // Generate the corresponding Shape
         // *************************************************
         TopoDS_Edge theEdge;
-        theEdge = TopoDS.Edge(myEdges!.Value(iprof, ispin));
+        theEdge = TopoDS.Edge(myEdges!.Value(iprof, ispin)); // OCCT: myEdges is null for a vertex profile (an access violation natively)
 
         return theEdge;
     }

@@ -1289,3 +1289,24 @@ last column says otherwise.
 | `BRepFill_Evolved` (`ElementaryPerform`, `PrepareProfile`, `Add`, `Transfert`) | Iterates `myMap` and `MapVevo`, keyed by shapes, in TShape-address order | Natively the parallel edges are built, and the result's faces listed, in an address-dependent order; the port uses insertion order. The bindings don't depend on it |
 | `BRepOffsetAPI_MakeOffset::BuildDomains` (via BRepFill_OffsetWire and the medial axis) | Bisector_BisecAna can leave its curve unset (5M) and Bisector_Bisec dereferences it, on some arc profiles with intersection joins | An access violation: with OCCT's signal translator (DRAWEXE, build123d.NET) a Standard_Failure caught as "not done"; without it a crash. The port: a NullReferenceException caught as "not done" (decision 917) |
 | `BRepOffsetAPI_MakeOffset::BuildDomains` | `double Found = false` holds a bool | No effect |
+
+## Phase 5: unit 5S2, pipe shells
+
+Found by the MakePipeShell oracle, tools/piperec and reading. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| MakePipeShell with an auxiliary spine and `BRepFill_Contact` on polyline spines (the site not isolated) | Dereferences a null handle | An access violation natively; Standard_NullObject in the port (4 oracle cases, decision 7207) |
+| `BRepFill_Pipe::Edge` (through `BRepOffsetAPI_MakePipe::Generated(spine edge, profile vertex)`) | Reads `myEdges`, which is null when the profile is a vertex | An access violation natively (OSD_Exception_ACCESS_VIOLATION under OSD::SetSignal, 18 of tools/piperec's cases); NullReferenceException in the port |
+| `BRepFill_PipeShell::Set(bool IsFrenet)` | Both branches set `myTrihedron = GeomFill_IsFrenet`; the corrected Frenet one is labelled Frenet | No effect seen (`myTrihedron` only chooses the continuity for the discrete trihedron and the contact laws) |
+| `BRepFill_PipeShell::Prepare` | Clears `WSeq` and `myEdgeNewEdges` but not `myIndOfSec` | After a second Prepare (a section added or removed after a build) the history reads the first build's section indices |
+| `BRepFill_PipeShell::BuildHistory` | The loop looking for the section's inde-th edge tests `Degenerated(anEdge)` (the section's edge) instead of `theEdge` | Degenerated edges of the placed wire are counted; no effect on the oracle's sections |
+| `BRepFill_PipeShell` constructor | `mySpine.Closed(true)` on the caller's wire when its ends meet | Natively the caller's spine changes; the port closes a new wire of the caller's edges (decision 7203) |
+| `BRepFill_PipeShell::MakeSolid` | Adds the end faces to the shell `Shape()` already returned | Natively the shape the caller holds changes; the port adds them to a new shell of the same faces when the shell was published (decision 7203) |
+| `BRepFill_Sweep` BuildFace | `BRepLib_FindSurface` can return the plane of a face already built (the four edges' pcurves lie on it), and BuildFace calls `UReverse` on it | The other face's surface is reversed too, natively. **Fixed** in the port: it reverses a copy (decision 7206); the results differ from native's there |
+| `BRepFill_Sweep::BuildWire` | With a last bound, stores `FirstShape` (a wire) at column NbPath of the vertex table instead of the last vertex | Unreachable: the pipes give no bounds to a vertex's sweep |
+| `BRepFill_Sweep::PerformCorner`, tangent case | Evaluates the next law's frame at its last parameter instead of its first | The corner of a tangent but twisted junction is placed with the next edge's end frame |
+| `BRepFill_Sweep::Build` | Substitutes the edges of `myVEdgesModified`, a map keyed by shapes, in TShape-address order; the first substitution of a shared vertex wins | Natively the order can change which new vertex replaces a shared one; the port iterates in insertion order. Not observed in the oracle |
+| `BRepFill_TrimShellCorner::HasSection` | `myHasSection` is set nowhere | Always false; the sweep's fallback for a failed right corner depends only on the transition |
+| `BRepOffsetAPI_MiddlePath::Build` | Writes "Interpolation failed" to `std::cout` when GeomAPI_Interpolate fails, then calls `Curve()` | StdFail_NotDone on both sides; the port doesn't print |

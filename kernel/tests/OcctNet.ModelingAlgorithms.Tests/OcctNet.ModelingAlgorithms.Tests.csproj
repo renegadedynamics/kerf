@@ -54,6 +54,8 @@
     <EmbeddedResource Include="BRepFill\Recordings\brepfillrec.txt.gz" LogicalName="BRepFill.brepfillrec.txt.gz" />
     <!-- Native OCCT's BRepFill_CompatibleWires, recorded by tools/cwrec (unit 5S1) -->
     <EmbeddedResource Include="BRepFill\Recordings\cwrec.txt.gz" LogicalName="BRepFill.cwrec.txt.gz" />
+    <!-- Native OCCT's BRepOffsetAPI_MakePipe and MiddlePath, recorded by tools/piperec (unit 5S2) -->
+    <EmbeddedResource Include="BRepOffsetAPI\Recordings\piperec.txt.gz" LogicalName="BRepOffsetAPI.piperec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->

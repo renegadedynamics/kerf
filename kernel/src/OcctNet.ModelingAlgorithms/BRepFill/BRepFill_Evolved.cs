@@ -24,9 +24,8 @@ namespace Occt;
 /// spine or profile: it moves its own handles on them, and builds every face, edge and vertex it changes.
 /// </para>
 /// <para>
-/// Not available in this unit: the profile parts that are neither horizontal nor vertical (OCCT's
-/// <c>ElementaryPerform</c>) sweep each spine edge with BRepFill_Pipe, whose BRepFill_Sweep unit 5S2 ports: until
-/// then they throw <see cref="Standard_NotImplemented"/>.
+/// The profile parts that are neither horizontal nor vertical (OCCT's <c>ElementaryPerform</c>) sweep each spine edge
+/// with BRepFill_Pipe (BRepFill_Sweep, unit 5S2).
 /// </para>
 /// </remarks>
 public sealed class BRepFill_Evolved
@@ -2033,8 +2032,6 @@ public sealed class BRepFill_Evolved
 
         TopoDS_Wire GenProf = TopoDS.Wire(Modif.InternalModifiedShape(DummyProf));
 
-        // OCCT.NET: BRepFill_Pipe sweeps with BRepFill_Sweep, a placeholder that throws Standard_NotImplemented until
-        // unit 5S2 ports it (decision 919)
         BRepFill_Pipe Pipe = new(new BRepLib_MakeWire(SE).InternalWire(), GenProf);
 
         //---------------------------------------------

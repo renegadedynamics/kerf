@@ -7,8 +7,8 @@ namespace OcctNet.DrawLite.Tests;
 
 /// <summary>
 /// Unit 5O2's <c>evolved</c> (BRepTest_SweepCommands.cxx) on hand-made spines and profiles, and on OCCT's corpus: the
-/// cases that use it, runnable before and after the unit, and how they end (most need the parts unit 5O2 leaves for
-/// later: BRepFill_Sweep (unit 5S2) for slanted profile edges, BRepFill_AdvancedEvolved for <c>-v</c>).
+/// cases that use it, runnable before and after the unit, and how they end (slanted profile edges are swept by
+/// BRepFill_Pipe since unit 5S2; <c>-v</c> needs BRepFill_AdvancedEvolved, phase 7).
 /// </summary>
 public class DrawEvolvedCommandsTests(ITestOutputHelper output)
 {
@@ -49,8 +49,11 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r s p"));
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r -s s"));
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r -s s -p p -v"));
+        // a slanted profile, swept by BRepFill_Pipe since unit 5S2 (native value from tools/evorec)
         aDI.Eval("polyline t 0 0 0 0 1 1");
-        Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r -s s -p t"));
+        Assert.Equal("", aDI.Eval("evolved r -s s -p t"));
+        Assert.Equal(50.911688245431428, Mass(aDI, "sprops r"), 1e-4); // sprops prints 6 digits
+        Assert.Contains("This shape seems to be valid", aDI.Eval("checkshape r"));
     }
 
     [Fact]
