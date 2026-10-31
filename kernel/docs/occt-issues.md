@@ -1310,3 +1310,17 @@ the last column says otherwise.
 | `BRepFill_Sweep::Build` | Substitutes the edges of `myVEdgesModified`, a map keyed by shapes, in TShape-address order; the first substitution of a shared vertex wins | Natively the order can change which new vertex replaces a shared one; the port iterates in insertion order. Not observed in the oracle |
 | `BRepFill_TrimShellCorner::HasSection` | `myHasSection` is set nowhere | Always false; the sweep's fallback for a failed right corner depends only on the transition |
 | `BRepOffsetAPI_MiddlePath::Build` | Writes "Interpolation failed" to `std::cout` when GeomAPI_Interpolate fails, then calls `Curve()` | StdFail_NotDone on both sides; the port doesn't print |
+
+## Phase 5: unit 5T, lofts and projection
+
+Found by the ThruSections and BRepProj_Projection oracles and reading. The port reproduces each (`// OCCT` at the
+line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `BRepFill_Generator::Perform` | `anOrEdge1`/`anOrEdge2` are references to the wire explorers' current edge; after `ex1.Next()` they name the next edge (a null edge after the last), and `myMap` is keyed by it | `GeneratedShapes(E)` gives the face built on the edge before E; the last face is keyed by a null edge. ThruSections doesn't read this map. Reproduced (decision 936) |
+| `BRepOffsetAPI_ThruSections::Init` | Sets the maximal degree to 6 where the constructor sets 8 | A loft re-initialised approximates with a lower degree. Reproduced |
+| `BRepOffsetAPI_ThruSections::SetCriteriumWeight` | A negative weight sets the status to Failed; `Build` resets the status | No effect but a transient status. Reproduced |
+| `BRepOffsetAPI_ThruSections` (mutable input, the default) and `BRepFill_Generator` | Write pcurves, ranges, flags and tolerances into the caller's section edges and vertices | Natively the caller's sections change. The port copies frozen sections at Build and gives back the unchanged sub-shapes (decisions 936, 937) |
+| `BRepFill_CompatibleWires` through ThruSections | Maps keyed by shapes iterated in TShape-address order | Native's status and result vary from run to run on lofts whose first section is also the last, and rarely otherwise (1 of 630 random cases); the port is deterministic (decision 940) |
+| `BRepProj_Projection::BuildSection` | A compound target's faces go into a new, unlocked compound, so the section runs destructively and writes pcurves into the caller's target edges | Natively the target changes. On frozen targets the port's section ran destructively into frozen edges and failed (IntersectionFailed); it now runs non-destructively when the target holds frozen shapes (`// OCCT.NET`, decision 939) |

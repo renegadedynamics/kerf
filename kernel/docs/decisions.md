@@ -9319,3 +9319,87 @@ merged numbers.
         `middlepath` → `new BRepOffsetAPI_MiddlePath(shape, start, end).Build()`; `geompipe` is GeomFill_Pipe (5L2).
         `IsReady`, `GetStatus`, `ErrorOnSurface`, `Generated`, `FirstShape`, `LastShape` and `Profiles` are there for
         the commands' checks. Expect long runs where an auxiliary spine with contact follows a polyline.
+
+## Phase 5: unit 5T, lofts and projection
+
+BRepFill_Generator, BRepOffsetAPI_ThruSections, BRepProj_Projection. In OcctNet.ModelingAlgorithms (`BRepFill/`,
+`BRepOffsetAPI/`, `BRepProj/`). Numbers from 7301 are placeholders, renumbered on merge; earlier decisions are cited by
+their merged numbers.
+
+935. **Working objects; results frozen.** BRepFill_Generator is a public sealed working object: `Shell`,
+      `Generated`, `GeneratedShapes` and `ResultShape` freeze what they hand out; `InternalShell`, `InternalGenerated`,
+      `InternalGeneratedShapes` and `InternalResultShape` don't. `DetectKPart` and `CreateKPart` (exported free
+      functions in OCCT) are internal statics; CreateKPart's unused face, wires and edges are left out. ThruSections
+      derives from BRepBuilderAPI_MakeShape: `Shape`, `FirstShape`, `LastShape`, `Generated`, `GeneratedFace` and
+      `Wires()` (an `IBentoList`) are publication points, and the history freezes the whole result first (decision 414).
+      `CriteriumWeight` has `out` parameters. BRepProj_Projection is a sealed class whose `Current` and `Shape` are
+      frozen (the compound is frozen when built). Smooth lofts use GeomFill_SectionGenerator, Line and AppSurf as
+      decision 852 says; `EdgeToBSpline` is ThruSections' own private static (with OCCT's conic special case, unlike
+      NSections'), reading `GeomConvert_ApproxCurve.InternalCurve` and `CompCurveToBSplineCurve.InternalBSplineCurve`.
+936. **BRepFill_Generator copies frozen sections at Perform.** OCCT bounds the faces by the sections' own edges and
+      writes pcurves, ranges, flags and tolerances into them. When a section holds a frozen TShape, all sections are
+      copied at once (a holder compound through `BRepTools_CopyAtEntry`, so shared sub-shapes stay shared), the shell
+      is built on the copies and `Finish` gives back the caller's unchanged sub-shapes; the history maps the caller's
+      shapes through `Copied` and its answers through `Final`. Unfrozen sections (ThruSections' working sections,
+      BRepProj's transformed wire) are used in place, as in OCCT. OCCT's `anOrEdge1` alias of the explorer's current
+      edge (`myMap` keyed by the next edge) is reproduced by re-reading the explorer after `Next` (occt-issues.md).
+937. **ThruSections copies frozen sections at Build.** The sections as added are kept apart (`AddWire`, `AddVertex`);
+      each Build takes them again and, when they hold frozen shapes, copies them all at once. CompatibleWires and the
+      generator then run on the copies (CompatibleWires' result wires share the copies' uncut edges, as decision 913
+      foresaw). `Finish` receives the result, the end faces and the working sections, so the vertices the working
+      sections share with the result are the same TShapes after the give-back (KeepUnchangedIn rewrites a copy whose
+      children are partly kept; without the working sections in the holder the wire explorer of `Generated` saw a
+      broken wire). The history maps the caller's shape to its copy for the maps' keys and every shape it reads from
+      the working sections or the generator through `Final`. A second Build after a failure starts again from the
+      sections as added, where OCCT reuses its compatible wires (only a re-Build can tell). `Standard_Failure` is
+      caught around the construction as in OCCT; other exceptions propagate.
+938. **BRepProj_Projection never writes its inputs.** As in OCCT, the swept prism or cone is built on a
+      `BRepTools_Modifier` copy (`InternalModifiedShape`) of the wire, the cone through BRepFill_Generator on it.
+939. **BRepProj's compound target is sectioned non-destructively when it holds frozen shapes.** OCCT gathers a
+      compound target's faces into a new compound, which isn't locked, so the section (decision 577's lock check
+      reads only the arguments) runs destructively and writes pcurves into the edges of the target's planar faces: in
+      the port that threw TopoDS_LockedShape inside the pave filler (IntersectionFailed, IsDone false where native is
+      done). The port sets `SetNonDestructive(true)` for such a target (`// OCCT.NET`, occt-issues.md), as a frozen
+      solid or face target already is. The oracle's pocketed boxes (Cut results, compounds) are then byte-identical.
+940. **Native varies on lofts through CompatibleWires.** Decision 908's address order reaches the loft: on looping
+      lofts (first section also the last) native's status and result change from run to run, and once in 630 random
+      lofts otherwise. The oracle re-runs native on re-read inputs at other heap addresses (5 times, 16 for looping
+      lofts) and counts a case the port matches on another run; a looping loft whose status alone differs on every
+      run here is listed as native variation (other processes gave the port's status). Looping lofts' histories are
+      not compared.
+941. **The oracles** (`tests/OcctNet.Oracle.Tests/BRepOffsetAPI/BRepOffsetAPIThruSectionsOracleTests.cs`,
+      `BRepProj/BRepProjProjectionOracleTests.cs`; inputs built by the port, written to one BRep file both sides read,
+      the port's frozen).
+      - ThruSections, 630 random cases: polygons, circles whole or cut, ellipses, rounded rectangles, periodic
+        B-splines, polylines with arcs; open polylines, arcs, B-splines; tilted, shifted, reversed, located sections;
+        vertex ends; CheckCompatibility off (one kind, same edge count); looping; closed and open mixed (40 cases,
+        NotSameTopology on both sides); build123d.NET's MakeLoft; all options (ruled, smooth, solid, tolerance,
+        smoothing and weights, parametrisation, continuity, maximal degree, mutable input, Init). Plus 248 cases of
+        OCCT's thrusection corpus (solids, not_solids, bugs and the locked grids; a small interpreter of restore,
+        ttranslate, orientation, explode and thrusections with -N and -safe). Compared: exceptions, status, IsDone,
+        result, FirstShape, LastShape (BRep text, Free column included), Generated of every section edge and vertex,
+        GeneratedFace of every edge; inputs unchanged. **Every built result, end face and history byte-identical**
+        (about 530 random lofts built, 247 corpus lofts), statuses identical; native variation as decision 940.
+      - BRepProj_Projection, 266 cases: circles, polygons, ellipses, arc and segment edges, B-splines, open polylines
+        projected along random directions and from points onto boxes, a pocketed box, cylinders, a cylindrical face,
+        spheres, cones, tori, an extruded elliptical face, a compound of faces with a vertex; build123d.NET's cases
+        and the errors (Standard_ConstructionError on both sides). Every wire identical with the Free column masked
+        (open question 1) but one, canonically identical, whose edges run in another order: byte-identical when the
+        port's section runs destructively on unfrozen copies, as native's does (decision 577).
+942. **Tests** (`tests/OcctNet.ModelingAlgorithms.Tests/BRepOffsetAPI/BRepOffsetAPI_ThruSectionsTests.cs`): OCCT's
+      GTests BRepOffsetAPI_ThruSections (OCC10006_LoftAndFusion, BSplineProfilesWithDifferentPoleCount,
+      OCC895_TwoCircularArcWires_NoTwist); BOPAlgo_PaveFiller's FuseConeLoftWithBox_DegeneratedEdge and
+      FuseTwoLofts_RobustnessCheck unskipped; frozen sections never written, results frozen, the history on the
+      caller's shapes, point sections, wrong usage, OCCT's defaults, the generator's copy and its OCCT keying,
+      projections and their input checks.
+943. **For later units.**
+      - **5W (Draw-lite construction):** `thrusections [-N] result issolid isruled s1 s2 ... [-safe]` → `new
+        BRepOffsetAPI_ThruSections(issolid, isruled)`, `AddWire` for a wire, `AddVertex` for a vertex,
+        `SetMutableInput(false)` for `-safe`, `CheckCompatibility(check || !samenumber)` with OCCT's toggling
+        `IsFirstWire` edge count (the oracle's `RunScript` reproduces it), `Build`, then `Shape()` or the status
+        message; history through `Wires()` and the maker. `prj name wire shape x y z` → `BRepProj_Projection(wire, shape,
+        gp_Dir(x, y, z))` and `cprj` the same with `gp_Pnt(x, y, z)`; "Not done" when not IsDone, else each `Current()`
+        named `name_1`, `name_2`... (BRepTest_ProjectionCommands.cxx). `gener result w1
+        w2 ...` → `BRepFill_Generator`: `AddWire` each, `Perform`, `Shell()`. `ruled result e1 e2` / `ruled result w1
+        w2` → `BRepFill.Face` / `BRepFill.Shell` (5S1). The corpus's 120 `specific` thrusection cases need vertex,
+        edge, polyline, circle, pbsplinecurve, beziercurve, ellipse and mkedge.
