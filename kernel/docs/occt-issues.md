@@ -1359,3 +1359,16 @@ line), unless the last column says otherwise.
 | SWDRAW_ShapeFix `fixshape +?` | Lists its message counts in NCollection_DataMap hash order | Draw-lite lists them in first-seen order |
 | SWDRAW_ShapeAnalysis `fbprops` on a 10×10 square | `1-16k` comes out marginally negative, so ratio and width print 0 (the formula gives 1 and 10) | Reproduced; not checked against native |
 | bugs/heal/bug29382_3 (UnifySameDomain with `+b` on a Bézier prism's common with a box) | The script expects 5 vertices | The port and native OCCT (build123d.NET's build, on the port's input and on its own Boolean) both give 6; the case fails on both |
+## Phase 5: unit 5W, Draw-lite construction
+
+Found by reading Draw's command sources while porting them. Draw-lite reproduces each, unless the last column says
+otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| `qcircle`, `qline` (GeometryTest_CurveTanCommands.cxx) | The help gives the qualifier as `-enclosing`, `-enclosed`...; `GccEnt::PositionFromString` matches only the names without the dash | A qualifier written as the help shows is ignored: the curve is unqualified. Reproduced |
+| `geompipe` (BRepTest_SweepCommands.cxx) | The first edge (`spineedge`) is used as the guide and the second (`profileedge`) as the path; the circle's frame is taken on the path at the guide's first parameter (`ProfileCurve->D1(aSpFirst, ...)`) | The arguments mean the opposite of their names, and the section is misplaced when the two edges' ranges differ. Reproduced |
+| `mksweep` | Accepts 2 or 5 words, so `mksweep wire -C` without tolerances (the help's `[-C [AngTol LinTol]]`) fails with no message | Only `mksweep wire -C AngTol LinTol` corrects the spine. Reproduced |
+| `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
+| `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
+| `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |

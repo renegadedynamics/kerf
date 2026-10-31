@@ -8,8 +8,9 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// GeometryTest_SurfaceCommands.cxx's surfaces from curves (unit 5L3): <c>appsurf</c> (GeomFill_SectionGenerator and
-/// GeomFill_AppSurf) and <c>fillcurves</c> (GeomFill_BSplineCurves). <c>ruled</c> needs the GeomFill package's
-/// <c>GeomFill::Surface</c> (unit 5L2), <c>sweep</c> and <c>tuyau</c> GeomFill_Pipe (5L2).
+/// GeomFill_AppSurf), <c>fillcurves</c> (GeomFill_BSplineCurves) and <c>ruled</c> (the GeomFill package's
+/// <c>GeomFill::Surface</c>, unit 5W). <c>sweep</c>, <c>tuyau</c> and <c>partuyau</c> are
+/// <see cref="GeometryTestPipeCommands"/>, <c>getsurfcontinuity</c> <see cref="GeometryTestContinuityCommands"/>.
 /// </summary>
 internal static class GeometryTestSurfaceCommands
 {
@@ -17,6 +18,38 @@ internal static class GeometryTestSurfaceCommands
     {
         DrawCxx.Add(theInterpreter, "appsurf", appsurf);
         DrawCxx.Add(theInterpreter, "fillcurves", fillcurves);
+        DrawCxx.Add(theInterpreter, "ruled", ruled);
+    }
+
+    private static int ruled(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 4)
+        {
+            return 1;
+        }
+
+        Geom_Curve? C1 = DrawTrSurf.GetCurve(theDI, a[2]);
+        if (C1 is null)
+        {
+            di.Append(" C1 is not a Curve ==> Command failed\n");
+            return 1;
+        }
+        Geom_Curve? C2 = DrawTrSurf.GetCurve(theDI, a[3]);
+        if (C2 is null)
+        {
+            di.Append(" C2 is not a Curve ==> Command failed\n");
+            return 1;
+        }
+
+        Geom_Surface? S = GeomFill.Surface(C1, C2);
+        if (S is null)
+        {
+            return 1;
+        }
+
+        DrawTrSurf.Set(theDI, a[1], S);
+        return 0;
     }
 
     private static int appsurf(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

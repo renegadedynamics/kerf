@@ -9602,3 +9602,90 @@ their numbers.
         OCCT gives the same 6 vertices; occt-issues.md). heal/unify_same_domain/A9 failed until decision 958.
       - Healing commands: 3,623 cases use them; runnable 0 before, 903 after: OK 602, BAD 12 (TODOs), SKIPPED 289,
         FAILED 0.
+## Phase 5: unit 5W, Draw-lite construction
+
+The phase 5 corpus milestone: the rest of BRepTest_SweepCommands.cxx, BRepTest_ProjectionCommands.cxx,
+GeometryTest_ContinuityCommands.cxx, GeometryTest_CurveTanCommands.cxx and the commands of GeometryTest's constraint,
+curve and surface files whose algorithms are ported, in Draw-lite (tests/OcctNet.DrawLite). Numbers from 7601 are
+placeholders, renumbered on merge; earlier decisions are cited by their merged numbers.
+
+963. **The commands, in new files where the C++ file was new to Draw-lite.**
+      - `BRepTestPipeShellCommands`: `pruled` (BRepFill::Face and Shell), `gener` (BRepFill_Generator),
+        `thrusections` (as decision 943 lists), `mksweep`, `setsweep`, `addsweep`, `deletesweep`, `buildsweep`,
+        `errorsweep`, `simulsweep` (BRepOffsetAPI_MakePipeShell, as decision 934 lists), `geompipe` (GeomFill_Pipe with a
+        guide) and `middlepath` (BRepOffsetAPI_MiddlePath). The rest of the C++ file (`prism`, `revol`, `pipe`,
+        `evolved`) stays in `BRepTestSweepCommands`.
+      - `BRepTestProjectionCommands`: `prj` and `cprj` (BRepProj_Projection).
+      - `GeometryTestContinuityCommands`: `surfaceCcontinuity`, `surfaceGcontinuity`, `curveCcontinuity`,
+        `curveGcontinuity` (LocalAnalysis, unit 5P), with `getcurvcontinuity` and `getsurfcontinuity` from the curve
+        and surface files.
+      - `GeometryTestCurveTanCommands`: `qcircle`, `qline` and `circ2d3Tan` (GccAna_Circ2d3Tan, unit 5K1), and
+        `DrawQualifiedCurve2d`, the port of GeometryTest_DrawableQualifiedCurve2d (dump, whatis, copy as a plain curve);
+        `DrawTrSurf.GetCurve2d` reads its curve, as OCCT's does through DrawTrSurf_Curve2d.
+      - Added to existing files: `ruled` (GeomFill::Surface) to `GeometryTestSurfaceCommands`, `partuyau` (OCCT
+        registers `tuyau`'s function under that name too) to `GeometryTestPipeCommands`, `interpol` and `tanginterpol`
+        (GeomAPI_Interpolate, Geom2dAPI_Interpolate) to `GeometryTestCommands`.
+964. **The sweep maker and the last loft are per interpreter.** OCCT keeps them in two file statics (`Sweep`,
+      `Generator`); Draw-lite keeps them in a session per interpreter (a ConditionalWeakTable, as
+      `BRepTestHistoryCommands`), so corpus cases run side by side. `errorsweep` and `deletesweep` before any `mksweep`
+      dereference the null maker natively (an access violation DRAWEXE's signal handler reports); in Draw-lite the
+      NullReferenceException is a Tcl error with .NET's message, not "An exception was caught". No corpus case does it.
+965. **The sweep commands record their history** (BRepTest_Objects::SetHistory) as OCCT's do: `pipe` (profile and
+      spine), `thrusections` (the maker's `Wires()`), `buildsweep` (`Profiles` and `Spine`), `mksweep -C`
+      (UnifySameDomain's history). `savehistory`, `generated` and `modified` then answer for the caller's shapes
+      (the makers' histories answer for them, decisions 926 and 937). `prism` and `revol` still record none.
+966. **Output.** As decision 405: `Message::SendFail` (the continuity and qualified-curve commands' errors, `geompipe`'s
+      failure) and `std::cout` (`geompipe`'s accuracy, precision 6) write lines on the interpreter's output; `prj` and
+      `cprj`'s `PrintHelp` on a wrong count returns 1 with an empty result (Draw-lite has no help texts). DBRep::Get's
+      complaint on a vertex section of `thrusections` ("v is not a wire but a vertex") is printed, as natively.
+967. **Left out or reduced.**
+      - `interpol name` (points picked in a view) prints its prompt and makes nothing, as when no view is picked;
+        `interpol name file` is ported (bugs/modalg_7/bug23942 uses it).
+      - `qcircle` with 9 or more words makes a qualified drawable of a null curve natively; Draw-lite binds nothing.
+      - Not ported: BRepTest's `continuity` (BRepOffsetAPI_FindContigousEdges, not ported, no corpus case) and `quilt`;
+        GeometryTest's other curve, API and polygon commands, which are outside this unit.
+      - `geompipe` has no corpus case and GeomFill_Pipe with a guide isn't bound natively: it is unit-tested only. On
+        degenerate input (a straight guide parallel to a straight path, by curvilinear abscissa) it reports an absurd
+        accuracy (2.5e+97); natively unchecked.
+968. **DrawCorpus can count a procedure only once it is called** (`FollowsCalledProcsOnly`, off by default). The scan
+      counted the commands of every procedure a case's scripts define. The bugs group's modalg grids define
+      `OFFSETSHAPE` in their begin scripts (it calls phase 7's `offsetparameter`, `offsetload`, `offsetperform`), so
+      every case of those grids looked blocked, though few call it. With the option a procedure of the case's scripts
+      counts its body's commands only when the case (or another procedure it calls) calls it; DrawResources'
+      procedures were already followed that way. It is off by default so that the other units' corpus tests keep their
+      numbers; unit 5W's test turns it on (789 runnable cases with every procedure counted, 938 with it). **For the
+      owner:** turning it on by default would make more of the bugs group runnable for every unit (6L's Booleans most of
+      all) and change their tests' counts.
+969. **The corpus** (`DrawConstructionCorpusTests`, `Unit5WCommands`, `Before5W`). 1,085 cases use 5W's commands;
+      runnable before 5W: 0, after: 938 (pipe/specific 260, thrusection's grids 416, prj/base 76, geometry/circ2d3Tan
+      22, pipe/bugs 9, the bugs group 155). Run with OCCT's log check: **OK 569, BAD 48, SKIPPED 321, none failing.**
+      - BAD are OCCT's own TODOs, each matched as DRAWEXE matches it: OCC7166 (the loft area of thrusection/specific's
+        E, F, G, L and M cases and their locked twins), OCC24909 and OCC25110 (sweeps that throw: Standard_OutOfRange,
+        Standard_ConstructionError and Standard_NullObject in the port; the TODOs don't name the type, so the type
+        isn't compared with native), OCC11111 and 29663 (faulty pipe shells in bug1477), OCC21413 (bug23942's
+        accuracy), OCC25458, OCC25626, OCC26295, OCC28108.
+      - SKIPPED: data files not in the public dataset (`OCC1477_profile1_circle.brep` and `_polygon.brep` for 169
+        pipe/specific cases, the `bug26606_*` offsets for all 76 of prj/base, 76 bugs cases); of the 9 cases
+        with `prj`, only bugs/modalg_6/bug28054_2 has its data (OK); `prj` is otherwise checked by its unit tests and 5T's
+        oracle.
+      - No case threw TopoDS_LockedShape or Standard_ImmutableObject: Draw variables hold frozen shapes, and every
+        algorithm copies before writing (decisions 910, 926, 936, 937, 939).
+      - The 147 cases still blocked need the helix commands (`comphelix`, `helix`, `spiral`..., TKHelix, not planned
+        in phases 5 and 6; 56 with the helix group's `vzfit`), phase 7's BRepOffset (50), 6L's Booleans and ShapeFix
+        (about 20), and a few GeomliteTest and healing commands (`convert`, `offsetcurve`, `scaleshape`,
+        `DT_ShapeDivide`, `bsplres`, `dversion`, `setaxis`, `shape`).
+      - Phase 5's construction commands in all (5W's, `cirtang`, `lintan`, `gcarc`, `sweep`, `tuyau`, `appsurf`,
+        `fillcurves`, the filling, Fillet2D and fair-curve commands, `pipe`, `evolved`, `mkoffset`, `openoffset`,
+        `bisec`): 1,807 cases runnable (the plan expected 861 newly runnable and about 550 offset cases). The offset
+        group's 626 cases still pass (DrawOffsetCommandsTests).
+970. **Tests** (`DrawConstructionCommandsTests5W`, 8): lofts of circles, polygons and a vertex with their volumes, the
+      failure messages and the history; `gener` and `pruled`; the sweep commands' help, errors, modes, corners, solids,
+      laws, simulation, deletion and history; `middlepath` on bug23367_1's box; `geompipe`; `prj` and `cprj` on a box;
+      the continuity commands; `ruled` and `partuyau`; `qcircle`, `qline` and `circ2d3Tan`; `interpol` and
+      `tanginterpol`. Every input variable dumps the same text after the commands.
+971. **For later units.**
+      - **6L:** `prism` and `revol` don't record their history yet (BRepTest_Objects::SetHistory with the
+        BRepPrimAPI makers). DrawCorpus's `FollowsCalledProcsOnly` (decision 968) would make bugs/modalg cases
+        runnable for the Boolean commands too.
+      - **Phase 7:** 50 cases of 5W's commands wait for `offsetparameter`/`offsetload`/`offsetperform`; the helix group
+        waits for TKHelix's commands.

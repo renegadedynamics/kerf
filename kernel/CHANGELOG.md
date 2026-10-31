@@ -1065,3 +1065,15 @@ Phase 6 (part): Draw-lite Booleans and healing, the phase 6 corpus milestone (un
   missing data, 2 failing for attributed reasons (one through DRAWEXE's destructive default, one that native OCCT
   fails too); 903 using the healing commands (none before): OK 602, BAD 12, 289 missing data, none failing. The heal
   group's split and convert grids wait for phase 7's ShapeUpgrade and ShapeCustom.
+Phase 5 (part): Draw-lite construction, the phase 5 corpus milestone (unit 5W).
+
+- Draw-lite: the lofts (`thrusections`, `gener`, `pruled`), the pipe-shell commands (`mksweep`, `setsweep`,
+  `addsweep`, `deletesweep`, `buildsweep`, `errorsweep`, `simulsweep`), `middlepath`, `geompipe`, the projections
+  (`prj`, `cprj`), the continuity commands (`surfaceCcontinuity`, `surfaceGcontinuity`, `curveCcontinuity`,
+  `curveGcontinuity`, `getcurvcontinuity`, `getsurfcontinuity`), `ruled`, `partuyau`, the qualified curves (`qcircle`,
+  `qline`, `circ2d3Tan`), `interpol` (from a file) and `tanginterpol`. `pipe`, `thrusections` and the sweeps record
+  their history for `savehistory`. The corpus scan can count a case's procedures only where they are called.
+- Corpus: 1,085 cases use the new commands; none runnable before, 938 after: OK 569, BAD 48 (OCCT's own TODOs),
+  321 without their data files; none failing. With the earlier units, 1,807 cases using phase 5's construction
+  commands run.
+- Tests: the commands on hand-made shapes and curves, their inputs left unchanged.
