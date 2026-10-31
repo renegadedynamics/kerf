@@ -9363,7 +9363,7 @@ their merged numbers.
       solid or face target already is. The oracle's pocketed boxes (Cut results, compounds) are then byte-identical.
 940. **Native varies on lofts through CompatibleWires.** Decision 908's address order reaches the loft: on looping
       lofts (first section also the last) native's status and result change from run to run, and once in 630 random
-      lofts otherwise. The oracle re-runs native on re-read inputs at other heap addresses (5 times, 16 for looping
+      lofts otherwise. The oracle re-runs native on new TShapes of the same inputs (decision 944; 5 times, 16 for looping
       lofts) and counts a case the port matches on another run; a looping loft whose status alone differs on every
       run here is listed as native variation (other processes gave the port's status). Looping lofts' histories are
       not compared.
@@ -9406,10 +9406,33 @@ their merged numbers.
 
 ## Phases 5 and 6: integration (31 October 2026)
 
-944. **Looping lofts get 40 native reruns in the ThruSections oracle, not 16.** `Looping_sections_first_also_last`
-     failed once in a full-suite run (case 12, a tilted smooth loft whose first section is also its last): the port's
-     poles differed from native's around the 13th significant digit, and no native rerun on new TShapes matched within
-     16. Run alone it passes on the first native run, twice. Native's result there depends on TShape addresses
-     (decision 908), and after the rest of the Oracle suite native's heap is fragmented enough that the ballast takes
-     more reruns to reach a matching layout. A rerun costs well under a second. If 40 also proves flaky, compare these
-     cases with a tolerance instead.
+944. **The oracles' native reruns read the inputs' source again, never a write of native's shapes.** The ThruSections
+     and BRepProj oracles re-ran native on its own shapes written and read back. A BRep read builds each curve's and
+     surface's `gp_Dir` from the written numbers, which normalises them again, so the re-read inputs' directions differ
+     from the originals' by an ulp: every rerun was another loft. `Looping_sections_first_also_last` case 12 (a tilted
+     smooth loft whose first section is also its last) showed it, failing in a full-suite run and once alone under
+     load. The port gives one result A, bit for bit, serially, at every degree of parallelism, in 32 concurrent builds
+     and under CPU load. Native on the inputs both sides read gives A or Failed from run to run, even on the same
+     TShapes (decision 908: SearchRoot's address order, here also over the vertices CompatibleWires creates); the port
+     with SearchRoot over 60 random key orders gives exactly A or Failed too. Native on any re-read gives B (the poles
+     moved around the 13th digit) or Failed, never A. When native's first run failed, no rerun could match; whether it
+     failed is a matter of addresses, hence the dependence on load and on the rest of the suite. The reruns now read
+     the text both sides read (ThruSections' `Both` returns the reader, BRepProj keeps the text), and the corpus
+     replays its script's native side (each restore read once per replay). Looping lofts keep 16 reruns (a rerun
+     gives A about half the time here); an increase to 40 made before the cause was known is withdrawn.
+945. **The oracle serialises native calls that reach AppDef_Variational.** In the same full run that checked decision
+     944, `AppDefOracleTests.PointsToBSpline_Variational` (case 100, a pole 1e-4 away) and ThruSections
+     `Vertex_end_sections` (case 19, with smoothing) failed; each passes alone. The port is deterministic there (64
+     concurrent runs, and 32 beside native runs of the other continuity, all bit-identical to the serial run). Native
+     isn't: OCCT's FEmTool linear criteria keep their integrals in unsynchronised function statics (occt-issues.md), and
+     32 native C2 runs beside C1 runs gave the serial poles 30 times and other poles twice, one of them exactly the
+     failing run's. xUnit runs the test classes in parallel, so `Oracle.NativeVariational`, a process-wide lock, is
+     held around every native variational call: GeomAPI_PointsToBSpline and GeomAPI_PointsToBSplineSurface with
+     criterion weights (the AppDef and GeomAPI oracles) and ThruSections' Build with smoothing. The port's calls stay
+     unlocked, so they keep checking the port's own thread safety.
+946. **The sewing oracle sews natively up to 16 times, stopping at the port's variant.** The next full run failed
+     `tol_0_01/Q5` of the sewing group: native's sewn shape has two variants there (address-ordered maps), and the port's
+     came in 3 of 5 serial native runs and 16 of 32 concurrent ones, while the port gave one text in 5
+     serial, 32 concurrent and 40 runs beside other sewings. Seven runs (the first and 6 more) all missed the port's
+     variant once, about 1 in 130 if each run is even. The reruns now stop as soon as one matches the port, up to 16
+     in all; they sew from the file both sides read, so they are the same inputs at other addresses.

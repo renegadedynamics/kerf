@@ -21,6 +21,15 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     private int myValues;
     private int myExact;
 
+    /// <summary>
+    /// Held around every native call that reaches AppDef_Variational (GeomAPI_PointsToBSpline and
+    /// GeomAPI_PointsToBSplineSurface with criterion weights, ThruSections with smoothing): OCCT's FEmTool linear
+    /// criteria keep their reference integrals in unsynchronised function statics, so concurrent native runs with
+    /// different constraint orders read each other's integrals (occt-issues.md, decision 945). Test classes run in
+    /// parallel; the port needs no lock (decision 148).
+    /// </summary>
+    public static readonly Lock NativeVariational = new();
+
     /// <summary>The default tolerance: relative to the magnitude, with an absolute floor for values near zero.</summary>
     public const double Tolerance = 1e-12;
 
