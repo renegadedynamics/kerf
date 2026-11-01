@@ -11268,3 +11268,103 @@ whole. Numbers from 10201 are placeholders, renumbered on merge.
          selects the solution).
        - `ChFi3d_FilDS` writes everything 7R reads (decision 1069): the solid's SSIs, the faces' and fillets' SCIs,
          the curves' CPIs, the edges' CPIs and the vertices cut; its regularities go into the builder's list.
+
+## Phase 7: unit 7Q1, the data model of HLR
+
+HLRTopoBRep (all of it) and HLRBRep's data model, curves, surfaces and intersector: HLRBRep_Data, EdgeData, FaceData,
+ShapeBounds, ShapeToHLR, FaceIterator, EdgeFaceTool, EdgeInterferenceTool, EdgeIList, VertexList, AreaLimit,
+Intersector, Curve, Surface and their tools, CLProps and SLProps, and the generic instantiations they use. Algo,
+InternalAlgo, PolyAlgo, Hider, HLRToShape, PolyHLRToShape, EdgeBuilder, BiPoint, BiPnt2D, the package HLRBRep and
+HLRAppli are 7Q2's.
+
+1091. **HLRBRep's generic instantiations are generated from earlier ones** (plan 2.5; decisions 321, 322, 337, 338).
+       OCCT's curve type for the 2D intersections is `HLRBRep_CurvePtr`, a void pointer cast to `HLRBRep_Curve*`; its
+       surface type for the line/surface intersections is `HLRBRep_Surface*`. The port's type arguments are the classes
+       themselves. HLRBRep_CInter and its family (TheProjPCur, TheCurveLocator, TheLocateExtPC, PCLocF, MyImpParTool,
+       TheIntConicCurve, TheIntersectorOfTheIntConicCurve, IntConicCurve, TheIntPCurvePCurve, ThePolygon2d,
+       TheDistBetweenPCurves, ExactIntersectionPoint) are Geom2dInt's files with the curve and its tool substituted
+       (OCCT's two sets are identical after the same substitution); the extrema (TheLocateExtPC, PCLocF) are
+       Extrema_LocEPCOfLocateExtPC2d and Extrema_PCFOfEPCOfExtPC2d substituted. HLRBRep_InterCSurf and its family
+       (ThePolygon, ThePolyhedron, their tools, TheInterference, TheCSFunction, TheExactInterCSurf, TheQuadCurvExact,
+       TheQuadCurvFunc) are IntCurveSurface_HInter's with `gp_Lin`/HLRBRep_LineTool and HLRBRep_Surface/
+       HLRBRep_SurfaceTool substituted; OCCT's HLR polyhedron evaluates its grid on the surface's adaptor and doesn't
+       check its parameter arrays, as the port's does. HLRBRep_CLProps and HLRBRep_SLProps are GeomLProp_CLProps2d and
+       LProp_SLProps3d substituted, with OCCT's tool access: the curve's own evaluators (its `D3` writes nothing, so it
+       takes `ref` arguments), and the surface's bounds RealFirst and RealLast (HLRBRep_SLPropsATool). HLRBRep_CurveTool,
+       HLRBRep_SurfaceTool and HLRBRep_LineTool are readonly structs with static members implementing the generic
+       interfaces; HLRBRep_BCurveTool and HLRBRep_BSurfaceTool are static classes. No generic code changed.
+1092. **HLR's value classes that own objects are classes.** HLRBRep_EdgeData (it holds an HLRAlgo_EdgeStatus and an
+       HLRBRep_Curve, decision 1084), HLRBRep_FaceData, HLRBRep_Curve, HLRBRep_Surface, HLRBRep_ShapeBounds,
+       HLRBRep_EdgeInterferenceTool and HLRTopoBRep_FaceData are classes; HLRBRep_Data's arrays hold one instance per
+       index (index 0 too, unused), and OCCT's pointers into them (`myLEData`, `iFaceData`, `myFEGeom`, ...) are
+       references to the instances. OCCT's copies are explicit: EdgeData's and FaceData's `Assign` (the status deep, the
+       curve or surface copied, the face's wires block shared as OCCT's handle), the curves' and surfaces' `Copy` (the
+       adaptor copied, the projector shared), copy constructors for ShapeBounds and the interference tool (VertexList
+       copies its tool, as OCCT). OCCT's pointers to min-max boxes (`iFaceMinMax`, `myLEMinMax`) are reached through
+       their owners (ref-returning private properties). HLRTopoBRep_VData is a readonly struct. Working objects: their
+       setters are public, as OCCT's.
+1093. **The projector the curves and surfaces point to is in a box.** OCCT's curves and surfaces keep a pointer to
+       HLRBRep_Data's projector (`Projector(&myProj)` in `Update`). HLRAlgo_Projector is a struct (decision 1078), so
+       the data keeps it in a `StrongBox<HLRAlgo_Projector>` that every curve and surface shares; `Projector()` returns
+       a reference to the boxed value, so a later change is seen by all, as OCCT's pointer gives.
+1094. **HLRTopoBRep_Data's maps iterate in insertion order** (decision 784's rule for address-keyed maps). OCCT iterates
+       its map of the vertices inserted on each edge in hash order (TShape addresses): `ProcessEdges` splits the edges in
+       that order. In the port the order is the one the edges got their first vertex; only the order the splits are built
+       in changes, nothing observable (every recorded case is identical).
+1095. **HLRTopoBRep_OutLiner copies a frozen original shape at the entry** (plan 2.2; decisions 973, 1005, 1013).
+       OCCT's outlining writes into its input: `HLRTopoBRep_DSFiller::ProcessEdges` updates the point representations
+       of the end vertices of every edge it splits (`UpdateVertex(VF, PF, newE, ...)`, :739-754) and
+       `HLRTopoBRep_FaceIsoLiner::MakeIsoLine` those of an isoline's ends, which may be the face's own vertices
+       (:484-486). `Fill` replaces an original shape holding frozen TShapes by `BRepTools.ExactCopyForWrite` of it and
+       outlines that working shape; an unfrozen shape (ported code's) is outlined in place, as OCCT does.
+       `OriginalShape()` stays the caller's shape (HLRBRep_Algo's `Index` compares it with the caller's); the data, the
+       outlined shape and the adaptors' map refer to the working shape, which ported code reads with the internal
+       `InternalWorkingShape()` (HLRBRep_ShapeToHLR's `ExploreShape`, where OCCT walks the original shape).
+       `OutLinedShape()` is a publication point (frozen), `InternalOutLinedShape()` doesn't freeze. Nothing is given
+       back: HLR's results are new edges, and the outlined shape is the outliner's intermediate. DSFiller and
+       FaceIsoLiner, OCCT's static tools, write in place into the shape they are given: a frozen one throws
+       TopoDS_LockedShape. Tested: a frozen cylinder outlined with isolines is unchanged and copied, an unfrozen one is
+       written in place with the same data, DSFiller on a frozen shape throws, and every native comparison reads its
+       shapes frozen.
+1096. **The maps of face adaptors share their tools.** OCCT copies a BRepTopAdaptor_Tool value into a second key
+       (`MST.Bind(NF, MST.ChangeFind(F))` in HLRTopoBRep_OutLiner); OCCT's copy shares the tool's handles (the topology
+       tool and the surface) and neither is initialised again, so the port's class instance is bound twice.
+1097. **Process-wide state** (plan 2.3). HLRBRep_Data.cxx's global counters (`nbOkIntersection`,
+       `nbPtIntersection`, `nbSegIntersection`, `nbClassification`, `nbCal1Intersection` to `nbCal3Intersection`) are
+       internal static fields with OCCT's behaviour: unsynchronised increments, read only by the hider's traces (7Q2).
+       The function-scope statics `nbsOther` (HLRBRep_CurveTool, HLRBRep_BCurveTool), never written, are constants;
+       `aff` (HLRBRep_Data::Classify's debug dump, never set) is left out with its dump. The rejection table
+       (`TableauRejection`) is per data structure, as OCCT's. Nothing needed `[ThreadStatic]`.
+1098. **NCollection_List's iterator gets OCCT's copy** (Foundation, additive): `new Iterator(other)`, an iterator on
+       the same list at the same item. HLRBRep_EdgeIList copies `It1` into `It2` and HLRBRep_VertexList copies the
+       caller's iterator, as OCCT does.
+1099. **The oracle: tools/hlrrec records the data model** (`data.cpp`, run with two more arguments; `HlrDataRecorder.cs`
+       is the same program in C#). On a cylinder, a torus, a box, a sphere and a cone in seven views (axonometric, top,
+       bottom, front, back, left, right) and a perspective (isolines in the axonometric view), and on the hlr group's
+       shapes in the views their tests use (bug25908's B-spline shape in its seven views; bug25813's bus, normandc1m1 and
+       fillet; bug32747; bug28242; the group's other data files are not in the 7.9.0 dataset), it records, as the 64
+       bits of every double: HLRTopoBRep's outlining (each face's internal outlines, outlines and isolines, the splits of
+       its edges, every such edge's vertices, range, parameters on its vertices, pcurve and points); HLRBRep_Data after
+       `Update` (each edge's flags, hiding count, vertices, min-max box, status bounds and projected curve with its
+       points, derivatives, depths and parameter conversions; each face's flags, orientation, type, size, tolerance,
+       wires and boxes); and the hider's walk without hiding (for each hiding face, up to 25 on the files' shapes, the
+       edges it may hide, every interference with its boundary or its rejection, the interferences sorted and merged by
+       HLRBRep_EdgeIList, the vertex lists, the hiding start levels, and `Compare` and `SimplClassify`). **52 cases, all
+       identical bit for bit** (6,957 edges, 1,405 faces, 11,125 outline, isoline and split edges, 11,036 classified
+       edges, 16,851 merged interferences). The recording (14 MB, 2.3 MB gzipped) is embedded.
+1100. **For 7Q2.**
+       - **Load a shape** as OCCT: `HLRBRep_ShapeToHLR.Load(outliner, projector, MST, nbIso)`; the outliner copies a
+         frozen shape (decision 1095), so compare shapes with `OriginalShape()`, and read the outlined shape with
+         `InternalOutLinedShape()`. MST is `NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool>` with
+         `TopTools_ShapeMapHasher.Instance`.
+       - **HLRBRep_Data**: the arrays hold instances (`DS.EDataArray()[i]` is the edge data, no copy); `*ed = *e1` is
+         `Assign`. `Projector()` returns a reference. `Interference()` returns a reference to the current interference
+         (`ref HLRAlgo_Interference I = ref DS.Interference();`). The global counters are `HLRBRep_Data.nbOkIntersection`
+         and the others, internal.
+       - **HLRBRep_VertexList(T, I)** copies the tool and the iterator; HLRBRep_AreaLimit is a transient class.
+       - **HLRBRep_Curve/HLRBRep_Surface** are classes: an edge's curve is `ed.Curve()` or `ed.Geometry()`; the 2D
+         intersections take it directly (OCCT's `void*`).
+       - HLRBRep_BiPoint, HLRBRep_BiPnt2D, HLRBRep_EdgeBuilder, HLRBRep_TypeOfResultingEdge and the package HLRBRep
+         (`MakeEdge`, `PolyHLRAngleAndDeflection`) are not ported: only 7Q2's classes use them.
+       - Extend `tools/hlrrec` again: `main.cpp` takes the data recording's output and the test data directory as its
+         second and third arguments (build.ps1's `-TestDataDir`).

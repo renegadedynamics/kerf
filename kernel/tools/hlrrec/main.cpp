@@ -736,9 +736,28 @@ static void RecContours()
   RecFace("bspline", BRepBuilderAPI_MakeFace(Bump(), Precision::Confusion()).Face());
 }
 
+#include <string>
+#include "data.cpp"
+
 int main(int argc, char** argv)
 {
   OSD::SetSignal(false);
+  if (argc > 3)
+  {
+    // the data model (unit 7Q1): hlrrec <foundations> <data> <test data directory>
+    gOut = std::fopen(argv[2], "wb");
+    try
+    {
+      RecDataAll(argv[3]);
+    }
+    catch (Standard_Failure& anExc)
+    {
+      std::fprintf(stderr, "%s: %s\n", typeid(anExc).name(), anExc.GetMessageString());
+      return 1;
+    }
+    std::fclose(gOut);
+    gOut = stdout;
+  }
   if (argc > 1)
   {
     gOut = std::fopen(argv[1], "wb");
