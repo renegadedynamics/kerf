@@ -1294,3 +1294,15 @@ Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fill
 - Tests: tools/dsrec records native OCCT's analytic cases on real faces and Builder_0's functions (compiled from OCCT's
   own source): 66 cases, all identical byte for byte. The fillets write only the builder's working copy of their
   input (unit 7N2 copies it at entry).
+
+Phase 7 (part): the fillets' reconstruction on the Boolean engine (unit 7R, option C).
+
+- `ChFi3d_BOPReconstruction` replaces TopOpeBRepBuild_HBuilder for the fillet builders: from the data structure the
+  fillets fill, it builds the edges of the curves, the fillet faces, the input's faces and edges cut (concave fillets
+  growing a face, holes kept or dropped, a fillet reaching a cone's apex), and the shells and solids, with
+  `BOPAlgo_BuilderFace`; it answers `IsSplit`, `Splits`, `Merged`, `NewFaces` and `NewEdges` as ChFi3d asks.
+  `ChFi3d_Reconstruction.Create` gives it to the builders. It writes only into the shapes it makes.
+- Tests: `tools/dsrec --recon` records native OCCT's data structure, result and history for 120 fillets and chamfers
+  (blend/simple A to H, blend/complex's shapes in the dataset, build123d.NET's, shells, voids, compounds, corners of
+  four faces). Compared geometrically (volumes, areas, counts, validity, boxes, histories as sets): 114 equal, 3
+  attributed to native (two invalid native results, Bezier pieces made B-splines), 3 not comparable.

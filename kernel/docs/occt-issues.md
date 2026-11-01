@@ -1664,3 +1664,17 @@ Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// O
 | ChFi3d_Builder_0 `ChFi3d_Orientation`, `ChFi3d_FilDS` | The orientation is left unchanged when no interference matches; FilDS goes on with the previous transition | A fillet surface data on a surface without its solid interference takes the previous one's transitions |
 | ChFi3d_Builder_0 `ChFi3d_PerformElSpine` | Declares three arrays (`ExtrapPole`, `ExtraCoeffs`, `Cont`) it never uses | None |
 | ChFi3d_Builder_0 `ChFi3d_StripeEdgeInter` | Takes the data structure and never reads it | None |
+
+## Phase 7: unit 7R, the fillets' reconstruction
+
+Found by comparing the reconstruction with native OCCT's fillets (tools/dsrec --recon). The reconstruction replaces
+TopOpeBRepBuild (decision 992), so these are native results it does not reproduce; each is attributed in
+`ReconstructionNativeTests.KnownDifferences`.
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepBuild (a fillet reaching a cone's apex, blend/simple H8) | The degenerated edge at the apex is left whole although the fillet's curve reaches it inside its parametric range | Native's cone face fails BRepCheck (UnorientableShape); the reconstruction cuts the edge there (decision 10704) and its face is valid, the geometry equal |
+| ChFi3d / TopOpeBRepBuild (blend/complex A1, OCC22817, "TEST INCOMPLETE" in OCCT) | The result fails BRepCheck (a sub-shape badly oriented) and the face on one fillet surface has a negative area | The reconstruction builds no face on that surface and its result is valid; volumes differ |
+| TopOpeBRepBuild (a Bezier face cut, blend/complex A2) | The pieces are built on a B-spline copy of the Bezier surface | The reconstruction's pieces keep the Bezier surface; same geometry |
+| BRepFilletAPI_MakeFillet (all twelve edges of a cube of 10, radius 6) | `IsDone` is true and the result degenerate: negative volume, an area of -6e29, B-spline faces far outside the cube | Not compared; build123d.NET rejects the result |
+| TopOpeBRepBuild_HBuilder::Perform (blend/complex A3) | Its filters and reducers change the data structure before building (the only recorded case where they do) | The reconstruction reads the data structure as ChFi3d left it and gives native's result |
