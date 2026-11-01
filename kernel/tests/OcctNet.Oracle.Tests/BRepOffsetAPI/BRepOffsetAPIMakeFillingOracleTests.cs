@@ -817,5 +817,192 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         Report("MakeFilling on bug23380", aWatch.Elapsed);
         Assert.Empty(myDifferences);
     }
+    // build123d.NET's FaceTests.MakeSurfacePatch: spline edges, each extruded into its support face. Natively the prism
+    // writes the face's pcurve into the edge itself; the port's prism sweeps a copy of the caller's (frozen) edge, so the
+    // filling finds the pcurve on the support's own edge (decision 10403; it threw NullReferenceException before). The
+    // filling's edges are copies of the boundary edges with all their representations, so native's carry the pcurves
+    // the prism wrote into the caller's edges: the results are compared by the face's own geometry (FaceRecord), the
+    // errors and the exceptions.
+    [Fact]
+    public void MakeFilling_on_faces_extruded_from_the_constraint_edges_matches_native_OCCT()
+    {
+        var aWatch = Stopwatch.StartNew();
+        gp_Pnt[][] aSplines =
+        [
+            [new(0, 0, 0), new(1, 0, 0), new(10, 0, -10)],
+            [new(0, 0, 0), new(0, 1, 0), new(0, 10, -10)],
+            [new(10, 0, -10), new(7, 7, -10), new(0, 10, -10)],
+        ];
+        gp_Vec[] aDirs = [new(0, -1, 0), new(-1, 0, 0), new(0, 0, -1)];
+        // (edge, with its face or not, order) for each case
+        (int Edge, bool OnFace, GeomAbs_Shape Order)[][] aCases =
+        [
+            [(0, true, GeomAbs_Shape.GeomAbs_G1), (1, true, GeomAbs_Shape.GeomAbs_G1), (2, true, GeomAbs_Shape.GeomAbs_G1)],
+            [(0, true, GeomAbs_Shape.GeomAbs_G1), (1, true, GeomAbs_Shape.GeomAbs_G1), (2, false, GeomAbs_Shape.GeomAbs_C0)],
+            [(0, true, GeomAbs_Shape.GeomAbs_C1), (1, false, GeomAbs_Shape.GeomAbs_C0), (2, false, GeomAbs_Shape.GeomAbs_C0)],
+            [(0, true, GeomAbs_Shape.GeomAbs_G2), (1, true, GeomAbs_Shape.GeomAbs_C0), (2, true, GeomAbs_Shape.GeomAbs_G1)],
+        ];
+        for (int c = 0; c < aCases.Length; c++)
+        {
+            myCases++;
+            var aNEdges = new List<N.TopoDS_Shape>();
+            var aPEdges = new List<TopoDS_Shape>();
+            var aNFaces = new List<N.TopoDS_Face>();
+            var aPFaces = new List<TopoDS_Face>();
+            for (int k = 0; k < 3; k++)
+            {
+                using var aNPnts = new N.TColgp_HArray1OfPnt(1, 3);
+                var aPPnts = new NCollection_HArray1<gp_Pnt>(1, 3);
+                for (int i = 0; i < 3; i++)
+                {
+                    using N.gp_Pnt aNP = Oracle.ToNative(aSplines[k][i]);
+                    aNPnts.SetValue(i + 1, aNP);
+                    aPPnts.SetValue(i + 1, aSplines[k][i]);
+                }
+                using var aNI = new N.GeomAPI_Interpolate(aNPnts, false, 1.0e-6);
+                aNI.Perform();
+                var aPI = new GeomAPI_Interpolate(aPPnts, false, 1.0e-6);
+                aPI.Perform();
+                N.TopoDS_Edge aNE = new N.BRepBuilderAPI_MakeEdge(aNI.Curve()).Edge();
+                TopoDS_Edge aPE = new BRepBuilderAPI_MakeEdge(aPI.Curve()).Edge();
+                using N.gp_Vec aNV = new(aDirs[k].X(), aDirs[k].Y(), aDirs[k].Z());
+                aNFaces.Add(N.TopoDS.Face(new N.BRepPrimAPI_MakePrism(aNE, aNV, false, true).Shape()));
+                aPFaces.Add(TopoDS.Face(new BRepPrimAPI_MakePrism(aPE, aDirs[k]).Shape()));
+                aNEdges.Add(aNE);
+                aPEdges.Add(aPE);
+            }
+            Assert.True(aPEdges[0].TShape()!.IsFrozen());
+            Assert.Null(BRep_Tool.CurveOnSurface(TopoDS.Edge(aPEdges[0]), aPFaces[0], out _, out _)); // the port's edge has none
+            List<TopoDS_Shape> aPIn = [.. aPEdges, .. aPFaces.Select(f => (TopoDS_Shape)f)];
+            List<string> anInputTexts = aPIn.Select(x => PortText(x)).ToList();
+            void CheckInputs(string theWhat)
+            {
+                if (aPIn.Select(x => PortText(x)).SequenceEqual(anInputTexts))
+                {
+                    myUnchanged++;
+                }
+                else
+                {
+                    myDifferences.Add($"{theWhat}: an input changed");
+                }
+            }
+            using var aN = new N.BRepOffsetAPI_MakeFilling();
+            var aP = new BRepOffsetAPI_MakeFilling();
+            int aNb = 0;
+            foreach ((int anEdge, bool anOnFace, GeomAbs_Shape anOrder) in aCases[c])
+            {
+                string w = $"extruded supports {c}";
+                if (anOnFace)
+                {
+                    Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNEdges[anEdge]), aNFaces[anEdge], (N.GeomAbs_Shape)(int)anOrder, true),
+                         aP.Add(TopoDS.Edge(aPEdges[anEdge]), aPFaces[anEdge], anOrder, true));
+                }
+                else
+                {
+                    Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNEdges[anEdge]), (N.GeomAbs_Shape)(int)anOrder, true),
+                         aP.Add(TopoDS.Edge(aPEdges[anEdge]), anOrder, true));
+                }
+                aNb++;
+            }
+            string w2 = $"extruded supports {c}";
+            myBuilds++;
+            string? aNErr = null, aPErr = null;
+            N.TopoDS_Shape? aNRes = null;
+            TopoDS_Shape aPRes = new();
+            try
+            {
+                aN.Build();
+                aNRes = aN.IsDone() ? aN.Shape() : null;
+            }
+            catch (N.OcctException e)
+            {
+                aNErr = ErrorOf(e);
+            }
+            try
+            {
+                aP.Build();
+                aPRes = aP.IsDone() ? aP.Shape() : new TopoDS_Shape();
+            }
+            catch (Exception e)
+            {
+                aPErr = ErrorOf(e) ?? e.GetType().Name;
+            }
+            if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull())
+            {
+                if (aNErr == aPErr && (aNRes is null) == aPRes.IsNull())
+                {
+                    myIdentical++;
+                    myExceptions += aNErr is null ? 0 : 1;
+                    myNotDone += aNErr is null ? 1 : 0;
+                }
+                else
+                {
+                    myDifferences.Add($"{w2}: {aNErr ?? (aNRes is null ? "not done" : "done")} natively, {aPErr ?? (aPRes.IsNull() ? "not done" : "done")} in the port");
+                }
+                CheckInputs(w2);
+                continue;
+            }
+            string aNRec = FaceRecord(NativeText(aNRes)), aPRec = FaceRecord(PortText(aPRes));
+            if (aNRec == aPRec)
+            {
+                myCanonical++;
+            }
+            else
+            {
+                myDifferences.Add($"{w2}: the faces differ:\n{aNRec}\n---\n{aPRec}");
+            }
+            SameValue(w2 + ": G0Error", aN.G0Error, aP.G0Error);
+            SameValue(w2 + ": G1Error", aN.G1Error, aP.G1Error);
+            SameValue(w2 + ": G2Error", aN.G2Error, aP.G2Error);
+            GeomPlate_BuildPlateSurface aPlate = aP.InternalFilling().InternalBuilder()!;
+            for (int i = 1; i <= aNb; i++)
+            {
+                bool aReadsUninitialised = aPlate.NbIntervalsChecked(i) < aPlate.NbPtsOnCur();
+                SameIndexedValue(w2 + $": G0Error({i})", () => aN.G0Error(i), () => aP.G0Error(i), aReadsUninitialised);
+                SameIndexedValue(w2 + $": G1Error({i})", () => aN.G1Error(i), () => aP.G1Error(i), aReadsUninitialised);
+            }
+            CheckInputs(w2);
+        }
+        Report("MakeFilling on faces extruded from the constraint edges", aWatch.Elapsed);
+        Assert.Equal(4, myBuilds);
+        Assert.Equal(3, myCanonical); // the fourth: the same exception on both sides
+        Assert.Equal(4, myUnchanged);
+        Assert.Empty(myDifferences);
+    }
+
+    // A face's own geometry, read from its BRep text: its surface and tolerance, and for each edge its orientation,
+    // tolerance, 3D curve, pcurve on the face with its range, and vertices.
+    private static string FaceRecord(string theText)
+    {
+        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
+        TopoDS_Face aFace = TopoDS.Face(aShape);
+        var aW = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
+        GeomTools_SurfaceSet.PrintSurface(BRep_Tool.Surface(aFace)!, aW, true);
+        aW.WriteLine($"face {aFace.Orientation()} {BRep_Tool.Tolerance(aFace):R}");
+        for (var anExp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
+            aW.WriteLine($"edge {anE.Orientation()} {BRep_Tool.Tolerance(anE):R}");
+            Geom_Curve? aC = BRep_Tool.Curve(anE, out double f, out double l);
+            if (aC is not null)
+            {
+                aW.WriteLine($"3d [{f:R}, {l:R}]");
+                GeomTools_CurveSet.PrintCurve(aC, aW, true);
+            }
+            Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, aFace, out double pf, out double pl);
+            if (aPC is not null)
+            {
+                aW.WriteLine($"2d [{pf:R}, {pl:R}]");
+                GeomTools_Curve2dSet.PrintCurve2d(aPC, aW, true);
+            }
+            TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+            foreach (TopoDS_Vertex aV in new[] { aV1, aV2 })
+            {
+                gp_Pnt aP = BRep_Tool.Pnt(aV);
+                aW.WriteLine($"vertex {aP.X():R} {aP.Y():R} {aP.Z():R} {BRep_Tool.Tolerance(aV):R}");
+            }
+        }
+        return aW.ToString();
+    }
 }
 #endif

@@ -23,8 +23,13 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
 
     // The port's shape written and read by both sides; the port's frozen, as a caller's
     private static (N.TopoDS_Shape N, TopoDS_Shape P) Both(string theDirectory, ref int theNumber, in TopoDS_Shape theShape)
+        => Both(theDirectory, ref theNumber, theShape, out _);
+
+    private static (N.TopoDS_Shape N, TopoDS_Shape P) Both(string theDirectory, ref int theNumber, in TopoDS_Shape theShape,
+                                                         out string theFile)
     {
         string aFile = Path.Combine(theDirectory, $"in{theNumber++}.brep");
+        theFile = aFile;
         Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
         N.TopoDS_Shape aN = ShapeFixOracleRun.NativeRead(aFile)!;
         Assert.True(BRepTools.Read(out TopoDS_Shape aP, aFile));
@@ -201,31 +206,45 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                         aB.MakeCompound(ref aComp);
                         aB.Add(aComp, aBase);
                         aB.Add(aComp, aProfile.Value);
-                        (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn) = Both(aDir, ref aNumber, aComp);
+                        (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn) = Both(aDir, ref aNumber, aComp, out string anInFile);
                         string aPInText = aRun.PortText(aPIn);
                         var aPIt = new TopoDS_Iterator(aPIn);
                         TopoDS_Shape aPBase = aPIt.Value();
                         aPIt.Next();
                         TopoDS_Face aPProf = TopoDS.Face(aPIt.Value());
-                        using var aNIt = new N.TopoDS_Iterator(aNIn);
-                        N.TopoDS_Shape aNBase = aNIt.Value();
-                        aNIt.Next();
-                        N.TopoDS_Face aNProf = N.TopoDS.Face(aNIt.Value());
-                        List<TopoDS_Shape> aPFaces = Faces(aPBase);
-                        List<N.TopoDS_Shape> aNFaces = Faces(aNBase);
-                        var aPEdges = new List<TopoDS_Shape>();
-                        for (var anExp = new TopExp_Explorer(aPProf, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
-                        {
-                            aPEdges.Add(anExp.Current());
-                        }
+                        N.TopoDS_Shape aNBase = new();
+                        N.TopoDS_Face aNProf = new();
+                        List<N.TopoDS_Shape> aNFaces = [];
                         var aNEdges = new List<N.TopoDS_Shape>();
-                        using (var anExp = new N.TopExp_Explorer(aNProf, N.TopAbs_ShapeEnum.TopAbs_EDGE))
+                        // Native writes into its input (the profile's vertex tolerances, raised by a tapered fuse):
+                        // each native run reads its input again, as the port's is the same frozen shape every time
+                        // (decision 10405)
+                        void ReadNative(bool theAgain)
                         {
+                            if (theAgain)
+                            {
+                                aNIn = ShapeFixOracleRun.NativeRead(anInFile)!;
+                            }
+                            using var aNIt = new N.TopoDS_Iterator(aNIn);
+                            aNBase = aNIt.Value();
+                            aNIt.Next();
+                            aNProf = N.TopoDS.Face(aNIt.Value());
+                            aNFaces = Faces(aNBase);
+                            aNEdges.Clear();
+                            using var anExp = new N.TopExp_Explorer(aNProf, N.TopAbs_ShapeEnum.TopAbs_EDGE);
                             for (; anExp.More(); anExp.Next())
                             {
                                 aNEdges.Add(anExp.Current());
                             }
                         }
+                        ReadNative(false);
+                        List<TopoDS_Shape> aPFaces = Faces(aPBase);
+                        var aPEdges = new List<TopoDS_Shape>();
+                        for (var anExp = new TopExp_Explorer(aPProf, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+                        {
+                            aPEdges.Add(anExp.Current());
+                        }
+                        bool isFirstRun = true;
                         // the face opposite (for Until): the last planar face but this one
                         int iUntil = Enumerable.Range(0, aPFaces.Count).Reverse()
                                                .FirstOrDefault(k => k != iF && Profile(TopoDS.Face(aPFaces[k]), false) is not null, -1);
@@ -240,6 +259,8 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                                     {
                                         continue;
                                     }
+                                    ReadNative(!isFirstRun);
+                                    isFirstRun = false;
                                     bool isSketch = (iF + aFuse) % 2 == 0;
                                     double aDepth = aFuse == 1 ? 4.0 : -4.0;
                                     string aWhat = $"{aName} face {iF} {(isCircle ? "circle" : "rectangle")} {aMode} fuse {aFuse} taper {aTaper}{(isSketch ? " on its face" : "")}";
@@ -326,16 +347,16 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         }
         output.WriteLine($"statuses equal {aStatuses}, histories equal {aHistories}, results equal only by the coarse record {aCoarse}");
         aRun.Report("BRepFeat_MakeDPrism as build123d.NET's DPrism", aWatch.Elapsed);
-        // Attributed (decision 1057): the same geometry, but native's result fails BRepCheck in the port where the port's
-        // passes (rectangles fused by a depth with a taper), or native raises four profile vertices to 1.1e-5 where the
-        // port's stay at 1e-7 (rectangles cut through all on side faces). Open, for unit 7X.
+        // Attributed (decisions 1057, 10405): rectangles fused by a depth with a taper. Native's LocOpe_DPrism trims the
+        // tapered walls' pcurves at 1.0640513e-5 where the port's start at 0, and raises the four profile vertices to
+        // 1.06e-5 in place (BRepLib::UpdateTolerances); native's result written as text then fails BRepCheck, natively
+        // as in the port (in memory it passes). The same geometry otherwise; the trim's cause is open. The six cases cut
+        // through all that differed by those vertices' tolerance were native's input written by the earlier tapered fuse:
+        // each native run now reads its input again.
         int anInvalidNative = aRun.Differences.Count(d => d.Contains("valid False; port only volume", StringComparison.Ordinal)
                                                           && d.Contains("fuse 1 taper 5", StringComparison.Ordinal));
-        int aVertexTolerance = aRun.Differences.Count(d => d.Contains("ThruAll fuse 0 taper 0", StringComparison.Ordinal)
-                                                           && d.Contains("; 11;", StringComparison.Ordinal));
         Assert.Equal(11, anInvalidNative);
-        Assert.Equal(6, aVertexTolerance);
-        Assert.Equal(anInvalidNative + aVertexTolerance, aRun.Differences.Count);
+        Assert.Equal(anInvalidNative, aRun.Differences.Count);
     }
 
     [Fact]

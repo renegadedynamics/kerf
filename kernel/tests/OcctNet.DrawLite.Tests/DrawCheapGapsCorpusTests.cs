@@ -65,6 +65,19 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
     /// </summary>
     internal static bool MeasuresMemory(DrawCaseScan theScan) => theScan.Commands.Contains("meminfo");
 
+    /// <summary>
+    /// Runs a case that measures memory, once more if it fails (decision 10407): `meminfo h` is the managed heap's live
+    /// bytes, and the interpreter's own log grows by a few kilobytes a cycle, so bug7287_1's trend (mean about 5 kB a
+    /// step against a sigma of about 7 kB) passes on the noise and failed once alone.
+    /// </summary>
+    internal static DrawCaseRun RunMemoryCase(DrawCorpus theCorpus, DrawTestCase theCase)
+    {
+        DrawCaseRun RunOnce() => theCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
+                                                       TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
+        DrawCaseRun aRun = RunOnce();
+        return aRun.Passed ? aRun : RunOnce();
+    }
+
     [Fact]
     public void Corpus_cases_the_cheap_gaps_make_runnable_run_and_pass()
     {
@@ -88,7 +101,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
             => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
         List<DrawCaseRun> aRuns = [.. aNew.Where(c => !UsesMemory(c)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                           .Select(RunOne),
-                                   .. aNew.Where(UsesMemory).Select(RunOne)];
+                                   .. aNew.Where(UsesMemory).Select(c => RunMemoryCase(aCorpus, c))];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7W: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                .OrderBy(g => g.Key, StringComparer.Ordinal)

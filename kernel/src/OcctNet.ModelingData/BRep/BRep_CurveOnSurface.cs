@@ -12,7 +12,7 @@ public class BRep_CurveOnSurface : BRep_GCurve
     protected gp_Pnt2d myUV1;
     protected gp_Pnt2d myUV2;
     private Geom2d_Curve? myPCurve;
-    private readonly Geom_Surface? mySurface;
+    private Geom_Surface? mySurface;
 
     /// <summary>The pcurve <paramref name="PC"/> on <paramref name="S"/> with location <paramref name="L"/> (both frozen here).</summary>
     public BRep_CurveOnSurface(Geom2d_Curve PC, Geom_Surface? S, in TopLoc_Location L)
@@ -23,6 +23,17 @@ public class BRep_CurveOnSurface : BRep_GCurve
         myUV1 = new gp_Pnt2d();
         myUV2 = new gp_Pnt2d();
         myPCurve = PC;
+        mySurface = S;
+    }
+
+    /// <summary>
+    /// OCCT.NET: puts the pcurve on <paramref name="S"/>, which stands for its surface changed in place by OCCT (the
+    /// offset surface whose basis BRepOffset_Tool's EnlargeGeometry enlarges, decision 10401).
+    /// </summary>
+    internal void ReplaceSurface(Geom_Surface S)
+    {
+        CheckMutable();
+        S.Freeze();
         mySurface = S;
     }
 

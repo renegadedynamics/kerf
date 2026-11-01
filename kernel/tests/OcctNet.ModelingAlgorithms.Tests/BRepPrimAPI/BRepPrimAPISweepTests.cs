@@ -254,6 +254,30 @@ public class BRepPrimAPISweepTests
     }
 
     [Fact]
+    public void Prism_of_a_frozen_disk_gives_back_a_changed_copy_as_its_first_shape()
+    {
+        // decision 10402: natively FirstShape() IsSame the caller's disk, whose circle gets its pcurve on the wall in
+        // place; the caller's frozen disk can't take it, so the bottom face is a copy holding a changed copy of the
+        // circle, and FirstShape(disk) and the history answer for the caller's disk with it
+        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire(), true).Face();
+        Assert.True(aDisk.TShape()!.IsFrozen());
+        var aMP = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 1));
+        TopoDS_Shape aS = aMP.Shape();
+        TopoDS_Shape aBottom = aMP.FirstShape();
+        Assert.False(aBottom.IsSame(aDisk));
+        Assert.True(aMP.FirstShape(aDisk).IsSame(aBottom));
+        Assert.True(Contains(aS, aBottom));
+        TopoDS_Edge aCircle = TopoDS.Edge(new TopExp_Explorer(aDisk, TopAbs_EDGE).Current());
+        Assert.False(Contains(aS, aCircle));
+        TopoDS_Edge aCopy = TopoDS.Edge(aMP.FirstShape(aCircle));
+        Assert.True(Contains(aS, aCopy));
+        TopoDS_Face aWall = TopoDS.Face(Assert.Single(aMP.Generated(aCircle)));
+        Assert.Null(BRep_Tool.CurveOnSurface(aCircle, aWall, out _, out _));
+        Assert.NotNull(BRep_Tool.CurveOnSurface(aCopy, aWall, out _, out _));
+    }
+
+    [Fact]
     public void An_unfrozen_profile_is_swept_in_place_as_OCCT_does()
     {
         // ported code passing its own unfrozen shape: no copy, the result holds the profile's own edges, which get

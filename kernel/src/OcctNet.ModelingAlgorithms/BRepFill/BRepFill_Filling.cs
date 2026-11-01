@@ -243,6 +243,34 @@ public class BRepFill_Filling
         return (myBoundary.Length() + myFreeConstraints.Length() + myConstraints.Length() + myPoints.Length());
     }
 
+    // OCCT.NET: OCCT's sweeps of an edge (MakePrism, MakeRevol, ...) write the new face's pcurve into the caller's edge,
+    // which the face shares; the port sweeps a frozen edge as a copy (decision 468), so the caller's edge has no pcurve
+    // on the face the sweep made, and the constraint would read a null pcurve (OCCT's comment below). For a frozen edge
+    // without a pcurve on the support, the support's edge on the same 3D curve, location and range stands for it, as it
+    // is OCCT's edge itself (decision 10403).
+    private static TopoDS_Edge EdgeOnSupport(in TopoDS_Edge theEdge, in TopoDS_Face theSupport)
+    {
+        if (!theEdge.TShape()!.IsFrozen() || BRep_Tool.CurveOnSurface(theEdge, theSupport, out _, out _) is not null)
+        {
+            return theEdge;
+        }
+        Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out double aFirst, out double aLast);
+        if (aCurve is null)
+        {
+            return theEdge;
+        }
+        for (TopExp_Explorer anExp = new(theSupport, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+            Geom_Curve? aC = BRep_Tool.Curve(anEdge, out TopLoc_Location aL, out double aF, out double aLa);
+            if (ReferenceEquals(aC, aCurve) && aL == aLoc && aF == aFirst && aLa == aLast)
+            {
+                return TopoDS.Edge(anEdge.Oriented(theEdge.Orientation()));
+            }
+        }
+        return theEdge;
+    }
+
     private void AddConstraints(NCollection_Sequence<BRepFill_EdgeFaceAndOrder> SeqOfConstraints)
     {
         TopoDS_Edge CurEdge;
@@ -295,7 +323,7 @@ public class BRepFill_Filling
                 BRepAdaptor_Surface Surf = new BRepAdaptor_Surface();
                 Surf.Initialize(CurFace);
                 BRepAdaptor_Curve2d Curve2d = new BRepAdaptor_Curve2d();
-                Curve2d.Initialize(CurEdge, CurFace);
+                Curve2d.Initialize(EdgeOnSupport(CurEdge, CurFace), CurFace);
                 // If CurEdge has no 2d representation on CurFace,
                 // there will be exception "Attempt to access to null object"
                 // in this initialization (null pcurve).
