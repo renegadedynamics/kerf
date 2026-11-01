@@ -1119,3 +1119,12 @@ Phase 7 (part): Draw-lite's cheap gaps (unit 7W).
 - Corpus (unit 7W's follow-up): the Boolean corpus test run whole: 5,530 runnable, OK 4,095, BAD 129, 1,292 missing
   data, 8 failing, all attributed (bugs/modalg_6/bug26393: DRAWEXE's destructive Booleans; bugs/modalg_7/bug83: the
   port's section is about 6x slower than native's on two B-spline sheets).
+Phase 7 (part): helix (unit 7D).
+
+- TKHelix, new in OCCT 8: HelixGeom (HelixCurve, the analytical helix adaptor; Tools, the B-spline approximation;
+  BuilderApproxCurve, BuilderHelixGen, BuilderHelixCoil, BuilderHelix) and HelixBRep_BuilderHelix (composite helix and
+  spiral wires by heights, pitches or numbers of turns). The builders' curves and wires are frozen when handed out;
+  the smoothing between parts changes copies of the edges' curves (decision 8502).
+- Draw-lite: `setaxis`, `comphelix`, `helix`, `spiral`, `comphelix2`, `helix2`, `spiral2`; `vzfit` as a viewer no-op.
+- Tests: TKHelix's six GTests; `tools/helixrec` records native TKHelix on the helix grid's parameters (56 cases,
+  all byte-identical, BRep text included). Corpus: the 56 helix cases are runnable: OK 54, BAD 2 (OCCT's own TODO).

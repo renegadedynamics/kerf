@@ -9931,3 +9931,43 @@ the default run's every-fourth sample had skipped. Numbers from 8301 are placeho
      geometrically (volumes, areas, face and edge counts, validity, histories as sets), not byte for byte; their
      differences are attributed case by case; upstream fixes to TopOpeBRepBuild don't apply. HLR (7P, 7Q1, 7Q2) stays
      in phase 7 at step 11. Step 9 of the running order is no longer a stop.
+## Phase 7: unit 7D, helix (TKHelix)
+
+TKHelix (HelixGeom, HelixBRep; new in OCCT 8) in `src/OcctNet.ModelingAlgorithms/HelixGeom` and `HelixBRep`, and the
+helix Draw commands. Numbers from 8501 are placeholders, renumbered on merge.
+
+993. **The helix builders publish their curves frozen.** `HelixGeom_BuilderApproxCurve.Curves()` returns an
+      `IBentoList<Geom_Curve>` of the stored curves, frozen (as decision 243's conversion results): a new list each
+      call, the same curves. Ported code reads `InternalCurves()`, the unfrozen sequence, because
+      `HelixGeom_BuilderHelix` transforms its coil builder's curves in place (`Transform` to the helix's position, as
+      OCCT does) and `HelixBRep_BuilderHelix` builds its edges on them. `HelixBRep_BuilderHelix.Shape()` freezes the
+      wire (`InternalShape()` doesn't). `HelixGeom_Tools`' outputs are `ref`, since OCCT leaves them unchanged when the
+      approximation fails. The builders are working objects (decision 21); `HelixGeom_HelixCurve` is an adaptor with
+      public `Load`, and a public copy constructor for OCCT's implicit one (OCCT's code and GTests use it).
+994. **`SmoothingEdges` changes copies of the edges' curves.** OCCT's `HelixBRep_BuilderHelix::SmoothingEdges` moves
+      the end tangents of two consecutive parts' curves in place (`MovePointAndTangent`, `IncreaseDegree`) on the
+      curves the edges hold, which `BRep_Builder` froze when it attached them. The port copies each curve first and
+      puts the copy on the edge with `UpdateEdge`, as OCCT does when the move succeeds. Where no degree lets the tangent
+      move, OCCT doesn't call `UpdateEdge` but its curve keeps the raised degree; the port puts the copy on the edge in
+      that case too (whenever the degree changed), so the edge's curve is the one OCCT's edge ends up with. The edges
+      are the builder's own (made in `BuildPart`), never a caller's: no copy at entry is needed.
+995. **Draw-lite keeps `setaxis`'s axis per interpreter.** OCCT keeps it in a file-scope static of
+      BRepTest_HelixCommands.cxx for the DRAWEXE process; Draw-lite keeps it per interpreter (as the viewer's context,
+      decision 495), so a corpus case starts from OCCT's default axis as a fresh DRAWEXE does, and cases run in
+      parallel don't share it. `vzfit` joins the ignored viewer commands.
+996. **The native recording** (tools/helixrec). build123d.NET's native OCCT contains TKHelix but doesn't bind it, so
+      a recorder records, for each helix command the helix grid's cases call (tools/helixrec/cases.txt, 56 commands
+      with two setaxis axes): HelixBRep_BuilderHelix through the command's SetParameters overload with the commands'
+      approximation parameters and with 1e-5, degree 8, C2; and per part HelixGeom_BuilderHelix (at the axis, C1,
+      degree 8, 1000 segments, alternate parts counter-clockwise), HelixGeom_BuilderHelixCoil and
+      HelixGeom_Tools::ApprHelix. Statuses, tolerances reached and curves (degree, poles, knots, multiplicities) as
+      bits; the wires as BRep text, in full up to 250 lines and by an FNV-1a hash of the text beyond (the 60-turn
+      wires would make the recording 12 MB); curves after the second, but the last, of a builder by the hash of their
+      record. `HelixNativeTests` writes the same records from the recorded inputs' bits: **all 56 cases (12,634
+      lines) identical, BRep text included, no column masked.**
+997. **Corpus** (`DrawHelixCorpusTests`, `Unit7DCommands`, `Before7D`). 56 cases use the helix commands (all in
+      helix/standard), none runnable before the unit, all 56 after: **OK 54, BAD 2** (D6 and D7: OCCT's own `TODO
+      OCC11111 ALL: Error : CheckSpiral`, which compares lprops' centre and moments as strings, centre coordinates
+      near 1e-15 included, and which OCCT expects to fail on every platform). The plan expected 60 (section 1.6); the
+      grid has 56 cases. The construction corpus test, whose sweep commands the helix cases use, runs them too (1,017
+      runnable there now).

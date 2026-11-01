@@ -1,0 +1,58 @@
+helix/standard/A1 helix result 1 100 100 5 0
+helix/standard/A2 helix result 1 100 100 20 1
+helix/standard/A3 helix result 3 100 20 60 20 2 6 2 0 0 0
+helix/standard/A4 helix result 3 100 20 60 20 10 10 10 1 1 1
+helix/standard/A5 helix result 3 100 20 60 20 2 60 2 0 0 0
+helix/standard/A6 helix result 3 100 20 60 20 10 1 10 1 1 1
+helix/standard/A7 helix result 3 100 45 10 45 45 1 45 0 0 0
+helix/standard/A8 helix result 3 100 45 10 45 1 10 1 1 1 1
+helix/standard/A9 comphelix result 1 100 100 100 5 0
+helix/standard/B1 comphelix result 1 100 100 100 20 1
+helix/standard/B2 comphelix result 3 100 100 100 100 20 60 20 2 6 2 0 0 0
+helix/standard/B3 comphelix result 3 100 100 100 100 20 60 20 10 10 10 1 1 1
+helix/standard/B4 comphelix result 3 100 100 100 100 20 60 20 2 60 2 0 0 0
+helix/standard/B5 comphelix result 3 100 100 100 100 20 60 20 10 1 10 1 1 1
+helix/standard/B6 comphelix result 3 100 100 100 100 45 10 45 45 1 45 0 0 0
+helix/standard/B7 comphelix result 3 100 100 100 100 45 10 45 1 10 1 1 1 1
+helix/standard/B8 spiral result 1 100 20 100 5 0
+helix/standard/B9 spiral result 1 100 20 100 20 1
+helix/standard/C1 spiral result 3 100 20 20 60 20 2 6 2 0 0 0
+helix/standard/C2 spiral result 3 100 20 20 60 20 10 10 10 1 1 1
+helix/standard/C3 spiral result 3 100 20 20 60 20 2 60 2 0 0 0
+helix/standard/C4 spiral result 3 100 20 20 60 20 10 1 10 1 1 1
+helix/standard/C5 spiral result 3 100 20 45 10 45 45 1 45 0 0 0
+helix/standard/C6 spiral result 3 100 20 45 10 45 1 10 1 1 1 1
+helix/standard/C7 comphelix result 1 100 20 100 5 0
+helix/standard/C8 comphelix result 1 100 20 100 20 1
+helix/standard/C9 comphelix result 3 100 84 36 20 20 60 20 2 6 2 0 0 0
+helix/standard/D1 comphelix result 3 100 84 36 20 20 60 20 10 10 10 1 1 1
+helix/standard/D2 comphelix result 3 100 84 36 20 20 60 20 2 60 2 0 0 0
+helix/standard/D3 comphelix result 3 100 84 36 20 20 60 20 10 1 10 1 1 1
+helix/standard/D4 comphelix result 3 100 64 56 20 45 10 45 45 1 45 0 0 0
+helix/standard/D5 comphelix result 3 100 64 56 20 45 10 45 1 10 1 1 1 1
+helix/standard/D6 setaxis 0 0 0 0 0 1 1 0 0
+helix/standard/D6 helix result 1 100 100 5 0
+helix/standard/D7 setaxis 0 0 0 0 1 0 1 0 0
+helix/standard/D7 helix result 1 100 100 5 0
+helix/standard/D8 spiral result 3 150 123 9.75 270.9045 9.75 .75 4.05 .75 0 0 0
+helix/standard/D9 spiral result 3 150 123 9.75 270.9045 9.75 13 66.89 13 1 1 1
+helix/standard/E1 comphelix result 5 150 150 150 123 123 123 9.75 134.4 112.5 112.5 9.75 .75 2.1 2.25 2.5 .75 0 0 0 0 0
+helix/standard/E2 comphelix result 5 150 150 150 123 123 123 9.75 134.4 112.5 112.5 9.75 13 64 50 45 13 1 1 1 1 1
+helix/standard/E3 spiral2 result 3 150 123 13 66.89 13 .75 4.05 .75
+helix/standard/E4 comphelix2 result 5 150 150 150 123 123 123 13 64 50 45 13 .75 2.1 2.25 2.5 .75
+helix/standard/E5 helix2 result 1 100 20 5
+helix/standard/E6 helix2 result 3 100 10 10 10 2 6 2
+helix/standard/E7 helix2 result 3 100 10 1 10 2 60 2
+helix/standard/E8 helix2 result 3 100 1 10 1 45 1 45
+helix/standard/E9 comphelix2 result 1 100 100 20 5
+helix/standard/F1 comphelix2 result 3 100 100 100 100 10 10 10 2 6 2
+helix/standard/F2 comphelix2 result 3 100 100 100 100 10 1 10 2 60 2
+helix/standard/F3 comphelix2 result 3 100 100 100 100 1 10 1 45 1 45
+helix/standard/F4 spiral2 result 1 100 20 20 5
+helix/standard/F5 spiral2 result 3 100 20 10 10 10 2 6 2
+helix/standard/F6 spiral2 result 3 100 20 10 1 10 2 60 2
+helix/standard/F7 spiral2 result 3 100 20 1 10 1 45 1 45
+helix/standard/F8 comphelix2 result 1 100 20 20 5
+helix/standard/F9 comphelix2 result 3 100 84 36 20 10 10 10 2 6 2
+helix/standard/G1 comphelix2 result 3 100 84 36 20 10 1 10 2 60 2
+helix/standard/G2 comphelix2 result 3 100 64 56 20 1 10 1 45 1 45

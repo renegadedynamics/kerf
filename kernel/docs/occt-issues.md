@@ -1416,3 +1416,18 @@ each (`// OCCT` at the line where it is code), unless the last column says other
 | Where | What | Effect |
 |---|---|---|
 | bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: the port's section takes 0.20 s warm in Release where native takes 0.03 s (and 0.34 s on a cold start, the JIT) | The case's 0.1 s limit fails. A performance gap to profile (plan 2.7), not a result difference |
+
+## Phase 7: unit 7D, helix (TKHelix)
+
+Found by porting TKHelix and BRepTest_HelixCommands.cxx. The port reproduces each (`// OCCT` at the line where it is
+code), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| HelixGeom_HelixCurve `Load` | `myTgBeta` is set only when \|taper\| > 1e-4, never reset: reloading a tapered adaptor with a (near) zero taper keeps the old taper | The second helix is tapered. Not reached by TKHelix's builders, which load a new adaptor each time. Reproduced, and pinned by a test |
+| HelixBRep_BuilderHelix `SetParameters` (spiral, by heights) | Reads `theHeights(1)` where the loop uses `theHeights.Lower()` | An array not starting at 1 is read at the wrong place or throws. Reproduced |
+| HelixBRep_BuilderHelix (class documentation) | Error 13 is documented for "TaperAngle < 0 or > π/2 - TolAng"; `BuildPart` checks only the upper bound, and returns 3 (undocumented) when an edge can't be made | Negative tapers (diameters decreasing) are built, as the corpus's spirals need |
+| HelixBRep_BuilderHelix `SmoothingEdges` | Changes the edges' curves in place; when no degree lets the tangent move, the curve keeps the raised degree though `UpdateEdge` isn't called | Native shares no curve with a caller, so harmless; the port changes copies (decision 994) |
+| HelixGeom_Tools `HelixGeom_Tools_Eval::Evaluate` | Sets error code 1 for a dimension other than 3, then writes three values anyway | Never reached (the dimension is always 3). Reproduced |
+| `helix2`, `spiral2` (BRepTest_HelixCommands.cxx) | The usage text for a wrong argument count names H and PF arguments the commands don't take | Text only. Reproduced |
+| helix/standard/D6, D7 | `CheckSpiral` compares lprops' centre and moments as strings, centre coordinates near 1e-15 included | OCCT's own TODO (OCC11111) on all platforms; BAD in Draw-lite as in DRAWEXE |
