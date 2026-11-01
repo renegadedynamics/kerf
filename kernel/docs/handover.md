@@ -170,7 +170,7 @@ tests.
     Helpers have written into the main checkout by mistake several times.
   - **The build properties.**
   - **The decisions to read**, and earlier units' notes copied into the brief.
-  - **Placeholder decision numbers:** one range of 1000 or more per unit.
+  - **Placeholder decision numbers:** one range of 5000 or more per unit (1000 or more until phase 7, when real numbers passed 1000).
   - **The oracle method:** use the native binding where it exists; otherwise a native recorder in `tools/<name>rec`
     built with MSVC, its recording embedded in the tests.
   - **The final report:** what you need back.

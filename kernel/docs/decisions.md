@@ -9980,7 +9980,9 @@ helix Draw commands. Numbers from 8501 are placeholders, renumbered on merge.
       the same in Debug (helpers' runs) and Release (the gate). The port leaves out OCCT_DEBUG code, so it is always
       OCCT's release build. `--no-gate` merges the first of two ready units without testing it (built only), and the
       second merge's gate tests both. A shared corpus scan was measured and not done: a full scan of the 21,068 cases
-      takes about 4 s, so the twenty corpus tests' scans cost a minute or two of a 35-minute gate.
+      takes about 4 s, so the twenty corpus tests' scans cost a minute or two of a 35-minute gate. The
+      placeholder threshold of `renumber.pl` rises from 1000 to 5000: real numbers passed 1000 with unit 7B, and a
+      merge then took 7B's decisions 1000 to 1003 for placeholders (caught and undone before it was committed).
 ## Phase 7: unit 7B, ShapeUpgrade and ShapeAlgo
 
 The rest of ShapeUpgrade (the Tool root, the curve and surface split tools and their Continuity, Angle and Area

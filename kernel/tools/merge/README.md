@@ -33,7 +33,7 @@ fails, the failure may be either unit's; the log says which tests.
 
 ## `renumber.pl <repo> [floor]`
 
-Helpers number their decisions with placeholders of 1000 or more (one range per unit, e.g. 7201…). This script gives
+Helpers number their decisions with placeholders of 5000 or more (one range per unit, e.g. 8201…). Real numbers passed 1000 in phase 7, so the threshold was raised from 1000 to 5000. This script gives
 every placeholder heading in `docs/decisions.md` the next real number in file order, and rewrites every reference to
 them ("decision 926", "decisions 924, 925 and 928–930") in `docs`, `src`, `tests`, `tools`, `samples` and
 `benchmarks` (`.md .cs .csproj .props .targets .ps1 .py .cpp .sh .sed`).
