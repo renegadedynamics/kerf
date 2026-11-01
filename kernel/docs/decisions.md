@@ -10224,9 +10224,9 @@ BRepOffsetAPI_MakeThickSolid. Numbers from 9201 are placeholders, renumbered on 
       `myArtInvalidFaces`, RemoveInvalidSplitsFromValid's `aDMFF`, and maps of faces and vertices (FindInvalidEdges,
       GetInvalidEdges, GetInvalidEdgesByBounds' `theMECheckExt`). The port iterates them in insertion order
       (`// OCCT.NET:` at each site). Native's result varies from run to run where these orders matter: the Arc join in
-      the Complete mode (Intersection on) gave a different BRep text from one native run to the next in 42 of the
-      oracle's runs on primitives; the port matched one of native's variants in 11 and native's geometry (counts,
-      volume, area, centroid, validity) in the other 31. The port is deterministic.
+      the Complete mode (Intersection on) gave a different BRep text from one native run to the next in about 40 of
+      the oracle's runs on primitives; the port matched one of native's variants or native's geometry (counts, volume,
+      area, centroid, validity) in all of them. The port is deterministic.
 9204. **Value semantics.** BRepOffset_Offset is a class in the port, a value in C++ (decision 1009): MakeOffset binds each
       offset once in MapSF and never changes a copy (ToContext reads its copy and unbinds the original). In
       BRepOffset_BuildOffsetFaces the lists, maps and indexed maps OCCT holds by value inside other maps are copied
@@ -10249,11 +10249,12 @@ BRepOffsetAPI_MakeThickSolid. Numbers from 9201 are placeholders, renumbered on 
       and Generated/Modified/IsDeleted of every vertex, edge and face of the input (as indices in the result, or as
       canonical keys). Native's input sub-shapes are mapped before its run, since native writes into its input.
       **724 runs: 599 with a result (16 of them null after a reported success), 118 not done on both sides, 7 the same
-      exception (Standard_ConstructionError 6, Standard_NoSuchObject 1). Of the results, 426 byte-identical, 130
-      canonically identical, 42 attributed to native varying (11 the same as one of native's variants, 31 native's
-      geometry, decision 9203), and 1 attributed to native varying on an invalid result whose volume native itself
-      gives differently from run to run (MODERN_MVCooker_1, hollow with arcs: counts and area equal). Histories: 426
-      identical, 130 canonically equal, none different.** OCCT's GTests (BRepOffset_MakeOffset's 19 cases,
+      exception (Standard_ConstructionError 6, Standard_NoSuchObject 1). Of the results (one run; the split moves a
+      little between runs because native's own result does), 426 byte-identical, 133 canonically identical, 39 attributed
+      to native varying (7 the same as one of native's variants, 32 native's geometry, decision 9203), and 1 attributed
+      to native varying on an invalid result whose volume native itself gives differently from run to run
+      (MODERN_MVCooker_1, hollow with arcs: counts and area equal). Histories: 426 identical, 133 canonically equal,
+      none different.** OCCT's GTests (BRepOffset_MakeOffset's 19 cases,
       MakeThickSolid's 4) pass.
 9207. **For 7G, 7X and the Draw commands.**
       - **7G (drafts, BiTgte):** BiTgte_Blend runs BRepOffset_Inter3d, MakeLoops and Tool on its own working shapes
