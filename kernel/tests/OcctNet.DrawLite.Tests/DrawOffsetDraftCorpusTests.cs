@@ -116,9 +116,9 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
 
         // unit 7G: 1,687 newly runnable (471 with data): OK 405, BAD 63 (OCCT's TODOs), SKIPPED 1,216 (data not public),
         // FAILED 3, attributed (KnownFailures); 67 cases using the commands still miss others (the viewer, IGES, the
-        // feature commands of 7I, blend)
-        Assert.Equal(1687, aNew.Count);
-        Assert.Equal(405, aRuns.Count(r => r.Status == "OK"));
+        // feature commands of 7I, blend). With 7I's feature commands merged: 1,696 newly runnable, OK 414, FAILED 3 as before
+        Assert.Equal(1696, aNew.Count);
+        Assert.Equal(414, aRuns.Count(r => r.Status == "OK"));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
     }

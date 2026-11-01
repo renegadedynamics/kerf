@@ -1230,3 +1230,16 @@ Phase 7 (part): drafts and the rest of TKOffset (unit 7G).
   commands (`featprism`, `featperform`, `splitshape`, `hole`...): 280 more corpus cases pass. Oracle: DPrism and
   SplitShape against native OCCT, the other makers against a native recording (tools/featrec). A Boolean argument
   holding frozen sub-shapes now runs non-destructively (decision 9505).
+
+Phase 7 (part): the walking of blends (unit 7K, BRepBlend), the second step to 3D fillets.
+
+- The walkers: BRepBlend_Walking (a blend between two surfaces, stopping on the faces' restrictions and correcting the
+  corners), BRepBlend_CSWalking (a curve and a surface), BRepBlend_SurfRstLineBuilder and RstRstLineBuilder (a surface
+  and a restriction, two restrictions, with the losses of contact), their line, extremities and points on arcs.
+- The surface/restriction and restriction/restriction functions of constant and evolving radius and the inverse
+  functions at the walkings' ends; the curve and blend tools.
+- The approximation's side: BRepBlend_AppFuncRoot with AppFunc, AppFuncRst and AppFuncRstRst (the walking line as a
+  sweep function), BRepBlend_AppSurface and BRepBlend_AppSurf.
+- Tests: `tools/blendrec` now records native OCCT's walking step by step on planes, a plane and a cylinder, B-splines,
+  a curve and a plane, and restrictions, with the lines' approximations: 112 cases (45 of them walk), all identical
+  bit for bit; unit tests of the line, extremities, tools and approximation function.

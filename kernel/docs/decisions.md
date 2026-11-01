@@ -10787,3 +10787,79 @@ renumbered on merge.
       and QA commands.
       - **For 7X:** DPrism and SplitByPerimeter are covered here (9506); the 17 attributed DPrism differences are open.
         Extrude until needs no BRepFeat.
+
+## Phase 7: unit 7K, the walking (BRepBlend)
+
+BRepBlend: the walkers (Walking for surface/surface, CSWalking for curve/surface, the surface/restriction and
+restriction/restriction line builders), their line, extremities and points on restrictions, the curve and blend tools,
+the surface/restriction and restriction/restriction functions of constant and evolving radius with the inverse
+functions at the walkings' ends, and the approximation's side (AppFuncRoot and its three functions, AppSurface,
+AppSurf). Numbers from 9801 are placeholders, renumbered on merge.
+
+1059. **The shape of BRepBlend in C#.**
+      - BRepBlend_Extremity and BRepBlend_PointOnRst are C++ value classes, so structs with internal mutators and public
+        `With*` twins. OCCT copies an extremity with its sequence of points on arcs (`Ext1 = line->StartPointOnFirst()`,
+        `SetStartPoints`), so the struct keeps the sequence copy-on-write: `AddArc` appends to a new sequence and
+        `SetValue` drops it, and two copies never share one. Code that edits an extremity got from the line (ChFi3d's
+        `UpdateLine`) writes it back with `SetStartPoints`/`SetEndPoints`, as OCCT does.
+      - BRepBlend_Line is a working class whose mutators are internal; it implements `IAppBlend_Line<Blend_Point>` for
+        BRepBlend_AppSurf (`AppBlend_AppSurf<Blend_AppFunction, BRepBlend_Line, Blend_Point>`, decision 1041).
+        `Point(i)` returns a copy; `ChangePoint(i)` (internal ref) is for the builders that edit a stored point.
+      - The typedef headers (BRepBlend_ConstRad is BlendFunc_ConstRad, BRepBlend_CSCircular is BlendFunc_CSCircular,
+        ...) are written out; their provenance lines are in BRepBlend_Typedefs.cs. The curve tools and BlendTool are
+        static classes.
+      - OCCT 8 declares BRepBlend_CSWalking's `IsDone` and `Line` without defining them (they don't link natively;
+        ChFi3d never uses the class). The port defines them as the other walkers'.
+      - C++ references that a method writes on some paths only are `ref`, so the caller's value survives the others as
+        in OCCT: Walking's `CorrectExtremityOnOneRst` (it sets `NewParam` before it may fail, and `CorrectedParam` is a
+        member read by the next `Perform`), the `Recadre` methods' vertex and flag (locals that live across the walking
+        loop), `ArcToRecadre`'s parameter, BlendTool's `Inters`. The rest are `out`; `PerformFirstSection`'s `Psol` is
+        `ref`.
+      - BRepBlend_AppFuncRoot keeps OCCT's raw pointer to the function as a reference; as OCCT's, its `SearchPoint`
+        inserts into the line it was given the points whose solving took more than three iterations.
+      - The SurfRst and RstRst functions leave `myTConv` uninitialised until `GetShape` sets it; here it starts at its
+        first value (read only after `GetShape` in OCCT's call order). Fields set and never read keep a `CS0414`
+        pragma. CSWalking's `CheckDeflectionOnCurv` (its call is commented out in OCCT) is kept; the `OCCT_DEBUG` code
+        (`Drawsect`, `BBPP`, `tracederiv`, traces) is left out, and so is CSWalking's line to the standard output on
+        "same points".
+      - The walkers keep BRepBlend's call order on the functions line for line (`Set`, the root finder, `IsSolution`
+        once per tested point, the tangents, `Section`), which BlendFunc's caches and `[ThreadStatic]` scratch depend on
+        (decisions 1037, 1043).
+1060. **The oracle: tools/blendrec extended** (BRepBlend is not bound in build123d.NET). Its `RecordWalking` part walks:
+      a constant-radius blend between two bounded planes (to both faces' restrictions; to a bound, continued with
+      `Continu`; with an evolving radius), a plane and a cylinder, and two B-splines, each in the eight "quadrants";
+      the two first-section variants (inside a face, and from outside moved onto its restriction, then walked from it);
+      CSWalking between a plane and a line; the surface/restriction builder (stopping on the restriction's ends, on the
+      face's boundary, and with an evolving radius) in the sixteen choice pairs ChFi3d_FilBuilder makes; the
+      restriction/restriction builder (constant and evolving radius). Each case records every point of the line
+      (parameter, points, parameters, tangents), the four extremities with their arcs and transitions, the line's
+      transitions, the statuses (`IsDone`, `Complete`, twist and "décroché" flags), the function's state (minimal
+      distance, section size), then BRepBlend_AppSurface over the matching AppFunc (surface shape, poles and weights,
+      knots, 2D curves, tolerances reached, the line's size after the approximation's insertions) and BRepBlend_AppSurf.
+      The native recorder reads CSWalking's results through its fields (`#define private public`) since `IsDone` and
+      `Line` don't link. `BlendRecorder.Walking.cs` is the same program in C#. **112 walking cases, all identical bit
+      for bit** (7J's 235 cases unchanged); 45 of them walk (the others fail in the wrong quadrant natively too). A
+      changed step factor in the walking makes 10 of the surface/surface cases differ, so the comparison is sharp.
+1061. **For 7N1 and 7N2: how ChFi3d drives the walkers, and their state.**
+      - **ComputeData (ChFi3d_Builder_6)** builds `BRepBlend_Walking(S1, S2, I1, I2, HGuide)` with the ElSpine as the
+        guide (and as the functions' guide), calls `Check2d`, `Check`, `ClassificationOnS1/S2`, `AddSingularPoint`
+        (the "jalons", kept across calls), `PerformFirstSection` (either overload), `Perform` (with `Appro`),
+        `Continu(F, FInv, Target)`, `Complete`, and reads `Line()`, `TwistOnS1/S2`. `Perform` reuses the line a
+        `PerformFirstSection` made (it then keeps its extremities), and `ToCorrectOnRst1/2` and `CorrectedParam`
+        survive from `PerformFirstSection` to `Perform`: keep OCCT's call order. The walking reads the ElSpine's saved
+        first and last parameters and its vertices with tangents (`SaveFirstParameter`, `AddVertexWithTangent`, set by
+        Builder_0 and Builder_2) in its corner corrections.
+      - **The surface/restriction and restriction/restriction builders** (the SimulData and ComputeData overloads):
+        `PerformFirstSection(..., ref Psol, ParSol)`, `Perform`, `Complete`, `DecrochStart/End`,
+        `Decroch1/2Start/End`. ChFi3d_FilBuilder makes their functions and point and curve inverses with a "small"
+        choice and the inverse on the restriction with the surfaces' choice; `BRepBlend_SurfRstConstRad.Set(SurfRef,
+        RstRef)` and `BRepBlend_RstRstConstRad.Set(...)` give the reference surfaces for the "décroché" test.
+      - **CompleteData** makes `BRepBlend_AppFunc`/`AppFuncRst`/`AppFuncRstRst(lin, Func, tolapp3d, 1e-5)` and
+        `BRepBlend_AppSurface(...)`; the AppFunc inserts points into `lin`, so the line is read after the approximation
+        as OCCT reads it. The approximation's arrays are its own (shared; copy before changing).
+      - `UpdateLine` and the other edits of extremities: BRepBlend_Extremity is a struct; `BE.SetValue(P, U, V, tol)`
+        with four arguments is the curve overload (U the parameter, V the guide's), as in OCCT; write back with
+        `SetStartPoints`/`SetEndPoints`. Blend_Point values from `Line().Point(i)` are copies.
+      - The line, the walkers and the functions are working objects of one walking: never shared between threads (the
+        functions' `[ThreadStatic]` scratch is per thread, decision 1037). BRepBlend writes no shapes: there is no copy
+        at entry to make here.

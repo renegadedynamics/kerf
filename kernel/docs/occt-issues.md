@@ -1585,3 +1585,21 @@ the line), unless the last column says otherwise.
 | BRepFeat_MakeCylindricalHole `PerformThruNext` | The `else` meant for `parbar > Last` hangs on `First - parbar < dmin` | Reproduced |
 | BRepFeat_Form `UpdateDescendants`, BRepFeat_RibSlot, BRepFeat_MakeDPrism `BossEdges` | Iterate maps keyed by shape address into the history lists and the lateral edges | Natively in address order; the port in insertion order (decision 1054) |
 | BRepFeat_Builder, BRepFeat_Form (the Booleans), BRepFeat_MakeLinearForm `Init` (`BB.UpdateVertex`, `myPln->Transform`), BRepFeat_RibSlot `LFPerform` (`BRepLib::SameParameter` on the glued result) | Write into the shapes and the plane the caller gives | The port works on copies (decision 1052) |
+
+## Phase 7: unit 7K, the walking (BRepBlend)
+
+Found by porting BRepBlend and by tools/blendrec. The port reproduces each (`// OCCT` at the line) except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepBlend_CSWalking `IsDone`, `Line` | Declared inline in the header, never defined (no .lxx) | The class can't be used natively (a link error); ChFi3d doesn't use it. The port defines them (decision 1059) |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | `math_Vector DEDT(1, 3); DEDT = secmember;` for the 2x2 system when Gauss fails | Release builds copy the two values and solve on them (the dimension checks are compiled out); the port's vector has two entries |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | The second restriction's 2D tangent is computed from `tgrst1` | `Tangent2dOnRst2` is the first restriction's tangent in the second surface's parameters |
+| BRepBlend_RstRstLineBuilder `PerformFirstSection`, `InternalPerform` | Leaving the first restriction's domain, `IsVtxrst2`/`Vtxrst2` take the vertex found on the first restriction | The second extremity can be marked on the first restriction's vertex |
+| BRepBlend_RstRstLineBuilder `MakeExtremity` | The second extremity's tangent is `TangentOnC1()` | The extremity on the second restriction has the first's tangent |
+| BRepBlend_SurfRstLineBuilder `InternalPerform` | On both restrictions at once, `sol(3) = solinvs(3)` (the parameter on the face's arc) where `PerformFirstSection` takes `solinvs(2)` (on the restriction) | The section is set at a wrong restriction parameter before `TestArret` |
+| BRepBlend_SurfRstLineBuilder `Perform` | The restriction's start extremity is built with the surface's (U, V) | Its parameter is the surface's U, not the restriction's |
+| BRepBlend_Walking `Perform`, `PerformFirstSection`, `InternalPerform`; ChFi3d's `UpdateLine` | Four-argument `BRepBlend_Extremity(P, sol(1), sol(2), tol)` and `SetValue` are the curve overload (P, W, Param, Tol) | The extremity's U is the surface's u and its guide parameter the surface's v |
+| BRepBlend_SurfRstConstRad, SurfRstEvolRad, RstRstConstRad, RstRstEvolRad | `myTConv` is not initialised by the constructors | Read only after `GetShape` sets it in OCCT's call order; the port starts it at its first value |
+| BRepBlend_SurfRstLineBuilder `ArcToRecadre` | The header names the 2D points (pt2d, lastpt2d), the definition (lastpt2d, pt2d) | The port follows the definition |
+| BRepBlend_CurvPointRadInv | `choix` is set and never read | None |
