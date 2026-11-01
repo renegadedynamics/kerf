@@ -172,6 +172,21 @@ The numbers in brackets are the plan's (section 7).
     the merge work that brings. *Now:* at most two units at a time, on disjoint parts of the tree (phase7-plan.md
     4, "Running order").
 
+## Phase 8 (data exchange), from the plan in [phase8-plan.md](phase8-plan.md)
+
+31. **Assemblies, names and colours without OCAF** (phase8-plan.md 2.2). *Provisional:* STEPControl first, then
+    STEPCAFControl over an immutable assembly tree; XCAF and OCAF are not ported.
+32. **STEP's entity classes** (2.1). *Provisional:* generated from OCCT's own C++ (its EXPRESS schemas and generator
+    left OCCT's repository, and the classes were edited by hand since); design.md's wording changes accordingly.
+33. **STEP content beyond shapes, names, colours and layers.** *Provisional:* parse everything; transfer shapes,
+    assemblies, names, colours, layers and validation properties; materials, GD&T, views, kinematics and FEA later.
+34. **Mesh formats** (2.5). *Provisional:* STL ported; glTF, OBJ and 3MF written fresh; readers for STL and glTF.
+35. **The STEP parser** (2.3). *Provisional:* a reentrant C# parser with limits, not OCCT's flex/bison tables.
+36. **Text encodings** (2.4). *Provisional:* .NET's encodings, checked against OCCT's tables.
+37. **IFSelect** (2.8). *Provisional:* only what a member trace reaches.
+38. **XDE Draw commands over the immutable tree** (2.6). *Provisional:* yes, in unit 8G.
+39. **NuGet publishing at the end of phase 8.** *Provisional:* yes, once the owner chooses names and a feed.
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and
