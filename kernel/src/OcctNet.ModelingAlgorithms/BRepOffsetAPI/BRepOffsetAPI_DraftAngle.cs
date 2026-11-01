@@ -567,7 +567,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 {
                     BRepAdaptor_Curve bcur = new(NewE);
                     gp_Pnt Point = bcur.Value(par);
-                    NewV = new BRepLib_MakeVertex(Point).Vertex();
+                    NewV = new BRepLib_MakeVertex(Point).InternalVertex();
                     BB.UpdateVertex(NewV, par, NewE, 10.0 * Precision.Confusion());
                 }
                 BB.UpdateVertex(NewV, ParsSeam[i][j], SeamEdge, 10.0 * Precision.Confusion());
