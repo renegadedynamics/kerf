@@ -11275,9 +11275,10 @@ Option C of phase7-plan.md 2.1 (decision 992): `ChFi3d_BOPReconstruction` answer
 ChFi3d asks of it, from the same data structure, with BOPAlgo's builders. New design, not a port. Numbers from 10701
 are placeholders, renumbered on merge.
 
-10701. **The seam and what it answers.** 7N2's `IChFi3d_Reconstruction` (HBuilder's `Perform`, `MergeSolid`,
-       `IsSplit`, `Splits`, `Merged`, `NewFaces`, `NewEdges`, `DataStructure`, OCCT's names and parameters) is adopted
-       as 7N2 committed it; `ChFi3d_Reconstruction.Create` now gives a `ChFi3d_BOPReconstruction`. Only the state IN
+10701. **The seam and what it answers.** 7N2's abstract class `ChFi3d_Reconstruction` (HBuilder's `Perform`,
+       `MergeSolid`, `IsSplit`, `Splits`, `Merged`, `NewFaces`, `NewEdges`, `DataStructure`, OCCT's names and
+       parameters) is adopted as 7N2 committed it (its commit 53ec321, which replaced the interface of 04e6780);
+       `ChFi3d_Reconstruction.Create` now gives a `ChFi3d_BOPReconstruction`. Only the state IN
        is built, the only one ChFi3d asks for: `IsSplit` and `Splits` for OUT and ON answer false and empty, so
        `BRepFilletAPI_MakeFillet::Modified` (the union of OUT, IN and ON) gives the kept pieces, the faces native
        gives. `Merged` binds the solids and shells merged, as the HBuilder does for fillets: `Merged` of a face is

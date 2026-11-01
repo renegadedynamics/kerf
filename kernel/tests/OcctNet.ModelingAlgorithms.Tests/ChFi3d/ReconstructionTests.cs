@@ -17,7 +17,7 @@ public class ReconstructionTests
     [Fact]
     public void TheFactoryGivesTheReconstruction()
     {
-        IChFi3d_Reconstruction R = ChFi3d_Reconstruction.Create(new TopOpeBRepDS_BuildTool());
+        ChFi3d_Reconstruction R = ChFi3d_Reconstruction.Create(new TopOpeBRepDS_BuildTool());
         Assert.IsType<ChFi3d_BOPReconstruction>(R);
         Assert.Null(R.DataStructure());
         Assert.Empty(R.NewFaces(1));

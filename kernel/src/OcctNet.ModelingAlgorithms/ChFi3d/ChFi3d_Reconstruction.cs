@@ -34,46 +34,44 @@ namespace Occt;
 /// </list>
 /// <para>
 /// The lists returned are the reconstruction's own (OCCT returns <c>const&amp;</c> into the builder); callers only
-/// read them. <see cref="ChFi3d_Reconstruction.Create"/> gives unit 7R's <see cref="ChFi3d_BOPReconstruction"/>.
+/// read them. <see cref="Create"/> gives unit 7R's <see cref="ChFi3d_BOPReconstruction"/>.
 /// </para>
 /// </remarks>
-internal interface IChFi3d_Reconstruction
+internal abstract class ChFi3d_Reconstruction
 {
     /// <summary><c>TopOpeBRepBuild_HBuilder::Perform(HDS)</c>: builds the topology from the data structure.</summary>
-    void Perform(TopOpeBRepDS_HDataStructure HDS);
+    public abstract void Perform(TopOpeBRepDS_HDataStructure HDS);
 
     /// <summary><c>MergeSolid(S, State)</c>: assembles the parts of the solid or shell <paramref name="S"/> (a shape
-    /// of the data structure) in the state <paramref name="ToBuild"/>.</summary>
-    void MergeSolid(in TopoDS_Shape S, TopAbs_State ToBuild);
+    /// of the data structure) in the state <paramref name="TB"/>.</summary>
+    public abstract void MergeSolid(in TopoDS_Shape S, TopAbs_State TB);
 
     /// <summary><c>IsSplit(S, State)</c>: true if the edge or face <paramref name="S"/> was split, with parts in the
     /// state <paramref name="ToBuild"/>.</summary>
-    bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild);
 
     /// <summary><c>Splits(S, State)</c>: the parts of <paramref name="S"/> in the state <paramref name="ToBuild"/>.</summary>
-    NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild);
 
     /// <summary><c>Merged(S, State)</c>: what <see cref="MergeSolid"/> made of <paramref name="S"/> (empty if it was
     /// not merged).</summary>
-    NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild);
 
     /// <summary><c>NewFaces(I)</c>: the faces built on the data structure's surface <paramref name="I"/>.</summary>
-    NCollection_List<TopoDS_Shape> NewFaces(int I);
+    public abstract NCollection_List<TopoDS_Shape> NewFaces(int I);
 
     /// <summary><c>NewEdges(I)</c>: the edges built on the data structure's curve <paramref name="I"/>.</summary>
-    NCollection_List<TopoDS_Shape> NewEdges(int I);
+    public abstract NCollection_List<TopoDS_Shape> NewEdges(int I);
 
     /// <summary><c>DataStructure()</c>: the data structure given to <see cref="Perform"/> (null before).</summary>
-    TopOpeBRepDS_HDataStructure? DataStructure();
-}
+    public abstract TopOpeBRepDS_HDataStructure? DataStructure();
 
-/// <summary>The reconstruction the fillet builders use: unit 7R's, on the Boolean engine.</summary>
-internal static class ChFi3d_Reconstruction
-{
+    // Where unit 7R plugs in.
+
     /// <summary>
     /// The reconstruction for a builder: OCCT's <c>new TopOpeBRepBuild_HBuilder(mkbuildtool())</c>
     /// (ChFi3d_Builder_1.cxx:346), <paramref name="BT"/> being the build tool OCCT gives it (B-spline curves of
     /// degree 1 approximations off, no translation, no overwrite).
     /// </summary>
-    internal static IChFi3d_Reconstruction Create(TopOpeBRepDS_BuildTool BT) => new ChFi3d_BOPReconstruction(BT);
+    internal static ChFi3d_Reconstruction Create(TopOpeBRepDS_BuildTool BT) => new ChFi3d_BOPReconstruction(BT);
 }

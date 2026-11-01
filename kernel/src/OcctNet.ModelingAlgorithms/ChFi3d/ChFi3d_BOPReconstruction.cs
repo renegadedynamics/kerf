@@ -1,6 +1,6 @@
 // OCCT.NET: the fillets' topological reconstruction on the Boolean engine (unit 7R, option C of
 // docs/phase7-plan.md 2.1, decision 992). Not a port: it answers for TopOpeBRepBuild_HBuilder, which OCCT.NET does
-// not port, what ChFi3d_Builder asks of it (IChFi3d_Reconstruction), reading the same data structure.
+// not port, what ChFi3d_Builder asks of it (ChFi3d_Reconstruction), reading the same data structure.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using static Occt.TopAbs_Orientation;
@@ -44,7 +44,7 @@ namespace Occt;
 /// freezes once at the end.
 /// </para>
 /// </remarks>
-internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
+internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
 {
     /// <summary>The build tool OCCT gives its HBuilder (kept for the record: the edges are built here).</summary>
     private readonly TopOpeBRepDS_BuildTool myBuildTool;
@@ -85,10 +85,10 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
     internal ChFi3d_BOPReconstruction(TopOpeBRepDS_BuildTool BT) => myBuildTool = BT;
 
     //=================================================================================================
-    // IChFi3d_Reconstruction
+    // ChFi3d_Reconstruction
 
     /// <inheritdoc/>
-    public void Perform(TopOpeBRepDS_HDataStructure HDS)
+    public override void Perform(TopOpeBRepDS_HDataStructure HDS)
     {
         Clear();
         myHDS = HDS;
@@ -99,9 +99,9 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
     }
 
     /// <inheritdoc/>
-    public void MergeSolid(in TopoDS_Shape S, TopAbs_State ToBuild)
+    public override void MergeSolid(in TopoDS_Shape S, TopAbs_State TB)
     {
-        if (ToBuild != TopAbs_IN || myHDS is null || myMergedIN.ContainsKey(S))
+        if (TB != TopAbs_IN || myHDS is null || myMergedIN.ContainsKey(S))
         {
             return;
         }
@@ -111,27 +111,27 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
     }
 
     /// <inheritdoc/>
-    public bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild) =>
+    public override bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild) =>
         ToBuild == TopAbs_IN && mySplitIN.TryGetValue(S, out NCollection_List<TopoDS_Shape>? L) && !L.IsEmpty();
 
     /// <inheritdoc/>
-    public NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild) =>
+    public override NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild) =>
         ToBuild == TopAbs_IN && mySplitIN.TryGetValue(S, out NCollection_List<TopoDS_Shape>? L) ? L : theEmptyList;
 
     /// <inheritdoc/>
-    public NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild) =>
+    public override NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild) =>
         ToBuild == TopAbs_IN && myMergedIN.TryGetValue(S, out NCollection_List<TopoDS_Shape>? L) ? L : theEmptyList;
 
     /// <inheritdoc/>
-    public NCollection_List<TopoDS_Shape> NewFaces(int I) =>
+    public override NCollection_List<TopoDS_Shape> NewFaces(int I) =>
         myNewFaces.TryGetValue(I, out NCollection_List<TopoDS_Shape>? L) ? L : theEmptyList;
 
     /// <inheritdoc/>
-    public NCollection_List<TopoDS_Shape> NewEdges(int I) =>
+    public override NCollection_List<TopoDS_Shape> NewEdges(int I) =>
         myNewEdges.TryGetValue(I, out NCollection_List<TopoDS_Shape>? L) ? L : theEmptyList;
 
     /// <inheritdoc/>
-    public TopOpeBRepDS_HDataStructure? DataStructure() => myHDS;
+    public override TopOpeBRepDS_HDataStructure? DataStructure() => myHDS;
 
     public override string ToString() => "ChFi3d_BOPReconstruction, " + myBuildTool;
 
