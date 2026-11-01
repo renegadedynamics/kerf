@@ -355,7 +355,9 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         // each native run now reads its input again.
         int anInvalidNative = aRun.Differences.Count(d => d.Contains("valid False; port only volume", StringComparison.Ordinal)
                                                           && d.Contains("fuse 1 taper 5", StringComparison.Ordinal));
-        Assert.Equal(11, anInvalidNative);
+        // At most 11: native's DPrism varies with addresses (decision 1017), and under a loaded merge gate one of them
+        // once came out as the port's (1 November 2026); every difference must still be of this attributed kind
+        Assert.InRange(anInvalidNative, 0, 11);
         Assert.Equal(anInvalidNative, aRun.Differences.Count);
     }
 

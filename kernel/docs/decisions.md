@@ -11984,3 +11984,54 @@ and a note for the owner on build123d.NET's OCCT.NET backend. Numbers from 11301
          `IBentoList<TopoDS_Shape>` histories, which the generated wrapper copies into `TopTools_ListOfShape`; `Shape()`
          on a run not done throws StdFail_NotDone, which the wrapper turns into its OcctException as natively; build123d.NET's
          Quantity_Color could use OCCT.NET's own (decision 1070).
+
+## Phase 7: unit 7R3, the reconstruction's tail (7N3's findings)
+
+The gaps unit 7N3's oracle and corpus found in the reconstruction (its decisions 1140, 1147). Each was reproduced
+from native's own data structure (`tools/dsrec --recon`), so that it is the reconstruction's and not ChFi3d's, fixed or
+attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201 are placeholders.
+
+1155. **The seam band.** A face whose seam a filleted edge crosses (a cylinder or sphere of a Boolean result: the
+       rim of the hole crosses the seam, so it is part of the outer wire, in two edges) kept the band the fillet
+       removes: with the seam's parts under the fillet dropped, the rim's two whole edges close a loop by themselves,
+       which `BOPAlgo_BuilderFace` builds into a face (2 shells, UnorientableShape). The face's whole edges in touched
+       wires are now kept only when connected, through whole edges, to a vertex of a kept edge (a new edge or a part
+       IN); a chain of them between parts dropped lies under the fillet. Recorded: `box common sphere` e4, e7, all;
+       `cylinder T` e2, e5, e7. 7N3's oracle: 33 runs invalid before, 0 after (1,252 of 1,255 done runs native's, 2
+       native invalid, 1 attributed by 11202); OCC1077 and OCC426 valid (their GTests' known gaps emptied); the corpus
+       gains buildevol F7, F8, simple K2, K3 and bug28828_4.
+1156. **Attributed: a radius ten times the cylinder's** (`cylinder T e2 too large r28.914`). The small cylinder's
+       end circle has 11 points whose transitions do not alternate; native keeps two pieces of zero area of that
+       cylinder, the reconstruction also the band round its seam. Not worth a rule.
+1157. **A point at an edge's end is the edge's vertex.** ChFi3d records a fillet ending exactly at a vertex as a
+       new POINT with a CPI at the edge's first or last parameter (blend/simple Y1). The point is now bound to the edge's
+       vertex before the curves' edges are made (so the fillet's edges end on it), and an edge whose only points are
+       such ends is not cut: before, its state after the point made the whole edge OUT and the faces round it were
+       swallowed in cascade.
+1158. **A fillet face whose loop the face builder takes for a hole is built all the same**, on that loop, as the
+       HBuilder does (a fillet surface whose normal runs against its SCIs' transitions: degenerate surfaces, negative
+       areas natively). It makes blend/simple W4 native's but for the optimal box, blend/complex A1 (OCC22817) and
+       `b3d_fail_box_top_edges_r6` native's exactly, faults included.
+1159. **Two points at one parameter of a curve make no edge**, as the HBuilder's pave set (bug354_1 gave an edge of
+       length 0).
+1160. **A point beyond an edge's end extends its part IN to it** along the edge's curve, when the curve allows:
+       the fillet's end section overflows the edge (tolblend_simple C4, C7, C8 and bug354_1, where the faces grow by
+       the overflow, 625 to 625.12, as natively).
+1161. **The input's solids and shells are split** (`IsSplit`, `Splits` for IN): the solid into the merged solid, each
+       shell into the new shells holding its faces, as the HBuilder answers. `BRepFilletAPI`'s `Modified` and
+       `IsDeleted` read them: the input solid was reported deleted (found by unit 7X, its decision 1150). The
+       recording now has each input solid's `IsDeleted` and `Modified` (`msolid`), compared by volume; 7N3's oracle
+       compares the faces of the solids `Modified` gives on both sides.
+       A solid the fillets do not touch is not split, as natively (`IsDeleted` is then true on both sides, OCCT's
+       `myMap` holding only faces). 7N3's oracle now compares the input solids' history too: all native's.
+1162. **Not fixed: a Bezier face the fillet runs past.** In blend/simple V7 and tolblend_simple C5 the fillet's curve
+       leaves the Bezier face's parametric domain ([0, 1]); native's piece is a B-spline (the surface extended), the
+       reconstruction's keeps the Bezier surface with a pcurve outside it (UnorientableShape; areas within 1e-5).
+       It needs the face's surface extended before the split: attributed (complex A2's type difference is the same).
+1163. **The corpus's other failures, triaged.** The corpus now: OK 736 (723 before), FAILED 20 (34), IMPROVEMENT 10
+       (bug25979 and bug27711_2 newly: OCCT's TODOs not reproduced), BAD 33. Recorded natively and reconstructed from native's data structure:
+       the 9 blend cases above (simple W4, Y1, V7; tolblend_simple C4, C5, C7, C8; bug32929, bug354_1). bug32929's data
+       structure holds shapes not in the input (the text dump cannot read it back): untriaged. Not yet recorded
+       (Draw's evolving radii, `chamf_sequence` and two-step cases): buildevol J5, tolblend_buildvol A9, bug27711_2,
+       bug354_2, the dist_angle, dist_dist and equal_dist sequences; the order cases (complex G8, bug27711_3) stay
+       attributed to the faces' order; the draft cases are rerun after these fixes.

@@ -93,6 +93,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         Clear();
         myHDS = HDS;
         CollectCurveSupports();
+        BindPointsAtEdgeEnds();
         BuildEdges();
         SplitEdges();
         BuildFaces();
@@ -243,6 +244,10 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 {
                     continue;
                 }
+                if (aPaves[k + 1].T - aPaves[k].T <= Precision.PConfusion())
+                {
+                    continue; // two points at one parameter: no edge, as the HBuilder's pave set (decision 1159)
+                }
                 TopoDS_Edge E = MakeCurveEdge(iC, aPaves[k].V, aPaves[k].T, aPaves[k + 1].V, aPaves[k + 1].T);
                 aLE.Append(E);
             }
@@ -344,7 +349,13 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             {
                 continue;
             }
+            TopoDS_Edge E = TopoDS.Edge(S.Oriented(TopAbs_FORWARD));
+            if (BRep_Tool.Degenerated(E))
+            {
+                continue;
+            }
             List<(double T, TopoDS_Vertex V, TopAbs_State Before, TopAbs_State After)> aCuts = [];
+            bool aOnlyPointsAtEnds = true;
             foreach (TopOpeBRepDS_Interference I in aDS.ShapeInterferences(i))
             {
                 if (I is TopOpeBRepDS_CurvePointInterference CPI
@@ -352,9 +363,36 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 {
                     TopOpeBRepDS_Transition T = CPI.Transition();
                     aCuts.Add((CPI.Parameter(), VertexOf(CPI.GeometryType(), CPI.Geometry()), T.Before(), T.After()));
+                    aOnlyPointsAtEnds &= CPI.GeometryType() == TopOpeBRepDS_POINT && AtEnd(E, CPI.Parameter());
                 }
             }
-            if (aCuts.Count == 0)
+            if (aCuts.Count == 0 || aOnlyPointsAtEnds)
+            {
+                // points only where the edge's vertices are (a fillet ending at a vertex the data structure gives as a
+                // point): they cut nothing, and the edge is left whole (decision 1157)
+                continue;
+            }
+            SplitEdge(E, aCuts);
+        }
+    }
+
+    private static bool AtEnd(TopoDS_Edge E, double T)
+    {
+        BRep_Tool.Range(E, out double f, out double l);
+        return Math.Abs(T - f) <= Precision.PConfusion() || Math.Abs(T - l) <= Precision.PConfusion();
+    }
+
+    /// <summary>
+    /// The points the data structure puts on an edge at one of its ends are its vertex there: the curves ending at
+    /// them then end on the edge's vertex, as natively (decision 1157).
+    /// </summary>
+    private void BindPointsAtEdgeEnds()
+    {
+        TopOpeBRepDS_DataStructure aDS = DS;
+        for (int i = 1; i <= aDS.NbShapes(); i++)
+        {
+            TopoDS_Shape S = aDS.Shape(i);
+            if (S.IsNull() || S.ShapeType() != TopAbs_EDGE)
             {
                 continue;
             }
@@ -363,7 +401,22 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             {
                 continue;
             }
-            SplitEdge(E, aCuts);
+            BRep_Tool.Range(E, out double f, out double l);
+            TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            foreach (TopOpeBRepDS_Interference I in aDS.ShapeInterferences(i))
+            {
+                if (I is not TopOpeBRepDS_CurvePointInterference CPI || CPI.GeometryType() != TopOpeBRepDS_POINT
+                    || myPointVertices.ContainsKey(CPI.Geometry()))
+                {
+                    continue;
+                }
+                TopoDS_Vertex V = Math.Abs(CPI.Parameter() - f) <= Precision.PConfusion() ? V1
+                                  : Math.Abs(CPI.Parameter() - l) <= Precision.PConfusion() ? V2 : new TopoDS_Vertex();
+                if (!V.IsNull())
+                {
+                    myPointVertices[CPI.Geometry()] = V;
+                }
+            }
         }
     }
 
@@ -375,8 +428,29 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         theCuts.Sort((a, b) => a.T.CompareTo(b.T));
         double aTolPar = Precision.PConfusion();
 
+        // a point beyond an end, where the part IN runs to it: the fillet's section overflows the edge, and the part
+        // kept is extended to the point along the edge's curve, as the HBuilder's pave set does (decision 1160)
+        (double T, TopoDS_Vertex V) aStart = (f, aV1), anEnd = (l, aV2);
+        Geom_Curve? aC3d = BRep_Tool.Curve(E, out double _, out double _);
+        foreach ((double T, TopoDS_Vertex V, TopAbs_State Before, TopAbs_State After) c in theCuts)
+        {
+            if (aC3d is null)
+            {
+                break;
+            }
+            if (c.T > l + aTolPar && c.Before == TopAbs_IN && c.T <= aC3d.LastParameter())
+            {
+                anEnd = (c.T, c.V);
+            }
+            else if (c.T < f - aTolPar && c.After == TopAbs_IN && c.T >= aC3d.FirstParameter() && aStart.T == f)
+            {
+                aStart = (c.T, c.V);
+            }
+        }
+        bool anExtended = aStart.T != f || anEnd.T != l;
+
         // the paves: the edge's ends and its points inside, each with the state of the part that follows
-        List<(double T, TopoDS_Vertex V)> aPaves = [(f, aV1)];
+        List<(double T, TopoDS_Vertex V)> aPaves = [aStart];
         List<TopAbs_State> aStates = [];
         TopAbs_State aFirst = theCuts[0].Before;
         aStates.Add(aFirst);
@@ -399,8 +473,8 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             aPaves.Add((c.T, c.V));
             aStates.Add(c.After);
         }
-        aPaves.Add((l, aV2));
-        if (aPaves.Count == 2)
+        aPaves.Add(anEnd);
+        if (aPaves.Count == 2 && !anExtended)
         {
             // not cut: one part, kept when its state is IN
             List<(TopoDS_Edge, TopAbs_State)> aWhole = [(E, aStates[0])];
@@ -463,7 +537,18 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             }
             TopoDS_Face F = new();
             myBB.MakeFace(ref F, aSurf, Math.Max(S.Tolerance(), Precision.Confusion()));
-            NCollection_List<TopoDS_Shape> aFaces = BuildAreas(F, aLE);
+            NCollection_List<TopoDS_Shape> aFaces = BuildAreas(F, aLE, out NCollection_List<TopoDS_Shape> aLoops);
+            if (aFaces.IsEmpty())
+            {
+                // the SCIs' edges close a loop the face builder takes for a hole (a fillet surface whose normal runs
+                // against its transitions): the HBuilder makes the face on it all the same (decision 1158)
+                foreach (TopoDS_Shape W in aLoops)
+                {
+                    TopoDS_Face FW = TopoDS.Face(F.EmptyCopied());
+                    myBB.Add(FW, W);
+                    aFaces.Append(FW);
+                }
+            }
             if (!aFaces.IsEmpty())
             {
                 myNewFaces[iS] = aFaces;
@@ -472,7 +557,11 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
     }
 
     /// <summary>The faces <see cref="BOPAlgo_BuilderFace"/> builds on a forward face from edges.</summary>
-    private NCollection_List<TopoDS_Shape> BuildAreas(TopoDS_Face theFace, NCollection_List<TopoDS_Shape> theEdges)
+    private NCollection_List<TopoDS_Shape> BuildAreas(TopoDS_Face theFace, NCollection_List<TopoDS_Shape> theEdges) =>
+        BuildAreas(theFace, theEdges, out _);
+
+    private NCollection_List<TopoDS_Shape> BuildAreas(TopoDS_Face theFace, NCollection_List<TopoDS_Shape> theEdges,
+                                                      out NCollection_List<TopoDS_Shape> theLoops)
     {
         BOPAlgo_BuilderFace aBF = new();
         aBF.SetFace(theFace);
@@ -481,6 +570,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         aBF.SetRunParallel(false);
         aBF.SetAvoidInternalShapes(true); // the edges the fillet leaves dangling are dropped
         aBF.Perform();
+        theLoops = new NCollection_List<TopoDS_Shape>(aBF.Loops());
         return new NCollection_List<TopoDS_Shape>(aBF.Areas());
     }
 
@@ -493,18 +583,27 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         TopOpeBRepDS_DataStructure aDS = DS;
         NCollection_List<TopoDS_Shape> aFaces = new();
         List<TopoDS_Shape> aWhole = [];
-        for (TopExp_Explorer exp = new(S, TopAbs_FACE); exp.More(); exp.Next())
+        // the shell of the input each face kept comes from, for the shells' history
+        Dictionary<TopoDS_Shape, TopoDS_Shape> anOrigin = new(TopTools_ShapeMapHasher.Instance);
+        bool aChanged = false; // a solid the fillets do not touch is not split (natively it is then "deleted")
+        for (TopExp_Explorer exs = new(S, TopAbs_SHELL); exs.More(); exs.Next())
         {
-            TopoDS_Face F = TopoDS.Face(exp.Current());
-            NCollection_List<TopoDS_Shape>? aPieces = SplitFace(F);
-            if (aPieces is null)
+            for (TopExp_Explorer exp = new(exs.Current(), TopAbs_FACE); exp.More(); exp.Next())
             {
-                aWhole.Add(F);
-                continue;
-            }
-            foreach (TopoDS_Shape P in aPieces)
-            {
-                aFaces.Append(P.Oriented(F.Orientation()));
+                TopoDS_Face F = TopoDS.Face(exp.Current());
+                NCollection_List<TopoDS_Shape>? aPieces = SplitFace(F);
+                if (aPieces is null)
+                {
+                    aWhole.Add(F);
+                    anOrigin[F] = exs.Current();
+                    continue;
+                }
+                aChanged = true;
+                foreach (TopoDS_Shape P in aPieces)
+                {
+                    aFaces.Append(P.Oriented(F.Orientation()));
+                    anOrigin[P] = exs.Current();
+                }
             }
         }
         foreach (TopOpeBRepDS_Interference I in aDS.ShapeInterferences(S))
@@ -521,6 +620,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             foreach (TopoDS_Shape F in NewFaces(I.Geometry()))
             {
                 aFaces.Append(F.Oriented(O));
+                aChanged = true;
             }
         }
         foreach (TopoDS_Shape F in KeptWholeFaces(S, aWhole, aFaces))
@@ -540,6 +640,19 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             }
             aShell.Closed(BRep_Tool.IsClosed(aShell));
             aShells.Add(aShell);
+            // the input's shells this one comes from (decision 1161: the HBuilder splits solids and shells too)
+            HashSet<TopoDS_Shape> aFrom = new(TopTools_ShapeMapHasher.Instance);
+            foreach (TopoDS_Shape F in aBlock)
+            {
+                if (aChanged && anOrigin.TryGetValue(F, out TopoDS_Shape anOld) && aFrom.Add(anOld))
+                {
+                    if (!mySplitIN.TryGetValue(anOld, out NCollection_List<TopoDS_Shape>? L))
+                    {
+                        mySplitIN[anOld] = L = new NCollection_List<TopoDS_Shape>();
+                    }
+                    L.Append(aShell);
+                }
+            }
         }
         if (S.ShapeType() == TopAbs_SHELL)
         {
@@ -556,6 +669,13 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             myBB.Add(aSolid, aShell);
         }
         theMerged.Append(aSolid);
+        // BRepFilletAPI's Modified and IsDeleted read the solid's splits: native's give the solid made of it
+        if (aChanged)
+        {
+            NCollection_List<TopoDS_Shape> aSolidSplits = new();
+            aSolidSplits.Append(aSolid);
+            mySplitIN[S] = aSolidSplits;
+        }
     }
 
     /// <summary>
@@ -787,12 +907,9 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 aIsolated.Add(aWE);
             }
         }
-        foreach (TopoDS_Shape E in aWhole)
+        foreach (TopoDS_Shape E in WholeEdgesKept(aWhole, aIsolatedEdges, aKeptVertices))
         {
-            if (!aIsolatedEdges.Contains(E))
-            {
-                aLE.Append(E);
-            }
+            aLE.Append(E);
         }
 
         NCollection_List<TopoDS_Shape> aPieces = BuildAreas(FF, aLE);
@@ -929,6 +1046,52 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             return false;
         }
         return false;
+    }
+
+    /// <summary>
+    /// The face's edges left whole, in touched wires, that it keeps: those connected through edges left whole to a
+    /// vertex of a kept edge (decision 1155). A chain of them between two parts dropped lies under the fillet: alone
+    /// it dangles and the face builder drops it, but round a seam two such chains close a loop (the rim of a hole that
+    /// crosses a cylinder's seam) that it would build into a band.
+    /// </summary>
+    private static List<TopoDS_Shape> WholeEdgesKept(NCollection_List<TopoDS_Shape> theWhole,
+                                                     NCollection_Map<TopoDS_Shape> theIsolated,
+                                                     NCollection_Map<TopoDS_Shape> theKeptVertices)
+    {
+        List<TopoDS_Shape> aEdges = [.. theWhole.Where(E => !theIsolated.Contains(E))];
+        int[] aParent = Enumerable.Range(0, aEdges.Count).ToArray();
+        int Root(int i)
+        {
+            while (aParent[i] != i)
+            {
+                i = aParent[i] = aParent[aParent[i]];
+            }
+            return i;
+        }
+        Dictionary<TopoDS_Shape, int> aFirst = new(TopTools_ShapeMapHasher.Instance);
+        for (int i = 0; i < aEdges.Count; i++)
+        {
+            for (TopExp_Explorer exv = new(aEdges[i], TopAbs_VERTEX); exv.More(); exv.Next())
+            {
+                if (aFirst.TryGetValue(exv.Current(), out int j))
+                {
+                    aParent[Root(i)] = Root(j);
+                }
+                else
+                {
+                    aFirst[exv.Current()] = i;
+                }
+            }
+        }
+        HashSet<int> aAnchored = [];
+        foreach ((TopoDS_Shape V, int i) in aFirst)
+        {
+            if (theKeptVertices.Contains(V))
+            {
+                aAnchored.Add(Root(i));
+            }
+        }
+        return [.. aEdges.Where((E, i) => aAnchored.Contains(Root(i)))];
     }
 
     private static void AddVertices(in TopoDS_Shape E, NCollection_Map<TopoDS_Shape> theMap)

@@ -76,6 +76,7 @@ internal static class ReconRecordings
             List<int[]> aNewFaces = [], aModified = [], aGenE = [], aGenV = [];
             List<bool> aDeleted = [];
             List<double[]> aNewEdges = [];
+            List<(bool Deleted, int[] Modified)> aSolids = [];
             if (aResult.Length > 0)
             {
                 string[] h = aLines[k++].Split(' ');
@@ -103,13 +104,18 @@ internal static class ReconRecordings
                 {
                     aGenV.Add(Faces(aLines[k++].Split(' '), 3));
                 }
+                while (aLines[k].StartsWith("msolid ", StringComparison.Ordinal))
+                {
+                    string[] w = aLines[k++].Split(' ');
+                    aSolids.Add((w[2] == "1", Faces(w, 3)));
+                }
             }
             if (aLines[k++] != "end-case")
             {
                 throw new InvalidDataException("reconrec: end-case expected after " + aName);
             }
             aCases[aName] = new ReconCase(aName, aDone, aBRep, aDs, aResult, aNewFaces, aNewEdges, aDeleted, aModified,
-                                          aGenE, aGenV);
+                                          aGenE, aGenV, aSolids);
         }
         return aCases;
     }
@@ -119,7 +125,8 @@ internal static class ReconRecordings
 internal sealed record ReconCase(string Name, bool Done, string BRepText, string DsText, string ResultText,
                                  List<int[]> NewFaces, List<double[]> NewEdges, List<bool> Deleted,
                                  List<int[]> Modified,
-                                 List<int[]> GeneratedFromEdges, List<int[]> GeneratedFromVertices)
+                                 List<int[]> GeneratedFromEdges, List<int[]> GeneratedFromVertices,
+                                 List<(bool Deleted, int[] Modified)> Solids)
 {
     /// <summary>The input shape (a new one at each call).</summary>
     internal TopoDS_Shape Input

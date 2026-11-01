@@ -279,6 +279,35 @@ internal static class ReconComparison
                 d.Add($"Modified(F{i}) {s1} | {s2}");
             }
         }
+        // the input's solids: BRepFilletAPI's IsDeleted and Modified read the reconstruction's splits (unit 7R3)
+        NCollection_IndexedMap<TopoDS_Shape> aIS = new(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(theRun.Input, TopAbs_SOLID, aIS);
+        NCollection_IndexedMap<TopoDS_Shape> aNS = new(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(aNative, TopAbs_SOLID, aNS);
+        NCollection_IndexedMap<TopoDS_Shape> aMS = new(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(aMine, TopAbs_SOLID, aMS);
+        for (int i = 1; i <= Math.Min(theCase.Solids.Count, aIS.Extent()); i++)
+        {
+            TopoDS_Shape S = aIS[i];
+            List<TopoDS_Shape> aMod = [];
+            foreach (TopAbs_State st in new[] { TopAbs_OUT, TopAbs_IN, TopAbs_ON })
+            {
+                if (theRun.Builder.IsSplit(S, st))
+                {
+                    aMod.AddRange(theRun.Builder.Splits(S, st));
+                }
+            }
+            bool aDeleted = !(aMS.Contains(S) || aMod.Count > 0);
+            static string Volumes(IEnumerable<TopoDS_Shape> L) =>
+                "[" + string.Join(", ", L.Select(x => Volume(x).ToString("G6", CultureInfo.InvariantCulture))) + "]";
+            (bool nDel, int[] nMod) = theCase.Solids[i - 1];
+            string s1 = (nDel ? "deleted " : "") + Volumes(nMod.Where(j => j > 0).Select(j => aNS[j]));
+            string s2 = (aDeleted ? "deleted " : "") + Volumes(aMod);
+            if (s1 != s2)
+            {
+                d.Add($"Modified(So{i}) {s1} | {s2}");
+            }
+        }
         return d;
     }
 }

@@ -548,6 +548,7 @@ static TopoDS_Shape Scaled(const TopoDS_Shape& S, double theFactor)
 
 // dsrec --recon (unit 7R, recon.inc): native's result and history after Build, written after the data structure
 static bool        gRecon = false;
+static bool        gDrawParams = false; // --recon: Draw's blend parameters (recon.inc's corpus cases)
 static std::string gResult;
 template <class Maker>
 static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput);
@@ -611,6 +612,12 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
     }
     else
     {
+      if (gDrawParams)
+      {
+        // Draw's blend (BRepTest_FilletCommands): its default tolerances and continuity (unit 7R3's corpus cases)
+        aMkF.SetParams(1.0e-2, 1.0e-4, 1.0e-5, 1.0e-4, 1.0e-5, 1.0e-3);
+        aMkF.SetContinuity(GeomAbs_C1, 1.0e-2);
+      }
       for (const Edge& e : theEdges)
       {
         TopoDS_Edge E = EdgeOf(S, e.k);

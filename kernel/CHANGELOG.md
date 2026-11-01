@@ -1394,3 +1394,13 @@ Phase 7 (part): build123d.NET parity for fillets and chamfers (unit 7X, its seco
   tests make reproduces native (plan milestone 2).
 - Benchmarks: the fillets and chamfers join the `-- phase7` suite, within 2× native serial (0.54× to 1.05× by
   operation). Phase 6's parallel Boolean benchmark measured again.
+
+Phase 7 (part): the reconstruction's tail (unit 7R3).
+
+Phase 7 (part): the reconstruction's tail (unit 7R3).
+- Fixed: the band a fillet removes from a face whose seam it crosses (box common sphere, cylinder T, OCC1077,
+  OCC426); fillets ending at a vertex given as a point; fillet sections overflowing an edge; fillet faces whose loop
+  reads as a hole; zero-length curve edges; the input solid's history (`Modified` and `IsDeleted` of the solid, as
+  native's).
+- 7N3's oracle: 1,252 of 1,255 primitive runs native's (1,220 before), the GTests' inputs 7 of 7, histories of solids
+  compared; the fillet corpus: OK 736 (723), FAILED 20 (34), all attributed.

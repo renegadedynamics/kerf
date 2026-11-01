@@ -5,6 +5,9 @@
 // (tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/ReconstructionNativeTests.cs).
 
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <cmath>
 #include <GCPnts_AbscissaPoint.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
@@ -110,10 +113,23 @@ static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput)
     OS << "generated E " << i << " " << aList(theMk.Generated(aIE(i))) << "\n";
   for (int i = 1; i <= aIV.Extent(); i++)
     OS << "generated V " << i << " " << aList(theMk.Generated(aIV(i))) << "\n";
+  // unit 7R3: the history of the input's solids (IsDeleted, Modified as indices in MapShapes(result, SOLID))
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aIS, aRS;
+  TopExp::MapShapes(theInput, TopAbs_SOLID, aIS);
+  TopExp::MapShapes(aRes, TopAbs_SOLID, aRS);
+  for (int i = 1; i <= aIS.Extent(); i++)
+  {
+    const NCollection_List<TopoDS_Shape>& L = theMk.Modified(aIS(i));
+    OS << "msolid " << i << " " << (theMk.IsDeleted(aIS(i)) ? 1 : 0) << " " << L.Extent();
+    for (NCollection_List<TopoDS_Shape>::Iterator it(L); it.More(); it.Next())
+      OS << " " << aRS.FindIndex(it.Value());
+    OS << "\n";
+  }
   return OS.str();
 }
 
 static void RecordComplexCases(const char* theDataDir);
+static void RecordCorpusCases(const char* theDataDir);
 
 static void RecordReconCases(const char* theDataDir)
 {
@@ -439,9 +455,36 @@ static void RecordReconCases(const char* theDataDir)
     Record("b3d_fail_box_top_edges_r6", b, false, All(EdgesAtZ(b, 5), 6));
   }
 
+  // unit 7R3: faces with a seam cut by a fillet (unit 7N3's oracle: box common sphere, cylinder T; radius 3% of the
+  // box's diagonal as there)
+  {
+    auto aDiag = [](const TopoDS_Shape& S) {
+      Bnd_Box aBB;
+      BRepBndLib::Add(S, aBB);
+      return std::round(std::sqrt(aBB.SquareExtent()) * 0.03 * 1000.0) / 1000.0;
+    };
+    TopoDS_Shape aBCS = ThroughText(
+      BRepAlgoAPI_Common(BRepPrimAPI_MakeBox(10, 10, 10).Shape(), BRepPrimAPI_MakeSphere(gp_Pnt(5, 5, 5), 6.5).Shape())
+        .Shape());
+    double r = aDiag(aBCS);
+    Record("seam_box_common_sphere_e4", aBCS, false, {{4, r, -1}});
+    Record("seam_box_common_sphere_e7", aBCS, false, {{7, r, -1}});
+    Record("seam_box_common_sphere_all", aBCS, false, EdgesWhere(aBCS, r, [](const TopoDS_Edge&) { return true; }));
+    TopoDS_Shape aT = ThroughText(
+      BRepAlgoAPI_Fuse(BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 3, 20).Shape(),
+                       BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(-10, 0, 10), gp_Dir(1, 0, 0)), 2, 20).Shape())
+        .Shape());
+    r = aDiag(aT);
+    Record("seam_cylinder_T_e2", aT, false, {{2, r, -1}});
+    Record("seam_cylinder_T_e5", aT, false, {{5, r, -1}});
+    Record("seam_cylinder_T_e7", aT, false, {{7, r, -1}});
+    Record("seam_cylinder_T_e2_too_large", aT, false, {{2, 28.914, -1}}); // the oracle's "too large" radius
+  }
+
   if (theDataDir != nullptr)
   {
     RecordComplexCases(theDataDir);
+    RecordCorpusCases(theDataDir);
   }
 }
 
@@ -489,4 +532,55 @@ static void RecordComplexCases(const char* theDataDir)
                 {{9, 3, -1}, {7, 3, -1}, {5, 3, -1}, {3, 3, -1}, {1, 3, -1}, {2, 3, -1}, {4, 3, -1}, {6, 3, -1},
                  {8, 3, -1}});
   RecordComplex(theDataDir, "complex_G2", "CFI_pro14550.rle", 1, {{1, 5, -1}, {3, 5, -1}, {4, 5, -1}, {2, 5, -1}});
+}
+
+// unit 7R3: corpus cases that failed end to end with unit 7N3 (DrawFilletCorpusTests.KnownFailures), recorded as Draw's
+// blend makes them (its tolerances; .draw files are BRep text after a two-line header) to see whether the
+// reconstruction alone reproduces native's result from native's data structure
+static TopoDS_Shape ReadData(const char* theDataDir, const char* theFile)
+{
+  std::ifstream anIn(std::string(theDataDir) + "/brep/" + theFile, std::ios::binary);
+  std::stringstream aText;
+  aText << anIn.rdbuf();
+  std::string s = aText.str();
+  if (s.rfind("DBRep_DrawableShape", 0) == 0)
+  {
+    s = s.substr(s.find("CASCADE Topology"));
+  }
+  std::istringstream aStream(s);
+  TopoDS_Shape       S;
+  BRep_Builder       B;
+  BRepTools::Read(S, aStream, B);
+  return S;
+}
+
+static void RecordCorpus(const char* theDataDir, const char* theName, const char* theFile, double theScale,
+                         const std::vector<Edge>& theEdges)
+{
+  TopoDS_Shape S = ReadData(theDataDir, theFile);
+  if (S.IsNull())
+  {
+    std::fprintf(stderr, "dsrec: cannot read %s\n", theFile);
+    return;
+  }
+  if (theScale != 1.0)
+  {
+    S = Scaled(S, theScale);
+  }
+  gDrawParams = true;
+  Record(theName, S, false, theEdges);
+  gDrawParams = false;
+}
+
+static void RecordCorpusCases(const char* theDataDir)
+{
+  RecordCorpus(theDataDir, "corpus_simple_W4", "CCV_1_c12gsf.rle", 1, {{2, 0.2, -1}, {1, 0.2, -1}});
+  RecordCorpus(theDataDir, "corpus_simple_Y1", "CCV_1_n12gsq.rle", 1, {{7, 10, -1}});
+  RecordCorpus(theDataDir, "corpus_simple_V7", "8_J1.draw", 1000, {{3, 50, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C4", "CFI_11_a1few.rle", 5, {{17, 10, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C5", "CFI_11_a2fex.rle", 5, {{7, 50, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C7", "CFI_11_c1ffa.rle", 5, {{1, 40, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C8", "CFI_11_d1ffc.rle", 5, {{8, 100, -1}});
+  RecordCorpus(theDataDir, "corpus_bug32929", "bug32929.brep", 1, {{8, 1, -1}});
+  RecordCorpus(theDataDir, "corpus_bug354_1", "OCC354a.brep", 1, {{18, 2, -1}});
 }

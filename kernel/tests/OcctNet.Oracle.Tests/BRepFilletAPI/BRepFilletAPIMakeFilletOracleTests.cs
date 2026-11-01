@@ -502,6 +502,27 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
                 }
             }
+            // the input's solids (unit 7R3, decision 1161): IsDeleted, and the faces of the solids Modified gives
+            using var aSolids = new N.TopTools_IndexedMapOfShape();
+            N.TopExp.MapShapes(theInput, N.TopAbs_ShapeEnum.TopAbs_SOLID, aSolids);
+            for (int i = 1; i <= aSolids.Extent(); i++)
+            {
+                using N.TopoDS_Shape S = aSolids.FindKey(i);
+                using N.TopTools_ListOfShape aL = aMaker.Modified(S);
+                List<int> aSolidFaces = [];
+                foreach (N.TopoDS_Shape aSo in aL)
+                {
+                    using var aSoFaces = new N.TopTools_IndexedMapOfShape();
+                    N.TopExp.MapShapes(aSo, N.TopAbs_ShapeEnum.TopAbs_FACE, aSoFaces);
+                    for (int j = 1; j <= aSoFaces.Extent(); j++)
+                    {
+                        using N.TopoDS_Shape aFace = aSoFaces.FindKey(j);
+                        aSolidFaces.Add(aResFaces.FindIndex(aFace));
+                    }
+                }
+                GC.KeepAlive(aL); // decision 1109: the list outlives its native iterator
+                aHistory["So" + i] = (aMaker.IsDeleted(S), [.. aSolidFaces]);
+            }
             return new Outcome(null, aStatus, BooleanOracleTests.ReadPort(aText), aHistory);
         }
         catch (N.OcctException e)
@@ -599,6 +620,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 {
                     aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
                 }
+            }
+            NCollection_IndexedMap<TopoDS_Shape> aSolids = Map(theInput, TopAbs_SOLID);
+            for (int i = 1; i <= aSolids.Extent(); i++)
+            {
+                aHistory["So" + i] = (aMaker.IsDeleted(aSolids[i]),
+                                      [.. aMaker.Modified(aSolids[i]).SelectMany(x => Map(x, TopAbs_FACE)).Select(x => aResFaces.FindIndex(x))]);
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }
@@ -820,19 +847,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // keys: a case's name or the start of its names, before a space
     internal static readonly Dictionary<string, string> KnownPrimitiveDifferences = new(StringComparer.Ordinal)
     {
-        ["box common sphere e4"] = SeamBand,
-        ["box common sphere e7"] = SeamBand,
-        ["box common sphere all"] = SeamBand,
-        ["box common sphere face2"] = SeamBand,
-        ["cylinder T e2"] = SeamBand,
-        ["cylinder T e5"] = SeamBand,
-        ["cylinder T e7"] = SeamBand,
-        ["cylinder T all"] = SeamBand,
-        ["cylinder T face1"] = SeamBand,
-        ["cylinder T face2"] = SeamBand,
+        // unit 7N3 attributed 33 runs here to the seam band (a face with a seam cut by the fillet kept the band the
+        // fillet removes); unit 7R3 fixed it (decision 1155). Left (decision 1156): a radius of 28.9 on the T's
+        // junction (cylinders of radius 3 and 2): the end circle of the small cylinder has 11 points whose
+        // transitions do not alternate, and native keeps two pieces of zero area of that cylinder; the reconstruction
+        // keeps the band round the seam the rim crosses. Not worth a rule.
+        ["cylinder T e2 too large"] = "reconstruction (7R3): a radius ten times the cylinder's, transitions that do not alternate on the end circle",
     };
-
-    private const string SeamBand = "reconstruction (7R): a face with a seam (cylinder, sphere) cut by the fillet keeps a second piece, the band the fillet removes: 2 shells, FACE UnorientableShape; the fillet faces are native's";
 
     internal static readonly Dictionary<string, string> KnownDataOccDifferences = new(StringComparer.Ordinal)
     {
@@ -840,8 +861,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
 
     internal static readonly Dictionary<string, string> KnownGTestDifferences = new(StringComparer.Ordinal)
     {
-        ["OCC1077 cut 3, section edges r0.7"] = SeamBand,
-        ["OCC426"] = SeamBand,
+        // OCC1077's third cut and OCC426: the seam band, fixed by unit 7R3 (decision 1155)
     };
 
     internal static readonly string[] KnownMaxFilletDifferences = [];
