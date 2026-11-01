@@ -100,4 +100,28 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.Equal(10.0 * 20.0 * 30.0 - 8.0 * 18.0 * 29.0, Volume(aResult), 3);
     }
+
+    [Theory]
+    [InlineData(2.0)]
+    [InlineData(-1.0)]
+    public void CompleteIntersection_OfAnLShape_IsValid(double theOffset)
+    {
+        TopoDS_Shape aBox1 = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 20, 5, 5).Shape();
+        TopoDS_Shape aL = new BRepAlgoAPI_Fuse(aBox1, aBox2).Shape();
+        var aL2 = new ShapeUpgrade_UnifySameDomain(aL);
+        aL2.Build();
+        TopoDS_Shape anL = aL2.Shape();
+        ShapeSnapshot aSnap = ShapeSnapshot.Of(anL);
+
+        var anAlgo = new BRepOffset_MakeOffset();
+        anAlgo.Initialize(anL, theOffset, 1.0e-7, BRepOffset_Skin, true, false, GeomAbs_Intersection);
+        anAlgo.MakeOffsetShape();
+
+        aSnap.AssertUnchanged(anL);
+        Assert.True(anAlgo.IsDone(), anAlgo.Error().ToString());
+        TopoDS_Shape aResult = anAlgo.Shape();
+        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(Volume(aResult) > 0);
+    }
 }
