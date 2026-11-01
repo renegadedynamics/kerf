@@ -24,8 +24,9 @@
     <!-- The Booleans suite (unit 6M): build123d.NET's tests' Booleans, rebuilt with its public API as the oracle's capture does -->
     <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasNative)' == 'true'" />
     <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dBooleanCapture.cs" Link="Build123dBooleanCapture.cs" />
-    <!-- The phase 7 suite (unit 7X): build123d.NET's tests' offset, draft, feature and healing calls, as the oracle's capture records them -->
+    <!-- The phase 7 suite (unit 7X): build123d.NET's tests' offset, draft, feature, healing, fillet and chamfer calls, as the oracle's capture records them -->
     <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dPhase7Capture.cs" Link="Build123dPhase7Capture.cs" />
+    <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dPhase7Capture.Blend.cs" Link="Build123dPhase7Capture.Blend.cs" />
     <!-- The corpus's bopfuse_simple arguments (tools/pfrec's recording, decision 785) -->
     <EmbeddedResource Include="..\..\tests\OcctNet.ModelingAlgorithms.Tests\BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" Link="PaveFillerRecordings.txt.gz" />
     <!-- OCCT's source (tools/get-occt.ps1), for data/occ -->

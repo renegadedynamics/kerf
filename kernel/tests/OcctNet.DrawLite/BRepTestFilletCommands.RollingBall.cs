@@ -12,7 +12,7 @@ namespace OcctNet.DrawLite;
 /// </summary>
 /// <remarks>
 /// OCCT's tolerance is the file-scope <c>t3d</c> that <c>tolblend</c> sets (1e-4 by default), kept per interpreter
-/// (decision 11010).
+/// (decision 1144).
 /// </remarks>
 internal static partial class BRepTestFilletCommands
 {

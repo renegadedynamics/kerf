@@ -245,7 +245,7 @@ public partial class ChFi3d_Builder
     //=================================================================================================
 
     /// <summary>
-    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R). Internal (decision 11003): its type is
+    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R). Internal (decision 1137): its type is
     /// OCCT.NET's seam, not an OCCT class.
     /// </summary>
     internal ChFi3d_Reconstruction Builder()

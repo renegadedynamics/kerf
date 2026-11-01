@@ -155,7 +155,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
 
         // unit 7N3: 894 cases use the commands, 883 newly runnable (799 with data; none before): OK 712, BAD 34 (OCCT's
         // TODOs), IMPROVEMENT 8, SKIPPED 84 (data not public), FAILED 45 before the two fixes below; the 11 others miss
-        // viewer commands and stepread. encoderegularity rebinding the variables (decision 11011): OK 719, FAILED 38.
+        // viewer commands and stepread. encoderegularity rebinding the variables (decision 1145): OK 719, FAILED 38.
         // The frozen ConstrainedFilling surface in ChFi3d_Builder_2's PerformSetOfKGen (a port bug, fixed in src by the
         // unit): OK 723, FAILED 34. Unit 7R3's seam band (decision 11201): OK 728, FAILED 29 (buildevol F7, F8, simple K2,
         // K3, bug28828_4 pass). Its points at edge ends, overflowing sections and hole-like fillet loops (11203-11206):

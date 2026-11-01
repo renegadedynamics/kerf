@@ -6,7 +6,7 @@ namespace Occt;
 
 /// <summary>
 /// The options of a fillet for the functional twin <see cref="BRepFilletAPI.Fillet(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_FilletOptions, out BRepTools_History)"/>
-/// (decision 11005): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
+/// (decision 1139): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
 /// </summary>
 /// <remarks>
 /// An OCCT.NET addition, as <see cref="BRepAlgoAPI_Options"/> (decision 579): a struct with public fields, equatable
@@ -89,7 +89,7 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
 
 /// <summary>
 /// The options of a chamfer for the functional twin <see cref="BRepFilletAPI.Chamfer(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_ChamferOptions, out BRepTools_History)"/>
-/// (decision 11005): BRepFilletAPI_MakeChamfer's one option, <c>SetMode</c>, with OCCT's default.
+/// (decision 1139): BRepFilletAPI_MakeChamfer's one option, <c>SetMode</c>, with OCCT's default.
 /// </summary>
 public struct BRepFilletAPI_ChamferOptions : IEquatable<BRepFilletAPI_ChamferOptions>
 {

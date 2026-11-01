@@ -2108,7 +2108,7 @@ public partial class ChFi3d_Builder
 
                 ChFi3d_ReparamPcurv(0.0, 1.0, ref PC1);
                 ChFi3d_ReparamPcurv(0.0, 1.0, ref PC2);
-                Geom_Surface? newsurf = fil.InternalSurface(); // unfrozen: VReverse below (decision 10506)
+                Geom_Surface? newsurf = fil.InternalSurface(); // unfrozen: VReverse below (decision 1122)
                 if (pointuon1)
                 {
                     newsurf.VReverse(); // we return to direction 1 from  2;

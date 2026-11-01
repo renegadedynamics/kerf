@@ -214,7 +214,7 @@ internal static class BRepTestChamferCommands
                 else
                 {
                     // OCCT loops for ever here (i is not advanced: an edge and a face with too few words after
-                    // them); Draw-lite stops reading the words (decision 11012)
+                    // them); Draw-lite stops reading the words (decision 1146)
                     break;
                 }
             }

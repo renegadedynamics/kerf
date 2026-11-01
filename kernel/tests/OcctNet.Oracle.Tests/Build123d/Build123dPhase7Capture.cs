@@ -13,7 +13,7 @@ using Ops = Build123d.Operations;
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>The phase 7 calls build123d.NET makes: the native operation and how build123d.NET finishes its result.</summary>
-internal enum P7Op { ThickSolid, MakeOffset, Draft, DPrism, Split, ToSplines }
+internal enum P7Op { ThickSolid, MakeOffset, Draft, DPrism, Split, ToSplines, Fillet, Chamfer, MaxFillet }
 
 /// <summary>
 /// What build123d.NET does with the call's result before handing it back (compared separately, on native's result in
@@ -23,22 +23,29 @@ internal enum P7Op { ThickSolid, MakeOffset, Draft, DPrism, Split, ToSplines }
 /// </summary>
 internal enum P7Post { None, HollowSolid, Offset3D, OffsetOperation, Clean, Validity, SewSides }
 
-/// <summary>The arguments of one call (the faces of <c>Faces</c> are indices in the first operand's face map).</summary>
+/// <summary>
+/// The arguments of one call (the faces of <c>Faces</c> are indices in the first operand's face map). A fillet's or
+/// chamfer's <c>Edges</c> are indices in the first operand's edge map, negative for an edge given REVERSED; a chamfer's
+/// <c>Faces</c> give its face per edge (0: the edge's first ancestor face, as build123d.NET picks it) and its distances
+/// are <c>Value</c> and <c>Value2</c>; MaxFillet's window is twice <c>Value2</c> (the shape's diagonal), its tolerance
+/// <c>Tol</c>.
+/// </summary>
 internal sealed record P7Args(double Value = 0, double Tol = 0, int Join = 0, bool Inter = false, bool Thickening = false,
                               bool RemoveIntEdges = false, bool ThreeArgs = false, int[]? Faces = null, double[]? Angles = null,
                               double[]? Dir = null, double[]? PlnLoc = null, int Mode = 0, double Taper = 0, int Fuse = 0,
-                              bool HasBasis = false, int NbProfiles = 1, int Degree = 3, bool Nurbs = false);
+                              bool HasBasis = false, int NbProfiles = 1, int Degree = 3, bool Nurbs = false,
+                              int[]? Edges = null, double Value2 = 0, bool Operation = false, int MaxIterations = 0);
 
 /// <summary>
 /// One native call of build123d.NET's phase 7 path, from one of its tests: its operands (as native shapes), arguments and
 /// finishing step, and build123d.NET's own result of the operation (or its exception), which checks the transcription.
 /// </summary>
 internal sealed record P7Call(string Name, string Test, P7Op Op, N.TopoDS_Shape[] Operands, P7Args Args, P7Post Post,
-                              B.Shape? Result, string? Error);
+                              B.Shape? Result, string? Error, string? Message = null);
 
 /// <summary>A native run: the exception, the status, the result, the history, and SplitShape's Left and Right.</summary>
 internal sealed record P7Native(string? Error, string Status, N.TopoDS_Shape? Result, string History,
-                                N.TopoDS_Shape[]? Left = null, N.TopoDS_Shape[]? Right = null);
+                                N.TopoDS_Shape[]? Left = null, N.TopoDS_Shape[]? Right = null, string? Details = null);
 
 /// <summary>A port's run, as <see cref="P7Native"/>.</summary>
 internal sealed record P7Port(string? Error, string Status, TopoDS_Shape? Result, string History,
@@ -56,7 +63,7 @@ internal sealed record P7Port(string? Error, string Status, TopoDS_Shape? Result
 /// InputsUnchangedTests). The runners (shared with the benchmarks) run one call on either side from operands read from
 /// the same BRep text.
 /// </summary>
-internal static class Build123dPhase7Capture
+internal static partial class Build123dPhase7Capture
 {
     // ---------------------------------------------------------------------------------------------------------------
     // The cases
@@ -65,7 +72,7 @@ internal static class Build123dPhase7Capture
     internal static List<P7Call> Capture(Action<string>? theFailure = null)
     {
         var aCalls = new List<P7Call>();
-        foreach ((string aTest, Action<List<P7Call>, string> aScenario) in Scenarios())
+        foreach ((string aTest, Action<List<P7Call>, string> aScenario) in Scenarios().Concat(BlendScenarios()))
         {
             try
             {
@@ -573,6 +580,9 @@ internal static class Build123dPhase7Capture
         P7Op.Draft => theCall.Post == P7Post.Validity ? "ExtrudeTaper" : "Draft",
         P7Op.DPrism => "DPrism",
         P7Op.Split => "SplitByPerimeter",
+        P7Op.Fillet => theCall.Args.Operation ? "Fillet operation" : "Fillet",
+        P7Op.Chamfer => theCall.Args.Operation ? "Chamfer operation" : "Chamfer",
+        P7Op.MaxFillet => "MaxFillet",
         _ => "ToSplines",
     };
 
@@ -728,6 +738,10 @@ internal static class Build123dPhase7Capture
     /// <summary>One call natively, on operands read from the text; with <paramref name="theHistory"/>, its history too.</summary>
     internal static P7Native RunNative(P7Call theCall, List<N.TopoDS_Shape> theOps, bool theHistory = true)
     {
+        if (theCall.Op is P7Op.Fillet or P7Op.Chamfer or P7Op.MaxFillet)
+        {
+            return RunBlendNative(theCall, theOps, theHistory);
+        }
         P7Args a = theCall.Args;
         using var aFaces = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theOps[0], N.TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
@@ -872,6 +886,10 @@ internal static class Build123dPhase7Capture
     /// <summary>One call in the port, on its (frozen) operands, as <see cref="RunNative"/>.</summary>
     internal static P7Port RunPort(P7Call theCall, List<TopoDS_Shape> theOps, bool theHistory = true)
     {
+        if (theCall.Op is P7Op.Fillet or P7Op.Chamfer or P7Op.MaxFillet)
+        {
+            return RunBlendPort(theCall, theOps, theHistory);
+        }
         P7Args a = theCall.Args;
         var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(theOps[0], TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
