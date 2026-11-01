@@ -36,7 +36,7 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
 
 ## State
 
-- `main`: phases 0–6.
+- `main`: phases 0–7 (phase 7 merged on 1 November 2026 from `phase7/finishing`; see phase7-plan.md's banner).
 - `phase5/construction`: the integration branch for phases 5 and 6. Merged so far:
   - **Intersections:** 5A, 5B, 5C, 5D, 5E, 5F, 5G.
   - **Construction:** 5H, 5K1, 5K2, 5L1, 5L2, 5L3, 5M, 5O1, 5P, 5Q, 5R, 5S1, 5S2, 5T, 5O2, 5W.

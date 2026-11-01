@@ -12035,3 +12035,39 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        (Draw's evolving radii, `chamf_sequence` and two-step cases): buildevol J5, tolblend_buildvol A9, bug27711_2,
        bug354_2, the dist_angle, dist_dist and equal_dist sequences; the order cases (complex G8, bug27711_3) stay
        attributed to the faces' order; the draft cases are rerun after these fixes.
+
+## Phase 7: closing (1 November 2026)
+
+1164. **Phase 7 closes with the fillet tail attributed** (owner, 1 November). Every unit of phase7-plan.md section 4
+       is merged except 7M1 to 7M3, which option C dropped (decision 992). Twenty fillet corpus cases still fail and
+       stay attributed, not fixed:
+       - evolving radii (blend/buildevol J5, tolblend_buildvol A9) and the chamfer sequences (8 cases): not yet
+         triaged against native's data structure;
+       - drafts of fillet results (draft/angle A2, B5, C3, C4, C5, F1): not investigated;
+       - fillets running past a Bezier face's parameter range (blend/simple V7, tolblend_simple C5): need the
+         reconstruction to extend the face's surface before splitting it;
+       - edges picked by explode index on a fillet result (complex G8, bug27711_3): the reconstruction's face order.
+
+       Estimated at 0.3 to 0.5 million tokens, and as much again for the Bezier extension (decision 1163's unit). None
+       of these cases is reached by build123d.NET's tests or Bento's examples.
+1165. **The whole corpus at phase 7's end** (`DrawCorpusTests.Runnable_cases_run_and_OCCTs_log_check_judges_them`
+       with `OCCTNET_CORPUS_FULL=1`, decision 1020).
+       - **Totals:** of 21,068 cases, 16,381 are runnable (77.8%; the plan's estimate was 15,721): OK 10,066,
+         SKIPPED 5,825 (data not public), BAD 419 (OCCT's own TODOs), IMPROVEMENT 12, FAILED 59.
+       - **Already attributed (38):** in a per-area corpus test's known failures.
+       - **Not checked before (21):** only this report ever ran them.
+         - Commands the scan misses because scripts reach them indirectly, all outside the port (12): the viewer's
+           `vbackground`, `vaspects`, text's `text2brep`, OCAF's `XNewDoc`/`NewDocument` (demo/samples bottle, cad,
+           cpu, gehause, logo2019, materials, penrose, raytrace, snowflake, xde; v3d/materials/phong1;
+           v3d/bugs/bug29020).
+         - Explained (4): bug21727 (the Free flag, open question 1), bug30346_2 (the prism history difference of
+           decision 981), bug30949 (`Bnd_OBB::DumpJson` not ported), bug24639 (a parallel speed-up check).
+         - Not yet triaged, possible port bugs (5):
+           - bugs/modalg_6/bug26406: `TopoDS_LockedShape` in `BRep_Builder::UpdateVertex`, a write into a frozen
+             shape;
+           - bugs/filling/bug23380: 3 edges, wrong count;
+           - lowalgos/extss/bug29712_44: distance 0 where 10 is expected;
+           - demo/samples/anc101: "no suitable edges for chamfer or fillet";
+           - bugs/fclasses/bug1281: `pload ALL`.
+
+         These are a follow-up.
