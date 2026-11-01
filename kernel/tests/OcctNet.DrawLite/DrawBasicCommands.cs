@@ -29,9 +29,8 @@ internal static class DrawBasicCommands
     {
         // print OCCT version and OCCTY-specific macros used
         di.Append("Open CASCADE Technology 8.0.1\n");
-#if DEBUG
-        di.Append("Debug mode\n");
-#endif
+        // OCCT.NET: no "Debug mode" line in either configuration. The port leaves out OCCT_DEBUG code, so it is always
+        // OCCT's release build, and the corpus scripts that read the line run the same in Debug and Release builds
         di.Append("Tk disabled\n");
         if (!OperatingSystem.IsWindows())
         {

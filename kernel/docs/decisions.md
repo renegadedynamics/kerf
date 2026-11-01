@@ -9971,3 +9971,13 @@ helix Draw commands. Numbers from 8501 are placeholders, renumbered on merge.
       near 1e-15 included, and which OCCT expects to fail on every platform). The plan expected 60 (section 1.6); the
       grid has 56 cases. The construction corpus test, whose sweep commands the helix cases use, runs them too (1,017
       runnable there now).
+
+## Phase 7: a faster merge gate
+
+8801. **The merge gate runs in Release, and can cover two units** (owner, 1 November). `merge-unit.sh` tests with
+      `-c Release`: the port's floating point is the same in both configurations (.NET has no fast-math), and the
+      only `#if DEBUG` in the code, `dversion`'s "Debug mode" line, is gone, so the 32 corpus scripts that read it run
+      the same in Debug (helpers' runs) and Release (the gate). The port leaves out OCCT_DEBUG code, so it is always
+      OCCT's release build. `--no-gate` merges the first of two ready units without testing it (built only), and the
+      second merge's gate tests both. A shared corpus scan was measured and not done: a full scan of the 21,068 cases
+      takes about 4 s, so the twenty corpus tests' scans cost a minute or two of a 35-minute gate.

@@ -3,7 +3,7 @@
 Used to merge each unit's branch into an integration branch (today `phase5/construction`) with a test gate. Run from
 Git Bash on Windows; needs `perl` and the .NET SDK.
 
-## `merge-unit.sh <branch> "<title>"`
+## `merge-unit.sh [--no-gate] <branch> "<title>"`
 
 Merges `<branch>` into the branch checked out in the repository that holds this script, then:
 
@@ -18,7 +18,7 @@ Merges `<branch>` into the branch checked out in the repository that holds this 
 
    Any other conflict stops the merge (exit 2) and leaves it for you to resolve by hand.
 3. **Runs `renumber.pl`** to turn the unit's placeholder decision numbers into real ones.
-4. **Runs `dotnet test OcctNet.slnx`** and commits only if everything passes (exit 3 and the merge left uncommitted
+4. **Runs `dotnet test OcctNet.slnx -c Release`** and commits only if everything passes (exit 3 and the merge left uncommitted
    otherwise). The failing tests' names are printed. The whole test output is kept in `.git/merge-unit-test.log`, with the failures' messages.
 
 A full gate takes about 25 minutes on an idle machine and up to an hour when several helpers share it. Merge units one
@@ -26,6 +26,10 @@ at a time, each as its own command, and check the exit code directly: a pipe thr
 
 If a gate fails for a reason outside the unit, fix it in the working tree (the merge is still staged), rerun the
 failing project's tests, and commit the merge with a message that says what was fixed.
+
+**Two units at once.** When both units of a step are ready, merge the first with `--no-gate` (it is resolved,
+renumbered and built in Release, then committed untested) and the second without: its gate tests both. If that gate
+fails, the failure may be either unit's; the log says which tests.
 
 ## `renumber.pl <repo> [floor]`
 
