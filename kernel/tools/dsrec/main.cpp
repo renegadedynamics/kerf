@@ -12,6 +12,7 @@
 // "%.17g", geometry with GeomTools::Write at precision 17. Built with MSVC against build123d.NET's native OCCT
 // V8_0_1 (TKFillet and TopOpeBRepDS are not bound there).
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 
 #include <cstdio>
@@ -535,6 +536,12 @@ static TopoDS_Shape Scaled(const TopoDS_Shape& S, double theFactor)
   return BRepBuilderAPI_Transform(S, T, true).Shape();
 }
 
+// dsrec --recon (unit 7R, recon.inc): native's result and history after Build, written after the data structure
+static bool        gRecon = false;
+static std::string gResult;
+template <class Maker>
+static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput);
+
 struct Edge
 {
   int    k;
@@ -549,6 +556,7 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
   gBefore.clear();
   std::string anAfter, aStatus;
   bool        aDone = false;
+  gResult.clear();
   try
   {
     OCC_CATCH_SIGNALS
@@ -559,7 +567,9 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
       for (const Edge& e : theEdges)
       {
         TopoDS_Edge E = EdgeOf(S, e.k);
-        if (e.r2 < 0)
+        if (e.r2 == -2)
+          aMk.AddDA(e.r1, 60 * M_PI / 180, E, FaceOf(S, E)); // --recon only: a distance and an angle
+        else if (e.r2 < 0)
           aMk.Add(e.r1, E);
         else
           aMk.Add(e.r1, e.r2, E, FaceOf(S, E));
@@ -567,6 +577,8 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
       aMk.Build();
       aDone = aMk.IsDone();
       aHB   = aMk.Builder();
+      if (gRecon && gCalls > 0)
+        gResult = ResultText(aMk, S);
     }
     else
     {
@@ -582,6 +594,8 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
       aMk.Build();
       aDone = aMk.IsDone();
       aHB   = aMk.Builder();
+      if (gRecon && gCalls > 0)
+        gResult = ResultText(aMk, S);
     }
     if (gCalls > 0 && !aHB.IsNull() && !aHB->DataStructure().IsNull())
     {
@@ -616,18 +630,25 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
        << (anAfter == gBefore ? 1 : 0) << "\n";
   gOut << "brep " << nB << "\n" << aB;
   gOut << "ds " << nD << "\n" << gBefore;
+  if (gRecon)
+  {
+    gOut << (gResult.empty() ? std::string("result 0\n") : gResult);
+  }
   gOut << "end-case\n";
   std::fprintf(stdout, "%s: done %d, %d lines, unchanged by Perform %d\n", theName, aDone ? 1 : 0, nD,
                anAfter == gBefore ? 1 : 0);
 }
 
 int RunKPart(const char* thePath); // kpart.cpp
+static void RecordCases();
+static void RecordReconCases(const char* theDataDir); // recon.inc
+
 
 int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt\n");
+    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt | dsrec --recon out.txt [dataset]\n");
     return 2;
   }
   OSD::SetSignal(false);
@@ -640,7 +661,19 @@ int main(int argc, char** argv)
     std::fprintf(stderr, "dsrec: could not hook TopOpeBRepBuild_HBuilder::Perform in TKFillet.dll\n");
     return 3;
   }
-  gOut.open(argv[1], std::ios::binary);
+  // --recon (unit 7R): the same cases and more, each with native's result and history after its data structure
+  gRecon = argc >= 3 && std::strcmp(argv[1], "--recon") == 0;
+  gOut.open(argv[gRecon ? 2 : 1], std::ios::binary);
+  RecordCases();
+  if (gRecon)
+  {
+    RecordReconCases(argc >= 4 ? argv[3] : nullptr);
+  }
+  return 0;
+}
+
+static void RecordCases()
+{
   const gp_Ax1 aZ(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
   const gp_Ax1 aX(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0));
 
@@ -708,5 +741,6 @@ int main(int argc, char** argv)
   Record("chamfer_box_edge", aBox, true, {{5, 10, -1}});
   Record("chamfer_box_edge_two_distances", aBox, true, {{5, 10, 20}});
   Record("chamfer_box_corner", aBox, true, {{aCorner[0], 10, -1}, {aCorner[1], 10, -1}, {aCorner[2], 10, -1}});
-  return 0;
 }
+
+#include "recon.inc"

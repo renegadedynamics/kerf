@@ -1693,3 +1693,17 @@ Found by unit 7Y's investigations. The port reproduces each except where said.
 | BRepFill_Filling `AddConstraints` | An edge without a pcurve on its support face leaves the 2D adaptor unloaded, then evaluated (OCCT's comment says so) | A null dereference natively; the port takes the support's own edge on the same curve for a caller's frozen edge (decision 1103) |
 | LocOpe_DPrism (BRepFeat_MakeDPrism with a taper) | `BRepLib::UpdateTolerances` on the result raises the profile's vertex tolerances (1.06e-5), the profile being shared | The caller's profile changes; a later DPrism on it starts from the raised tolerances (decision 1105) |
 | build123d.NET's native binding, from several threads at once | (see decision 1109) | |
+
+## Phase 7: unit 7R, the fillets' reconstruction
+
+Found by comparing the reconstruction with native OCCT's fillets (tools/dsrec --recon). The reconstruction replaces
+TopOpeBRepBuild (decision 992), so these are native results it does not reproduce; each is attributed in
+`ReconstructionNativeTests.KnownDifferences`.
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepBuild (a fillet reaching a cone's apex, blend/simple H8) | The degenerated edge at the apex is left whole although the fillet's curve reaches it inside its parametric range | Native's cone face fails BRepCheck (UnorientableShape); the reconstruction cuts the edge there (decision 1113) and its face is valid, the geometry equal |
+| ChFi3d / TopOpeBRepBuild (blend/complex A1, OCC22817, "TEST INCOMPLETE" in OCCT) | The result fails BRepCheck (a sub-shape badly oriented) and the face on one fillet surface has a negative area | The reconstruction builds no face on that surface and its result is valid; volumes differ |
+| TopOpeBRepBuild (a Bezier face cut, blend/complex A2) | The pieces are built on a B-spline copy of the Bezier surface | The reconstruction's pieces keep the Bezier surface; same geometry |
+| BRepFilletAPI_MakeFillet (all twelve edges of a cube of 10, radius 6) | `IsDone` is true and the result degenerate: negative volume, an area of -6e29, B-spline faces far outside the cube | Not compared; build123d.NET rejects the result |
+| TopOpeBRepBuild_HBuilder::Perform (blend/complex A3) | Its filters and reducers change the data structure before building (the only recorded case where they do) | The reconstruction reads the data structure as ChFi3d left it and gives native's result |

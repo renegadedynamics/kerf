@@ -11451,3 +11451,82 @@ HLRAppli are 7Q2's.
       case 105 read their inputs through such helpers, so they likely had this cause too; their reruns can stay as a
       guard. For build123d.NET (not changed here): its generated TopoDS_Iterator wrapper should hold a reference to the
       wrapper of the shape it iterates, as build123d.NET's own code iterates shapes the same way.
+
+## Phase 7: unit 7R, the fillets' reconstruction on the Boolean engine
+
+Option C of phase7-plan.md 2.1 (decision 992): `ChFi3d_BOPReconstruction` answers for TopOpeBRepBuild_HBuilder what
+ChFi3d asks of it, from the same data structure, with BOPAlgo's builders. New design, not a port. Numbers from 10701
+are placeholders, renumbered on merge.
+
+1110. **The seam and what it answers.** 7N2's abstract class `ChFi3d_Reconstruction` (HBuilder's `Perform`,
+       `MergeSolid`, `IsSplit`, `Splits`, `Merged`, `NewFaces`, `NewEdges`, `DataStructure`, OCCT's names and
+       parameters) is adopted as 7N2 committed it (its commit 53ec321, which replaced the interface of 04e6780);
+       `ChFi3d_Reconstruction.Create` now gives a `ChFi3d_BOPReconstruction`. Only the state IN
+       is built, the only one ChFi3d asks for: `IsSplit` and `Splits` for OUT and ON answer false and empty, so
+       `BRepFilletAPI_MakeFillet::Modified` (the union of OUT, IN and ON) gives the kept pieces, the faces native
+       gives. `Merged` binds the solids and shells merged, as the HBuilder does for fillets: `Merged` of a face is
+       empty, so `ChFi3d_FilBuilder::SetRegul`'s branch for a face codes nothing, as natively. A face is split
+       (`IsSplit` true) when it had curves or cut edges and keeps a piece; an edge when it was cut at points and keeps
+       a part. The lists are the reconstruction's own; `Perform` starts afresh.
+1111. **Steps 1 and 2: the vertices, the edges, the fillet faces.** A point of geometry VERTEX is the input's
+       vertex itself; a POINT gets one new vertex (its tolerance). Each curve gives an edge between each point whose
+       transition's orientation for IN is FORWARD and the next REVERSED one, by parameter; a curve without points
+       gives none, a curve without 3D curve a degenerated edge (HBuilder's `BuildEdges`). Its pcurves are those of the
+       SCIs naming it, on the input's faces (their surface and location) and on the fillet surfaces; two SCIs on one
+       support make a seam, the FORWARD one's pcurve first. Its tolerance is the curve's, raised to the surfaces' (as
+       `BuildFaces` does). The DS curves are used as they are: the HBuilder's build tool approximations
+       (`mkbuildtool`'s BSPLINE1 settings) and `RecomputeCurves` are not reproduced. An input edge with CPIs is cut at
+       them (`BOPTools_AlgoTools::MakeSplitEdge`, which keeps its pcurves and a seam's pair), each part with the state
+       after the point before it. A fillet face is built by `BOPAlgo_BuilderFace` on the DS surface from its SCIs'
+       edges oriented by their transitions.
+1112. **Step 3: a face cut is rebuilt from the edges it keeps** (`SplitFace`), as the HBuilder's face builder does:
+       its new edges oriented by their transitions (both ways on a seam of the face), the parts IN of its cut edges,
+       its other edges whole. Those the fillet removes (the edge filleted) are left dangling by the parts dropped and
+       `BOPAlgo_BuilderFace` drops them (`SetAvoidInternalShapes`). A wire with no edge cut and no vertex on a kept
+       edge is classified apart: an inner wire is kept if a point of it lies in a piece built without it (a hole far
+       from the fillet), dropped otherwise (the rim of a hole filleted); the outer wire is kept when the pieces built
+       without it are none (the fillet's loops are holes: a hole's rim, a concave fillet round a window), classified
+       as an inner one otherwise (a face whose every edge is filleted). Pieces are built on the forward face, recorded
+       forward in `Splits` and oriented as the face in the shell. Rejected: splitting the face by all its edges and
+       its new edges both ways and dropping the pieces that hold a new edge against its transition. It is right for
+       convex fillets, but a concave fillet's new edges lie outside the face (the face grows into the fillet), which
+       no piece of the face can give (blend/simple B4, C3), and its votes misjudge a concave window's corners.
+1113. **Degenerated edges are cut where a fillet reaches them.** A fillet ending at a cone's apex has a DS curve
+       ending on the apex vertex at a point of the degenerated edge's pcurve inside its range (blend/simple H8, H9).
+       The degenerated edge is cut there in the face's parametric space and all its parts are given to the face
+       builder: its wire splitter follows the parametric space at the vertex, and the part under the fillet is left
+       over and dropped. Native leaves the edge whole and its face fails BRepCheck (UnorientableShape) in H8; the
+       reconstruction's is valid, the geometry equal (attributed, occt-issues 7R).
+1114. **Step 4: the assembly.** The solid's faces in order (each cut one's pieces), the fillet faces of its SSIs
+       (oriented by their transitions), then its faces left whole that keep, for every edge, as many faces as the
+       input had: a face whose edge lost a neighbour lies where a fillet swallowed it and is dropped, until none is
+       (blend/complex E8). Shells are the faces connected by edges, so a solid's voids stay apart; a solid is made of
+       all of them, a shell input gives shells (Compute takes their first shell, as natively). Orientations come from
+       the data structure: no `BOPAlgo_ShellSplitter` and no reorientation. The faces therefore come in another order
+       than native's; the history agrees as sets.
+1115. **The oracle: `tools/dsrec --recon` and a geometric comparison.** dsrec records, after each case's data
+       structure, native's result (BRep text) and history: the faces of each surface and the edges of each curve
+       (`Builder()->NewFaces`, `NewEdges`, by length), `IsDeleted` and `Modified` of each input face, `Generated` of
+       each edge and vertex (`reconrec.txt.gz`, a file apart so that dsrec.txt stays byte for byte as 7L recorded
+       it). Cases (120): dsrec's 15; blend/simple A2 to H9 (boxes, wedges, partial cylinders, cones, spheres, tori,
+       elliptic, parabolic, Bezier and B-spline prisms, revolutions, concave and convex); build123d.NET's fillets and
+       chamfers (a box's edges, a cylinder's circles, a plate with a hole and with a window, an open box); a shell, a
+       solid with a void, a compound of two solids; pyramids (corners of four faces, the plate filling); chamfers by
+       two distances and by a distance and an angle; blend/complex's shapes found in the dataset; failures. The
+       harness runs Compute from `Perform` (the vertices of the edges split, the new faces same-parameter) on the
+       builder's working copy; a second run freezes the input and runs Perform and MergeSolid (nothing written).
+       Compared: volume and area (1e-6 relative), the counts of solids, shells, faces, edges and vertices, BRepCheck's
+       validity, the optimal box (1e-4 of the diagonal), the faces of each surface and the images of each input face
+       as sets of (surface type, area), the edges of each curve by length (1e-5). **114 cases equal; 2 differ where
+       native's result is invalid (H8, blend/complex A1, OCC22817); 1 differs in a surface type (complex A2:
+       native's pieces of a Bezier face are B-splines); 3 are not compared** (a radius larger than the cube: native
+       says done with a degenerate result; complex B3 and G1: the data structure holds shapes ChFi3d made, which the
+       text dump cannot rebuild, so 7N2's end-to-end run will reach them).
+1116. **Not handled, for 7N2, 7N3 and later.** Nothing recorded reaches them; each would need a case: faces given a
+       new surface (`SetNewSurface`: the pieces would have to be built on it), same-domain faces, section edges and
+       `Isfafa`; partial results (`badShape`) take the same `Merged` and are untested; the history comes in another
+       order than native's (indices differ; sets agree). Writes: the reconstruction writes only into its own shapes
+       and reuses the input's faces and edges left whole and its vertices; Compute's later steps (`UpdateVertex` on
+       the edges split, `BRepLib::SameParameter` and `ShapeFix::SameParameter` on the new faces, `SetRegul`'s
+       continuities) write into those, so 7N2 must run them on its working copy, freeze the result once at the end
+       and map the faces left whole back to the caller's (`FromWork`).

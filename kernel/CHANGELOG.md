@@ -1321,3 +1321,15 @@ Phase 7 (part): follow-ups on the differences from native (unit 7Y).
   its input); memory-trend corpus cases run once more when they fail; MakeDraft's four and DPrism's eleven tapered fuses
   stay attributed, with their causes narrowed. A stress of build123d.NET's native binding from many threads reproduces
   the gate's native-only access violation (decision 10409).
+
+Phase 7 (part): the fillets' reconstruction on the Boolean engine (unit 7R, option C).
+
+- `ChFi3d_BOPReconstruction` replaces TopOpeBRepBuild_HBuilder for the fillet builders: from the data structure the
+  fillets fill, it builds the edges of the curves, the fillet faces, the input's faces and edges cut (concave fillets
+  growing a face, holes kept or dropped, a fillet reaching a cone's apex), and the shells and solids, with
+  `BOPAlgo_BuilderFace`; it answers `IsSplit`, `Splits`, `Merged`, `NewFaces` and `NewEdges` as ChFi3d asks.
+  `ChFi3d_Reconstruction.Create` gives it to the builders. It writes only into the shapes it makes.
+- Tests: `tools/dsrec --recon` records native OCCT's data structure, result and history for 120 fillets and chamfers
+  (blend/simple A to H, blend/complex's shapes in the dataset, build123d.NET's, shells, voids, compounds, corners of
+  four faces). Compared geometrically (volumes, areas, counts, validity, boxes, histories as sets): 114 equal, 3
+  attributed to native (two invalid native results, Bezier pieces made B-splines), 3 not comparable.
