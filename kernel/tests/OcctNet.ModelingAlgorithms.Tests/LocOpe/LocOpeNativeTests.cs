@@ -562,6 +562,36 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         for (int f = 1; f <= aNbF; f++)
         {
             TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            if (!IsPlanar(aF))
+            {
+                continue;
+            }
+            add(Run("DRAFT", f, () =>
+            {
+                TopoDS_Edge anE = IsoEdge(aF);
+                if (anE.IsNull())
+                {
+                    return null;
+                }
+                double aZMin = 1e100;
+                for (var anExp = new TopExp_Explorer(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
+                {
+                    aZMin = Min(aZMin, BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())).Z());
+                }
+                var aDrafts = new LocOpe_SplitDrafts(S);
+                aDrafts.Perform(aF, new BRepBuilderAPI_MakeWire(anE).Wire(), gp.DZ(), new gp_Pln(new gp_Pnt(0, 0, aZMin), gp.DZ()),
+                                5 * Math.PI / 180);
+                if (!aDrafts.IsDone())
+                {
+                    return "NOTDONE";
+                }
+                return Rec(aDrafts.Shape()) + " " + aDrafts.ShapesFromShape(aF).Extent().ToString(CultureInfo.InvariantCulture);
+            }));
+        }
+
+        for (int f = 1; f <= aNbF; f++)
+        {
+            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
             add(Run("FIND", f, () =>
             {
                 var aFind = new LocOpe_FindEdges(aF, S);

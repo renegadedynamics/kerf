@@ -25,6 +25,8 @@
 //   LFORM    i  LocOpe_LinearForm of F(i) along (3, 4, 12)
 //   DPRISM   i  LocOpe_DPrism of a planar F(i) with at most 16 edges, height 10, angle 3 degrees; DPRISM2 heights 10
 //               and 4
+//   DRAFT    i  LocOpe_SplitDrafts on a planar F(i) with the wire of its iso edge (as SPLITTER's), extraction Z, the
+//               neutral plane z = zmin of its vertices, 5 degrees on the left part
 //   FIND     i  LocOpe_FindEdges(F(i), input): the pairs (index of the edge from, index of the edge to)
 //   FIF      i  LocOpe_FindEdgesInFace(input, F(i)): the indices of the edges
 // A shape is written <hash> <faces> <edges> <vertices>: hash, FNV-1a 64 of its BRep text (format 3, triangles, no
@@ -77,6 +79,7 @@
 #include <LocOpe_LinearForm.hxx>
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
+#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <LocOpe_Spliter.hxx>
 #include <LocOpe_WiresOnShape.hxx>
@@ -690,6 +693,39 @@ static void Tools(const std::string& theName)
         return Swept(*aDPrism, aF, true) + Curves(*aDPrism);
       });
     }
+  }
+
+  for (int f = 1; f <= aNbF; f++)
+  {
+    if (!IsPlanar(TopoDS::Face(aFMap(f))))
+    {
+      continue;
+    }
+    Run("DRAFT", f, [&]() -> std::string {
+      TopoDS_Shape aS  = Make(theName);
+      TopoDS_Face  aF  = Face(aS, f);
+      TopoDS_Edge  anE = IsoEdge(aF);
+      if (anE.IsNull())
+      {
+        return "SKIP";
+      }
+      double aZMin = 1e100;
+      for (TopExp_Explorer anExp(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
+      {
+        aZMin = std::min(aZMin, BRep_Tool::Pnt(TopoDS::Vertex(anExp.Current())).Z());
+      }
+      LocOpe_SplitDrafts aDrafts(aS);
+      aDrafts.Perform(aF,
+                      BRepBuilderAPI_MakeWire(anE).Wire(),
+                      gp::DZ(),
+                      gp_Pln(gp_Pnt(0, 0, aZMin), gp::DZ()),
+                      5 * M_PI / 180);
+      if (!aDrafts.IsDone())
+      {
+        return "NOTDONE";
+      }
+      return Rec(aDrafts.Shape()) + " " + std::to_string(aDrafts.ShapesFromShape(aF).Extent());
+    });
   }
 
   for (int f = 1; f <= aNbF; f++)
