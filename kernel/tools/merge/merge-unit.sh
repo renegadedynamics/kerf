@@ -42,8 +42,9 @@ if [ $gate = 1 ]; then
 out=$(dotnet test OcctNet.slnx -c Release -nologo --logger "console;verbosity=normal" 2>&1)
 # the whole output, with each test's duration and the failures' messages (inside .git, so never committed)
 echo "$out" > .git/merge-unit-test.log
-echo "$out" | grep -E " error |Passed!|Failed!|\[FAIL\]" | sed 's/\[C:.*//' | sort -u
-if echo "$out" | grep -qE " error |Failed!"; then echo "Stopping: build or tests failed; merge left uncommitted."; exit 3; fi
+echo "$out" | grep -E ": error [A-Z]+[0-9]+|Passed!|Failed!|Test Run (Successful|Failed|Aborted)|Total tests|\[FAIL\]" | sed 's/\[C:.*//' | sort | uniq -c
+# the detailed logger prints "Test Run Failed." (not "Failed!") for a project with failures
+if echo "$out" | grep -qE ": error [A-Z]+[0-9]+|Failed!|Test Run Failed|Test Run Aborted|\[FAIL\]"; then echo "Stopping: build or tests failed; merge left uncommitted."; exit 3; fi
 else
 dotnet build OcctNet.slnx -c Release -nologo -v q > .git/merge-unit-test.log 2>&1 || { echo "Stopping: the build failed; merge left uncommitted."; exit 3; }
 note="$note Built, not tested: the next merge's gate tests it."
