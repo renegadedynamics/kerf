@@ -16,9 +16,12 @@ public class TopOpeBRepDSNativeTests
     public static TheoryData<string> CaseNames()
     {
         TheoryData<string> aData = new();
-        foreach (string aName in DsRecordings.Cases.Keys)
+        foreach (DsCase aCase in DsRecordings.Cases.Values)
         {
-            aData.Add(aName);
+            if (aCase.PerformCalls > 0)
+            {
+                aData.Add(aCase.Name);
+            }
         }
         return aData;
     }
@@ -26,9 +29,16 @@ public class TopOpeBRepDSNativeTests
     [Fact]
     public void TheRecordingHasTheCases()
     {
-        Assert.Equal(15, DsRecordings.Cases.Count);
+        // 15 cases of unit 7L, 23 of unit 7N2 (three of them failures that never reach Perform)
+        Assert.Equal(38, DsRecordings.Cases.Count);
         foreach (DsCase aCase in DsRecordings.Cases.Values)
         {
+            if (aCase.PerformCalls == 0)
+            {
+                Assert.False(aCase.Done, aCase.Name);
+                Assert.StartsWith("b3d_fail_", aCase.Name);
+                continue;
+            }
             Assert.True(aCase.Done, aCase.Name);
             Assert.Equal(1, aCase.PerformCalls);
             // in these cases Perform leaves what the dump shows unchanged (decision 9903)
@@ -69,7 +79,7 @@ public class TopOpeBRepDSNativeTests
             TopoDS_Shape S = aDS.Shape(i);
             Assert.False(S.IsNull());
             Assert.Equal(i, aDS.Shape(S));
-            if (S.ShapeType() == TopAbs_SOLID)
+            if (S.ShapeType() == TopAbs_SOLID || S.ShapeType() == TopAbs_SHELL) // a fillet on a shell: its SSIs (unit 7N2)
             {
                 for (TopOpeBRepDS_InterferenceIterator it = new(aDS.ShapeInterferences(S)); it.More(); it.Next())
                 {

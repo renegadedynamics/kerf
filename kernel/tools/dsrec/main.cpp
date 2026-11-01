@@ -24,6 +24,16 @@
 #include <vector>
 
 #include <BRepAlgoAPI_Cut.hxx>
+#include <BRepBndLib.hxx>
+#include <TopExp_Explorer.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepOffsetAPI_ThruSections.hxx>
+#include <BRep_Builder.hxx>
+#include <Bnd_Box.hxx>
+#include <Geom_Line.hxx>
+#include <Geom_TrimmedCurve.hxx>
+#include <TopoDS_Shell.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
@@ -539,49 +549,66 @@ struct Edge
 {
   int    k;
   double r1;
-  double r2; // evolving fillet: r1 to r2; chamfer: distances (r2 < 0: one distance)
+  double r2;       // evolving fillet: r1 to r2; chamfer: distances (r2 < 0: one distance)
+  int    mode = 0; // chamfer: 0 distances, 1 distance and angle (r2 in degrees) (unit 7N2)
 };
 
-static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, const std::vector<Edge>& theEdges)
+// Unit 7N2: the input goes through BRep text first, as the port reads it, so both sides compute on the same shape
+// (a rotated or scaled shape's location read back can differ from the in-memory one by an ulp).
+static TopoDS_Shape ThroughText(const TopoDS_Shape& S)
 {
-  gInput  = S;
-  gCalls  = 0;
+  std::ostringstream anOut;
+  BRepTools::Write(S, anOut);
+  std::istringstream anIn(anOut.str());
+  TopoDS_Shape       aRes;
+  BRep_Builder       aB;
+  BRepTools::Read(aRes, anIn, aB);
+  return aRes;
+}
+
+static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer, const std::vector<Edge>& theEdges)
+{
+  const TopoDS_Shape S = ThroughText(S0);
+  gInput               = S;
+  gCalls               = 0;
   gBefore.clear();
-  std::string anAfter, aStatus;
-  bool        aDone = false;
+  std::string               anAfter, aStatus, aFaults;
+  bool                      aDone = false;
+  BRepFilletAPI_MakeChamfer aMkC(S);
+  BRepFilletAPI_MakeFillet  aMkF(S);
   try
   {
     OCC_CATCH_SIGNALS
     occ::handle<TopOpeBRepBuild_HBuilder> aHB;
     if (theChamfer)
     {
-      BRepFilletAPI_MakeChamfer aMk(S);
       for (const Edge& e : theEdges)
       {
         TopoDS_Edge E = EdgeOf(S, e.k);
-        if (e.r2 < 0)
-          aMk.Add(e.r1, E);
+        if (e.mode == 1)
+          aMkC.AddDA(e.r1, e.r2 * M_PI / 180., E, FaceOf(S, E));
+        else if (e.r2 < 0)
+          aMkC.Add(e.r1, E);
         else
-          aMk.Add(e.r1, e.r2, E, FaceOf(S, E));
+          aMkC.Add(e.r1, e.r2, E, FaceOf(S, E));
       }
-      aMk.Build();
-      aDone = aMk.IsDone();
-      aHB   = aMk.Builder();
+      aMkC.Build();
+      aDone = aMkC.IsDone();
+      aHB   = aMkC.Builder();
     }
     else
     {
-      BRepFilletAPI_MakeFillet aMk(S);
       for (const Edge& e : theEdges)
       {
         TopoDS_Edge E = EdgeOf(S, e.k);
         if (e.r2 < 0)
-          aMk.Add(e.r1, E);
+          aMkF.Add(e.r1, E);
         else
-          aMk.Add(e.r1, e.r2, E);
+          aMkF.Add(e.r1, e.r2, E);
       }
-      aMk.Build();
-      aDone = aMk.IsDone();
-      aHB   = aMk.Builder();
+      aMkF.Build();
+      aDone = aMkF.IsDone();
+      aHB   = aMkF.Builder();
     }
     if (gCalls > 0 && !aHB.IsNull() && !aHB->DataStructure().IsNull())
     {
@@ -592,11 +619,26 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
   {
     aStatus = std::string(" failure ") + typeid(e).name();
   }
-  if (gCalls == 0)
+  if (!theChamfer)
   {
-    std::fprintf(stdout, "%s: Perform not reached%s\n", theName, aStatus.c_str());
-    gOut << "case " << theName << "\nstatus done " << (aDone ? 1 : 0) << " perform 0\nend-case\n";
-    return;
+    // the diagnostics build123d.NET reads (plan 2.6): faulty contours, stripe statuses, faulty vertices
+    std::ostringstream aF;
+    try
+    {
+      OCC_CATCH_SIGNALS
+      aF << " contours " << aMkF.NbContours() << " faulty " << aMkF.NbFaultyContours();
+      for (int i = 1; i <= aMkF.NbFaultyContours(); i++)
+        aF << " " << aMkF.FaultyContour(i);
+      aF << " statuses";
+      for (int ic = 1; ic <= aMkF.NbContours(); ic++)
+        aF << " " << (int)aMkF.StripeStatus(ic);
+      aF << " faultyvertices " << aMkF.NbFaultyVertices() << " hasresult " << (aMkF.HasResult() ? 1 : 0);
+    }
+    catch (const Standard_Failure&)
+    {
+      aF << " diagnostics-failed";
+    }
+    aFaults = aF.str();
   }
   std::ostringstream aBRep;
   BRepTools::Write(S, aBRep);
@@ -612,13 +654,161 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
   for (char c : gBefore)
     nD += c == '\n';
   gOut << "case " << theName << "\n";
+  // the edges and their parameters (k:r1:r2:mode), so that the port's tests need no edge selection of their own
+  std::string anEdges = theChamfer ? " chamfer" : " fillet";
+  for (const Edge& e : theEdges)
+    anEdges += " " + std::to_string(e.k) + ":" + R(e.r1) + ":" + R(e.r2) + ":" + std::to_string(e.mode);
   gOut << "status done " << (aDone ? 1 : 0) << " perform " << gCalls << " unchanged "
-       << (anAfter == gBefore ? 1 : 0) << "\n";
+       << (gCalls > 0 && anAfter == gBefore ? 1 : 0) << aFaults << (aStatus.empty() ? "" : " exception") << anEdges
+       << "\n";
   gOut << "brep " << nB << "\n" << aB;
   gOut << "ds " << nD << "\n" << gBefore;
   gOut << "end-case\n";
-  std::fprintf(stdout, "%s: done %d, %d lines, unchanged by Perform %d\n", theName, aDone ? 1 : 0, nD,
-               anAfter == gBefore ? 1 : 0);
+  std::fprintf(stdout,
+               "%s: done %d, %d lines, perform %d%s%s\n",
+               theName,
+               aDone ? 1 : 0,
+               nD,
+               gCalls,
+               aFaults.c_str(),
+               aStatus.c_str());
+}
+
+static TopoDS_Shape Translated(const TopoDS_Shape& S, double x, double y, double z)
+{
+  gp_Trsf T;
+  T.SetTranslation(gp_Vec(x, y, z));
+  return S.Moved(TopLoc_Location(T));
+}
+
+// build123d.NET's Box(x, y, z) and Cylinder(r, h): centred at the origin
+static TopoDS_Shape CBox(double x, double y, double z)
+{
+  return Translated(BRepPrimAPI_MakeBox(x, y, z).Shape(), -x / 2, -y / 2, -z / 2);
+}
+
+static TopoDS_Shape CCyl(double r, double h)
+{
+  return Translated(BRepPrimAPI_MakeCylinder(r, h).Shape(), 0, 0, -h / 2);
+}
+
+static bool IsLine(const occ::handle<Geom_Curve>& C)
+{
+  occ::handle<Geom_Curve> B = C;
+  occ::handle<Geom_TrimmedCurve> T = occ::down_cast<Geom_TrimmedCurve>(B);
+  if (!T.IsNull())
+    B = T->BasisCurve();
+  return B->DynamicType() == STANDARD_TYPE(Geom_Line);
+}
+
+// the edges whose ends and middle are at Z = z (and, with theLinesOnly, that are lines)
+static std::vector<int> EdgesAtZ(const TopoDS_Shape& S, double z, bool theLinesOnly = false)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapes(S, TopAbs_EDGE, M);
+  std::vector<int> r;
+  for (int k = 1; k <= M.Extent(); k++)
+  {
+    TopoDS_Edge E = TopoDS::Edge(M(k));
+    if (BRep_Tool::Degenerated(E))
+      continue;
+    double                  f, l;
+    occ::handle<Geom_Curve> C = BRep_Tool::Curve(E, f, l);
+    if (C.IsNull())
+      continue;
+    if (std::abs(C->Value(f).Z() - z) < 1e-7 && std::abs(C->Value(l).Z() - z) < 1e-7
+        && std::abs(C->Value(0.5 * (f + l)).Z() - z) < 1e-7)
+    {
+      if (theLinesOnly && !IsLine(C))
+        continue;
+      r.push_back(k);
+    }
+  }
+  return r;
+}
+
+// the edges parallel to Z
+static std::vector<int> VerticalEdges(const TopoDS_Shape& S)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapes(S, TopAbs_EDGE, M);
+  std::vector<int> r;
+  for (int k = 1; k <= M.Extent(); k++)
+  {
+    TopoDS_Edge E = TopoDS::Edge(M(k));
+    if (BRep_Tool::Degenerated(E))
+      continue;
+    double                  f, l;
+    occ::handle<Geom_Curve> C = BRep_Tool::Curve(E, f, l);
+    gp_Pnt                  a = C->Value(f), b = C->Value(l);
+    if (std::abs(a.X() - b.X()) < 1e-7 && std::abs(a.Y() - b.Y()) < 1e-7 && std::abs(a.Z() - b.Z()) > 1e-7)
+      r.push_back(k);
+  }
+  return r;
+}
+
+static std::vector<Edge> All(const std::vector<int>& ks, double r1, double r2 = -1, int mode = 0)
+{
+  std::vector<Edge> r;
+  for (int k : ks)
+    r.push_back({k, r1, r2, mode});
+  return r;
+}
+
+static std::vector<int> AllEdges(const TopoDS_Shape& S)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapes(S, TopAbs_EDGE, M);
+  std::vector<int> r;
+  for (int k = 1; k <= M.Extent(); k++)
+    if (!BRep_Tool::Degenerated(TopoDS::Edge(M(k))))
+      r.push_back(k);
+  return r;
+}
+
+// the edges at the vertex at P
+static std::vector<int> EdgesAtPoint(const TopoDS_Shape& S, const gp_Pnt& P)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> ME;
+  TopExp::MapShapes(S, TopAbs_EDGE, ME);
+  NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapesAndAncestors(S, TopAbs_VERTEX, TopAbs_EDGE, M);
+  std::vector<int> r;
+  for (int i = 1; i <= M.Extent(); i++)
+  {
+    if (BRep_Tool::Pnt(TopoDS::Vertex(M.FindKey(i))).Distance(P) > 1e-6)
+      continue;
+    for (NCollection_List<TopoDS_Shape>::Iterator it(M(i)); it.More(); it.Next())
+    {
+      int  k    = ME.FindIndex(it.Value());
+      bool seen = false;
+      for (int j : r)
+        seen = seen || j == k;
+      if (!seen && !BRep_Tool::Degenerated(TopoDS::Edge(it.Value())))
+        r.push_back(k);
+    }
+  }
+  return r;
+}
+
+// the edges whose ends and middle have X = x and Z = z
+static std::vector<int> EdgesAtXZ(const TopoDS_Shape& S, double x, double z)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapes(S, TopAbs_EDGE, M);
+  std::vector<int> r;
+  for (int k = 1; k <= M.Extent(); k++)
+  {
+    double                  f, l;
+    occ::handle<Geom_Curve> C = BRep_Tool::Curve(TopoDS::Edge(M(k)), f, l);
+    if (C.IsNull())
+      continue;
+    gp_Pnt a = C->Value(f), b = C->Value(l);
+    if (std::abs(a.X() - x) < 1e-7 && std::abs(b.X() - x) < 1e-7 && std::abs(a.Z() - z) < 1e-7
+        && std::abs(b.Z() - z) < 1e-7)
+      r.push_back(k);
+  }
+  return r;
 }
 
 int RunKPart(const char* thePath); // kpart.cpp
@@ -708,5 +898,84 @@ int main(int argc, char** argv)
   Record("chamfer_box_edge", aBox, true, {{5, 10, -1}});
   Record("chamfer_box_edge_two_distances", aBox, true, {{5, 10, 20}});
   Record("chamfer_box_corner", aBox, true, {{aCorner[0], 10, -1}, {aCorner[1], 10, -1}, {aCorner[2], 10, -1}});
+
+  // unit 7N2: more of the blend and chamfer grids' features, and build123d.NET's fillet and chamfer tests
+  {
+    // a tangent chain: a box whose vertical edge is filleted, then the top edges around it (line-arc-line)
+    BRepFilletAPI_MakeFillet aMk(aBox);
+    aMk.Add(20, EdgeOf(aBox, VerticalEdges(aBox)[0]));
+    aMk.Build();
+    TopoDS_Shape aRounded = aMk.Shape();
+    Record("tangent_chain_top", aRounded, false, All(EdgesAtZ(aRounded, 100), 5));
+    Record("tangent_chain_chamfer", aRounded, true, All(EdgesAtZ(aRounded, 100), 5));
+  }
+  {
+    // a four-edge corner: the apex of a square pyramid
+    BRepBuilderAPI_MakePolygon aSq(gp_Pnt(0, 0, 0), gp_Pnt(100, 0, 0), gp_Pnt(100, 100, 0), gp_Pnt(0, 100, 0), true);
+    BRepOffsetAPI_ThruSections aTS(true, true);
+    aTS.AddWire(aSq.Wire());
+    aTS.AddVertex(BRepBuilderAPI_MakeVertex(gp_Pnt(50, 50, 80)).Vertex());
+    aTS.Build();
+    TopoDS_Shape aPyr = aTS.Shape();
+    Record("pyramid_apex_four_edges", aPyr, false, All(EdgesAtPoint(aPyr, gp_Pnt(50, 50, 80)), 5));
+    Record("pyramid_base_edges", aPyr, false, All(EdgesAtZ(aPyr, 0), 5));
+  }
+  {
+    // concave and convex: an L-shaped block (a box cut by a box), its inner edge, and with the top edges
+    TopoDS_Shape aL = BRepAlgoAPI_Cut(BRepPrimAPI_MakeBox(100, 100, 100).Shape(),
+                                      BRepPrimAPI_MakeBox(gp_Pnt(50, -10, 50), gp_Pnt(110, 110, 110)).Shape())
+                        .Shape();
+    std::vector<int> aIn = EdgesAtXZ(aL, 50, 50);
+    Record("L_concave_edge", aL, false, All(aIn, 10));
+    std::vector<int> aMix = aIn;
+    for (int k : EdgesAtZ(aL, 100))
+      aMix.push_back(k);
+    Record("L_concave_and_top", aL, false, All(aMix, 10));
+    Record("L_concave_chamfer", aL, true, All(aIn, 10));
+  }
+  Record("box_two_edges_evolving", aBox, false, {{aCorner[0], 5, 15}, {aCorner[1], 5, 15}});
+  Record("chamfer_box_edge_distance_angle", aBox, true, {{5, 10, 30, 1}});
+  Record("chamfer_box_two_edges", aBox, true, {{aCorner[0], 10, -1}, {aCorner[1], 10, -1}});
+  Record("chamfer_box_two_distances_corner",
+         aBox,
+         true,
+         {{aCorner[0], 10, 20}, {aCorner[1], 10, 20}, {aCorner[2], 10, 20}});
+  {
+    // a fillet on a shell: the box's faces but the top
+    TopoDS_Shell aSh;
+    BRep_Builder aB;
+    aB.MakeShell(aSh);
+    for (TopExp_Explorer ex(aBox, TopAbs_FACE); ex.More(); ex.Next())
+    {
+      Bnd_Box aBB;
+      BRepBndLib::Add(ex.Current(), aBB);
+      double x0, y0, z0, x1, y1, z1;
+      aBB.Get(x0, y0, z0, x1, y1, z1);
+      if (z0 > 99)
+        continue;
+      aB.Add(aSh, ex.Current());
+    }
+    Record("open_box_shell_vertical_edges", aSh, false, All(VerticalEdges(aSh), 10));
+  }
+  // build123d.NET's tests (tests/Build123d.Tests): its Box and Cylinder are centred
+  {
+    TopoDS_Shape b = CBox(10, 10, 10);
+    Record("b3d_box_all_edges_r1", b, false, All(AllEdges(b), 1));
+    Record("b3d_box_top_edges_r2", b, false, All(EdgesAtZ(b, 5), 2));
+    Record("b3d_box_vertical_edges_r1", b, false, All(VerticalEdges(b), 1));
+    Record("b3d_box_top_chamfer_d1", b, true, All(EdgesAtZ(b, 5), 1));
+    Record("b3d_box_top_chamfer_two_distances", b, true, All(EdgesAtZ(b, 5), 0.1, 0.2));
+    TopoDS_Shape plate = BRepAlgoAPI_Cut(CBox(20, 10, 4), CCyl(2, 10)).Shape();
+    Record("b3d_plate_hole_top_lines_r1", plate, false, All(EdgesAtZ(plate, 2, true), 1));
+    TopoDS_Shape cyl = CCyl(1, 2);
+    Record("b3d_cylinder_bottom_r01", cyl, false, All(EdgesAtZ(cyl, -1), 0.1));
+    // failures: build123d.NET turns them into ArgumentException from the stripe statuses (plan 2.6)
+    TopoDS_Shape small = CBox(1, 1, 1);
+    Record("b3d_fail_box_fillet_too_large", small, false, All(AllEdges(small), 5));
+    Record("b3d_fail_box_chamfer_too_large", small, true, All(AllEdges(small), 5));
+    TopoDS_Shape thin = CBox(20, 20, 2);
+    Record("b3d_fail_thin_plate_fillet_r3", thin, false, All(AllEdges(thin), 3));
+    Record("b3d_fail_box_top_edges_r6", b, false, All(EdgesAtZ(b, 5), 6));
+  }
   return 0;
 }

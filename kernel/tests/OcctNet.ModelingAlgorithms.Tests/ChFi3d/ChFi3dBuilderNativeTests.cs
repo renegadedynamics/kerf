@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Globalization;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -48,8 +49,11 @@ public class ChFi3dBuilderNativeTests
         public override TopOpeBRepDS_HDataStructure? DataStructure() => HDS;
     }
 
-    /// <summary>An edge of a fillet case: its index in TopExp::MapShapes(input, EDGE) and its radii (r2 &lt; 0: constant).</summary>
-    internal readonly record struct CaseEdge(int K, double R1, double R2 = -1);
+    /// <summary>
+    /// An edge of a case: its index in TopExp::MapShapes(input, EDGE) and its parameters (a fillet's radii, r2 &lt; 0:
+    /// constant; a chamfer's distances, r2 &lt; 0: one distance; Mode 1: a distance and an angle in degrees).
+    /// </summary>
+    internal readonly record struct CaseEdge(int K, double R1, double R2 = -1, int Mode = 0);
 
     internal static TopoDS_Edge EdgeOf(in TopoDS_Shape S, int k)
     {
@@ -58,85 +62,33 @@ public class ChFi3dBuilderNativeTests
         return TopoDS.Edge(M[k]);
     }
 
-    /// <summary>tools/dsrec's EdgesAtVertex1: the edges at the input's first vertex, in ancestor order.</summary>
-    internal static List<int> EdgesAtVertex1(in TopoDS_Shape S)
+    /// <summary>tools/dsrec's FaceOf: the first face of the edge in TopExp::MapShapesAndAncestors(S, EDGE, FACE).</summary>
+    internal static TopoDS_Face FaceOf(in TopoDS_Shape S, in TopoDS_Edge E)
     {
-        NCollection_IndexedMap<TopoDS_Shape> ME = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, ME);
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(S, TopAbs_VERTEX, TopAbs_EDGE, M);
-        List<int> r = [];
-        foreach (TopoDS_Shape e in M[1])
-        {
-            int k = ME.FindIndex(e);
-            if (!r.Contains(k))
-            {
-                r.Add(k);
-            }
-        }
-        return r;
+        TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, M);
+        return TopoDS.Face(M.FindFromKey(E).First());
     }
 
-    /// <summary>tools/dsrec's choice of the cylinder's top edge: not degenerated, not the seam, at Z &gt; 50.</summary>
-    private static int CylinderTopEdge(in TopoDS_Shape S)
+    /// <summary>The case's operation (true: chamfer) and edges, as tools/dsrec records them in the status line.</summary>
+    internal static (bool Chamfer, List<CaseEdge> Edges) CaseEdges(DsCase theCase)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> EF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, EF);
-        for (int k = 1; k <= M.Extent(); k++)
+        string[] t = theCase.StatusTokens;
+        int i = Array.IndexOf(t, "fillet");
+        bool aChamfer = false;
+        if (i < 0)
         {
-            TopoDS_Edge E = TopoDS.Edge(M[k]);
-            if (!BRep_Tool.Degenerated(E) && !BRep_Tool.IsClosed(E, TopoDS.Face(EF.FindFromKey(E).First())))
-            {
-                Geom_Curve C = BRep_Tool.Curve(E, out double f, out _)!;
-                if (C.Value(f).Z() > 50)
-                {
-                    return k;
-                }
-            }
+            i = Array.IndexOf(t, "chamfer");
+            aChamfer = true;
         }
-        return 0;
-    }
-
-    /// <summary>tools/dsrec/main.cpp's fillet cases: the edges and radii of each.</summary>
-    internal static List<CaseEdge> FilletEdges(string theName, in TopoDS_Shape S)
-    {
-        switch (theName)
+        List<CaseEdge> r = [];
+        foreach (string e in t.Skip(i + 1))
         {
-            case "box_edge":
-                return [new(5, 10)];
-            case "box_two_edges":
-            {
-                List<int> c = EdgesAtVertex1(S);
-                return [new(c[0], 10), new(c[1], 10)];
-            }
-            case "box_corner":
-            {
-                List<int> c = EdgesAtVertex1(S);
-                return [new(c[0], 10), new(c[1], 10), new(c[2], 10)];
-            }
-            case "box_all_edges":
-                return Enumerable.Range(1, 12).Select(k => new CaseEdge(k, 10)).ToList();
-            case "box_edge_evolving":
-                return [new(5, 5, 15)];
-            case "cylinder_top_edge":
-                return [new(CylinderTopEdge(S), 10)];
-            case "B1_partial_cylinder":
-                return [new(9, 10), new(6, 10), new(5, 10)];
-            case "C1_partial_cone":
-                return [new(3, 10)];
-            case "D1_partial_cone_apex":
-                return [new(3, 10), new(2, 10), new(5, 10)];
-            case "E1_partial_sphere":
-                return [new(7, 10)];
-            case "F1_partial_torus":
-                return [new(4, 10), new(1, 10), new(5, 10)];
-            case "K1_box_cut_cylinder":
-                return [new(5, 5)];
-            default:
-                throw new ArgumentException(theName);
+            string[] p = e.Split(':');
+            r.Add(new CaseEdge(int.Parse(p[0], CultureInfo.InvariantCulture), double.Parse(p[1], CultureInfo.InvariantCulture),
+                               double.Parse(p[2], CultureInfo.InvariantCulture), int.Parse(p[3], CultureInfo.InvariantCulture)));
         }
+        return (aChamfer, r);
     }
 
     /// <summary>
@@ -169,15 +121,50 @@ public class ChFi3dBuilderNativeTests
         return (aB, aRec);
     }
 
-    public static TheoryData<string> FilletCaseNames()
+    /// <summary>BRepFilletAPI_MakeChamfer's Add, AddDA and Build on the port's ChFi3d_ChBuilder.</summary>
+    internal static (ChFi3d_ChBuilder Builder, RecordingReconstruction Rec) RunChamfer(in TopoDS_Shape S,
+                                                                                       IEnumerable<CaseEdge> theEdges)
+    {
+        ChFi3d_ChBuilder aB = new(S);
+        RecordingReconstruction aRec = new(aB.WorkingShape());
+        aB.myCoup = aRec;
+        foreach (CaseEdge e in theEdges)
+        {
+            TopoDS_Edge E = EdgeOf(S, e.K);
+            if (e.Mode == 1)
+            {
+                aB.AddDA(e.R1, e.R2 * M_PI / 180.0, E, FaceOf(S, E));
+            }
+            else if (e.R2 < 0)
+            {
+                aB.Add(e.R1, E);
+            }
+            else
+            {
+                aB.Add(e.R1, e.R2, E, FaceOf(S, E));
+            }
+        }
+        aB.Compute();
+        return (aB, aRec);
+    }
+
+    internal static (ChFi3d_Builder Builder, RecordingReconstruction Rec) Run(DsCase theCase)
+    {
+        TopoDS_Shape anInput = theCase.Input;
+        (bool aChamfer, List<CaseEdge> anEdges) = CaseEdges(theCase);
+        if (aChamfer)
+        {
+            (ChFi3d_ChBuilder c, RecordingReconstruction rc) = RunChamfer(anInput, anEdges);
+            return (c, rc);
+        }
+        (ChFi3d_FilBuilder f, RecordingReconstruction rf) = RunFillet(anInput, anEdges);
+        return (f, rf);
+    }
+
+    public static TheoryData<string> CaseNames()
     {
         TheoryData<string> aData = new();
-        foreach (string aName in new[]
-                 {
-                     "box_edge", "box_two_edges", "box_corner", "box_all_edges", "box_edge_evolving", "cylinder_top_edge",
-                     "B1_partial_cylinder", "C1_partial_cone", "D1_partial_cone_apex", "E1_partial_sphere",
-                     "F1_partial_torus", "K1_box_cut_cylinder",
-                 })
+        foreach (string aName in DsRecordings.Cases.Keys)
         {
             aData.Add(aName);
         }
@@ -185,15 +172,49 @@ public class ChFi3dBuilderNativeTests
     }
 
     [Theory]
-    [MemberData(nameof(FilletCaseNames))]
+    [MemberData(nameof(CaseNames))]
     public void TheDataStructureAtPerformIsNatives(string theName)
     {
         DsCase aCase = DsRecordings.Cases[theName];
-        TopoDS_Shape anInput = aCase.Input;
-        (ChFi3d_FilBuilder _, RecordingReconstruction aRec) = RunFillet(anInput, FilletEdges(theName, anInput));
+        (ChFi3d_Builder aB, RecordingReconstruction aRec) = Run(aCase);
         Assert.Equal(aCase.PerformCalls, aRec.NbPerform);
+        if (aCase.PerformCalls == 0)
+        {
+            Assert.False(aB.IsDone());
+            return;
+        }
         Assert.NotNull(aRec.Text);
-        List<string> aDiffs = DsRecordings.Differences(aCase.DsText, aRec.Text!, 1.0e-9);
+        List<string> aDiffs = DsRecordings.Differences(aCase.DsText, aRec.Text!, 0.0);
         Assert.True(aDiffs.Count == 0, theName + ":\n" + string.Join("\n", aDiffs));
+        Assert.Equal(aCase.DsText, aRec.Text); // byte for byte
+    }
+
+    [Theory]
+    [MemberData(nameof(CaseNames))]
+    public void TheDiagnosticsAreNatives(string theName)
+    {
+        // what build123d.NET reads after a fillet (plan 2.6): the faulty contours, the stripes' ChFiDS_ErrorStatus, the
+        // faulty vertices; recorded for the fillets (BRepFilletAPI_MakeChamfer does not expose them)
+        DsCase aCase = DsRecordings.Cases[theName];
+        if (CaseEdges(aCase).Chamfer)
+        {
+            return;
+        }
+        (ChFi3d_Builder aB, RecordingReconstruction _) = Run(aCase);
+        Assert.Equal(aCase.StatusInts("contours")[0], aB.NbElements());
+        List<int> aFaulty = aCase.StatusInts("faulty");
+        Assert.Equal(aFaulty[0], aB.NbFaultyContours());
+        for (int i = 1; i <= aB.NbFaultyContours(); i++)
+        {
+            Assert.Equal(aFaulty[i], aB.FaultyContour(i));
+        }
+        List<int> aStatuses = aCase.StatusInts("statuses");
+        for (int ic = 1; ic <= aB.NbElements(); ic++)
+        {
+            Assert.Equal((ChFiDS_ErrorStatus)aStatuses[ic - 1], aB.StripeStatus(ic));
+        }
+        Assert.Equal(aCase.StatusInts("faultyvertices")[0], aB.NbFaultyVertices());
+        Assert.Equal(aCase.StatusInts("hasresult")[0] == 1, aB.HasResult());
+        Assert.Equal(aCase.Done, aB.IsDone());
     }
 }

@@ -42,20 +42,24 @@ internal static class DsRecordings
             int aCalls = int.Parse(aStatus[4], System.Globalization.CultureInfo.InvariantCulture);
             bool anUnchanged = aCalls > 0 && aStatus[6] == "1";
             string aBRep = "", aDs = "";
-            if (aCalls > 0)
+            // the input is recorded for every case since unit 7N2, the data structure when Perform was reached
+            if (k < aLines.Length && aLines[k].StartsWith("brep ", StringComparison.Ordinal))
             {
                 int nB = int.Parse(aLines[k++][5..], System.Globalization.CultureInfo.InvariantCulture);
                 aBRep = string.Join("\n", aLines, k, nB) + "\n";
                 k += nB;
+            }
+            if (k < aLines.Length && aLines[k].StartsWith("ds ", StringComparison.Ordinal))
+            {
                 int nD = int.Parse(aLines[k++][3..], System.Globalization.CultureInfo.InvariantCulture);
-                aDs = string.Join("\n", aLines, k, nD) + "\n";
+                aDs = nD == 0 ? "" : string.Join("\n", aLines, k, nD) + "\n";
                 k += nD;
             }
             if (aLines[k++] != "end-case")
             {
                 throw new InvalidDataException("dsrec: end-case expected after " + aName);
             }
-            aCases[aName] = new DsCase(aName, aDone, aCalls, anUnchanged, aBRep, aDs);
+            aCases[aName] = new DsCase(aName, aDone, aCalls, anUnchanged, aBRep, aDs, aStatus);
         }
         return aCases;
     }
@@ -119,8 +123,27 @@ internal static class DsRecordings
 /// <param name="UnchangedByPerform">Whether the dump after Build equals the dump before Perform.</param>
 /// <param name="BRepText">The input shape, as BRepTools::Write writes it.</param>
 /// <param name="DsText">The data structure before Perform.</param>
-internal sealed record DsCase(string Name, bool Done, int PerformCalls, bool UnchangedByPerform, string BRepText, string DsText)
+/// <param name="StatusTokens">The case's status line (unit 7N2 adds a fillet's diagnostics: "contours n faulty k i..
+/// statuses s.. faultyvertices v hasresult h"; "exception" when Build threw).</param>
+internal sealed record DsCase(string Name, bool Done, int PerformCalls, bool UnchangedByPerform, string BRepText, string DsText,
+                             string[] StatusTokens)
 {
+    /// <summary>The integers following <paramref name="theKey"/> in the status line, up to the next word.</summary>
+    internal List<int> StatusInts(string theKey)
+    {
+        List<int> r = [];
+        int i = Array.IndexOf(StatusTokens, theKey);
+        if (i < 0)
+        {
+            return r;
+        }
+        for (i++; i < StatusTokens.Length && int.TryParse(StatusTokens[i], out int v); i++)
+        {
+            r.Add(v);
+        }
+        return r;
+    }
+
     /// <summary>The input shape.</summary>
     internal TopoDS_Shape Input
     {
