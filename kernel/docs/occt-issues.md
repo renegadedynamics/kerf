@@ -1416,3 +1416,20 @@ each (`// OCCT` at the line where it is code), unless the last column says other
 | Where | What | Effect |
 |---|---|---|
 | bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: the port's section takes 0.20 s warm in Release where native takes 0.03 s (and 0.34 s on a cold start, the JIT) | The case's 0.1 s limit fails. A performance gap to profile (plan 2.7), not a result difference |
+
+## Phase 7: unit 7B, ShapeUpgrade and ShapeAlgo
+
+The port reproduces each, unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of linear extrusion whose basis curve had knots removed, `SetBasisCurve` on the surface it was given: the face's own surface (for a trimmed one, the basis shared by its faces) | Changes the caller's geometry (heal's BUC60173.rle with C2 criteria); the port changes a copy (decision 8401), the one attributed oracle difference |
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of revolution, the knots removed from the basis curve aren't set into the surface (unlike the extrusion); DONE3 is reported anyway | Reproduced |
+| ShapeUpgrade::C0BSplineToSequenceOfC1BSplineCurve | `SetNotPeriodic` on the caller's curve | The port splits a copy of a frozen curve (decision 8401) |
+| ShapeUpgrade_ShapeConvertToBezier `Perform` | Segments the edges' Bezier pcurves in place; where a seam's two pcurves are one curve, it is segmented twice (an arc ending at π/4 gets 0.49, data/occ's nuts and many heal inputs in curves-only mode) | Reproduced on copies (decision 8401) |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | For the seam's second pcurve, compares the bounds with the first pcurve's range and lowers `First` with `if (First > f)` | Reproduced |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | Re-initializes the wire divider's own split tools, which WireDivide is still using | Reproduced |
+| ShapeUpgrade_ShapeDivide `Perform` | Dereferences the split face tool for the free wires without checking it | Reproduced (NullReferenceException) |
+| ShapeUpgrade_ShellSewing `ApplySewing` | Documented to return the input when no shell is sewn; returns a null shape | Reproduced |
+| ShapeUpgrade_ShapeDivideClosedEdges `SetNbSplitPoints` | Ignores the number | Reproduced |
+| ShapeUpgrade_SplitCurve2dContinuity `Compute` | After removing a knot completely, doesn't lower the last index as the 3D tool does | Reproduced |

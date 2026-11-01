@@ -9921,3 +9921,81 @@ the default run's every-fourth sample had skipped. Numbers from 8301 are placeho
         (BRepAlgoAPI_Section with `bsection`'s options) takes 0.03 s: a gap of about 6x on that section, logged in
         occt-issues.md for the performance work (plan 2.7). Attributed, not fixed.
       No BOP code changed, so BooleanOracleTests weren't rerun.
+
+## Phase 7: unit 7B, ShapeUpgrade and ShapeAlgo
+
+The rest of ShapeUpgrade (the Tool root, the curve and surface split tools and their Continuity, Angle and Area
+variants, the Bezier converters, EdgeDivide, WireDivide, FaceDivide and its Area and Closed variants, ShapeDivide and
+its Angle, Area, Closed, ClosedEdges and Continuity variants, ShapeConvertToBezier, FixSmallCurves,
+FixSmallBezierCurves, RemoveInternalWires, ShellSewing, the package function) and ShapeAlgo. OCCT 8 has no
+ShapeUpgrade_CombineToCylinder. Numbers from 8401 are placeholders, renumbered on merge.
+
+8401. **Copy on write of the geometry OCCT changes in place** (decision 974's rule, extended). At each site the port
+      changes a copy of a frozen curve or surface and puts the copy where OCCT's change would show:
+      - `ShapeUpgrade::C0BSplineToSequenceOfC1BSplineCurve` makes the caller's B-spline non-periodic in place: the port
+        splits a non-periodic copy of a frozen curve (an unfrozen one is changed, as in OCCT).
+      - `ShapeUpgrade_SplitSurfaceContinuity::Compute` sets the knot-reduced basis curve into the caller's surface of
+        linear extrusion: the port sets it into a copy, which becomes the tool's surface. Natively the face's own
+        surface changes, and every face sharing it (occt-issues.md): the oracle's one attributed difference.
+      - `ShapeUpgrade_ConvertSurfaceToBezierBasis`'s `GetSegment` segments the basis Bezier of its copy of a surface of
+        revolution in place; the port's basis curves are frozen once handed out (decision 159), so the segment is made
+        on a copy, rebuilt into the offset curve if there is one, and set as the copy's basis.
+      - `ShapeUpgrade_ShapeConvertToBezier::Perform`'s last step segments and moves the poles of the edges' Bezier
+        curves in place. Curves attached to an edge are frozen (BRep_CurveRepresentation freezes what it takes): a 3D
+        curve is changed on a copy that OCCT's following UpdateEdge attaches; a pcurve on a copy that replaces the
+        curve in the representations of the edge and of the next edge, in place (no reordering, as UpdateEdge's would
+        be), and in every local that held it, so a seam whose two pcurves are one curve, or a wire of one edge, takes
+        each change as natively (segmented twice: OCCT's behaviour, reproduced). A curve shared with edges outside the
+        pair isn't followed (none in the oracle's inputs).
+      - The split tools copy the curves they are given (as OCCT's Init does); `ConvertCurve2dToBezier` calls
+        `ShapeCustom_Curve2d.SimplifyBSpline2d` with `ref` (decision 974).
+8402. **Copy at the entry of the divide and convert tools** (plan 2.2's healing row, decision 973's rule). The audit:
+      - WireDivide writes only into the edges it makes (`ShapeBuild_Edge.CopyReplaceVertices`), the vertices it makes
+        (`MakeVertex`, `EmptyCopied` of the ends, so SameParameter can't raise the input's tolerances) and the new
+        wires; EdgeDivide, the split tools, FixSmall(Bezier)Curves, RemoveInternalWires and ShellSewing only read the
+        shape (sewing copies at its own entry, decision 583). None of these copies.
+      - FaceDivide and ClosedFaceDivide run ShapeFix_ComposeShell, which splits the face's edges in place; it copies a
+        frozen face itself (decision 583). Its new internal `InternalFinishedResult` gives the finished result (the
+        caller's sub-shapes given back, the context re-keyed) unfrozen, for the steps that follow.
+      - ShapeDivide (so every variant and ShapeConvertToBezier) copies at the entry of the outermost `Perform`
+        (`BRepTools_CopyAtEntry` of the whole shape, the requests of a kept context moved onto the copy): natively
+        ComposeShell's in-place edits of an edge show in the other faces sharing it (with a per-face copy, a
+        non-manifold edge on three faces, heal's rrr.rle, came out different), and ShapeConvertToBezier's last step
+        writes ranges, curves and `BRepTools::Update` into the result, which shares the input's sub-shapes. Nested
+        calls (a compound's children, ShapeConvertToBezier's passes) run on the copy. At the end the caller's unchanged
+        sub-shapes are given back in the result, in the shape left in `myShape` (ShapeConvertToBezier's intermediate)
+        and in the context.
+      - Publication: `Result()`, `Wire()`, `GetResult()` and `ApplySewing` freeze what they return; ported callers (7C's
+        ShapeProcess) read `InternalResult`, `InternalWire`, `InternalGetResult`, `InternalApplySewing`. The tools read
+        the context with `InternalApply`.
+      - Tested by the frozen-input unit tests and by every oracle run (each input checked unchanged by `ShapeSnapshot`).
+8403. **ShapeAlgo's process-wide AlgoContainer** (plan 2.3). A static field read and written with `Volatile`, null
+      until `ShapeAlgo.Init` creates the default one, once per process (OCCT's static flag, under a lock; Init then
+      loads the messages through `ShapeExtend.Init`); `SetAlgoContainer` replaces it for all threads. Its test is in
+      the non-parallel `ShapeAlgoGlobalStateCollection`. Only DataExchange calls it in OCCT.
+8404. **API.** The tools are working objects (decision 21). OCCT's modifiable references (`MaxArea`, `NbParts`,
+      `MinArea`, `RemoveFaceMode`) return `ref`; `FixSmallCurves.Approx` takes `ref` arguments (OCCT's handle
+      references); `C0BSplineToSequenceOfC1BSplineCurve` a `ref` sequence (unchanged when it returns false);
+      `ConnectNextWire` and `HomoWires` use `out`. Protected getters stay protected. `RemovedFaces` and `RemovedWires`
+      return the tool's sequences. The `OCC_CATCH_SIGNALS` blocks catch Standard_Failure and NullReferenceException,
+      never a write into a frozen object (decisions 423, 977). HomoWires' copy of a TopoDS_Iterator to look one step
+      ahead is an index count (the port's iterator can't be copied).
+8405. **The oracle** (`tools/shupgraderec`, `ShapeUpgradeNativeTests`). build123d.NET binds none of the tools, so a
+      native recorder runs twelve of them with the heal group's Draw parameters (DT_SplitAngle, DT_ClosedSplit, the
+      closed-edge divider, DT_ShapeDivide with 0.01 and with the defaults, a C2 continuity split, DT_SplitByNumber 4
+      and 2 by 3, DT_ShapeConvert 1 1, a curves-only conversion keeping lines and circles, RemoveIntWires 10,
+      ShellSewing) on data/occ's shapes and the heal group's public inputs up to 60 kB, each tool on the file read
+      again (native writes into some inputs). It records the statuses, an FNV hash of the result's BRep text with the
+      Free and Checked columns masked (decision 347), and the counts of faces, edges and vertices. The port reads each
+      input frozen. 527 inputs, 6,324 records: 6,323 identical, 1 attributed (decision 8401's extrusion). Unit tests:
+      OCCT's GTest (ShapeUpgrade_FaceDivide, 2) and 20 others (the heal group's split_number counts, frozen inputs,
+      the package function, ShapeAlgo).
+8406. **For unit 7C (ShapeProcess).** The operators of ShapeProcess_OperLibrary that call ShapeUpgrade: `SplitAngle`
+      (ShapeDivideAngle), `ShapeToBezier` (ShapeConvertToBezier with its modes, MaxTolerance, MinCurveLength,
+      EdgeMode), `SplitContinuity` (ShapeDivideContinuity with criteria and tolerances), `SplitClosedFaces`
+      (ShapeDivideClosed, NbSplitPoints), `SplitClosedEdges` (ShapeDivideClosedEdges). Each sets the tool's
+      MsgRegistrator, calls `Perform()`, then `RecordModification(tool.GetContext(), msg)` and
+      `SetResult(tool.Result())`: use `InternalResult()` and freeze at ShapeProcess's own publication point; the tool
+      copies a frozen input at the entry and its context answers for the input's shapes (decision 8402). Nothing in
+      ShapeUpgrade is process-wide; ShapeAlgo's container is (8403). The "ShapeDivide.*.MSG0" messages need
+      `ShapeExtend.Init`.

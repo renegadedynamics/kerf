@@ -1119,3 +1119,16 @@ Phase 7 (part): Draw-lite's cheap gaps (unit 7W).
 - Corpus (unit 7W's follow-up): the Boolean corpus test run whole: 5,530 runnable, OK 4,095, BAD 129, 1,292 missing
   data, 8 failing, all attributed (bugs/modalg_6/bug26393: DRAWEXE's destructive Booleans; bugs/modalg_7/bug83: the
   port's section is about 6x slower than native's on two B-spline sheets).
+
+Phase 7 (part): the rest of ShapeUpgrade, and ShapeAlgo (unit 7B).
+
+- ShapeUpgrade: the divide tools (ShapeDivide and its Angle, Area, Closed, ClosedEdges and Continuity variants;
+  FaceDivide, FaceDivideArea, ClosedFaceDivide, WireDivide, EdgeDivide, ClosedEdgeDivide), the split tools (2D and 3D
+  curves, surfaces, with their Continuity, Angle and Area variants), the Bezier converters (curves, surfaces,
+  ShapeConvertToBezier), FixSmallCurves, FixSmallBezierCurves, RemoveInternalWires, ShellSewing and
+  C0BSplineToSequenceOfC1BSplineCurve. ShapeAlgo: its process-wide AlgoContainer and the ToolContainer.
+- The caller's shape is never written: the dividers copy a frozen shape at the entry and give back its unchanged
+  sub-shapes, and the geometry OCCT changes in place is changed on copies (decisions 8401, 8402).
+- Tests: OCCT's FaceDivide GTest, frozen-input unit tests; `tools/shupgraderec` records twelve tools with the heal
+  group's Draw parameters on 527 inputs (6,324 records: 6,323 identical, 1 attributed to OCCT writing into the
+  caller's surface).

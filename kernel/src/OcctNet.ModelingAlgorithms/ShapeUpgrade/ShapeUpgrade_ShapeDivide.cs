@@ -17,9 +17,10 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A working object (decision 21). The shape given is not modified (decision 8402): the face and wire dividers build
-/// new shapes and record them in the context, and ShapeFix_ComposeShell works on a copy of a frozen face (decision
-/// 583). So a frozen shape needs no copy at the entry; the result shares the caller's unchanged sub-shapes.
+/// A working object (decision 21). The dividers write into the shape in place (ShapeFix_ComposeShell splits the edges
+/// of the faces it rebuilds, ShapeConvertToBezier sets ranges and curves), so a shape holding frozen shapes is copied
+/// at the entry and the caller's own sub-shapes are given back where nothing changed, the context re-keyed to them
+/// (decision 8402); the shape given is never modified.
 /// </para>
 /// <para>
 /// <see cref="Result"/> freezes what it returns; ported callers (ShapeProcess's operators) read
@@ -108,7 +109,51 @@ public class ShapeUpgrade_ShapeDivide
     /// context is cleared at the start, else the previous substitutions apply. True if the result differs from the
     /// shape.
     /// </summary>
-    public virtual bool Perform(bool newContext = true)
+    public virtual bool Perform(bool newContext = true) => PerformAtEntry(newContext, performBody);
+
+    // OCCT.NET: the copy at the entry (decision 8402). The face dividers' ShapeFix_ComposeShell edits the edges it splits
+    // in place (as do ShapeConvertToBezier's last step and the dividers called on a compound's children), and the
+    // edges shared by other faces see those edits natively; so the outermost Perform runs on an exact copy of a shape
+    // holding frozen shapes, and gives back the caller's own sub-shapes where nothing changed (decision 583). Nested
+    // calls (a compound's children, ShapeConvertToBezier's passes) run on the copy.
+    private int myEntryDepth;
+
+    /// <summary>
+    /// Runs <paramref name="theBody"/> on a copy of the shape when it holds frozen shapes and this is the outermost
+    /// call, then gives back the caller's unchanged sub-shapes in the result, in the shape left in <c>myShape</c> and
+    /// in the context.
+    /// </summary>
+    protected bool PerformAtEntry(bool newContext, Func<bool, bool> theBody)
+    {
+        if (myEntryDepth > 0 || myShape.IsNull())
+        {
+            return theBody(newContext);
+        }
+
+        // the requests already recorded in a kept context move onto the copies
+        var anEntry = new BRepTools_CopyAtEntry(myShape, newContext ? null : myContext);
+        myShape = anEntry.Shape();
+        TopoDS_Shape aCopy = myShape;
+        bool aRes;
+        myEntryDepth++;
+        try
+        {
+            aRes = theBody(newContext);
+        }
+        finally
+        {
+            myEntryDepth--;
+        }
+
+        anEntry.AttachContext(myContext);
+        // ShapeConvertToBezier leaves myShape on the intermediate result of its surface conversion
+        bool isIntermediate = !myShape.IsNull() && !ReferenceEquals(myShape.TShape(), aCopy.TShape());
+        myResult = anEntry.Finish(myResult, isIntermediate ? [myShape] : null);
+        myShape = anEntry.Final(myShape);
+        return aRes;
+    }
+
+    private bool performBody(bool newContext)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         if (myShape.IsNull())

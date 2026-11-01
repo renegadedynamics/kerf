@@ -165,20 +165,12 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     public bool GetBSplineMode() => myBSplineMode;
 
     /// <summary>Performs the conversion and computes the resulting shape.</summary>
-    public override bool Perform(bool newContext = true)
+    public override bool Perform(bool newContext = true) => PerformAtEntry(newContext, performConversion);
+
+    private bool performConversion(bool newContext)
     {
         myLevel++;
         bool res = false;
-
-        // OCCT.NET: the copy at the entry of a frozen shape (decision 8402); the requests already recorded in a kept
-        // context move onto the copies
-        BRepTools_CopyAtEntry? anEntry = null;
-        if (myLevel == 1 && !myShape.IsNull())
-        {
-            anEntry = new BRepTools_CopyAtEntry(myShape, newContext ? null : myContext);
-            myShape = anEntry.Shape();
-        }
-        TopoDS_Shape aCopy = myShape;
 
         if (myLevel == 1)
         {
@@ -276,6 +268,30 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
 
                         Geom2d_Curve? c2drev = null;
                         Geom2d_BezierCurve? bezier = null, bezierR = null;
+                        Geom2d_BezierCurve? beziernext = null, bezierRnext = null;
+                        TopoDS_Edge edgenext = sewd.Edge((i == sewd.NbEdges() ? 1 : i + 1));
+                        Geom2d_Curve? newRevCurve = null, newCurve = null, newnextCurve = null;
+
+                        // OCCT.NET: OCCT changes the pcurves in place, so a curve held by several of these variables (a seam
+                        // whose two pcurves are one curve, a wire of one edge) takes every change; the port changes copies
+                        // (decision 8401), carried over to each variable that held the curve changed
+                        Geom2d_BezierCurve change(in TopoDS_Edge theEdge, Geom2d_BezierCurve theCurve,
+                                                  Action<Geom2d_BezierCurve> theChange)
+                        {
+                            Geom2d_BezierCurve aNew = changed2d(theEdge, theEdge.IsSame(edge) ? edgenext : edge, theCurve, theChange);
+                            if (!ReferenceEquals(aNew, theCurve))
+                            {
+                                if (ReferenceEquals(bezier, theCurve)) bezier = aNew;
+                                if (ReferenceEquals(bezierR, theCurve)) bezierR = aNew;
+                                if (ReferenceEquals(beziernext, theCurve)) beziernext = aNew;
+                                if (ReferenceEquals(bezierRnext, theCurve)) bezierRnext = aNew;
+                                if (ReferenceEquals(newCurve, theCurve)) newCurve = aNew;
+                                if (ReferenceEquals(newRevCurve, theCurve)) newRevCurve = aNew;
+                                if (ReferenceEquals(newnextCurve, theCurve)) newnextCurve = aNew;
+                            }
+                            return aNew;
+                        }
+
                         bool isSeam = BRep_Tool.IsClosed(edge, face);
                         if (!sae.PCurve(edge, face, out Geom2d_Curve? c2d, out first, out last, false))
                         {
@@ -286,7 +302,6 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                         {
                             continue;
                         }
-                        Geom2d_Curve? newRevCurve = null, newCurve = null;
                         bezier = (Geom2d_BezierCurve)c2d;
                         if (isSeam)
                         {
@@ -307,7 +322,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                 if (bezier is not null)
                                 {
                                     double f0 = first, l0 = last;
-                                    bezier = changed2d(edge, bezier, b => b.Segment(f0, l0));
+                                    bezier = change(edge, bezier, b => b.Segment(f0, l0));
                                     newCurve = bezier;
                                 }
                                 else
@@ -319,7 +334,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     if (bezierR is not null)
                                     {
                                         double f0 = first, l0 = last;
-                                        bezierR = changed2d(edge, bezierR, b => b.Segment(f0, l0));
+                                        bezierR = change(edge, bezierR, b => b.Segment(f0, l0));
                                         newRevCurve = bezierR;
                                     }
                                     else if (c2drev is not null)
@@ -339,9 +354,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             B.Range(edge, face, 0, 1);
                         }
 
-                        TopoDS_Edge edgenext = sewd.Edge((i == sewd.NbEdges() ? 1 : i + 1));
-                        Geom2d_Curve? c2drevnext = null, newnextCurve = null;
-                        Geom2d_BezierCurve? beziernext = null, bezierRnext = null;
+                        Geom2d_Curve? c2drevnext = null;
                         if (!sae.PCurve(edgenext, face, out Geom2d_Curve? c2dnext, out double first2, out double last2, false))
                         {
                             continue;
@@ -372,7 +385,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                 if (beziernext is not null)
                                 {
                                     double f0 = first2, l0 = last2;
-                                    beziernext = changed2d(edgenext, beziernext, b => b.Segment(f0, l0));
+                                    beziernext = change(edgenext, beziernext, b => b.Segment(f0, l0));
                                     newnextCurve = beziernext;
                                 }
                                 else
@@ -384,7 +397,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     if (bezierRnext is not null)
                                     {
                                         double f0 = first2, l0 = last2;
-                                        bezierRnext = changed2d(edgenext, bezierRnext, b => b.Segment(f0, l0));
+                                        bezierRnext = change(edgenext, bezierRnext, b => b.Segment(f0, l0));
                                         newRevCurve = bezierRnext;
                                     }
                                     else if (c2drevnext is not null)
@@ -419,23 +432,11 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                         gp_Pnt2d p2d1next = beziernext.Value(f2);
                         gp_Pnt2d p2d2next = beziernext.Value(l2);
 
-                        // OCCT.NET: OCCT sets the poles in place, so a curve shared by both edges (a wire of one edge)
-                        // takes both changes; the port changes copies, carried over to the other variable when shared
                         void setPoles(int theIndex, int theIndexNext, in gp_Pnt2d thePnt)
                         {
                             gp_Pnt2d aPnt = thePnt;
-                            Geom2d_BezierCurve anOld = bezier!;
-                            bezier = changed2d(edge, bezier!, b => b.SetPole(theIndex, aPnt));
-                            if (ReferenceEquals(beziernext, anOld))
-                            {
-                                beziernext = bezier;
-                            }
-                            Geom2d_BezierCurve anOldNext = beziernext!;
-                            beziernext = changed2d(edgenext, beziernext!, b => b.SetPole(theIndexNext, aPnt));
-                            if (ReferenceEquals(bezier, anOldNext))
-                            {
-                                bezier = beziernext;
-                            }
+                            change(edge, bezier!, b => b.SetPole(theIndex, aPnt));
+                            change(edgenext, beziernext!, b => b.SetPole(theIndexNext, aPnt));
                         }
 
                         if (edge.Orientation() == TopAbs_FORWARD && edgenext.Orientation() == TopAbs_FORWARD)
@@ -479,16 +480,6 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
             }
         }
 
-        // OCCT.NET: give back the caller's unchanged sub-shapes and re-key the context (decision 8402)
-        if (anEntry is not null)
-        {
-            anEntry.AttachContext(myContext);
-            // OCCT leaves myShape on the intermediate result of the surface conversion, if any
-            bool isIntermediate = !myShape.IsNull() && !ReferenceEquals(myShape.TShape(), aCopy.TShape());
-            myResult = anEntry.Finish(myResult, isIntermediate ? [myShape] : null);
-            myShape = anEntry.Final(myShape);
-        }
-
         myLevel--;
         return res;
     }
@@ -501,7 +492,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     // OCCT.NET: changes a pcurve as OCCT does in place. A frozen curve (attached to the edge) is changed on a copy,
     // which then replaces the curve in the edge's representations, where OCCT's change would show; a curve that isn't
     // the edge's (a planar face's computed pcurve) is changed alone, as in OCCT.
-    private static Geom2d_BezierCurve changed2d(in TopoDS_Edge theEdge, Geom2d_BezierCurve theCurve,
+    private static Geom2d_BezierCurve changed2d(in TopoDS_Edge theEdge, in TopoDS_Edge theOther, Geom2d_BezierCurve theCurve,
                                                 Action<Geom2d_BezierCurve> theChange)
     {
         if (!theCurve.IsFrozen())
@@ -511,6 +502,17 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
         }
         var aCopy = (Geom2d_BezierCurve)theCurve.Copy();
         theChange(aCopy);
+        replaced(theEdge, theCurve, aCopy);
+        if (!theOther.IsSame(theEdge))
+        {
+            replaced(theOther, theCurve, aCopy);
+        }
+        return aCopy;
+    }
+
+    // The curve replaced in the edge's representations.
+    private static void replaced(in TopoDS_Edge theEdge, Geom2d_BezierCurve theCurve, Geom2d_BezierCurve aCopy)
+    {
         var aTEdge = (BRep_TEdge)theEdge.TShape()!;
         foreach (BRep_CurveRepresentation aRep in aTEdge.ChangeCurves())
         {
@@ -523,7 +525,6 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                 aRep.PCurve2(aCopy);
             }
         }
-        return aCopy;
     }
 
     /// <summary>Returns a new tool for dividing faces with the conversion modes.</summary>
