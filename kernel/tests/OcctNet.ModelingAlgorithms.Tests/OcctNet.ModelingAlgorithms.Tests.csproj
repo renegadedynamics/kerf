@@ -64,6 +64,8 @@
     <EmbeddedResource Include="BRepOffset\Recordings\offsetrec.txt.gz" LogicalName="BRepOffset.offsetrec.txt.gz" />
     <!-- Native OCCT's LocOpe local operations, recorded by tools/locoperec (unit 7H) -->
     <EmbeddedResource Include="LocOpe\Recordings\locoperec.txt.gz" LogicalName="LocOpe.locoperec.txt.gz" />
+    <!-- Native OCCT's ShapeProcess, recorded by tools/shprocrec (unit 7C) -->
+    <EmbeddedResource Include="ShapeProcess\Recordings\shprocrec.txt.gz" LogicalName="ShapeProcess.shprocrec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->

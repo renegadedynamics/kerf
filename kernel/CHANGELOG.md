@@ -1166,3 +1166,19 @@ Phase 7 (part): LocOpe (unit 7H).
   data/occ's shapes, the feat group's data files): 5,201 records, all identical (DPrism's shapes compared canonically:
   native varies run to run).
 - Fix: BRepFill_OffsetWire down-casts its spine's plane as OCCT does (decision 8906).
+
+Phase 7 (part): ShapeProcess and the healing Draw commands (unit 7C).
+
+- ShapeProcess (the operator registry and performer, Context, ShapeContext, Operator, UOperator, the operator library
+  of eighteen operators), ShapeProcessAPI_ApplySequence and TKernel's Resource_Manager. OCCT's default resource files
+  (XSTEPResource's IGES and STEP) are compiled in; other files are read only from directories the caller gives, never
+  through CSF_ environment variables (decision 8703). The operators run on a copy of a frozen shape and give back its
+  unchanged sub-shapes, the history keyed by the caller's sub-shapes (decision 8702).
+- Draw-lite: SWDRAW's ShapeUpgrade commands (`DT_ShapeDivide`, `DT_SplitAngle`, `DT_ShapeConvert`,
+  `DT_ShapeConvertRev`, `DT_SplitCurve2d`, `DT_SplitCurve`, `DT_SplitSurface`, `offset2dcurve`, `offsetcurve`,
+  `splitface`, `DT_ToBspl`, `DT_ClosedSplit`, `DT_SplitByArea`, `DT_SplitByNumber`, `RemoveIntWires`), ShapeCustom
+  commands (`directfaces`, `expshape`, `scaleshape`, `bsplres`, `convtorevol`) and ShapeProcess commands (`SPApply`,
+  `DT_ApplySeq`).
+- Tests: Resource_Manager's GTests; `tools/shprocrec` records native ShapeProcess (OCCT's and the heal group's
+  sequences, each operator alone) on 527 inputs: 13,702 records, 13,673 identical, 29 attributed to OCCT's hash-ordered
+  maps. Corpus: 2,607 newly runnable cases (OK 1,584, BAD 41, 982 missing data, none failing).

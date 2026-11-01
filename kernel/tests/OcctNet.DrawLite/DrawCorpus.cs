@@ -258,6 +258,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // mpsetdefaultname) don't carry over to the next case
             Occt.BRepMesh_IncrementalMesh.SetParallelDefault(false);
             Occt.BRepMesh_DiscretFactory.Get().SetDefaultName("FastDiscret");
+            // nor ShapeProcess's cached resource file (unit 7C; its operator registry is the same in every DRAWEXE)
+            Occt.ShapeProcess_Context.ClearResourceCache();
         }
 
         string aText = aLog.ToString();
