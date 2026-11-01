@@ -113,8 +113,11 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
         }
 
         Assert.True(aRunnable.Count > aRunnableBefore);
+        // the Boolean cases' attributed failures (bugs/modalg_7/bug26034's bopcheck, bugs/modalg_5/bug23881's sewn shell),
+        // and unit 7W's (bugs/modalg_7/bug21264, made runnable by XProgress, reads the progress indicator's output)
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
-                                          && !DrawBooleanCorpusTests.NotYetAttributed.Contains(r.Case.Id));
+                                          && !DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id)
+                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
     }
 
     /// <summary>Cases that fail with an attributed cause (see the unit's decisions).</summary>

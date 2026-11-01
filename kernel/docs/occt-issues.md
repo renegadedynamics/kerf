@@ -1372,3 +1372,20 @@ otherwise.
 | `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
 | `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
 | `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |
+
+## Phase 7: unit 7W, Draw-lite's cheap gaps
+
+Found by investigating the four cases decision 972 made runnable and by porting Draw's commands. Draw-lite reproduces
+each (`// OCCT` at the line where it is code), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| bugs/modalg_7/bug26034 (`bopcheck` after `ttranslate Revolve002 0 0 -0.5`) | IntPatch_ImpImpIntersection of the sphere and a cone reaches `Standard_NumericError_Raise_if` in math_FunctionAllRoots (IntStart_SearchOnBoundaries::BoundedArc); BOPAlgo_CheckerSI turns the exception into the warning "Intersection of pair of shapes has failed", which the script reads as a fault | OCCT's default Release build compiles the check out (`No_Exception`), so OCCT's CI passes. build123d.NET's native build keeps the check, as the port does (decision 9): tools/cksirec (native BOPAlgo_CheckerSI) gives the same warning at -0.5 and none at 0, +0.5 and -0.25, as the port. The case fails on both |
+| `insertpole` (GeomliteTest_CurveCommands.cxx) | Returns 1 below 6 words, so the 2D form `insertpole name index x y` can't be given; with 6 words the 2D form takes `a[5]` as the weight | A 2D pole is always inserted with a weight. Reproduced |
+| `dmode`, `discr`, `defle` (DrawTrSurf.cxx) | With names, every iteration sets the drawable of `a[1]`, not `a[i]`; `dmode` with one word sets the uniform mode whatever the word | Display only: Draw-lite keeps the modal values and changes no drawable |
+| `lastrep` (Draw_VariableCommands.cxx) | With Z, divides the pick by `dout.Zoom`, which is `false` (0) in batch mode | X, Y and Z are NaN when no view exists. Reproduced |
+| `crvpoints`, `crvtpoints` (GeometryTest_CurveCommands.cxx) | Read `a[2]` and `a[3]` without checking the word count | Natively undefined; Draw-lite reads an empty word |
+| `2dintersect` (GeomliteTest_API2dCommands.cxx) | `-tol` as the last word reads `a[++i]` past the end; the output spells "parameter on the fist" | Draw-lite reads an empty word (0); the text is reproduced |
+| `xbounds`, `removeinternals` (BRepTest_OtherCommands.cxx, DBRep.cxx) | Messages without a space: " shape<name> must be a face", "<name>is a null shape" | Text only. Reproduced |
+| `XProgress` | Sets Draw_ProgressIndicator's process-wide defaults; the corpus's progress cases read the indicator's output in the commands' results | Draw-lite keeps the modes per interpreter and its commands make no progress indicator (decision 954), so those cases fail (decisions 8205, 8209) |
+| BRepPrimAPI_MakePrism's history on a sphere band from 0 to 2π (bugs/modalg_7/bug30346_2, `prism` then `savehistory`) | The port's IsDeleted says one edge of the base is deleted; native (build123d.NET's MakePrism on the same face) says none | Not OCCT's: a port difference in what BRepSweep marks used, found by decision 8202 and not yet fixed. The case fails |

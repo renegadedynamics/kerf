@@ -9700,3 +9700,99 @@ placeholders, renumbered on merge; earlier decisions are cited by their merged n
      (a section of a sewn shell), bugs/modalg_7/bug26034 (`bopcheck` reports faults after `ttranslate`), bug29333_2
      and bug29586 (an empty result). They are listed apart from the attributed failures, in
      `DrawBooleanCorpusTests.NotYetAttributed`, and unit 7W investigates them first.
+
+## Phase 7: unit 7W, Draw-lite's cheap gaps
+
+Step 1 of phase 7's running order: first the four cases decision 972 made runnable, then the cheap gaps of
+phase7-plan.md section 1.6 (open question 28). Numbers from 8201 are placeholders, renumbered on merge; merged
+decisions are cited by their numbers.
+
+8201. **The four cases decision 972 exposed: one port difference fixed, three attributed.**
+      `DrawBooleanCorpusTests.NotYetAttributed` is gone; the attributed cases are in its `KnownFailures`, which the
+      check and healing corpus tests also accept.
+      - bugs/modalg_7/bug29586: `prism` and `revol` didn't record their history (decision 965 left it to later), so
+        `savehistory` gave the earlier `bcut`'s. They now record it as OCCT's do (BRepTest_Objects::SetHistory, always,
+        not only under `setfillhistory`). The case passes.
+      - bugs/modalg_5/bug23881 and bugs/modalg_7/bug29333_2: decision 955. In DRAWEXE's destructive default the
+        section of the sewn shell is the shell's common edge itself, and the second general fuse keeps `s1_sp`'s
+        solids; Draw-lite's Booleans are non-destructive. Native OCCT (build123d.NET's build, BRepAlgoAPI_Section and
+        BOPAlgo_Builder on the port's inputs written as BRep) gives the port's counts non-destructively (8 vertices and
+        8 edges; 22 vertices, 41 edges, 5 solids) and the script's destructively (6 and 7; 16, 28, 3). Its twin on two faces, bug29333_1, fails the same way (11 vertices, 15 edges, 5 faces non-destructively, natively too, 8, 10, 3 destructively); it entered the Boolean corpus test's every-fourth sample with the cases 7W made runnable.
+      - bugs/modalg_7/bug26034: OCCT's behaviour in a build with exceptions (occt-issues.md, unit 7W): the sphere and
+        cone's ImpImp intersection throws Standard_NumericError in math_FunctionAllRoots, and `bopcheck` warns that
+        the intersection of a pair failed. tools/cksirec runs native BOPAlgo_CheckerSI on the case's shape: the same
+        warning at -0.5, none at 0, 0.5 and -0.25, as the port. OCCT's default Release build compiles the check out
+        (`No_Exception`), so DRAWEXE built that way passes.
+8202. **Prism's history differs from native on one shape** (found through decision 8201, not fixed). bugs/modalg_7/
+      bug30346_2 was runnable and failing before ("No history has been prepared yet"); with the history recorded it
+      fails differently: on a sphere band from 0 to 2π, the port's BRepPrimAPI_MakePrism says one edge of the base
+      is deleted, native says none (build123d.NET's MakePrism on the same face: no edge deleted, the seam and the
+      degenerated edge generate nothing). BRepSweep_NumLinearRegularSweep::IsUsed reads the same as OCCT's, so the
+      difference is in what marks the edge used. Logged in occt-issues.md for the sweep's owner; the case stays
+      failing in DrawCorpusTests, which doesn't assert on failures.
+8203. **Draw's core commands.** A new `DrawBasicCommands` (Draw_BasicCommands.cxx): `dversion` prints what DRAWEXE
+      prints for OCCT 8.0.1 without the optional libraries, "Exceptions enabled" (decision 9), "Debug mode" when
+      Draw-lite is a Debug build (the corpus relaxes time limits on it), "Compiler: unrecognized" (OCCT's fallback:
+      no C++ compiler built the port), and the architecture and OS .NET reports. `meminfo` reads OSD_MemInfo's
+      counters from System.Diagnostics.Process; the heap counter, OCCT's sum of the C heap, is the managed heap's live
+      bytes after a full collection. Also: `lastrep` (Draw_VariableCommands.cxx) returns the initial pick (no view
+      ever picks; with Z, NaN, as a batch DRAWEXE's zoom of 0 gives); `dmode`, `discr`, `defle` keep DrawTrSurf_Params'
+      modal values per interpreter and change no drawable; `XProgress` keeps Draw_ProgressIndicator's default modes per
+      interpreter and prints them; `removeinternals` runs BRepTools::RemoveInternals in place through
+      `SWDRAWShapeFixCommands.InPlace` (decision 960), so every variable sharing a changed sub-shape sees it, as
+      DRAWEXE's; `repaint` joins the viewer no-ops. Draw-lite has no help texts (decision 966): commands print the
+      usage OCCT prints itself.
+8204. **Geometry and topology commands over ported packages**, from their OCCT files, with OCCT's messages and
+      argument checks:
+      - GeometryTest: `proj` (to `GeometryTestCommands`, with `extrema`); a new `GeometryTestCurveCommands` for
+        `to2d`, `to3d`, `project`, `projonplane`, `crvpoints` and `crvtpoints` (with ComputeDeviation's PSO and Brent
+        search).
+      - GeomliteTest: a new `GeomliteTestAPI2dCommands` for `2dproj`, `2dextrema`, `2dintersect`, `2dintanalytical`
+        and `intconcon`; `incdeg`, `insertpole`, `cmovepoint`, `convert`, `segsur` and `setweight` in
+        `GeomliteTestCommands`. Those that change the bound geometry in place bind the changed copy the public API
+        returns (`Increased`, `DegreeIncreased`, `PoleInsertedAfter`, `PointMoved`, `Segmented`, `WithWeight`), as
+        `segment` does (decision 476).
+      - BRepTest: a new `BRepTestOtherCommands` for `shape`, `subshape`, `BRepIntCS`, `xbounds` and `xclassify`;
+        `validrange` in `BRepTestCheckCommands`; `concatC0wire` in `BRepTestCurveCommands`.
+      - The markers and curves OCCT draws in views (2D extrema, intersection points and segments, the polylines'
+        knot display) are left out.
+8205. **Left out.**
+      - `nproject` (28 cases): BRepOffsetAPI_NormalProjection and BRepAlgo_NormalProjection (about 780 lines) aren't
+        ported; they belong with BRepOffsetAPI's phase 7 units (7F or 7G), with a recorder, as nothing binds them.
+      - The unit commands (`unitparsing`, `unitconvtoSI`, `unit`; 7 cases): the Units and UnitsAPI packages aren't
+        ported.
+      - `normals` (DBRep_DrawableShape's normals), `gproject`, `uniformAbscissa`, `discrCurve`, `2ddeviation`,
+        `tocanon` and the QA commands: one or two cases each, not in section 1.6's list.
+      - `makeboss` and `mksh` need LocOpe and BRepFeat (phase 7).
+      - The progress indicator: `XProgress +t` cases read Draw_ProgressIndicator's output from the commands' results;
+        Draw-lite's commands make none (decision 954), so those cases fail (decision 8209).
+8206. **The scan knows `repeat` and `do`** (DrawCorpus.Role). StandardCommands.tcl's procedures run a script argument,
+      which is usually one line, so the guess for unknown commands (a braced multi-line word) missed it:
+      geometry/bsplinecurve/A1 and geometry/2dbsplinecurve/A6 and A7 looked runnable and failed on `cmovepoint`
+      inside `repeat`. With the fix, one case before 7W is no longer runnable (10,105 instead of 10,106); `cmovepoint`
+      is ported and the three cases pass.
+8207. **ConcatenateWireC0 reversed a frozen curve** (a port bug, fixed). With more than one C1 piece the result is
+      GeomConvert_CompCurveToBSplineCurve's curve, taken through its public accessor, which freezes it; a reversed
+      wire then reversed it in place: Standard_ImmutableObject (bugs/modalg_7/bug29573, `concatC0wire`). The maker is
+      discarded, so the port takes its curve unfrozen (`InternalBSplineCurve`), as OCCT's handle. The recorded native
+      comparisons of BRepAlgo (tools/frrec, unit 5O1, `BRepAlgo_FaceRestrictorNativeTests`) are unchanged; a test runs both of the
+      case's wires on the frozen input.
+8208. **Memory cases run alone.** bugs/fclasses/bug7287_1 and _6 check that `meminfo h` doesn't grow over a loop. Run
+      side by side with other cases, the process-wide managed heap grows with theirs (4 MB a step); alone, the trend is
+      within the scripts' tolerance and both pass. The corpus test runs the cases that call `meminfo` one at a time
+      after the others.
+8209. **Corpus** (`DrawCheapGapsCorpusTests`, `Unit7WCommands`, `Before7W`). The scan over all 21,068 cases: runnable
+      10,106 before the unit (10,105 with decision 8206), 10,617 after: +512, 374 with their data. Run with OCCT's
+      log check: **OK 337, BAD 18 (OCCT's TODOs), SKIPPED 138 (data not public), FAILED 19, all attributed**: six
+      progress cases (decision 8205: bugs/modalg_7/bug21264, bug30788, lowalgos/progress/A1 to A4), the viewer's
+      triangulation (bugs/mesh/bug32241: DRAWEXE's `checkview -display` meshes the shape, Draw-lite's checkview does
+      nothing), and twelve evolved/voluved cases (BRepOffsetAPI_MakeEvolved's volume mode, phase 7). Section 1.6 of
+      the plan expected +885 (522 with data): its count removed the whole list, `nproject`, the unit commands and the
+      other one- and two-case commands included (decision 8205).
+8210. **Tests.** `DrawCheapGapsCommandsTests` (9): the revolution's and prism's history (bug29586's script); the core
+      commands; `removeinternals` seen through a compound sharing the shape; `proj` on a curve and a surface; the
+      projections; the discretisations; the 2D commands; the in-place geometry commands binding copies (the earlier
+      copy unchanged); the topology commands. `BRepAlgo_ConcatenateWireC0Tests` (1) in ModelingAlgorithms.Tests.
+      `tools/cksirec` is the native check of decision 8201. Earlier tests whose numbers moved: the pipe corpus test (106
+      runnable, OK 69 to 71: three more cases use 7W's commands); the removefeatures, check-command and construction
+      corpus tests accept the 7W failures (bug30788, bug21264, bug32241) that 7W's commands made runnable there.

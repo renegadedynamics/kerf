@@ -119,7 +119,10 @@ public class DrawConstructionCorpusTests(ITestOutputHelper output)
         // loft areas, OCC24909 and OCC25110's sweeps), SKIPPED 250 (data files missing); none failing.
         Assert.Empty(aRunnableBefore);
         Assert.True(aRunnable.Count >= 789, $"{aRunnable.Count}");
-        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
+        // unit 7W's dversion made bugs/mesh/bug32241 runnable: it reads the triangulation DRAWEXE's checkview -display makes
+        // (an attributed failure of DrawCheapGapsCorpusTests)
+        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
+                                           || DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
         Assert.True(aFilter is not null || aRuns.Count(r => r.Status == "OK") >= 499);
     }
 }

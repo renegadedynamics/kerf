@@ -7,12 +7,16 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// The curve and surface commands of GeomliteTest_CurveCommands.cxx and GeomliteTest_SurfaceCommands.cxx that
 /// construct, trim, offset and evaluate geometry: the analytic curves and surfaces, the Bezier and B-spline ones
-/// from poles, the swept surfaces, offsets and trims, isos, values, bounds and parameters.
+/// from poles, the swept surfaces, offsets and trims, isos, values, bounds and parameters; and (unit 7W)
+/// <c>incdeg</c>, <c>insertpole</c>, <c>cmovepoint</c>, <c>convert</c>, <c>segsur</c> and GeomliteTest_ModificationCommands.cxx's
+/// <c>setweight</c>.
 /// </summary>
 /// <remarks>
-/// OCCT's <c>reverse</c>, <c>ureverse</c>, <c>vreverse</c>, <c>segment</c> and <c>setorigin</c> change the bound
-/// geometry in place. Geometry is frozen when bound (DrawTrSurf.Set), so they bind the changed copy that the port's
-/// public API returns (<c>Reversed</c>, <c>UReversed</c>, <c>Segmented</c>, <c>WithOrigin</c>) under the same name:
+/// OCCT's <c>reverse</c>, <c>ureverse</c>, <c>vreverse</c>, <c>segment</c>, <c>setorigin</c>, <c>incdeg</c>,
+/// <c>insertpole</c>, <c>cmovepoint</c>, <c>segsur</c> and <c>setweight</c> change the bound geometry in place. Geometry is frozen when
+/// bound (DrawTrSurf.Set), so they bind the changed copy that the port's public API returns (<c>Reversed</c>,
+/// <c>UReversed</c>, <c>Segmented</c>, <c>WithOrigin</c>, <c>Increased</c>, <c>DegreeIncreased</c>,
+/// <c>PoleInsertedAfter</c>, <c>PointMoved</c>, <c>WithWeight</c>) under the same name:
 /// a shape made from the geometry before keeps the old geometry, where in OCCT it would see the change.
 /// Draw passes a null pointer for an argument past the end of the words (Tcl's argv[argc]), which Draw::Atof would
 /// dereference; the port reads it as an empty word (0).
@@ -68,6 +72,12 @@ internal static class GeomliteTestCommands
         DrawCxx.Add(theInterpreter, "parameters", Parameters);
         DrawCxx.Add(theInterpreter, "bounds", Bounds);
         DrawCxx.Add(theInterpreter, "length", Length);
+        DrawCxx.Add(theInterpreter, "incdeg", IncreaseDegree);
+        DrawCxx.Add(theInterpreter, "insertpole", InsertPole);
+        DrawCxx.Add(theInterpreter, "convert", Converting);
+        DrawCxx.Add(theInterpreter, "segsur", SegSur);
+        DrawCxx.Add(theInterpreter, "setweight", SetWeight);
+        DrawCxx.Add(theInterpreter, "cmovepoint", CMovePoint);
     }
 
     // a[i], or an empty word past the end (OCCT reads Tcl's null argv[argc] there)
@@ -399,6 +409,310 @@ internal static class GeomliteTestCommands
         }
 
         return 0;
+    }
+
+    // cmovepoint name u dx dy [dz index1 index2]
+    private static int CMovePoint(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 5)
+        {
+            return 1;
+        }
+
+        double dx = theDI.Atof(a[3]);
+        double dy = theDI.Atof(a[4]);
+        double dz = 0;
+        if (n >= 6 && n != 7)
+        {
+            dz = theDI.Atof(a[5]);
+        }
+        double u = theDI.Atof(a[2]);
+        int index1 = 0;
+        int index2 = 0;
+        if (n == 7)
+        {
+            index1 = theDI.Atoi(a[5]);
+            index2 = theDI.Atoi(a[6]);
+        }
+        else if (n == 8)
+        {
+            index1 = theDI.Atoi(a[6]);
+            index2 = theDI.Atoi(a[7]);
+        }
+
+        Geom_BSplineCurve? G2 = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        if (G2 is not null)
+        {
+            if (index1 == 0)
+            {
+                index1 = 2;
+                index2 = G2.NbPoles() - 1;
+            }
+            G2.D0(u, out gp_Pnt p);
+            p.SetCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
+            DrawTrSurf.Set(theDI, a[1], G2.PointMoved(u, p, index1, index2, out _, out _));
+            return 0;
+        }
+
+        Geom2d_BSplineCurve? G4 = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+        if (G4 is not null)
+        {
+            if (index1 == 0)
+            {
+                index1 = 2;
+                index2 = G4.NbPoles() - 1;
+            }
+            G4.D0(u, out gp_Pnt2d p);
+            p.SetCoord(p.X() + dx, p.Y() + dy);
+            DrawTrSurf.Set(theDI, a[1], G4.PointMoved(u, p, index1, index2, out _, out _));
+            return 0;
+        }
+        return 0;
+    }
+
+    // incdeg name degree
+    private static int IncreaseDegree(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        int Deg = theDI.Atoi(a[2]);
+
+        Geom_BezierCurve? GBz = DrawTrSurf.GetBezierCurve(theDI, a[1]);
+        Geom_BSplineCurve? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        Geom2d_BezierCurve? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
+        Geom2d_BSplineCurve? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+
+        if (GBz is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], GBz.Increased(Deg));
+        }
+        else if (GBs is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], GBs.DegreeIncreased(Deg));
+        }
+        else if (GBz2d is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], GBz2d.Increased(Deg));
+        }
+        else if (GBs2d is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], GBs2d.DegreeIncreased(Deg));
+        }
+        else
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    // insertpole name index x y [z] [weight]
+    private static int InsertPole(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 6)
+        {
+            return 1;
+        }
+
+        int Index = theDI.Atoi(a[2]);
+
+        Geom_BezierCurve? GBZ = DrawTrSurf.GetBezierCurve(theDI, a[1]);
+        Geom2d_BezierCurve? GBZ2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
+        if (GBZ is not null)
+        {
+            var P = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+            if (n == 7)
+            {
+                DrawTrSurf.Set(theDI, a[1], GBZ.PoleInsertedAfter(Index, P, theDI.Atof(a[6])));
+            }
+            else
+            {
+                DrawTrSurf.Set(theDI, a[1], GBZ.PoleInsertedAfter(Index, P));
+            }
+        }
+        else if (GBZ2d is not null)
+        {
+            // OCCT: n >= 6 here, so the 2D form always takes a[5] as the weight (occt-issues.md, unit 7W)
+            var P = new gp_Pnt2d(theDI.Atof(a[3]), theDI.Atof(a[4]));
+            if (n == 6)
+            {
+                DrawTrSurf.Set(theDI, a[1], GBZ2d.PoleInsertedAfter(Index, P, theDI.Atof(a[5])));
+            }
+            else
+            {
+                DrawTrSurf.Set(theDI, a[1], GBZ2d.PoleInsertedAfter(Index, P));
+            }
+        }
+        else
+        {
+            di.Append("insertpole needs a bezier curve");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    // convert result c2d/c3d/surf [qa,c1,s1,s2,s3,s4,po]
+    private static int Converting(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        Convert_ParameterisationType Parameterisation = a[n - 1] switch
+        {
+            "qa" => Convert_ParameterisationType.Convert_QuasiAngular,
+            "c1" => Convert_ParameterisationType.Convert_RationalC1,
+            "s1" => Convert_ParameterisationType.Convert_TgtThetaOver2_1,
+            "s2" => Convert_ParameterisationType.Convert_TgtThetaOver2_2,
+            "s3" => Convert_ParameterisationType.Convert_TgtThetaOver2_3,
+            "s4" => Convert_ParameterisationType.Convert_TgtThetaOver2_4,
+            "po" => Convert_ParameterisationType.Convert_Polynomial,
+            _ => Convert_ParameterisationType.Convert_TgtThetaOver2,
+        };
+
+        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        if (GC is null)
+        {
+            Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
+            if (GS is null)
+            {
+                Geom2d_Curve? G2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
+                if (G2d is null)
+                {
+                    return 1;
+                }
+                else
+                {
+                    G2d = Geom2dConvert.CurveToBSplineCurve(G2d, Parameterisation);
+                    DrawTrSurf.Set(theDI, a[1], G2d);
+                }
+            }
+            else
+            {
+                GS = GeomConvert.SurfaceToBSplineSurface(GS);
+                DrawTrSurf.Set(theDI, a[1], GS);
+            }
+        }
+        else
+        {
+            GC = GeomConvert.CurveToBSplineCurve(GC, Parameterisation);
+            DrawTrSurf.Set(theDI, a[1], GC);
+        }
+
+        return 0;
+    }
+
+    // segsur name Ufirst Ulast Vfirst Vlast [Utol [Vtol]]
+    private static int SegSur(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 6 || n > 8)
+        {
+            return 1;
+        }
+
+        Geom_BezierSurface? GBz = DrawTrSurf.GetBezierSurface(theDI, a[1]);
+        Geom_BSplineSurface? GBs;
+        if (GBz is null)
+        {
+            GBs = DrawTrSurf.GetBSplineSurface(theDI, a[1]);
+            if (GBs is null)
+            {
+                return 1;
+            }
+
+            double aUTolerance = Precision.PConfusion();
+            double aVTolerance = Precision.PConfusion();
+            if (n >= 7)
+            {
+                aUTolerance = aVTolerance = theDI.Atof(a[6]);
+            }
+            if (n == 8)
+            {
+                aVTolerance = theDI.Atof(a[7]);
+            }
+
+            DrawTrSurf.Set(theDI, a[1], GBs.Segmented(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]),
+                                                      aUTolerance, aVTolerance));
+        }
+        else
+        {
+            DrawTrSurf.Set(theDI, a[1], GBz.Segmented(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])));
+        }
+
+        return 0;
+    }
+
+    // setweight curve/surf index1 [index2] weight (GeomliteTest_ModificationCommands.cxx)
+    private static int SetWeight(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 4 || n > 5)
+        {
+            // Message::SendFail (decision 405)
+            theDI.Output.WriteLine("Syntax error: Wrong parameters");
+            return 1;
+        }
+
+        int anIndex1 = theDI.Atoi(a[2]);
+        int anIndex2 = n == 5 ? theDI.Atoi(a[3]) : 0;
+        double aWeight = theDI.Atof(a[n - 1]);
+
+        if (DrawTrSurf.GetBSplineCurve(theDI, a[1]) is { } aBSplCurve)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBSplCurve.WithWeight(anIndex1, aWeight));
+            return 0;
+        }
+
+        if (DrawTrSurf.GetBezierCurve(theDI, a[1]) is { } aBezCurve)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBezCurve.WithWeight(anIndex1, aWeight));
+            return 0;
+        }
+
+        if (DrawTrSurf.GetBSplineCurve2d(theDI, a[1]) is { } aBSplCurve2d)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBSplCurve2d.WithWeight(anIndex1, aWeight));
+            return 0;
+        }
+
+        if (DrawTrSurf.GetBezierCurve2d(theDI, a[1]) is { } aBezCurve2d)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBezCurve2d.WithWeight(anIndex1, aWeight));
+            return 0;
+        }
+
+        Geom_BSplineSurface? aBSplSurf = DrawTrSurf.GetBSplineSurface(theDI, a[1]);
+        Geom_BezierSurface? aBezSurf = DrawTrSurf.GetBezierSurface(theDI, a[1]);
+        if (n != 5 && (aBSplSurf is not null || aBezSurf is not null))
+        {
+            theDI.Output.WriteLine("Syntax error: Incorrect parameters");
+            return 1;
+        }
+
+        if (aBSplSurf is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBSplSurf.WithWeight(anIndex1, anIndex2, aWeight));
+            return 0;
+        }
+
+        if (aBezSurf is not null)
+        {
+            DrawTrSurf.Set(theDI, a[1], aBezSurf.WithWeight(anIndex1, anIndex2, aWeight));
+            return 0;
+        }
+
+        theDI.Output.WriteLine($"{a[1]} is not a B-spline nor a Bezier curve/surface");
+        return 1;
     }
 
     private static int Segment(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

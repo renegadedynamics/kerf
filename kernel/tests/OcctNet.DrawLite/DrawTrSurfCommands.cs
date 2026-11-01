@@ -6,7 +6,9 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// DrawTrSurf.cxx's transformations of geometry variables: translate, rotate, pmirror, lmirror, smirror, pscale and
-/// their 2D forms. The display commands of the same file (clpoles, dmode, setcurvcolor, ...) need a viewer.
+/// their 2D forms; and the display settings <c>dmode</c>, <c>discr</c> and <c>defle</c> (unit 7W), which set and print
+/// DrawTrSurf_Params' modal values and change nothing else without a viewer. The other display commands of the file
+/// (clpoles, setcurvcolor, ...) need a viewer.
 /// </summary>
 /// <remarks>
 /// OCCT transforms the bound curve or surface in place; geometry is frozen when bound (decision 476), so the port binds
@@ -26,6 +28,60 @@ internal static class DrawTrSurfCommands
         {
             DrawCxx.Add(theInterpreter, aName, D2Transform);
         }
+
+        foreach (string aName in new[] { "dmode", "discr", "defle" })
+        {
+            DrawCxx.Add(theInterpreter, aName, Draw);
+        }
+    }
+
+    /// <summary>DrawTrSurf_Params: the display settings, per interpreter.</summary>
+    private sealed class Params
+    {
+        public double Deflection = 0.01;
+        public int Discret = 30;
+        public int DrawMode;
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<DrawInterpreter, Params> s_params = new();
+
+    // dmode [names...] Uniform/Discret; discr [names...] nbintervals; defle [names...] defle
+    private static int Draw(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        Params aParams = s_params.GetOrCreateValue(theDI);
+        if (n <= 2)
+        {
+            if (a[0] == "dmode")
+            {
+                // OCCT: any word sets the uniform mode
+                if (n == 2)
+                {
+                    aParams.DrawMode = 1;
+                }
+                di.Append(aParams.DrawMode != 0 ? "u" : "d");
+            }
+            else if (a[0] == "discr")
+            {
+                if (n == 2)
+                {
+                    aParams.Discret = theDI.Atoi(a[n - 1]);
+                }
+                di.Append(aParams.Discret);
+            }
+            else if (a[0] == "defle")
+            {
+                if (n == 2)
+                {
+                    aParams.Deflection = theDI.Atof(a[n - 1]);
+                }
+                di.Append(aParams.Deflection);
+            }
+        }
+        // with names, OCCT sets the drawable of a[1] (for every name, // OCCT) to the mode, which only changes how a view
+        // draws it
+
+        return 0;
     }
 
     private static int Transform(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

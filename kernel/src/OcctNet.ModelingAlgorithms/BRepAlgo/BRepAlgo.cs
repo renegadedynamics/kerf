@@ -729,7 +729,9 @@ public static class BRepAlgo
                     Concat.Add(concatcurve.Value(i), MaxTolVer, true);
                 }
 
-                concatcurve.SetValue(concatcurve.Lower(), Concat.BSplineCurve()!);
+                // the maker is discarded: its curve unfrozen, as OCCT's handle, which the reversal below writes into
+                // (bugs/modalg_7/bug29573: BSplineCurve() froze it, and Reverse threw Standard_ImmutableObject)
+                concatcurve.SetValue(concatcurve.Lower(), Concat.InternalBSplineCurve()!);
             }
 
             if (isReverse)

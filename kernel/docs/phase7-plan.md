@@ -168,6 +168,10 @@ isn't public.
   `projonplane` 27, `validrange` 12, `2dintersect` 10, `2dextrema` 8, a few more.
 - All of these together: +885 cases (522 with data). The viewer commands would add 1,177 more (508 with data), but
   those cases would run without testing anything, so they stay out.
+- *Measured by unit 7W* (decision 8209): the commands ported make **+512 runnable (374 with data)**, 10,617 in all.
+  The estimate counted the whole list: `nproject` (28 cases; BRepAlgo_NormalProjection isn't ported), the unit
+  commands (Units isn't ported) and one- and two-case commands were left out (decision 8205). Run: OK 337, BAD 18,
+  SKIPPED 138, FAILED 19 (attributed).
 
 **Still blocked after phase 7:** 5,347 cases: the viewer (1,177), OCAF (427, and 765 more with phase 8), phase 8's
 STEP and IGES (586, and the `de` grids' 1,073), QA test commands (137), and the rest.
@@ -441,7 +445,7 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 
 | Step | Units (at most two at once) | Notes |
 |---:|---|---|
-| 1 | 7W (the cheap Draw-lite gaps, question 28) ‖ 7A ShapeCustom | 7W first fixes or attributes the four modalg cases the new scan default exposed (`DrawBooleanCorpusTests.NotYetAttributed`, decision 972) |
+| 1 | 7W (the cheap Draw-lite gaps, question 28) ‖ 7A ShapeCustom | 7W first fixes or attributes the four modalg cases the new scan default exposed (decision 972; done by 7W, decision 8201) |
 | 2 | 7B ShapeUpgrade ‖ 7D helix | 7D ends with the helix commands |
 | 3 | 7C ShapeProcess, with the healing commands ‖ 7E offset foundations | healing's corpus (2,604 cases) runs here |
 | 4 | 7F MakeOffset ‖ 7H LocOpe | |
