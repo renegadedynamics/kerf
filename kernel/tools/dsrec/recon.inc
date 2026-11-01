@@ -113,7 +113,9 @@ static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput)
   return OS.str();
 }
 
-static void RecordReconCases()
+static void RecordComplexCases(const char* theDataDir);
+
+static void RecordReconCases(const char* theDataDir)
 {
   const gp_Ax1 aZ(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
   const double D = M_PI / 180.;
@@ -422,4 +424,55 @@ static void RecordReconCases()
     TopoDS_Shape aCube = BRepPrimAPI_MakeBox(10, 10, 10).Shape();
     Record("fail_cube_radius_6", aCube, false, EdgesWhere(aCube, 6, [](const TopoDS_Edge&) { return true; }));
   }
+
+  if (theDataDir != nullptr)
+  {
+    RecordComplexCases(theDataDir);
+  }
+}
+
+// tests/blend/complex: the cases whose shapes the dataset has (Draw's "explode a e" numbers edges as MapShapes)
+static void RecordComplex(const char* theDataDir, const char* theName, const char* theFile, double theScale,
+                          const std::vector<Edge>& theEdges)
+{
+  TopoDS_Shape S;
+  BRep_Builder B;
+  std::string  aPath = std::string(theDataDir) + "/brep/" + theFile;
+  if (!BRepTools::Read(S, aPath.c_str(), B))
+  {
+    std::fprintf(stderr, "dsrec: cannot read %s\n", aPath.c_str());
+    return;
+  }
+  if (theScale != 1.0)
+  {
+    S = Scaled(S, theScale);
+  }
+  Record(theName, S, false, theEdges);
+}
+
+static void RecordComplexCases(const char* theDataDir)
+{
+  RecordComplex(theDataDir, "complex_A1", "CFI_indusfjm.rle", 1, {{4, 2, -1}, {5, 2, -1}, {15, 2, -1}, {16, 2, -1}});
+  RecordComplex(theDataDir, "complex_A2", "CCH_indushem.rle", 1000, {{26, 2, -1}});
+  RecordComplex(theDataDir, "complex_A3", "CCH_indushep.rle", 1000, {{8, 5, -1}});
+  RecordComplex(theDataDir, "complex_A4", "CCH_indushep.rle", 1000, {{12, 5, -1}});
+  RecordComplex(theDataDir, "complex_A5", "CCH_blendhdp.rle", 1000, {{3, 5, -1}});
+  RecordComplex(theDataDir, "complex_B2", "CFI_pro10320.rle", 1, {{15, 15, -1}});
+  RecordComplex(theDataDir, "complex_B3", "pro11555.rle", 1, {{1, 2, -1}, {2, 2, -1}});
+  RecordComplex(theDataDir, "complex_D2", "CFI_pro10391.rle", 1,
+                {{3, 10, -1}, {4, 5, -1}, {2, 10, -1}, {13, 5, -1}, {11, 5, -1}, {14, 10, -1}, {15, 5, -1},
+                 {12, 10, -1}, {6, 5, -1}, {9, 5, -1}});
+  RecordComplex(theDataDir, "complex_D6", "CFI_pro10321.rle", 1, {{13, 59, -1}});
+  RecordComplex(theDataDir, "complex_E5", "CFI_pro7788.rle", 1, {{8, 20, -1}, {11, 20, -1}, {1, 20, -1}, {12, 20, -1}});
+  RecordComplex(theDataDir, "complex_E7", "CFI_pro11850.rle", 1, {{22, 3, -1}});
+  RecordComplex(theDataDir, "complex_E8", "CFI_pro12404.rle", 1, {{8, 10, -1}, {13, 10, -1}});
+  RecordComplex(theDataDir, "complex_F1", "CFI_id150009.rle", 1, {{9, 10, -1}});
+  RecordComplex(theDataDir, "complex_F2", "CFI_id150009.rle", 1, {{17, 10, -1}});
+  RecordComplex(theDataDir, "complex_F4", "CFI_cts20686.rle", 1,
+                {{4, 10, -1}, {15, 10, -1}, {13, 10, -1}, {10, 10, -1}, {7, 10, -1}});
+  RecordComplex(theDataDir, "complex_F7", "CFI_pro13225.rle", 1, {{3, 10, -1}, {8, 10, -1}, {7, 10, -1}, {6, 10, -1}});
+  RecordComplex(theDataDir, "complex_G1", "CFI_pro14035.rle", 1,
+                {{9, 3, -1}, {7, 3, -1}, {5, 3, -1}, {3, 3, -1}, {1, 3, -1}, {2, 3, -1}, {4, 3, -1}, {6, 3, -1},
+                 {8, 3, -1}});
+  RecordComplex(theDataDir, "complex_G2", "CFI_pro14550.rle", 1, {{1, 5, -1}, {3, 5, -1}, {4, 5, -1}, {2, 5, -1}});
 }

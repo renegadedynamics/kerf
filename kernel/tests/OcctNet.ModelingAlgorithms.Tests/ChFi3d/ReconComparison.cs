@@ -19,12 +19,22 @@ internal static class ReconComparison
                                TopoDS_Shape Result);
 
     /// <summary>Compute from <c>myCoup->Perform</c> to the result and the same-parameter (not SetRegul).</summary>
-    internal static Run Reconstruct(ReconCase theCase, bool theFreezeInput = true)
+    /// <remarks>
+    /// With <paramref name="theFreezeInput"/>, the input is frozen and only <c>Perform</c> and <c>MergeSolid</c> run:
+    /// the reconstruction must not write into it (Compute's own steps after them write into the working copy's
+    /// vertices, as natively).
+    /// </remarks>
+    internal static Run Reconstruct(ReconCase theCase, bool theFreezeInput = false)
     {
         TopoDS_Shape anInput = theCase.Input;
         if (theFreezeInput)
         {
             anInput.TShape()?.FreezeGraph(); // the reconstruction writes only into its own shapes
+        }
+        else
+        {
+            // the fillet builder's working copy (decision 10203): Compute's steps after MergeSolid write into it
+            anInput = BRepTools.ExactCopyForWrite(anInput, out BRepTools_History _);
         }
         TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(theCase.DsText, anInput);
         TopOpeBRepDS_DataStructure aDS = aHDS.DS();
@@ -48,6 +58,19 @@ internal static class ReconComparison
         }
 
         BRep_Builder B1 = new();
+        if (theFreezeInput)
+        {
+            TopoDS_Compound aMergedOnly = new();
+            B1.MakeCompound(ref aMergedOnly);
+            foreach (int i in aSolids)
+            {
+                foreach (TopoDS_Shape M in aCoup.Merged(aDS.Shape(i), TopAbs_IN))
+                {
+                    B1.Add(aMergedOnly, M);
+                }
+            }
+            return new Run(anInput, aHDS, aCoup, aMergedOnly);
+        }
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
             TopoDS_Shape S = aDS.Shape(i);
@@ -228,11 +251,11 @@ internal static class ReconComparison
         }
         for (int i = 1; i <= theCase.NewEdges.Count; i++)
         {
-            string s1 = Lengths(theCase.NewEdges[i - 1]);
-            string s2 = Lengths(theRun.Builder.NewEdges(i).Select(e => EdgeLength(e)));
-            if (s1 != s2)
+            double[] l1 = [.. theCase.NewEdges[i - 1].Order()];
+            double[] l2 = [.. theRun.Builder.NewEdges(i).Select(e => EdgeLength(e)).Order()];
+            if (l1.Length != l2.Length || l1.Zip(l2).Any(p => !Close(p.First, p.Second, 1.0e-5)))
             {
-                d.Add($"NewEdges({i}) {s1} | {s2}");
+                d.Add($"NewEdges({i}) {Lengths(l1)} | {Lengths(l2)}");
             }
         }
         NCollection_IndexedMap<TopoDS_Shape> aIF = new(TopTools_ShapeMapHasher.Instance);

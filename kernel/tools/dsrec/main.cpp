@@ -641,14 +641,14 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
 
 int RunKPart(const char* thePath); // kpart.cpp
 static void RecordCases();
-static void RecordReconCases(); // recon.inc
+static void RecordReconCases(const char* theDataDir); // recon.inc
 
 
 int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt\n");
+    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt | dsrec --recon out.txt [dataset]\n");
     return 2;
   }
   OSD::SetSignal(false);
@@ -667,7 +667,7 @@ int main(int argc, char** argv)
   RecordCases();
   if (gRecon)
   {
-    RecordReconCases();
+    RecordReconCases(argc >= 4 ? argv[3] : nullptr);
   }
   return 0;
 }

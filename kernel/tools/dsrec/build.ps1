@@ -10,7 +10,9 @@ param(
   [string] $Build123dNetRoot = (Join-Path $PSScriptRoot '..\..\..\build123d.net'),
   [string] $Out = (Join-Path ([IO.Path]::GetTempPath()) 'dsrec'),
   # OCCT's sources: kpart.cpp's cases call ChFi3d_Builder_0.cxx, compiled unchanged into dsrec (unit 7N1)
-  [string] $OcctSrc = (Join-Path $PSScriptRoot '..\..\.deps\occt-src')
+  [string] $OcctSrc = (Join-Path $PSScriptRoot '..\..\.deps\occt-src'),
+  # OCCT's test dataset: --recon records tests/blend/complex's shapes from it (unit 7R)
+  [string] $TestData = (Join-Path $PSScriptRoot '..\..\.deps\occt-testdata\opencascade-dataset-7.9.0')
 )
 $ErrorActionPreference = 'Stop'
 $inst = Join-Path $Build123dNetRoot '.deps\install\win-x64'
@@ -52,7 +54,7 @@ try {
   Write-Host "Recording in $Out\kpartrec.txt"
   # The fillets with native's result and history, for the reconstruction (unit 7R):
   # tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/Recordings/reconrec.txt.gz
-  & .\dsrec.exe --recon (Join-Path $Out 'reconrec.txt')
+  & .\dsrec.exe --recon (Join-Path $Out 'reconrec.txt') $TestData
   if ($LASTEXITCODE -ne 0) { throw "dsrec --recon failed ($LASTEXITCODE)" }
   $bytes = [IO.File]::ReadAllBytes((Join-Path $Out 'reconrec.txt'))
   $gz = [IO.File]::Create((Join-Path $Out 'reconrec.txt.gz'))

@@ -492,13 +492,14 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
     {
         TopOpeBRepDS_DataStructure aDS = DS;
         NCollection_List<TopoDS_Shape> aFaces = new();
+        List<TopoDS_Shape> aWhole = [];
         for (TopExp_Explorer exp = new(S, TopAbs_FACE); exp.More(); exp.Next())
         {
             TopoDS_Face F = TopoDS.Face(exp.Current());
             NCollection_List<TopoDS_Shape>? aPieces = SplitFace(F);
             if (aPieces is null)
             {
-                aFaces.Append(F);
+                aWhole.Add(F);
                 continue;
             }
             foreach (TopoDS_Shape P in aPieces)
@@ -521,6 +522,10 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
             {
                 aFaces.Append(F.Oriented(O));
             }
+        }
+        foreach (TopoDS_Shape F in KeptWholeFaces(S, aWhole, aFaces))
+        {
+            aFaces.Append(F);
         }
 
         // the shells: the faces connected by their edges (a solid's outer shell and its voids' apart)
@@ -551,6 +556,59 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
             myBB.Add(aSolid, aShell);
         }
         theMerged.Append(aSolid);
+    }
+
+    /// <summary>
+    /// The faces left whole that stay: a face is dropped when one of its edges has lost a face it bounded (the
+    /// pieces around dropped it: the face lies where a fillet swallowed it), until none is (decision 10705).
+    /// </summary>
+    private static List<TopoDS_Shape> KeptWholeFaces(TopoDS_Shape S, List<TopoDS_Shape> theWhole,
+                                                     NCollection_List<TopoDS_Shape> theOthers)
+    {
+        Dictionary<TopoDS_Shape, int> aBefore = EdgeUses(new[] { S });
+        List<TopoDS_Shape> aKept = [.. theWhole];
+        bool aChanged = true;
+        while (aChanged && aKept.Count > 0)
+        {
+            aChanged = false;
+            Dictionary<TopoDS_Shape, int> aNow = EdgeUses(aKept.Concat(theOthers));
+            for (int i = aKept.Count - 1; i >= 0; i--)
+            {
+                for (TopExp_Explorer exp = new(aKept[i], TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    TopoDS_Shape E = exp.Current();
+                    if (!BRep_Tool.Degenerated(TopoDS.Edge(E))
+                        && aNow.GetValueOrDefault(E) < aBefore.GetValueOrDefault(E))
+                    {
+                        aKept.RemoveAt(i);
+                        aChanged = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return aKept;
+    }
+
+    /// <summary>How many faces of the shapes each edge bounds (a seam counts once).</summary>
+    private static Dictionary<TopoDS_Shape, int> EdgeUses(IEnumerable<TopoDS_Shape> theShapes)
+    {
+        Dictionary<TopoDS_Shape, int> aUses = new(TopTools_ShapeMapHasher.Instance);
+        foreach (TopoDS_Shape S in theShapes)
+        {
+            for (TopExp_Explorer expf = new(S, TopAbs_FACE); expf.More(); expf.Next())
+            {
+                HashSet<TopoDS_Shape> aSeen = new(TopTools_ShapeMapHasher.Instance);
+                for (TopExp_Explorer exp = new(expf.Current(), TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    if (aSeen.Add(exp.Current()))
+                    {
+                        aUses[exp.Current()] = aUses.GetValueOrDefault(exp.Current()) + 1;
+                    }
+                }
+            }
+        }
+        return aUses;
     }
 
     /// <summary>The faces in blocks connected by shared edges, in the faces' order.</summary>
