@@ -10606,3 +10606,106 @@ merge.
         `ChangePrevious`/`ChangeNext`. All are internal and reachable from ChFi3d. ChFiDS_StripeMap's `Add` and `Clear`
         are internal; ChFiDS_Map's `Fill` is public. ChFiDS_SecHArray1 (the simulation's sections) is
         `NCollection_HArray1<ChFiDS_CircSection>`, stored through `SetSimul` as a Standard_Transient.
+
+## Phase 7: unit 7L, the legacy data structure's core
+
+9901. **Scope: what ChFi3d, ChFiKPart and FilletSurf call, traced member by member.** Their calls into TopOpeBRepDS
+      and TopOpeBRepTool (`TKFillet/ChFi3d`, `ChFiKPart`, `FilletSurf`, `BRepFilletAPI`): on
+      TopOpeBRepDS_DataStructure `AddShape`, `AddCurve`, `AddPoint`, `AddSurface`, `Shape` (both), `Curve`,
+      `ChangeCurve`, `Point`, `ChangePoint`, `Surface`, `ChangeSurface`, `ShapeInterferences`,
+      `ChangeShapeInterferences`, `CurveInterferences`, `ChangeCurveInterferences`, `SurfaceInterferences`,
+      `ChangeSurfaceInterferences`, `HasGeometry`, `NbShapes`, `NbCurves`, `NbPoints`, `NbSurfaces`, `RemovePoint`,
+      `SetNewSurface`; on HDataStructure `ChangeDS`, `Shape`, `Surface`, `Curve`, `CurvePoints`, `NbSurfaces`; on
+      Curve `Curve`, `ChangeCurve`, `Tolerance` (both), `SetSCI`, `GetSCI1`, `SetRange`; on Point `Point`,
+      `Tolerance` (both), `IsEqual`; Surface's constructor and `Tolerance`; the interferences' constructors (CPI, SCI,
+      SSI), `Transition`, `Geometry`, `GeometryType`, `GKGSKS`, CPI's `Parameter`, SCI's `PCurve`; Transition's
+      constructors, `Set`, `Index`, `Orientation`; PointIterator's `Parameter`, `Value`, `IsVertex`, `Current`,
+      `Orientation`; CurveExplorer's `Curve`, `Index`, `More`, `Next`; InterferenceIterator; Kind; TopOpeBRepTool's
+      `TOOL::Nt` (ported by 7E), `GeomTool` and `BSPLINE1` (phase 5) for `mkbuildtool`; BuildTool's constructor from a
+      GeomTool (phase 5). Of TopOpeBRepBuild only the HBuilder (7R). Ported, each class whole so that 7R can read the
+      data structure freely: Kind, Config, Transition, Interference, CurvePointInterference, SurfaceCurveInterference,
+      SolidSurfaceInterference, ShapeShapeInterference, EdgeVertexInterference, FaceEdgeInterference, Point, Curve,
+      Surface, GeometryData, CurveData, PointData, SurfaceData, ShapeData, ShapeWithState, ListOfShapeOn1State,
+      DataStructure, HDataStructure (but `ChkIntg`, which needs TopOpeBRepDS_Check), InterferenceIterator,
+      PointIterator, CurveIterator, SurfaceIterator, CurveExplorer, PointExplorer, SurfaceExplorer, the package
+      TopOpeBRepDS; TopOpeBRepTool_ShapeTool whole (the same-domain filling and the points of vertices use it) and
+      `FUN_tool_projPonS` (ShapeTool's cylinder case). About 3,900 OCCT lines: the plan's 10,000 counted the builder-side
+      DS files too. Left out, only the builder uses them: EXPORT, the filters, reducers and interference processors
+      (Filter, Reducer, ProcessInterferencesTool, the Edge/Face/Edge3d interference tools, EIR, FIR, redu, repvg, samdom,
+      GapFiller, GapTool, TKI, Marker, Association, Check, Dumper, connex, funk, TOOL, InterferenceTool), BuildTool's
+      builder members, and TopOpeBRepBuild beyond phase 5's slice. FilletSurf builds the HBuilder but never runs
+      Perform.
+9902. **The data structure is the context; nothing in the core is process-wide.** OCCT's function-scope statics in the
+      core become per-object or stateless: `ChangeMapOfShapeWithState`'s `static` dummy map and `GetShapeWithState`'s
+      dummy are members of the data structure; CurveExplorer's `thread_local CEX_PEMPTY` (returned when there is no
+      curve) is a new empty curve per call, since nothing writes it through a missing curve (ChFi3d casts the
+      constness away only while `More()`); Curve's `static` null pcurve handles are `null`; ShapeWithState's static
+      empty list is a static list nothing writes. No value an earlier call left behind is read, so the core needs no
+      `[ThreadStatic]`. **The context's shape, for 7N1, 7N2 and 7R:** `TopOpeBRepDS_HDataStructure` is the whole
+      context. ChFi3d's `myDS` holds everything the fillet writes (shapes, points, curves, surfaces, interferences, new
+      surfaces); two builders never share one, and nothing outside it is read or written. The thread-local and
+      file-scope state plan 2.1 names (Builder1's `mySDEdgeMap`, `GLOBAL_DS2d`, `GLOBAL_TOOLBOX_hboxtool`, HBuilder's,
+      `ffsfs`, `DS_connex`, `Tool_2d`) belongs to TopOpeBRepBuild and the builder-side DS tools, not ported (decision
+      992): 7R keeps its state in its reconstruction object, as `IntTools_Context` does for the Booleans (decision 580).
+9903. **The native recorder: `tools/dsrec`, hooking Perform through TKFillet's import table.**
+      `ChFi3d_Builder::Compute` is not virtual and calls `TopOpeBRepBuild_HBuilder::Perform(HDS)` (TKBool.dll) through
+      TKFillet.dll's import address table; dsrec patches that one entry (found by comparing with `GetProcAddress` of
+      the decorated name) to a function that dumps the data structure and then calls the real Perform through dsrec's
+      own import. No OCCT code is copied or changed, and every fillet and chamfer path is covered. It also dumps
+      `Builder()->DataStructure()` after Build: **Perform left the dump unchanged in all 15 cases** (its Filter and
+      Reducer find nothing to change in a fillet's interferences), so for these inputs the data structure after Build
+      is the same ground truth; the recording keeps the flag per case. Cases: a box (one edge, two edges at a corner,
+      three, all twelve, an evolving radius), a cylinder's top edge, blend/simple's B1, C1, D1, E1, F1 (partial
+      cylinder, cones, sphere, torus) and K1 (a box cut by a cylinder), and chamfers (one distance, two distances, a
+      corner). The recording (`dsrec.txt.gz`, 95 KB) holds each input as BRep text and its data structure: 380 CPIs,
+      306 SCIs, 50 SSIs over planes, cylinders, spheres, tori and B-spline surfaces.
+9904. **Value types and working objects.** Transition, Point, Curve and Surface are C++ value classes, so structs
+      (translation rules 3); the data structure stores them in its data classes (classes) and gives them for writing by
+      `ref` (`ref DS.ChangeCurve(i)`, `ChangePoint`, `ChangeSurface`), and by value from `Curve(i)`, `Point(i)`,
+      `Surface(i)` and the explorers (OCCT returns `const&`; ChFi3d's const cast on `CurveExplorer::Curve()` becomes
+      `ref DS.ChangeCurve(cex.Index())`). `AddCurve(ref C)` sets the index on the caller's curve as OCCT does through a
+      const cast; a by-value overload serves OCCT's calls with a temporary. The interferences, data structure, handle,
+      iterators and explorers are classes; mutators are internal, queries public, so a builder's data structure can be
+      read but not changed from outside OCCT.NET. `double&` outputs that OCCT leaves unchanged when it has nothing to
+      give are `out` (0) where no caller relies on the old value (`Curve::Range`), `ref` where callers do
+      (`MinMaxOnParameter`, `GetGeometry`, `UVBOUNDS`, `EdgeData`). Interference lists are
+      `NCollection_List<TopOpeBRepDS_Interference>`, shared as in OCCT.
+9905. **OCCT's shared empty objects are kept, per data structure.** The `Change*` accessors give a missing shape,
+      curve, point or surface the data structure's own empty list or value, for writing; what a caller writes there is
+      seen by every later miss (`AddShapeInterference` on a shape not in the data structure appends to the list every
+      missing shape then returns). Reproduced (each data structure has its own, as OCCT's members), logged in
+      occt-issues; ChFi3d adds a shape before writing its interferences, so the fillets never reach it.
+9906. **The text dump: `TopOpeBRepDS_TextDump`** (OCCT.NET addition, internal, in the library so that later units'
+      tests and Draw-lite can use it). `Write(DS, input)` writes the format tools/dsrec writes (documented on the
+      class): every shape (its index in `TopExp::MapShapes(input, type)` with its orientation) with keep, same domain,
+      ancestor rank and interferences; points, curves (tolerance, range, keep, mother, index, walk, both shapes, both
+      SCIs, the 3D curve), surfaces, each list of interferences (class, transition, kinds and indices, parameter,
+      GBound and configuration, pcurve), the interferences only curves hold, the new surfaces of faces, the section
+      edges and the fafa flag. An interference is written once and referred to by `#id` afterwards, so sharing
+      survives. Reals are `%.17g` (`Standard_Stream.FormatReal`), geometry GeomTools' text at precision 17, so equal
+      data gives equal bytes. `Read(text, input)` rebuilds a data structure (not shapes outside the input). Reading
+      geometry back normalises directions and brings periodic trims into their period, as OCCT's GeomTools does, so
+      native's text read and written back differs from native's by an ulp or a period: the tests compare that
+      tolerantly (`DsRecordings.Differences`, 1e-14) and then require the read text to be a fixed point, byte for byte.
+9907. **Map order.** The data structure's shapes are an indexed map (insertion order, as natively); points, curves and
+      surfaces are maps keyed by their index and read by index; the new surfaces of faces are a shape-keyed map that
+      OCCT never iterates (the dump walks the input's faces). Nothing in the core iterates an address-keyed map, so no
+      order is observable here; the builder's maps are 7R's.
+9908. **For 7N1/7N2 (writing into the data structure) and 7R (reading it).**
+      - Writing: `DStr.AddCurve(TopOpeBRepDS_Curve(C, tol))` is `DStr.AddCurve(new TopOpeBRepDS_Curve(C, tol))`;
+        `TopOpeBRepDS_Curve& c = DStr.ChangeCurve(i)` is `ref TopOpeBRepDS_Curve c = ref DStr.ChangeCurve(i)` (a plain
+        local is a copy); `TopOpeBRepDS_Point tp = DStr.Point(i)` is a copy, as in OCCT. Interference lists are appended
+        to directly (`DStr.ChangeShapeInterferences(F).Append(I)`). `ChangeDS()` is internal.
+      - Comparing with native: `DsRecordings.Cases[name]` (tests) gives each case's input (`Input`) and native's text
+        (`DsText`); run the port's maker on that input with the edges and radii of tools/dsrec/main.cpp (edge numbers
+        are `TopExp::MapShapes(input, EDGE)` indices) and compare `TopOpeBRepDS_TextDump.Write(DS, input)` with
+        `DsText`, exactly, or with `DsRecordings.Differences` where geometry differs by ulps. Add cases to dsrec as the
+        fillet units need them (`tools/dsrec/build.ps1` rebuilds and records).
+      - Reading (7R): `TopOpeBRepDS_TextDump.Read(DsText, input)` gives native's data structure for each case. What the
+        fillets write: the solid has SSIs on the fillet surfaces; each support face has SCIs for its trimming curves
+        (with the pcurve on the face); each fillet surface has SCIs for its boundary curves; each curve has CPIs at its
+        ends (POINT or VERTEX geometry, the parameter on the curve) and its range set from them by CompleteDS (a curve
+        without points gets [RealLast, RealFirst]); the edges a fillet cuts have CPIs of their points; the faces' wires,
+        the shells and the solid are added as ancestors. Some surfaces have no interference (a second copy of a fillet
+        surface). Surfaces are never kept (`Keep()` false): use `SurfaceExplorer(DS, false)`. `SolidSurfaces` keeps
+        OCCT's unmatched first value (occt-issues 7L).
