@@ -15,7 +15,7 @@ internal static class DrawBuiltins
     /// </summary>
     internal static readonly string[] Ignored =
     [
-        "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
+        "pload", "cpulimit", "checkview", "vfit", "vzfit", "vdump", "vglinfo",
         "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
         "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit", "repaint",
@@ -84,6 +84,8 @@ internal static class DrawBuiltins
         BRepTestOtherCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
+        // unit 7D: the helix commands
+        BRepTestHelixCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

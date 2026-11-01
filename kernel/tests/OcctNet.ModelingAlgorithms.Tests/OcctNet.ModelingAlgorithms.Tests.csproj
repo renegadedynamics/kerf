@@ -68,6 +68,8 @@
     <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
     <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
     <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
+    <!-- Native OCCT's TKHelix (HelixBRep_BuilderHelix and HelixGeom's builders) on the helix grid's parameters, recorded by tools/helixrec (unit 7D) -->
+    <EmbeddedResource Include="HelixBRep\Recordings\helixrec.txt.gz" LogicalName="HelixBRep.helixrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
