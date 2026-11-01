@@ -1603,3 +1603,22 @@ Found by porting BRepBlend and by tools/blendrec. The port reproduces each (`// 
 | BRepBlend_SurfRstConstRad, SurfRstEvolRad, RstRstConstRad, RstRstEvolRad | `myTConv` is not initialised by the constructors | Read only after `GetShape` sets it in OCCT's call order; the port starts it at its first value |
 | BRepBlend_SurfRstLineBuilder `ArcToRecadre` | The header names the 2D points (pt2d, lastpt2d), the definition (lastpt2d, pt2d) | The port follows the definition |
 | BRepBlend_CurvPointRadInv | `choix` is set and never read | None |
+
+## Phase 7: unit 7L, the legacy data structure's core
+
+Found by porting TopOpeBRepDS's core and TopOpeBRepTool_ShapeTool. The port reproduces each (`// OCCT` or a remark at
+the place).
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepDS_SurfaceIterator constructor | Sets the SURFACE condition after the base constructor has matched, without matching again | The first `Value()` is the list's first interference whatever its geometry (`HDataStructure::SolidSurfaces`); `Next()` then skips the others |
+| TopOpeBRepDS_DataStructure `Change*Interferences`, `ChangeCurve`, `ChangePoint`, `ChangeSurface` | Return the data structure's own empty list or value, for writing, when the shape or geometry is missing | What is written there is every later miss's list or value (decision 1066) |
+| TopOpeBRepDS_Point(shape) | Leaves `myKeep` unset; the default constructor leaves the tolerance unset | Uninitialised natively; the port keeps the point and uses 0 |
+| TopOpeBRepDS_Interference() | Leaves the indices and kinds unset | Uninitialised natively; the port uses 0 and POINT |
+| TopOpeBRepDS_SurfaceExplorer() | Leaves `myFindKeep` unset | Uninitialised natively; the port uses false |
+| TopOpeBRepDS_CurveIterator `PCurve`, TopOpeBRepDS_Curve `Curve1`/`Curve2` | Cast the interference to a surface/curve interference without checking | Undefined natively on another class; the port throws InvalidCastException |
+| TopOpeBRepDS_Surface | A new surface is not kept, a new point or curve is | `SurfaceExplorer` with its default `FindOnlyKeep` finds none of a fillet's surfaces |
+| TopOpeBRepDS_DataStructure `IsSectionEdge`, `SectionEdge` | Need the edge among the data structure's shapes too, not only among the section edges | A section edge added alone is not one |
+| TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
+| TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
+| TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
