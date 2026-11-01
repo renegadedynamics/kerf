@@ -1281,3 +1281,16 @@ Phase 7 (part): the foundations of hidden-line removal (unit 7P).
 - Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
   quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
   the edge status and the contours.
+
+Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fillet builders.
+
+- ChFiKPart: the fillets and chamfers computed analytically, written into the legacy data structure as native OCCT
+  writes them: a cylinder between two planes, a torus or sphere between a plane and a cylinder or cone, the chamfers
+  (symmetric, two distances, distance and angle, constant throat with or without penetration) on the same pairs, and
+  the toric, spherical and rotule corners.
+- ChFi3d_Builder_0, whole: the builders' free functions (pcurves and their same parameter, the edges between fillets,
+  the intersections of fillets and faces, the elementary spines' curves, writing a stripe into the data structure, the
+  topology helpers).
+- Tests: tools/dsrec records native OCCT's analytic cases on real faces and Builder_0's functions (compiled from OCCT's
+  own source): 66 cases, all identical byte for byte. The fillets write only the builder's working copy of their
+  input (unit 7N2 copies it at entry).

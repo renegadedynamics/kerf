@@ -46,6 +46,8 @@
     <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
     <!-- Native OCCT's blend functions and fillet spines (BlendFunc, ChFiDS), recorded by tools/blendrec (unit 7J) -->
     <EmbeddedResource Include="BlendFunc\Recordings\blendrec.txt.gz" LogicalName="BlendFunc.blendrec.txt.gz" />
+    <!-- Native OCCT's analytic fillets and ChFi3d_Builder_0's functions, recorded by tools/dsrec in its kpart mode (unit 7N1) -->
+    <EmbeddedResource Include="ChFiKPart\Recordings\kpartrec.txt.gz" LogicalName="ChFiKPart.kpartrec.txt.gz" />
     <!-- Native OCCT's legacy data structure as fillets and chamfers hand it to TopOpeBRepBuild_HBuilder::Perform, recorded by tools/dsrec (unit 7L) -->
     <EmbeddedResource Include="TopOpeBRepDS\Recordings\dsrec.txt.gz" LogicalName="TopOpeBRepDS.dsrec.txt.gz" />
     <!-- Native OCCT HLR foundations (HLRAlgo, Intrv, Contap), recorded by tools/hlrrec (unit 7P) -->
