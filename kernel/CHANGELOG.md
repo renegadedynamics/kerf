@@ -1208,3 +1208,19 @@ Phase 7 (part): the blend functions (unit 7J), the first step to 3D fillets.
 - Tests: `tools/blendrec` records native OCCT's functions on plane, cylinder, cone and B-spline pairs and its spines on
   a box, a cylinder and a B-spline solid: 235 cases, all identical bit for bit; derivatives against finite differences;
   unit tests of ChFiDS's data.
+Phase 7 (part): drafts and the rest of TKOffset (unit 7G).
+
+- Draft and BRepOffsetAPI_DraftAngle (taper faces of a shape: planes, cylinders, cones); BRepAlgo_NormalProjection,
+  BRepOffsetAPI_NormalProjection and FindContigousEdges; BRepFill_Draft, DraftLaw and BRepOffsetAPI_MakeDraft (draft
+  skins); BiTgte_Blend and its curves (the rolling ball); BRepFill_AdvancedEvolved, so BRepOffsetAPI_MakeEvolved's
+  volume mode works.
+- The caller's shape is never written: the draft angle copies the modifier's result before OCCT's in-place wire
+  corrections when it shares the caller's sub-shapes, and the rolling ball and the evolved volume copy a frozen input at
+  the entry (decisions 9401, 9403, 9404).
+- Draw-lite: the 3D offset commands (`offsetparameter`, `offsetload`, `offsetonface`, `offsetperform`, `offsetshape`,
+  `offsetcompshape`, `thickshell`, `mkoffsetshape`, `offsetshapesimple`), the draft commands (`depouille`,
+  `ndepouille`, `draft`), `rollingball`/`brollingball`/`trollingball` and `nproject`; a backslash-newline now ends a bare
+  Tcl word. 1,687 corpus cases newly runnable (OK 405, BAD 63, 1,216 missing data, 3 failing, attributed).
+- Tests: unit and frozen-input tests; the draft angle against native OCCT (870 runs, every result and history identical
+  or canonically equal); `tools/draftrec` records MakeDraft, BiTgte_Blend and the evolved volume (181 runs, all
+  byte-identical but 4 attributed). Fixed: unit 7F's offset threw reading the history of a run with a null result.

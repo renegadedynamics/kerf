@@ -9,7 +9,7 @@ namespace Occt;
 
 /// <summary>A location law on a wire: a copy of the given law on each non-degenerated edge's 3D curve.</summary>
 /// <remarks>The caller's law is only copied (<c>Copy()</c>), never changed; each edge's law is the wire law's own.</remarks>
-public sealed class BRepFill_Edge3DLaw : BRepFill_LocationLaw
+public class BRepFill_Edge3DLaw : BRepFill_LocationLaw
 {
     /// <summary>The law on <paramref name="Path"/> with copies of <paramref name="Law"/>.</summary>
     public BRepFill_Edge3DLaw(in TopoDS_Wire Path, GeomFill_LocationLaw Law)

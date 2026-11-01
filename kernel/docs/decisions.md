@@ -10606,3 +10606,106 @@ merge.
         `ChangePrevious`/`ChangeNext`. All are internal and reachable from ChFi3d. ChFiDS_StripeMap's `Add` and `Clear`
         are internal; ChFiDS_Map's `Fill` is public. ChFiDS_SecHArray1 (the simulation's sections) is
         `NCollection_HArray1<ChFiDS_CircSection>`, stored through `SetSimul` as a Standard_Transient.
+## Phase 7: unit 7G, drafts and the rest of TKOffset
+
+The Draft package and BRepOffsetAPI_DraftAngle; BRepAlgo_NormalProjection, BRepOffsetAPI_NormalProjection and
+FindContigousEdges; BRepFill_Draft, BRepFill_DraftLaw and BRepOffsetAPI_MakeDraft; BiTgte (Blend, CurveOnEdge,
+CurveOnVertex, ContactType); BRepFill_AdvancedEvolved, with BRepOffsetAPI_MakeEvolved's volume mode; Draw-lite's 3D
+offset, draft, rolling-ball and `nproject` commands. Numbers from 9401 are placeholders, renumbered on merge.
+
+1044. **Copy on write in the draft angle** (decision 1005's audit of plan 2.2's "frees and edits the modifier's result").
+      - **Draft_Modification only reads its shape.** Its new geometry is its own; `NewCurve2d` writes the range of the
+        modifier's new edge only. OCCT reverses and translates curves in place: the intersection's lines and pcurves
+        (GeomInt_IntSS hands them out frozen in the port), the curves kept for an edge, the pcurve `NewCurve2d` returns.
+        The port reverses or translates a frozen one on a copy that takes its place (`// OCCT.NET:` at each site); in the
+        B-spline branch of `Perform`, which compares the intersection's curves by handle, it works on unfrozen copies of
+        all of them made once. Draft_EdgeInfo, FaceInfo and VertexInfo are classes (decision 1033), changed only through
+        the maps; the maps OCCT keys by faces, edges and vertices with TopTools_ShapeMapHasher are keyed by TopoDS_Shape.
+      - **BRepOffsetAPI_DraftAngle.** The modifier runs in its immutable mode (decision 973): its result shares the
+        caller's unchanged sub-shapes. OCCT's `CorrectWires` then edits that result in place where a face's seam crosses
+        another wire: vertices' parameters, `Free(true)` and `Remove` on wires and faces, pcurves moved by a period, so it
+        writes into the caller's shape natively (the oracle saw native change its input in 324 of 870 runs). When it has
+        something to change (its first loop finds an intersection) and the result holds frozen TShapes, the port copies
+        the result with BRepTools_CopyAtEntry, runs the loop again on the copy and finishes the copy, so the caller's
+        sub-shapes left alone stand in the result again. `ModifiedShape`, `Generated` and `Modified` map through the copy
+        (`Copied`, then `Final`), then through the vertex replacements of `CorrectVertexTol`, as OCCT does.
+        `CorrectVertexTol` writes only the modifier's own vertices, as in OCCT. No input of the tests and oracle reached
+        the copy; the path is there for the shapes OCCT's comment describes.
+      - OCCT iterates by address the edges of a wire (`emap`) and the maps `Emap`, `EPmap`, `WWmap`, `VEmap` of
+        `CorrectWires` and `myVtxToReplace` of `CorrectVertexTol`; the port in insertion order.
+1045. **The other makers' API.** BRepOffsetAPI_DraftAngle's `ConnectedFaces` and `ModifiedFaces` return frozen lists of
+      the caller's faces. BRepAlgo_NormalProjection, BRepFill_Draft and BiTgte_Blend are working objects (decision 21)
+      whose `Projection`/`Shape`/`Shell`/`Face`/`Generated` freeze what they hand out; the `Internal*` forms don't. They
+      read their inputs only, but for one write: BRepFill_Draft marks the caller's wire closed when its ends are the
+      same vertex; on a frozen wire the port marks a new wire holding the same edges (so `Generated` still answers for
+      the caller's edges). BRepFill_Edge3DLaw is no longer sealed (BRepFill_DraftLaw derives from it). BRepFill_Draft
+      merges the Booleans' history through an adapter (OCCT's BRepTools_History takes any algorithm by template).
+      BRepOffsetAPI_FindContigousEdges' `NbEdges` is declared and never defined in OCCT: left out.
+1046. **Copy at entry in BiTgte_Blend** (decision 1005's rule, as 1036 asked). OCCT writes into the shape it is given
+      (`BRepLib::BuildCurves3d`, `SameParameter` on the sewn shape's edges, the tubes' vertex parameters on the input's
+      edges). `Perform` copies a frozen shape with BRepTools_CopyAtEntry, maps the faces, edges and stopping faces given
+      onto the copy, runs OCCT's code unchanged, and finishes the copy on the result, so the untouched faces of a built
+      shape are the caller's. `SupportShape1`/`SupportShape2` give the caller's shapes where unchanged. It reads
+      BRepOffset_Offset's `InternalFace`/`InternalGenerated` (working shapes). The maps of lists OCCT binds by value
+      (`myCreated`) get a new map and list per binding; `myMapSF` and `MapOnV1f/l` iterate in insertion order (OCCT's
+      by address).
+1047. **BRepFill_AdvancedEvolved and MakeEvolved's volume mode.** The volume mode of BRepOffsetAPI_MakeEvolved (phase 5
+      threw Standard_NotImplemented) runs BRepFill_AdvancedEvolved. The algorithm works on the sweep's shapes (it
+      reduces vertex tolerances, removes internal wires, splits faces); the spine and profile are copied at the entry
+      when frozen and the copies finished on the result. `RemoveExcessSolids` takes `TopoDS::Solid` of an explorer past
+      its only solid: `Current()` is then the explored compound, which native's release build casts without a check,
+      so its result is that compound; the port keeps the explorer's shape without the cast (which would throw
+      Standard_TypeMismatch). `IsDone(unsigned int*)` is an `IsDone(out uint)` overload; the debug path setter is kept
+      and ignored.
+1048. **Draw-lite's commands** (BRepTest_FeatureCommands' 3D offset commands, BRepTest_DraftAngleCommands, the rolling
+      ball of BRepTest_FilletCommands, `nproject` of BRepTest_BasicCommands).
+      - OCCT keeps one BRepOffset_MakeOffset and the offset parameters in file-scope statics between `offsetparameter`,
+        `offsetload`, `offsetonface` and `offsetperform`; Draw-lite keeps them per interpreter (as decision 995), so a
+        case starts from OCCT's defaults. `offsetperform` records the history (an adapter over the algorithm's
+        `Generated`, `Modified`, `IsDeleted`). The rolling ball's tolerance is the default of `tolblend`'s `t3d` (1e-4)
+        until the fillet units port `tolblend`. Where OCCT reads past the arguments (`offsetload` with no value,
+        `offsetonface` with an odd count, `rollingball` with too few words) Draw-lite reads an empty word.
+      - **The Tcl parser:** a backslash-newline ends a bare word, as Tcl replaces it by a space before splitting the
+        command into words. Draw-lite kept it inside the word, so draft/angle/H6–H9's `bsplinesurf` rows ending in `1\`
+        read "1 0" as one weight; inside quotes and braces it stays a space of the word.
+      - **Corpus** (`DrawOffsetDraftCorpusTests`, `Unit7GCommands`, `Before7G`): 1,754 cases use the commands; 1,687 are
+        newly runnable (471 with their data; the plan estimated 1,584 and 457): OK 405, BAD 63 (OCCT's TODOs), SKIPPED
+        1,216 (data not public), FAILED 3, attributed: bugs/modalg_2/bug5805_3 and _4 (decision 1049) and
+        bugs/modalg_7/bug32330 (the progress indicator, decision 954). The others miss the viewer, IGES, 7I's feature
+        commands and `blend`. The 12 evolved/voluved cases 7W attributed to the volume mode now pass
+        (`DrawCheapGapsCorpusTests`), and the pipe corpus gains 34 runnable cases, 31 more OK
+        (`DrawPipeMakerCommandsTests`: OK 103).
+1049. **A fix to unit 7F's BRepOffset_MakeOffset, and a difference left.** `FinishCopy` skipped the copy's finish when
+      the result was null (a run reported done with a null shape, decision 1031), so the history threw
+      Standard_ProgramError ("Finish not called"), which `offsetperform` reads. It now finishes the copy for a null
+      result too, once per `Initialize` (a second run without `Initialize` doesn't finish it again). Left for 7F's
+      follow-up: MakeThickSolid on data's OCC5805.brep with a closing face and offset -1 (bugs/modalg_2/bug5805_3 and _4)
+      gives four extra faces on offset surfaces with no edges, in shells of their own, where native gives one shell of
+      seven faces (checked against build123d.NET's binding with 7F's oracle harness).
+1050. **The oracle and the recordings.**
+      - `BRepOffsetAPIDraftAngleOracleTests` (native through build123d.NET's binding): each plane, cylinder and cone face
+        of 14 primitives and Boolean results alone, both signs, neutral planes at the bottom, in the middle and outside
+        the shape, and pulled along X; every side face at once (build123d.NET's `Solid.Draft`), with both flags; tapered
+        prisms of five profiles, inner walls the other way (build123d.NET's `ExtrudeTaper`); data/occ's solids.
+        Compared: the exception, AddDone, Status, ProblematicShape, IsDone, the result's text and Generated/Modified of
+        every face. **870 runs: 562 results (238 byte-identical, 324 canonically identical), 240 refused by `Add` and 35
+        not built with the same status and problematic shape, 33 the same exception (24 access violations natively where
+        the port throws NullReferenceException, 9 Standard_OutOfRange); histories 238 identical, 324 canonically equal;
+        no difference.** The canonical-only results are those where native wrote into its input.
+      - `tools/draftrec` (`Draft7GNativeTests`): MakeDraft on five wires, two faces and an open shell (by length, up to a
+        plane, up to a box; internal and round-corner variants), BiTgte_Blend on pairs of faces (a box, a Boolean result,
+        bug29861's cylinders; with and without the shape) and the evolved volume of four spines and three profiles.
+        **181 runs: MakeDraft 156 of 160 results byte-identical (18 of them with the Free column masked), 4 attributed;
+        BiTgte_Blend 60 results byte-identical, 17 the same exception after the same surfaces; AdvancedEvolved 22
+        byte-identical, 2 the same exception.** The four attributed: the drafts of the circle and the disk up to the box,
+        the same sub-shape counts and curves, but the Boolean of `BRepFill_Draft::Fuse` splits the circle at its seam
+        differently (the seam pieces' vertices, one wire's Closed flag); not investigated further.
+      - Every input of both is checked unchanged and every result frozen.
+1051. **For 7X and later units.**
+      - **7X (build123d.NET's Draft and ExtrudeTaper):** both call BRepOffsetAPI_DraftAngle as the oracle's side-face and
+        taper runs do, which agree with native. build123d.NET copies ExtrudeTaper's profile before the prism because
+        native's draft writes into the prism's faces; OCCT.NET never writes into its input, so the copy is no longer
+        needed (it stays harmless). `Solid.Draft`'s DraftAngleError reads `ProblematicShape`, which the oracle compares.
+      - BRepAlgo_NormalProjection is ported: 7N2 needn't port it.
+      - 7N1/7N2: `tolblend`'s `t3d` should feed the rolling ball (BRepTestFilletCommands.RollingBall.cs has a constant).
+      - 7I: BRepTestFeatureCommands is a partial class; the offset commands are in its `.Offset.cs` file.
