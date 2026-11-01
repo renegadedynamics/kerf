@@ -86,7 +86,8 @@ internal static class DrawBuiltins
         BRepTestOtherCommands.Register(theInterpreter);
         BRepTestFeatureCommands.RegisterOffsetCommands(theInterpreter);
         BRepTestDraftAngleCommands.Register(theInterpreter);
-        BRepTestFilletCommands.RegisterRollingBallCommands(theInterpreter);
+        BRepTestFilletCommands.Register(theInterpreter);
+        BRepTestChamferCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
         // unit 7D: the helix commands

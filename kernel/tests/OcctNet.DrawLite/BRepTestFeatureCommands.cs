@@ -12,15 +12,14 @@ namespace OcctNet.DrawLite;
 /// BRepTest's feature commands (BRepTest_FeatureCommands.cxx): <c>localope</c>, <c>hole</c>, <c>firsthole</c>,
 /// <c>holend</c>, <c>blindhole</c>, <c>holecontrol</c>, <c>wprism</c>, <c>fprism</c>, <c>wrotate</c>,
 /// <c>frotate</c>, <c>splitshape</c>, <c>glue</c>, <c>featprism</c>, <c>featrevol</c>, <c>featpipe</c>,
-/// <c>featdprism</c>, <c>featlf</c>, <c>featrf</c>, <c>addslide</c>, <c>featperform</c>, <c>featperformval</c> and
-/// <c>endedges</c>, as OCCT writes them.
+/// <c>featdprism</c>, <c>featlf</c>, <c>featrf</c>, <c>addslide</c>, <c>featperform</c>, <c>featperformval</c>,
+/// <c>endedges</c>, <c>fillet</c> and <c>bossage</c>, as OCCT writes them.
 /// </summary>
 /// <remarks>
 /// <para>OCCT keeps the feature makers (and the hole, its control flag, the prism's arguments and which features are
 /// defined) in function-scope statics, from a <c>feat*</c> command to <c>featperform</c>; Draw-lite keeps them per
 /// interpreter (decision 1055), so a corpus case starts from a fresh DRAWEXE's state.</para>
-/// <para>Left out: <c>fillet</c> and <c>bossage</c> (BRepFilletAPI_MakeFillet, unit 7N3); the offset commands of the
-/// same file (unit 7G); the interactive picks of <c>glue</c> and <c>splitshape</c> (names starting with a dot).</para>
+/// <para>Left out: the offset commands of the same file (unit 7G, in the file's other part); the interactive picks of <c>glue</c> and <c>splitshape</c> (names starting with a dot).</para>
 /// </remarks>
 internal static partial class BRepTestFeatureCommands
 {
@@ -38,6 +37,8 @@ internal static partial class BRepTestFeatureCommands
         public TopoDS_Shape theSbase = new(), thePbase = new();
         public TopoDS_Face theSkface = new();
         public bool dprdef, prdef, rvdef, pidef, lfdef, rfdef;
+        // the fillet of fillet and bossage (OCCT's file-scope Rakk)
+        public BRepFilletAPI_MakeFillet? Rakk;
     }
 
     private static readonly ConditionalWeakTable<DrawInterpreter, FeatureState> s_states = new();
@@ -68,6 +69,8 @@ internal static partial class BRepTestFeatureCommands
         DrawCxx.Add(theInterpreter, "featperform", PERF);
         DrawCxx.Add(theInterpreter, "featperformval", PERF);
         DrawCxx.Add(theInterpreter, "endedges", BOSS);
+        DrawCxx.Add(theInterpreter, "fillet", BOSS);
+        DrawCxx.Add(theInterpreter, "bossage", BOSS);
     }
 
     private static bool EqualsNoCase(string theA, string theB) => string.Equals(theA, theB, StringComparison.OrdinalIgnoreCase);
@@ -1764,69 +1767,199 @@ internal static partial class BRepTestFeatureCommands
         }
     }
 
-    // BOSS, for endedges only: fillet and bossage need BRepFilletAPI_MakeFillet (unit 7N3)
+    // BOSS: endedges, fillet and bossage
     private static int BOSS(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a)
     {
         int narg = a.Count;
-        if (!EqualsNoCase(a[0], "ENDEDGES"))
+        if (!EqualsNoCase(a[0], "ENDEDGES") && !EqualsNoCase(a[0], "FILLET") && !EqualsNoCase(a[0], "BOSSAGE"))
         {
             return 1;
         }
 
-        if (narg != 5)
+        if ((EqualsNoCase(a[0], "ENDEDGES") && narg != 5) || (EqualsNoCase(a[0], "FILLET") && (narg < 5 || narg % 2 != 1))
+            || (EqualsNoCase(a[0], "BOSSAGE") && narg != 6))
         {
             // theCommands.PrintHelp(a[0])
-            theCommands.Append(a[0]).Append(" :  Return top and bottom edges of dprism :endedges dprism shapetop shapebottom First/LastShape (1/2)\n");
+            theCommands.Append(a[0]).Append(" : ").Append(BossHelp(a[0])).Append("\n");
             return 1;
         }
 
         FeatureState aState = State(theDI);
-        int dprsig = theDI.Atoi(a[4]);
+        int Kas = 0;
+        int dprsig = 0;
+        if (EqualsNoCase("ENDEDGES", a[0]))
+        {
+            Kas = 1;
+            dprsig = theDI.Atoi(a[4]);
+        }
+        else if (EqualsNoCase("FILLET", a[0]))
+        {
+            Kas = 2;
+        }
+        else if (EqualsNoCase("BOSSAGE", a[0]))
+        {
+            Kas = 3;
+            dprsig = theDI.Atoi(a[5]);
+        }
 
         TopoDS_Compound theShapeTop = new();
         TopoDS_Compound theShapeBottom = new();
 
-        if (EqualsNoCase("DPRISM", a[1]))
+        if (Kas == 1 || Kas == 3)
         {
-            if (!aState.dprdef)
+            if (EqualsNoCase("DPRISM", a[1]))
             {
-                theCommands.Append("dprism not defined");
+                if (!aState.dprdef)
+                {
+                    theCommands.Append("dprism not defined");
+                    return 1;
+                }
+            }
+            else
+            {
+                theCommands.Append("unknown argument : ").Append(a[1]);
                 return 1;
+            }
+
+            aState.DPrism.BossEdges(dprsig);
+
+            NCollection_List<TopoDS_Shape> theTopEdges = new(aState.DPrism.InternalTopEdges());
+            NCollection_List<TopoDS_Shape> theLatEdges = new(aState.DPrism.InternalLatEdges());
+
+            NCollection_List<TopoDS_Shape>.Iterator it = new();
+            BRep_Builder B = new();
+
+            B.MakeCompound(ref theShapeTop);
+            it.Initialize(theTopEdges);
+            for (; it.More(); it.Next())
+            {
+                TopExp_Explorer exp = new();
+                for (exp.Init(it.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    B.Add(theShapeTop, exp.Current());
+                }
+            }
+            theDI.SetShape(a[2], theShapeTop);
+
+            B.MakeCompound(ref theShapeBottom);
+            it.Initialize(theLatEdges);
+            for (; it.More(); it.Next())
+            {
+                B.Add(theShapeBottom, it.Value());
+            }
+            theDI.SetShape(a[3], theShapeBottom);
+            if (Kas == 1)
+            {
+                return 0;
+            }
+        }
+
+        // Kas == 2 || Kas == 3
+        TopoDS_Shape V = new();
+        if (Kas == 2)
+        {
+            V = theDI.GetShape(a[2], TopAbs_SHAPE);
+        }
+        else
+        {
+            V = aState.DPrism.Shape();
+        }
+
+        if (V.IsNull())
+        {
+            return 1;
+        }
+        ChFi3d_FilletShape FSh = ChFi3d_FilletShape.ChFi3d_Rational;
+        // the file's own tolerances (OCCT's file-scope statics, which no command of this file changes)
+        const double tesp = 1.0e-4, t3d = 1.0e-4, t2d = 1.0e-5, ta = 1.0e-2, fl = 1.0e-3, tapp_angle = 1.0e-2;
+        BRepFilletAPI_MakeFillet Rakk = new(V, FSh);
+        aState.Rakk = Rakk;
+        Rakk.SetParams(ta, tesp, t2d, t3d, t2d, fl);
+        Rakk.SetContinuity(GeomAbs_Shape.GeomAbs_C1, tapp_angle);
+        int nbedge = 0;
+
+        if (Kas == 2)
+        {
+            for (int ii = 1; ii < (narg - 1) / 2; ii++)
+            {
+                double Rad = theDI.Atof(a[2 * ii + 1]);
+                if (Rad == 0.0)
+                {
+                    continue;
+                }
+                TopoDS_Shape S = theDI.GetShape(a[2 * ii + 2], TopAbs_SHAPE);
+                TopExp_Explorer exp = new();
+                for (exp.Init(S, TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
+                    if (!E.IsNull())
+                    {
+                        Rakk.Add(Rad, E);
+                        nbedge++;
+                    }
+                }
             }
         }
         else
         {
-            theCommands.Append("unknown argument : ").Append(a[1]);
-            return 1;
-        }
-
-        aState.DPrism.BossEdges(dprsig);
-
-        NCollection_List<TopoDS_Shape> theTopEdges = new(aState.DPrism.InternalTopEdges());
-        NCollection_List<TopoDS_Shape> theLatEdges = new(aState.DPrism.InternalLatEdges());
-
-        NCollection_List<TopoDS_Shape>.Iterator it = new();
-        BRep_Builder B = new();
-
-        B.MakeCompound(ref theShapeTop);
-        it.Initialize(theTopEdges);
-        for (; it.More(); it.Next())
-        {
-            TopExp_Explorer exp = new();
-            for (exp.Init(it.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+            double Rad = theDI.Atof(a[3]);
+            if (Rad != 0.0)
             {
-                B.Add(theShapeTop, exp.Current());
+                TopExp_Explorer exp = new();
+                for (exp.Init(theShapeTop, TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
+                    if (!E.IsNull())
+                    {
+                        Rakk.Add(Rad, E);
+                        nbedge++;
+                    }
+                }
+            }
+            Rad = theDI.Atof(a[4]);
+            if (Rad != 0.0)
+            {
+                TopExp_Explorer exp = new();
+                for (exp.Init(theShapeBottom, TopAbs_EDGE); exp.More(); exp.Next())
+                {
+                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
+                    if (!E.IsNull())
+                    {
+                        Rakk.Add(Rad, E);
+                        nbedge++;
+                    }
+                }
             }
         }
-        theDI.SetShape(a[2], theShapeTop);
 
-        B.MakeCompound(ref theShapeBottom);
-        it.Initialize(theLatEdges);
-        for (; it.More(); it.Next())
+        if (nbedge == 0)
         {
-            B.Add(theShapeBottom, it.Value());
+            return 1;
         }
-        theDI.SetShape(a[3], theShapeBottom);
+        Rakk.Build();
+        if (!Rakk.IsDone())
+        {
+            return 1;
+        }
+        TopoDS_Shape res = Rakk.Shape();
+
+        theDI.SetShape(Kas == 2 ? a[1] : a[2], res);
+
+        // Save history for fillet
+        if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
+        {
+            NCollection_List<TopoDS_Shape> anArg = new();
+            anArg.Append(V);
+            BRepTestHistoryCommands.SetHistory(theDI, anArg, Rakk);
+        }
+
         return 0;
     }
+
+    private static string BossHelp(string theName) => theName.ToUpperInvariant() switch
+    {
+        "ENDEDGES" => " Return top and bottom edges of dprism :endedges dprism shapetop shapebottom First/LastShape (1/2)",
+        "FILLET" => " Perform fillet on compounds of edges :fillet result object rad1 comp1 rad2 comp2 ...",
+        _ => " Perform fillet on top and bottom edges of dprism :bossage dprism result radtop radbottom First/LastShape (1/2)",
+    };
 }

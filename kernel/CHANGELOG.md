@@ -1364,3 +1364,21 @@ Phase 7 (part): the hidden-line removal algorithms (unit 7Q2). TKHLR is complete
 - Tests: `tools/hlrrec` records native OCCT's exact and polygonal hidden-line removal and reflect lines on primitives,
   pairs of shapes and the hlr group's shapes in eight views: 133 cases, 1890 compounds, all identical as BRep text
   (50 with the Free column masked); unit tests of the algorithms, frozen inputs and runs on several threads.
+
+Phase 7 (part): the public fillet and chamfer API (unit 7N3).
+
+- BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeChamfer and BRepFilletAPI_LocalOperation: fillets with constant and
+  evolving radii and chamfers by one distance, two distances or a distance and an angle, with their histories and the
+  diagnostics of failed contours, on 7N2's builders and 7R's reconstruction. The caller's shape is never written and
+  the result shares its unchanged faces; results and histories are frozen. FilletSurf_Builder (a fillet's surfaces
+  and curves without a shape). The functional twins `BRepFilletAPI.Fillet` and `BRepFilletAPI.Chamfer`.
+- Tests: OCCT's GTests for MakeFillet and MakeChamfer; against native OCCT, 1,922 fillets and chamfers on primitives,
+  Boolean results, data/occ's solids and the GTests' inputs, geometrically native's where both results are valid but
+  for 35 attributed to the reconstruction (a face with a seam keeps the band the fillet removes), and build123d.NET's
+  MaxFillet probes, all native's.
+- Draw-lite: the fillet and chamfer commands (`blend`, `bfuseblend`, `bcutblend`, `mkevol`, `updatevol`,
+  `buildevol`, `tolblend`, `continuityblend`, `checkhist`, `chamf`, `chamf_throat`,
+  `chamf_throat_with_penetration`) and the feature commands `fillet` and `bossage`; the rolling-ball commands read
+  `tolblend`'s tolerance; `encoderegularity` rebinds the variables sharing the shape. 883 corpus cases newly runnable
+  (799 with data): OK 723, BAD 34, IMPROVEMENT 8, FAILED 34, all attributed (mostly the reconstruction's invalid
+  results).

@@ -1746,3 +1746,17 @@ Found by porting HLRBRep's algorithms, HLRAppli and the HLR Draw commands. The p
 | HLRBRep `MakeEdge3d`, HLRAppli_ReflectLines `GetCompoundOf3dEdges` | The 3D edges share the input edges' vertices, and `BRepLib::SameParameter` on the compound may raise their tolerances | Writes into the caller's vertices natively; the port's are the outliner's working copy's for a frozen input (decision 1128) |
 | HLRTest `houtl` | Reads `a[2]` after checking only `n < 2` | A null name with one argument; the port checks |
 | ViewerTest `vcomputehlr` | The projector's location is the negated centre of the near plane | On the view axis: the 2D results don't depend on it but through rounding |
+
+## Phase 7: unit 7N3, the public fillet and chamfer API
+
+Found by porting BRepFilletAPI, FilletSurf and the fillet and chamfer Draw commands. The port reproduces each, but
+for the hang in `chamf` (decision 1146).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiDS_FilSpine::SetRadius(Law_Function, IinC) (BRepFilletAPI_MakeFillet's `Add(L, E)` and `SetRadius(L, IC, IinC)`) | Builds a Law_Composite holding the law, drops it, and clears the radii | The law is lost; Build throws Standard_OutOfRange on the empty radii |
+| FilletSurf_InternalBuilder::Add | The loop over the edge's faces re-initializes the iterator of the loop over the edges | Only the first edge is checked for being sharp and on the shape; the outer loop then runs on over the first edge's faces |
+| FilletSurf_Builder::EndSectionStatus | Its StdFail_NotDone says "StartSectionStatus" | None but the message |
+| BRepTest_ChamferCommands.cxx, `chamf` | When an edge is followed by a face and fewer than two more words (`chamf r s e f 1`), neither branch advances `i` and the `while (i + 1 < narg)` loop never ends | Draw-lite stops reading the words there (decision 1146); no corpus case reaches it |
+| BRepTest_FilletCommands.cxx, `buildevol` and `blend` | `Rake`/`Rakk` are deleted only after a Build that returns | On an exception the maker stays; `checkhist` then says "Active Builder Not Done" (reproduced) |
+| Corpus cases that depend on the reconstruction's order (not OCCT bugs, for unit 7R) | blend/complex/G8 and bugs/modalg_7/bug27711_3 name the edges of a fillet's result by `explode` index for a second fillet | The reconstruction's faces and edges come in another order (decision 1114), so another edge is filleted and `blend` fails |

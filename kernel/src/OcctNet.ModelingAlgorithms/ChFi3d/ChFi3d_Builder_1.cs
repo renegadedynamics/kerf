@@ -70,7 +70,17 @@ public partial class ChFi3d_Builder
 
     //=================================================================================================
 
+    /// <summary>The result (frozen: a publication point, decision 414).</summary>
+    /// <exception cref="Standard_NoSuchObject">The computation is not done.</exception>
     public TopoDS_Shape Shape()
+    {
+        TopoDS_Shape aResult = InternalShape();
+        aResult.TShape()?.FreezeGraph();
+        return aResult;
+    }
+
+    /// <summary>The result, unfrozen, for ported callers (OCCT.NET).</summary>
+    internal TopoDS_Shape InternalShape()
     {
         Standard_NoSuchObject_Raise_if(!done, "ChFi3d_Builder.Shape() - no result");
         return myShapeResult;
@@ -203,9 +213,12 @@ public partial class ChFi3d_Builder
 
     //=================================================================================================
 
+    /// <summary>The partial result when a vertex failed (frozen).</summary>
+    /// <exception cref="Standard_NoSuchObject">There is no partial result (<see cref="HasResult"/> is false).</exception>
     public TopoDS_Shape BadShape()
     {
         Standard_NoSuchObject_Raise_if(!hasresult, "ChFi3d_Builder.BadShape() - no result");
+        badShape.TShape()?.FreezeGraph();
         return badShape;
     }
 
@@ -231,7 +244,10 @@ public partial class ChFi3d_Builder
 
     //=================================================================================================
 
-    /// <summary>OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R).</summary>
+    /// <summary>
+    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R). Internal (decision 1137): its type is
+    /// OCCT.NET's seam, not an OCCT class.
+    /// </summary>
     internal ChFi3d_Reconstruction Builder()
     {
         return myCoup;

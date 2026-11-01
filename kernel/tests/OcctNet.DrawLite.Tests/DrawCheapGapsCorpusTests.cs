@@ -128,10 +128,12 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // measured (decision 988): 512 newly runnable; OK 337, BAD 18 (OCCT's TODOs), SKIPPED 138 (data not public),
         // FAILED 19, all attributed (KnownFailures); since unit 7G (MakeEvolved's volume mode) the 12 evolved/voluved
         // cases among them pass; with 7G's commands 596 are newly runnable (OK 354, BAD 18, SKIPPED 216, FAILED 8
-        // attributed)
+        // attributed); with 7N3's fillet commands 603 (OK 359, SKIPPED 218, FAILED 8, the fillets' failures attributed in
+        // DrawFilletCorpusTests.KnownFailures)
         Assert.True(aNew.Count >= 512, $"{aNew.Count}");
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 337, $"{aRuns.Count(r => r.Status == "OK")}");
-        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),
+        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
+                                           || DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
     }
 }
