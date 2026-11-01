@@ -1372,3 +1372,24 @@ otherwise.
 | `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
 | `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
 | `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |
+
+## Phase 7: unit 7A, ShapeCustom
+
+Found by porting ShapeCustom and comparing it with native OCCT (decisions 973 to 978). The port reproduces each
+(`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeCustom_SweptToElementary `NewCurve2d` | Calls `BRep_Tool::Surface(NewF, L)` on the null face BRepTools_Modifier passes from `CreateOtherVertices` (to ask whether an edge's vertices must be copied), which reaches it for edges without a new 3D curve (degenerated edges of revolutions) | An access violation natively (`OSD_Exception_ACCESS_VIOLATION` under the signal handler) on 16 of the heal group's and data/occ's shapes: `ShapeCustom::SweptToElementary` fails on any shape with such a face. The port throws a NullReferenceException there (decision 977) |
+| ShapeCustom_SweptToElementary `NewCurve2d` | Dereferences `SS` (null) when the face's surface isn't swept and only the edge was copied, if the new face is a torus or a sphere | An access violation natively; the port skips the shift (`is` on null). Not met by the tests |
+| ShapeCustom_SweptToElementary `IsToConvert` | For a trimmed or offset surface, tests `S->IsKind(Geom_SweptSurface)` (known false) instead of its basis `Stmp` | Trimmed and offset surfaces of revolution or extrusion are never converted |
+| ShapeCustom_Surface `ConvertToAnalytical` | `if (substitute && !NHS.IsNull()) Init(newSurf)`: the adaptor is never null, so a surface rejected by the final check (null) replaces the tool's surface | With `substitute`, a failed conversion leaves the tool with no surface; a later `ConvertToPeriodic` returns null |
+| ShapeCustom_Surface `ConvertToAnalytical` | Computes the orientation check with `iso->D1(0., ...)` on the last iso-curve built (V at the middle), at parameter 0 rather than U1 | Reproduced |
+| ShapeCustom_Curve, ShapeCustom_Surface `ConvertToPeriodic` | Make the given B-spline periodic in place when its knots needn't be rearranged | Changes the caller's (shared) geometry; the port changes a copy (decision 974) |
+| ShapeCustom_Curve2d `SimplifyBSpline2d` | Removes knots from the caller's curve in place | As above; the port copies a frozen curve (decision 974) |
+| ShapeCustom_BSplineRestriction `ConvertCurve2d` | For an offset pcurve whose basis converts to C0, converts the curve into `ResCurve`, not `C`, and returns true | The caller's C is left as it was (null in NewCurve2d), and the modifier stores a null pcurve. Not met by the tests |
+| ShapeCustom_BSplineRestriction `ConvertCurve`, `ConvertCurve2d` | The `continue` meant to restart with the global limits (`aC = aC1`) is inside the inner `for (j = 1; j <= 2; j++)` loop: it retries once (ConvertCurve2d with the continuity computed before `aC = aC1`), and when the retry fails too and the curve isn't to be copied anyway, falls through to `myConvert = true; return true` | A failed approximation is returned as the converted curve, with its error as the tolerance. Reproduced |
+| ShapeCustom_BSplineRestriction `IsConvertCurve3d` / `IsConvertCurve2d` | A 3D B-spline is converted from `NbKnots - 1 >= NbSeg` spans, a 2D one from `> NbSeg` | Reproduced |
+| ShapeCustom_BSplineRestriction `NewPoint` | Answers from `myConvert`, the state of the last face or edge converted before the call; BRepTools_Modifier asks for points first | The vertices of a shape get new points only when the same modification converted something before (a compound's later children) |
+| ShapeCustom_RestrictionParameters | `ConvertToroidalSurf` returns the cylinders' field and `ConvertCylindricalSurf` the tori's | Harmless: each accessor always uses the same field |
+| BRepTools_Modifier `SetShapeFlags(S, S)` (reached by every ShapeCustom function) | Copies the flags of a sub-shape left alone onto itself; `Modified(true)` clears its Checked bit | Writes into the caller's shape natively; the port's frozen input keeps its flags (decision 347), the oracles mask the Checked column |

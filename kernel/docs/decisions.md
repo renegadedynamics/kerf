@@ -9700,3 +9700,108 @@ placeholders, renumbered on merge; earlier decisions are cited by their merged n
      (a section of a sewn shell), bugs/modalg_7/bug26034 (`bopcheck` reports faults after `ttranslate`), bug29333_2
      and bug29586 (an empty result). They are listed apart from the attributed failures, in
      `DrawBooleanCorpusTests.NotYetAttributed`, and unit 7W investigates them first.
+
+## Phase 7: unit 7A, ShapeCustom (1 November 2026)
+
+973. **Copy at entry for healing's modifiers: the modifier is the copy** (the pilot's audit, plan 2.2). The audit of
+      every site where ShapeCustom, through `ShapeCustom::ApplyModifier`, `BRepTools_Modifier` and
+      `ShapeBuild_ReShape`, could write into the caller's shape:
+      - **BRepTools_Modifier, as ShapeCustom runs it (immutable input), never writes into its input.** It rebuilds every
+        sub-shape whose geometry, or a sub-shape's, changes: `CreateOtherVertices` gives new vertices to every edge
+        of a face with new geometry, so the pcurves and parameters it adds (`UpdateEdge`, `UpdateVertex`, `Range`)
+        land on its own new edges and vertices. What it leaves alone is the caller's own sub-shape (decision 347;
+        its flags aren't rewritten). So ShapeCustom needs no `ExactCopyForWrite` at the entry, and doesn't make one:
+        the result shares the caller's unchanged sub-shapes, as OCCT's does.
+      - **The modifications write only into `NewE`, the modifier's edge.** DirectModification's `UpdateEdge`/`Range`
+        on a seam of an indirect surface runs only for an edge it rebuilt (its `NewCurve` copies every edge with a
+        pcurve on an indirect surface), and BSplineRestriction's `Range` is guarded by `!NewE.IsSame(E)`. Both may
+        also write into the modifier's dummy edge (`CreateOtherVertices`' `EmptyCopied`), its own.
+      - **The port's own hazard is publishing too early.** `ApplyModifier` processes a compound's children one by one
+        with the same modifier, whose maps persist, so a later child's faces add pcurves to edges an earlier child's
+        result holds (a compound of faces sharing edges). `BRepTools_Modifier.ModifiedShape` freezes what it
+        returns, so OCCT's code would throw `TopoDS_LockedShape` there. `ApplyModifier` and its history
+        (`UpdateHistoryShape`) read `InternalModifiedShape`, and only the public `ApplyModifier` freezes, once, at
+        the end; `InternalApplyModifier` is the unfrozen form for ported code (7C's ShapeProcess), which freezes at its
+        own publication point. The shapes bound in the context and recorded in the ReShape are sub-shapes of the
+        result, frozen with it.
+      - **A modifier reused across public calls** on shapes that share sub-shapes with an earlier call's (frozen) result
+        throws `TopoDS_LockedShape` where OCCT changes that earlier result in place. Documented on `ApplyModifier`;
+        ShapeCustom's own functions and ShapeProcess make a modifier per call.
+      - **Geometry**: the caller's curves and surfaces that OCCT changes in place are copied first (decision 974).
+      - **Rule for 7B and 7C:** a healing tool that runs BRepTools_Modifier in its immutable mode needs no copy at the
+        entry; one that writes into its input, or runs the modifier's mutable-input mode (ShapeProcess_OperLibrary's
+        `ApplyModifier(..., theMutableInput = true)` updates the input's vertices in place), copies at the entry with
+        `ExactCopyForWrite` and gives back the caller's sub-shapes with `KeepUnchanged` (decision 583), composing the
+        histories. ShapeBuild_ReShape's `Apply` builds new shapes and is safe on frozen ones (decision 583). Freeze
+        only at the publication point; between steps, ported code reads the `Internal*` accessors.
+      - Tested by the frozen-input unit tests (`ShapeCustomTests`: inputs unchanged, results frozen, the input itself
+        when nothing changes, the caller's box kept in a compound, a compound of faces sharing edges, the reused
+        modifier) and by every oracle comparison (5,919 bound runs and 556 recorded inputs, each input checked
+        unchanged).
+974. **Copy on write of the caller's geometry.** Where OCCT changes a curve or surface it was given, and the port's is
+      frozen, the port changes a copy:
+      - `ShapeCustom_Curve::ConvertToPeriodic` and `ShapeCustom_Surface::ConvertToPeriodic` make the caller's B-spline
+        periodic in place when its knots needn't be rearranged; the port returns a periodic copy (OCCT returns the
+        same handle, changed).
+      - `ShapeCustom_Curve2d::SimplifyBSpline2d(ref theBSpline2d, ...)` removes knots from a copy of a frozen curve and
+        gives the copy back through the `ref` only if a knot was removed (OCCT's argument is a handle reference too);
+        an unfrozen curve is changed in place, as in OCCT. ShapeUpgrade_ConvertCurve2dToBezier (7B) calls it.
+      - `ShapeCustom_BSplineRestriction::ConvertSurface` makes the approximation's surface periodic and shifts its knots;
+        `GeomConvert_ApproxSurface.Surface()` is frozen (decision 197), so the port changes a copy, only when it has
+        something to change.
+      - Results are the same geometry; only the identity of the returned object differs from OCCT's.
+975. **SHMessage is compiled in, and `Message_MsgFile.LoadFromString` is ported** (amends decision 520).
+      `SHMessage_SHAPE_us` is OCCT's `.pxx` (resources/SHMessage/SHAPE.us) as a C# string, generated line for line.
+      `Message_MsgFile.LoadFromString` (internal) ports OCCT's parser (`getString`, `loadFile`): keywords, multi-line
+      messages with their relative indentation, `!` comments, CRLF. `ShapeExtend.Init` loads it once per process
+      (OCCT's static flag, behind a lock) unless `ShapeFix.FixSmallSolid.MSG0` is already there, and throws
+      Standard_ProgramError if it still isn't. OCCT first tries `LoadFromEnv("CSF_SHMessage", "SHAPE")`; the port
+      reads no file or environment variable (decision 520's reason). As in OCCT, only `ShapeExtend.Init` (and later
+      ShapeAlgo's and ShapeProcess's `Init`) loads the messages: a modification's `SendMsg` before it gets
+      Message_Msg's "Unknown message invoked with the keyword" text.
+976. **ShapeCustom's API.**
+      - The package functions are public statics; the modifications are public classes deriving from
+        ShapeCustom_Modification (itself a BRepTools_Modification); ShapeCustom_TrsfModification derives from
+        BRepTools_TrsfModification, as in OCCT. They, ShapeCustom_RestrictionParameters, Curve and Surface are working
+        objects (decision 21); `ShapeCustom_Curve2d` is a static class.
+      - OCCT's modifiable references (`ModifyApproxSurfaceFlag`, the restriction parameters' accessors) return `ref`.
+      - Outputs that OCCT leaves unchanged on some paths are `ref`: `ConvertSurface`'s S, `ConvertCurve`'s and
+        `ConvertCurve2d`'s C and TolCur (one OCCT path returns true without setting C, occt-issues.md), and
+        `ShapeCustom_Curve2d.IsLinear`'s and `ConvertToLine2d`'s outputs. `MaxErrors` has `out` errors.
+      - OCCT's implicit gp_Vec to gp_Dir conversion in ConvertToAnalytical (`YDirection().Dot(origD1U)`) is written
+        out, normalising as C++ does.
+977. **Exceptions.** BSplineRestriction's `OCC_CATCH_SIGNALS` blocks catch Standard_Failure and NullReferenceException
+      (an approximation without a result dereferenced, an access violation natively: decision 917), never
+      Standard_ImmutableObject or TopoDS_LockedShape (decision 423). SweptToElementary's `NewCurve2d` dereferences the
+      null face the modifier passes from `CreateOtherVertices` (occt-issues.md): natively an access violation, which
+      build123d.NET's signal handler reports as `OSD_Exception_ACCESS_VIOLATION` (16 of the heal group's and
+      data/occ's shapes), in the port a NullReferenceException out of `SweptToElementary`; the oracle counts them as
+      the same exception.
+978. **The oracle** (`tests/OcctNet.Oracle.Tests/ShapeCustom/`, `tests/OcctNet.ModelingAlgorithms.Tests/ShapeCustom/`).
+      - build123d.NET binds all six package functions, not only BSplineRestriction (plan section 3), so the oracle
+        calls native DirectFaces, ScaleShape, ConvertToRevolution, SweptToElementary, ConvertToBSpline and
+        BSplineRestriction directly; tools/shcustomrec records what the binding can't reach: BSplineRestriction with
+        two other sets of restriction parameters (every elementary surface and planes; Beziers, offsets kept, no
+        segment mode, the span priority), and ShapeCustom_Surface, Curve and Curve2d on the inputs' B-spline and
+        Bezier surfaces, curves and pcurves.
+      - Results (both sides read the file native writes; the port's input frozen): build123d.NET's ToSplines on 156
+        primitives and Boolean results, 312 runs, all byte-identical; the seven modifications, bsplres and ToSplines on
+        generated primitives, mirrored primitives, negative cones, prisms and revolutions, 540 runs, all identical;
+        the seven modifications on the heal group's and data/occ's shapes up to 300 kB, 3,955 runs, all identical
+        (18 the same exception); BSplineRestriction (ToSplines, bsplres) on those up to 100 kB, 1,112 runs, all
+        identical. Recorded: 556 inputs, 8,878 records, all identical. Every input unchanged, every result frozen.
+      - "Identical" includes the Free and Checked columns masked (1,734, 112, 4 and 380 of the runs above): native's
+        BRepTools_Modifier copies the flags of the sub-shapes it leaves alone onto themselves (`SetShapeFlags(S, S)`),
+        and `Modified(true)` clears their Checked bit in the caller's shape; the port leaves a frozen shape's flags
+        alone (decision 347), and its results share the caller's sub-shapes with Free = 1 (open question 1).
+979. **For later units.**
+      - **7B (ShapeUpgrade):** decision 973's rule; ConvertCurve2dToBezier calls `SimplifyBSpline2d` with `ref`
+        (decision 974); the split tools that use ShapeBuild_ReShape copy at the entry as ShapeFix does (decision 583).
+      - **7C (ShapeProcess):** its `ApplyModifier` runs BRepTools_Modifier in the mutable-input mode (internal in the
+        port, decision 347): copy at the entry and use `KeepUnchanged`, or the input's vertices throw
+        TopoDS_LockedShape. Use `ShapeCustom.InternalApplyModifier` and the modifications' classes; freeze once.
+        `ShapeExtend.Init` loads the messages (decision 975); ShapeProcess's resource files need
+        Resource_Manager's own compiled-in text in the same way.
+      - **7E (BRepOffset_Tool):** `ShapeCustom_Curve2d.ConvertToLine2d(theCurve, c1, c2, tol, ref cf, ref cl, ref dev)`
+        returns null where it isn't a line and then leaves the outputs unchanged; tested against native on 1,690
+        pcurves (1,069 lines).
