@@ -441,7 +441,9 @@ The owner's answer to question 30: prefer fewer tokens to a shorter elapsed time
 helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on overlapping files add merge work. So:
 
 - **At most two units at a time,** chosen to touch disjoint parts of the tree (one in `src`, one in Draw-lite or a
-  different package), so a merge never needs more than the merge tool's own resolutions.
+  different package), so a merge never needs more than the merge tool's own resolutions. *Raised to three on
+  1 November (owner), once the merge gate took about 15 minutes instead of 36; work in Bento and build123d.NET sits
+  outside the limit.*
 - **No forks inside units** unless a unit is over about 25,000 lines (7M3).
 - **Each stage's Draw-lite commands go with the stage's last unit,** done by the helper that already has the
   context, instead of a separate Draw-lite unit at the end. 7W keeps only the cheap gaps of 1.6.
