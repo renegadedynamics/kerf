@@ -1141,3 +1141,15 @@ Phase 7 (part): the rest of ShapeUpgrade, and ShapeAlgo (unit 7B).
 - Tests: OCCT's FaceDivide GTest, frozen-input unit tests; `tools/shupgraderec` records twelve tools with the heal
   group's Draw parameters on 527 inputs (6,324 records: 6,323 identical, 1 attributed to OCCT writing into the
   caller's surface).
+Phase 7 (part): the offset foundations (unit 7E).
+
+- BRepOffset but BRepOffset_MakeOffset: Analyse (edge types: convex, concave, tangent, mixed; the tangent faces'
+  treatment), Tool, Inter2d, Inter3d, Offset (offset faces, pipes and spheres), Interval, MakeLoops, SimpleOffset,
+  MakeSimpleOffset, the package (`Surface`, `CollapseSingularities`) and the enums. Also ChFi3d's package functions
+  (DefineConnectType, IsTangentFaces, ConcaveSide, NextSide, SameSide) with ChFiDS_TypeOfConcavity, and
+  TopOpeBRepTool_TOOL's `Nt`.
+- Copy at entry for the offset family (decision 8601): the makers copy a frozen input before OCCT's in-place writes,
+  so `Locked(false)` and `Free(true)` act on the copy, and they give back the caller's unchanged sub-shapes.
+  MakeSimpleOffset's solid mode and BRepOffset_Offset's pipes and spheres never write into a caller's shape.
+- Tests: `tools/offsetrec` records native Analyse, Offset and MakeSimpleOffset on 40 primitives, Boolean and fillet
+  results and data/occ shapes: 1,984 records, all byte-identical (two are the same exception).
