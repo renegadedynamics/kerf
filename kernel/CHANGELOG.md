@@ -1243,3 +1243,17 @@ Phase 7 (part): the walking of blends (unit 7K, BRepBlend), the second step to 3
 - Tests: `tools/blendrec` now records native OCCT's walking step by step on planes, a plane and a cylinder, B-splines,
   a curve and a plane, and restrictions, with the lines' approximations: 112 cases (45 of them walk), all identical
   bit for bit; unit tests of the line, extremities, tools and approximation function.
+
+Phase 7 (part): follow-ups on the differences from native (unit 7Y).
+
+- BRepOffset_Tool's `EnLargeFace` puts the enlarged offset surface on the offset's own working face, as OCCT changes it
+  in place: OCC5805.brep's thick solid (bugs/modalg_2/bug5805_3 and _4) is one shell of seven faces as natively; the
+  offset oracle gains three byte-identical results.
+- BRepFill_Filling (BRepOffsetAPI_MakeFilling) accepts a caller's edge on the face swept from it (build123d.NET's
+  MakeSurfacePatch threw NullReferenceException); results as native's.
+- Public `TopoDS_Builder.MakeWire`, `MakeShell`, `MakeSolid`, `MakeCompSolid` (frozen results, as `MakeCompound`) and a
+  `BRepTools_History` copy constructor, for build123d.NET.
+- Oracle and corpus: the DPrism oracle reads native's input again for each run (6 differences were native's writes into
+  its input); memory-trend corpus cases run once more when they fail; MakeDraft's four and DPrism's eleven tapered fuses
+  stay attributed, with their causes narrowed. A stress of build123d.NET's native binding from many threads reproduces
+  the gate's native-only access violation (decision 10409).

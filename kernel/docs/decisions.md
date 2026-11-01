@@ -10863,3 +10863,87 @@ AppSurf). Numbers from 9801 are placeholders, renumbered on merge.
       - The line, the walkers and the functions are working objects of one walking: never shared between threads (the
         functions' `[ThreadStatic]` scratch is per thread, decision 1037). BRepBlend writes no shapes: there is no copy
         at entry to make here.
+
+## Phase 7: unit 7Y, follow-ups on the differences from native
+
+10401. **BRepOffset_Tool's EnLargeFace changes a working face's offset surface, as OCCT does in place.** OCCT's
+      EnlargeGeometry, on a Geom_OffsetSurface, sets the enlarged basis on the face's own surface
+      (`SetBasisSurface`), so the face lies on the enlarged surface afterwards: its bounds grow, and `ExtentEdge`
+      (BRepOffset_MakeOffset's `ToContext` through `ExtentFace`) then extends the face's lateral edges to them. The port
+      changed a copy and left the face on its old surface (the comment of 7E), so on OCC5805.brep's thick solid
+      (bugs/modalg_2/bug5805_3 and _4, decision 1049) the lateral edges stayed unextended, `Inter2d` found no vertex,
+      `ExtentFace` returned four faces with no edges, which made shells of their own. Now, where the face and its edges
+      are unfrozen (the offset's own working faces), the copy is put on the face and the face's pcurves are moved onto
+      it in place (`BRep_CurveOnSurface.ReplaceSurface`, keeping the representations' order); a caller's frozen face
+      keeps its surface (native changes the caller's). Found with a native recorder calling BRepOffset_Tool's
+      `ExtentFace`, `EnLargeFace` and `Inter3D` on the port's inputs (scratch probes, not kept). Effects: both corpus
+      cases pass (`DrawOffsetDraftCorpusTests` OK 416, FAILED 1); the offset oracle has 429 byte-identical results
+      instead of 426 (130 canonical, 40 attributed to native varying), the draft angle and BiTgte oracles are
+      unchanged. OCCT's other in-place write there, the degree raised on the basis B-spline by `ExtendSurfByLength`
+      (geometrically nothing), is still not reproduced.
+10402. **MakePrism's FirstShape of a frozen face whose edges get pcurves is a copy** (build123d.NET's spike: a circle
+      face's prism, `FirstShape().IsSame(circleFace)` false; native true). Natively the sweep shares the base and writes
+      the walls' pcurves into its edges; a caller's frozen circle can't take the cylinder's pcurve, so the circle is a
+      changed copy, and the face holding it too (decision 468); a polygon face's prism keeps the caller's face (planar
+      walls store no pcurves). No change: the caller's face can't be given back without the pcurve. `FirstShape(face)`,
+      `FirstShape(edge)` and `Generated` answer for the caller's sub-shapes with the copies, so build123d.NET should ask
+      the maker rather than compare with `IsSame`. Tested (`BRepPrimAPISweepTests`).
+10403. **BRepFill_Filling takes a support's own edge for a caller's frozen edge with no pcurve on it** (the spike's
+      NullReferenceException in `Geom2dAdaptor_Curve.EvalD1`: `MakeFilling.Add(m1, f1, C1)` with f1 the prism of the
+      spline m1). The cause is decision 10402: natively f1 holds m1 itself with its pcurve; the port's f1 holds a copy, so
+      m1 has no pcurve on f1 and OCCT's constraint reads a null pcurve (natively an access violation, OCCT's own comment).
+      `AddConstraints` now uses, for a frozen edge without a pcurve on the support, the support's edge on the same 3D
+      curve object, location and range (the copy shares the frozen curve), as it is OCCT's edge. Oracle
+      (`MakeFilling_on_faces_extruded_from_the_constraint_edges_matches_native_OCCT`, build123d.NET's MakeSurfacePatch
+      cases and the spike's): 4 builds, 3 faces equal to native's by surface, edges, pcurves and vertices and all
+      errors bit-identical, 1 the same exception; the BRep texts differ only by the pcurves native's prism wrote into the
+      caller's edges, which the filling's edge copies carry.
+10404. **Public builders for wires, shells, solids and composite solids, and a history copy** (what build123d.NET reached
+      by UnsafeAccessor). `TopoDS_Builder.MakeWire`, `MakeShell`, `MakeSolid` and `MakeCompSolid` over an enumerable of
+      shapes, beside `MakeCompound`: OCCT's MakeX then Add, OCCT's Add rules (TopoDS_UnCompatibleShapes), no flag set (a
+      shell isn't marked closed), the result frozen. With them build123d.NET's open-until-read builder can collect its
+      components and build once, so no public freeze is needed (callers never hold an unfrozen shape) and `Remove`
+      becomes dropping a pending component. `BRepTools_History(BRepTools_History)` copies the three maps as they are
+      (OCCT's implicit copy constructor; `Merge` into an empty history drops a removal that also generated). Tested in
+      `FreezingTests`.
+10405. **DPrism's 17 differences (decision 1057): 6 were the oracle's, 11 are open.** The oracle ran the 12 native
+      configurations of a base and profile on the same native shapes, and native's tapered fuse (Depth, fuse 1, taper 5)
+      raises the profile's vertices to 1.06e-5 in place (LocOpe_DPrism's BRepLib::UpdateTolerances, the profile being
+      shared); the six cut-through-all cases that followed inherited them. Each native run now reads its input again:
+      367 results byte-identical (was 331), 102 by the coarse record, 11 different. Those 11 are the tapered fuses
+      themselves: native's LocOpe_DPrism trims the tapered walls' pcurves at 1.0640513e-5 where the port's start at 0
+      (seen on LocOpe_DPrism alone, frozen or unfrozen profile), hence native's vertex tolerances; native's result then
+      fails BRepCheck once written as text (natively too, read back; in memory it passes), so "valid False" isn't a
+      BRepCheck difference. The trim's cause (BRepFill_Evolved's walls) is left for the fillet units' owner.
+10406. **MakeDraft of the circle and the disk up to the stop box (decision 1050's four), provisionally.** The swept shell
+      is byte-identical (the SHELL records); the difference comes from BRepFill_Draft::Fuse's PaveFiller and
+      BOPAlgo_Builder (glue mode, BuildBOP with states). Native is repeatable in one process across allocation patterns
+      (eight runs, different allocations between, identical), so it isn't address order; the port's result is the same
+      with unfrozen inputs, so it isn't the non-destructive mode. Left attributed; the next step is to record the Fuse's
+      inputs natively and replay its PaveFiller in the port.
+10407. **bugs/fclasses/bug7287_1's memory trend is noise around a small growth.** Alone, five runs give a mean of about
+      5.3 kB a step against a sigma of 7 to 10 kB (`meminfo h` is the managed heap's live bytes; the interpreter's
+      captured log grows each cycle), which passes OCCT's check (|mean| <= 10 + 2 sigma) only through the noise. The
+      corpus tests now run a memory case once more when it fails (`DrawCheapGapsCorpusTests.RunMemoryCase`, also used by
+      `DrawOffsetDraftCorpusTests`).
+10408. **The native reruns added at the recent merges** (the pipe-shell oracle's case 220, the Boolean oracle's failing
+      native run, both added at merges on 1 November): read, and run here alongside a 24-thread stress: all 11 tests
+      pass, neither rerun was needed. Decision 10409 gives the likely cause of those failures.
+10409. **The oracle's native-only failures under load: native TopoDS_Iterator keeps no reference to the shape it
+      iterates.** OCCT 8.0's TopoDS_Iterator holds an iterator into the shape's child list and the current child, not
+      the shape. In .NET, `NativeChildren(NativeRead(file))` and the like leave the shape's wrapper unreachable once the
+      iterator is made; under GC pressure its finalizer deletes the native TopoDS_Shape, the TShape's last reference
+      goes, and the iteration walks freed memory: children with garbage or null TShapes, then, for instance, an access
+      violation writing at 0x38 in `TopoDS_Builder::Add` (a null child's TShape flags), as the loft oracle's
+      `NativeCompound` met. Reproduced by a scratch stress of build123d.NET's binding (24 threads, Booleans, lofts,
+      native BRep write and read, a compound of the read children, a thread forcing collections): 4 such access
+      violations in 108,000 runs; none in 54,000 runs without the collecting thread, in 18,000 under a global lock,
+      in 90,000 with every wrapper disposed, nor in 108,000 with only the read shape kept alive past its iteration (the
+      one change). So it is neither OCCT's thread safety (MMGR is NATIVE, malloc; reference counts are atomic) nor the
+      finalizers' thread as such, but the wrappers' lifetime; a lock or a non-parallel collection would not help (the
+      finalizer thread always runs) and would cost the gate its parallelism. Fix: each native TopoDS_Iterator loop in
+      the oracle now keeps its shape alive past the loop (`GC.KeepAlive`, 15 sites; the DPrism oracle's and the
+      filling oracle's already do). The pipe-shell case 220, bopfuse_simple/F3's section, loft case 122 and BRepProj's
+      case 105 read their inputs through such helpers, so they likely had this cause too; their reruns can stay as a
+      guard. For build123d.NET (not changed here): its generated TopoDS_Iterator wrapper should hold a reference to the
+      wrapper of the shape it iterates, as build123d.NET's own code iterates shapes the same way.

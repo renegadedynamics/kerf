@@ -45,6 +45,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
             {
                 AddInput(new(aNIter.Value(), anIt.Value()));
             }
+            GC.KeepAlive(theShape.N); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 10409)
         }
 
         /// <summary>Compares the two shapes' identity, type, orientation and location; pairs new shapes.</summary>
@@ -98,6 +99,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
             {
                 MatchTree(theOracle, aNIt.Value(), anIt.Value(), theWhat + "/child", theDone);
             }
+            GC.KeepAlive(theN); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 10409)
         }
 
         /// <summary>True if the native shape is an input's twin or a new shape met so far.</summary>

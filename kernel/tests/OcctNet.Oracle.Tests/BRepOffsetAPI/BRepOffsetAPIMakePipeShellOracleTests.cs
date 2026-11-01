@@ -91,6 +91,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         {
             aN.Add(anIt.Value());
         }
+        GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 10409)
         var aP = new List<TopoDS_Shape>();
         for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {

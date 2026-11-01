@@ -1603,3 +1603,14 @@ Found by porting BRepBlend and by tools/blendrec. The port reproduces each (`// 
 | BRepBlend_SurfRstConstRad, SurfRstEvolRad, RstRstConstRad, RstRstEvolRad | `myTConv` is not initialised by the constructors | Read only after `GetShape` sets it in OCCT's call order; the port starts it at its first value |
 | BRepBlend_SurfRstLineBuilder `ArcToRecadre` | The header names the 2D points (pt2d, lastpt2d), the definition (lastpt2d, pt2d) | The port follows the definition |
 | BRepBlend_CurvPointRadInv | `choix` is set and never read | None |
+
+## Phase 7: unit 7Y, follow-ups on the differences from native
+
+Found by unit 7Y's investigations. The port reproduces each except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_Tool `EnlargeGeometry` (through `EnLargeFace` with `ChangeGeom`) | On a Geom_OffsetSurface, `SetBasisSurface` on the face's own surface; on a B-spline basis, `ExtendSurfByLength` raises its degree in place | The face given lies on the enlarged surface afterwards, its bounds grown (BRepOffset_MakeOffset's `ExtentFace` relies on it, OCC5805's thick solid); a caller's face changes too. The port does the first on its working faces (decision 10401), never on a caller's, and not the degree raise |
+| BRepFill_Filling `AddConstraints` | An edge without a pcurve on its support face leaves the 2D adaptor unloaded, then evaluated (OCCT's comment says so) | A null dereference natively; the port takes the support's own edge on the same curve for a caller's frozen edge (decision 10403) |
+| LocOpe_DPrism (BRepFeat_MakeDPrism with a taper) | `BRepLib::UpdateTolerances` on the result raises the profile's vertex tolerances (1.06e-5), the profile being shared | The caller's profile changes; a later DPrism on it starts from the raised tolerances (decision 10405) |
+| build123d.NET's native binding, from several threads at once | (see decision 10409) | |

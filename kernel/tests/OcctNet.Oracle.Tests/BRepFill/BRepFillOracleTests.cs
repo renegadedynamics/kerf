@@ -79,6 +79,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         {
             aList.Add(anIt.Value());
         }
+        GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 10409)
         Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
         aPShape.TShape()!.FreezeGraph();
         var aPList = new List<TopoDS_Shape>();
