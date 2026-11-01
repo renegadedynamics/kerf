@@ -1723,3 +1723,17 @@ remark at the place).
 | ChFi3d_Builder_C1, `_C2` | Booleans kept in integers and doubles (`proledge`, `sens`, `sameparam`) | None (0 and 1) |
 | ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
 | ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |
+
+## Phase 7: unit 7N3, the public fillet and chamfer API
+
+Found by porting BRepFilletAPI, FilletSurf and the fillet and chamfer Draw commands. The port reproduces each, but
+for the hang in `chamf` (decision 11012).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiDS_FilSpine::SetRadius(Law_Function, IinC) (BRepFilletAPI_MakeFillet's `Add(L, E)` and `SetRadius(L, IC, IinC)`) | Builds a Law_Composite holding the law, drops it, and clears the radii | The law is lost; Build throws Standard_OutOfRange on the empty radii |
+| FilletSurf_InternalBuilder::Add | The loop over the edge's faces re-initializes the iterator of the loop over the edges | Only the first edge is checked for being sharp and on the shape; the outer loop then runs on over the first edge's faces |
+| FilletSurf_Builder::EndSectionStatus | Its StdFail_NotDone says "StartSectionStatus" | None but the message |
+| BRepTest_ChamferCommands.cxx, `chamf` | When an edge is followed by a face and fewer than two more words (`chamf r s e f 1`), neither branch advances `i` and the `while (i + 1 < narg)` loop never ends | Draw-lite stops reading the words there (decision 11012); no corpus case reaches it |
+| BRepTest_FilletCommands.cxx, `buildevol` and `blend` | `Rake`/`Rakk` are deleted only after a Build that returns | On an exception the maker stays; `checkhist` then says "Active Builder Not Done" (reproduced) |
+| Corpus cases that depend on the reconstruction's order (not OCCT bugs, for unit 7R) | blend/complex/G8 and bugs/modalg_7/bug27711_3 name the edges of a fillet's result by `explode` index for a second fillet | The reconstruction's faces and edges come in another order (decision 1114), so another edge is filleted and `blend` fails |

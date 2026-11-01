@@ -1347,3 +1347,18 @@ Phase 7 (part): the fillet builder (unit 7N2), up to the topological reconstruct
   results, a tangent chain, a four-edge corner, concave edges, a shell, build123d.NET's test inputs and failures): the
   data structure at the reconstruction is native's byte for byte in all 35 that reach it, and the faulty contours and
   stripe statuses build123d.NET reads are native's in all.
+- BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeChamfer and BRepFilletAPI_LocalOperation: fillets with constant and
+  evolving radii and chamfers by one distance, two distances or a distance and an angle, with their histories and the
+  diagnostics of failed contours, on 7N2's builders and 7R's reconstruction. The caller's shape is never written and
+  the result shares its unchanged faces; results and histories are frozen. FilletSurf_Builder (a fillet's surfaces
+  and curves without a shape). The functional twins `BRepFilletAPI.Fillet` and `BRepFilletAPI.Chamfer`.
+- Tests: OCCT's GTests for MakeFillet and MakeChamfer; against native OCCT, 1,922 fillets and chamfers on primitives,
+  Boolean results, data/occ's solids and the GTests' inputs, geometrically native's where both results are valid but
+  for 35 attributed to the reconstruction (a face with a seam keeps the band the fillet removes), and build123d.NET's
+  MaxFillet probes, all native's.
+- Draw-lite: the fillet and chamfer commands (`blend`, `bfuseblend`, `bcutblend`, `mkevol`, `updatevol`,
+  `buildevol`, `tolblend`, `continuityblend`, `checkhist`, `chamf`, `chamf_throat`,
+  `chamf_throat_with_penetration`) and the feature commands `fillet` and `bossage`; the rolling-ball commands read
+  `tolblend`'s tolerance; `encoderegularity` rebinds the variables sharing the shape. 883 corpus cases newly runnable
+  (799 with data): OK 723, BAD 34, IMPROVEMENT 8, FAILED 34, all attributed (mostly the reconstruction's invalid
+  results).

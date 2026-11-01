@@ -38,8 +38,9 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>The seam</b> (decision 992): OCCT's <c>myCoup</c>, a <c>TopOpeBRepBuild_HBuilder</c>, is an
-/// <see cref="ChFi3d_Reconstruction"/>, which unit 7R implements. Until then <see cref="Compute"/> fills the data
-/// structure exactly as OCCT does and stops at <c>myCoup->Perform(myDS)</c> with a <see cref="NotImplementedException"/>.
+/// <see cref="ChFi3d_Reconstruction"/>, unit 7R's <see cref="ChFi3d_BOPReconstruction"/> on the Boolean engine. At the
+/// end of <see cref="Compute"/> the working copy's sub-shapes left unchanged are replaced by the caller's in the result
+/// (decision 11002); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
 /// </para>
 /// </remarks>
 public abstract partial class ChFi3d_Builder

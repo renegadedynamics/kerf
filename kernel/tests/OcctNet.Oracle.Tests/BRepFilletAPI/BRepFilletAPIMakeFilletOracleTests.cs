@@ -840,7 +840,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
 
     internal static readonly Dictionary<string, string> KnownGTestDifferences = new(StringComparer.Ordinal)
     {
-        ["OCC1077 cut 3"] = SeamBand,
+        ["OCC1077 cut 3, section edges r0.7"] = SeamBand,
         ["OCC426"] = SeamBand,
     };
 
