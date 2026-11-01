@@ -23,16 +23,18 @@ public class ChFi3dBuilderTests
     }
 
     [Fact]
-    public void ComputeStopsAtTheSeamUntilTheReconstructionLands()
+    public void ComputeRunsThroughTheReconstruction()
     {
-        // ChFi3d_Builder::Compute calls myCoup->Perform(myDS) with the data structure complete: until unit 7R, the
-        // stand-in reconstruction throws there (decision 992's seam)
+        // ChFi3d_Builder::Compute hands the data structure to myCoup->Perform: unit 7R's reconstruction on the
+        // Boolean engine (decision 992's seam)
         TopoDS_Shape aBox = Box();
         ChFi3d_FilBuilder aB = new(aBox);
+        Assert.IsType<ChFi3d_BOPReconstruction>(aB.Builder());
         aB.Add(10, ChFi3dBuilderNativeTests.EdgeOf(aBox, 5));
-        NotImplementedException e = Assert.Throws<NotImplementedException>(aB.Compute);
-        Assert.StartsWith("7R", e.Message);
-        Assert.True(aB.myDS.DS().NbSurfaces() > 0);
+        aB.Compute();
+        Assert.True(aB.IsDone());
+        Assert.True(new BRepCheck_Analyzer(aB.Shape()).IsValid());
+        Assert.Equal(1, ReconComparison.Count(aB.Shape(), TopAbs_SOLID));
     }
 
     [Fact]

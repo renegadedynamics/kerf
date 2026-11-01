@@ -12,6 +12,7 @@
 // "%.17g", geometry with GeomTools::Write at precision 17. Built with MSVC against build123d.NET's native OCCT
 // V8_0_1 (TKFillet and TopOpeBRepDS are not bound there).
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 
 #include <cstdio>
@@ -545,6 +546,12 @@ static TopoDS_Shape Scaled(const TopoDS_Shape& S, double theFactor)
   return BRepBuilderAPI_Transform(S, T, true).Shape();
 }
 
+// dsrec --recon (unit 7R, recon.inc): native's result and history after Build, written after the data structure
+static bool        gRecon = false;
+static std::string gResult;
+template <class Maker>
+static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput);
+
 struct Edge
 {
   int    k;
@@ -568,7 +575,8 @@ static TopoDS_Shape ThroughText(const TopoDS_Shape& S)
 
 static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer, const std::vector<Edge>& theEdges)
 {
-  const TopoDS_Shape S = ThroughText(S0);
+  // --recon (unit 7R) runs on the shape as given, as its recording was made
+  const TopoDS_Shape S = gRecon ? S0 : ThroughText(S0);
   gInput               = S;
   gCalls               = 0;
   gBefore.clear();
@@ -576,6 +584,7 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
   bool                      aDone = false;
   BRepFilletAPI_MakeChamfer aMkC(S);
   BRepFilletAPI_MakeFillet  aMkF(S);
+  gResult.clear();
   try
   {
     OCC_CATCH_SIGNALS
@@ -587,6 +596,8 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
         TopoDS_Edge E = EdgeOf(S, e.k);
         if (e.mode == 1)
           aMkC.AddDA(e.r1, e.r2 * M_PI / 180., E, FaceOf(S, E));
+        else if (e.r2 == -2)
+          aMkC.AddDA(e.r1, 60 * M_PI / 180, E, FaceOf(S, E)); // --recon only: a distance and an angle
         else if (e.r2 < 0)
           aMkC.Add(e.r1, E);
         else
@@ -595,6 +606,8 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
       aMkC.Build();
       aDone = aMkC.IsDone();
       aHB   = aMkC.Builder();
+      if (gRecon && gCalls > 0)
+        gResult = ResultText(aMkC, S);
     }
     else
     {
@@ -609,6 +622,8 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
       aMkF.Build();
       aDone = aMkF.IsDone();
       aHB   = aMkF.Builder();
+      if (gRecon && gCalls > 0)
+        gResult = ResultText(aMkF, S);
     }
     if (gCalls > 0 && !aHB.IsNull() && !aHB->DataStructure().IsNull())
     {
@@ -619,7 +634,16 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
   {
     aStatus = std::string(" failure ") + typeid(e).name();
   }
-  if (!theChamfer)
+  if (gRecon)
+  {
+    if (gCalls == 0)
+    {
+      std::fprintf(stdout, "%s: Perform not reached%s\n", theName, aStatus.c_str());
+      gOut << "case " << theName << "\nstatus done " << (aDone ? 1 : 0) << " perform 0\nend-case\n";
+      return;
+    }
+  }
+  else if (!theChamfer)
   {
     // the diagnostics build123d.NET reads (plan 2.6): faulty contours, stripe statuses, faulty vertices
     std::ostringstream aF;
@@ -658,11 +682,19 @@ static void Record(const char* theName, const TopoDS_Shape& S0, bool theChamfer,
   std::string anEdges = theChamfer ? " chamfer" : " fillet";
   for (const Edge& e : theEdges)
     anEdges += " " + std::to_string(e.k) + ":" + R(e.r1) + ":" + R(e.r2) + ":" + std::to_string(e.mode);
-  gOut << "status done " << (aDone ? 1 : 0) << " perform " << gCalls << " unchanged "
-       << (gCalls > 0 && anAfter == gBefore ? 1 : 0) << aFaults << (aStatus.empty() ? "" : " exception") << anEdges
-       << "\n";
+  if (gRecon)
+    gOut << "status done " << (aDone ? 1 : 0) << " perform " << gCalls << " unchanged " << (anAfter == gBefore ? 1 : 0)
+         << "\n";
+  else
+    gOut << "status done " << (aDone ? 1 : 0) << " perform " << gCalls << " unchanged "
+         << (gCalls > 0 && anAfter == gBefore ? 1 : 0) << aFaults << (aStatus.empty() ? "" : " exception") << anEdges
+         << "\n";
   gOut << "brep " << nB << "\n" << aB;
   gOut << "ds " << nD << "\n" << gBefore;
+  if (gRecon)
+  {
+    gOut << (gResult.empty() ? std::string("result 0\n") : gResult);
+  }
   gOut << "end-case\n";
   std::fprintf(stdout,
                "%s: done %d, %d lines, perform %d%s%s\n",
@@ -812,12 +844,15 @@ static std::vector<int> EdgesAtXZ(const TopoDS_Shape& S, double x, double z)
 }
 
 int RunKPart(const char* thePath); // kpart.cpp
+static void RecordCases();
+static void RecordReconCases(const char* theDataDir); // recon.inc
+
 
 int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt\n");
+    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt | dsrec --recon out.txt [dataset]\n");
     return 2;
   }
   OSD::SetSignal(false);
@@ -830,7 +865,19 @@ int main(int argc, char** argv)
     std::fprintf(stderr, "dsrec: could not hook TopOpeBRepBuild_HBuilder::Perform in TKFillet.dll\n");
     return 3;
   }
-  gOut.open(argv[1], std::ios::binary);
+  // --recon (unit 7R): the same cases and more, each with native's result and history after its data structure
+  gRecon = argc >= 3 && std::strcmp(argv[1], "--recon") == 0;
+  gOut.open(argv[gRecon ? 2 : 1], std::ios::binary);
+  RecordCases();
+  if (gRecon)
+  {
+    RecordReconCases(argc >= 4 ? argv[3] : nullptr);
+  }
+  return 0;
+}
+
+static void RecordCases()
+{
   const gp_Ax1 aZ(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
   const gp_Ax1 aX(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0));
 
@@ -898,6 +945,9 @@ int main(int argc, char** argv)
   Record("chamfer_box_edge", aBox, true, {{5, 10, -1}});
   Record("chamfer_box_edge_two_distances", aBox, true, {{5, 10, 20}});
   Record("chamfer_box_corner", aBox, true, {{aCorner[0], 10, -1}, {aCorner[1], 10, -1}, {aCorner[2], 10, -1}});
+
+  if (gRecon)
+    return; // --recon: unit 7R's cases follow (recon.inc)
 
   // unit 7N2: more of the blend and chamfer grids' features, and build123d.NET's fillet and chamfer tests
   {
@@ -977,5 +1027,6 @@ int main(int argc, char** argv)
     Record("b3d_fail_thin_plate_fillet_r3", thin, false, All(AllEdges(thin), 3));
     Record("b3d_fail_box_top_edges_r6", b, false, All(EdgesAtZ(b, 5), 6));
   }
-  return 0;
 }
+
+#include "recon.inc"

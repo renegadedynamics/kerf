@@ -175,4 +175,36 @@ public class BRepFill_FillingTests
         Assert.Throws<Standard_Failure>(() => new BRepFill_CurveConstraint((Adaptor3d_CurveOnSurface?)null, 1));
         Assert.Throws<Standard_Failure>(() => new BRepFill_CurveConstraint(new BRepAdaptor_Curve(anEdge), 3));
     }
+    // build123d.NET's MakeSurfacePatch: a spline edge with its extrusion as the support face. The port's prism sweeps a
+    // copy of the caller's frozen edge, so the edge has no pcurve on the face; the filling takes the face's edge on the
+    // same curve (decision 1103). It threw NullReferenceException in Geom2dAdaptor_Curve.EvalD1.
+    [Fact]
+    public void An_edge_on_the_face_extruded_from_it_is_a_constraint()
+    {
+        TopoDS_Edge Spline(params gp_Pnt[] thePoints)
+        {
+            var aPnts = new NCollection_HArray1<gp_Pnt>(1, thePoints.Length);
+            for (int i = 0; i < thePoints.Length; i++)
+            {
+                aPnts.SetValue(i + 1, thePoints[i]);
+            }
+            var anI = new GeomAPI_Interpolate(aPnts, false, 1.0e-6);
+            anI.Perform();
+            return new BRepBuilderAPI_MakeEdge(anI.Curve()).Edge();
+        }
+        TopoDS_Edge m1 = Spline(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(10, 0, -10));
+        TopoDS_Edge m2 = Spline(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 1, 0), new gp_Pnt(0, 10, -10));
+        TopoDS_Edge m3 = Spline(new gp_Pnt(10, 0, -10), new gp_Pnt(7, 7, -10), new gp_Pnt(0, 10, -10));
+        TopoDS_Face f1 = TopoDS.Face(new BRepPrimAPI_MakePrism(m1, new gp_Vec(0, -1, 0)).Shape());
+        Assert.Null(BRep_Tool.CurveOnSurface(m1, f1, out _, out _));
+        string aText = Text(m1);
+        var aFill = new BRepOffsetAPI_MakeFilling();
+        aFill.Add(m1, f1, GeomAbs_Shape.GeomAbs_C1);
+        aFill.Add(m2, GeomAbs_Shape.GeomAbs_C0);
+        aFill.Add(m3, GeomAbs_Shape.GeomAbs_C0);
+        aFill.Build();
+        Assert.True(aFill.IsDone());
+        Assert.True(new BRepCheck_Analyzer(aFill.Shape()).IsValid());
+        Assert.Equal(aText, Text(m1));
+    }
 }

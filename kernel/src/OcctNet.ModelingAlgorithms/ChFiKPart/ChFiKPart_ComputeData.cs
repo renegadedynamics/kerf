@@ -35,7 +35,7 @@ namespace Occt;
 /// <item>the chamfers (symmetric, two distances, distance and angle, constant throat) in the same cases;</item>
 /// <item>a torus between a plane and an orthogonal line ("rotule"), and the toric and spherical corners.</item>
 /// </list>
-/// The data structure is the builder's own (decision 9902): nothing here reads or writes the input's shapes.
+/// The data structure is the builder's own (decision 1063): nothing here reads or writes the input's shapes.
 /// </remarks>
 internal static class ChFiKPart_ComputeData
 {

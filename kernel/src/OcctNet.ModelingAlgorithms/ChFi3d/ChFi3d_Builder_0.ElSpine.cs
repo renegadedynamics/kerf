@@ -21,7 +21,7 @@ internal static partial class ChFi3d_Builder_0
     /// </summary>
     /// <remarks>
     /// Reads the spine's edges (the input's or the offset ones). <c>BRepLib::BuildCurve3d</c> is called on each: it
-    /// writes into an edge only when the edge has no 3D curve (decision 10203). The curves made here are this
+    /// writes into an edge only when the edge has no 3D curve (decision 1087). The curves made here are this
     /// function's own; the concatenation's result is taken unfrozen, as OCCT changes it in place.
     /// </remarks>
     internal static void ChFi3d_PerformElSpine(ChFiDS_ElSpine HES, ChFiDS_Spine Spine, GeomAbs_Shape continuity,
@@ -318,7 +318,7 @@ internal static partial class ChFi3d_Builder_0
         // On a la portion d elspine calculee sans prolongements sur la partie
         // valide des aretes du chemin.
         // OCCT.NET: OCCT changes the concatenation's curve in place (SetKnots, Segment...) and drops the
-        // concatenation; the curve is taken unfrozen (decision 10204).
+        // concatenation; the curve is taken unfrozen (decision 1088).
         BSpline = Concat.InternalBSplineCurve()!;
         // There is a reparametrisation to maximally connect the abscissas of edges.
         NCollection_Array1<double> BSNoeuds = new(BSpline.InternalKnots());

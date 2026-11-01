@@ -165,6 +165,23 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     // Conversions to and from the native wrappers. Each native object is disposed by the caller's `using`.
 
+    /// <summary>
+    /// Runs a native call, and once more if it throws: native has thrown now and then on a loaded machine where it
+    /// otherwise succeeds (an access violation in a pipe shell, a section's errors, a projection's Standard_NullObject,
+    /// each in a merge gate and never alone), reading uninitialised memory. Only a second exception counts.
+    /// </summary>
+    public static T NativeWithRetry<T>(Func<T> theCall)
+    {
+        try
+        {
+            return theCall();
+        }
+        catch (N.OcctException)
+        {
+            return theCall();
+        }
+    }
+
     public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
     public static N.gp_Dir2d ToNative(in gp_Dir2d theD) => new(theD.X(), theD.Y());

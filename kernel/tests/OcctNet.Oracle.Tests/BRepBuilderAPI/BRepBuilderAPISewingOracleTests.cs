@@ -233,6 +233,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             {
                 aN.Add(anIt.Value());
             }
+            GC.KeepAlive(aShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         }
         else
         {
@@ -292,6 +293,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             {
                 aNInputs.Add(anIt.Value());
             }
+            GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             for (var anIt = new TopoDS_Iterator(aPShape); anIt.More(); anIt.Next())
             {
                 aPInputs.Add(anIt.Value());

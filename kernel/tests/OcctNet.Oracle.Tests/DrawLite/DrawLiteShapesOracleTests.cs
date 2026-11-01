@@ -65,6 +65,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
                 AddTShapes(anIt.Value(), theMap);
             }
         }
+        GC.KeepAlive(aShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
 
         theMap.Add(aShape);
     }
@@ -298,6 +299,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
 
                 Assert.Equal(aChildren, Words(aDI.Eval("explode s")).Length);
             }
+            GC.KeepAlive(aNS); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
 
             foreach ((string aCode, int aType) in new[] { ("so", 2), ("sh", 3), ("f", 4), ("w", 5), ("e", 6), ("v", 7) })
             {

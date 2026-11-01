@@ -229,7 +229,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>When <paramref name="Pcurv"/> is a B-spline (or a trimmed one), segments it to its range and
     /// reparametrizes it on [<paramref name="Uf"/>, <paramref name="Ul"/>].</summary>
     /// <remarks>OCCT segments the B-spline in place; a frozen one (an intersection's result) is segmented on a copy
-    /// (decision 10204).</remarks>
+    /// (decision 1088).</remarks>
     internal static void ChFi3d_ReparamPcurv(double Uf, double Ul, ref Geom2d_Curve? Pcurv)
     {
         if (Pcurv is null)
@@ -702,7 +702,7 @@ internal static partial class ChFi3d_Builder_0
     }
 
     // OCCT.NET: OCCT changes these curves in place; one frozen elsewhere (a projection's or an intersection's
-    // result) is changed on a copy (decisions 974 and 10204).
+    // result) is changed on a copy (decisions 974 and 1088).
     private static T Writable<T>(T theCurve) where T : Geom2d_Geometry =>
         theCurve.IsFrozen() ? (T)theCurve.Copy() : theCurve;
 }

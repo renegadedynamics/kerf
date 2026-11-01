@@ -1255,6 +1255,32 @@ Phase 7 (part): the legacy data structure's core (unit 7L), which 3D fillets and
   cylinders, cones, a sphere, a torus, a Boolean result, chamfers), in a text format the port writes too
   (`TopOpeBRepDS_TextDump`), so that the fillet units can compare theirs with native's byte for byte. Every recording
   reads into the port's data structure and writes back as native's.
+Phase 7 (part): build123d.NET parity, its first part, and Quantity_Color (unit 7X).
+
+- Quantity_Color and Quantity_ColorRGBA (colours: the 509 named colours, RGB, sRGB, HLS, CIE Lab and Lch, hex strings),
+  the last classes build123d.NET calls that the port lacked outside phase 7 and STEP. Identical bit for bit with native
+  OCCT on 14,326 records.
+- build123d.NET's healing, offset, draft and feature calls (Hollow, Offset3D and the Offset operation, Thicken,
+  Face and Shell Offset, Draft, ExtrudeTaper's draft, DPrism, SplitByPerimeter, ToSplines) replayed on the port from its
+  tests' inputs, with their histories, failures and build123d.NET's finishing steps: 93 calls, none different (85
+  identical or canonically identical where native varies, 2 attributed to native's run-to-run variation, the same
+  failure on both sides in the others).
+- Benchmarks: `-- phase7` times those calls against native OCCT: 1.56× native serial in all (geometric mean 1.09×);
+  offsets and drafts within 2×; DPrism, SplitByPerimeter, ToSplines and three small hollows above it (decision 10304).
+
+Phase 7 (part): the foundations of hidden-line removal (unit 7P).
+
+- Intrv (intervals with tolerances and their Boolean operations), TopBas, TopCnx.
+- HLRAlgo: the projector (parallel and perspective), the edge status and its iterator, the min-max boxes, the edge and
+  wire blocks, interferences, and the polygonal algorithm's data (bi-points, triangles, hiding data, the internal
+  triangulation, shells) and PolyAlgo.
+- Contap: the contours (silhouettes) of a surface for a direction, a draft angle or an eye: in closed form on planes,
+  spheres, cylinders and cones, otherwise by the boundary search, the interior search and the walking (phase 5's
+  generics).
+- Fix: `Standard.Epsilon` of the largest reals is 0, as OCCT's.
+- Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
+  quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
+  the edge status and the contours.
 
 Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fillet builders.
 
@@ -1268,6 +1294,45 @@ Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fill
 - Tests: tools/dsrec records native OCCT's analytic cases on real faces and Builder_0's functions (compiled from OCCT's
   own source): 66 cases, all identical byte for byte. The fillets write only the builder's working copy of their
   input (unit 7N2 copies it at entry).
+
+Phase 7 (part): the data model of hidden-line removal (unit 7Q1).
+
+- HLRTopoBRep: the outlining of a shape for a projector (its faces' contours as internal outlines and outlines, their
+  isolines, its edges split at their vertices), with its data.
+- HLRBRep's data model: the edge and face data, the data structure the hider walks (projection, min-max boxes, faces'
+  flags and orientations of outlines, interferences of an edge with a face's boundary, classification by a line of
+  sight), the loading of a shape, the shape bounds, the interference lists, vertex lists and area limits.
+- HLRBRep's projected curves and surfaces with their tools and local properties, and the 2D curve intersection and
+  line/surface intersection it uses (phase 5's generics instantiated).
+- The outliner copies a frozen shape at the entry: OCCT writes into its input's vertices.
+- Tests: `tools/hlrrec` records native OCCT's outlining, data structure and hider's walk on five primitives in eight
+  projectors and on the hlr group's shapes: 52 cases, all identical bit for bit; unit tests of the curves, surfaces,
+  data, merging and the copy at the entry.
+Phase 7 (part): follow-ups on the differences from native (unit 7Y).
+
+- BRepOffset_Tool's `EnLargeFace` puts the enlarged offset surface on the offset's own working face, as OCCT changes it
+  in place: OCC5805.brep's thick solid (bugs/modalg_2/bug5805_3 and _4) is one shell of seven faces as natively; the
+  offset oracle gains three byte-identical results.
+- BRepFill_Filling (BRepOffsetAPI_MakeFilling) accepts a caller's edge on the face swept from it (build123d.NET's
+  MakeSurfacePatch threw NullReferenceException); results as native's.
+- Public `TopoDS_Builder.MakeWire`, `MakeShell`, `MakeSolid`, `MakeCompSolid` (frozen results, as `MakeCompound`) and a
+  `BRepTools_History` copy constructor, for build123d.NET.
+- Oracle and corpus: the DPrism oracle reads native's input again for each run (6 differences were native's writes into
+  its input); memory-trend corpus cases run once more when they fail; MakeDraft's four and DPrism's eleven tapered fuses
+  stay attributed, with their causes narrowed. A stress of build123d.NET's native binding from many threads reproduces
+  the gate's native-only access violation (decision 10409).
+
+Phase 7 (part): the fillets' reconstruction on the Boolean engine (unit 7R, option C).
+
+- `ChFi3d_BOPReconstruction` replaces TopOpeBRepBuild_HBuilder for the fillet builders: from the data structure the
+  fillets fill, it builds the edges of the curves, the fillet faces, the input's faces and edges cut (concave fillets
+  growing a face, holes kept or dropped, a fillet reaching a cone's apex), and the shells and solids, with
+  `BOPAlgo_BuilderFace`; it answers `IsSplit`, `Splits`, `Merged`, `NewFaces` and `NewEdges` as ChFi3d asks.
+  `ChFi3d_Reconstruction.Create` gives it to the builders. It writes only into the shapes it makes.
+- Tests: `tools/dsrec --recon` records native OCCT's data structure, result and history for 120 fillets and chamfers
+  (blend/simple A to H, blend/complex's shapes in the dataset, build123d.NET's, shells, voids, compounds, corners of
+  four faces). Compared geometrically (volumes, areas, counts, validity, boxes, histories as sets): 114 equal, 3
+  attributed to native (two invalid native results, Bezier pieces made B-splines), 3 not comparable.
 
 Phase 7 (part): the fillet builder (unit 7N2), up to the topological reconstruction.
 

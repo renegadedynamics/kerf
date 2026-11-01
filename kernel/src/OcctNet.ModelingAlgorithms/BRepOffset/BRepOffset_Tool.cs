@@ -3238,6 +3238,42 @@ public static class BRepOffset_Tool
 
     //=================================================================================================
 
+    // OCCT.NET: stands for OCCT's change in place of the surface theOld of the face F into theNew (see EnLargeFace):
+    // F and the pcurves of its edges on theOld are put on theNew. Nothing is done where F or one of its edges is frozen
+    // (a caller's face keeps its surface, decision 1101).
+    private static void PutSurfaceInPlace(in TopoDS_Face F, Geom_Surface theOld, Geom_Surface theNew, in TopLoc_Location L)
+    {
+        if (F.TShape()!.Locked())
+        {
+            return;
+        }
+        NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
+        TopExp.MapShapes(F, TopAbs_EDGE, anEdges);
+        for (int i = 1; i <= anEdges.Extent(); i++)
+        {
+            if (anEdges[i].TShape()!.Locked())
+            {
+                return;
+            }
+        }
+        BRep_Builder B = new();
+        B.UpdateFace(F, theNew, L, BRep_Tool.Tolerance(F));
+        for (int i = 1; i <= anEdges.Extent(); i++)
+        {
+            TopoDS_Edge E = TopoDS.Edge(anEdges[i]);
+            TopLoc_Location aLoc = L.Predivided(E.Location());
+            BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+            for (NCollection_List<BRep_CurveRepresentation>.Iterator it = new(TE.ChangeCurves()); it.More(); it.Next())
+            {
+                if (it.Value() is BRep_CurveOnSurface aCOS && aCOS.IsCurveOnSurface(theOld, aLoc))
+                {
+                    aCOS.ReplaceSurface(theNew);
+                }
+            }
+            TE.Modified(true);
+        }
+    }
+
     /// <summary>
     /// Makes in <paramref name="NF"/> a face on the surface of <paramref name="F"/> enlarged (or, if
     /// <paramref name="ChangeGeom"/> is false, on the surface itself, within its bounds). True if the surface was
@@ -3299,6 +3335,7 @@ public static class BRepOffset_Tool
             coeff = 1.0;
         }
 
+        Geom_Surface aFaceSurface = S;
         if (CanExtentSurface)
         {
             SurfaceChange = EnlargeGeometry(ref S,
@@ -3320,6 +3357,13 @@ public static class BRepOffset_Tool
                                             theLenAfterUlast,
                                             theLenBeforeVfirst,
                                             theLenAfterVlast);
+            // OCCT.NET: on an offset surface OCCT sets the enlarged basis on the face's own surface in place, so F lies
+            // on the enlarged surface from then on (its bounds grow; ExtentEdge and the callers read them). The port's
+            // EnlargeGeometry gives a copy: on a working face it is put on F and its pcurves (decision 1101).
+            if (aFaceSurface is Geom_OffsetSurface && S is Geom_OffsetSurface && !ReferenceEquals(S, aFaceSurface))
+            {
+                PutSurfaceInPlace(F, aFaceSurface, S, L);
+            }
         }
         else
         {

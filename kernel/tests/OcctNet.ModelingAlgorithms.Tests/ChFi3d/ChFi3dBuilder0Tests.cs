@@ -23,7 +23,7 @@ public class ChFi3dBuilder0Tests
     public void IndexPointInDSWritesTheVertexOfTheWorkingCopyAndRefusesAFrozenOne()
     {
         // OCCT's line 2333: the common point's vertex gets the point's position and tolerance. The builder works on a
-        // copy of its input (unit 7N2); a frozen input vertex is refused, never changed (decision 10203).
+        // copy of its input (unit 7N2); a frozen input vertex is refused, never changed (decision 1087).
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
         TopoDS_Vertex aFrozen = FirstVertex(aBox);
         double aTol = BRep_Tool.Tolerance(aFrozen);

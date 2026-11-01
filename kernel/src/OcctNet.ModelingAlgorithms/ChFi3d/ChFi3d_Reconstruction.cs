@@ -34,9 +34,7 @@ namespace Occt;
 /// </list>
 /// <para>
 /// The lists returned are the reconstruction's own (OCCT returns <c>const&amp;</c> into the builder); callers only
-/// read them. Until 7R lands, <see cref="Create"/> gives a reconstruction whose
-/// <see cref="Perform"/> throws <see cref="NotImplementedException"/>("7R"), so <c>Compute</c> stops exactly where
-/// OCCT's hands over, with the data structure complete.
+/// read them. <see cref="Create"/> gives unit 7R's <see cref="ChFi3d_BOPReconstruction"/>.
 /// </para>
 /// </remarks>
 internal abstract class ChFi3d_Reconstruction
@@ -75,32 +73,5 @@ internal abstract class ChFi3d_Reconstruction
     /// (ChFi3d_Builder_1.cxx:346), <paramref name="BT"/> being the build tool OCCT gives it (B-spline curves of
     /// degree 1 approximations off, no translation, no overwrite).
     /// </summary>
-    internal static ChFi3d_Reconstruction Create(TopOpeBRepDS_BuildTool BT) => new Pending(BT);
-
-    /// <summary>The stand-in until unit 7R: <see cref="Perform"/> throws; the queries before it answer empty.</summary>
-    private sealed class Pending : ChFi3d_Reconstruction
-    {
-        private readonly TopOpeBRepDS_BuildTool myBuildTool;
-
-        internal Pending(TopOpeBRepDS_BuildTool BT) => myBuildTool = BT;
-
-        public override void Perform(TopOpeBRepDS_HDataStructure HDS) =>
-            throw new NotImplementedException("7R: the fillet's topological reconstruction (TopOpeBRepBuild_HBuilder::Perform)");
-
-        public override void MergeSolid(in TopoDS_Shape S, TopAbs_State TB) => throw new NotImplementedException("7R");
-
-        public override bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild) => false;
-
-        public override NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild) => new();
-
-        public override NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild) => new();
-
-        public override NCollection_List<TopoDS_Shape> NewFaces(int I) => new();
-
-        public override NCollection_List<TopoDS_Shape> NewEdges(int I) => new();
-
-        public override TopOpeBRepDS_HDataStructure? DataStructure() => null;
-
-        public override string ToString() => "ChFi3d_Reconstruction (pending unit 7R), " + myBuildTool;
-    }
+    internal static ChFi3d_Reconstruction Create(TopOpeBRepDS_BuildTool BT) => new ChFi3d_BOPReconstruction(BT);
 }

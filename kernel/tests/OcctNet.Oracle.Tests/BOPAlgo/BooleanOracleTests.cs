@@ -448,6 +448,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             {
                 aNArgs.Add(anIt.Value());
             }
+            GC.KeepAlive(aN); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             var aPArgs = new List<TopoDS_Shape>();
             for (var anIt = new TopoDS_Iterator(aP); anIt.More(); anIt.Next())
             {
