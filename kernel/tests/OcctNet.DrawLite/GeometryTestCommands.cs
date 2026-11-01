@@ -9,7 +9,8 @@ namespace OcctNet.DrawLite;
 /// GeometryTest_ConstraintCommands.cxx's <c>gcarc</c> (segments and arcs of circles through points, GC),
 /// <c>cirtang</c> and <c>lintan</c> (circles and lines under constraints, Geom2dGcc), <c>interpol</c> and
 /// <c>tanginterpol</c> (GeomAPI_Interpolate and Geom2dAPI_Interpolate, unit 5W), and GeometryTest_APICommands.cxx's
-/// <c>extrema</c> (GeomAPI_ExtremaCurveCurve, CurveSurface, SurfaceSurface).
+/// <c>extrema</c> (GeomAPI_ExtremaCurveCurve, CurveSurface, SurfaceSurface) and <c>proj</c> (GeomAPI_ProjectPointOnCurve,
+/// GeomAPI_ProjectPointOnSurf and Extrema_GenLocateExtPS, unit 7W).
 /// </summary>
 /// <remarks>
 /// Draw's curve colour changes around the constraint commands' results are left out (no viewer). <c>interpol</c>'s
@@ -26,6 +27,7 @@ internal static class GeometryTestCommands
         DrawCxx.Add(theInterpreter, "interpol", interpol);
         DrawCxx.Add(theInterpreter, "tanginterpol", tanginterpol);
         DrawCxx.Add(theInterpreter, "extrema", Extrema);
+        DrawCxx.Add(theInterpreter, "proj", Proj);
     }
 
     private static int interpol(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
@@ -186,6 +188,127 @@ internal static class GeometryTestCommands
             DrawTrSurf.Set(theDI, a[1], NewCurvePtr);
             di.Append(a[2]).Append(" ");
         }
+        return 0;
+    }
+
+    private static void ShowProjSolution(DrawInterpreter theDI, DrawResult di, int i, in gp_Pnt P, in gp_Pnt P1, double U, double V,
+                                         bool isSurface)
+    {
+        string name = $"ext_{i}";
+        di.Append(name).Append(" ");
+        if (P.Distance(P1) > Precision.Confusion())
+        {
+            var L = new Geom_Line(P, new gp_Dir(new gp_Vec(P, P1)));
+            var CT = new Geom_TrimmedCurve(L, 0.0, P.Distance(P1));
+            DrawTrSurf.Set(theDI, name, CT);
+        }
+        else
+        {
+            DrawTrSurf.Set(theDI, name, P1);
+            if (isSurface)
+            {
+                di.Append(" Point on surface ");
+            }
+            else
+            {
+                di.Append(" Point on curve ");
+            }
+        }
+        if (isSurface)
+        {
+            di.Append(" Parameters: ").Append(U).Append(" ").Append(V).Append("\n");
+        }
+        else
+        {
+            di.Append(" parameter ").Append(i).Append(" = ").Append(U).Append("\n");
+        }
+    }
+
+    // proj curve/surf x y z [{extrema algo: g(grad)/t(tree)}|{u v}]
+    private static int Proj(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 5)
+        {
+            // Message::SendFail (decision 405)
+            theDI.Output.WriteLine(" Use proj curve/surf x y z [{extrema algo: g(grad)/t(tree)}|{u v}]");
+            return 1;
+        }
+
+        var P = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+
+        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Geom_Surface? GS;
+        Extrema_ExtAlgo aProjAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad;
+
+        if (n == 6 && a[5].Length > 0 && a[5][0] == 't')
+        {
+            aProjAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Tree;
+        }
+
+        if (GC is null)
+        {
+            GS = DrawTrSurf.GetSurface(theDI, a[1]);
+
+            if (GS is null)
+            {
+                return 1;
+            }
+
+            if (n <= 6)
+            {
+                GS.Bounds(out double U1, out double U2, out double V1, out double V2);
+
+                var proj = new GeomAPI_ProjectPointOnSurf(P, GS, U1, U2, V1, V2, aProjAlgo);
+                if (!proj.IsDone())
+                {
+                    di.Append("projection failed.");
+                    return 0;
+                }
+
+                for (int i = 1; i <= proj.NbPoints(); i++)
+                {
+                    gp_Pnt P1 = proj.Point(i);
+                    proj.Parameters(i, out double UU, out double VV);
+                    ShowProjSolution(theDI, di, i, P, P1, UU, VV, true);
+                }
+            }
+            else if (n == 7)
+            {
+                var aP2d = new gp_XY(theDI.Atof(a[5]), theDI.Atof(a[6]));
+                var aGAS = new GeomAdaptor_Surface(GS);
+                var aProjector = new Extrema_GenLocateExtPS(aGAS, Precision.PConfusion(), Precision.PConfusion());
+                aProjector.Perform(P, aP2d.X(), aP2d.Y(), false);
+                if (!aProjector.IsDone())
+                {
+                    di.Append("projection failed.");
+                    return 0;
+                }
+
+                Extrema_POnSurf aP = aProjector.Point();
+                aP.Parameter(out double UU, out double VV);
+                ShowProjSolution(theDI, di, 1, P, aP.Value(), UU, VV, true);
+            }
+        }
+        else
+        {
+            var proj = new GeomAPI_ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
+
+            if (proj.NbPoints() == 0)
+            {
+                // std::cout (decision 405)
+                theDI.Output.Write("No project point was found.\n");
+                return 0;
+            }
+
+            for (int i = 1; i <= proj.NbPoints(); i++)
+            {
+                gp_Pnt P1 = proj.Point(i);
+                double UU = proj.Parameter(i);
+                ShowProjSolution(theDI, di, i, P, P1, UU, UU, false);
+            }
+        }
+
         return 0;
     }
 

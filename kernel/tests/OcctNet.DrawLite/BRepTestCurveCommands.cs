@@ -7,7 +7,7 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// The commands of BRepTest_CurveCommands.cxx that need only BRepBuilderAPI's makers and BRepLib: vertex, edge,
 /// mkedge, wire, polyline, polyvertex, mkcurve, mkoricurve, mkpoint, mk2dcurve, uisoedge, visoedge and profile; and
-/// mkoffset and openoffset (BRepOffsetAPI_MakeOffset, unit 5O2).
+/// mkoffset and openoffset (BRepOffsetAPI_MakeOffset, unit 5O2); concatC0wire (BRepAlgo::ConcatenateWireC0, unit 7W).
 /// </summary>
 /// <remarks>
 /// The makers' results are read through their internal accessors where OCCT writes into them before binding
@@ -35,6 +35,30 @@ internal static class BRepTestCurveCommands
         DrawCxx.Add(theInterpreter, "profile", Profile);
         DrawCxx.Add(theInterpreter, "mkoffset", MkOffset);
         DrawCxx.Add(theInterpreter, "openoffset", OpenOffset);
+        DrawCxx.Add(theInterpreter, "concatC0wire", ConcatC0Wire);
+    }
+
+    // concatC0wire result wire
+    private static int ConcatC0Wire(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> c)
+    {
+        int n = c.Count;
+        if (n < 3)
+        {
+            return 1;
+        }
+
+        TopoDS_Shape S = theDI.GetShape(c[2], TopAbs_ShapeEnum.TopAbs_WIRE);
+
+        if (S.IsNull())
+        {
+            return 1; // test if the shape is empty
+        }
+
+        TopoDS_Wire W = TopoDS.Wire(S);
+
+        TopoDS_Shape res = BRepAlgo.ConcatenateWireC0(W); // treatment
+        theDI.SetShape(c[1], res);
+        return 0;
     }
 
     private static int Vertex(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

@@ -12,11 +12,16 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// DBRep's basic shape commands (DBRep.cxx): the display settings (isos, hlr, triangles, polygons, discretisation,
 /// vori, vconn) without a viewer; compound, add, explode, nexplode, exwire, emptycopy, orientation, treverse,
-/// complement, invert, nbshapes, numshapes, countshapes, setflags, writebrep, readbrep, binsave and binrestore.
+/// complement, invert, nbshapes, numshapes, countshapes, setflags, writebrep, readbrep, binsave and binrestore;
+/// XProgress and removeinternals (unit 7W).
 /// </summary>
 /// <remarks>
 /// Shapes are frozen values (decision 272), so the commands that change a shape in place in OCCT (add, setflags) bind
 /// a new shape to the variable instead (docs/decisions.md, unit 3L1).
+/// <c>XProgress</c> sets and prints Draw_ProgressIndicator's default modes, per interpreter; Draw-lite's commands make
+/// no progress indicator (decision 954), so the modes change no command's output. <c>removeinternals</c> removes the
+/// internal sub-shapes in place, as OCCT, on a copy whose changes every variable sharing them sees
+/// (<see cref="SWDRAWShapeFixCommands.InPlace"/>).
 /// </remarks>
 internal static class DBRepCommands
 {
@@ -32,6 +37,10 @@ internal static class DBRepCommands
         public bool WithRgN;
         public bool WithHid;
         public double HLRAngle = 35.0 * Math.PI / 180.0;
+        // Draw_ProgressIndicator::DefaultTclMode, DefaultConsoleMode, DefaultGraphMode
+        public bool ProgressTclMode;
+        public bool ProgressConsoleMode;
+        public bool ProgressGraphMode;
         public const double HAngMin = 1.0 * Math.PI / 180.0;
         public const double HAngMax = 35.0 * Math.PI / 180.0;
     }
@@ -68,6 +77,8 @@ internal static class DBRepCommands
         DrawCxx.Add(theInterpreter, "binsave", WriteBRep);
         DrawCxx.Add(theInterpreter, "readbrep", ReadBRep);
         DrawCxx.Add(theInterpreter, "binrestore", ReadBRep);
+        DrawCxx.Add(theInterpreter, "XProgress", XProgress);
+        DrawCxx.Add(theInterpreter, "removeinternals", RemoveInternals);
     }
 
     // DBRep.cxx's Characters and Float macros
@@ -708,6 +719,85 @@ internal static class DBRepCommands
 
         aStr.Append(pNames[0]).Append(aNbSh.ToString(CultureInfo.InvariantCulture)).Append('\n');
         return aStr.ToString();
+    }
+
+    // XProgress [+|-t] [+|-c] [+|-g]
+    private static int XProgress(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
+    {
+        Params aParams = Parameters(theDI);
+        int argc = argv.Count;
+        for (int i = 1; i < argc; i++)
+        {
+            bool turn = true;
+            char aFirst = argv[i].Length > 0 ? argv[i][0] : '\0';
+            if (aFirst == '-')
+            {
+                turn = false;
+            }
+            else if (aFirst != '+')
+            {
+                continue;
+            }
+
+            char aSecond = argv[i].Length > 1 ? argv[i][1] : '\0';
+            if (aSecond == 't')
+            {
+                aParams.ProgressTclMode = turn;
+            }
+            else if (aSecond == 'c')
+            {
+                aParams.ProgressConsoleMode = turn;
+            }
+            else if (aSecond == 'g')
+            {
+                aParams.ProgressGraphMode = turn;
+            }
+            else if (argv[i] == "-stop" && i + 1 < argc)
+            {
+                // Draw_ProgressIndicator::StopIndicator: the address of an indicator to stop; there is none
+                ++i;
+                return 0;
+            }
+        }
+        di.Append("Progress Indicator defaults: tcl mode is ").Append(aParams.ProgressTclMode ? "ON" : "OFF");
+        di.Append(", console mode is ").Append(aParams.ProgressConsoleMode ? "ON" : "OFF");
+        di.Append(", graphical mode is ").Append(aParams.ProgressGraphMode ? "ON" : "OFF");
+        di.Append("\n");
+        return 0;
+    }
+
+    // removeinternals shape [force flag {0/1}]
+    private static int RemoveInternals(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 2)
+        {
+            // di.PrintHelp: Draw-lite has no help texts
+            return 1;
+        }
+
+        TopoDS_Shape aShape = theDI.GetShape(a[1]);
+        if (aShape.IsNull())
+        {
+            di.Append(a[1]).Append("is a null shape\n");
+            return 1;
+        }
+
+        bool isForce = false;
+        if (n > 2)
+        {
+            isForce = theDI.Atoi(a[2]) != 0;
+        }
+
+        aShape = SWDRAWShapeFixCommands.InPlace(theDI, aShape, s =>
+        {
+            BRepTools.RemoveInternals(s, isForce);
+            return s;
+        });
+
+        theDI.SetShape(a[1], aShape);
+
+        return 0;
     }
 
     private static int NbShapes(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

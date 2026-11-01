@@ -18,7 +18,7 @@ internal static class DrawBuiltins
         "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
         "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit", "repaint",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -77,6 +77,11 @@ internal static class DrawBuiltins
         BOPTestUtilityCommands.Register(theInterpreter);
         BOPTestTolerCommands.Register(theInterpreter);
         BOPTestDebugCommands.Register(theInterpreter);
+        // unit 7W: the cheap gaps of the phase 7 plan (section 1.6)
+        DrawBasicCommands.Register(theInterpreter);
+        GeometryTestCurveCommands.Register(theInterpreter);
+        GeomliteTestAPI2dCommands.Register(theInterpreter);
+        BRepTestOtherCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
 

@@ -11,7 +11,7 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// BRepTest's checking commands (BRepTest_CheckCommands.cxx): checkshape (with its contextual and structural dumps),
-/// checksection and computetolerance.
+/// checksection, computetolerance, and validrange (BRepLib::FindValidRange, unit 7W).
 /// </summary>
 /// <remarks>
 /// checkdiff (BRepAlgo::IsValid, TKBool) isn't here: it writes SameParameter and tolerances into the result's
@@ -27,6 +27,43 @@ internal static class BRepTestCheckCommands
         DrawCxx.Add(theInterpreter, "checkshape", CheckShape);
         DrawCxx.Add(theInterpreter, "checksection", CheckSection);
         DrawCxx.Add(theInterpreter, "computetolerance", ComputeTolerance);
+        DrawCxx.Add(theInterpreter, "validrange", ValidRange);
+    }
+
+    // validrange edge [(out) u1 u2]
+    private static int ValidRange(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int narg = a.Count;
+        if (narg < 2)
+        {
+            di.Append("usage: validrange edge [(out) u1 u2]");
+            return 1;
+        }
+
+        TopoDS_Edge aE = TopoDS.Edge(theDI.GetShape(a[1], TopAbs_EDGE, true));
+        if (aE.IsNull())
+        {
+            return 1;
+        }
+
+        double u1 = 0.0, u2 = 0.0;
+        if (BRepLib.FindValidRange(aE, ref u1, ref u2))
+        {
+            if (narg > 3)
+            {
+                theDI.SetNumber(a[2], u1);
+                theDI.SetNumber(a[3], u2);
+            }
+            else
+            {
+                di.Append(u1).Append(" ").Append(u2);
+            }
+        }
+        else
+        {
+            di.Append("edge has no valid range");
+        }
+        return 0;
     }
 
     /// <summary>

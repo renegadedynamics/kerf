@@ -292,7 +292,9 @@ public class ShapeCustomTests
     [Fact]
     public void Modifications_SendTheirMessages()
     {
-        ShapeExtend.Init();
+        // what ShapeExtend.Init loads, loaded unconditionally: Init skips it once another test's Msg has stored an
+        // unknown-keyword text under its probe keyword (see SHMessageTests)
+        Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
         TopoDS_Shape aBox = Mirrored(Box());
         var aDM = new ShapeCustom_DirectModification();
         var aMsg = new ShapeExtend_MsgRegistrator();

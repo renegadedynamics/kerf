@@ -1101,3 +1101,17 @@ Phase 7 (part): ShapeCustom, the healing pilot (unit 7A).
   primitives, Boolean results, swept and mirrored shapes, the heal group's inputs and data/occ (5,919 runs, all
   identical); `tools/shcustomrec` records BSplineRestriction with other restriction parameters and the geometry
   tools on 556 inputs (8,878 records, all identical).
+Phase 7 (part): Draw-lite's cheap gaps (unit 7W).
+
+- Draw-lite: Draw's `dversion`, `meminfo`, `lastrep`, `dmode`, `discr`, `defle`, `XProgress`, `removeinternals` and
+  `repaint` (a viewer no-op); the geometry commands `proj`, `to2d`, `to3d`, `project`, `projonplane`, `crvpoints`,
+  `crvtpoints`, `2dproj`, `2dextrema`, `2dintersect`, `2dintanalytical`, `intconcon`, `incdeg`, `insertpole`,
+  `cmovepoint`, `convert`, `segsur`, `setweight`; the topology commands `validrange`, `shape`, `subshape`,
+  `BRepIntCS`, `xbounds`, `xclassify` and `concatC0wire`. `prism` and `revol` record their history. The corpus scan
+  reads the scripts of `repeat` and `do`.
+- Fixed: `BRepAlgo.ConcatenateWireC0` threw Standard_ImmutableObject when it reversed a concatenation of several
+  pieces.
+- Corpus: 512 more cases runnable (10,617 of 21,068): OK 337, BAD 18 (OCCT's TODOs), 138 missing data, 19 failing for
+  attributed reasons (progress output, the viewer's mesh, phase 7's evolved volume mode). The four cases the new scan
+  default exposed are fixed (bug29586) or attributed (bug23881 and bug29333_2: DRAWEXE's destructive Booleans;
+  bug26034: native OCCT built with exceptions fails it too).

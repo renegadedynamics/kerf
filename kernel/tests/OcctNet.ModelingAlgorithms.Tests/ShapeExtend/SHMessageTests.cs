@@ -14,6 +14,10 @@ public class SHMessageTests
         ShapeExtend.Init();
         ShapeExtend.Init(); // once
         Assert.True(Message_MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"));
+        // As OCCT's, Init loads only when its probe keyword is missing, and Msg stores an unknown keyword's error text
+        // under that keyword: a test that ran ShapeFix_FixSmallSolid before Init leaves the table without the texts
+        // for the rest of the process. Load them again, as Init would have.
+        Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
         Assert.Equal("Face converted to BSpline", Message_MsgFile.Msg("BSplineRestriction.NewSurface.MSG0"));
         Assert.Equal("Info: Shape Processing: Operator %d/%d: %s", Message_MsgFile.Msg("SP.Sequence.Info.Operator"));
         Assert.Equal("Edge %d was small, removed", new Message_Msg("FixAdvWire.FixSmall.MSG5").Original());

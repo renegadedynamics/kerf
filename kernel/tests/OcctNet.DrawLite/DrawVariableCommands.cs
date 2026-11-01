@@ -7,8 +7,13 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// Draw's variable commands (Draw_VariableCommands.cxx): bsave, brestore, isdraw, isprot, dtyp, dval, dname, dump,
-/// copy, renamevar, dset, protect and unprotect, autodisplay, and the numeric functions.
+/// copy, renamevar, dset, protect and unprotect, autodisplay, lastrep, and the numeric functions.
 /// </summary>
+/// <remarks>
+/// <c>lastrep</c> returns the last pick, which only <c>pick</c> in a view sets: Draw-lite has no views, so it always
+/// returns OCCT's initial values (view 0, at 0 0, button 0, no name), as a DRAWEXE that has picked nothing. With
+/// four names it converts the pick by the view's zoom, which a batch DRAWEXE gives as 0, so the coordinates are NaN.
+/// </remarks>
 internal static class DrawVariableCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
@@ -27,6 +32,7 @@ internal static class DrawVariableCommands
         DrawCxx.Add(theInterpreter, "protect", Protect);
         DrawCxx.Add(theInterpreter, "unprotect", Protect);
         DrawCxx.Add(theInterpreter, "autodisplay", AutoDisplay);
+        DrawCxx.Add(theInterpreter, "lastrep", LastRep);
         foreach (string aName in new[] { "cos", "sin", "tan", "acos", "asin", "atan2", "sqrt" })
         {
             DrawCxx.Add(theInterpreter, aName, Trigo);
@@ -296,6 +302,50 @@ internal static class DrawVariableCommands
         }
 
         di.Append(aValue);
+        return 0;
+    }
+
+    // the last pick (Draw_VariableCommands.cxx's p_id, p_X, p_Y, p_b, p_Name): never set without a view
+    private const int p_id = 0;
+    private const int p_X = 0;
+    private const int p_Y = 0;
+    private const int p_b = 0;
+    private const string p_Name = "";
+
+    // lastrep id X Y [Z] b, return name
+    private static int LastRep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 5)
+        {
+            return 1;
+        }
+
+        theDI.SetNumber(a[1], p_id);
+        if (n == 5)
+        {
+            theDI.SetNumber(a[2], p_X);
+            theDI.SetNumber(a[3], p_Y);
+        }
+        else if (n == 6)
+        {
+            // OCCT: dout.Zoom(p_id) is false (0) in batch mode, so the pick is NaN; dout.GetTrsf leaves the identity
+            double z = 0.0;
+            var P = new gp_Pnt(p_X / z, p_Y / z, 0);
+            var T = new gp_Trsf();
+            T.Invert();
+            P.Transform(T);
+            theDI.SetNumber(a[2], P.X());
+            theDI.SetNumber(a[3], P.Y());
+            theDI.SetNumber(a[4], P.Z());
+        }
+        else
+        {
+            di.Append("Too many args");
+            return 1;
+        }
+        theDI.SetNumber(a[n - 1], p_b);
+        di.Append(p_Name);
         return 0;
     }
 
