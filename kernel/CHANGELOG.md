@@ -1153,3 +1153,16 @@ Phase 7 (part): the offset foundations (unit 7E).
   MakeSimpleOffset's solid mode and BRepOffset_Offset's pipes and spheres never write into a caller's shape.
 - Tests: `tools/offsetrec` records native Analyse, Offset and MakeSimpleOffset on 40 primitives, Boolean and fillet
   results and data/occ shapes: 1,984 records, all byte-identical (two are the same exception).
+
+Phase 7 (part): LocOpe (unit 7H).
+
+- LocOpe, TKFeat's local operations: SplitShape, WiresOnShape, Spliter, BuildWires, BuildShape, Generator,
+  GeneratedShape, GluedShape, Gluer, SplitDrafts, Prism, DPrism, Revol, RevolutionForm, Pipe, LinearForm, FindEdges,
+  FindEdgesInFace, CSIntersector, CurveShapeIntersector, the package functions, PntFace and Operation.
+- The caller's shapes are never written: each operation works on copies of the frozen shapes it is given, all sharing
+  their copies, and gives back the caller's sub-shapes it left unchanged (decisions 8901, 8902). Results are frozen;
+  BRepFeat (unit 7I) reads the Internal forms.
+- Tests: unit tests per class on frozen inputs; `tools/locoperec` records native LocOpe on 119 inputs (primitives,
+  data/occ's shapes, the feat group's data files): 5,201 records, all identical (DPrism's shapes compared canonically:
+  native varies run to run).
+- Fix: BRepFill_OffsetWire down-casts its spine's plane as OCCT does (decision 8906).

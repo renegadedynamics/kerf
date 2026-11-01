@@ -597,7 +597,8 @@ public sealed class BRepFill_OffsetWire
         NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<TopoDS_Shape>> MapBis = new(TopTools_ShapeMapHasher.Instance);
         NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<double>> MapVerPar = new(TopTools_ShapeMapHasher.Instance);
 
-        Geom_Plane RefPlane = (Geom_Plane)BRep_Tool.Surface(myWorkSpine)!;
+        // OCCT.NET: OCCT down-casts (a null plane on another surface, dereferenced below: an access violation natively)
+        Geom_Plane RefPlane = (BRep_Tool.Surface(myWorkSpine) as Geom_Plane)!;
         if (Math.Abs(Alt) > gp.Resolution())
         {
             double anAlt = Alt;

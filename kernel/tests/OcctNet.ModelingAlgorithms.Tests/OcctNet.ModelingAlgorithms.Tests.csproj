@@ -62,6 +62,8 @@
     <EmbeddedResource Include="ShapeUpgrade\Recordings\shupgraderec.txt.gz" LogicalName="ShapeUpgrade.shupgraderec.txt.gz" />
     <!-- Native OCCT's BRepOffset_Analyse, BRepOffset_Offset and BRepOffset_MakeSimpleOffset, recorded by tools/offsetrec (unit 7E) -->
     <EmbeddedResource Include="BRepOffset\Recordings\offsetrec.txt.gz" LogicalName="BRepOffset.offsetrec.txt.gz" />
+    <!-- Native OCCT's LocOpe local operations, recorded by tools/locoperec (unit 7H) -->
+    <EmbeddedResource Include="LocOpe\Recordings\locoperec.txt.gz" LogicalName="LocOpe.locoperec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->

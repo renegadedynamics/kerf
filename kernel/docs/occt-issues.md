@@ -1468,3 +1468,26 @@ the last column says otherwise.
 | BRepOffset_MakeSimpleOffset `GetSafeOffset` | Divides by `myMaxAngle`, which is 0 for a smooth shape | Infinite or NaN. Reproduced |
 | BRepOffset_MakeSimpleOffset `BuildMissingWalls` | `IsClosed` on a null shell when the quilt makes none (an edge in solid mode) | An access violation natively; Standard_NullObject in the port (decision 1010) |
 | BRepOffset_MakeSimpleOffset, solid mode | Writes the walls' pcurves into the input's free edges and raises their vertices' tolerances | A second run on the same input gives another result natively (decision 1010). The port copies at the entry (decision 1006), so the input is never written |
+## Phase 7: unit 7H, LocOpe
+
+Found by porting LocOpe and recording it natively (tools/locoperec). The port reproduces each, unless the last column
+says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| LocOpe_SplitShape, WiresOnShape, Spliter, Generator, Gluer, SplitDrafts, the sweeps | Write into the shapes they are given: vertices' point representations and tolerances, edges' pcurves and continuities, the split shape's faces (plan 2.2) | The caller's shapes change. The port works on copies of frozen shapes and gives back the unchanged ones (decisions 1013, 1014) |
+| LocOpe_SplitDrafts `Perform` | Builds a GeomFill_Pipe on the two drafted planes' intersection, an infinite Geom_Line, which GeomConvert can't convert ("No such curve") | Throws Standard_DomainError whenever the planes meet (natively on all 229 such recorded cases; the 133 others aren't done): the class can't draft a plane. Reproduced |
+| LocOpe_SplitDrafts `Perform` | After the right edge is built, tests the left one (`NewEdgg`) again; the tolerance compared is NewEdgg's twice | Reproduced |
+| LocOpe_DPrism (through BRepFill_Evolved) | The order of an edge's two pcurves in the result, and the last bits of the faces' areas, follow addresses | Native's BRep text varies run to run; the oracle compares the shapes canonically (decision 1017) |
+| LocOpe_CSIntersector `LocalizeBefore(I, FromInd, ...)` | No index version of `LocBefore` exists: the index converts to the double parameter `From` | Searches before the parameter equal to the index. Reproduced |
+| LocOpe_WiresOnShape `Add` | Puts each argument's box at the argument's index but its edges at the next free indices; an argument with several edges (a wire) leaves boxes and edges out of step | Edges tested against another edge's box. Reproduced |
+| LocOpe_WiresOnShape `Project` | The V resolution is computed with `UResolution` | Reproduced |
+| LocOpe_WiresOnShape `PutPCurve` | The branch for internal vertices (`!V1.IsNull() && V2.IsNull()`) reads the tolerance and point of the null V2 | Throws when reached. Reproduced |
+| LocOpe_FindEdges `Set` | Compares B-spline knots with `Kf(k) - Kt(k) > Tol`, not in absolute value | Knots smaller than the other's pass. Reproduced |
+| LocOpe_Pipe | Corrects the orientation of a fused planar face's normal with the reference plane's `Direct()`, not the face's own plane's | Reproduced |
+| LocOpe_Pipe `Curves`, `BarycCurve` | A straight spine's pipe lines are infinite lines, which GeomConvert can't convert; `BarycCurve` with no curve appends a null curve and goes on to read the first | Throws Standard_DomainError / Standard_OutOfRange. Reproduced |
+| LocOpe_Generator `Perform` | Computes whether a face's wire touches the removed edges (`isIncludedInW`) and doesn't use it | Reproduced |
+| LocOpe_Gluer `AddEdges` | Computes, for each face of the result, the new shape's edges touching it, and keeps nothing | Reproduced (for its cost) |
+| LocOpe_Revol, LocOpe_RevolutionForm | Declare constructors taking the base and the axis without defining them; RevolutionForm never sets its rotation (`myIsTrans` stays false) | The constructors are left out (decision 1015) |
+| LocOpe_LinearForm | Stores the two points it is given and never reads them | Reproduced |
+| LocOpe_Spliter `Perform` | Builds the left part from maps keyed by addresses | `Left()`'s order varies natively; the oracle compares it as a set |
