@@ -82,9 +82,10 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         // After 5S2: OK 53, BAD 1 (pipe/standard/B1, OCCT's own TODO OCC22741: faulty shapes), SKIPPED 4 (data files
         // missing); none failing. After 6L (the Boolean commands its scripts call): 61 runnable, OK 56. With procedures
         // counted only once called (open question 29): 103 runnable, OK 69, BAD 4, SKIPPED 30. With unit 7W's commands
-        // (three more cases using them): 106 runnable, OK 71, BAD 4, SKIPPED 31.
+        // (three more cases using them): 106 runnable, OK 71, BAD 4, SKIPPED 31. With unit 7C's healing commands
+        // (bugs/modalg_7/bug30140 calls offsetcurve): 107 runnable, OK 72.
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
-        Assert.Equal(71, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(72, aRuns.Count(r => r.Status == "OK"));
     }
 }

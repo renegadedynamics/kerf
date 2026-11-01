@@ -86,6 +86,10 @@ internal static class DrawBuiltins
         DrawSourceFiles.Register(theInterpreter);
         // unit 7D: the helix commands
         BRepTestHelixCommands.Register(theInterpreter);
+        // unit 7C: SWDRAW's ShapeCustom commands (the ShapeUpgrade ones are in SWDrawShapeUpgradeCommands). DRAWEXE's
+        // SWDRAW::Init loads Shape Healing's messages (ShapeExtend::Init, process-wide and once, decision 975)
+        SWDRAWShapeCustomCommands.Register(theInterpreter);
+        Occt.ShapeExtend.Init();
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>
