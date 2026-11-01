@@ -11622,3 +11622,19 @@ renumbered on merge.
        - Corners: PerformOneCorner 62, PerformTwoCorner 37 (fillets and chamfers), PerformThreeCorner 22,
          PerformMoreThreeCorner 1 (the pyramid's apex); not reached: PerformIntersectionAtEnd, PerformMoreSurfdata,
          PerformSingularCorner, and fillets ending on a free boundary inside a face (ExtentOneCorner only).
+
+## Phase 7: unit 7R2, the reconstruction's follow-up (7N2's invalid results)
+
+11101. **The two invalid results end to end are native's, not the reconstruction's.** Unit 7N2's pipeline gave
+       results BRepCheck rejects in two cases; `tools/dsrec --recon` now records native's result for both (built through
+       BRep text as dsrec builds them: their data structures equal dsrec.txt's byte for byte, and 7N2's equal native's).
+       `pyramid_base_edges`: native's result fails with the same faults (FACE UnorientableShape, WIRE
+       SelfIntersectingWire), and the reconstruction from native's data structure equals native's geometrically
+       (volume, area, counts, box, history). `b3d_fail_box_top_edges_r6` (a box of 10, its top edges with a radius
+       of 6, over half its width): native says done, but two corner faces have negative areas and its result fails
+       with BadOrientationOfSubshape and IntersectingWires (the fillets cross on the top face); the reconstruction
+       builds no face on those two degenerate surfaces and has native's IntersectingWires. So the data ChFi3d computes
+       (faithfully ported: the data structure is native's) is invalid there, and nothing is changed in the
+       reconstruction or in ChFi3d. `ReconstructionNativeTests.InvalidWhereNativeIs` checks the faults against
+       native's; 7N2's `KnownInvalidResults` keeps the two cases, attributed, and its end-to-end comparison with
+       native skips the degenerate one (`NativeDegenerate`).

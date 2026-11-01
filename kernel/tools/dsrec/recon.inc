@@ -425,6 +425,20 @@ static void RecordReconCases(const char* theDataDir)
     Record("fail_cube_radius_6", aCube, false, EdgesWhere(aCube, 6, [](const TopoDS_Edge&) { return true; }));
   }
 
+  // two of unit 7N2's cases whose reconstructed results BRepCheck rejected (unit 7R2): built as dsrec builds them,
+  // through BRep text, so that the data structure is dsrec.txt's
+  {
+    BRepBuilderAPI_MakePolygon aSq(gp_Pnt(0, 0, 0), gp_Pnt(100, 0, 0), gp_Pnt(100, 100, 0), gp_Pnt(0, 100, 0), true);
+    BRepOffsetAPI_ThruSections aTS(true, true);
+    aTS.AddWire(aSq.Wire());
+    aTS.AddVertex(BRepBuilderAPI_MakeVertex(gp_Pnt(50, 50, 80)).Vertex());
+    aTS.Build();
+    TopoDS_Shape aPyr = ThroughText(aTS.Shape());
+    Record("pyramid_base_edges", aPyr, false, All(EdgesAtZ(aPyr, 0), 5));
+    TopoDS_Shape b = ThroughText(CBox(10, 10, 10));
+    Record("b3d_fail_box_top_edges_r6", b, false, All(EdgesAtZ(b, 5), 6));
+  }
+
   if (theDataDir != nullptr)
   {
     RecordComplexCases(theDataDir);

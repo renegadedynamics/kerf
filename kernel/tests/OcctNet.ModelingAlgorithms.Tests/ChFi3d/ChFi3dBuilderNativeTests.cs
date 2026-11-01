@@ -297,9 +297,20 @@ public class ChFi3dBuilderNativeTests
     /// The cases that reach Perform, end to end: done, a valid result; and where unit 7R recorded native's result for
     /// the same case (tools/dsrec --recon), the same volume, area and face, edge and vertex counts.
     /// </summary>
-    /// <summary>Cases whose reconstructed result BRepCheck rejects (unit 7R to look at).</summary>
+    /// <summary>
+    /// Cases whose result BRepCheck rejects, as native's (decision 11101: native's data structure is the same byte for
+    /// byte, and native's result fails BRepCheck with the same faults).
+    /// </summary>
     private static readonly HashSet<string> KnownInvalidResults =
-        ["b3d_fail_box_top_edges_r6" /* FACE: IntersectingWires */, "pyramid_base_edges" /* UnorientableShape, SelfIntersectingWire */];
+    [
+        "b3d_fail_box_top_edges_r6" /* FACE: IntersectingWires; native's too, and BadOrientationOfSubshape */,
+        "pyramid_base_edges" /* UnorientableShape, SelfIntersectingWire: native's the same, its geometry equal */,
+    ];
+
+    /// <summary>
+    /// Cases whose native result is degenerate (faces of negative area): not compared with it (decision 11101).
+    /// </summary>
+    private static readonly HashSet<string> NativeDegenerate = ["b3d_fail_box_top_edges_r6"];
 
     [Theory]
     [MemberData(nameof(CaseNames))]
@@ -316,7 +327,8 @@ public class ChFi3dBuilderNativeTests
         bool aValid = new BRepCheck_Analyzer(aMine).IsValid();
         // attributed to the reconstruction (unit 7R), whose recording has no native result for these unit 7N2 cases
         Assert.True(aValid != KnownInvalidResults.Contains(theName), theName + " " + ReconComparison.Faults(aMine));
-        if (ReconRecordings.Cases.TryGetValue(theName, out ReconCase? aRecon) && aRecon.Result is TopoDS_Shape aNative)
+        if (!NativeDegenerate.Contains(theName) && ReconRecordings.Cases.TryGetValue(theName, out ReconCase? aRecon)
+            && aRecon.Result is TopoDS_Shape aNative)
         {
             Assert.Equal(ReconComparison.Volume(aNative), ReconComparison.Volume(aMine), 1.0e-6 * Math.Abs(ReconComparison.Volume(aNative)) + 1.0e-9);
             Assert.Equal(ReconComparison.Area(aNative), ReconComparison.Area(aMine), 1.0e-6 * ReconComparison.Area(aNative));
