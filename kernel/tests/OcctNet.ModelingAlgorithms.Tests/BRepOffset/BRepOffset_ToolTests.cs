@@ -320,4 +320,47 @@ public class BRepOffset_ToolTests
         Assert.False(BRepOffset_Tool.TryProject(FOpp, F2, aEdges, L1, L2, TopAbs_IN, 1e-6));
         Assert.True(L1.IsEmpty());
     }
+    // A B-spline face's working offset face: BRepOffset_Offset puts it on an offset surface.
+    private static TopoDS_Face OffsetCylinderFace(out TopoDS_Face theFace)
+    {
+        TopoDS_Shape aCyl = new BRepBuilderAPI_NurbsConvert(new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape()).Shape();
+        theFace = Face(aCyl, 1);
+        return new BRepOffset_Offset(theFace, -1.0).InternalFace();
+    }
+
+    [Fact]
+    public void EnLargeFace_PutsTheEnlargedOffsetSurfaceOnAWorkingFace_AsOCCTDoesInPlace()
+    {
+        // decision 1101: OCCT sets the enlarged basis on the face's own offset surface, so the face lies on it after
+        TopoDS_Face anOF = OffsetCylinderFace(out _);
+        Geom_Surface aBefore = BRep_Tool.Surface(anOF)!;
+        Assert.IsType<Geom_OffsetSurface>(aBefore);
+        aBefore.Bounds(out _, out _, out double v1, out double v2);
+        string aCheck = new BRepCheck_Analyzer(anOF).IsValid().ToString();
+        TopoDS_Face aNF = new();
+        Assert.True(BRepOffset_Tool.EnLargeFace(anOF, ref aNF, true));
+        Geom_Surface anAfter = BRep_Tool.Surface(anOF)!;
+        Assert.NotSame(aBefore, anAfter);
+        Assert.Same(BRep_Tool.Surface(aNF), anAfter);
+        anAfter.Bounds(out _, out _, out double w1, out double w2);
+        Assert.True(w1 < v1 && w2 > v2);
+        // the face's edges keep their pcurves, now on the enlarged surface
+        for (TopExp_Explorer anExp = new(anOF, TopAbs_EDGE); anExp.More(); anExp.Next())
+        {
+            Assert.NotNull(BRep_Tool.CurveOnSurface(TopoDS.Edge(anExp.Current()), anOF, out _, out _));
+        }
+        Assert.Equal(aCheck, new BRepCheck_Analyzer(anOF).IsValid().ToString());
+    }
+
+    [Fact]
+    public void EnLargeFace_LeavesAFrozenFacesSurface()
+    {
+        TopoDS_Face anOF = OffsetCylinderFace(out _);
+        anOF.TShape()!.FreezeGraph(); // a caller's face
+        Geom_Surface aBefore = BRep_Tool.Surface(anOF)!;
+        TopoDS_Face aNF = new();
+        Assert.True(BRepOffset_Tool.EnLargeFace(anOF, ref aNF, true));
+        Assert.Same(aBefore, BRep_Tool.Surface(anOF));
+        Assert.NotSame(aBefore, BRep_Tool.Surface(aNF));
+    }
 }

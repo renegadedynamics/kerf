@@ -161,6 +161,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                         aFix.Add(N.TopoDS.Wire(anIt.Value()));
                     }
                 }
+                GC.KeepAlive(theFace); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
                 theDone = aFix.Perform();
                 break;
             }

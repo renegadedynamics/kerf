@@ -74,6 +74,28 @@ public class BRepTools_History : Standard_Transient
     }
 
     /// <summary>
+    /// A copy of <paramref name="theOther"/>: its maps copied as they are (OCCT's implicit copy constructor; decision
+    /// 10404). <see cref="Merge(BRepTools_History?)"/> into an empty history isn't a copy: it drops the removal of a
+    /// shape that also generated or was modified.
+    /// </summary>
+    public BRepTools_History(BRepTools_History theOther)
+    {
+        ArgumentNullException.ThrowIfNull(theOther);
+        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aPair in theOther.myShapeToModified)
+        {
+            myShapeToModified.Bind(aPair.Key, new NCollection_List<TopoDS_Shape>(aPair.Value));
+        }
+        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aPair in theOther.myShapeToGenerated)
+        {
+            myShapeToGenerated.Bind(aPair.Key, new NCollection_List<TopoDS_Shape>(aPair.Value));
+        }
+        foreach (TopoDS_Shape aShape in theOther.myRemoved)
+        {
+            myRemoved.Add(aShape);
+        }
+    }
+
+    /// <summary>
     /// The history of an algorithm with the standard history methods, for the vertices, edges, faces and solids of
     /// its arguments.
     /// </summary>

@@ -63,6 +63,75 @@ public class TopoDS_Builder
         return aCompound;
     }
 
+    /// <summary>
+    /// A frozen wire of the given edges, as OCCT's <c>MakeWire</c> and <c>Add</c> make it (OCCT.NET addition, decision
+    /// 10404): no flag is set and no geometry is checked.
+    /// </summary>
+    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't an edge.</exception>
+    public static TopoDS_Wire MakeWire(IEnumerable<TopoDS_Shape> theEdges)
+    {
+        TopoDS_Wire aWire = new TopoDS_Wire();
+        new TopoDS_Builder().MakeWire(ref aWire);
+        Fill(aWire, theEdges, "MakeWire");
+        return aWire;
+    }
+
+    /// <summary>
+    /// A frozen shell of the given faces, as OCCT's <c>MakeShell</c> and <c>Add</c> make it (OCCT.NET addition,
+    /// decision 1104): no flag is set (it isn't marked closed) and no geometry is checked.
+    /// </summary>
+    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a face.</exception>
+    public static TopoDS_Shell MakeShell(IEnumerable<TopoDS_Shape> theFaces)
+    {
+        TopoDS_Shell aShell = new TopoDS_Shell();
+        new TopoDS_Builder().MakeShell(ref aShell);
+        Fill(aShell, theFaces, "MakeShell");
+        return aShell;
+    }
+
+    /// <summary>
+    /// A frozen solid of the given shells (or edges and vertices), as OCCT's <c>MakeSolid</c> and <c>Add</c> make it
+    /// (OCCT.NET addition, decision 1104): the shells are taken as they are oriented, nothing is checked.
+    /// </summary>
+    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a shell, an edge or a vertex.</exception>
+    public static TopoDS_Solid MakeSolid(IEnumerable<TopoDS_Shape> theShells)
+    {
+        TopoDS_Solid aSolid = new TopoDS_Solid();
+        new TopoDS_Builder().MakeSolid(ref aSolid);
+        Fill(aSolid, theShells, "MakeSolid");
+        return aSolid;
+    }
+
+    /// <summary>
+    /// A frozen composite solid of the given solids, as OCCT's <c>MakeCompSolid</c> and <c>Add</c> make it (OCCT.NET
+    /// addition, decision 1104).
+    /// </summary>
+    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a solid.</exception>
+    public static TopoDS_CompSolid MakeCompSolid(IEnumerable<TopoDS_Shape> theSolids)
+    {
+        TopoDS_CompSolid aCompSolid = new TopoDS_CompSolid();
+        new TopoDS_Builder().MakeCompSolid(ref aCompSolid);
+        Fill(aCompSolid, theSolids, "MakeCompSolid");
+        return aCompSolid;
+    }
+
+    // Adds the shapes to the new shape and freezes it.
+    private static void Fill(in TopoDS_Shape theShape, IEnumerable<TopoDS_Shape> theShapes, string theWhat)
+    {
+        var aBuilder = new TopoDS_Builder();
+        foreach (TopoDS_Shape aComponent in theShapes)
+        {
+            Standard_NullObject_Raise_if(aComponent.IsNull(), $"TopoDS_Builder::{theWhat}: a shape is null");
+            aBuilder.Add(theShape, aComponent);
+        }
+
+        theShape.TShape()!.FreezeGraph();
+    }
+
     /// <summary>Makes an empty wire.</summary>
     internal void MakeWire(ref TopoDS_Wire W)
     {

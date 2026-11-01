@@ -75,7 +75,7 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
                                    TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
         List<DrawCaseRun> aRuns = [.. aNew.Where(c => !UsesMemory(c)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                           .Select(RunOne),
-                                   .. aNew.Where(UsesMemory).Select(RunOne)];
+                                   .. aNew.Where(UsesMemory).Select(c => DrawCheapGapsCorpusTests.RunMemoryCase(aCorpus, c))];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7G: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                               .OrderBy(g => g.Key, StringComparer.Ordinal)
@@ -116,9 +116,10 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
 
         // unit 7G: 1,687 newly runnable (471 with data): OK 405, BAD 63 (OCCT's TODOs), SKIPPED 1,216 (data not public),
         // FAILED 3, attributed (KnownFailures); 67 cases using the commands still miss others (the viewer, IGES, the
-        // feature commands of 7I, blend). With 7I's feature commands merged: 1,696 newly runnable, OK 414, FAILED 3 as before
+        // feature commands of 7I, blend). With 7I's feature commands merged: 1,696 newly runnable, OK 414, FAILED 3 as before.
+        // Unit 7Y: bug5805_3 and _4 pass (decision 1101): OK 416, FAILED 1
         Assert.Equal(1696, aNew.Count);
-        Assert.Equal(414, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(416, aRuns.Count(r => r.Status == "OK"));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
     }
@@ -126,11 +127,6 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7G).</summary>
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
-        // BRepOffsetAPI_MakeThickSolid (unit 7F) on OCC5805.brep with a closing face differs from native: four extra
-        // faces on offset surfaces, without edges, in shells of their own (decision 1049; native's result checked against
-        // build123d.NET's binding)
-        ["bugs/modalg_2/bug5805_3"] = "7F: thick solid on OCC5805.brep",
-        ["bugs/modalg_2/bug5805_4"] = "7F: thick solid on OCC5805.brep",
         // the progress indicator's output (XProgress), which Draw-lite's commands don't make (decision 954)
         ["bugs/modalg_7/bug32330"] = "progress",
     };

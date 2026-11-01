@@ -210,6 +210,64 @@ public class FreezingTests
     }
 
     [Fact]
+    public void MakeWire_MakeShell_MakeSolid_and_MakeCompSolid_return_frozen_shapes()
+    {
+        // decision 1104: OCCT's MakeX then Add, for callers, as MakeCompound
+        TopoDS_Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0)));
+        TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0)));
+        TopoDS_Wire aWire = TopoDS_Builder.MakeWire([anE1, anE2]);
+        Assert.True(aWire.TShape()!.IsFrozen());
+        Assert.Equal(2, aWire.NbChildren());
+        Assert.False(aWire.Closed());
+        Assert.True(new TopoDS_Iterator(aWire).Value() == anE1);
+
+        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        var aFaces = new List<TopoDS_Shape>();
+        for (var anExp = new TopExp_Explorer(aBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        {
+            aFaces.Add(anExp.Current());
+        }
+        TopoDS_Shell aShell = TopoDS_Builder.MakeShell(aFaces);
+        Assert.True(aShell.TShape()!.IsFrozen());
+        Assert.Equal(6, aShell.NbChildren());
+        Assert.False(aShell.Closed()); // as OCCT's builder leaves it
+        TopoDS_Solid aSolid = TopoDS_Builder.MakeSolid([aShell]);
+        Assert.True(aSolid.TShape()!.IsFrozen());
+        Assert.True(new TopoDS_Iterator(aSolid).Value() == aShell);
+        TopoDS_CompSolid aCS = TopoDS_Builder.MakeCompSolid([aSolid, aSolid.Moved(new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(1, 0, 0))))]);
+        Assert.True(aCS.TShape()!.IsFrozen());
+        Assert.Equal(2, aCS.NbChildren());
+
+        // OCCT's rules: only faces into a shell, solids into a compsolid; no null shape
+        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeShell([anE1]));
+        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeCompSolid([aShell]));
+        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeWire([aShell]));
+        Assert.Throws<Standard_NullObject>(() => TopoDS_Builder.MakeSolid([new TopoDS_Shape()]));
+        Assert.Equal(0, TopoDS_Builder.MakeShell([]).NbChildren());
+    }
+
+    [Fact]
+    public void A_history_copy_has_the_same_maps_and_is_independent()
+    {
+        // decision 1104: OCCT's implicit copy constructor
+        TopoDS_Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0)));
+        TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0)));
+        TopoDS_Edge anE3 = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(1, 1, 0), new gp_Pnt(0, 1, 0)));
+        var aH = new BRepTools_History();
+        aH.AddGenerated(anE1, anE3);
+        aH.Remove(anE1); // a shape removed that also generated: Merge into an empty history drops the removal
+        aH.AddModified(anE2, anE1);
+        var aCopy = new BRepTools_History(aH);
+        Assert.True(aCopy.IsRemoved(anE1));
+        Assert.True(aCopy.Generated(anE1).Single().IsSame(anE3));
+        Assert.True(aCopy.Modified(anE2).Single().IsSame(anE1));
+        aH.AddModified(anE2, anE3);
+        Assert.Single(aCopy.Modified(anE2));
+        aH.Clear();
+        Assert.True(aCopy.HasModified() && aCopy.HasGenerated() && aCopy.HasRemoved());
+    }
+
+    [Fact]
     public void FreezeGraph_survives_deep_nesting_and_cycles()
     {
         // built from the inside out, as OCCT requires (a shape is filled before it is added)

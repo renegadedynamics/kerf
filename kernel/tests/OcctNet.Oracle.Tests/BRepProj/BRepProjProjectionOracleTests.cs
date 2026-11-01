@@ -83,6 +83,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         {
             aN.Add(anIt.Value());
         }
+        GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         var aP = new List<TopoDS_Shape>();
         for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {
@@ -298,6 +299,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             {
                 aIn.Add(anIt.Value());
             }
+            GC.KeepAlive(aRead); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             using N.BRepProj_Projection aN = theDir is { } d ? new N.BRepProj_Projection(aIn[0], aIn[1], Oracle.ToNative(d))
                                                              : new N.BRepProj_Projection(aIn[0], aIn[1], Oracle.ToNative(thePnt!.Value));
             var aNW = new List<N.TopoDS_Wire>();
