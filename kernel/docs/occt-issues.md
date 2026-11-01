@@ -1525,3 +1525,23 @@ the line), unless the last column says otherwise.
 | BRepOffset_MakeOffset, BRepOffsetAPI_MakeThickSolid | `IsDone()` with a null `Shape()` (open shells with nothing left to offset, a hollow sphere) | Reproduced (16 oracle runs); build123d.NET checks for it |
 | BSplCLib `AntiBoorScheme` through `RemoveKnot` (GeomLib::ExtendSurfByLength, the offset's face extension) | Steps outside its NCollection_LocalArray buffers, reading and writing the stack around them | Undefined natively (the tolerance test then fails); the port's `RemoveKnot` reports the removal impossible instead of throwing (decision 1034) |
 | BRepOffset_MakeOffset `SelfInter` | Throws Standard_NotImplemented | Never called. Reproduced |
+
+## Phase 7: unit 7J, the blend functions
+
+Found by porting Blend, BlendFunc and ChFiDS and by tools/blendrec. The port reproduces each (`// OCCT` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| BlendFunc_ConstRad, BlendFunc_EvolRad `ComputeValues` | The scratch values (the guide's point and derivatives, the surfaces' third derivatives) are `static thread_local`, shared by every instance on a thread, while the cache guards are per instance | An instance whose parameter is unchanged can read the guide point another instance computed last. Reproduced with `[ThreadStatic]` (decision 9601) |
+| BlendFunc_ConstRadInv `Derivatives` | `dnplan.SetLinearForm(theD, nplan, d2cur)` where `Values` has `-nplan.Dot(d2cur)` | The derivatives in the guide's parameter (rows 2 to 4) differ from `Values`' and from finite differences off the origin (decision 9602) |
+| BlendFunc_EvolRad `ComputeValues` | The order-2 positioning doesn't recompute `dns1u1`, `dns1v1`, `dns1u2`, `dns1v2` (ConstRad's does) | The second derivatives use the last order-1 values (decision 9603) |
+| BlendFunc_ConstThroatInv, ConstThroatWithPenetrationInv `Derivatives` | `temp1`, `temp2`, `tempmid`/`temp3` are computed from `pts1`, `pts2` before `D1` updates them | They are the previous call's points (the same point when `Values` calls `Value` first) |
+| BlendFunc_ChAsym `Section` (first order) | Writes `PointOnS1()`/`PointOnS2()` into the poles before computing the points | The poles are the previous computation's points |
+| BlendFunc_ChAsymInv `ComputeValues` | On the first surface's restriction, `DX(4,2)` uses `dnplan.Dot(tempVec)` with `tempVec = 2 * nps1` | Disagrees with finite differences on a curved guide (2 against 0 on the plane/cylinder case) |
+| BlendFunc_CSCircular `GetTolerance` | Passes the signed radius to GeomFill::GetTolerance (CSConstRad passes its absolute value) | A negative radius makes gp_Circ throw Standard_ConstructionError |
+| BlendFunc_EvolRad `GetTolerance` | `lengthmin / maxang` before any solution (both still at RealLast/RealFirst) gives a negative radius | gp_Circ throws Standard_ConstructionError |
+| BlendFunc_Chamfer, ConstThroat, ChAsym, Ruled (GenChamfer) `GetTolerance` | Leave `Tol1D` unset | The caller's vector keeps whatever it held (uninitialised memory natively) |
+| BlendFunc `Knots`, `Mults` | Declared, never defined | Left out |
+| ChFiDS_Stripe `Reset` | `pcrv1.Nullify()` twice | The last pcurve is kept |
+| ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost |
+| Blend_CurvPointFuncInv `NbVariables` | Documented as 3, returns 2 | Reproduced |

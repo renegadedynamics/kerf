@@ -1195,3 +1195,16 @@ Phase 7 (part): the 3D offset (unit 7F).
   results, faces and shells and data/occ's shapes, both joins and signs, with and without intersection, and
   build123d.NET's Hollow, Offset3D and Thicken calls: 724 runs, every result and history identical, canonically equal or
   attributed to native varying from run to run (decision 9206).
+
+Phase 7 (part): the blend functions (unit 7J), the first step to 3D fillets.
+
+- Blend: the function interfaces the walking and the approximation of a blend use (Blend_AppFunction, Function,
+  FuncInv, CSFunction, RstRstFunction, SurfRstFunction and the point inverses) and Blend_Point.
+- BlendFunc: the functions of constant and evolving radius fillets (ConstRad, EvolRad), chamfers (Chamfer, ConstThroat,
+  ConstThroatWithPenetration, ChAsym), ruled blends, and fillets between a surface and a curve (CSConstRad,
+  CSCircular), with their inverses on restrictions, and the package's tools.
+- ChFiDS: the fillet builders' data: spines (Spine, FilSpine with its radius laws, ChamfSpine, ElSpine), stripes,
+  surface data, common points, face interferences and their maps, and the error status build123d.NET reports.
+- Tests: `tools/blendrec` records native OCCT's functions on plane, cylinder, cone and B-spline pairs and its spines on
+  a box, a cylinder and a B-spline solid: 235 cases, all identical bit for bit; derivatives against finite differences;
+  unit tests of ChFiDS's data.
