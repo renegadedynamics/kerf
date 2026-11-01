@@ -738,10 +738,27 @@ static void RecContours()
 
 #include <string>
 #include "data.cpp"
+#include "algo.cpp"
 
 int main(int argc, char** argv)
 {
   OSD::SetSignal(false);
+  if (argc > 4)
+  {
+    // the algorithms (unit 7Q2): hlrrec <foundations> <data> <test data directory> <algorithms>
+    gOut = std::fopen(argv[4], "wb");
+    try
+    {
+      RecAlgoAll(argv[3]);
+    }
+    catch (Standard_Failure& anExc)
+    {
+      std::fprintf(stderr, "%s: %s\n", typeid(anExc).name(), anExc.GetMessageString());
+      return 1;
+    }
+    std::fclose(gOut);
+    gOut = stdout;
+  }
   if (argc > 3)
   {
     // the data model (unit 7Q1): hlrrec <foundations> <data> <test data directory>

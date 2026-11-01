@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   Builds hlrrec, the native recorder of the foundations of the hidden-line removal (HLRAlgo, Intrv, Contap) (unit 7P)
-  and of its data model (HLRTopoBRep, HLRBRep_Data) (unit 7Q1), and records them for the tests
+  and of its data model (HLRTopoBRep, HLRBRep_Data) (unit 7Q1) and algorithms (HLRBRep_Algo, HLRBRep_PolyAlgo,
+  HLRAppli_ReflectLines) (unit 7Q2), and records them for the tests
   (tests/OcctNet.ModelingAlgorithms.Tests/Contap/Recordings/hlrrec.txt.gz, HLRBRep/Recordings/hlrdata.txt.gz).
     tools/hlrrec/build.ps1 [-Build123dNetRoot ..\build123d.net] [-Out <dir>] [-TestDataDir <opencascade-dataset>]
   Needs Visual Studio's C++ tools and build123d.NET's native OCCT build (its .deps/install/win-x64: headers, import
@@ -30,11 +31,11 @@ try {
     /Fe"hlrrec.exe" (Join-Path $PSScriptRoot 'main.cpp') /link $libs
   if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
   $env:PATH = "$(Join-Path $inst 'bin');$env:PATH"
-  & .\hlrrec.exe (Join-Path $Out 'hlrrec.txt') (Join-Path $Out 'hlrdata.txt') $TestDataDir
+  & .\hlrrec.exe (Join-Path $Out 'hlrrec.txt') (Join-Path $Out 'hlrdata.txt') $TestDataDir (Join-Path $Out 'hlralgo.txt')
   if ($LASTEXITCODE -ne 0) { throw "hlrrec failed ($LASTEXITCODE)" }
   # The tests embed them gzipped: tests/OcctNet.ModelingAlgorithms.Tests/Contap/Recordings/hlrrec.txt.gz (unit 7P) and
-  # tests/OcctNet.ModelingAlgorithms.Tests/HLRBRep/Recordings/hlrdata.txt.gz (unit 7Q1)
-  foreach ($name in 'hlrrec', 'hlrdata') {
+  # tests/OcctNet.ModelingAlgorithms.Tests/HLRBRep/Recordings/hlrdata.txt.gz (unit 7Q1) and hlralgo.txt.gz (unit 7Q2)
+  foreach ($name in 'hlrrec', 'hlrdata', 'hlralgo') {
     $bytes = [IO.File]::ReadAllBytes((Join-Path $Out "$name.txt"))
     $gz = [IO.File]::Create((Join-Path $Out "$name.txt.gz"))
     $zip = New-Object IO.Compression.GZipStream($gz, [IO.Compression.CompressionLevel]::Optimal)
