@@ -21,8 +21,8 @@ namespace Occt;
 /// solids. With theIsProfOnSpine the profile must touch the spine.
 /// </para>
 /// <para>
-/// Not available in this unit: the volume mode (theIsVolume, BRepFill_AdvancedEvolved, which removes
-/// self-intersections with the Boolean operations; phase 7) throws <see cref="Standard_NotImplemented"/>.
+/// The volume mode (theIsVolume) builds the evolved volume with <see cref="BRepFill_AdvancedEvolved"/> (the sweep
+/// with its self-intersections removed by the Boolean operations); the spine of a face is its first wire.
 /// </para>
 /// <para>
 /// A maker (decisions 414 and 454): <see cref="BRepBuilderAPI_MakeShape.Shape"/>, <see cref="Top"/>,
@@ -32,6 +32,7 @@ namespace Occt;
 public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
 {
     private readonly BRepFill_Evolved myEvolved = new();
+    private readonly BRepFill_AdvancedEvolved myVolume = new();
     private readonly bool myIsVolume;
 
     /// <summary>An empty maker.</summary>
@@ -44,7 +45,7 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
     /// face).
     /// </summary>
     /// <exception cref="Standard_TypeMismatch">The spine is neither a wire nor a face.</exception>
-    /// <exception cref="Standard_NotImplemented">The volume mode, or a join other than GeomAbs_Arc.</exception>
+    /// <exception cref="Standard_NotImplemented">A join other than GeomAbs_Arc (not in the volume mode).</exception>
     public BRepOffsetAPI_MakeEvolved(in TopoDS_Shape theSpine,
                                      in TopoDS_Wire theProfile,
                                      GeomAbs_JoinType theJoinType = GeomAbs_Arc,
@@ -62,9 +63,21 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
         }
         if (theIsVolume)
         {
-            // OCCT.NET: BRepFill_AdvancedEvolved (the Boolean operations' removal of self-intersections) is phase 7's
-            _ = theRunInParallel;
-            throw new Standard_NotImplemented("BRepOffsetAPI_MakeEvolved: the volume mode needs BRepFill_AdvancedEvolved (phase 7)");
+            myVolume.SetParallelMode(theRunInParallel);
+            TopoDS_Wire aSpine;
+            if (theSpine.ShapeType() == TopAbs_WIRE)
+            {
+                aSpine = TopoDS.Wire(theSpine);
+            }
+            else
+            {
+                aSpine = TopoDS.Wire(new TopoDS_Iterator(theSpine).Value());
+            }
+            myVolume.Perform(aSpine, theProfile, theTol, theIsSolid);
+            if (!myVolume.IsDone())
+            {
+                return;
+            }
         }
         else
         {
@@ -108,6 +121,10 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
         if (myEvolved.IsDone())
         {
             myShape = myEvolved.InternalShape();
+        }
+        else if (myVolume.IsDone())
+        {
+            myShape = myVolume.InternalShape();
         }
 
         Done();
