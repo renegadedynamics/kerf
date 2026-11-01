@@ -363,6 +363,7 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
         {
             aList.Add(anIt.Value());
         }
+        GC.KeepAlive(theShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         return aList;
     }
 

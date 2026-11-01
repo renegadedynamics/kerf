@@ -626,6 +626,7 @@ internal static class Build123dPhase7Capture
             {
                 aList.Add(anIt.Value());
             }
+            GC.KeepAlive(aC); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             return aList;
         }
         finally
