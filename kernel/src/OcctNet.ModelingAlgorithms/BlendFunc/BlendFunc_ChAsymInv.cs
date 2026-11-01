@@ -280,6 +280,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
                 DX[4, 1] = PScaInv * temp;
 
                 temp = F4 * dwtsurf1.Dot(s1s2);
+                // OCCT: disagrees with finite differences on a curved guide (decision 9604)
                 temp -= dnplan.Dot(tempVec) + nplan.Dot(dwtsurf1.Crossed(s1s2));
                 DX[4, 2] = PScaInv * temp;
 
