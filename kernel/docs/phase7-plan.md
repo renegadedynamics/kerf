@@ -235,6 +235,11 @@ native's (a recorder dumps it). Then decide (question 24), knowing exactly which
 the corpus and build123d.NET reach, and with a working fillet front end to try C's first four steps on cheaply. As of
 today A remains the safer choice: it costs more tokens once and none in triage afterwards.
 
+**Decided (owner, 1 November): option C.** The fillet builder is rebuilt on the Boolean engine (unit 7R); 7M1 to
+7M3 are dropped. 7R is designed against 7N2's working front end and the DS dumps of 7L's recorder, and its results
+are compared with native geometrically (volumes, areas, counts, validity, histories as sets), its differences
+attributed. Phase 5's TopOpeBRepBuild slice stays for the 2D offset.
+
 Either way the data structure's shared state changes form:
 
 - **File-scope and `thread_local` state** (`TopOpeBRepBuild_Builder1`'s `mySDEdgeMap`, the grids' `GLOBAL_DS2d`,
@@ -453,9 +458,9 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 | 6 | 7X's first part (build123d.NET's healing, offset, draft and feature operations; `Quantity_Color`) ‖ 7J blend functions | |
 | 7 | 7K BRepBlend ‖ 7L the data structure's core | |
 | 8 | 7N1, then 7N2 | one at a time: the fillet front end |
-| 9 | **Report and decide question 24** | with 7N2's measurements |
-| 10 | 7M1 → 7M2 → 7M3, or 7R; then 7N3 with the fillet and chamfer commands; then 7X's fillet part | one at a time |
-| 11 | 7P → 7Q1 → 7Q2 with the HLR commands, if question 25 keeps HLR | |
+| 9 | *(was: decide question 24; decided, option C)* | 7N2's measurements go into 7R's brief |
+| 10 | 7R the reconstruction; then 7N3 with the fillet and chamfer commands; then 7X's fillet part | one at a time |
+| 11 | 7P → 7Q1 → 7Q2 with the HLR commands (question 25: kept) | |
 
 ## 5. Milestones
 
@@ -490,10 +495,9 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 
 These are in [open-questions.md](open-questions.md) as 24 to 30. The owner answered on 31 October:
 
-1. **The legacy data structure for fillets** (24). *Open.* The owner asked for an estimate of rebuilding the fillets'
-   reconstruction on the Boolean engine; it is in 2.1. The plan ports what all three options need first, and the
-   question is decided at step 9 of the running order, with measurements. Leaning: option A.
-2. **HLR and helix** (25). *Open for HLR* (explained in 1.5); it runs last, at step 11. Helix stays in phase 7.
+1. **The legacy data structure for fillets** (24). *Answered (1 November): option C,* the fillet builder rebuilt on the
+   Boolean engine (unit 7R). 7M1 to 7M3 are dropped, and step 9 of the running order is no longer a stop.
+2. **HLR and helix** (25). *Answered (1 November): port HLR too,* at step 11. Helix stays in phase 7.
 3. **ShapeProcess's resource files** (26). *Answered:* OCCT's defaults, embedded.
 4. **Bindings to widen the oracle** (27). *Answered: yes.* Each unit adds the bindings it needs to build123d.NET's
    `bindings/occt.txt` on a branch there, for the owner to merge; recorders cover what the shim can't bind.

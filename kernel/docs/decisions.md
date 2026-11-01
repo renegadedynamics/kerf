@@ -9921,3 +9921,13 @@ the default run's every-fourth sample had skipped. Numbers from 8301 are placeho
         (BRepAlgoAPI_Section with `bsection`'s options) takes 0.03 s: a gap of about 6x on that section, logged in
         occt-issues.md for the performance work (plan 2.7). Attributed, not fixed.
       No BOP code changed, so BooleanOracleTests weren't rerun.
+
+## Phase 7: the owner's decisions (1 November 2026)
+
+992. **Fillets are rebuilt on the Boolean engine; HLR is ported** (open questions 24 and 25). The owner chose option C
+     of phase7-plan.md 2.1: unit 7R replaces `TopOpeBRepBuild_HBuilder`'s `Perform`, `MergeSolid` and the queries
+     ChFi3d makes afterwards with a reconstruction on BOPAlgo, reading the same TopOpeBRepDS data structure. Units 7M1
+     to 7M3 are dropped. Consequences, accepted with the choice: fillet and chamfer results are compared with native
+     geometrically (volumes, areas, face and edge counts, validity, histories as sets), not byte for byte; their
+     differences are attributed case by case; upstream fixes to TopOpeBRepBuild don't apply. HLR (7P, 7Q1, 7Q2) stays
+     in phase 7 at step 11. Step 9 of the running order is no longer a stop.

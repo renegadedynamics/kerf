@@ -141,9 +141,13 @@ The numbers in brackets are the plan's (section 7).
     **Owner (31 October):** asked for an estimate of the rebuild on the Boolean engine. *Given in phase7-plan.md
     2.1:* the data structure's core and the fillet code are needed either way, so the plan ports those first and
     decides between TopOpeBRepBuild and a rebuild when they are done, with measurements.
+    **Owner (1 November):** rebuild the fillet builder on the Boolean engine (option C, unit 7R). TopOpeBRepBuild and
+    the builder-only parts of DS and Tool (7M1 to 7M3) are not ported; the fillet results are compared with native
+    geometrically, not byte for byte.
 25. **HLR and helix in phase 7** (phase7-plan.md 1.5). build123d.NET uses neither. *Provisional:* helix in phase 7
     (small, with OCCT 8's GTests); HLR in phase 7 but last, deferrable if Bento has no use for drawings.
     **Owner (31 October):** asked what HLR is; explained (phase7-plan.md 1.5). Still open; HLR stays last.
+    **Owner (1 November):** port HLR too (7P, 7Q1, 7Q2, at step 11).
 26. **ShapeProcess's resource files** (phase7-plan.md 2.3). *Provisional:* OCCT's default resource files embedded;
     other files read only when the caller gives a path, not through OCCT's `CSF_*` environment variables.
     **Owner (31 October):** OCCT's defaults are fine for now.
