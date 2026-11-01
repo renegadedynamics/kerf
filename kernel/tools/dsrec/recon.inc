@@ -4,7 +4,48 @@
 // port's reconstruction (ChFi3d_BOPReconstruction) is compared with these geometrically
 // (tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/ReconstructionNativeTests.cs).
 
+#include <BRepAdaptor_Curve.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepOffsetAPI_MakeThickSolid.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepPrimAPI_MakeWedge.hxx>
+#include <BRep_Builder.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS_Compound.hxx>
+#include <TopoDS_Shell.hxx>
+#include <functional>
+#include <gp_Elips.hxx>
+#include <gp_Parab.hxx>
+
+static GeomAbs_CurveType CurveType(const TopoDS_Edge& E)
+{
+  return BRepAdaptor_Curve(E).GetType();
+}
+
+static gp_Pnt MidPoint(const TopoDS_Edge& E)
+{
+  BRepAdaptor_Curve C(E);
+  return C.Value(0.5 * (C.FirstParameter() + C.LastParameter()));
+}
+
+// the edges of S (TopExp::MapShapes numbers) where the predicate holds, each with the radius (distance) r
+static std::vector<Edge> EdgesWhere(const TopoDS_Shape& S, double r, std::function<bool(const TopoDS_Edge&)> thePred)
+{
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> M;
+  TopExp::MapShapes(S, TopAbs_EDGE, M);
+  std::vector<Edge> aRes;
+  for (int k = 1; k <= M.Extent(); k++)
+  {
+    TopoDS_Edge E = TopoDS::Edge(M(k));
+    if (!BRep_Tool::Degenerated(E) && thePred(E))
+      aRes.push_back({k, r, -1});
+  }
+  return aRes;
+}
 
 template <class Maker>
 static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput)
@@ -103,4 +144,149 @@ static void RecordReconCases()
          {{1, 5, -1}, {2, 5, -1}, {3, 5, -1}, {4, 5, -1}, {5, 5, -1}, {6, 5, -1}, {7, 5, -1}, {8, 5, -1},
           {9, 5, -1}, {10, 5, -1}, {11, 5, -1}, {12, 5, -1}});
   Record("chamfer_A9", Rotated(aPC90, aZ, 90), true, {{9, 10, -1}});
+
+  // tests/blend/simple D5 to F9
+  Record("D5", aSph, false, {{2, 10, -1}, {1, 10, -1}, {6, 10, -1}});
+  TopoDS_Shape aSph270 = Scaled(BRepPrimAPI_MakeSphere(15, -60 * D, 60 * D, 270 * D).Shape(), 10);
+  Record("D6", aSph270, false, {{9, 10, -1}});
+  Record("D7", aSph270, false, {{9, 10, -1}, {6, 10, -1}, {5, 10, -1}});
+  Record("D8", aSph270, false, {{1, 10, -1}});
+  Record("D9", aSph270, false, {{1, 10, -1}, {6, 10, -1}, {2, 10, -1}});
+  TopoDS_Shape aSphS = Scaled(Rotated(BRepPrimAPI_MakeSphere(15, -90 * D, 60 * D, 90 * D).Shape(), aZ, 90), 10);
+  Record("E2", aSphS, false, {{7, 10, -1}, {6, 10, -1}, {5, 10, -1}});
+  Record("E3", aSphS, false, {{2, 10, -1}});
+  Record("E4", aSphS, false, {{2, 10, -1}, {7, 10, -1}, {4, 10, -1}});
+  TopoDS_Shape aTor = Scaled(BRepPrimAPI_MakeTorus(10, 10, 0, 45 * D, 90 * D).Shape(), 10);
+  Record("E5", aTor, false, {{4, 10, -1}});
+  Record("E6", aTor, false, {{4, 10, -1}, {8, 10, -1}, {3, 10, -1}});
+  Record("E7", aTor, false, {{1, 10, -1}});
+  Record("E8", aTor, false, {{1, 10, -1}, {4, 10, -1}, {5, 10, -1}});
+  TopoDS_Shape aTor2 = Scaled(BRepPrimAPI_MakeTorus(20, 5, 0, 160 * D, 90 * D).Shape(), 10);
+  Record("E9", aTor2, false, {{4, 10, -1}});
+  Record("F2", aTor2, false, {{8, 10, -1}});
+  Record("F3", aTor2, false, {{8, 10, -1}, {4, 10, -1}, {3, 10, -1}});
+  {
+    gp_Elips    anEl(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1), gp_Dir(1, 0, 0)), 15, 10);
+    TopoDS_Edge aE1 = BRepBuilderAPI_MakeEdge(anEl, 0, M_PI).Edge();
+    BRepBuilderAPI_MakePolygon aPoly(gp_Pnt(-15, 0, 0), gp_Pnt(0, -5, 0), gp_Pnt(15, 0, 0));
+    BRepBuilderAPI_MakeWire    aW(aE1);
+    aW.Add(aPoly.Wire());
+    TopoDS_Shape aPr = Scaled(
+      BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(), gp_Vec(2, 0, 10)).Shape(), 10);
+    Record("F4", aPr, false, {{1, 10, -1}});
+    Record("F5", aPr, false, {{1, 10, -1}, {4, 10, -1}, {9, 10, -1}});
+    Record("F6", aPr, false, {{5, 10, -1}});
+    Record("F7", aPr, false, {{5, 10, -1}, {7, 10, -1}, {9, 10, -1}});
+  }
+  {
+    gp_Parab    aPa(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0), gp_Dir(0, 0, 1)), 50);
+    TopoDS_Edge aE1 = BRepBuilderAPI_MakeEdge(aPa, -100, 100).Edge();
+    TopoDS_Edge aE2 = BRepBuilderAPI_MakeEdge(gp_Pnt(0, -100, 50), gp_Pnt(0, 100, 50)).Edge();
+    BRepBuilderAPI_MakeWire aW(aE1, aE2);
+    TopoDS_Shape aPr = Scaled(
+      BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(), gp_Vec(20, 0, 100)).Shape(), 10);
+    Record("F8", aPr, false, {{2, 10, -1}});
+    Record("F9", aPr, false, {{2, 10, -1}, {6, 10, -1}});
+  }
+
+  // build123d.NET's fillets and chamfers (tests/Build123d.Tests: Operations, Topology)
+  {
+    TopoDS_Shape      aB = BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+    std::vector<Edge> all;
+    for (int k = 1; k <= 12; k++)
+      all.push_back({k, 0.2, -1});
+    Record("b3d_box_1x2x3_all_edges", aB, false, all); // OperationsGenericTests.Fillet3D
+    std::vector<Edge> allc;
+    for (int k = 1; k <= 12; k++)
+      allc.push_back({k, 0.2, -1});
+    Record("b3d_box_1x2x3_chamfer_all_edges", aB, true, allc); // Chamfer3D
+  }
+  {
+    TopoDS_Shape aC = BRepPrimAPI_MakeCylinder(1, 1).Shape(); // ExtrudeThenChamfer: both circles
+    Record("b3d_cylinder_chamfer_circles", aC, true,
+           EdgesWhere(aC, 0.3, [](const TopoDS_Edge& E) { return CurveType(E) == GeomAbs_Circle; }));
+    Record("b3d_cylinder_fillet_circles", aC, false,
+           EdgesWhere(aC, 0.3, [](const TopoDS_Edge& E) { return CurveType(E) == GeomAbs_Circle; }));
+  }
+  {
+    // SelectorTests: (Box(20, 10, 4) - Cylinder(2, 10)), the top face's lines, radius 1: the hole's wire untouched
+    TopoDS_Shape aB = BRepPrimAPI_MakeBox(gp_Pnt(-10, -5, -2), 20, 10, 4).Shape();
+    TopoDS_Shape aC = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(0, 0, -5), gp_Dir(0, 0, 1)), 2, 10).Shape();
+    TopoDS_Shape aCut = BRepAlgoAPI_Cut(aB, aC).Shape();
+    Record("b3d_box_minus_cylinder_top_lines", aCut, false, EdgesWhere(aCut, 1, [](const TopoDS_Edge& E) {
+             return CurveType(E) == GeomAbs_Line && MidPoint(E).Z() > 1.9;
+           }));
+    // the hole's rim
+    Record("b3d_box_minus_cylinder_hole_rim", aCut, false, EdgesWhere(aCut, 1, [](const TopoDS_Edge& E) {
+             return CurveType(E) == GeomAbs_Circle && MidPoint(E).Z() > 1.9;
+           }));
+    // all the top edges
+    Record("b3d_box_minus_cylinder_top", aCut, false,
+           EdgesWhere(aCut, 1, [](const TopoDS_Edge& E) { return MidPoint(E).Z() > 1.9; }));
+  }
+  {
+    // Shape1DTests.EdgesTopoParent: a plate with a window, the window's edges filleted (concave)
+    TopoDS_Shape aP = BRepPrimAPI_MakeBox(gp_Pnt(-40, -75, 0), 80, 150, 2).Shape();
+    TopoDS_Shape aW = BRepPrimAPI_MakeBox(gp_Pnt(-32.5, 42.5, -1), 25, 25, 4).Shape();
+    TopoDS_Shape aCase = BRepAlgoAPI_Cut(aP, aW).Shape();
+    Record("b3d_phone_case_window", aCase, false, EdgesWhere(aCase, 1, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 1.9 && P.X() > -33 && P.X() < -7 && P.Y() > 42 && P.Y() < 68;
+           }));
+    Record("b3d_phone_case_vertical_window_edges", aCase, false, EdgesWhere(aCase, 1, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 0.5 && P.Z() < 1.5 && P.X() > -33 && P.X() < -7 && P.Y() > 42 && P.Y() < 68;
+           }));
+  }
+  {
+    // FaceTests.IsConvexConcave: an open box (Offset with an opening), all its edges
+    TopoDS_Shape                         aB = BRepPrimAPI_MakeBox(gp_Pnt(-10, -10, -2.5), 20, 20, 5).Shape();
+    NCollection_List<TopoDS_Shape>       aOpen;
+    for (TopExp_Explorer ex(aB, TopAbs_FACE); ex.More(); ex.Next())
+    {
+      BRepAdaptor_Surface aS(TopoDS::Face(ex.Current()));
+      if (aS.GetType() == GeomAbs_Plane && std::abs(aS.Plane().Location().Z() - 2.5) < 1e-9)
+        aOpen.Append(ex.Current());
+    }
+    BRepOffsetAPI_MakeThickSolid aThick;
+    aThick.MakeThickSolidByJoin(aB, aOpen, -2, 1.e-4, BRepOffset_Skin, false, false, GeomAbs_Arc);
+    TopoDS_Shape anOpenBox = aThick.Shape();
+    Record("b3d_open_box_all_edges", anOpenBox, false,
+           EdgesWhere(anOpenBox, 0.5, [](const TopoDS_Edge&) { return true; }));
+  }
+
+  // a shell (a box without its top), and a compound of two solids
+  {
+    BRep_Builder    B;
+    TopoDS_Shell    aSh;
+    B.MakeShell(aSh);
+    for (TopExp_Explorer ex(aBox, TopAbs_FACE); ex.More(); ex.Next())
+    {
+      BRepAdaptor_Surface aS(TopoDS::Face(ex.Current()));
+      if (!(aS.GetType() == GeomAbs_Plane && std::abs(aS.Plane().Location().Z() - 100) < 1e-9))
+        B.Add(aSh, ex.Current());
+    }
+    Record("shell_box_without_top", aSh, false, EdgesWhere(aSh, 10, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 1 && P.Z() < 99 && P.X() > 99 && P.Y() < 1;
+           }));
+    TopoDS_Compound aCo;
+    B.MakeCompound(aCo);
+    B.Add(aCo, aBox);
+    gp_Trsf aT;
+    aT.SetTranslation(gp_Vec(200, 0, 0));
+    B.Add(aCo, BRepBuilderAPI_Transform(aBox, aT, true).Shape());
+    Record("compound_two_boxes", aCo, false, EdgesWhere(aCo, 10, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 1 && P.Z() < 99 && P.Y() < 1 && (std::abs(P.X() - 100) < 1 || std::abs(P.X() - 300) < 1);
+           }));
+  }
+
+  // failures: radii too large (Shape3DTests.Plate, PlainMessage)
+  {
+    TopoDS_Shape      aPl = BRepPrimAPI_MakeBox(gp_Pnt(-10, -10, -1), 20, 20, 2).Shape();
+    Record("fail_plate_radius_3", aPl, false, EdgesWhere(aPl, 3, [](const TopoDS_Edge&) { return true; }));
+    TopoDS_Shape aCube = BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+    Record("fail_cube_radius_6", aCube, false, EdgesWhere(aCube, 6, [](const TopoDS_Edge&) { return true; }));
+  }
 }

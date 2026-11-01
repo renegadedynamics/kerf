@@ -12,6 +12,7 @@
 // "%.17g", geometry with GeomTools::Write at precision 17. Built with MSVC against build123d.NET's native OCCT
 // V8_0_1 (TKFillet and TopOpeBRepDS are not bound there).
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 
 #include <cstdio>

@@ -80,6 +80,8 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
 
     private static readonly NCollection_List<TopoDS_Shape> theEmptyList = new();
 
+    internal static Action<string>? Trace; // p7r-DEBUG
+
     /// <summary>A curve's SCI: on a face of the input (<see cref="Face"/> not null) or on a fillet surface.</summary>
     private readonly record struct CurveSupport(TopoDS_Face Face, int Surface, Geom2d_Curve PCurve,
                                                 TopAbs_Orientation Orientation);
@@ -621,7 +623,10 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
         }
 
         // the wires the fillet does not touch are classified afterwards
+        TopoDS_Wire anOuter = BRepTools.OuterWire(FF);
         List<NCollection_List<TopoDS_Shape>> aIsolated = [];
+        NCollection_List<TopoDS_Shape>? anOuterIsolated = null;
+        NCollection_Map<TopoDS_Shape> aIsolatedEdges = new(TopTools_ShapeMapHasher.Instance);
         for (TopoDS_Iterator itw = new(FF); itw.More(); itw.Next())
         {
             TopoDS_Shape W = itw.Value();
@@ -631,7 +636,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
             }
             bool aTouched = false;
             NCollection_List<TopoDS_Shape> aWE = new();
-            for (TopExp_Explorer exp = new(W.Oriented(FF.Orientation()), TopAbs_EDGE); exp.More() && !aTouched; exp.Next())
+            for (TopExp_Explorer exp = new(W, TopAbs_EDGE); exp.More() && !aTouched; exp.Next())
             {
                 TopoDS_Shape E = exp.Current();
                 aTouched = myEdgeParts.ContainsKey(E);
@@ -641,17 +646,21 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
                 }
                 aWE.Append(E);
             }
-            if (!aTouched)
+            if (aTouched)
             {
-                aIsolated.Add(aWE);
+                continue;
             }
-        }
-        NCollection_Map<TopoDS_Shape> aIsolatedEdges = new(TopTools_ShapeMapHasher.Instance);
-        foreach (NCollection_List<TopoDS_Shape> aWE in aIsolated)
-        {
             foreach (TopoDS_Shape E in aWE)
             {
                 aIsolatedEdges.Add(E);
+            }
+            if (W.IsSame(anOuter))
+            {
+                anOuterIsolated = aWE;
+            }
+            else
+            {
+                aIsolated.Add(aWE);
             }
         }
         foreach (TopoDS_Shape E in aWhole)
@@ -663,9 +672,27 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
         }
 
         NCollection_List<TopoDS_Shape> aPieces = BuildAreas(FF, aLE);
+        if (anOuterIsolated is not null)
+        {
+            // the outer wire, not touched: it bounds what the face keeps when the fillet's loops are holes (a hole's
+            // rim filleted, a concave fillet around a hole), and is dropped when a loop the fillet made replaces it
+            if (aPieces.IsEmpty())
+            {
+                foreach (TopoDS_Shape E in anOuterIsolated)
+                {
+                    aLE.Append(E);
+                }
+                aPieces = BuildAreas(FF, aLE);
+            }
+            else
+            {
+                aIsolated.Add(anOuterIsolated);
+            }
+        }
         if (aIsolated.Count > 0)
         {
-            // an isolated wire inside a piece is a hole of it (or a wire inside): built again with it
+            // an inner wire the fillet does not touch is kept if it lies in a piece (a hole of it), dropped if it
+            // lies where the fillet removed the face (the rim of a hole filleted)
             bool aAny = false;
             foreach (NCollection_List<TopoDS_Shape> aWE in aIsolated)
             {
@@ -683,16 +710,9 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
                 aPieces = BuildAreas(FF, aLE);
             }
         }
+        Trace?.Invoke($"face {DS.Shape(F)}: edges {aLE.Extent()} isolated {aIsolated.Count} pieces {aPieces.Extent()}");
         mySplitIN[F] = aPieces;
         return aPieces;
-    }
-
-    private static void AddVertices(in TopoDS_Shape E, NCollection_Map<TopoDS_Shape> theMap)
-    {
-        for (TopExp_Explorer exv = new(E, TopAbs_VERTEX); exv.More(); exv.Next())
-        {
-            theMap.Add(exv.Current());
-        }
     }
 
     /// <summary>Whether a point inside an edge of the wire is inside one of the faces.</summary>
@@ -722,5 +742,21 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
             return false;
         }
         return false;
+    }
+
+    private static void AddEdges(in TopoDS_Shape S, NCollection_Map<TopoDS_Shape> theMap)
+    {
+        for (TopExp_Explorer exp = new(S, TopAbs_EDGE); exp.More(); exp.Next())
+        {
+            theMap.Add(exp.Current());
+        }
+    }
+
+    private static void AddVertices(in TopoDS_Shape E, NCollection_Map<TopoDS_Shape> theMap)
+    {
+        for (TopExp_Explorer exv = new(E, TopAbs_VERTEX); exv.More(); exv.Next())
+        {
+            theMap.Add(exv.Current());
+        }
     }
 }
