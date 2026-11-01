@@ -122,7 +122,8 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         Assert.Contains(aRuns, r => r.Status == "OK");
         // and unit 7W's attributed failures among the cases using the Boolean commands (bugs/modalg_7/bug21264: progress)
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
-                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
+                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id)
+                                          && !DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 6L).</summary>

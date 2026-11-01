@@ -11,14 +11,12 @@ namespace OcctNet.DrawLite;
 /// units'.
 /// </summary>
 /// <remarks>
-/// OCCT's tolerance is the file-scope <c>t3d</c> that <c>tolblend</c> sets (1e-4 by default); until the fillet units
-/// port <c>tolblend</c>, Draw-lite uses the default.
+/// OCCT's tolerance is the file-scope <c>t3d</c> that <c>tolblend</c> sets (1e-4 by default), kept per interpreter
+/// (decision 11010).
 /// </remarks>
 internal static partial class BRepTestFilletCommands
 {
-    private const double t3d = 1.0e-4;
-
-    public static void RegisterRollingBallCommands(DrawInterpreter theInterpreter)
+    private static void RegisterRollingBallCommands(DrawInterpreter theInterpreter)
     {
         DrawCxx.Add(theInterpreter, "rollingball", Rollingball);
         DrawCxx.Add(theInterpreter, "brollingball", Rollingball);
@@ -43,7 +41,7 @@ internal static partial class BRepTestFilletCommands
         }
         double Rad = theDI.Atof(n > 3 ? a[3] : "");
 
-        double Tol = t3d; // the same as blend ! 1.e-7;
+        double Tol = T3d(theDI); // the same as blend ! 1.e-7;
 
         BiTgte_Blend Roll = new();
         Roll.Init(S, Rad, Tol, false);

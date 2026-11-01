@@ -84,9 +84,9 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         // counted only once called (open question 29): 103 runnable, OK 69, BAD 4, SKIPPED 30. With unit 7W's commands
         // (three more cases using them): 106 runnable, OK 71, BAD 4, SKIPPED 31. With unit 7C's healing commands
         // (bugs/modalg_7/bug30140 calls offsetcurve): 107 runnable, OK 72. With unit 7G's offset and draft commands: 141
-        // runnable, OK 103, BAD 7, SKIPPED 31.
+        // runnable, OK 103, BAD 7, SKIPPED 31. With unit 7N3's fillet and chamfer commands: 159 runnable, OK 121.
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
-        Assert.Equal(103, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(121, aRuns.Count(r => r.Status == "OK"));
     }
 }
