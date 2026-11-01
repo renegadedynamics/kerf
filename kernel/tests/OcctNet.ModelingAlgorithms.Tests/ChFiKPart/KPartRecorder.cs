@@ -98,8 +98,8 @@ internal static class KPartRecorder
 
         internal void Cp(string theTag, in ChFiDS_CommonPoint P)
         {
-            L(theTag + " vertex " + (P.IsVertex() ? 1 : 0) + " arc " + (P.IsOnArc() ? 1 : 0) + " tol " + R(P.Tolerance())
-              + " param " + R(P.Parameter()));
+            L(theTag + " vertex " + (P.IsVertex() ? 1 : 0) + " arc " + (P.IsOnArc() ? 1 : 0) + " tol "
+              + R(P.Tolerance()) + " param " + R(P.Parameter()));
             P3("  point", P.Point());
             if (P.HasVector())
             {
@@ -696,7 +696,8 @@ internal static class KPartRecorder
                 + (int)HES.GetType());
             for (int i = 0; i <= 4; i++)
             {
-                o.P3("value", HES.Value(HES.FirstParameter() + 0.25 * i * (HES.LastParameter() - HES.FirstParameter())));
+                double aW = HES.FirstParameter() + 0.25 * i * (HES.LastParameter() - HES.FirstParameter());
+                o.P3("value", HES.Value(aW));
             }
             if (HES.GetType() == GeomAbs_BSplineCurve)
             {
