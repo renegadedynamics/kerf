@@ -749,6 +749,7 @@ public partial struct Quantity_Color : IEquatable<Quantity_Color>
         NCollection_Vec3<double> aColor = new((double)((theARGB & 0xff0000) >> 16),
                                               (double)((theARGB & 0x00ff00) >> 8),
                                               (double)((theARGB & 0x0000ff)));
+        // OCCT: sRGB here, where Color2argb writes the linear values (occt-issues.md, unit 7X)
         theColor.SetValues(aColor.r() / 255.0, aColor.g() / 255.0, aColor.b() / 255.0, Quantity_TOC_sRGB);
     }
 

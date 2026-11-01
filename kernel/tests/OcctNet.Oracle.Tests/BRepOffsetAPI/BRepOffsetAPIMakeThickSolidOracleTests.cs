@@ -421,7 +421,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     // Null if the two results agree geometrically: the same number of each type of sub-shape, the same volume, area and
     // centroid (relative 1e-7), the same validity; else what differs.
-    private static string? Geometric(in TopoDS_Shape theN, in TopoDS_Shape theP, CanonicalComparison theCanon)
+    internal static string? Geometric(in TopoDS_Shape theN, in TopoDS_Shape theP, CanonicalComparison theCanon)
     {
         if (!theCanon.CountsEqual)
         {

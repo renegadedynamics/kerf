@@ -10787,3 +10787,136 @@ renumbered on merge.
       and QA commands.
       - **For 7X:** DPrism and SplitByPerimeter are covered here (9506); the 17 attributed DPrism differences are open.
         Extrude until needs no BRepFeat.
+
+## Phase 7: unit 7X, build123d.NET parity (its first part) and Quantity_Color
+
+build123d.NET's healing, offset, draft and feature calls replayed on the port (milestone 2, its first part; the fillets
+and chamfers follow 7N3), Quantity_Color and Quantity_ColorRGBA (TKernel), and the phase 7 benchmark. Numbers from 10301
+are placeholders, renumbered on merge.
+
+10301. **Quantity_Color and Quantity_ColorRGBA** (plan 1.4: the only classes outside phase 7 and STEP that
+       build123d.NET calls and the port lacked). Ported class for class into OcctNet.Foundation's `Quantity` folder as
+       value structs (translation rules 3): linear RGB in single precision, OCCT's default colour (yellow, opaque) by an
+       explicit parameterless constructor, the mutators internal with `WithValues`, `ChangedIntensity`,
+       `ChangedContrast`, `WithRGB` and `WithAlpha` twins. The 509-entry colour table is generated from
+       `Quantity_ColorTable.pxx`, the enumeration from `Quantity_NameOfColor.hxx` (its twelve aliases kept).
+       - `==` compares the components exactly, as every value type's does; OCCT's tolerant `operator==` is `IsEqual`
+         (and `!=` is `IsDifferent`). `Epsilon()` is process-wide, as OCCT's function-scope static (`SetEpsilon` changes
+         it for every thread); the tests that set it run in non-parallel collections.
+       - `ColorFromName`, `ColorFromHex` and `Argb2color` take the colour by `ref`: OCCT leaves it unchanged when the
+         name or string is refused. `ColorToHex` returns a string; `StringName` gives "UNDEFINED" outside the table. The
+         conversion operators to `NCollection_Vec3<float>` and `Vec4<float>` are explicit. `DumpJson`, `InitFromJson`
+         and the `std::hash` specialisations are left out. `Standard.ShortRealLast()` (FLT_MAX) is added for `Name()`.
+       - `powf` is `MathF.Pow` and `std::pow` is `Math.Pow`: bit-identical with MSVC's on every value the oracle tried.
+       - `ColorFromName("Quantity_NOC_")` (the bare prefix) raises Standard_OutOfRange from `SubString` inside a
+         `noexcept` function, so native OCCT terminates the process. The port throws Standard_OutOfRange
+         (occt-issues.md, unit 7X).
+       - **For the owner:** build123d.NET's OCCT.NET backend (`Build123dBackend=OcctNet`) carries its own hand-written
+         Quantity_Color; it can now use this one. build123d.NET isn't edited here.
+10302. **Quantity's oracle** (`QuantityColorOracleTests`, native through build123d.NET's binding). It covers:
+       - every name's colour (its RGB, its values in all five colour spaces, its hue, lightness, saturation and nearest
+         name), `StringName`, and `ColorFromName` on every name (upper case, lower case, prefixed), the aliases and other
+         strings, for both classes;
+       - each colour space's constructor on grids and random values in and out of range (exceptions by type), with
+         `Values`, `DeltaE2000`, `Distance`, `Delta`, `Color2argb`, `ChangeIntensity` and `ChangeContrast`;
+       - `Name(r, g, b)` on 500 random colours;
+       - the sRGB and linear conversions in both precisions, and the approximate gamma 2.2 ones, on 2,009 values;
+         `HlsRgb` and `RgbHls`;
+       - 327 hex strings (`ColorFromHex` of both classes, alpha on and off), `Argb2color` and back on 1,000 integers,
+         RGBA equality, and `SetEpsilon`.
+       **14,326 records, every double identical bit for bit, none different.** OCCT's GTests (Quantity_Color_Test's 17
+       cases, Quantity_ColorRGBA_Test's 14) pass, with four of the port's own.
+10303. **The phase 7 replay** (`Build123dPhase7Capture`, `Build123dPhase7OracleTests`; extends 6M's, decisions 947 and
+       952). The tests' operands are rebuilt with build123d.NET's public API. They come from Shape3DTests, SolidTests
+       (with its offset orientation, taper and draft tests), OperationsGenericTests' offsets, OperationsPartTests'
+       draft and thicken, FaceTests' thicken, surface offsets and SplitByPerimeter, ShellTests, TopologyReferenceTests,
+       MalformedInputTests, InputsUnchangedTests and EmptyShapeTests' split outside the face. Each native call is
+       transcribed from build123d.NET's source with its arguments and order:
+       - MakeThickSolidByJoin: Hollow; Offset3D and the Offset operation, which remove the internal edges;
+       - BRepOffset_MakeOffset: Thicken with its normal override, OffsetCore, and OffsetTopodsFace's three-argument form;
+       - BRepOffsetAPI_DraftAngle: Solid.Draft, the Draft operation, and ExtrudeTaper's draft of a copied profile's
+         prism (its sides found through the prism's `Generated`, the holes' angle flipped);
+       - BRepFeat_MakeDPrism, each profile face in turn;
+       - BRepFeat_SplitShape, on the perimeter's edges split at the faces' seams by build123d.NET's own private
+         `SplitEdgeAtVertices` (called by reflection);
+       - BSplineRestriction.
+       Each call runs on operands read from native's BRep text. The port's operands are frozen and checked unchanged,
+       and its result is checked frozen. Compared:
+       - the exception type, and the status: IsDone and Error, the draft's Add and Build status with its
+         `ProblematicShape` (an index of the input), the feature's status;
+       - the result's text, with the Free column masked, then also the Checked column. Otherwise nine native runs decide:
+         the port's result must be canonically native's, one of native's variants, or (for DPrism) equal by decision
+         1017's coarse record; where native varies and none of these holds, a result with native's geometry is
+         attributed (decision 1032);
+       - the history of every vertex, edge and face of the operands, as sets of the result's sub-shapes (by index, by
+         canonical key, or by size where the results agree only geometrically), and SplitShape's Left and Right.
+       Then build123d.NET's finishing step runs on native's result in both: Hollow's solid of the two shells (the
+       result's first and the input's first, ordered by the thickness's sign) and its Fix (ShapeFix_Shape on a private
+       copy when BRepCheck fails); Offset3D's ForwardSolid and inside-out reversal, and the Offset operation's Fix; the
+       Thicken operation's clean; ExtrudeTaper's validity check (which picks the loft); SplitByPerimeter's sewing of each
+       side. **The transcription is checked**: native's replay of each call and its finishing step gives build123d.NET's
+       own result (solids, faces, edges, vertices, volume and area to nine digits) or its failure.
+       - Left out as not phase 7: ExtrudeTaper's loft fallback (MakeLoft, Offset2D and a cut, phases 5 and 6), the fuse
+         of a two-way thickening (a Boolean, unit 6M's), and SplitByPerimeter's projections. The tests call ToSplines only
+         on an empty shape (it throws before reaching OCCT) and OffsetTopodsFace not at all, so both run on reference
+         primitives and faces instead. MaxFillet, Fillet and Chamfer are part 2.
+       - **Result: 93 calls and 48 finishing steps, none different.** By operation (byte-identical / canonical where
+         native varies / attributed / failing the same way on both sides):
+
+         | operation | calls | identical | canonical | attributed | same failure |
+         |---|---:|---:|---:|---:|---:|
+         | Hollow | 5 | 3 | 1 | 1 | 0 |
+         | Offset3D | 16 | 10 | 3 | 1 | 2 |
+         | Thicken | 16 | 15 | 0 | 0 | 1 |
+         | OffsetCore | 9 | 9 | 0 | 0 | 0 |
+         | OffsetTopodsFace | 2 | 2 | 0 | 0 | 0 |
+         | Draft | 5 | 4 | 0 | 0 | 1 |
+         | ExtrudeTaper's draft | 24 | 22 | 0 | 0 | 2 |
+         | DPrism | 4 | 4 | 0 | 0 | 0 |
+         | SplitByPerimeter | 5 | 5 | 0 | 0 | 0 |
+         | ToSplines | 7 | 7 | 0 | 0 | 0 |
+
+         The same failures: StdFail_NotDone on the cup the Offset operation can't hollow; the null result after a
+         reported success of MalformedInputTests' "offset through itself" (plan 1.5); "thicken by nothing", not done
+         with error 4; BadDraftFaces refused by Add (status 1, the same problematic face); and ExtrudeTaper's recess and
+         15-degree cross not built (status 2, the same problematic face).
+         The two attributed are the closed boxes offset inward with the Arc join (Hollow's "box inward" and the Offset
+         operation's bare solid). Native gives nine different texts in nine runs (decision 1032's address-ordered
+         maps), and the port's result has native's sub-shape counts, volume, area, centroid and validity; the histories
+         agree in size.
+         Histories (80 compared): 74 identical, 4 canonically equal, 2 equal in size. Finishing steps: 24 byte-identical, 1 with the
+         Free column masked (a sewn side), 1 with the Checked column masked, and the 22 validity checks the same. The
+         Checked one is the hollow box's solid: native sets the Checked flag of three faces it shares with its input,
+         and the port's frozen faces keep theirs, as decision 738 found. 64 transcriptions checked, all agree. The test
+         takes about 5 s.
+10304. **The phase 7 benchmark** (`-- phase7 [filter]`, plan 2.7). It times the replay's 93 calls, the port against
+       native, serially. Each run reads its operands afresh outside the timing, since native writes into its input; the
+       port's are frozen. It reports the median after a warm-up and the port's allocation. Release, 24 logical
+       processors, with other units' builds and tests running (about 50% load):
+
+       | operation | calls | port/native (sum) | geometric mean | port MB per call |
+       |---|---:|---:|---:|---:|
+       | Hollow | 5 | 2.19× | 2.04× | 5.8 |
+       | Offset3D | 16 | 1.20× | 1.10× | 5.1 |
+       | Thicken | 16 | 1.14× | 0.88× | 0.9 |
+       | OffsetCore and OffsetTopodsFace | 11 | 0.83× | 0.81× | 0.6 |
+       | Draft | 5 | 0.89× | 0.77× | 0.5 |
+       | ExtrudeTaper's draft | 24 | 0.94× | 0.93× | 0.9 |
+       | DPrism | 4 | 2.31× | 2.27× | 16.2 |
+       | SplitByPerimeter | 5 | 2.59× | 1.50× | 1.3 |
+       | ToSplines | 7 | 2.67× | 2.05× | 2.7 |
+       | all | 93 | 1.56× | 1.09× | 2.7 |
+
+       **Offsets and drafts are within 2× as a whole.** These go over 2×:
+       - Hollow's three boxes, 3.1× to 3.5× (native under 3 ms);
+       - DPrism on the small block, 3.3× to 3.9× (it runs two Booleans);
+       - SplitByPerimeter's ring, 3.1×;
+       - ToSplines' cylinder and cone, 3.8× (native 0.6 ms);
+       - the wave surface's thickening, 4.1× (native 1.2 ms).
+       **The frozen inputs' copies at entry are not the cause**: the same calls on unfrozen copies
+       (`ExactCopyForWrite`) are at most 7% faster. The time is in the algorithms themselves. Their allocation (16 MB
+       per DPrism, 6 MB per hollow box) is where an optimisation unit should look first. Fillets and chamfers join the
+       suite in part 2.
+10305. **Phase 6's parallel Boolean benchmark is not re-measured here.** Plan 2.7 asks for a quiet machine; during this
+       unit the other phase 7 helpers kept it at 50% to 100% load (five samples at the end: 96% to 100%). It waits for a
+       quiet run (`-- booleans`), as decision 951 left it.

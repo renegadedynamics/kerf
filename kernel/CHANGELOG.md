@@ -1230,3 +1230,16 @@ Phase 7 (part): drafts and the rest of TKOffset (unit 7G).
   commands (`featprism`, `featperform`, `splitshape`, `hole`...): 280 more corpus cases pass. Oracle: DPrism and
   SplitShape against native OCCT, the other makers against a native recording (tools/featrec). A Boolean argument
   holding frozen sub-shapes now runs non-destructively (decision 9505).
+
+Phase 7 (part): build123d.NET parity, its first part, and Quantity_Color (unit 7X).
+
+- Quantity_Color and Quantity_ColorRGBA (colours: the 509 named colours, RGB, sRGB, HLS, CIE Lab and Lch, hex strings),
+  the last classes build123d.NET calls that the port lacked outside phase 7 and STEP. Identical bit for bit with native
+  OCCT on 14,326 records.
+- build123d.NET's healing, offset, draft and feature calls (Hollow, Offset3D and the Offset operation, Thicken,
+  Face and Shell Offset, Draft, ExtrudeTaper's draft, DPrism, SplitByPerimeter, ToSplines) replayed on the port from its
+  tests' inputs, with their histories, failures and build123d.NET's finishing steps: 93 calls, none different (85
+  identical or canonically identical where native varies, 2 attributed to native's run-to-run variation, the same
+  failure on both sides in the others).
+- Benchmarks: `-- phase7` times those calls against native OCCT: 1.56× native serial in all (geometric mean 1.09×);
+  offsets and drafts within 2×; DPrism, SplitByPerimeter, ToSplines and three small hollows above it (decision 10304).

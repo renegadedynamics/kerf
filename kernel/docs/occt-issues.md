@@ -1585,3 +1585,16 @@ the line), unless the last column says otherwise.
 | BRepFeat_MakeCylindricalHole `PerformThruNext` | The `else` meant for `parbar > Last` hangs on `First - parbar < dmin` | Reproduced |
 | BRepFeat_Form `UpdateDescendants`, BRepFeat_RibSlot, BRepFeat_MakeDPrism `BossEdges` | Iterate maps keyed by shape address into the history lists and the lateral edges | Natively in address order; the port in insertion order (decision 1054) |
 | BRepFeat_Builder, BRepFeat_Form (the Booleans), BRepFeat_MakeLinearForm `Init` (`BB.UpdateVertex`, `myPln->Transform`), BRepFeat_RibSlot `LFPerform` (`BRepLib::SameParameter` on the glued result) | Write into the shapes and the plane the caller gives | The port works on copies (decision 1052) |
+
+## Phase 7: unit 7X, Quantity_Color and build123d.NET's phase 7 calls
+
+Found by porting Quantity_Color and Quantity_ColorRGBA and by replaying build123d.NET's phase 7 calls. The port
+reproduces each (`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Quantity_Color `ColorFromName` | The bare prefix `"Quantity_NOC_"` (any case) makes `SubString(14, 13)` raise Standard_OutOfRange inside a `noexcept` function | Native OCCT terminates the process (std::terminate). The port throws Standard_OutOfRange (decision 10301) |
+| Quantity_Color `Argb2color` | Reads the bytes as sRGB, where `Color2argb` writes the linear values | A colour doesn't come back from its ARGB integer; documented by OCCT. Reproduced |
+
+The replay found nothing new in the offsets, drafts and features: the null result after a reported success and native's
+run-to-run variation with the Arc join are unit 7F's (decisions 1031 and 1032).
