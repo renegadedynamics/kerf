@@ -1295,6 +1295,33 @@ Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fill
   own source): 66 cases, all identical byte for byte. The fillets write only the builder's working copy of their
   input (unit 7N2 copies it at entry).
 
+Phase 7 (part): the data model of hidden-line removal (unit 7Q1).
+
+- HLRTopoBRep: the outlining of a shape for a projector (its faces' contours as internal outlines and outlines, their
+  isolines, its edges split at their vertices), with its data.
+- HLRBRep's data model: the edge and face data, the data structure the hider walks (projection, min-max boxes, faces'
+  flags and orientations of outlines, interferences of an edge with a face's boundary, classification by a line of
+  sight), the loading of a shape, the shape bounds, the interference lists, vertex lists and area limits.
+- HLRBRep's projected curves and surfaces with their tools and local properties, and the 2D curve intersection and
+  line/surface intersection it uses (phase 5's generics instantiated).
+- The outliner copies a frozen shape at the entry: OCCT writes into its input's vertices.
+- Tests: `tools/hlrrec` records native OCCT's outlining, data structure and hider's walk on five primitives in eight
+  projectors and on the hlr group's shapes: 52 cases, all identical bit for bit; unit tests of the curves, surfaces,
+  data, merging and the copy at the entry.
+Phase 7 (part): follow-ups on the differences from native (unit 7Y).
+
+- BRepOffset_Tool's `EnLargeFace` puts the enlarged offset surface on the offset's own working face, as OCCT changes it
+  in place: OCC5805.brep's thick solid (bugs/modalg_2/bug5805_3 and _4) is one shell of seven faces as natively; the
+  offset oracle gains three byte-identical results.
+- BRepFill_Filling (BRepOffsetAPI_MakeFilling) accepts a caller's edge on the face swept from it (build123d.NET's
+  MakeSurfacePatch threw NullReferenceException); results as native's.
+- Public `TopoDS_Builder.MakeWire`, `MakeShell`, `MakeSolid`, `MakeCompSolid` (frozen results, as `MakeCompound`) and a
+  `BRepTools_History` copy constructor, for build123d.NET.
+- Oracle and corpus: the DPrism oracle reads native's input again for each run (6 differences were native's writes into
+  its input); memory-trend corpus cases run once more when they fail; MakeDraft's four and DPrism's eleven tapered fuses
+  stay attributed, with their causes narrowed. A stress of build123d.NET's native binding from many threads reproduces
+  the gate's native-only access violation (decision 10409).
+
 Phase 7 (part): the fillets' reconstruction on the Boolean engine (unit 7R, option C).
 
 - `ChFi3d_BOPReconstruction` replaces TopOpeBRepBuild_HBuilder for the fillet builders: from the data structure the

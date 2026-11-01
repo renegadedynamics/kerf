@@ -222,4 +222,35 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.True(Volume(aResult) > 0);
     }
+    // bugs/modalg_2/bug5805_3 and _4: OCC5805.brep's thick solid with a closing face and offset -1. The offset faces are
+    // extended to the closing face: OCCT enlarges their offset surfaces in place (decision 1101), and their lateral
+    // edges then extend to the new boundary. Native's result is one shell of seven faces (OCCT's script checks it).
+    [Fact]
+    public void ThickSolid_OfOCC5805_IsOneShellOfSevenFaces_AsNative()
+    {
+        string aRoot = System.Reflection.CustomAttributeExtensions.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>(typeof(BRepOffset_MakeOffsetTests).Assembly)
+                                                         .Single(a => a.Key == "OcctTestDataDir").Value!;
+        string? aFile = string.IsNullOrEmpty(aRoot) || !Directory.Exists(aRoot) ? null
+            : Directory.EnumerateFiles(aRoot, "OCC5805.brep", SearchOption.AllDirectories).FirstOrDefault();
+        if (aFile is null)
+        {
+            return; // the data isn't available
+        }
+        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+        ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
+        var aClosing = new NCollection_List<TopoDS_Shape>();
+        aClosing.Append(SubShapes(aShape, TopAbs_FACE)[5]); // a_6
+        var anAlgo = new BRepOffsetAPI_MakeThickSolid();
+        anAlgo.MakeThickSolidByJoin(aShape, aClosing, -1.0, 1.0e-7);
+        aSnap.AssertUnchanged(aShape);
+        Assert.True(anAlgo.IsDone());
+        TopoDS_Shape aResult = anAlgo.Shape();
+        Assert.True(AllFrozen(aResult));
+        Assert.Equal(7, SubShapes(aResult, TopAbs_FACE).Count);
+        Assert.Single(SubShapes(aResult, TopAbs_SHELL));
+        Assert.Equal(15, SubShapes(aResult, TopAbs_EDGE).Count);
+        var aProps = new GProp_GProps();
+        BRepGProp.SurfaceProperties(aResult, aProps);
+        Assert.Equal(1185.03, aProps.Mass(), 2);
+    }
 }

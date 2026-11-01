@@ -319,6 +319,13 @@ public class NCollection_List<T> : IEnumerable<T>
 
         public Iterator(NCollection_List<T> theList) => Initialize(theList);
 
+        /// <summary>OCCT's copy: an iterator on the same list at the same item.</summary>
+        public Iterator(Iterator theOther)
+        {
+            myList = theOther.myList;
+            Index = theOther.Index;
+        }
+
         internal int Index { get; private set; }
 
         public void Initialize(NCollection_List<T> theList) => Reset(theList, 0);

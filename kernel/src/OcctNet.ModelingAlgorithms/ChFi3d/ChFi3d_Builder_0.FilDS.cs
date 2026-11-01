@@ -20,7 +20,7 @@ internal static partial class ChFi3d_Builder_0
     /// <remarks>
     /// Writes into the builder's data (the data structure, the surface data's common points of degenerated
     /// interferences) and, through <see cref="ChFi3d_IndexPointInDS"/>, raises the tolerance of the working shape's
-    /// vertices (decision 10203).
+    /// vertices (decision 1087).
     /// </remarks>
     internal static void ChFi3d_FilDS(int SolidIndex, ChFiDS_Stripe CorDat, TopOpeBRepDS_DataStructure DStr,
                                       NCollection_List<ChFiDS_Regul> reglist, double tol3d, double tol2d)

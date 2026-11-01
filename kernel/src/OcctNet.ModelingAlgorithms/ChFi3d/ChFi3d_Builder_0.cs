@@ -19,7 +19,7 @@ namespace Occt;
 /// The functions write only into the builder's own data: the data structure (<see cref="TopOpeBRepDS_DataStructure"/>),
 /// the stripes, surface data and spines, and the geometry they make. None writes into a shape of the input: the
 /// vertices whose tolerance the builder raises are updated by the builder itself (<c>ChFi3d_Builder</c>, unit 7N2),
-/// not here (decision 10203).
+/// not here (decision 1087).
 /// </remarks>
 internal static partial class ChFi3d_Builder_0
 {
