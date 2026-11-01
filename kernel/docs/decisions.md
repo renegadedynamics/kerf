@@ -10301,3 +10301,13 @@ are placeholders, renumbered on merge.
       - Native DPrism varies run to run (decision 1017): BRepFeat_MakeDPrism's oracle (bound) needs the same canonical
         comparison of its shapes.
       - LocOpe_SplitDrafts is unusable natively on planar drafts (occt-issues.md); BRepFeat doesn't call it.
+
+## Phase 7: the whole-corpus run on request
+
+9301. **`DrawCorpusTests.Runnable_cases_run_and_OCCTs_log_check_judges_them` runs its cases only when asked**
+      (`OCCTNET_CORPUS_FULL=1`). It ran every runnable case, 13,286 by unit 7H and twice for the cases runnable before
+      unit 4L2, for a report of statuses; its only assertions were that more cases are runnable than before 4L2 (from
+      the scan, kept) and that one ran OK. It took 25 of the merge gate's 36 minutes. It never failed on a case's
+      status, so it guarded nothing the per-area corpus tests (which assert their statuses) don't; cases outside every
+      area's test, such as phase 3's and 4's older grids, were only ever reported here, never checked. The full report
+      stays one variable away, and is worth running at each milestone.

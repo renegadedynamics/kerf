@@ -270,6 +270,15 @@ public class DrawCorpusTests(ITestOutputHelper output)
             output.WriteLine($"  mesh group: {Counts(theRuns.Where(r => r.Case.Group == "mesh"))}");
         }
 
+        // The runs only report (the per-area corpus tests check their cases): about 25 minutes of a gate for every
+        // runnable case twice, so they run only when asked for (decision 9301)
+        Assert.True(aRunnable.Count > aRunnableBefore.Count);
+        if (Environment.GetEnvironmentVariable("OCCTNET_CORPUS_FULL") != "1")
+        {
+            output.WriteLine("runs skipped: OCCTNET_CORPUS_FULL=1 runs every runnable case and reports the statuses");
+            return;
+        }
+
         Statuses("before 4L2", Run(aRunnableBefore, Before4L2));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
@@ -296,7 +305,6 @@ public class DrawCorpusTests(ITestOutputHelper output)
             output.WriteLine($"  {aGroup.Key,-20} {aGroup.Count()}");
         }
 
-        Assert.True(aRunnable.Count > aRunnableBefore.Count);
         Assert.Contains(aRuns, r => r.Status == "OK");
     }
 }
