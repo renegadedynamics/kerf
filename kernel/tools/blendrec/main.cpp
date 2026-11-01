@@ -1,11 +1,12 @@
-// blendrec: records OCCT's blend functions (BlendFunc) and fillet spines (ChFiDS) for the tests of unit 7J, every double
-// as its 64 bits in hex. BlendFunc and ChFiDS are not bound in build123d.NET, so this is built with MSVC against its
+// blendrec: records OCCT's blend functions (BlendFunc) and fillet spines (ChFiDS) for the tests of unit 7J, and the
+// walking (BRepBlend) for unit 7K, every double as its 64 bits in hex. BlendFunc and ChFiDS are not bound in build123d.NET, so this is built with MSVC against its
 // native OCCT V8_0_1. tests/OcctNet.ModelingAlgorithms.Tests/BlendFunc/BlendRecorder.cs is the same program in C#,
 // line for line: the tests run it on the port and compare the two texts.
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
 #include <cmath>
+#include <memory>
 #include <string>
 #include <typeinfo>
 
@@ -34,6 +35,32 @@
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRep_Tool.hxx>
+#include <Adaptor3d_TopolTool.hxx>
+#include <Adaptor3d_CurveOnSurface.hxx>
+#include <BRepBlend_AppFunc.hxx>
+#include <BRepBlend_AppFuncRst.hxx>
+#include <BRepBlend_AppFuncRstRst.hxx>
+#include <BRepBlend_AppSurf.hxx>
+#include <BRepBlend_AppSurface.hxx>
+// OCCT 8 declares BRepBlend_CSWalking::IsDone and Line without defining them (no .lxx): the recorder reads the
+// fields they would return.
+#define private public
+#include <BRepBlend_CSWalking.hxx>
+#undef private
+#include <BRepBlend_CurvPointRadInv.hxx>
+#include <BRepBlend_Line.hxx>
+#include <BRepBlend_RstRstConstRad.hxx>
+#include <BRepBlend_RstRstEvolRad.hxx>
+#include <BRepBlend_RstRstLineBuilder.hxx>
+#include <BRepBlend_SurfCurvConstRadInv.hxx>
+#include <BRepBlend_SurfCurvEvolRadInv.hxx>
+#include <BRepBlend_SurfPointConstRadInv.hxx>
+#include <BRepBlend_SurfPointEvolRadInv.hxx>
+#include <BRepBlend_SurfRstConstRad.hxx>
+#include <BRepBlend_SurfRstEvolRad.hxx>
+#include <BRepBlend_SurfRstLineBuilder.hxx>
+#include <BRepBlend_Walking.hxx>
+#include <IntSurf_Transition.hxx>
 #include <ChFiDS_ElSpine.hxx>
 #include <ChFiDS_FilSpine.hxx>
 #include <ChFiDS_Spine.hxx>
@@ -1135,6 +1162,775 @@ static void RecSpines()
   }
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The walking (BRepBlend, unit 7K): each walker on simple configurations, the line it builds point by point with its
+// extremities, then the approximation of the line (BRepBlend_AppSurface over the AppFunc classes, BRepBlend_AppSurf).
+
+static void RecTrans(const IntSurf_Transition& T)
+{
+  Int((int)T.TransitionType());
+  if (T.TransitionType() != IntSurf_Undecided)
+  {
+    Int(T.IsTangent() ? 1 : 0);
+  }
+  if (T.TransitionType() == IntSurf_Touch)
+  {
+    Int((int)T.Situation());
+    Int(T.IsOpposite() ? 1 : 0);
+  }
+}
+
+static void RecPoint(const Blend_Point& P)
+{
+  Tag("pt");
+  Hex(P.Parameter());
+  Int(P.IsTangencyPoint() ? 1 : 0);
+  Pnt(P.PointOnS1());
+  Pnt(P.PointOnS2());
+  double u = 0., v = 0.;
+  try
+  {
+    P.ParametersOnS1(u, v);
+    Hex(u);
+    Hex(v);
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  try
+  {
+    P.ParametersOnS2(u, v);
+    Hex(u);
+    Hex(v);
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  try
+  {
+    Hex(P.ParameterOnC1());
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  try
+  {
+    Hex(P.ParameterOnC2());
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  if (!P.IsTangencyPoint())
+  {
+    Vec(P.TangentOnS1());
+    Vec(P.TangentOnS2());
+    try
+    {
+      Vec2d(P.Tangent2dOnS1());
+    }
+    catch (Standard_Failure&)
+    {
+      Tag(" X");
+    }
+    try
+    {
+      Vec2d(P.Tangent2dOnS2());
+    }
+    catch (Standard_Failure&)
+    {
+      Tag(" X");
+    }
+  }
+  End();
+}
+
+static void RecExt(const char* theTag, const BRepBlend_Extremity& E)
+{
+  Tag(theTag);
+  Pnt(E.Value());
+  double u = 0., v = 0.;
+  E.Parameters(u, v);
+  Hex(u);
+  Hex(v);
+  Hex(E.ParameterOnGuide());
+  Hex(E.Tolerance());
+  Int(E.HasTangent() ? 1 : 0);
+  if (E.HasTangent())
+  {
+    Vec(E.Tangent());
+  }
+  Int(E.IsVertex() ? 1 : 0);
+  Int(E.NbPointOnRst());
+  for (int i = 1; i <= E.NbPointOnRst(); i++)
+  {
+    const BRepBlend_PointOnRst& R = E.PointOnRst(i);
+    Hex(R.ParameterOnArc());
+    RecTrans(R.TransitionOnLine());
+    RecTrans(R.TransitionOnArc());
+  }
+  End();
+}
+
+static void RecLine(const occ::handle<BRepBlend_Line>& L)
+{
+  Tag("line");
+  Int(L->NbPoints());
+  try
+  {
+    Int((int)L->TransitionOnS1());
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  try
+  {
+    Int((int)L->TransitionOnS2());
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  End();
+  for (int i = 1; i <= L->NbPoints(); i++)
+  {
+    RecPoint(L->Point(i));
+  }
+  RecExt("start1", L->StartPointOnFirst());
+  RecExt("start2", L->StartPointOnSecond());
+  RecExt("end1", L->EndPointOnFirst());
+  RecExt("end2", L->EndPointOnSecond());
+}
+
+static void RecFuncState(Blend_AppFunction& F)
+{
+  Tag("funcstate");
+  try
+  {
+    Hex(F.GetMinimalDistance());
+  }
+  catch (Standard_Failure&)
+  {
+    Tag(" X");
+  }
+  Hex(F.GetSectionSize());
+  End();
+}
+
+static void RecApprox(const AppBlend_Approx& A)
+{
+  int ud = 0, vd = 0, nup = 0, nvp = 0, nuk = 0, nvk = 0;
+  A.SurfShape(ud, vd, nup, nvp, nuk, nvk);
+  Tag("surfshape");
+  Int(ud);
+  Int(vd);
+  Int(nup);
+  Int(nvp);
+  Int(nuk);
+  Int(nvk);
+  End();
+  const NCollection_Array2<gp_Pnt>& aPoles = A.SurfPoles();
+  const NCollection_Array2<double>& aW     = A.SurfWeights();
+  Tag("poles");
+  for (int i = aPoles.LowerRow(); i <= aPoles.UpperRow(); i++)
+  {
+    for (int j = aPoles.LowerCol(); j <= aPoles.UpperCol(); j++)
+    {
+      Pnt(aPoles(i, j));
+      Hex(aW(i, j));
+    }
+  }
+  End();
+  Tag("uknots");
+  for (int i = A.SurfUKnots().Lower(); i <= A.SurfUKnots().Upper(); i++)
+  {
+    Hex(A.SurfUKnots()(i));
+    Int(A.SurfUMults()(i));
+  }
+  End();
+  Tag("vknots");
+  for (int i = A.SurfVKnots().Lower(); i <= A.SurfVKnots().Upper(); i++)
+  {
+    Hex(A.SurfVKnots()(i));
+    Int(A.SurfVMults()(i));
+  }
+  End();
+  const int aNb2d = A.NbCurves2d();
+  int       d2 = 0, np2 = 0, nk2 = 0;
+  A.Curves2dShape(d2, np2, nk2);
+  Tag("curves2d");
+  Int(aNb2d);
+  Int(d2);
+  Int(np2);
+  Int(nk2);
+  End();
+  for (int k = 1; k <= aNb2d; k++)
+  {
+    const NCollection_Array1<gp_Pnt2d>& aP2 = A.Curve2dPoles(k);
+    Tag("c2d");
+    for (int i = aP2.Lower(); i <= aP2.Upper(); i++)
+    {
+      Pnt2d(aP2(i));
+    }
+    End();
+  }
+  if (aNb2d > 0)
+  {
+    Tag("c2dknots");
+    for (int i = A.Curves2dKnots().Lower(); i <= A.Curves2dKnots().Upper(); i++)
+    {
+      Hex(A.Curves2dKnots()(i));
+      Int(A.Curves2dMults()(i));
+    }
+    End();
+  }
+  double t3 = 0., t2 = 0.;
+  A.TolReached(t3, t2);
+  Tag("tolreached");
+  Hex(t3);
+  Hex(t2);
+  for (int k = 1; k <= aNb2d; k++)
+  {
+    Hex(A.TolCurveOnSurf(k));
+  }
+  End();
+}
+
+static void RecAppSurface(const occ::handle<BRepBlend_AppFuncRoot>& F, occ::handle<BRepBlend_Line>& L)
+{
+  BRepBlend_AppSurface approx(F,
+                              L->Point(1).Parameter(),
+                              L->Point(L->NbPoints()).Parameter(),
+                              1.e-4,
+                              1.e-5,
+                              1.e-2,
+                              GeomAbs_C1,
+                              20,
+                              5000);
+  Tag("appsurface");
+  Int(approx.IsDone() ? 1 : 0);
+  End();
+  if (!approx.IsDone())
+  {
+    return;
+  }
+  RecApprox(approx);
+  Tag("errors");
+  Hex(approx.MaxErrorOnSurf());
+  for (int k = 1; k <= approx.NbCurves2d(); k++)
+  {
+    Hex(approx.Max2dError(k));
+  }
+  End();
+  Tag("linepoints");
+  Int(L->NbPoints());
+  End();
+}
+
+static void RecAppSurf(Blend_AppFunction& F, occ::handle<BRepBlend_Line>& L)
+{
+  BRepBlend_AppSurf app(3, 8, 1.e-4, 1.e-5, 5);
+  app.Perform(L, F);
+  Tag("appsurf");
+  Int(app.IsDone() ? 1 : 0);
+  End();
+  if (app.IsDone())
+  {
+    RecApprox(app);
+  }
+}
+
+static occ::handle<ChFiDS_ElSpine> ElGuide(const occ::handle<Geom_Curve>& C, double theF, double theL)
+{
+  occ::handle<ChFiDS_ElSpine> E = new ChFiDS_ElSpine();
+  E->SetCurve(C);
+  E->FirstParameter(theF);
+  E->LastParameter(theL);
+  return E;
+}
+
+// A bounded copy of the walking surfaces of THE_PAIRS (Surf(theId)'s geometry).
+static occ::handle<Adaptor3d_Surface> BSurf(int theId, double u1, double u2, double v1, double v2)
+{
+  occ::handle<GeomAdaptor_Surface> S = occ::down_cast<GeomAdaptor_Surface>(Surf(theId));
+  return new GeomAdaptor_Surface(S->Surface(), u1, u2, v1, v2);
+}
+
+static occ::handle<Law_Function> EvolLaw(double theF, double theL)
+{
+  occ::handle<Law_Linear> aLaw = new Law_Linear();
+  aLaw->Set(theF, 0.8, theL, 1.4);
+  occ::handle<Law_Composite> aComp = new Law_Composite(theF, theL, 1.e-9);
+  aComp->ChangeLaws().Append(aLaw);
+  return aComp;
+}
+
+struct WalkCase
+{
+  const char* Name;
+  int         S1, S2;
+  double      B1[4], B2[4]; // u1 u2 v1 v2
+  int         G;            // 0 line along x; 1 circle of radius 5; 2 line x = 1.5 along y
+  double      GF, GL;
+  double      R;
+  double      X0[4];
+  double      Pdep, Pmax, Pmin, Pcont; // Pcont: Continu's target, or 0
+  bool        Evol;
+};
+
+static const WalkCase THE_WALKS[] = {
+  {"planeplane", 0, 1, {0., 8., 0., 5.}, {1., 10., -5., 0.}, 0, 0., 10., 1., {4., 1., 4., -1.}, 4., 10., 0., 0., false},
+  {"planeplanecont", 0, 1, {0., 8., 0., 5.}, {1., 10., -5., 0.}, 0, 0., 10., 1., {4., 1., 4., -1.}, 4., 6., 0., 7.5, false},
+  {"planeplaneevol", 0, 1, {0., 8., 0., 5.}, {1., 10., -5., 0.}, 0, 0., 10., 1., {4., 1., 4., -1.}, 4., 10., 0., 0., true},
+  {"planecyl", 0, 2, {-6., 6., -6., 6.}, {0.5, 2.5, 0., 5.}, 1, 0., 2. * M_PI, 1.,
+   {4.0 * 0.5403023058681398, 4.0 * 0.8414709848078965, 1., 1.}, 1., 2., 0., 0., false},
+  {"bspline", 6, 7, {0., 1., 0., 1.}, {0., 1., 0., 1.}, 2, 0., 3., 0.5, {0.83, 0.5, 0.5, 0.75}, 1.5, 3., 0., 0., false},
+};
+
+static occ::handle<Geom_Curve> WalkGuideCurve(int theG)
+{
+  switch (theG)
+  {
+    case 0: return new Geom_Line(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0));
+    case 1: return new Geom_Circle(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 5.0);
+    default: return new Geom_Line(gp_Pnt(1.5, 0, 0), gp_Dir(0, 1, 0));
+  }
+}
+
+static void RecWalk(const WalkCase& C, int choix)
+{
+  occ::handle<Adaptor3d_Surface>   S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+  occ::handle<Adaptor3d_Surface>   S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
+  occ::handle<Adaptor3d_TopolTool> D1 = new Adaptor3d_TopolTool(S1);
+  occ::handle<Adaptor3d_TopolTool> D2 = new Adaptor3d_TopolTool(S2);
+  occ::handle<ChFiDS_ElSpine>      G  = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
+  math_Vector                      X0(1, 4);
+  for (int i = 1; i <= 4; i++)
+  {
+    X0(i) = C.X0[i - 1];
+  }
+  std::unique_ptr<BlendFunc_ConstRad>    aConst;
+  std::unique_ptr<BlendFunc_EvolRad>     anEvol;
+  std::unique_ptr<BlendFunc_ConstRadInv> aConstInv;
+  std::unique_ptr<BlendFunc_EvolRadInv>  anEvolInv;
+  Blend_Function*                    F    = nullptr;
+  Blend_FuncInv*                     FInv = nullptr;
+  if (C.Evol)
+  {
+    occ::handle<Law_Function> aLaw = EvolLaw(C.GF, C.GL);
+    anEvol                         = std::make_unique<BlendFunc_EvolRad>(S1, S2, G, aLaw);
+    anEvol->Set(choix);
+    anEvolInv = std::make_unique<BlendFunc_EvolRadInv>(S1, S2, G, aLaw);
+    anEvolInv->Set(choix);
+    F    = anEvol.get();
+    FInv = anEvolInv.get();
+  }
+  else
+  {
+    aConst = std::make_unique<BlendFunc_ConstRad>(S1, S2, G);
+    aConst->Set(C.R, choix);
+    aConstInv = std::make_unique<BlendFunc_ConstRadInv>(S1, S2, G);
+    aConstInv->Set(C.R, choix);
+    F    = aConst.get();
+    FInv = aConstInv.get();
+  }
+  BRepBlend_Walking W(S1, S2, D1, D2, G);
+  W.Check2d(false);
+  W.Perform(*F, *FInv, C.Pdep, C.Pmax, 1.0, 1.e-4, 1.e-5, X0, 0.01, true);
+  Tag("perform");
+  Int(W.IsDone() ? 1 : 0);
+  End();
+  if (!W.IsDone())
+  {
+    return;
+  }
+  if (C.Pcont != 0.)
+  {
+    const bool isOk = W.Continu(*F, *FInv, C.Pcont);
+    Tag("continu");
+    Int(isOk ? 1 : 0);
+    End();
+  }
+  const bool isComplete = W.Complete(*F, *FInv, C.Pmin);
+  Tag("complete");
+  Int(isComplete ? 1 : 0);
+  Int(W.TwistOnS1() ? 1 : 0);
+  Int(W.TwistOnS2() ? 1 : 0);
+  End();
+  occ::handle<BRepBlend_Line> aLin = W.Line();
+  RecLine(aLin);
+  RecFuncState(*F);
+  occ::handle<BRepBlend_AppFuncRoot> AF = new BRepBlend_AppFunc(aLin, *F, 1.e-4, 1.e-5);
+  RecAppSurface(AF, aLin);
+  RecAppSurf(*F, aLin);
+}
+
+// The first sections: from inside, and from outside the first face, moved onto its restriction (then walked).
+static void RecFirstSection(int choix)
+{
+  const WalkCase&                  C  = THE_WALKS[0];
+  occ::handle<Adaptor3d_Surface>   S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+  occ::handle<Adaptor3d_Surface>   S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
+  occ::handle<Adaptor3d_TopolTool> D1 = new Adaptor3d_TopolTool(S1);
+  occ::handle<Adaptor3d_TopolTool> D2 = new Adaptor3d_TopolTool(S2);
+  occ::handle<ChFiDS_ElSpine>      G  = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
+  BlendFunc_ConstRad               F(S1, S2, G);
+  F.Set(C.R, choix);
+  BlendFunc_ConstRadInv FInv(S1, S2, G);
+  FInv.Set(C.R, choix);
+
+  BRepBlend_Walking W1(S1, S2, D1, D2, G);
+  math_Vector       X0(1, 4);
+  X0(1) = 3.;
+  X0(2) = 1.2;
+  X0(3) = 3.;
+  X0(4) = -0.8;
+  TopAbs_State aPos1 = TopAbs_UNKNOWN, aPos2 = TopAbs_UNKNOWN;
+  const bool   isOk1 = W1.PerformFirstSection(F, 3.0, X0, 1.e-4, 1.e-5, aPos1, aPos2);
+  Tag("firstsection");
+  Int(isOk1 ? 1 : 0);
+  Int((int)aPos1);
+  Int((int)aPos2);
+  End();
+  Vector("pardep", X0);
+
+  BRepBlend_Walking W2(S1, S2, D1, D2, G);
+  W2.Check2d(false);
+  X0(1)             = 8.5;
+  X0(2)             = 1.;
+  X0(3)             = 8.5;
+  X0(4)             = -1.;
+  double      aPsol = 0.;
+  math_Vector aParSol(1, 4, 0.);
+  const bool  isOk2 =
+    W2.PerformFirstSection(F, FInv, 8.5, 0., X0, 1.e-4, 1.e-5, true, true, aPsol, aParSol);
+  Tag("firstsectionrst");
+  Int(isOk2 ? 1 : 0);
+  Hex(aPsol);
+  End();
+  Vector("parsol", aParSol);
+  if (!isOk2)
+  {
+    return;
+  }
+  W2.Perform(F, FInv, aPsol, 0., 1.0, 1.e-4, 1.e-5, aParSol, 0.01, false);
+  Tag("perform");
+  Int(W2.IsDone() ? 1 : 0);
+  End();
+  if (W2.IsDone())
+  {
+    RecLine(W2.Line());
+  }
+}
+
+static void RecCSWalk(int choix)
+{
+  occ::handle<Adaptor3d_Surface>   S = BSurf(0, 0., 8., -3., 3.);
+  occ::handle<Adaptor3d_TopolTool> D = new Adaptor3d_TopolTool(S);
+  occ::handle<Adaptor3d_Curve>     C = Guide(4);
+  occ::handle<ChFiDS_ElSpine>      G = ElGuide(WalkGuideCurve(0), 0., 10.);
+  BlendFunc_CSConstRad             F(S, C, G);
+  F.Set(1.0, choix);
+  math_Vector X3(1, 3);
+  X3(1) = 3.0;
+  X3(2) = -0.5;
+  X3(3) = 3.0;
+  BRepBlend_CSWalking W(C, S, D);
+  W.Perform(F, 3.0, 9.0, 1.0, 1.e-4, 1.e-5, X3, 0.01, true);
+  Tag("perform");
+  Int(W.done ? 1 : 0); // IsDone()
+  End();
+  if (!W.done)
+  {
+    return;
+  }
+  const bool isComplete = W.Complete(F, 0.0);
+  Tag("complete");
+  Int(isComplete ? 1 : 0);
+  End();
+  occ::handle<BRepBlend_Line> aLin = W.line; // Line()
+  RecLine(aLin);
+  RecFuncState(F);
+  RecAppSurf(F, aLin);
+}
+
+// A surface (the floor) and a restriction (a line on the wall at z = 1), or two restrictions (lines on the floor at
+// y = 1 and on the wall at z = 1).
+struct RstCase
+{
+  const char* Name;
+  double      B1[4];
+  double      R1[2], R2[2]; // the restrictions' ranges
+  double      R;
+  bool        Evol;
+};
+
+static const RstCase THE_SURFRSTS[] = {
+  {"surfrst", {0., 10., -1., 5.}, {0., 0.}, {0.5, 9.}, 1.2, false},
+  {"surfrstface", {1., 8., -1., 5.}, {0., 0.}, {0., 10.}, 1.2, false},
+  {"surfrstevol", {0., 10., -1., 5.}, {0., 0.}, {0.5, 9.}, 0., true},
+};
+
+static const RstCase THE_RSTRSTS[] = {
+  {"rstrst", {0., 10., -1., 5.}, {0.5, 8.}, {1., 9.}, 1., false},
+  {"rstrstevol", {0., 10., -1., 5.}, {0.5, 8.}, {1., 9.}, 0., true},
+};
+
+static void RecSurfRstWalk(const RstCase& C, int choix, int bigchoix)
+{
+  occ::handle<Adaptor3d_Surface>   S1  = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+  occ::handle<Adaptor3d_Surface>   S2  = BSurf(1, 0., 10., -5., 0.);
+  occ::handle<Adaptor3d_TopolTool> D1  = new Adaptor3d_TopolTool(S1);
+  occ::handle<Adaptor3d_TopolTool> D2  = new Adaptor3d_TopolTool(S2);
+  occ::handle<ChFiDS_ElSpine>      G   = ElGuide(WalkGuideCurve(0), 0., 10.);
+  occ::handle<Adaptor2d_Curve2d>   Rst = new Geom2dAdaptor_Curve(
+    new Geom2d_Line(gp_Pnt2d(0., -1.), gp_Dir2d(1., 0.)), C.R2[0], C.R2[1]);
+  occ::handle<Adaptor3d_CurveOnSurface> HC = new Adaptor3d_CurveOnSurface();
+  HC->Load(Rst, S2);
+  math_Vector X0(1, 3);
+  X0(1) = 4.;
+  X0(2) = 1.;
+  X0(3) = 4.;
+
+  std::unique_ptr<BRepBlend_SurfRstConstRad>      aConst;
+  std::unique_ptr<BRepBlend_SurfRstEvolRad>       anEvol;
+  std::unique_ptr<BRepBlend_SurfCurvConstRadInv>  aConstC;
+  std::unique_ptr<BRepBlend_SurfCurvEvolRadInv>   anEvolC;
+  std::unique_ptr<BRepBlend_SurfPointConstRadInv> aConstP;
+  std::unique_ptr<BRepBlend_SurfPointEvolRadInv>  anEvolP;
+  std::unique_ptr<BlendFunc_ConstRadInv>          aConstI;
+  std::unique_ptr<BlendFunc_EvolRadInv>           anEvolI;
+  Blend_SurfRstFunction*                      F     = nullptr;
+  Blend_SurfCurvFuncInv*                      FInvC = nullptr;
+  Blend_SurfPointFuncInv*                     FInvP = nullptr;
+  Blend_FuncInv*                              FInv  = nullptr;
+  if (C.Evol)
+  {
+    occ::handle<Law_Function> aLaw = EvolLaw(0., 10.);
+    anEvol                         = std::make_unique<BRepBlend_SurfRstEvolRad>(S1, S2, Rst, G, aLaw);
+    anEvol->Set(S2, Rst);
+    anEvol->Set(choix);
+    anEvolC = std::make_unique<BRepBlend_SurfCurvEvolRadInv>(S1, HC, G, aLaw);
+    anEvolC->Set(choix);
+    anEvolP = std::make_unique<BRepBlend_SurfPointEvolRadInv>(S1, G, aLaw);
+    anEvolP->Set(choix);
+    anEvolI = std::make_unique<BlendFunc_EvolRadInv>(S1, S2, G, aLaw);
+    anEvolI->Set(false, Rst);
+    anEvolI->Set(bigchoix);
+    F     = anEvol.get();
+    FInvC = anEvolC.get();
+    FInvP = anEvolP.get();
+    FInv  = anEvolI.get();
+  }
+  else
+  {
+    aConst = std::make_unique<BRepBlend_SurfRstConstRad>(S1, S2, Rst, G);
+    aConst->Set(S2, Rst);
+    aConst->Set(C.R, choix);
+    aConstC = std::make_unique<BRepBlend_SurfCurvConstRadInv>(S1, HC, G);
+    aConstC->Set(C.R, choix);
+    aConstP = std::make_unique<BRepBlend_SurfPointConstRadInv>(S1, G);
+    aConstP->Set(C.R, choix);
+    aConstI = std::make_unique<BlendFunc_ConstRadInv>(S1, S2, G);
+    aConstI->Set(false, Rst);
+    aConstI->Set(C.R, bigchoix);
+    F     = aConst.get();
+    FInvC = aConstC.get();
+    FInvP = aConstP.get();
+    FInv  = aConstI.get();
+  }
+  BRepBlend_SurfRstLineBuilder W(S1, D1, S2, Rst, D2);
+  W.Perform(*F, *FInv, *FInvP, *FInvC, 4.0, 9.5, 1.0, 1.e-4, 1.e-5, 1.e-5, X0, 0.01, true);
+  Tag("perform");
+  Int(W.IsDone() ? 1 : 0);
+  End();
+  if (!W.IsDone())
+  {
+    return;
+  }
+  const bool isComplete = W.Complete(*F, *FInv, *FInvP, *FInvC, 0.0);
+  Tag("complete");
+  Int(isComplete ? 1 : 0);
+  Int(W.DecrochStart() ? 1 : 0);
+  Int(W.DecrochEnd() ? 1 : 0);
+  End();
+  occ::handle<BRepBlend_Line> aLin = W.Line();
+  RecLine(aLin);
+  RecFuncState(*F);
+  occ::handle<BRepBlend_AppFuncRoot> AF = new BRepBlend_AppFuncRst(aLin, *F, 1.e-4, 1.e-5);
+  RecAppSurface(AF, aLin);
+}
+
+static void RecRstRstWalk(const RstCase& C, int choix)
+{
+  occ::handle<Adaptor3d_Surface>   S1   = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+  occ::handle<Adaptor3d_Surface>   S2   = BSurf(1, 0., 10., -5., 0.);
+  occ::handle<Adaptor3d_TopolTool> D1   = new Adaptor3d_TopolTool(S1);
+  occ::handle<Adaptor3d_TopolTool> D2   = new Adaptor3d_TopolTool(S2);
+  occ::handle<ChFiDS_ElSpine>      G    = ElGuide(WalkGuideCurve(0), 0., 10.);
+  occ::handle<Adaptor2d_Curve2d>   Rst1 = new Geom2dAdaptor_Curve(
+    new Geom2d_Line(gp_Pnt2d(0., 1.), gp_Dir2d(1., 0.)), C.R1[0], C.R1[1]);
+  occ::handle<Adaptor2d_Curve2d> Rst2 = new Geom2dAdaptor_Curve(
+    new Geom2d_Line(gp_Pnt2d(0., -1.), gp_Dir2d(1., 0.)), C.R2[0], C.R2[1]);
+  occ::handle<Adaptor3d_CurveOnSurface> HC1 = new Adaptor3d_CurveOnSurface();
+  HC1->Load(Rst1, S1);
+  occ::handle<Adaptor3d_CurveOnSurface> HC2 = new Adaptor3d_CurveOnSurface();
+  HC2->Load(Rst2, S2);
+  math_Vector X0(1, 2);
+  X0(1) = 4.;
+  X0(2) = 4.;
+
+  std::unique_ptr<BRepBlend_RstRstConstRad>      aConst;
+  std::unique_ptr<BRepBlend_RstRstEvolRad>       anEvol;
+  std::unique_ptr<BRepBlend_SurfCurvConstRadInv> aConst1, aConst2;
+  std::unique_ptr<BRepBlend_SurfCurvEvolRadInv>  anEvol1, anEvol2;
+  Blend_RstRstFunction*                      F     = nullptr;
+  Blend_SurfCurvFuncInv*                     FInv1 = nullptr;
+  Blend_SurfCurvFuncInv*                     FInv2 = nullptr;
+  BRepBlend_CurvPointRadInv                  FInvP1(G, HC2), FInvP2(G, HC1);
+  FInvP1.Set(choix);
+  FInvP2.Set(choix);
+  if (C.Evol)
+  {
+    occ::handle<Law_Function> aLaw = EvolLaw(0., 10.);
+    anEvol                         = std::make_unique<BRepBlend_RstRstEvolRad>(S1, Rst1, S2, Rst2, G, aLaw);
+    anEvol->Set(S1, Rst1, S2, Rst2);
+    anEvol->Set(choix);
+    anEvol1 = std::make_unique<BRepBlend_SurfCurvEvolRadInv>(S1, HC2, G, aLaw);
+    anEvol1->Set(Rst1);
+    anEvol1->Set(1);
+    anEvol2 = std::make_unique<BRepBlend_SurfCurvEvolRadInv>(S2, HC1, G, aLaw);
+    anEvol2->Set(Rst2);
+    anEvol2->Set(2);
+    F     = anEvol.get();
+    FInv1 = anEvol1.get();
+    FInv2 = anEvol2.get();
+  }
+  else
+  {
+    aConst = std::make_unique<BRepBlend_RstRstConstRad>(S1, Rst1, S2, Rst2, G);
+    aConst->Set(S1, Rst1, S2, Rst2);
+    aConst->Set(C.R, choix);
+    aConst1 = std::make_unique<BRepBlend_SurfCurvConstRadInv>(S1, HC2, G);
+    aConst1->Set(Rst1);
+    aConst1->Set(C.R, 1);
+    aConst2 = std::make_unique<BRepBlend_SurfCurvConstRadInv>(S2, HC1, G);
+    aConst2->Set(Rst2);
+    aConst2->Set(C.R, 2);
+    F     = aConst.get();
+    FInv1 = aConst1.get();
+    FInv2 = aConst2.get();
+  }
+  BRepBlend_RstRstLineBuilder W(S1, Rst1, D1, S2, Rst2, D2);
+  W.Perform(*F, *FInv1, FInvP1, *FInv2, FInvP2, 4.0, 9.5, 1.0, 1.e-4, 1.e-5, X0, 0.01, true);
+  Tag("perform");
+  Int(W.IsDone() ? 1 : 0);
+  End();
+  if (!W.IsDone())
+  {
+    return;
+  }
+  const bool isComplete = W.Complete(*F, *FInv1, FInvP1, *FInv2, FInvP2, 0.0);
+  Tag("complete");
+  Int(isComplete ? 1 : 0);
+  Int(W.Decroch1Start() ? 1 : 0);
+  Int(W.Decroch1End() ? 1 : 0);
+  Int(W.Decroch2Start() ? 1 : 0);
+  Int(W.Decroch2End() ? 1 : 0);
+  End();
+  occ::handle<BRepBlend_Line> aLin = W.Line();
+  RecLine(aLin);
+  RecFuncState(*F);
+  occ::handle<BRepBlend_AppFuncRoot> AF = new BRepBlend_AppFuncRstRst(aLin, *F, 1.e-4, 1.e-5);
+  RecAppSurface(AF, aLin);
+}
+
+static void RecordWalking()
+{
+  const int aNbWalks = (int)(sizeof(THE_WALKS) / sizeof(THE_WALKS[0]));
+  for (int iw = 0; iw < aNbWalks; iw++)
+  {
+    for (int choix = 1; choix <= 8; choix++)
+    {
+      std::fprintf(gOut, "case walk %s %d\n", THE_WALKS[iw].Name, choix);
+      try
+      {
+        RecWalk(THE_WALKS[iw], choix);
+      }
+      catch (Standard_Failure&)
+      {
+        Fail("exception");
+      }
+    }
+  }
+  for (int choix = 1; choix <= 8; choix++)
+  {
+    std::fprintf(gOut, "case walk firstsection %d\n", choix);
+    try
+    {
+      RecFirstSection(choix);
+    }
+    catch (Standard_Failure&)
+    {
+      Fail("exception");
+    }
+  }
+  for (int choix = 1; choix <= 8; choix++)
+  {
+    std::fprintf(gOut, "case walk cs %d\n", choix);
+    try
+    {
+      RecCSWalk(choix);
+    }
+    catch (Standard_Failure&)
+    {
+      Fail("exception");
+    }
+  }
+  const int aNbSR = (int)(sizeof(THE_SURFRSTS) / sizeof(THE_SURFRSTS[0]));
+  for (int is = 0; is < aNbSR; is++)
+  {
+    // As ChFi3d_FilBuilder: the restriction's function and inverses take a "small" choice (1 or 3, plus 1 for an
+    // even choice), the inverse on the restriction the surfaces' choice.
+    for (int big = 1; big <= 8; big++)
+    {
+      for (int rev = 0; rev <= 1; rev++)
+      {
+        const int choix = (rev == 1 ? 3 : 1) + (big % 2 == 0 ? 1 : 0);
+        std::fprintf(gOut, "case walk %s %d %d\n", THE_SURFRSTS[is].Name, choix, big);
+        try
+        {
+          RecSurfRstWalk(THE_SURFRSTS[is], choix, big);
+        }
+        catch (Standard_Failure&)
+        {
+          Fail("exception");
+        }
+      }
+    }
+  }
+  const int aNbRR = (int)(sizeof(THE_RSTRSTS) / sizeof(THE_RSTRSTS[0]));
+  for (int ir = 0; ir < aNbRR; ir++)
+  {
+    for (int choix = 1; choix <= 4; choix++)
+    {
+      std::fprintf(gOut, "case walk %s %d\n", THE_RSTRSTS[ir].Name, choix);
+      try
+      {
+        RecRstRstWalk(THE_RSTRSTS[ir], choix);
+      }
+      catch (Standard_Failure&)
+      {
+        Fail("exception");
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv)
 {
   OSD::SetSignal(false);
@@ -1146,6 +1942,7 @@ int main(int argc, char** argv)
   {
     RecordFunctions();
     RecSpines();
+    RecordWalking();
   }
   catch (Standard_Failure& anExc)
   {

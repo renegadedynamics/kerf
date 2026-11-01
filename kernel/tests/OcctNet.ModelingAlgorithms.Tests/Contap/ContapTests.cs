@@ -129,7 +129,7 @@ public class ContapTests
     [Fact]
     public void Contour_InParallel_EqualsSerial()
     {
-        // Contap_HContTool's sampling bounds are [ThreadStatic] (decision 10101): contours computed at once on several
+        // Contap_HContTool's sampling bounds are [ThreadStatic] (decision 1075): contours computed at once on several
         // threads equal the serial ones.
         string[] aNames = ["torus", "bspline", "torus part", "cylinder part"];
         string Run(string theName)

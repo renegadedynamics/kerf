@@ -16,7 +16,7 @@ namespace Occt;
 /// <remarks>
 /// OCCT's class is used by value but holds its polyline and its vertices through handles, which its copies share. The
 /// port makes it a class with OCCT's (shallow) copy as the copy constructor; ported code copies where C++ copies
-/// (decision 10103). <see cref="Vertex"/> returns a reference to the stored vertex, as OCCT's. As in OCCT, the default
+/// (decision 1077). <see cref="Vertex"/> returns a reference to the stored vertex, as OCCT's. As in OCCT, the default
 /// constructor leaves the type unset (<see cref="Contap_Lin"/> here).
 /// </remarks>
 public sealed class Contap_Line

@@ -20,6 +20,8 @@ public class BlendFuncNativeTests
 {
     private static readonly Lazy<Dictionary<string, List<string>>> theRecording = new(Load);
 
+    internal static Dictionary<string, List<string>> Recording => theRecording.Value;
+
     private static Dictionary<string, List<string>> Load()
     {
         using Stream aRes = typeof(BlendFuncNativeTests).Assembly.GetManifestResourceStream("BlendFunc.blendrec.txt.gz")
@@ -52,10 +54,17 @@ public class BlendFuncNativeTests
 
     private static bool IsSpine(string theKey) => theKey.Contains("spine", StringComparison.Ordinal);
 
+    // The walking's cases (unit 7K, BRepBlendNativeTests).
+    internal static bool IsWalk(string theKey) => theKey.StartsWith("case walk ", StringComparison.Ordinal);
+
     private static void Compare(Dictionary<string, List<string>> thePort, bool theSpines, int theExpectedCases)
+        => Compare(thePort, k => !IsWalk(k) && IsSpine(k) == theSpines, theExpectedCases);
+
+    internal static void Compare(Dictionary<string, List<string>> thePort, Func<string, bool> theFilter,
+                                 int theExpectedCases)
     {
         Dictionary<string, List<string>> aNative = theRecording.Value;
-        List<string> aKeys = aNative.Keys.Where(k => IsSpine(k) == theSpines).ToList();
+        List<string> aKeys = aNative.Keys.Where(theFilter).ToList();
         Assert.Equal(theExpectedCases, aKeys.Count);
         Assert.Equal(aKeys.Count, thePort.Count);
         List<string> aDiffs = [];

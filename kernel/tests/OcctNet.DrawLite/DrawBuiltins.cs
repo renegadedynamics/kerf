@@ -82,10 +82,15 @@ internal static class DrawBuiltins
         GeometryTestCurveCommands.Register(theInterpreter);
         GeomliteTestAPI2dCommands.Register(theInterpreter);
         BRepTestOtherCommands.Register(theInterpreter);
+        BRepTestFeatureCommands.RegisterOffsetCommands(theInterpreter);
+        BRepTestDraftAngleCommands.Register(theInterpreter);
+        BRepTestFilletCommands.RegisterRollingBallCommands(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
         // unit 7D: the helix commands
         BRepTestHelixCommands.Register(theInterpreter);
+        // unit 7I: the feature commands (BRepTest_FeatureCommands.cxx, the offset commands apart)
+        BRepTestFeatureCommands.Register(theInterpreter);
         // unit 7C: SWDRAW's ShapeCustom commands (the ShapeUpgrade ones are in SWDrawShapeUpgradeCommands). DRAWEXE's
         // SWDRAW::Init loads Shape Healing's messages (ShapeExtend::Init, process-wide and once, decision 975)
         SWDRAWShapeCustomCommands.Register(theInterpreter);

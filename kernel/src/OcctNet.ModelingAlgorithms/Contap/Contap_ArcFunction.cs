@@ -17,7 +17,7 @@ namespace Occt;
 /// <remarks>
 /// A working object. It implements <see cref="IIntStart_ArcFunction"/>, what IntStart_SearchOnBoundaries reads; its
 /// quadric is OCCT's default one, never set. With <see cref="Contap_DraftPrs"/> OCCT computes nothing and leaves the
-/// value and derivative unset; the port returns 0 (decision 10102).
+/// value and derivative unset; the port returns 0 (decision 1076).
 /// </remarks>
 public class Contap_ArcFunction : math_FunctionWithDerivative, IIntStart_ArcFunction
 {
@@ -106,7 +106,7 @@ public class Contap_ArcFunction : math_FunctionWithDerivative, IIntStart_ArcFunc
 
     public override bool Value(double U, out double F)
     {
-        F = 0.0; // OCCT leaves F unset for Contap_DraftPrs (decision 10102)
+        F = 0.0; // OCCT leaves F unset for Contap_DraftPrs (decision 1076)
         // gp_Vec d1u,d1v;
         gp_Pnt2d pt2d = Contap_HCurve2dTool.Value(myArc!, U);
         //  Adaptor3d_HSurfaceTool::D1(mySurf,pt2d.X(),pt2d.Y(),solpt,d1u,d1v);
@@ -170,7 +170,7 @@ public class Contap_ArcFunction : math_FunctionWithDerivative, IIntStart_ArcFunc
 
     public override bool Values(double U, out double F, out double D)
     {
-        F = 0.0; // OCCT leaves F unset for Contap_DraftPrs (decision 10102)
+        F = 0.0; // OCCT leaves F unset for Contap_DraftPrs (decision 1076)
         double dfu = 0.0, dfv = 0.0;
         // gp_Vec d1u,d1v,d2u,d2v,d2uv;
         Contap_HCurve2dTool.D1(myArc!, U, out gp_Pnt2d pt2d, out gp_Vec2d d2d);

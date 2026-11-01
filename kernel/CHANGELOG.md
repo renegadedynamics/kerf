@@ -1208,6 +1208,65 @@ Phase 7 (part): the blend functions (unit 7J), the first step to 3D fillets.
 - Tests: `tools/blendrec` records native OCCT's functions on plane, cylinder, cone and B-spline pairs and its spines on
   a box, a cylinder and a B-spline solid: 235 cases, all identical bit for bit; derivatives against finite differences;
   unit tests of ChFiDS's data.
+Phase 7 (part): drafts and the rest of TKOffset (unit 7G).
+
+- Draft and BRepOffsetAPI_DraftAngle (taper faces of a shape: planes, cylinders, cones); BRepAlgo_NormalProjection,
+  BRepOffsetAPI_NormalProjection and FindContigousEdges; BRepFill_Draft, DraftLaw and BRepOffsetAPI_MakeDraft (draft
+  skins); BiTgte_Blend and its curves (the rolling ball); BRepFill_AdvancedEvolved, so BRepOffsetAPI_MakeEvolved's
+  volume mode works.
+- The caller's shape is never written: the draft angle copies the modifier's result before OCCT's in-place wire
+  corrections when it shares the caller's sub-shapes, and the rolling ball and the evolved volume copy a frozen input at
+  the entry (decisions 9401, 9403, 9404).
+- Draw-lite: the 3D offset commands (`offsetparameter`, `offsetload`, `offsetonface`, `offsetperform`, `offsetshape`,
+  `offsetcompshape`, `thickshell`, `mkoffsetshape`, `offsetshapesimple`), the draft commands (`depouille`,
+  `ndepouille`, `draft`), `rollingball`/`brollingball`/`trollingball` and `nproject`; a backslash-newline now ends a bare
+  Tcl word. 1,687 corpus cases newly runnable (OK 405, BAD 63, 1,216 missing data, 3 failing, attributed).
+- Tests: unit and frozen-input tests; the draft angle against native OCCT (870 runs, every result and history identical
+  or canonically equal); `tools/draftrec` records MakeDraft, BiTgte_Blend and the evolved volume (181 runs, all
+  byte-identical but 4 attributed). Fixed: unit 7F's offset threw reading the history of a run with a null result.
+- BRepFeat (unit 7I): the form features (MakePrism, MakeDPrism, MakeRevol, MakePipe), the ribs and grooves
+  (MakeLinearForm, MakeRevolutionForm), MakeCylindricalHole, SplitShape, Gluer, Builder; the caller's shapes are never
+  written (the features work on copies and give back the unchanged sub-shapes; decision 9501). Draw-lite's feature
+  commands (`featprism`, `featperform`, `splitshape`, `hole`...): 280 more corpus cases pass. Oracle: DPrism and
+  SplitShape against native OCCT, the other makers against a native recording (tools/featrec). A Boolean argument
+  holding frozen sub-shapes now runs non-destructively (decision 9505).
+
+Phase 7 (part): the walking of blends (unit 7K, BRepBlend), the second step to 3D fillets.
+
+- The walkers: BRepBlend_Walking (a blend between two surfaces, stopping on the faces' restrictions and correcting the
+  corners), BRepBlend_CSWalking (a curve and a surface), BRepBlend_SurfRstLineBuilder and RstRstLineBuilder (a surface
+  and a restriction, two restrictions, with the losses of contact), their line, extremities and points on arcs.
+- The surface/restriction and restriction/restriction functions of constant and evolving radius and the inverse
+  functions at the walkings' ends; the curve and blend tools.
+- The approximation's side: BRepBlend_AppFuncRoot with AppFunc, AppFuncRst and AppFuncRstRst (the walking line as a
+  sweep function), BRepBlend_AppSurface and BRepBlend_AppSurf.
+- Tests: `tools/blendrec` now records native OCCT's walking step by step on planes, a plane and a cylinder, B-splines,
+  a curve and a plane, and restrictions, with the lines' approximations: 112 cases (45 of them walk), all identical
+  bit for bit; unit tests of the line, extremities, tools and approximation function.
+
+Phase 7 (part): the legacy data structure's core (unit 7L), which 3D fillets and chamfers write their results into.
+
+- TopOpeBRepDS: the data structure and its handle, points, curves, surfaces, the interferences (curve/point,
+  surface/curve, solid/surface, shape/shape, edge/vertex, face/edge), transitions, the iterators and explorers, the
+  shape data and the package's functions; TopOpeBRepTool_ShapeTool. Ported whole for what ChFi3d, ChFiKPart and the
+  reconstruction of unit 7R need; the legacy builder's filters and reducers are left out (decision 992).
+- The data structure is its own context: nothing in it is process-wide.
+- `tools/dsrec` records the data structure native fillets and chamfers hand to the legacy builder (15 cases: boxes,
+  cylinders, cones, a sphere, a torus, a Boolean result, chamfers), in a text format the port writes too
+  (`TopOpeBRepDS_TextDump`), so that the fillet units can compare theirs with native's byte for byte. Every recording
+  reads into the port's data structure and writes back as native's.
+Phase 7 (part): build123d.NET parity, its first part, and Quantity_Color (unit 7X).
+
+- Quantity_Color and Quantity_ColorRGBA (colours: the 509 named colours, RGB, sRGB, HLS, CIE Lab and Lch, hex strings),
+  the last classes build123d.NET calls that the port lacked outside phase 7 and STEP. Identical bit for bit with native
+  OCCT on 14,326 records.
+- build123d.NET's healing, offset, draft and feature calls (Hollow, Offset3D and the Offset operation, Thicken,
+  Face and Shell Offset, Draft, ExtrudeTaper's draft, DPrism, SplitByPerimeter, ToSplines) replayed on the port from its
+  tests' inputs, with their histories, failures and build123d.NET's finishing steps: 93 calls, none different (85
+  identical or canonically identical where native varies, 2 attributed to native's run-to-run variation, the same
+  failure on both sides in the others).
+- Benchmarks: `-- phase7` times those calls against native OCCT: 1.56× native serial in all (geometric mean 1.09×);
+  offsets and drafts within 2×; DPrism, SplitByPerimeter, ToSplines and three small hollows above it (decision 10304).
 
 Phase 7 (part): the foundations of hidden-line removal (unit 7P).
 
@@ -1222,6 +1281,19 @@ Phase 7 (part): the foundations of hidden-line removal (unit 7P).
 - Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
   quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
   the edge status and the contours.
+
+Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fillet builders.
+
+- ChFiKPart: the fillets and chamfers computed analytically, written into the legacy data structure as native OCCT
+  writes them: a cylinder between two planes, a torus or sphere between a plane and a cylinder or cone, the chamfers
+  (symmetric, two distances, distance and angle, constant throat with or without penetration) on the same pairs, and
+  the toric, spherical and rotule corners.
+- ChFi3d_Builder_0, whole: the builders' free functions (pcurves and their same parameter, the edges between fillets,
+  the intersections of fillets and faces, the elementary spines' curves, writing a stripe into the data structure, the
+  topology helpers).
+- Tests: tools/dsrec records native OCCT's analytic cases on real faces and Builder_0's functions (compiled from OCCT's
+  own source): 66 cases, all identical byte for byte. The fillets write only the builder's working copy of their
+  input (unit 7N2 copies it at entry).
 
 Phase 7 (part): the data model of hidden-line removal (unit 7Q1).
 

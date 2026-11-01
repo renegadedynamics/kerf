@@ -50,25 +50,13 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // the progress indicator's output, which Draw-lite's commands don't make (decision 954)
         ["bugs/modalg_7/bug21264"] = "progress",
         ["bugs/modalg_7/bug30788"] = "progress",
+        ["bugs/modalg_7/bug32330"] = "progress", // runnable since unit 7G's offset commands
         ["lowalgos/progress/A1"] = "progress",
         ["lowalgos/progress/A2"] = "progress",
         ["lowalgos/progress/A3"] = "progress",
         ["lowalgos/progress/A4"] = "progress",
         // the triangulation DRAWEXE's `checkview -display` makes (the viewer); Draw-lite's checkview is a no-op
         ["bugs/mesh/bug32241"] = "viewer",
-        // BRepOffsetAPI_MakeEvolved's volume mode (BRepFill_AdvancedEvolved, phase 7)
-        ["evolved/voluved/AGT001"] = "phase 7",
-        ["evolved/voluved/AGT002"] = "phase 7",
-        ["evolved/voluved/AGT003"] = "phase 7",
-        ["evolved/voluved/AGT004"] = "phase 7",
-        ["evolved/voluved/AGT005"] = "phase 7",
-        ["evolved/voluved/AGT006"] = "phase 7",
-        ["evolved/voluved/AGT007"] = "phase 7",
-        ["evolved/voluved/AGT008"] = "phase 7",
-        ["evolved/voluved/AGT009"] = "phase 7",
-        ["evolved/voluved/bug26470_1"] = "phase 7",
-        ["evolved/voluved/bug26470_2"] = "phase 7",
-        ["evolved/voluved/bug30781"] = "phase 7",
     };
 
     /// <summary>
@@ -125,7 +113,9 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         }
 
         // measured (decision 988): 512 newly runnable; OK 337, BAD 18 (OCCT's TODOs), SKIPPED 138 (data not public),
-        // FAILED 19, all attributed (KnownFailures)
+        // FAILED 19, all attributed (KnownFailures); since unit 7G (MakeEvolved's volume mode) the 12 evolved/voluved
+        // cases among them pass; with 7G's commands 596 are newly runnable (OK 354, BAD 18, SKIPPED 216, FAILED 8
+        // attributed)
         Assert.True(aNew.Count >= 512, $"{aNew.Count}");
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 337, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),

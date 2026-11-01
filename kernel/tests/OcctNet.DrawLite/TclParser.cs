@@ -193,6 +193,13 @@ public static class TclParser
                 break;
             }
 
+            // A backslash-newline ends a bare word: Tcl replaces it (and the blanks after it) by a space before it
+            // splits the command into words (unit 7G: draft/angle/H6's "15 0 0 1\" rows read as one word "1 0").
+            if (!aQuoted && c == '\\' && aPos + 1 < s.Length && s[aPos + 1] == '\n')
+            {
+                break;
+            }
+
             switch (c)
             {
                 case '\\':

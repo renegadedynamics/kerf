@@ -465,6 +465,15 @@ public class BooleanOracleTests(ITestOutputHelper output)
 
     internal static (N.TopoDS_Shape?, N.BRepTools_History?, string?) RunNative(Run theCase, List<N.TopoDS_Shape> theArgs, bool theParallel)
     {
+        // Native failed now and then under a loaded machine where it otherwise succeeds (bopfuse_simple/F3's section,
+        // once in a merge gate on 1 November 2026; the port's result was the usual one): a failing native run is run once
+        // more, and only a second failure counts
+        var aFirst = RunNativeOnce(theCase, theArgs, theParallel);
+        return aFirst.Item3 is null ? aFirst : RunNativeOnce(theCase, theArgs, theParallel);
+    }
+
+    private static (N.TopoDS_Shape?, N.BRepTools_History?, string?) RunNativeOnce(Run theCase, List<N.TopoDS_Shape> theArgs, bool theParallel)
+    {
         using var anObjects = new N.TopTools_ListOfShape();
         using var aTools = new N.TopTools_ListOfShape();
         using var anAll = new N.TopTools_ListOfShape();

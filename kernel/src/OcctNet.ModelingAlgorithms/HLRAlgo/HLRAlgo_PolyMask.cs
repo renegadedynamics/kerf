@@ -8,7 +8,7 @@ namespace Occt;
 /// <remarks>
 /// OCCT's unscoped enum is only ever combined with the integer flags (<c>Flags &amp; HLRAlgo_PolyMask_FMskBack</c>), so
 /// the port makes its members integer constants; code that writes <c>using static Occt.HLRAlgo_PolyMask;</c> reads as
-/// the C++ does (decision 10105).
+/// the C++ does (decision 1079).
 /// </remarks>
 public static class HLRAlgo_PolyMask
 {

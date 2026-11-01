@@ -8,7 +8,8 @@ namespace Occt;
 /// <summary>The legacy Booleans' projection functions (<c>FUN_tool_*</c>).</summary>
 /// <remarks>
 /// OCCT's free functions, as a static class named after the file. Only <c>FUN_tool_bounds</c> (for an edge) is ported,
-/// for the face maker of the 2D offset (plan 2.11); the projections of points on curves and surfaces are left out.
+/// for the face maker of the 2D offset (plan 2.11), and <c>FUN_tool_projPonS</c>, for
+/// <see cref="TopOpeBRepTool_ShapeTool.SurfacesSameOriented"/> (unit 7L); the other projections are left out.
 /// </remarks>
 public static class TopOpeBRepTool_PROJECT
 {
@@ -20,6 +21,41 @@ public static class TopOpeBRepTool_PROJECT
         l = BAC.LastParameter();
     }
 
-    // FUN_tool_getindex, FUN_tool_projPonC, FUN_tool_projPonC2D, FUN_tool_projPonS, FUN_tool_projPonE,
+    /// <summary>
+    /// Projects <paramref name="P"/> on the surface <paramref name="S"/> within its bounds: the parameters
+    /// <paramref name="UV"/> and distance <paramref name="dist"/> of the nearest point; false (both unchanged) if
+    /// there is none.
+    /// </summary>
+    public static bool FUN_tool_projPonS(in gp_Pnt P,
+                                         Geom_Surface S,
+                                         ref gp_Pnt2d UV,
+                                         ref double dist,
+                                         Extrema_ExtFlag anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MINMAX,
+                                         Extrema_ExtAlgo anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad)
+    {
+        GeomAPI_ProjectPointOnSurf PonS = new();
+        //
+        S.Bounds(out double UMin, out double UMax, out double VMin, out double VMax);
+        PonS.Init(S, UMin, UMax, VMin, VMax, anExtAlgo);
+        Extrema_ExtPS anExtPS = PonS.Extrema();
+        anExtPS.SetFlag(anExtFlag);
+        //
+        PonS.Perform(P);
+        //
+        if (!PonS.Extrema().IsDone())
+        {
+            return false;
+        }
+        if (PonS.NbPoints() == 0)
+        {
+            return false;
+        }
+        dist = PonS.LowerDistance();
+        PonS.LowerDistanceParameters(out double U, out double V);
+        UV.SetCoord(U, V);
+        return true;
+    }
+
+    // FUN_tool_getindex, FUN_tool_projPonC, FUN_tool_projPonC2D, FUN_tool_projPonE,
     // FUN_tool_projPonboundedF, FUN_tool_projPonF: not ported (plan 2.11).
 }

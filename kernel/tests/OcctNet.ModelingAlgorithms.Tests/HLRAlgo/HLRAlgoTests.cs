@@ -107,7 +107,7 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_FirstAxonometricView_LeavesThePointUnset_AsOcct()
     {
-        // OCCT's type-0 view matrix: Project(P, Pout) computes X and Y but does not write them (decision 10104)
+        // OCCT's type-0 view matrix: Project(P, Pout) computes X and Y but does not write them (decision 1078)
         HLRAlgo_Projector P = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 1), new gp_Dir(1.4142135623730951, -1, 1)));
         gp_Pnt2d aP = new(-7, -7);
         P.Project(new gp_Pnt(1, 2, 3), ref aP);

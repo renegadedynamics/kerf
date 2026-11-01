@@ -8,7 +8,7 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// The commands of BRepTest_BasicCommands.cxx that modify or compare shapes with BRepBuilderAPI and BRepLib:
 /// nurbsconvert, deform, scalexyz, sameparameter, fsameparameter, updatetolerance, solidorientation, mkedgecurve,
-/// findplane, compare, issubshape and wexplo.
+/// findplane, compare, issubshape and wexplo; and nproject (BRepOffsetAPI_NormalProjection, unit 7G).
 /// </summary>
 /// <remarks>
 /// sameparameter, updatetolerance and mkedgecurve change their shape in place when no result name is given; the
@@ -32,6 +32,110 @@ internal static class BRepTestModifyCommands
         DrawCxx.Add(theInterpreter, "compare", CompareShapes);
         DrawCxx.Add(theInterpreter, "issubshape", IsSubShape);
         DrawCxx.Add(theInterpreter, "wexplo", WExplo);
+        DrawCxx.Add(theInterpreter, "nproject", NProject);
+    }
+
+    // nproject pj e1 e2 e3 ... surf -g -d [dmax] [Tol [continuity [maxdeg [maxseg]]]
+    private static int NProject(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
+    {
+        int n = a.Count;
+        if (n < 4)
+        {
+            return 1;
+        }
+        TopoDS_Shape InpShape;
+        int arg = 2, i;
+        NCollection_Sequence<TopoDS_Shape> Args = new();
+
+        double Tol = 1.0e-4;
+        double Tol2d;
+        double MaxDistance = 1.0e-3;
+        GeomAbs_Shape Continuity = GeomAbs_Shape.GeomAbs_C1;
+        int MaxDeg = 14;
+        int MaxSeg = 16;
+
+        while ((n > arg) && !(InpShape = theDI.GetShape(a[arg])).IsNull())
+        {
+            Args.Append(InpShape);
+            arg++;
+        }
+        if (Args.Length() < 2)
+        {
+            return 1;
+        }
+
+        BRepOffsetAPI_NormalProjection OrtProj = new(Args.Last());
+
+        for (i = 1; i < Args.Length(); i++)
+        {
+            OrtProj.Add(Args[i]);
+        }
+
+        if (n > arg)
+        {
+            if (a[arg] == "-g")
+            {
+                OrtProj.SetLimit(false);
+                arg++;
+            }
+        }
+
+        if (n > arg)
+        {
+            if (a[arg] == "-d")
+            {
+                arg++;
+                if (n > arg)
+                {
+                    MaxDistance = theDI.Atof(a[arg++]);
+                }
+                OrtProj.SetMaxDistance(MaxDistance);
+            }
+        }
+        if (n > arg)
+        {
+            Tol = Math.Max(theDI.Atof(a[arg++]), 1.0e-10);
+        }
+
+        if (n > arg)
+        {
+            if (theDI.Atoi(a[arg]) == 0)
+            {
+                Continuity = GeomAbs_Shape.GeomAbs_C0;
+            }
+            else if (theDI.Atoi(a[arg]) == 2)
+            {
+                Continuity = GeomAbs_Shape.GeomAbs_C2;
+            }
+            arg++;
+        }
+
+        if (n > arg)
+        {
+            MaxDeg = theDI.Atoi(a[arg++]);
+            if (MaxDeg < 1 || MaxDeg > 14)
+            {
+                MaxDeg = 14;
+            }
+        }
+
+        if (n > arg)
+        {
+            MaxSeg = theDI.Atoi(a[arg]);
+        }
+
+        Tol2d = Math.Pow(Tol, 2.0 / 3);
+
+        OrtProj.SetParams(Tol, Tol2d, Continuity, MaxDeg, MaxSeg);
+        OrtProj.Build();
+        NCollection_List<TopoDS_Shape> Wire = new();
+        bool IsWire = OrtProj.BuildWire(Wire);
+        if (IsWire)
+        {
+            di.Append(" BuildWire OK \n");
+        }
+        theDI.SetShape(a[1], OrtProj.Shape());
+        return 0;
     }
 
     private static int NurbsConvert(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's class is used by value but holds an NCollection_Sequence; the port makes it a class with OCCT's copy as the
-/// copy constructor, and ported code copies where C++ copies (decision 10103).
+/// copy constructor, and ported code copies where C++ copies (decision 1077).
 /// </remarks>
 public sealed class Intrv_Intervals
 {

@@ -16,11 +16,11 @@ namespace Occt;
 /// A struct with static members (decision 338), so that it can be the boundary search's tool
 /// (<see cref="Contap_TheSearch"/>, through <see cref="IIntStart_SOBTool"/>). OCCT keeps the sampling bounds that
 /// <see cref="NbSamplePoints"/> sets and <see cref="SamplePoint"/> reads in file-scope statics; they are read across
-/// calls, so they are <c>[ThreadStatic]</c> here (plan 2.3, decision 10101).
+/// calls, so they are <c>[ThreadStatic]</c> here (plan 2.3, decision 1075).
 /// </remarks>
 public readonly struct Contap_HContTool : IIntStart_SOBTool
 {
-    // OCCT: static double uinf, vinf, usup, vsup; (decision 10101)
+    // OCCT: static double uinf, vinf, usup, vsup; (decision 1075)
     [ThreadStatic] private static double uinf;
     [ThreadStatic] private static double vinf;
     [ThreadStatic] private static double usup;

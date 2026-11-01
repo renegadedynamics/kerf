@@ -16,7 +16,7 @@ namespace Occt;
 /// mutators, with the constructors and <see cref="WithScaled"/> as their twins. For four exact view matrices (top,
 /// front and two axonometric ones) OCCT projects with hard-coded formulas, as the port does. In
 /// <see cref="Project(in gp_Pnt, ref gp_Pnt2d)"/> OCCT forgets to write the result for the first of them, so the
-/// point is <c>ref</c> and keeps the caller's value there (decision 10104).
+/// point is <c>ref</c> and keeps the caller's value there (decision 1078).
 /// </remarks>
 public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
 {
@@ -246,7 +246,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
                     X = x07 - y05 + z05;
                     Y = x07 + y05 - z05;
                     //-- Z=0.7071067811865475*(P.Y()+P.Z());
-                    // OCCT: Pout is not set here (decision 10104)
+                    // OCCT: Pout is not set here (decision 1078)
                     break;
                 }
                 case 1:

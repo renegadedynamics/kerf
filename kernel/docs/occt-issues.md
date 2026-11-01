@@ -1545,6 +1545,95 @@ Found by porting Blend, BlendFunc and ChFiDS and by tools/blendrec. The port rep
 | ChFiDS_Stripe `Reset` | `pcrv1.Nullify()` twice | The last pcurve is kept |
 | ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost |
 | Blend_CurvPointFuncInv `NbVariables` | Documented as 3, returns 2 | Reproduced |
+## Phase 7: unit 7G, drafts and the rest of TKOffset
+
+Found by porting Draft, BRepOffsetAPI's draft and projection makers, BRepFill_Draft, BiTgte, BRepFill_AdvancedEvolved
+and their Draw commands, and by their oracle and recordings. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Draft_Modification `Remove` | A face whose `Add` failed was never added, so `Remove` throws Standard_NoSuchObject, though the documentation says to call it after a failed `Add` | Reproduced; `Clear` resets |
+| Draft_Modification `NewCurve2d` | Translates by a period the pcurve it returns, which may be the one it keeps for the edge | A second call for the same edge and face would translate it again. The port translates a frozen one on a copy (decision 1044) |
+| Draft_Modification `NewParameter` | `GC = down_cast<Geom_TrimmedCurve>(GC)` keeps the trimmed curve (its basis was meant) | Reproduced |
+| Draft_Modification (some drafts of several faces) | Dereferences a null handle | An access violation natively (24 oracle runs), a NullReferenceException in the port |
+| BRepOffsetAPI_DraftAngle `CorrectWires` | Frees and edits the modifier's result, which shares the input's unchanged sub-shapes | Native writes into its input (324 of the oracle's 870 runs changed native's input); build123d.NET copies ExtrudeTaper's profile for it. The port copies the result first (decision 1044) |
+| BRepAlgo_NormalProjection `Build` | The edges the face bounds trim (BRepAlgoAPI_Section) are added to the result but not to the list `Generated` returns | `Generated` is empty for them. Reproduced |
+| BRepOffsetAPI_FindContigousEdges `NbEdges` | Declared, never defined | Left out |
+| BRepFill_Draft `Generated` | For a vertex, `TopoDS::Edge` throws; the vertex branch runs only for a null shape, whose comparisons fail | Never answers for a vertex. Reproduced |
+| BiTgte_Blend `ContactType` | Two faces give BiTgte_FaceEdge, never BiTgte_FaceFace | Reproduced |
+| BiTgte_Blend `ContactType` (`SupportShape1`) | Throws Standard_NoSuchObject on some center lines (the recording's Boolean result and bug29861's cylinders) | Reproduced (17 recorded runs) |
+| BRepFill_AdvancedEvolved `GetSpineAndProfile` | Evaluates both tangents with the first edge's adaptor (`anAC1.D1(aPar2, ...)`), and takes `anExtr.Value()` for every solution | Reproduced |
+| BRepFill_AdvancedEvolved `RemoveExcessSolids` | `TopoDS::Solid(anExpSo.Current())` after the explorer passed its only solid: the explored compound, cast unchecked in release builds | The result is the compound. The port keeps it without the cast (decision 1047) |
+| BRepTest `offsetload`, `offsetonface`, `rollingball` | Read words past the arguments (`a[2]` with two words, `a[i + 1]` for an odd count, `a[2]`, `a[3]`, `a[n]`) | Draw-lite reads empty words |
+## Phase 7: unit 7I, BRepFeat
+
+Found by porting BRepFeat and the feature Draw commands, and by their oracle. The port reproduces each (`// OCCT` at
+the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepFeat_MakePrism, MakeDPrism, MakeRevol | Each declares its own private `myStatusError`, hiding BRepFeat_Form's; `CurrentStatusError` (the form's, not virtual) never reads it | A status the maker sets (IncTypes, NoIntersectU/F, NullToolU/F, InvFirstShape, IncParameter...) is never reported; a construction that never reaches GlobalPerform (a prism of a length without glued faces) reports NotInitialized. Reproduced (the oracle's statuses agree) |
+| BRepFeat_MakePipe | Declares its own `mySkface`, hiding the form's, which stays null | Reproduced |
+| BRepFeat_MakeRevolutionForm | Declares its own `mySliding`, hiding BRepFeat_RibSlot's, which stays false | Reproduced |
+| BRepFeat_MakePrism, MakeDPrism `PerformUntilHeight`, BRepFeat_MakeRevol `PerformUntilAngle` | `if (Until.IsNull()) Perform(Length);` and `if (Length == 0) Perform(Until);` don't return | A null Until throws Standard_ConstructionError after the prism of the length; a zero length builds the prism twice. Reproduced |
+| BRepFeat_MakeRevol `PerformUntilAngle` | The branches are the other way round from `Perform(Until)`: a finite until face is cut, a support glued | Reproduced |
+| BRepFeat_MakePipe `Perform(Until)`, `Perform(From, Until)` | `myFShape` becomes the pipe's first shape, which the map doesn't hold | `FirstShape()` then throws Standard_NoSuchObject. Reproduced |
+| BRepFeat_Form `GlobalPerform` | `if (myMap.IsEmpty())` where `myMap(fac).IsEmpty()` is meant (the until faces outside the shape) | An until face cut away entirely keeps an empty list. Reproduced |
+| BRepFeat_MakeRevolutionForm `Init` | Tests `proj.NbPoints()` again where `proj1` is meant | Reproduced |
+| BRepFeat_MakeRevol, RevolutionForm `ToFuse` | Down-casts the face's surface to a plane after testing the basis surface | A trimmed plane gives a null plane: an access violation natively, a NullReferenceException in the port |
+| BRepFeat_MakeCylindricalHole `PerformThruNext` | The `else` meant for `parbar > Last` hangs on `First - parbar < dmin` | Reproduced |
+| BRepFeat_Form `UpdateDescendants`, BRepFeat_RibSlot, BRepFeat_MakeDPrism `BossEdges` | Iterate maps keyed by shape address into the history lists and the lateral edges | Natively in address order; the port in insertion order (decision 1054) |
+| BRepFeat_Builder, BRepFeat_Form (the Booleans), BRepFeat_MakeLinearForm `Init` (`BB.UpdateVertex`, `myPln->Transform`), BRepFeat_RibSlot `LFPerform` (`BRepLib::SameParameter` on the glued result) | Write into the shapes and the plane the caller gives | The port works on copies (decision 1052) |
+
+## Phase 7: unit 7K, the walking (BRepBlend)
+
+Found by porting BRepBlend and by tools/blendrec. The port reproduces each (`// OCCT` at the line) except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepBlend_CSWalking `IsDone`, `Line` | Declared inline in the header, never defined (no .lxx) | The class can't be used natively (a link error); ChFi3d doesn't use it. The port defines them (decision 1059) |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | `math_Vector DEDT(1, 3); DEDT = secmember;` for the 2x2 system when Gauss fails | Release builds copy the two values and solve on them (the dimension checks are compiled out); the port's vector has two entries |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | The second restriction's 2D tangent is computed from `tgrst1` | `Tangent2dOnRst2` is the first restriction's tangent in the second surface's parameters |
+| BRepBlend_RstRstLineBuilder `PerformFirstSection`, `InternalPerform` | Leaving the first restriction's domain, `IsVtxrst2`/`Vtxrst2` take the vertex found on the first restriction | The second extremity can be marked on the first restriction's vertex |
+| BRepBlend_RstRstLineBuilder `MakeExtremity` | The second extremity's tangent is `TangentOnC1()` | The extremity on the second restriction has the first's tangent |
+| BRepBlend_SurfRstLineBuilder `InternalPerform` | On both restrictions at once, `sol(3) = solinvs(3)` (the parameter on the face's arc) where `PerformFirstSection` takes `solinvs(2)` (on the restriction) | The section is set at a wrong restriction parameter before `TestArret` |
+| BRepBlend_SurfRstLineBuilder `Perform` | The restriction's start extremity is built with the surface's (U, V) | Its parameter is the surface's U, not the restriction's |
+| BRepBlend_Walking `Perform`, `PerformFirstSection`, `InternalPerform`; ChFi3d's `UpdateLine` | Four-argument `BRepBlend_Extremity(P, sol(1), sol(2), tol)` and `SetValue` are the curve overload (P, W, Param, Tol) | The extremity's U is the surface's u and its guide parameter the surface's v |
+| BRepBlend_SurfRstConstRad, SurfRstEvolRad, RstRstConstRad, RstRstEvolRad | `myTConv` is not initialised by the constructors | Read only after `GetShape` sets it in OCCT's call order; the port starts it at its first value |
+| BRepBlend_SurfRstLineBuilder `ArcToRecadre` | The header names the 2D points (pt2d, lastpt2d), the definition (lastpt2d, pt2d) | The port follows the definition |
+| BRepBlend_CurvPointRadInv | `choix` is set and never read | None |
+
+## Phase 7: unit 7L, the legacy data structure's core
+
+Found by porting TopOpeBRepDS's core and TopOpeBRepTool_ShapeTool. The port reproduces each (`// OCCT` or a remark at
+the place).
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepDS_SurfaceIterator constructor | Sets the SURFACE condition after the base constructor has matched, without matching again | The first `Value()` is the list's first interference whatever its geometry (`HDataStructure::SolidSurfaces`); `Next()` then skips the others |
+| TopOpeBRepDS_DataStructure `Change*Interferences`, `ChangeCurve`, `ChangePoint`, `ChangeSurface` | Return the data structure's own empty list or value, for writing, when the shape or geometry is missing | What is written there is every later miss's list or value (decision 1066) |
+| TopOpeBRepDS_Point(shape) | Leaves `myKeep` unset; the default constructor leaves the tolerance unset | Uninitialised natively; the port keeps the point and uses 0 |
+| TopOpeBRepDS_Interference() | Leaves the indices and kinds unset | Uninitialised natively; the port uses 0 and POINT |
+| TopOpeBRepDS_SurfaceExplorer() | Leaves `myFindKeep` unset | Uninitialised natively; the port uses false |
+| TopOpeBRepDS_CurveIterator `PCurve`, TopOpeBRepDS_Curve `Curve1`/`Curve2` | Cast the interference to a surface/curve interference without checking | Undefined natively on another class; the port throws InvalidCastException |
+| TopOpeBRepDS_Surface | A new surface is not kept, a new point or curve is | `SurfaceExplorer` with its default `FindOnlyKeep` finds none of a fillet's surfaces |
+| TopOpeBRepDS_DataStructure `IsSectionEdge`, `SectionEdge` | Need the edge among the data structure's shapes too, not only among the section edges | A section edge added alone is not one |
+| TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
+| TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
+| TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
+## Phase 7: unit 7X, Quantity_Color and build123d.NET's phase 7 calls
+
+Found by porting Quantity_Color and Quantity_ColorRGBA and by replaying build123d.NET's phase 7 calls. The port
+reproduces each (`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Quantity_Color `ColorFromName` | The bare prefix `"Quantity_NOC_"` (any case) makes `SubString(14, 13)` raise Standard_OutOfRange inside a `noexcept` function | Native OCCT terminates the process (std::terminate). The port throws Standard_OutOfRange (decision 1070) |
+| Quantity_Color `Argb2color` | Reads the bytes as sRGB, where `Color2argb` writes the linear values | A colour doesn't come back from its ARGB integer; documented by OCCT. Reproduced |
+
+The replay found nothing new in the offsets, drafts and features: the null result after a reported success and native's
+run-to-run variation with the Arc join are unit 7F's (decisions 1031 and 1032).
 
 ## Phase 7: unit 7P, the foundations of HLR
 
@@ -1553,14 +1642,28 @@ the line where it is code).
 
 | Where | What | Effect |
 |---|---|---|
-| HLRAlgo_Projector `Project(const gp_Pnt&, gp_Pnt2d&)` | For the first hard-coded axonometric view (`TrsfType` 0) computes X and Y and never writes `Pout` | The caller's point comes back unchanged (decision 10104); the other `Project` forms are right |
-| Contap_ArcFunction `Value`, `Values`; Contap_SurfFunction `Value`, `Derivatives`, `Values` | Contap_DraftPrs (a draft seen from an eye) computes nothing | The value is left unset (the port's ArcFunction returns 0, decision 10102; SurfFunction leaves the caller's vector and matrix); the derivatives are 0 |
+| HLRAlgo_Projector `Project(const gp_Pnt&, gp_Pnt2d&)` | For the first hard-coded axonometric view (`TrsfType` 0) computes X and Y and never writes `Pout` | The caller's point comes back unchanged (decision 1078); the other `Project` forms are right |
+| Contap_ArcFunction `Value`, `Values`; Contap_SurfFunction `Value`, `Derivatives`, `Values` | Contap_DraftPrs (a draft seen from an eye) computes nothing | The value is left unset (the port's ArcFunction returns 0, decision 1076; SurfFunction leaves the caller's vector and matrix); the derivatives are 0 |
 | Contap_HCurve2dTool `NbSamples` | `nbs *= (Last - First) / (U1 - U0)`, the inverse of IntPatch_HCurve2dTool's corrected ratio | More samples on a short range of a B-spline arc than on the whole arc |
 | HLRAlgo_EdgeIterator `InitHidden` | On a status neither wholly hidden nor with visible intervals (a default status) reads the first interval of an empty sequence | An access violation natively; Standard_OutOfRange in the port |
-| Intrv_Interval's default constructor | Its tolerances are `Epsilon(RealFirst())` and `Epsilon(RealLast())`, both 0 | The whole line has null tolerances (the port's `Epsilon` gave infinity there, decision 10106) |
+| Intrv_Interval's default constructor | Its tolerances are `Epsilon(RealFirst())` and `Epsilon(RealLast())`, both 0 | The whole line has null tolerances (the port's `Epsilon` gave infinity there, decision 1080) |
 | TopCnx_EdgeFaceTransition `BoundaryTransition` | Both branches of the even/odd test return TopAbs_EXTERNAL | Reproduced |
 | Contap_Contour `LineConstructor` | `u2`, `v2` unset when a line or circle lies on a surface other than a cylinder, cone or sphere | Unreachable (ContAna only makes those); the port starts them at 0 |
 | HLRAlgo_EdgeStatus `Hide` | Ignores `OnBoundary` | Reproduced |
+
+## Phase 7: unit 7N1, the fillet construction data
+
+Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// OCCT` or a remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiKPart_ComputeData_ChAsymPlnCyl `MakeChAsym` (straight guide) | Projects the guide's point on the cylinder's axis with `gp_XYZ::Multiplied(gp_XYZ)`, a product coordinate by coordinate, where a dot product is meant | The point on the axis is right only for an axis parallel to a coordinate axis; on any other the distance-angle chamfer along a generatrix is built from a wrong point |
+| ChFiKPart_ComputeData_FilPlnCyl `MakeFillet` (circle, sphere case) | Evaluates the sphere with the cylinder's radius | The two radii are equal within the confusion there: no effect |
+| ChFi3d_Builder_0.hxx | Declares `ChFi3d_EnlargeFace`, defined nowhere | Not ported |
+| ChFi3d_Builder_0 `ChFi3d_IndexPointInDS` | Writes the point and tolerance into the common point's vertex ("it is necessary to implement a mechanism controlling tolerance") | Changes the input's vertices natively (plan 2.2); the port writes the builder's working copy (decision 1087) |
+| ChFi3d_Builder_0 `ChFi3d_Orientation`, `ChFi3d_FilDS` | The orientation is left unchanged when no interference matches; FilDS goes on with the previous transition | A fillet surface data on a surface without its solid interference takes the previous one's transitions |
+| ChFi3d_Builder_0 `ChFi3d_PerformElSpine` | Declares three arrays (`ExtrapPole`, `ExtraCoeffs`, `Cont`) it never uses | None |
+| ChFi3d_Builder_0 `ChFi3d_StripeEdgeInter` | Takes the data structure and never reads it | None |
 
 ## Phase 7: unit 7Q1, the data model of HLR
 

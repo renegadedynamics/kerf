@@ -15,7 +15,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// order, written in the same text (every double as its 64 bits in hex), so the tests compare the port's text with
 /// native OCCT's recording.
 /// </summary>
-internal sealed class BlendRecorder
+internal sealed partial class BlendRecorder
 {
     private readonly StringBuilder gOut = new();
 
