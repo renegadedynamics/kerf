@@ -77,7 +77,7 @@ public class DrawIntersectCorpusTests(ITestOutputHelper output)
 
         var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                              .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(120), null))
+                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5G: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

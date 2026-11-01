@@ -60,7 +60,7 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         output.WriteLine($"{aScans.Count} cases use pipe; runnable before 5S1: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
         var aRuns = aRunnable.Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(120), null))
+                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5S1: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

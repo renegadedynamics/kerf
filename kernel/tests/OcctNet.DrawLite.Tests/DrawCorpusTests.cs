@@ -207,6 +207,13 @@ public class DrawCorpusTests(ITestOutputHelper output)
     private static readonly System.Text.RegularExpressions.Regex s_failure =
         new(@"\b(?:[Ee]xception|[Ee][Rr][Rr][Oo][Rr]|[Ff][Aa][Ii][Ll](?:[0-9]|[Ee][Dd]|[Uu][Rr][Ee]))\b|could not be found");
 
+    /// <summary>
+    /// The elapsed-time limit of each case in the large corpus tests. A wall-clock limit, where DRAWEXE's cpulimit
+    /// counts CPU time: in the full suite those tests run side by side, each with half the processors, and cases that take
+    /// a minute alone have passed 300 s (bugs/modalg_5/bug25232_9 after unit 7W added its corpus test).
+    /// </summary>
+    internal const int CorpusTimeLimitSeconds = 900;
+
     internal static string DataPath
         => string.Join(';', Path.Combine(DrawResourcesTests.OcctSourceDirectory, "data"), DrawResourcesTests.OcctTestDataDirectory)
                  .Replace('\\', '/');
@@ -243,7 +250,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
         List<DrawCaseRun> Run(List<DrawTestCase> theCases, Action<DrawInterpreter>? theSetup)
             => theCases.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                       .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DataPath, TimeSpan.FromSeconds(120), theSetup))
+                       .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), theSetup))
                        .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                        .ToList();
 

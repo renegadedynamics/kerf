@@ -97,7 +97,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
 
         bool UsesMemory(DrawTestCase theCase) => MeasuresMemory(aScans.First(s => s.Case == theCase));
         DrawCaseRun RunOne(DrawTestCase theCase)
-            => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(300), null);
+            => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
         List<DrawCaseRun> aRuns = [.. aNew.Where(c => !UsesMemory(c)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                           .Select(RunOne),
                                    .. aNew.Where(UsesMemory).Select(RunOne)];

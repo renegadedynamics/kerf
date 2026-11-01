@@ -73,7 +73,7 @@ public class DrawConstructionCorpusTests(ITestOutputHelper output)
         var aRuns = aRunnable.Where(c => aFilter is null || c.Id.Contains(aFilter, StringComparison.Ordinal))
                              .AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                              .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(300), null))
+                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5W: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

@@ -83,7 +83,7 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
 
         var aRuns = aToRun.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                           TimeSpan.FromSeconds(300), null))
+                                                           TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                           .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                           .ToList();
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
@@ -120,7 +120,9 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
 
         Assert.True(aRunnable.Count > aRunnableBefore.Count + 3000);
         Assert.Contains(aRuns, r => r.Status == "OK");
-        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id));
+        // and unit 7W's attributed failures among the cases using the Boolean commands (bugs/modalg_7/bug21264: progress)
+        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
+                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 6L).</summary>
@@ -151,5 +153,15 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         // the same for its twin on two faces (8 vertices, 10 edges, 3 faces destructively; 11, 15, 5 non-destructively,
         // natively as in the port); in the default run's sample since unit 7W's commands made more cases runnable
         "bugs/modalg_7/bug29333_1",
+
+        // Attributed by unit 7W's follow-up (decisions 990 on):
+        // decision 955 again: the general fuse of the wire with the vertices v0 and v1 as tools; native OCCT
+        // (build123d.NET's BOPAlgo_Builder on the case's files) reports each vertex modified once non-destructively, as
+        // the port does, and not modified destructively, which the script expects ("The shape has not been modified.")
+        "bugs/modalg_6/bug26393",
+        // speed: the script wants each section within 0.1 s. The port takes 0.34 s for each on a cold start (the JIT) and
+        // 0.02 s and 0.20 s warm in Release; native (build123d.NET's BRepAlgoAPI_Section, the same options) takes 0.03 s
+        // for the second: a performance gap of about 6x on these B-spline sheets (occt-issues.md, unit 7W follow-up)
+        "bugs/modalg_7/bug83",
     };
 }

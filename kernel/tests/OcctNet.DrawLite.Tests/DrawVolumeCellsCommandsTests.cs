@@ -111,7 +111,7 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
 
         List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                            .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(300), null))
+                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

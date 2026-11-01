@@ -9900,3 +9900,24 @@ decisions are cited by their numbers.
       `tools/cksirec` is the native check of decision 980. Earlier tests whose numbers moved: the pipe corpus test (106
       runnable, OK 69 to 71: three more cases use 7W's commands); the removefeatures, check-command and construction
       corpus tests accept the 7W failures (bug30788, bug21264, bug32241) that 7W's commands made runnable there.
+
+## Phase 7: unit 7W's follow-up, the Boolean corpus in full
+
+The Boolean corpus test run whole (`OCCTNET_CORPUS_FULL=1`) after unit 7W's merge, and bugs/modalg_6/bug26393, which
+the default run's every-fourth sample had skipped. Numbers from 8301 are placeholders, renumbered on merge.
+
+990. **bugs/modalg_6/bug26393 is decision 955 again.** The general fuse of a wire with two vertices as tools: the
+      script wants `modified` to say the vertices are not modified. Native OCCT (build123d.NET's BOPAlgo_Builder on the
+      case's three files) reports each vertex modified once non-destructively, as the port does (Draw-lite's
+      Booleans are always non-destructive), and not modified destructively (DRAWEXE's default). The wire's edges and
+      the `isdeleted` checks pass. Attributed in `DrawBooleanCorpusTests.KnownFailures`.
+991. **The full run.** 5,530 runnable cases use the Boolean commands, 5,524 run (memory cases left out): OK 4,095, BAD 129 (OCCT's TODOs), SKIPPED
+      1,292 (data not public), FAILED 8. Five were attributed already (boolean/bcut_complex/F2, bugs/heal/bug29382_3,
+      bugs/modalg_5/bug23881, bugs/modalg_7/bug29333_1 and _2), one by decision 990, and:
+      - bugs/modalg_7/bug21264 reads the progress indicator's output (unit 7W's attributed failures, which the Boolean
+        test now accepts too);
+      - bugs/modalg_7/bug83 is a speed check: each `bsection` within 0.1 s. The port takes 0.34 s for each section on a
+        cold start (JIT), and warm in Release 0.02 s for the plane and 0.20 s for the two B-spline sheets, where native
+        (BRepAlgoAPI_Section with `bsection`'s options) takes 0.03 s: a gap of about 6x on that section, logged in
+        occt-issues.md for the performance work (plan 2.7). Attributed, not fixed.
+      No BOP code changed, so BooleanOracleTests weren't rerun.

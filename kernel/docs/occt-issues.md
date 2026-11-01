@@ -1410,3 +1410,9 @@ each (`// OCCT` at the line where it is code), unless the last column says other
 | `xbounds`, `removeinternals` (BRepTest_OtherCommands.cxx, DBRep.cxx) | Messages without a space: " shape<name> must be a face", "<name>is a null shape" | Text only. Reproduced |
 | `XProgress` | Sets Draw_ProgressIndicator's process-wide defaults; the corpus's progress cases read the indicator's output in the commands' results | Draw-lite keeps the modes per interpreter and its commands make no progress indicator (decision 954), so those cases fail (decisions 984, 988) |
 | BRepPrimAPI_MakePrism's history on a sphere band from 0 to 2π (bugs/modalg_7/bug30346_2, `prism` then `savehistory`) | The port's IsDeleted says one edge of the base is deleted; native (build123d.NET's MakePrism on the same face) says none | Not OCCT's: a port difference in what BRepSweep marks used, found by decision 981 and not yet fixed. The case fails |
+
+## Phase 7: unit 7W's follow-up, the Boolean corpus in full
+
+| Where | What | Effect |
+|---|---|---|
+| bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: the port's section takes 0.20 s warm in Release where native takes 0.03 s (and 0.34 s on a cold start, the JIT) | The case's 0.1 s limit fails. A performance gap to profile (plan 2.7), not a result difference |

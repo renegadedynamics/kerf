@@ -101,7 +101,7 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         output.WriteLine($"{aScans.Count} cases use sweep or tuyau; runnable before 5L2: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
         var aRuns = aRunnable.Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(120), null))
+                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5L2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
