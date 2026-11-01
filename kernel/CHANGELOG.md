@@ -1195,3 +1195,9 @@ Phase 7 (part): the 3D offset (unit 7F).
   results, faces and shells and data/occ's shapes, both joins and signs, with and without intersection, and
   build123d.NET's Hollow, Offset3D and Thicken calls: 724 runs, every result and history identical, canonically equal or
   attributed to native varying from run to run (decision 9206).
+- BRepFeat (unit 7I): the form features (MakePrism, MakeDPrism, MakeRevol, MakePipe), the ribs and grooves
+  (MakeLinearForm, MakeRevolutionForm), MakeCylindricalHole, SplitShape, Gluer, Builder; the caller's shapes are never
+  written (the features work on copies and give back the unchanged sub-shapes; decision 9501). Draw-lite's feature
+  commands (`featprism`, `featperform`, `splitshape`, `hole`...): 280 more corpus cases pass. Oracle: DPrism and
+  SplitShape against native OCCT, the other makers against a native recording (tools/featrec). A Boolean argument
+  holding frozen sub-shapes now runs non-destructively (decision 9505).

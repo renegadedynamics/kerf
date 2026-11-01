@@ -1525,3 +1525,23 @@ the line), unless the last column says otherwise.
 | BRepOffset_MakeOffset, BRepOffsetAPI_MakeThickSolid | `IsDone()` with a null `Shape()` (open shells with nothing left to offset, a hollow sphere) | Reproduced (16 oracle runs); build123d.NET checks for it |
 | BSplCLib `AntiBoorScheme` through `RemoveKnot` (GeomLib::ExtendSurfByLength, the offset's face extension) | Steps outside its NCollection_LocalArray buffers, reading and writing the stack around them | Undefined natively (the tolerance test then fails); the port's `RemoveKnot` reports the removal impossible instead of throwing (decision 1034) |
 | BRepOffset_MakeOffset `SelfInter` | Throws Standard_NotImplemented | Never called. Reproduced |
+
+## Phase 7: unit 7I, BRepFeat
+
+Found by porting BRepFeat and the feature Draw commands, and by their oracle. The port reproduces each (`// OCCT` at
+the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepFeat_MakePrism, MakeDPrism, MakeRevol | Each declares its own private `myStatusError`, hiding BRepFeat_Form's; `CurrentStatusError` (the form's, not virtual) never reads it | A status the maker sets (IncTypes, NoIntersectU/F, NullToolU/F, InvFirstShape, IncParameter...) is never reported; a construction that never reaches GlobalPerform (a prism of a length without glued faces) reports NotInitialized. Reproduced (the oracle's statuses agree) |
+| BRepFeat_MakePipe | Declares its own `mySkface`, hiding the form's, which stays null | Reproduced |
+| BRepFeat_MakeRevolutionForm | Declares its own `mySliding`, hiding BRepFeat_RibSlot's, which stays false | Reproduced |
+| BRepFeat_MakePrism, MakeDPrism `PerformUntilHeight`, BRepFeat_MakeRevol `PerformUntilAngle` | `if (Until.IsNull()) Perform(Length);` and `if (Length == 0) Perform(Until);` don't return | A null Until throws Standard_ConstructionError after the prism of the length; a zero length builds the prism twice. Reproduced |
+| BRepFeat_MakeRevol `PerformUntilAngle` | The branches are the other way round from `Perform(Until)`: a finite until face is cut, a support glued | Reproduced |
+| BRepFeat_MakePipe `Perform(Until)`, `Perform(From, Until)` | `myFShape` becomes the pipe's first shape, which the map doesn't hold | `FirstShape()` then throws Standard_NoSuchObject. Reproduced |
+| BRepFeat_Form `GlobalPerform` | `if (myMap.IsEmpty())` where `myMap(fac).IsEmpty()` is meant (the until faces outside the shape) | An until face cut away entirely keeps an empty list. Reproduced |
+| BRepFeat_MakeRevolutionForm `Init` | Tests `proj.NbPoints()` again where `proj1` is meant | Reproduced |
+| BRepFeat_MakeRevol, RevolutionForm `ToFuse` | Down-casts the face's surface to a plane after testing the basis surface | A trimmed plane gives a null plane: an access violation natively, a NullReferenceException in the port |
+| BRepFeat_MakeCylindricalHole `PerformThruNext` | The `else` meant for `parbar > Last` hangs on `First - parbar < dmin` | Reproduced |
+| BRepFeat_Form `UpdateDescendants`, BRepFeat_RibSlot, BRepFeat_MakeDPrism `BossEdges` | Iterate maps keyed by shape address into the history lists and the lateral edges | Natively in address order; the port in insertion order (decision 9503) |
+| BRepFeat_Builder, BRepFeat_Form (the Booleans), BRepFeat_MakeLinearForm `Init` (`BB.UpdateVertex`, `myPln->Transform`), BRepFeat_RibSlot `LFPerform` (`BRepLib::SameParameter` on the glued result) | Write into the shapes and the plane the caller gives | The port works on copies (decision 9501) |
