@@ -10519,3 +10519,90 @@ BRepOffsetAPI_MakeThickSolid. Numbers from 9201 are placeholders, renumbered on 
         agreement with the Arc join and Intersection on (9203).
       - **7X:** build123d.NET's Hollow, Offset3D, Thicken, OffsetCore and OffsetTopodsFace calls are covered here; its
         `ForwardSolid` fix-up after Offset3D is its own.
+
+## Phase 7: unit 7J, the blend functions
+
+Blend (the function interfaces and Blend_Point), BlendFunc (the constant and evolving radius, chamfer, throat,
+asymmetric chamfer, ruled and surface-curve functions with their inverses, Corde, Tensor) and ChFiDS (the spines, the
+stripes and surface data, their points and interferences, the maps). Numbers from 9601 are placeholders, renumbered on
+merge.
+
+1037. **BlendFunc_ConstRad's and EvolRad's scratch values are `[ThreadStatic]`** (plan 2.3). Their `ComputeValues`
+      keeps the guide's point, derivatives, inverse norm and the surfaces' third derivatives in `static thread_local`
+      variables, and reads them across calls: when the cache guards skip the positioning on the guide (`t_OK`) or on
+      the surfaces (`myX_OK`), the next order of computation uses the values the last positioning left. So they are not
+      locals but `[ThreadStatic]` static fields of each class, which keeps OCCT's semantics exactly, including that two
+      instances on one thread share them (an instance whose guide parameter is unchanged reads the point another
+      instance computed last; native does the same). ChFi3d_Builder_6's scratch is 7N2's.
+1038. **ConstRadInv's `Derivatives` is reproduced with OCCT's error.** It sets the derivative of the plane's normal with
+      the plane's offset `theD` where `Values` has `-nplan.Dot(d2cur)`, so on a guide off the origin the column of the
+      guide's parameter differs from `Values`' (rows 2 to 4). The walking calls `Values`; a test shows the difference.
+1039. **EvolRad's order-2 positioning keeps the first derivatives of the normals** (`dns1u1` ... `dns1v2`) of the last
+      order-1 positioning, where ConstRad recomputes them. Reproduced: the second derivatives of a section at a point
+      first met at order 2 use stale values, as native's (identical in the oracle, whose order-1 call comes first).
+1040. **Other OCCT slips reproduced** (`// OCCT` at the lines, listed in occt-issues.md): ConstThroatInv's and
+      ConstThroatWithPenetrationInv's `Derivatives` take the points of the previous call; ChAsym's first-order `Section`
+      writes the poles of the previous computation before computing; ChAsymInv's derivative of F(4) in the guide's
+      parameter on the first surface's restriction disagrees with finite differences on a curved guide (the test skips
+      that one entry); ChFiDS_Stripe's `Reset` forgets the first pcurve twice and keeps the second; CSCircular's
+      `GetTolerance` passes the signed radius. Unused fields (ConstRad's and EvolRad's `dnsurf1`/`dnsurf2`, Corde's
+      `pt2d`, Spine's `myOffsetCurve` and `offset_abscissa`) are left out. ConstRadInv's `Derivatives` and `Values`, and
+      RuledInv's, share their identical tails through one private method.
+1041. **The shape of Blend and ChFiDS in C#.**
+      - Blend's pure virtual classes are abstract classes; `const T&` returns are by value; output references are
+        `out`. Blend_AppFunction implements `IAppBlend_SectionGenerator<Blend_Point>` explicitly (decision 845), so
+        7K's BRepBlend_AppSurf is `AppBlend_AppSurf<Blend_AppFunction, BRepBlend_Line, Blend_Point>`; its `Section`
+        overloads take `in Blend_Point`.
+      - Blend_Point, ChFiDS_CommonPoint, ChFiDS_FaceInterference, ChFiDS_CircSection and ChFiDS_Regul are structs with
+        internal mutators and public `With*` twins. `new Blend_Point()` is a tangency point, as OCCT's default
+        constructor; `default` is not.
+      - BlendFunc_Tensor, BlendFunc_Corde, ChFiDS_Map and ChFiDS_StripeMap, held by value in OCCT and never copied, are
+        working classes. The functions are working objects (decision 21): they cache their last positioning.
+      - ChFiDS_SurfData, ChFiDS_Stripe, ChFiDS_ElSpine and the spines are the fillet builders' working data: what OCCT
+        declares `const` is public, the rest internal (the builders are in the same assembly). The `Change*` accessors
+        that return OCCT's references to stored values are `internal ref` (`ChangeVertexFirstOnS1()`,
+        `ChangeInterference(OnS)`, `ChangeSetOfSurfData()`, `ChangeSpine()`, `ChangePrevious()`, ...), so the builders
+        write in place as OCCT's do. The spine's evaluation by abscissa (`Value`, `D0` to `D2`, `Absc(U)`,
+        `Parameter`, `SetCurrent`, `CurrentElementarySpine`) moves its current elementary curve, so it is internal
+        too. The spine keeps the input's edges (frozen sub-shapes) and never writes them; ChFiDS_ElSpine's `SetOrigin`
+        edits its B-spline in place as OCCT's does, which is the builder's own approximated curve (a frozen one
+        throws).
+      - OCCT 8 has no ChFiDS_HElSpine, ListOfStripe or other collection classes: they are NCollection types, written
+        out (`NCollection_List<ChFiDS_Stripe>`, `NCollection_HSequence<ChFiDS_SurfData>`).
+1042. **The oracle: `tools/blendrec`** (BlendFunc and ChFiDS are not bound in build123d.NET). It builds the functions on
+      plane/plane, plane/cylinder, cylinder/cylinder, cone/plane and B-spline/B-spline pairs with their guides, and
+      records each call's results as the 64 bits of every double: values and derivatives at a start point, the root
+      from it (math_FunctionSetRoot), IsSolution, the points and tangents, `Tangent`, the sections' shape, knots,
+      weights, tolerances and intervals, and the sections with their first and second derivatives; ConstRad and
+      EvolRad in each of the eight "quadrants", the chamfers and ruled function in two; the inverse functions on
+      restrictions of either surface; CSConstRad and CSCircular. The spines: a box face's edges, a cylinder's circle
+      and a B-spline prism's base (abscissae, parameters, evaluation with tangent extensions, references and
+      periodicity), FilSpine's radii and the law of an elementary spine, and a periodic elementary spine (copy,
+      `SetOrigin`, D3). `BlendRecorder.cs` is the same program in C# and the tests compare the texts. Native leaves
+      `GetTolerance`'s `Tol1D` unset for the chamfers (uninitialised memory), so both sides fill the vector with 0
+      first. **235 cases (230 function cases, 5 spine cases), all identical bit for bit.** Derivatives are also checked
+      against central finite differences on every pair, at the start point and the solution, and ConstRad's
+      second-order section against finite differences of the first.
+1043. **For 7K, 7N1 and 7N2.**
+      - **7K (BRepBlend):** the walking calls `Set(Param)`, `Set(First, Last)`, `GetTolerance`, `GetBounds`,
+        math_FunctionSetRoot on the function, `IsSolution` (which updates ConstRad's and EvolRad's angles and minimal
+        distance, so it must be called as OCCT's walking does, once per accepted point), then the tangents and
+        `Section`. ConstRad's and EvolRad's caches depend on exact parameter equality and the order of calls
+        (decision 1037): keep BRepBlend's call order line for line. The RstRst and SurfRst functions
+        (BRepBlend_RstRstConstRad, SurfRstConstRad, ...) are 7K's, on Blend_RstRstFunction and Blend_SurfRstFunction;
+        BRepBlend_AppSurf instantiates `AppBlend_AppSurf` with Blend_AppFunction (decision 1041). Blend_Point's
+        `SetValue` overloads are internal; the walking's lines hold Blend_Point values (structs).
+      - **7N1/7N2 (ChFi3d, ChFiKPart):** the builders write ChFiDS_SurfData through `ChangeVertex*`,
+        `ChangeInterference*`, `ChangeOrientation` (refs), `ChangeIndexOfS1/S2`, `ChangeSurf`, `SetIndexOfC1/C2`,
+        `Set2dPoints`, `FirstSpineParam`/`LastSpineParam`, `TwistOnS1/S2`, `SetSimul`; ChFiDS_Stripe through
+        `ChangeSpine`, `ChangeSetOfSurfData`, `SetParameters`, `SetCurve`, `ChangePCurve`, `SetOrientation`,
+        `SetIndexPoint`, `InDS`, `Choix`; the spines through `SetEdges`, `PutInFirst`, `SetFirstStatus`/`SetLastStatus`,
+        `SetTypeOfConcavity`, `SetTangencyExtremity`, `Load`, `SetFirstParameter`/`SetLastParameter`,
+        `SetFirstTgt`/`SetLastTgt`, `SetReference`, `AppendElSpine`, `ChangeElSpines`, `SplitDone`, `Reset`,
+        `SetErrorStatus` (build123d.NET's fillet diagnostics read `ErrorStatus()` and the stripe statuses, plan 2.6);
+        FilSpine through `SetRadius`/`UnSetRadius` and `ChangeLaw`; ChamfSpine through `SetDist`, `SetDists`,
+        `SetDistAngle`, `SetMode`; ChFiDS_ElSpine through `FirstParameter(P)`, `LastParameter(P)`, `SetCurve`,
+        `SetPeriodic`, `SetOrigin`, `SaveFirstParameter`, `SetFirstPointAndTgt`, `AddVertexWithTangent`,
+        `ChangePrevious`/`ChangeNext`. All are internal and reachable from ChFi3d. ChFiDS_StripeMap's `Add` and `Clear`
+        are internal; ChFiDS_Map's `Fill` is public. ChFiDS_SecHArray1 (the simulation's sections) is
+        `NCollection_HArray1<ChFiDS_CircSection>`, stored through `SetSimul` as a Standard_Transient.
