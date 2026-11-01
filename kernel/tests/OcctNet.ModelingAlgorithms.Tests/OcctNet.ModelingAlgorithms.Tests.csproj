@@ -62,6 +62,8 @@
     <EmbeddedResource Include="ShapeUpgrade\Recordings\shupgraderec.txt.gz" LogicalName="ShapeUpgrade.shupgraderec.txt.gz" />
     <!-- Native OCCT's BRepOffset_Analyse, BRepOffset_Offset and BRepOffset_MakeSimpleOffset, recorded by tools/offsetrec (unit 7E) -->
     <EmbeddedResource Include="BRepOffset\Recordings\offsetrec.txt.gz" LogicalName="BRepOffset.offsetrec.txt.gz" />
+    <!-- Native OCCT's BRepOffsetAPI_MakeDraft, BiTgte_Blend and MakeEvolved's volume mode, recorded by tools/draftrec (unit 7G) -->
+    <EmbeddedResource Include="Draft\Recordings\draftrec.txt.gz" LogicalName="Draft.draftrec.txt.gz" />
     <!-- Native OCCT's LocOpe local operations, recorded by tools/locoperec (unit 7H) -->
     <EmbeddedResource Include="LocOpe\Recordings\locoperec.txt.gz" LogicalName="LocOpe.locoperec.txt.gz" />
     <!-- Native OCCT's ShapeProcess, recorded by tools/shprocrec (unit 7C) -->
