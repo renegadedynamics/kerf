@@ -10,7 +10,7 @@
 //   ... -- booleans [filter]: the Booleans suite (unit 6M, phase5-6-plan 2.9): BRepAlgoAPI and build123d.NET's clean, the
 //     port against native, serial and parallel, with allocation, over build123d.NET's tests' Booleans and the corpus's
 //     simple and complex grids (Booleans.cs); ... -- booleans-profile [filter]: the port's pave filler and builder apart;
-//   ... -- phase7 [filter]: build123d.NET's phase 7 calls (offsets, drafts, features, ToSplines; unit 7X, plan 2.7), the port
+//   ... -- phase7 [filter]: build123d.NET's phase 7 calls (offsets, drafts, features, ToSplines, fillets, chamfers; unit 7X, plan 2.7), the port
 //     against native, serially (Phase7.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
 // Pass the same -p:OcctSourceDir and -p:Build123dNetRoot as for the tests.

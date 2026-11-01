@@ -10,7 +10,7 @@ using N = Build123d.Occt;
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>
-/// Milestone 2 of phase 7, its first part (unit 7X; plan 1.5 and section 5): every healing, offset, draft and feature call
+/// Milestone 2 of phase 7 (unit 7X; plan 1.5 and section 5): every healing, offset, draft and feature call
 /// build123d.NET's tests make (<see cref="Build123dPhase7Capture"/>), replayed on the port from native's input bytes and
 /// compared as unit 6M compared the Booleans: the exception (by OCCT's type) and the status (IsDone and Error, the draft's
 /// status and problematic shape, the feature's status); the result as BRep text (the Free column masked), then canonically
@@ -21,9 +21,10 @@ namespace OcctNet.Oracle.Tests;
 /// operation's Clean, ExtrudeTaper's validity check, SplitByPerimeter's sewing of each side) run on native's result in
 /// both. The port's operands are frozen (a caller's) and checked unchanged, and its results frozen. Native's replay of
 /// each call and its finishing step must give build123d.NET's own result (sub-shape counts, volume and area to nine
-/// digits) or its failure, which checks the transcription.
+/// digits) or its failure, which checks the transcription. The fillets and chamfers (the unit's second part) are compared
+/// geometrically: <c>Build123dPhase7OracleTests.Blend.cs</c>.
 /// </summary>
-public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisposable
+public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ShapeFixOracleRun myRun = new(output, "b3d7");
 
@@ -35,7 +36,7 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
     private sealed class Tally
     {
         public int Calls, Identical, FreeMasked, CheckedMasked, Canonical, Attributed, SameError, NoResult, NullAfterSuccess, Histories, HistoriesSame,
-                   HistoriesCanonical, HistoriesBySize;
+                   HistoriesCanonical, HistoriesBySize, Geometric, NativeInvalid, HistoriesGeometric, SolidSplit;
         public readonly List<string> Differences = [];
         public readonly List<string> AttributedCases = [];
         public readonly List<string> Failures = [];
@@ -80,6 +81,11 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
 
     private void CompareCall(P7Call theCall)
     {
+        if (theCall.Op is P7Op.Fillet or P7Op.Chamfer or P7Op.MaxFillet)
+        {
+            CompareBlend(theCall);
+            return;
+        }
         string aLabel = Build123dPhase7Capture.Label(theCall);
         string aWhat = $"{theCall.Test}: {theCall.Name} [{aLabel}]";
         Tally aTally = TallyOf(aLabel);
@@ -656,10 +662,17 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
         foreach ((string aLabel, Tally t) in myTallies)
         {
             output.WriteLine($"{aLabel}: {t.Calls} calls: {t.Identical} byte-identical, {t.FreeMasked} Free-masked, {t.CheckedMasked} Free and "
-                             + $"Checked masked, {t.Canonical} canonical (native varies), {t.Attributed} attributed, {t.SameError} the same "
+                             + $"Checked masked, {t.Canonical} canonical (native varies), {t.Geometric} geometrically native's (option C), "
+                             + $"{t.NativeInvalid} where native's result is invalid, {t.Attributed} attributed, {t.SameError} the same "
                              + $"exception, {t.NoResult} no result on both sides (or a status only) ({t.NullAfterSuccess} null after success), {t.Differences.Count} "
                              + $"different; histories {t.HistoriesSame} identical, {t.HistoriesCanonical} canonically equal, {t.HistoriesBySize} "
-                             + $"equal in size (results equal geometrically), of {t.Histories}");
+                             + $"equal in size (results equal geometrically), "
+                             + $"{t.HistoriesGeometric} equal as sets of sub-shape measures, of {t.Histories}");
+            if (t.SolidSplit > 0)
+            {
+                output.WriteLine($"  attributed: in {t.SolidSplit} results the input solid's own history differs (Modified empty, IsDeleted true; native: "
+                                 + "the result's solid, false): the reconstruction records no split of the solid (unit 7R3)");
+            }
             foreach (string aF in t.Failures)
             {
                 output.WriteLine("  failure on both sides: " + aF);

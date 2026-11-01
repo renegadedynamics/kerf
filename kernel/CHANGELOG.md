@@ -1382,3 +1382,14 @@ Phase 7 (part): the public fillet and chamfer API (unit 7N3).
   `tolblend`'s tolerance; `encoderegularity` rebinds the variables sharing the shape. 883 corpus cases newly runnable
   (799 with data): OK 723, BAD 34, IMPROVEMENT 8, FAILED 34, all attributed (mostly the reconstruction's invalid
   results).
+
+Phase 7 (part): build123d.NET parity for fillets and chamfers (unit 7X, its second part).
+
+- Tests: every 3D fillet, chamfer and MaxFillet build123d.NET's tests make (63 calls: Shape3D.Fillet, Chamfer and
+  MaxFillet and the fillet and chamfer operations, with build123d.NET's validity check and failure messages) replayed
+  on the port from native's input bytes: results geometrically native's, the faulty contours, exceptions and MaxFillet's
+  probes exactly; none different. One difference attributed to the reconstruction: the input solid's own history
+  (removed in the port, modified into the result's solid natively). With part 1, every phase 7 call build123d.NET's
+  tests make reproduces native (plan milestone 2).
+- Benchmarks: the fillets and chamfers join the `-- phase7` suite, within 2× native serial (0.54× to 1.05× by
+  operation). Phase 6's parallel Boolean benchmark measured again.

@@ -11834,3 +11834,153 @@ the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are pla
        are missing), 2 to its face and edge order (G8, bug27711_3 name edges of a fillet result by explode index),
        6 draft cases whose `depouille` fails on a reconstructed fillet result, and 4 to a port bug fixed in ChFi3d.
        The 11 other cases miss viewer commands and `stepread`.
+
+## Phase 7: unit 7X, build123d.NET parity (its second part): fillets and chamfers
+
+build123d.NET's fillet and chamfer calls replayed on the port (milestone 2, its second part, over unit 7N3's makers and
+7R's reconstruction), their benchmark, phase 6's parallel Boolean benchmark measured again, the milestone's statement,
+and a note for the owner on build123d.NET's OCCT.NET backend. Numbers from 11301 are placeholders, renumbered on merge.
+
+11301. **The replay of the fillets and chamfers** (`Build123dPhase7Capture.Blend.cs`, `Build123dPhase7OracleTests.Blend.cs`;
+       part 1's capture, decision 1072, with three more operation types). Each call is transcribed from build123d.NET's
+       `Shape3D` and `Operations` source:
+       - `Shape3D.Fillet`: `BRepFilletAPI_MakeFillet(shape)`, `Add(radius, edge)` for each selected edge in the
+         selection's order (repeated and REVERSED edges kept), `Shape()`; on a failure or an invalid result,
+         `FilletFailureDetails`' reads (`NbFaultyContours`, `FaultyContour`, within `NbContours` the `StripeStatus` and
+         the contour's `NbEdges` and `Edge`). The fillet operation runs it on the selection's parent.
+       - `Shape3D.Chamfer`: `BRepFilletAPI_MakeChamfer(shape)`, `Add(length, length2 or length, edge, face)`, the face
+         the given one or the edge's first ancestor (`MapShapesAndAncestors`), `Shape()`. The chamfer operation turns an
+         angle into the second length (`length · tan(angle)`) first.
+       - `Shape3D.MaxFillet`: the validity check, then the binary search over (0, twice the bounding box's diagonal), a
+         new maker per probe, a probe passing if its result is valid; `InvalidOperationException` after
+         `maxIterations`.
+       - build123d.NET's finishing step: `Make3DResult` (a compound of one shape unwrapped) and `IsValid`; an invalid
+         result or a kernel exception becomes its ArgumentException with the faulty contours' message.
+       The inputs are its tests': FilletFailuresTests (the plate as Part, Solid and Part of the compound, the operation,
+       the tangent chains, the plain messages, repeated and reversed edges), Shape3DTests, ShapeTests (MaxFillet, the
+       fillet too large, IsManifold), OperationsGenericTests' fillet and chamfer tests (all eight 3D chamfers),
+       ErrorContextTests, MalformedInputTests, MemoryPressureTests, GeometryWithShapesTests, InputsUnchangedTests,
+       OperationsPartTests, EdgeTests, FaceTests (a fillet of an Offset result), HistoryTests, SelectorTests and
+       PlainValueSelectorTests, Shape1DTests (a fillet of a fillet's result), ShapeListTests, ShapeMeshTests,
+       SolidSmokeTests, SolidTests' offset orientation tests (fillets of Offset3D results) and TopologyReferenceTests.
+       Calls repeated within a test class are taken once.
+       **Left out, as they make no 3D fillet or chamfer:** the fillet and chamfer operations on sketch and wire vertices
+       (`Fillet2D`, `Chamfer2D`: MakeFillet2d, phase 5, covered by decision 952), and the argument checks that throw
+       before OCCT (no edges, vertices of a solid, both length2 and angle, a reference without either, an edge not on
+       the face, a dimension that isn't 3).
+11302. **How they are compared** (option C, decision 992: the reconstruction's faces come in another order than the
+       HBuilder's, so not as text). As unit 7N3's oracle (decision 11006, whose `Geometric` and `ReconFaults` are now
+       internal): volume and area (1e-6 relative), the counts of solids, shells, faces, edges and vertices, validity,
+       the optimal box (1e-4 of the diagonal). The history is what build123d.NET's `ShapeHistory.FromAlgorithm` reads,
+       plus `IsDeleted`: for every vertex, edge, face and solid of the operand, `Generated` (of the tracked types) and
+       `Modified` as sets of the result's sub-shapes' measures (a face's surface type and area, an edge's curve type and
+       length, a vertex's point, a solid's volume; 1e-5), whether the result has the sub-shape, and `IsDeleted`. The
+       exception's type, `IsDone`, the contour count and the faulty contours (their indices, stripe statuses and edges,
+       rendered as build123d.NET's details by index) must be native's exactly, and the chamfer's chosen faces;
+       MaxFillet's probes (each radius and its outcome) and radius too. The port's operand is frozen and checked
+       unchanged, its result frozen. **The transcription is checked:** native's replay gives build123d.NET's own
+       result (counts, volume and area to nine digits), its exception with the same message details (the contours'
+       edges by their centres, as build123d.NET prints them), or its radius.
+11303. **Result: 63 calls, none different.** By operation (geometrically native's / identical / native's result invalid,
+       the port's too / failing the same way on both sides):
+
+       | operation | calls | geometrically native's | identical | native's invalid | same failure |
+       |---|---:|---:|---:|---:|---:|
+       | Fillet | 22 | 12 | 0 | 2 | 8 |
+       | Fillet operation | 20 | 17 | 0 | 0 | 3 |
+       | Chamfer | 7 | 6 | 0 | 0 | 1 |
+       | Chamfer operation | 10 | 9 | 0 | 0 | 1 |
+       | MaxFillet | 4 | 0 | 3 | 0 | 1 |
+
+       - The same failures: StdFail_NotDone from `Shape()` with the same faulty contours, all ChFiDS_StartsolFailure
+         ("no starting solution"), and the same edges: the plate (8 of 12 edges, four ways), the tangent chains (with 7
+         and 1 additional tangent edges), the notched block (its one faulty contour past `NbContours`, so the plain
+         message), the repeated and reversed edges (3 of 4), the cubes too large (12 of 12, twice); the chamfers too
+         large (one edge, twelve edges); MaxFillet in one iteration (InvalidOperationException after the same probe).
+       - Native's result is invalid in two calls, the 10 mm cube filleted at 6 and the 1 mm cube at 0.75 (unit 7N3's
+         "radius too large" case); the port's is invalid too (other faults), so build123d.NET throws its ArgumentException
+         on both sides.
+       - Every MaxFillet probe and radius is native's (the box 10 × 8 × 2, the cone, the 1 mm box's top edge).
+       - None of these calls reaches the seam band unit 7R3 is fixing.
+       - **Attributed, for unit 7R3: the input solid's own history.** In all 46 results the port's `Modified` of the
+         operand's solid is empty and `IsDeleted` true; native's HBuilder splits the solid (state IN) into the result's,
+         so its `Modified` gives the result's solid and `IsDeleted` is false. Every vertex, edge and face agrees.
+         `ChFi3d_BOPReconstruction.IsSplit` and `Splits` answer for edges and faces only. Through build123d.NET this
+         changes the history it records: the solid is recorded removed rather than modified into the result's solid,
+         so a lookup of the input solid in a fillet's or chamfer's history finds nothing. Not changed here (the
+         reconstruction is 7R3's).
+       - The transcription: 127 calls checked (part 1's 64 and these 63), none differ.
+11304. **The fillets and chamfers in the `-- phase7` benchmark** (plan 2.7; serial medians, Release, the port against
+       native through build123d.NET's binding; the machine was not quiet, unit 7R3's tests ran at times):
+
+       | operation | calls | port serial (ms) | native serial (ms) | port/native (sum) | geometric mean | port MB per call |
+       |---|---:|---:|---:|---:|---:|---:|
+       | Fillet | 22 | 351.1 | 335.9 | 1.05× | 0.70× | 19.1 |
+       | Fillet operation | 20 | 99.1 | 155.9 | 0.64× | 0.64× | 13.0 |
+       | Chamfer | 7 | 5.6 | 10.4 | 0.54× | 0.51× | 2.1 |
+       | Chamfer operation | 10 | 30.3 | 49.7 | 0.61× | 0.56× | 8.3 |
+       | MaxFillet | 4 | 179.2 | 194.5 | 0.92× | 0.77× | 93.7 |
+       | the whole suite | 156 | 877.8 | 888.0 | 0.99× | 0.81× | 9.0 |
+
+       **The 2× target is met** for every fillet and chamfer operation: the reconstruction on the Boolean engine is
+       faster than native's TopOpeBRep. A second run of the fillets alone gave 1.14× (sum) over the 46 fillet calls.
+       The only fillet calls over 2× are the failing plates (3.5× to 3.6×, 29 to 41 ms against 8 to 11): no
+       reconstruction runs there, so the time is ChFi3d's search for a starting solution that fails on 8 of 12 contours
+       (left for an optimisation unit; no profile was needed by the target). MaxFillet allocates about 94 MB per
+       search (ten fillets).
+11305. **Phase 6's parallel Boolean benchmark, measured again on a quiet machine** (`-- booleans`, Release, 24 logical
+       processors; CPU load 0% before and 9% after the 4.4-minute run, no other helper's tests running; decisions 951
+       and 1074 left it waiting):
+
+       | group | cases | port/native serial (sum) | geometric mean | port/native parallel | port, native speed-up | clean | MB per Boolean |
+       |---|---:|---:|---:|---:|---:|---:|---:|
+       | build123d | 244 | 1.16× | 0.88× | 0.97× | 1.18, 0.99 | 1.12× | 2.1 |
+       | simple | 407 | 0.89× | 0.79× | 0.96× | 0.95, 1.04 | 0.64× | 10.3 |
+       | complex | 193 | 1.13× | 0.82× | 1.12× | 1.34, 1.33 | 0.67× | 13.0 |
+
+       **On a quiet machine the parallel figures meet the target:** the port's parallel runs are within 1.12× of
+       native's in every group, and its speed-up is native's (complex 1.34 against 1.33) or better (build123d 1.18
+       against 0.99); on the simple grid neither side gains (0.95, 1.04). Decision 951's slower parallel simple grid
+       (1.32×) was the loaded machine. The serial target still holds; the cases over 2× are decision 951's (SplitBox and
+       SplitSolid 3.6×, ExtrudeUntil, SweepPathFromEdges and CleanError's Booleans 3.2×, three complex fuses 2.1× to
+       2.5×), left for an optimisation unit.
+11306. **Milestone 2 (plan section 5): build123d.NET's phase 7 operations reproduce native.** With part 1 (decision
+       1072: 93 calls and 48 finishing steps) and this part (63 calls), every phase 7 call build123d.NET's tests make
+       is replayed on the port from native's input bytes, with its finishing steps, and none differs: the offsets,
+       drafts, features, splits and B-spline conversions byte-identical, canonical where native varies, or attributed to
+       native's own variation (decision 1032); the fillets and chamfers geometrically native's (option C), their
+       diagnostics and exceptions exactly. Histories equal (as sets, or by size where native varies), but the fillet's
+       and chamfer's input solid (11303). **What is left:**
+       - the input solid's history in fillets and chamfers (unit 7R3);
+       - fillets and chamfers are native's geometrically, not byte for byte: decision 992's choice, not a gap;
+       - the seam band (unit 7R3): build123d.NET's tests don't reach it, but a fillet near a cylinder's or sphere's seam
+         cut by the fillet does (7N3's `box common sphere`, `cylinder T`);
+       - ExtrudeTaper's loft fallback and the two-way thicken's fuse are phase 5 and 6 calls, covered there;
+       - STEP (not called by build123d.NET's phase 7 paths) and the viewer, as design.md says;
+       - **build123d.NET's OCCT.NET backend still throws for phase 7** (11307), so Bento's phase 7 functions do too
+         until it is regenerated. That is build123d.NET's side and the owner's call.
+11307. **For the owner (build123d.NET is not edited here; the owner's call): regenerating build123d.NET's OCCT.NET
+       backend.** Its forwarding layer (`src/Build123d.OcctNet/Generated`, written by `tools/OcctNetGen` through
+       `tools/generate-occtnet.ps1`) lists 229 members of ten phase 7 classes as "class not in OCCT.NET" in
+       `bindings/occtnet.unforwarded.txt`; each throws NotSupportedException ("not yet ported to OCCT.NET"), which is
+       what keeps Bento's phase 7 `CAD_` functions returning an error. All ten are now in OCCT.NET:
+       BRepFilletAPI_LocalOperation, BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeChamfer, BRepOffset_MakeOffset,
+       BRepOffsetAPI_MakeOffsetShape, BRepOffsetAPI_MakeThickSolid, BRepOffsetAPI_DraftAngle, BRepFeat_Form,
+       BRepFeat_MakeDPrism and BRepFeat_SplitShape (with ChFiDS_ChamfMode for `SetMode`); ShapeCustom's
+       BSplineRestriction and Quantity_Color were already forwarded or hand-written.
+       - **What regenerating involves:** run `tools/generate-occtnet.ps1 -OcctNetRoot <OCCT.NET checkout with phase 7>`.
+         It needs no hand-written code: this unit ran build123d.NET's generator (a copy built in the scratchpad) over
+         this branch's assemblies, writing elsewhere. It forwards **every member of the ten classes but their copy
+         constructors** (229 lines leave the report; 8 copy constructors join the "signatures differ" lines, as every
+         other maker's), changes only those ten `*.g.cs` files, and the generated backend compiles against this branch.
+         The report would then hold 676 lines (897 now): STEPControl's 32 and the rest unchanged.
+       - **Then on build123d.NET's side:** its `Backend.cs` test (`WhatIsntPortedSaysSo`) expects the fillet and
+         chamfer to throw NotSupportedException and would need another not-yet-ported example (STEP); its tests would
+         then run the phase 7 paths on OCCT.NET with `-p:Build123dBackend=OcctNet`, which this unit did not do (it
+         replays the calls instead).
+       - **Behaviour to expect through the backend** (from this replay): results geometrically native's but with faces in
+         another order (so code indexing a fillet result's faces by position may see others); the input solid recorded
+         removed in a fillet's or chamfer's history (11303, until 7R3); the port's makers return frozen
+         `IBentoList<TopoDS_Shape>` histories, which the generated wrapper copies into `TopTools_ListOfShape`; `Shape()`
+         on a run not done throws StdFail_NotDone, which the wrapper turns into its OcctException as natively; build123d.NET's
+         Quantity_Color could use OCCT.NET's own (decision 1070).

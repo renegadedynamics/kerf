@@ -691,7 +691,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Math.Abs(a - b) <= theRel * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
     // The faults BRepCheck finds, by sub-shape type.
-    private static string ReconFaults(in TopoDS_Shape S)
+    internal static string ReconFaults(in TopoDS_Shape S)
     {
         BRepCheck_Analyzer an = new(S);
         SortedSet<string> aFaults = [];
@@ -731,7 +731,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         "[" + string.Join(", ", k.Select(x => x.Type + " " + x.Area.ToString("G6", CultureInfo.InvariantCulture))) + "]";
 
     // What differs geometrically (empty: equal)
-    private static List<string> Geometric(Outcome theN, Outcome theP)
+    internal static List<string> Geometric(Outcome theN, Outcome theP)
     {
         List<string> d = [];
         TopoDS_Shape aN = theN.Result!.Value, aP = theP.Result!.Value;
