@@ -13,7 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Build123d.Occt\Build123d.Occt.csproj" />
+    <!-- The OCCT backend (Directory.Build.props): the same API, native or managed -->
+    <ProjectReference Include="..\Build123d.Occt\Build123d.Occt.csproj" Condition="'$(Build123dBackend)' != 'OcctNet'" />
+    <ProjectReference Include="..\Build123d.OcctNet\Build123d.OcctNet.csproj" Condition="'$(Build123dBackend)' == 'OcctNet'" />
     <!-- Packed locally by tools/pack-bento.ps1 until it is published -->
     <PackageReference Include="Bento.Collections" Version="0.4.0" />
   </ItemGroup>
