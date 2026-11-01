@@ -142,8 +142,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         BRepProj_Projection? aP = null;
         try
         {
-            aN = theDir is { } d ? new N.BRepProj_Projection(theNIn[0], theNIn[1], Oracle.ToNative(d))
-                                 : new N.BRepProj_Projection(theNIn[0], theNIn[1], Oracle.ToNative(thePnt!.Value));
+            aN = Oracle.NativeWithRetry(() => theDir is { } d ? new N.BRepProj_Projection(theNIn[0], theNIn[1], Oracle.ToNative(d))
+                                                              : new N.BRepProj_Projection(theNIn[0], theNIn[1], Oracle.ToNative(thePnt!.Value)));
         }
         catch (N.OcctException e)
         {

@@ -1612,7 +1612,7 @@ the place).
 | Where | What | Effect |
 |---|---|---|
 | TopOpeBRepDS_SurfaceIterator constructor | Sets the SURFACE condition after the base constructor has matched, without matching again | The first `Value()` is the list's first interference whatever its geometry (`HDataStructure::SolidSurfaces`); `Next()` then skips the others |
-| TopOpeBRepDS_DataStructure `Change*Interferences`, `ChangeCurve`, `ChangePoint`, `ChangeSurface` | Return the data structure's own empty list or value, for writing, when the shape or geometry is missing | What is written there is every later miss's list or value (decision 9905) |
+| TopOpeBRepDS_DataStructure `Change*Interferences`, `ChangeCurve`, `ChangePoint`, `ChangeSurface` | Return the data structure's own empty list or value, for writing, when the shape or geometry is missing | What is written there is every later miss's list or value (decision 1066) |
 | TopOpeBRepDS_Point(shape) | Leaves `myKeep` unset; the default constructor leaves the tolerance unset | Uninitialised natively; the port keeps the point and uses 0 |
 | TopOpeBRepDS_Interference() | Leaves the indices and kinds unset | Uninitialised natively; the port uses 0 and POINT |
 | TopOpeBRepDS_SurfaceExplorer() | Leaves `myFindKeep` unset | Uninitialised natively; the port uses false |
@@ -1622,6 +1622,34 @@ the place).
 | TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
 | TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
 | TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
+## Phase 7: unit 7X, Quantity_Color and build123d.NET's phase 7 calls
+
+Found by porting Quantity_Color and Quantity_ColorRGBA and by replaying build123d.NET's phase 7 calls. The port
+reproduces each (`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Quantity_Color `ColorFromName` | The bare prefix `"Quantity_NOC_"` (any case) makes `SubString(14, 13)` raise Standard_OutOfRange inside a `noexcept` function | Native OCCT terminates the process (std::terminate). The port throws Standard_OutOfRange (decision 1070) |
+| Quantity_Color `Argb2color` | Reads the bytes as sRGB, where `Color2argb` writes the linear values | A colour doesn't come back from its ARGB integer; documented by OCCT. Reproduced |
+
+The replay found nothing new in the offsets, drafts and features: the null result after a reported success and native's
+run-to-run variation with the Arc join are unit 7F's (decisions 1031 and 1032).
+
+## Phase 7: unit 7P, the foundations of HLR
+
+Found by porting Intrv, TopBas, TopCnx, HLRAlgo and Contap and by tools/hlrrec. The port reproduces each (`// OCCT` at
+the line where it is code).
+
+| Where | What | Effect |
+|---|---|---|
+| HLRAlgo_Projector `Project(const gp_Pnt&, gp_Pnt2d&)` | For the first hard-coded axonometric view (`TrsfType` 0) computes X and Y and never writes `Pout` | The caller's point comes back unchanged (decision 1078); the other `Project` forms are right |
+| Contap_ArcFunction `Value`, `Values`; Contap_SurfFunction `Value`, `Derivatives`, `Values` | Contap_DraftPrs (a draft seen from an eye) computes nothing | The value is left unset (the port's ArcFunction returns 0, decision 1076; SurfFunction leaves the caller's vector and matrix); the derivatives are 0 |
+| Contap_HCurve2dTool `NbSamples` | `nbs *= (Last - First) / (U1 - U0)`, the inverse of IntPatch_HCurve2dTool's corrected ratio | More samples on a short range of a B-spline arc than on the whole arc |
+| HLRAlgo_EdgeIterator `InitHidden` | On a status neither wholly hidden nor with visible intervals (a default status) reads the first interval of an empty sequence | An access violation natively; Standard_OutOfRange in the port |
+| Intrv_Interval's default constructor | Its tolerances are `Epsilon(RealFirst())` and `Epsilon(RealLast())`, both 0 | The whole line has null tolerances (the port's `Epsilon` gave infinity there, decision 1080) |
+| TopCnx_EdgeFaceTransition `BoundaryTransition` | Both branches of the even/odd test return TopAbs_EXTERNAL | Reproduced |
+| Contap_Contour `LineConstructor` | `u2`, `v2` unset when a line or circle lies on a surface other than a cylinder, cone or sphere | Unreachable (ContAna only makes those); the port starts them at 0 |
+| HLRAlgo_EdgeStatus `Hide` | Ignores `OnBoundary` | Reproduced |
 
 ## Phase 7: unit 7N1, the fillet construction data
 

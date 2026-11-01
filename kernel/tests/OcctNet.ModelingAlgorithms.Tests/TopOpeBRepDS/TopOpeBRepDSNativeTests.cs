@@ -31,7 +31,7 @@ public class TopOpeBRepDSNativeTests
         {
             Assert.True(aCase.Done, aCase.Name);
             Assert.Equal(1, aCase.PerformCalls);
-            // in these cases Perform leaves what the dump shows unchanged (decision 9903)
+            // in these cases Perform leaves what the dump shows unchanged (decision 1064)
             Assert.True(aCase.UnchangedByPerform, aCase.Name);
         }
     }

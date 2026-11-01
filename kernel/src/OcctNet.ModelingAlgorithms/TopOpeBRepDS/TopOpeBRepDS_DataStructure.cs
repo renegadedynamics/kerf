@@ -26,7 +26,7 @@ namespace Occt;
 /// <para>
 /// As in OCCT, an accessor asked for a geometry or shape that isn't there returns the data structure's own empty
 /// object, and the <c>Change*</c> accessors return it for writing: what is written there is seen by later calls that
-/// miss (decision 9905). OCCT's two function-scope statics (the empty shape-with-state map and value) are members here.
+/// miss (decision 1066). OCCT's two function-scope statics (the empty shape-with-state map and value) are members here.
 /// </para>
 /// </remarks>
 public sealed class TopOpeBRepDS_DataStructure
@@ -53,7 +53,7 @@ public sealed class TopOpeBRepDS_DataStructure
     private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfRejectedShapesObj = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfRejectedShapesTool = new(TopTools_ShapeMapHasher.Instance);
 
-    // OCCT.NET: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 9902)
+    // OCCT.NET: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 1063)
     private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> myDummyMapOfShapeWithState = new(TopTools_ShapeMapHasher.Instance);
     private readonly TopOpeBRepDS_ShapeWithState myDummyShapeWithState = new();
 
@@ -441,7 +441,7 @@ public sealed class TopOpeBRepDS_DataStructure
     {
         if (!HasShape(S))
         {
-            // OCCT: the shared empty list, for writing (decision 9905)
+            // OCCT: the shared empty list, for writing (decision 1066)
             return myEmptyListOfInterference;
         }
         TopOpeBRepDS_ShapeData SD = myShapes.ChangeFromKey(S);
@@ -1176,7 +1176,7 @@ public sealed class TopOpeBRepDS_DataStructure
     /// The map of shapes with state (the object's or the tool's) that holds <paramref name="aShape"/>; if neither does,
     /// <paramref name="aFlag"/> is false and the result is an empty map.
     /// </summary>
-    /// <remarks>OCCT returns a function-scope static map, shared by every data structure; the port's is this one's (decision 9902).</remarks>
+    /// <remarks>OCCT returns a function-scope static map, shared by every data structure; the port's is this one's (decision 1063).</remarks>
     internal NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithState(in TopoDS_Shape aShape,
                                                                                                              out bool aFlag)
     {

@@ -50,6 +50,8 @@
     <EmbeddedResource Include="ChFiKPart\Recordings\kpartrec.txt.gz" LogicalName="ChFiKPart.kpartrec.txt.gz" />
     <!-- Native OCCT's legacy data structure as fillets and chamfers hand it to TopOpeBRepBuild_HBuilder::Perform, recorded by tools/dsrec (unit 7L) -->
     <EmbeddedResource Include="TopOpeBRepDS\Recordings\dsrec.txt.gz" LogicalName="TopOpeBRepDS.dsrec.txt.gz" />
+    <!-- Native OCCT HLR foundations (HLRAlgo, Intrv, Contap), recorded by tools/hlrrec (unit 7P) -->
+    <EmbeddedResource Include="Contap\Recordings\hlrrec.txt.gz" LogicalName="Contap.hlrrec.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->

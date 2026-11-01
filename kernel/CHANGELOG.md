@@ -1255,6 +1255,32 @@ Phase 7 (part): the legacy data structure's core (unit 7L), which 3D fillets and
   cylinders, cones, a sphere, a torus, a Boolean result, chamfers), in a text format the port writes too
   (`TopOpeBRepDS_TextDump`), so that the fillet units can compare theirs with native's byte for byte. Every recording
   reads into the port's data structure and writes back as native's.
+Phase 7 (part): build123d.NET parity, its first part, and Quantity_Color (unit 7X).
+
+- Quantity_Color and Quantity_ColorRGBA (colours: the 509 named colours, RGB, sRGB, HLS, CIE Lab and Lch, hex strings),
+  the last classes build123d.NET calls that the port lacked outside phase 7 and STEP. Identical bit for bit with native
+  OCCT on 14,326 records.
+- build123d.NET's healing, offset, draft and feature calls (Hollow, Offset3D and the Offset operation, Thicken,
+  Face and Shell Offset, Draft, ExtrudeTaper's draft, DPrism, SplitByPerimeter, ToSplines) replayed on the port from its
+  tests' inputs, with their histories, failures and build123d.NET's finishing steps: 93 calls, none different (85
+  identical or canonically identical where native varies, 2 attributed to native's run-to-run variation, the same
+  failure on both sides in the others).
+- Benchmarks: `-- phase7` times those calls against native OCCT: 1.56× native serial in all (geometric mean 1.09×);
+  offsets and drafts within 2×; DPrism, SplitByPerimeter, ToSplines and three small hollows above it (decision 10304).
+
+Phase 7 (part): the foundations of hidden-line removal (unit 7P).
+
+- Intrv (intervals with tolerances and their Boolean operations), TopBas, TopCnx.
+- HLRAlgo: the projector (parallel and perspective), the edge status and its iterator, the min-max boxes, the edge and
+  wire blocks, interferences, and the polygonal algorithm's data (bi-points, triangles, hiding data, the internal
+  triangulation, shells) and PolyAlgo.
+- Contap: the contours (silhouettes) of a surface for a direction, a draft angle or an eye: in closed form on planes,
+  spheres, cylinders and cones, otherwise by the boundary search, the interior search and the walking (phase 5's
+  generics).
+- Fix: `Standard.Epsilon` of the largest reals is 0, as OCCT's.
+- Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
+  quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
+  the edge status and the contours.
 
 Phase 7 (part): the fillets' construction data (unit 7N1), the first of the fillet builders.
 

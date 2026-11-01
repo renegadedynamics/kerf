@@ -187,7 +187,7 @@ public class TopOpeBRepDSTests
     public void DataStructure_TheSharedEmptyListTakesWhatIsWrittenThere()
     {
         // OCCT: the Change* accessors give a shape not in the data structure the data structure's own empty list, for
-        // writing; what is appended there is then every missing shape's list (decision 9905, occt-issues 7L)
+        // writing; what is appended there is then every missing shape's list (decision 1066, occt-issues 7L)
         TopOpeBRepDS_DataStructure DS = new();
         TopoDS_Shape F1 = Sub(theBox, TopAbs_FACE, 1), F2 = Sub(theBox, TopAbs_FACE, 2);
         TopOpeBRepDS_Interference I = new(new TopOpeBRepDS_Transition(), TopOpeBRepDS_FACE, 1, TopOpeBRepDS_CURVE, 1);
