@@ -5025,7 +5025,9 @@ public sealed partial class BRepOffset_MakeOffset
             TopExp.MapShapes(myOffsetShape, myResMap);
         }
 
-        if (myResMap.Contains(theS))
+        // OCCT.NET: a sub-shape of the caller's that OCCT keeps in its result, changed in place (a thickened shell's
+        // edge given a pcurve), is in the port's result as its changed copy (decision 1005).
+        if (myResMap.Contains(theS) || myResMap.Contains(InternalCopied(theS)))
         {
             return false;
         }
