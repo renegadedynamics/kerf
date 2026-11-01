@@ -56,6 +56,8 @@
     <EmbeddedResource Include="Contap\Recordings\hlrrec.txt.gz" LogicalName="Contap.hlrrec.txt.gz" />
     <!-- Native OCCT HLR data model (HLRTopoBRep, HLRBRep_Data), recorded by tools/hlrrec (unit 7Q1) -->
     <EmbeddedResource Include="HLRBRep\Recordings\hlrdata.txt.gz" LogicalName="HLRBRep.hlrdata.txt.gz" />
+    <!-- Native OCCT exact and polygonal HLR and HLRAppli_ReflectLines, recorded by tools/hlrrec (unit 7Q2) -->
+    <EmbeddedResource Include="HLRBRep\Recordings\hlralgo.txt.gz" LogicalName="HLRBRep.hlralgo.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->

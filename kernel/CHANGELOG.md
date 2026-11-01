@@ -1347,3 +1347,20 @@ Phase 7 (part): the fillet builder (unit 7N2), up to the topological reconstruct
   results, a tangent chain, a four-edge corner, concave edges, a shell, build123d.NET's test inputs and failures): the
   data structure at the reconstruction is native's byte for byte in all 35 that reach it, and the faulty contours and
   stripe statuses build123d.NET reads are native's in all.
+Phase 7 (part): the hidden-line removal algorithms (unit 7Q2). TKHLR is complete.
+
+- HLRBRep_Algo: the exact hidden-line removal of shapes for a projector (each shape hidden by itself and by the
+  others), and HLRBRep_HLRToShape: its visible and hidden sharp, smooth, sewn, outline and isoline edges as compounds,
+  in the view plane or in 3D, for all the shapes, one of them or one of its faces. With HLRBRep_InternalAlgo,
+  HLRBRep_Hider, HLRBRep_EdgeBuilder and the package's edge builders.
+- HLRBRep_PolyAlgo and HLRBRep_PolyHLRToShape: the polygonal hidden-line removal of meshed shapes, faster and
+  approximate.
+- HLRAppli_ReflectLines: a shape's reflect lines (outlines and edges) for a view, in 3D or 2D.
+- The caller's shapes are not written into (the exact algorithm's outlining copies a frozen shape; the polygonal one
+  only reads); every compound is frozen.
+- Draw-lite: HLRTest's commands (hprj, houtl, hfill, hload, hhide, hres2d, reflectlines, hlrin3d, hlrin2d and the rest),
+  build3d, vcomputehlr with the view projections (vfront, vtop, vright, ...), and Draw's view commands as no-ops: 188
+  corpus cases run that didn't (OK 44, BAD 5, two attributed, 137 without public data).
+- Tests: `tools/hlrrec` records native OCCT's exact and polygonal hidden-line removal and reflect lines on primitives,
+  pairs of shapes and the hlr group's shapes in eight views: 133 cases, 1890 compounds, all identical as BRep text
+  (50 with the Free column masked); unit tests of the algorithms, frozen inputs and runs on several threads.
