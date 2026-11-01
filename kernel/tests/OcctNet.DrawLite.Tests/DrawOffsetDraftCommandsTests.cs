@@ -74,7 +74,7 @@ public class DrawOffsetDraftCommandsTests
         aDI.Eval("box b 10 10 10; explode b f");
         Assert.Equal("", aDI.Eval("depouille r b 0 0 1 b_2 5 0 0 0 0 0 1"));
         double aDelta = 0.5 * 10.0 * 10.0 * Math.Tan(5.0 * Math.PI / 180.0) * 10.0;
-        Assert.Equal(aDelta, Math.Abs(Volume(aDI, "r") - 1000.0), 1.0e-6);
+        Assert.Equal(aDelta, Math.Abs(Volume(aDI, "r") - 1000.0), 1.0e-3); // vprops prints 6 digits
         Assert.Equal("", aDI.Eval("ndepouille n b 0 0 1 b_2 1 5 0 0 0 0 0 1"));
         // a sphere can't be drafted: bugdep holds it
         aDI.Eval("psphere s 5; explode s f");

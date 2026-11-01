@@ -50,6 +50,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // the progress indicator's output, which Draw-lite's commands don't make (decision 954)
         ["bugs/modalg_7/bug21264"] = "progress",
         ["bugs/modalg_7/bug30788"] = "progress",
+        ["bugs/modalg_7/bug32330"] = "progress", // runnable since unit 7G's offset commands
         ["lowalgos/progress/A1"] = "progress",
         ["lowalgos/progress/A2"] = "progress",
         ["lowalgos/progress/A3"] = "progress",
@@ -113,7 +114,8 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
 
         // measured (decision 988): 512 newly runnable; OK 337, BAD 18 (OCCT's TODOs), SKIPPED 138 (data not public),
         // FAILED 19, all attributed (KnownFailures); since unit 7G (MakeEvolved's volume mode) the 12 evolved/voluved
-        // cases among them pass
+        // cases among them pass; with 7G's commands 596 are newly runnable (OK 354, BAD 18, SKIPPED 216, FAILED 8
+        // attributed)
         Assert.True(aNew.Count >= 512, $"{aNew.Count}");
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 337, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),
