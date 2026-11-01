@@ -16,7 +16,7 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21) over <see cref="FilletSurf_InternalBuilder"/>. The caller's shape is never written
 /// (the fillet builder works on a copy) and the support faces are the caller's. The surfaces and curves handed out are
-/// the computation's own and frozen: they are published (decision 11004).
+/// the computation's own and frozen: they are published (decision 1138).
 /// </remarks>
 public class FilletSurf_Builder
 {

@@ -11732,18 +11732,18 @@ and the HLR Draw commands. TKHLR is complete.
 
 BRepFilletAPI_LocalOperation, BRepFilletAPI_MakeFillet and BRepFilletAPI_MakeChamfer over 7N2's builders and 7R's
 reconstruction, FilletSurf, the functional twins, and the fillet and chamfer Draw commands with their corpus (ported by
-the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are placeholders, renumbered on merge.
+the unit's one sub-helper, decisions 1144 to 1147). Numbers from 11001 are placeholders, renumbered on merge.
 
-11001. **The makers.** BRepFilletAPI_LocalOperation is an abstract BRepBuilderAPI_MakeShape with OCCT's pure virtuals;
+1135. **The makers.** BRepFilletAPI_LocalOperation is an abstract BRepBuilderAPI_MakeShape with OCCT's pure virtuals;
        MakeFillet and MakeChamfer are ported member for member over a `ChFi3d_FilBuilder` and a `ChFi3d_ChBuilder`
-       (decision 10501): every `Add` and `SetRadius` overload (constant; linear from R1 to R2; a `Law_Function`; the
+       (decision 1117): every `Add` and `SetRadius` overload (constant; linear from R1 to R2; a `Law_Function`; the
        (parameter, radius) pairs as `NCollection_Array1<gp_Pnt2d>`), `GetBounds`, `GetLaw`, `SetLaw`, the contours'
        queries, `Simulate`, `NbSurf`, `Sect`, and the diagnostics build123d.NET reads (`NbFaultyContours`,
        `FaultyContour`, `NbComputedSurfaces`, `ComputedSurface`, `NbFaultyVertices`, `FaultyVertex`, `HasResult`,
        `BadShape`, `StripeStatus`). OCCT's `double&` outputs stay `ref`, as the builders have them. `Generated` and
        `Modified` are the makers' `InternalGenerated`/`InternalModified` overrides (decision 414); `Modified` is the
        union of the OUT, IN and ON splits as in OCCT (the reconstruction builds IN only, decision 1110).
-11002. **The caller's sub-shapes, and freezing once.** As 7R's decision 1116 and 7N2's 10503 asked:
+1136. **The caller's sub-shapes, and freezing once.** As 7R's decision 1116 and 7N2's 10503 asked:
        - `ChFi3d_Builder.Compute`, after the reconstruction, the vertex tolerances, `SetRegul` and the same-parameter of
          the new faces (all on the working copy), calls `myCopyAtEntry.Finish` on the result (or on `badShape` for a
          partial result), so the copied sub-shapes the fillets left unchanged are the caller's own in the result.
@@ -11755,18 +11755,18 @@ the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are pla
          `IsDeleted` also finds a face kept whole whose copy was changed in place (a vertex's tolerance raised), which
          is in the result as that copy (decision 1031's rule); `Edge(I, J)`, `FirstVertex`, `LastVertex` and
          `FaultyVertex` give the caller's.
-11003. **`Builder()` stays internal** (plan 2.8). OCCT returns its `TopOpeBRepBuild_HBuilder`; here it is OCCT.NET's
-       seam `ChFi3d_Reconstruction` (decision 10502), not an OCCT class, so it is not public. What OCCT's callers read
+1137. **`Builder()` stays internal** (plan 2.8). OCCT returns its `TopOpeBRepBuild_HBuilder`; here it is OCCT.NET's
+       seam `ChFi3d_Reconstruction` (decision 1118), not an OCCT class, so it is not public. What OCCT's callers read
        from it is public on the maker: `NbSurfaces` and `NewFaces` (frozen), and the history. build123d.NET does not
        call it.
-11004. **FilletSurf.** `FilletSurf_Builder` is public, `FilletSurf_InternalBuilder` (a `ChFi3d_FilBuilder`) internal,
+1138. **FilletSurf.** `FilletSurf_Builder` is public, `FilletSurf_InternalBuilder` (a `ChFi3d_FilBuilder`) internal,
        with the three status enums. It never runs `Compute`: the reconstruction is created and never used (plan 1.3),
        as OCCT's HBuilder. The caller's edges are mapped onto the working copy in `Add`, the support faces handed back
        are the caller's, and the surfaces, curves, pcurves and sections handed out are frozen. OCCT's reuse of the
        outer loop's iterator in `Add` is reproduced (occt-issues 7N3). Not bound natively and no corpus case calls
        `blend1`, so it is tested by unit tests (a box's edge: the surface, the support faces, the curves at the radius
        from the edge, the parameters spanning the edge, the sections; the error statuses).
-11005. **The functional twins** (plan 2.8, decision 579's pattern): `BRepFilletAPI.Fillet(shape, edges, radius, in
+1139. **The functional twins** (plan 2.8, decision 579's pattern): `BRepFilletAPI.Fillet(shape, edges, radius, in
        BRepFilletAPI_FilletOptions, out BRepTools_History)` and `BRepFilletAPI.Chamfer(shape, edges, distance, in
        BRepFilletAPI_ChamferOptions, out history)`, each without the history too. The options are equatable structs of
        the makers' options under OCCT's names and defaults (`FShape`, `SetParams`' six tolerances, `SetContinuity`'s
@@ -11775,7 +11775,7 @@ the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are pla
        `IsDeleted` from the result's faces only, every edge and vertex of the shape is recorded removed, as natively.
        Only a constant radius and a symmetric chamfer: build123d.NET's two-distance chamfer (a face per edge) and the
        evolving radii would need a decision on the twin's shape, so they are left to the makers.
-11006. **The oracle** (`BRepFilletAPIMakeFilletOracleTests`, against native MakeFillet and MakeChamfer through
+1140. **The oracle** (`BRepFilletAPIMakeFilletOracleTests`, against native MakeFillet and MakeChamfer through
        build123d.NET's bindings; the law overloads and `Builder()` are not bound). Both sides read the input from one
        BRep text (the port's frozen). Compared geometrically, the reconstruction's faces coming in another order
        (decision 1114): volume and area (1e-6), the counts of solids, shells, faces, edges and vertices, validity, the
@@ -11796,17 +11796,17 @@ the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are pla
        - OCCT's GTests' inputs (OCC1077's three cuts, OCC570): 7 runs, 5 native's, 2 the same seam band (OCC1077's third
          cut, OCC426).
        - build123d.NET's `MaxFillet` (7 binary searches, 69 probes): every probe and every radius found native's.
-11007. **OCCT's GTests** BRepFilletAPI_MakeFillet_Test (8) and BRepFilletAPI_MakeChamfer_Test (5) are ported: 11 pass
+1141. **OCCT's GTests** BRepFilletAPI_MakeFillet_Test (8) and BRepFilletAPI_MakeChamfer_Test (5) are ported: 11 pass
        as OCCT's; OCC1077 and OCC426 give invalid results through the seam band of 11006 and assert that until unit 7R
        fixes it (`KnownReconstructionGaps`).
-11008. **A port bug fixed:** ChFi3d_Builder_2's `PerformSetOfKGen` took GeomFill_ConstrainedFilling's surface frozen
+1142. **A port bug fixed:** ChFi3d_Builder_2's `PerformSetOfKGen` took GeomFill_ConstrainedFilling's surface frozen
        and reversed it (Standard_ImmutableObject in blend/complex C5, E1, F2 and blend/simple X1, a blend on a blend's
-       result); it now takes `InternalSurface`, as decision 10506 does in the corner files.
-11009. **The law-based radius** (`Add(Law_Function, E)`, `SetRadius(Law_Function, IC, IinC)`): OCCT's
+       result); it now takes `InternalSurface`, as decision 1122 does in the corner files.
+1143. **The law-based radius** (`Add(Law_Function, E)`, `SetRadius(Law_Function, IC, IinC)`): OCCT's
        `ChFiDS_FilSpine::SetRadius(Law_Function, IinC)` builds a composite law, drops it and clears the radii, so the
        build then throws Standard_OutOfRange on the empty radii (occt-issues 7N3). Reproduced and tested; `SetLaw`
        on an edge is the working way.
-11010. **The fillet and chamfer Draw commands** (`tests/OcctNet.DrawLite`, unit 7N3's sub-helper).
+1144. **The fillet and chamfer Draw commands** (`tests/OcctNet.DrawLite`, unit 7N3's sub-helper).
        - BRepTest_FilletCommands.cxx: `continuityblend`, `tolblend`, `blend`, `checkhist`, `mkevol`, `updatevol`,
          `buildevol`, `bfuseblend`, `bcutblend` (BRepTestFilletCommands.cs); BRepTest_ChamferCommands.cxx: `chamf`,
          `chamf_throat`, `chamf_throat_with_penetration` (BRepTestChamferCommands.cs); BRepTest_FeatureCommands.cxx's
@@ -11819,14 +11819,14 @@ the unit's one sub-helper, decisions 11010 to 11013). Numbers from 11001 are pla
        - Left out: `blend1` (FilletSurf_Builder) and the progress indicator of `bfuseblend`/`bcutblend` (decision 954).
          `Message::SendFail` writes to the output (decision 405). DrawInterpreterTests' unknown-command examples now use
          `blend1` instead of `blend`.
-11011. **`encoderegularity` rebinds the variables.** OCCT codes the regularities in the shape's TShapes in place, so
+1145. **`encoderegularity` rebinds the variables.** OCCT codes the regularities in the shape's TShapes in place, so
        edges exploded before see them; Draw-lite coded a copy and bound only the name (decision 407), and
        blend/encoderegularity's seven cases then gave `blend` edges of the old graph ("There are no suitable edges").
        It now rebinds every variable sharing the TShapes to the copy's (DrawShapeRebind, decision 495), as incmesh does.
-11012. **`chamf` stops on a face with too few words after it.** OCCT's loop does not advance `i` when an edge and a
+1146. **`chamf` stops on a face with too few words after it.** OCCT's loop does not advance `i` when an edge and a
        face are followed by fewer than two more words, and loops for ever; Draw-lite stops reading the words (a hang
        fixed minimally, occt-issues 7N3). No corpus case reaches it.
-11013. **The corpus** (DrawFilletCorpusTests): 894 cases use the commands; 883 newly runnable (799 with data; none
+1147. **The corpus** (DrawFilletCorpusTests): 894 cases use the commands; 883 newly runnable (799 with data; none
        before): OK 723, BAD 34 (OCCT's TODOs), IMPROVEMENT 8 (OCCT's TODOs not reproduced: blend/simple/H8 and
        buildevol/D8 as 7R's decision 1113, bugs/modalg_5/bug25199, modalg_7/bug25206, four chamfer sequences),
        SKIPPED 84 (data not public), FAILED 34 (with the ChFi3d_Builder_2 fix; 38 without), all attributed: 25 to the

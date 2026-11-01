@@ -275,7 +275,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>
-    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 11003): internal, its type
+    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 1137): internal, its type
     /// being OCCT.NET's.
     /// </summary>
     internal ChFi3d_Reconstruction Builder()

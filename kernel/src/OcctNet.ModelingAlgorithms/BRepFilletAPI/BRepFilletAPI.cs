@@ -3,7 +3,7 @@
 namespace Occt;
 
 /// <summary>
-/// The functional twins of the fillet and chamfer makers (plan 2.8, decision 11005): one call from a shape, its edges
+/// The functional twins of the fillet and chamfer makers (plan 2.8, decision 1139): one call from a shape, its edges
 /// and the options to a frozen result and its history, for callers that hold values (Bento's cells).
 /// </summary>
 /// <remarks>

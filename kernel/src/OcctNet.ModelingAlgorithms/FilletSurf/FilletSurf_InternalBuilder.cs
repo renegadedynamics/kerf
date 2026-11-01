@@ -21,7 +21,7 @@ namespace Occt;
 /// <remarks>
 /// It never runs <see cref="ChFi3d_Builder.Compute"/>, so the reconstruction (decision 992) is created and never used,
 /// as OCCT's HBuilder (plan 1.3). The caller's edges are mapped onto the builder's working copy, and the support faces
-/// handed back are the caller's (decision 10503).
+/// handed back are the caller's (decision 1119).
 /// </remarks>
 internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
 {
@@ -140,7 +140,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         {
             return 1;
         }
-        // OCCT.NET: the caller's edges on the working copy (decision 10503)
+        // OCCT.NET: the caller's edges on the working copy (decision 1119)
         NCollection_List<TopoDS_Shape> E = new();
         foreach (TopoDS_Shape anE in theE)
         {

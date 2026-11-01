@@ -16,7 +16,7 @@ namespace OcctNet.DrawLite;
 /// <remarks>
 /// <para>OCCT keeps the tolerances, the continuity, the last <c>blend</c>'s maker (<c>Rakk</c>, read by
 /// <c>checkhist</c>) and the evolving fillet's maker and result name (<c>Rake</c>, <c>name</c>) in file-scope
-/// statics; Draw-lite keeps them per interpreter (decision 11010), so a corpus case starts from a fresh DRAWEXE's
+/// statics; Draw-lite keeps them per interpreter (decision 1144), so a corpus case starts from a fresh DRAWEXE's
 /// state.</para>
 /// <para>Left out: <c>blend1</c> (FilletSurf_Builder).</para>
 /// </remarks>

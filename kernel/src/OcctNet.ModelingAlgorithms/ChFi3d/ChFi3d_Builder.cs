@@ -40,7 +40,7 @@ namespace Occt;
 /// <b>The seam</b> (decision 992): OCCT's <c>myCoup</c>, a <c>TopOpeBRepBuild_HBuilder</c>, is an
 /// <see cref="ChFi3d_Reconstruction"/>, unit 7R's <see cref="ChFi3d_BOPReconstruction"/> on the Boolean engine. At the
 /// end of <see cref="Compute"/> the working copy's sub-shapes left unchanged are replaced by the caller's in the result
-/// (decision 11002); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
+/// (decision 1136); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
 /// </para>
 /// </remarks>
 public abstract partial class ChFi3d_Builder
@@ -587,7 +587,7 @@ public abstract partial class ChFi3d_Builder
             }
         }
 
-        // OCCT.NET (decisions 10503, 11002): the working copy's sub-shapes the computation left unchanged become the
+        // OCCT.NET (decisions 1119, 1136): the working copy's sub-shapes the computation left unchanged become the
         // caller's in the result (or the partial result); a second Compute after a Reset keeps the copy's.
         if (!myCopyAtEntry.IsFinished())
         {

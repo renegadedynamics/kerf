@@ -18,7 +18,7 @@ namespace Occt;
 /// <para>
 /// A maker (decisions 21, 414) over a <see cref="ChFi3d_FilBuilder"/>. The caller's shape is never written: the
 /// builder copies a frozen shape at the entry and gives back the caller's sub-shapes where the fillets left them
-/// unchanged (decision 11002). <see cref="BRepBuilderAPI_MakeShape.Shape"/>, <see cref="BRepBuilderAPI_MakeShape.Generated"/>,
+/// unchanged (decision 1136). <see cref="BRepBuilderAPI_MakeShape.Shape"/>, <see cref="BRepBuilderAPI_MakeShape.Generated"/>,
 /// <see cref="BRepBuilderAPI_MakeShape.Modified"/>, <see cref="NewFaces"/> and <see cref="BadShape"/> hand out frozen
 /// shapes. The history answers for the caller's edges, vertices and faces.
 /// </para>
@@ -392,7 +392,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>
-    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 11003): internal, its type
+    /// OCCT's <c>TopOpeBRepBuild_HBuilder</c>, here the reconstruction's seam (decision 1137): internal, its type
     /// being OCCT.NET's. <see cref="NbSurfaces"/> and <see cref="NewFaces"/> give what OCCT's callers read from it.
     /// </summary>
     internal ChFi3d_Reconstruction Builder()

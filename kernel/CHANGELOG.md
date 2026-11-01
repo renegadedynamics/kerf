@@ -1383,8 +1383,9 @@ Phase 7 (part): the public fillet and chamfer API (unit 7N3).
   (799 with data): OK 723, BAD 34, IMPROVEMENT 8, FAILED 34, all attributed (mostly the reconstruction's invalid
   results).
 
-Phase 7 (part): build123d.NET parity for fillets and chamfers (unit 7X, its second part).
+Phase 7 (part): build123d.NET parity, its second part: fillets and chamfers (unit 7X).
 
+Phase 7 (part): build123d.NET parity for fillets and chamfers (unit 7X, its second part).
 - Tests: every 3D fillet, chamfer and MaxFillet build123d.NET's tests make (63 calls: Shape3D.Fillet, Chamfer and
   MaxFillet and the fillet and chamfer operations, with build123d.NET's validity check and failure messages) replayed
   on the port from native's input bytes: results geometrically native's, the faulty contours, exceptions and MaxFillet's
