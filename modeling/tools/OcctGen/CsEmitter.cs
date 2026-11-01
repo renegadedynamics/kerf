@@ -19,6 +19,11 @@ static class CsEmitter
         "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while",
     ];
 
+    // Classes that walk a shape without holding it: OCCT 8's TopoDS_Iterator keeps an iterator into the shape's child
+    // list and its current child, not the shape. Their wrappers hold the wrapper of the shape they were given, so a
+    // shape reachable only through its iterator isn't finalized (and its TShape freed) mid-iteration.
+    static readonly HashSet<string> KeepShapeAlive = ["TopoDS_Iterator"];
+
     // Members of object/OcctObject that a bound method must not collide with
     static readonly HashSet<string> Reserved =
         ["GetType", "Equals", "GetHashCode", "ToString", "Finalize", "MemberwiseClone", "Dispose", "Ptr", "ReleaseNative"];
@@ -95,11 +100,19 @@ static class CsEmitter
             }
         }
 
+        bool keepsShape = KeepShapeAlive.Contains(n);
+        if (keepsShape)
+        {
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>The shape iterated, kept alive: OCCT's iterator holds no reference to it.</summary>");
+            sb.AppendLine("    private TopoDS_Shape? __shape;");
+        }
+
         if (cls.CanCopy && !cls.Members.Any(m => m.IsCtor && m.Params.Count == 1 && m.Params[0].Type.Name == cls.Name))
         {
             sb.AppendLine();
             sb.AppendLine($"    /// <summary>A copy of another {n}.</summary>");
-            sb.AppendLine($"    public {n}({n} other) : this(__Copy(other)) {{ }}");
+            sb.AppendLine($"    public {n}({n} other) : this(__Copy(other)) {(keepsShape ? "{ __shape = other.__shape; }" : "{ }")}");
             sb.AppendLine();
             sb.AppendLine($"    private static IntPtr __Copy({n} other)");
             sb.AppendLine("    {");
@@ -130,7 +143,7 @@ static class CsEmitter
     {
         var ps = string.Join(", ", m.Params.Select(CsParam));
         var fwd = string.Join(", ", m.Params.Select(p => (IsRef(p.Type) ? "ref " : "") + Id(p.Name)));
-        sb.AppendLine($"    public {cls.Name}({ps}) : this(__New{index}({fwd})) {{ }}");
+        sb.AppendLine($"    public {cls.Name}({ps}) : this(__New{index}({fwd})) {{ {KeepShape(cls, m)}}}");
         sb.AppendLine();
         sb.AppendLine($"    private static IntPtr __New{index}({ps})");
         sb.AppendLine("    {");
@@ -144,11 +157,21 @@ static class CsEmitter
         var mods = "public " + (m.IsStatic ? "static " : "") + (m.HidesBase ? "new " : "");
         sb.AppendLine($"    {mods}{CsReturn(m.Return)} {name}({string.Join(", ", m.Params.Select(CsParam))})");
         sb.AppendLine("    {");
-        EmitBody(sb, m, receiver: m.IsStatic ? null : $"PtrAs_{cls.Name}()", retConv: CsConvertReturn(m.Return, "__r"));
+        EmitBody(sb, m, receiver: m.IsStatic ? null : $"PtrAs_{cls.Name}()", retConv: CsConvertReturn(m.Return, "__r"),
+                 after: m.IsStatic ? "" : KeepShape(cls, m));
         sb.AppendLine("    }");
     }
 
-    static void EmitBody(StringBuilder sb, Member m, string? receiver, string retConv)
+    /// <summary>For a class in <see cref="KeepShapeAlive"/>, the statement keeping the member's shape argument.</summary>
+    static string KeepShape(ClassInfo cls, Member m)
+    {
+        if (!KeepShapeAlive.Contains(cls.Name))
+            return "";
+        var shape = m.Params.FirstOrDefault(p => p.Type.Kind == Kind.Value && p.Type.Name == "TopoDS_Shape");
+        return shape is null ? "" : $"__shape = {Id(shape.Name)}; ";
+    }
+
+    static void EmitBody(StringBuilder sb, Member m, string? receiver, string retConv, string after = "")
     {
         foreach (var p in m.Params)
         {
@@ -173,6 +196,8 @@ static class CsEmitter
         foreach (var p in m.Params.Where(p => p.Type.Kind == Kind.RefBool))
             sb.AppendLine($"        {Id(p.Name)} = __{p.Name} != 0;");
         sb.AppendLine("        OcctException.ThrowIfError(__err);");
+        if (after.Length > 0)
+            sb.AppendLine($"        {after.TrimEnd()}");
         if (!isVoid)
             sb.AppendLine($"        return {retConv};");
     }
