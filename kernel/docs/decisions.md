@@ -11098,3 +11098,100 @@ are placeholders, renumbered on merge.
 1074. **Phase 6's parallel Boolean benchmark is not re-measured here.** Plan 2.7 asks for a quiet machine; during this
        unit the other phase 7 helpers kept it at 50% to 100% load (five samples at the end: 96% to 100%). It waits for a
        quiet run (`-- booleans`), as decision 951 left it.
+
+## Phase 7: unit 7P, the foundations of HLR
+
+Intrv, TopBas, TopCnx, HLRAlgo and Contap (TKHLR without HLRBRep, HLRTopoBRep and HLRAppli), kept by the owner's
+answer to open question 25.
+
+1075. **Contap_HContTool's sampling bounds are `[ThreadStatic]`** (plan 2.3). OCCT keeps `uinf, vinf, usup, vsup` in
+       file-scope statics: `NbSamplePoints` sets them and `SamplePoint` reads them on the next calls
+       (Contap_ArcFunction's and Contap_SurfFunction's `Set` loop over the samples), so they are read across calls and
+       cannot be locals. Per thread they keep OCCT's single-threaded behaviour and make concurrent contours
+       independent; a test computes contours on several threads at once and compares them with the serial ones. The
+       tool is a `readonly struct` with static members (decision 338), so that it is IntStart_SearchOnBoundaries'
+       `TheSOBTool` (IIntStart_SOBTool).
+1076. **Contap_ArcFunction's `Value` and `Values` return 0 for Contap_DraftPrs.** OCCT computes nothing for a draft
+       seen from an eye and leaves the caller's `F` unset; C#'s `out` must be written, so the port writes 0
+       (`// OCCT` at the lines, logged). Contap_SurfFunction writes into the caller's math_Vector and math_Matrix,
+       which keep their values as in OCCT. Contap_Contour never builds a DraftPrs function (there is no `Init(Eye,
+       Angle)`), so only direct users of the functions see it.
+1077. **Value classes that hold handles are classes with OCCT's copy as their copy constructor:** Contap_Line (its
+       polyline and its vertices are handles that copies share), Intrv_Intervals (a sequence) and HLRAlgo_EdgeStatus
+       (an Intrv_Intervals). Ported code copies where C++ copies: Contap_Contour's `slin.Append(theline)` appends
+       `new Contap_Line(theline)` (shallow, as OCCT: `Clear` then clears the shared polyline, `ResetSeqOfVertex`
+       starts a new vertex sequence), `Intrv_Intervals Inter(*this)` is `new(this)`, and an assignment of an edge
+       status is `Assign` (deep, as C++'s `operator=` copies the intervals). `Contap_Line.Vertex(i)` returns a
+       reference to the stored Contap_Point, as OCCT's non-const reference, and the points are structs (decision 609).
+       Contap_Point, Contap_ThePathPointOfTheSearch, Contap_TheSegmentOfTheSearch, Intrv_Interval,
+       TopBas_TestInterference, HLRAlgo_Coincidence, HLRAlgo_Intersection, HLRAlgo_Interference, HLRAlgo_BiPoint and
+       HLRAlgo_Projector are structs with internal mutators and `With` twins.
+1078. **HLRAlgo_Projector is a struct; `Project(P, ref Pout)` keeps the caller's point for OCCT's first axonometric
+       view.** For four exact view matrices (`TrsfType`: top, front and two axonometric ones) OCCT projects with
+       hard-coded formulas; for the first axonometric one (type 0) `Project(const gp_Pnt&, gp_Pnt2d&)` computes X and Y
+       and never writes them. The port reproduces it with a `ref` parameter (the recorder sees the caller's sentinel
+       come back on both sides). `Set` and `Scaled` are internal mutators with `WithSet` and `WithScaled` as twins;
+       `Transform(ref gp_Pnt)` and `Transform(ref gp_Vec)` are OCCT's const methods that transform their argument.
+1079. **HLRAlgo_PolyMask's members are integer constants** in a static class. OCCT's unscoped enum is only ever
+       combined with integer flags (`TD.Flags & HLRAlgo_PolyMask_FMskHiding`, `Flags |= ...`, `&= ~...`); as
+       constants, code with `using static Occt.HLRAlgo_PolyMask;` reads as the C++ does without casts.
+1080. **`Standard.Epsilon` follows `std::nextafter` at the ends of the reals** (a port bug, fixed). OCCT's
+       `Epsilon(x)` is `nextafter(x, RealLast()) - x` (or the mirror for negatives), so `Epsilon(RealLast())` and
+       `Epsilon(RealFirst())` are 0; the port's `Math.BitIncrement(x) - x` gave infinity there (and NaN at infinity).
+       Intrv_Interval's default constructor (the whole line, `Epsilon(RealFirst())` tolerances) showed it against the
+       recording. `Epsilon` now uses the existing `Standard.NextAfter`; finite values are unchanged. Foundation's 2153
+       tests pass.
+1081. **HLRAlgo's plain data and pointers.** The C++ plain structs keep OCCT's public fields:
+       HLRAlgo_EdgesBlock.MinMaxIndices (two `[InlineArray(8)]` integer arrays), HLRAlgo_BiPoint.IndicesT and
+       PointsT, HLRAlgo_TriangleData, HLRAlgo_PolyInternalSegment, the nested structs of HLRAlgo_PolyHidingData,
+       HLRAlgo_PolyInternalNode, HLRAlgo_PolyData and HLRAlgo_PolyShellData. OCCT's non-const reference accessors
+       (`Indices()`, `Points()`, `MinMax()`, `Data()`, `Plane()`) return references (`[UnscopedRef]` on structs);
+       HLRAlgo_BiPoint's and HLRAlgo_PolyHidingData's are internal, with `IndicesValue()`/`PointsValue()` copies for
+       callers. HLRAlgo's `double Min[16]` are spans. HLRAlgo_PolyInternalData's arrays passed as pointers by
+       reference (`NCollection_Array1<T>*&`, moved when an `Inc...` reallocates) are `ref NCollection_Array1<T>`,
+       compared by reference as OCCT compares the pointers; its pointers to elements are `ref` locals (`Unsafe.NullRef`
+       where OCCT starts from `nullptr`). HLRAlgo_PolyAlgo's `Hide` and `Show` return a reference to the current
+       segment's points, and `Hide` assigns the caller's status (`Assign`, decision 1077). HLRAlgo_WiresBlock types
+       its blocks (OCCT stores them as Standard_Transient and casts). `Dump` writes OCCT's trace to a TextWriter
+       (stdout by default).
+1082. **Contap's generics reuse phase 5's.** Contap_TheIWalking, Contap_TheSearch and Contap_TheSearchInside are
+       sealed instantiations of IntWalk_IWalking, IntStart_SearchOnBoundaries and IntStart_SearchInside (decisions
+       337, 607, 686), as IntPatch's; Contap_SurfFunction implements IIntWalk_IWFunction (with OCCT's implicit copy as
+       `Copy`), Contap_ArcFunction IIntStart_ArcFunction (its `Quadric()` is OCCT's default one, never set), the path
+       point and segment the IntStart struct interfaces. The walking is built with `theToFillHoles` true, as OCCT's
+       Contap. No generic code changed. The file-static functions of Contap_Contour.cxx are private static methods.
+1083. **The oracle: `tools/hlrrec`** (HLRAlgo, Intrv and Contap are not bound in build123d.NET). It records, as the
+       64 bits of every double (and float): 15 projectors (identity, top, front, both hard-coded axonometric views, a
+       general view, a downward view, two perspectives, a scaled transformation in parallel and perspective, with and
+       without `Scaled(true)`, given min-max directions, `Set`) with their transformations, directions, the three
+       `Project` forms, `Transform` and `Shoot` on five points; Intrv_Intervals' unions, subtractions, intersections
+       and exclusive unions step by step and the thirteen positions; two HLRAlgo_EdgeStatus histories with their
+       visible parts and HLRAlgo_EdgeIterator's visible and hidden intervals; HLRAlgo's min-max box, encoding,
+       decoding, size and addition; Contap_ContAna on a sphere, a cylinder and a cone (directions, drafts, eyes inside
+       and outside); and Contap_Contour on ten faces (a sphere and a half sphere, a cylinder and a part of one, a cone
+       and a cone with its apex, a torus and a part of one, a box's face and a B-spline surface), each for three
+       directions, two eyes and a draft: every line's type, transition, geometry, walking points and vertices with
+       their parameters, flags and transitions. `HlrRecorder.cs` is the same program in C#. **85 cases, all identical
+       bit for bit** (60 contours: 135 lines, 5588 walking points, 321 vertices). Native's default edge status reads
+       past its empty intervals when iterated over its hidden parts (an access violation), so both sides record its
+       counts only. Unit tests check the projector's formulas, the edge status and intervals, and the contours'
+       defining property (the normal orthogonal to the view or the line of sight) on the quadrics and the B-spline.
+1084. **For 7Q1 and 7Q2.**
+       - **HLRTopoBRep_DSFiller** builds the contours as OCCT does: `BRepTopAdaptor_Tool(face, PConfusion)`,
+         `GetSurface()!`, `GetTopolTool()`, one Contap_Contour per algorithm with `Perform(Surface, Domain)`.
+         `FO.Line(i)` is the stored Contap_Line (a class: no copy needed for reading), `Line.Vertex(i)` a reference
+         (copy it into a local where C++ copies, `Contap_Point P = Line.Vertex(i)`), `FO.SurfaceFunction()` the
+         stored function. The vertex writes into the input (plan 2.2) are HLRTopoBRep's, not Contap's.
+       - **HLRBRep_EdgeData holds an HLRAlgo_EdgeStatus by value**: with the status a class, an EdgeData must own its
+         status (`new` in its constructor) and a copy of an EdgeData must deep-copy it (`new HLRAlgo_EdgeStatus(s)`),
+         or EdgeData must itself be a class; `Status()` returns the stored instance. HLRBRep_Hider's
+         `HLRAlgo_EdgeStatus& ES = ed.Status()` is then a plain reference.
+       - **HLRBRep_PolyAlgo** uses HLRAlgo_PolyAlgo's `ref` returns (`ref HLRAlgo_BiPoint.PointsT aPoints = ref
+         myAlgo.Hide(status, out ...)`), HLRAlgo_PolyInternalData's `ref` arrays (`IncPINod(ref PINod1, ref PINod2)`:
+         pass the caller's array variables), the BiPoint's internal `Indices()`/`Points()` references, and
+         `NCollection_List<HLRAlgo_BiPoint>` (structs: change them through the iterator's `ChangeValue()`).
+         HLRAlgo_PolyMask's constants need `using static Occt.HLRAlgo_PolyMask;`.
+       - **The projector** is a struct: `Project(P, ref Pout)` needs an initialised point (C++'s default gp_Pnt2d is
+         the origin, as `new gp_Pnt2d()`). HLRBRep_Algo's `Projector(P)` stores a copy.
+       - **HLRBRep's global counters** keep OCCT's behaviour (plan 2.3); no Contap state is global but the sampling
+         bounds (decision 1075).
