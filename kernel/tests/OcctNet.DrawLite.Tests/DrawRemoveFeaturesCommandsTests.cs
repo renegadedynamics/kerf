@@ -73,7 +73,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
 
         List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                            .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(300), null))
+                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));
@@ -83,7 +83,10 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
         }
 
         Assert.True(aRunnable.Count > aRunnableBefore);
-        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal));
+        // unit 7W's dversion and XProgress made bugs/modalg_7/bug30788 runnable: it reads the progress indicator's output,
+        // which Draw-lite's commands don't make (an attributed failure of DrawCheapGapsCorpusTests)
+        Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal)
+                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
     }
 
     /// <summary>
@@ -121,7 +124,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     private static List<DrawCapture.Call> CaptureCase(DrawCorpus theCorpus, DrawTestCase theCase)
     {
         List<DrawCapture.Call> aCalls = [];
-        theCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(300), i =>
+        theCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), i =>
         {
             i.Eval("rename removefeatures __capture_removefeatures");
             i.Register("removefeatures", (theDI, a) =>

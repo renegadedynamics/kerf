@@ -321,6 +321,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             {
                 aStack.Push(anIt.Value());
             }
+            GC.KeepAlive(aShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         }
         return aCount;
     }

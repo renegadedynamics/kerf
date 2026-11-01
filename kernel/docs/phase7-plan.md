@@ -1,5 +1,9 @@
 # Phase 7 plan: finishing
 
+> **Done, 1 November 2026.** Every unit is merged but 7M1 to 7M3, dropped for option C (decision 992); the
+> fillet tail and the corpus figures at the close are decisions 1164 and 1165 (renumbered at the merge). What remains
+> after phase 7 is phases 8 and 9 (design.md) and the follow-ups those decisions list.
+
 This plan splits phase 7 into work units that can be ported in parallel, as [phase5-6-plan.md](phase5-6-plan.md) did
 for phases 5 and 6. Phase 7 is design.md's "finishing" phase:
 
@@ -168,6 +172,10 @@ isn't public.
   `projonplane` 27, `validrange` 12, `2dintersect` 10, `2dextrema` 8, a few more.
 - All of these together: +885 cases (522 with data). The viewer commands would add 1,177 more (508 with data), but
   those cases would run without testing anything, so they stay out.
+- *Measured by unit 7W* (decision 988): the commands ported make **+512 runnable (374 with data)**, 10,617 in all.
+  The estimate counted the whole list: `nproject` (28 cases; BRepAlgo_NormalProjection isn't ported), the unit
+  commands (Units isn't ported) and one- and two-case commands were left out (decision 984). Run: OK 337, BAD 18,
+  SKIPPED 138, FAILED 19 (attributed).
 
 **Still blocked after phase 7:** 5,347 cases: the viewer (1,177), OCAF (427, and 765 more with phase 8), phase 8's
 STEP and IGES (586, and the `de` grids' 1,073), QA test commands (137), and the rest.
@@ -230,6 +238,11 @@ path, about 100,000 lines). Port those first, testing ChFi3d by comparing its da
 native's (a recorder dumps it). Then decide (question 24), knowing exactly which interference kinds and builder paths
 the corpus and build123d.NET reach, and with a working fillet front end to try C's first four steps on cheaply. As of
 today A remains the safer choice: it costs more tokens once and none in triage afterwards.
+
+**Decided (owner, 1 November): option C.** The fillet builder is rebuilt on the Boolean engine (unit 7R); 7M1 to
+7M3 are dropped. 7R is designed against 7N2's working front end and the DS dumps of 7L's recorder, and its results
+are compared with native geometrically (volumes, areas, counts, validity, histories as sets), its differences
+attributed. Phase 5's TopOpeBRepBuild slice stays for the 2D offset.
 
 Either way the data structure's shared state changes form:
 
@@ -432,7 +445,9 @@ The owner's answer to question 30: prefer fewer tokens to a shorter elapsed time
 helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on overlapping files add merge work. So:
 
 - **At most two units at a time,** chosen to touch disjoint parts of the tree (one in `src`, one in Draw-lite or a
-  different package), so a merge never needs more than the merge tool's own resolutions.
+  different package), so a merge never needs more than the merge tool's own resolutions. *Raised to three on
+  1 November (owner), once the merge gate took about 15 minutes instead of 36; work in Bento and build123d.NET sits
+  outside the limit.*
 - **No forks inside units** unless a unit is over about 25,000 lines (7M3).
 - **Each stage's Draw-lite commands go with the stage's last unit,** done by the helper that already has the
   context, instead of a separate Draw-lite unit at the end. 7W keeps only the cheap gaps of 1.6.
@@ -441,7 +456,7 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 
 | Step | Units (at most two at once) | Notes |
 |---:|---|---|
-| 1 | 7W (the cheap Draw-lite gaps, question 28) ‖ 7A ShapeCustom | 7W first fixes or attributes the four modalg cases the new scan default exposed (`DrawBooleanCorpusTests.NotYetAttributed`, decision 972) |
+| 1 | 7W (the cheap Draw-lite gaps, question 28) ‖ 7A ShapeCustom | 7W first fixes or attributes the four modalg cases the new scan default exposed (decision 972; done by 7W, decision 980) |
 | 2 | 7B ShapeUpgrade ‖ 7D helix | 7D ends with the helix commands |
 | 3 | 7C ShapeProcess, with the healing commands ‖ 7E offset foundations | healing's corpus (2,604 cases) runs here |
 | 4 | 7F MakeOffset ‖ 7H LocOpe | |
@@ -449,9 +464,9 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 | 6 | 7X's first part (build123d.NET's healing, offset, draft and feature operations; `Quantity_Color`) ‖ 7J blend functions | |
 | 7 | 7K BRepBlend ‖ 7L the data structure's core | |
 | 8 | 7N1, then 7N2 | one at a time: the fillet front end |
-| 9 | **Report and decide question 24** | with 7N2's measurements |
-| 10 | 7M1 → 7M2 → 7M3, or 7R; then 7N3 with the fillet and chamfer commands; then 7X's fillet part | one at a time |
-| 11 | 7P → 7Q1 → 7Q2 with the HLR commands, if question 25 keeps HLR | |
+| 9 | *(was: decide question 24; decided, option C)* | 7N2's measurements go into 7R's brief |
+| 10 | 7R the reconstruction; then 7N3 with the fillet and chamfer commands; then 7X's fillet part | one at a time |
+| 11 | 7P → 7Q1 → 7Q2 with the HLR commands (question 25: kept) | |
 
 ## 5. Milestones
 
@@ -486,10 +501,9 @@ helpers at once; each costs 0.3 to 0.5 million tokens, and parallel units on ove
 
 These are in [open-questions.md](open-questions.md) as 24 to 30. The owner answered on 31 October:
 
-1. **The legacy data structure for fillets** (24). *Open.* The owner asked for an estimate of rebuilding the fillets'
-   reconstruction on the Boolean engine; it is in 2.1. The plan ports what all three options need first, and the
-   question is decided at step 9 of the running order, with measurements. Leaning: option A.
-2. **HLR and helix** (25). *Open for HLR* (explained in 1.5); it runs last, at step 11. Helix stays in phase 7.
+1. **The legacy data structure for fillets** (24). *Answered (1 November): option C,* the fillet builder rebuilt on the
+   Boolean engine (unit 7R). 7M1 to 7M3 are dropped, and step 9 of the running order is no longer a stop.
+2. **HLR and helix** (25). *Answered (1 November): port HLR too,* at step 11. Helix stays in phase 7.
 3. **ShapeProcess's resource files** (26). *Answered:* OCCT's defaults, embedded.
 4. **Bindings to widen the oracle** (27). *Answered: yes.* Each unit adds the bindings it needs to build123d.NET's
    `bindings/occt.txt` on a branch there, for the owner to merge; recorders cover what the shim can't bind.

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Renumbers placeholder decisions (numbers >= 1000, written by unit branches) in docs/decisions.md to continue
+# Renumbers placeholder decisions (numbers >= 5000, written by unit branches) in docs/decisions.md to continue
 # after the highest real number, in file order, and rewrites "decision N" / "decisions N" references to them in
 # docs, src and tests. Usage: perl renumber.pl <repo root>
 use strict;
@@ -16,13 +16,13 @@ my @lines = <$in>;
 close $in;
 
 my $max = 0;
-for (@lines) { $max = $1 if /^(\d+)\. / && $1 < 1000 && $1 > $max; }
+for (@lines) { $max = $1 if /^(\d+)\. / && $1 < 5000 && $1 > $max; }
 $max = $floor if $floor > $max;
 
 my %map;
 my $next = $max + 1;
 for (@lines) {
-    if (/^(\d+)\. / && $1 >= 1000 && !exists $map{$1}) { $map{$1} = $next++; }
+    if (/^(\d+)\. / && $1 >= 5000 && !exists $map{$1}) { $map{$1} = $next++; }
 }
 
 # Earlier renumberings, latest last: a reference to a placeholder that has no heading in this merge (a unit citing

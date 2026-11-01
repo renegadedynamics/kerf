@@ -1,0 +1,503 @@
+// Port of: src/ModelingAlgorithms/TKHLR/Contap/Contap_ContAna.hxx
+// Port of: src/ModelingAlgorithms/TKHLR/Contap/Contap_ContAna.lxx
+// Port of: src/ModelingAlgorithms/TKHLR/Contap/Contap_ContAna.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using static Occt.GeomAbs_CurveType;
+
+namespace Occt;
+
+/// <summary>
+/// The contours of the quadrics in closed form: a circle on a sphere, two lines on a cylinder, two (or four, for a
+/// draft) lines through the apex of a cone; for a view direction, a draft angle, or an eye.
+/// </summary>
+/// <remarks>A working object, as OCCT's: <c>Perform</c> sets the result, the queries read it.</remarks>
+public sealed class Contap_ContAna
+{
+    private const double Tolpetit = 1.0e-8;
+
+    private bool done;
+    private int nbSol;
+    private GeomAbs_CurveType typL;
+    private gp_Pnt pt1 = new();
+    private gp_Pnt pt2 = new();
+    private gp_Pnt pt3 = new();
+    private gp_Pnt pt4 = new();
+    private gp_Dir dir1 = new();
+    private gp_Dir dir2 = new();
+    private gp_Dir dir3 = new();
+    private gp_Dir dir4 = new();
+    private double prm;
+
+    public Contap_ContAna()
+    {
+        done = false;
+        nbSol = 0;
+        typL = GeomAbs_OtherCurve;
+        prm = 0.0;
+    }
+
+    /// <summary>The silhouette of a sphere for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Sphere S, in gp_Dir D)
+    {
+        done = false;
+        typL = GeomAbs_Circle;
+        pt1 = S.Location();
+        dir1 = D;
+        if (Math.Abs(D.Dot(S.XAxis().Direction())) < 0.9999999999999)
+        {
+            dir2 = D.Crossed(S.XAxis().Direction());
+        }
+        else
+        {
+            dir2 = D.Crossed(S.YAxis().Direction());
+        }
+        prm = S.Radius();
+        nbSol = 1;
+        done = true;
+    }
+
+    /// <summary>The draft contour of angle <paramref name="Angle"/> of a sphere for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Sphere S, in gp_Dir D, double Angle)
+    {
+        done = false;
+        typL = GeomAbs_Circle;
+
+        dir1 = D;
+        if (Math.Abs(D.Dot(S.XAxis().Direction())) < 0.9999999999999)
+        {
+            dir2 = D.Crossed(S.XAxis().Direction());
+        }
+        else
+        {
+            dir2 = D.Crossed(S.YAxis().Direction());
+        }
+        double alpha = (S.Direct() ? Angle : -Angle);
+        pt1.SetXYZ(S.Location().XYZ() - S.Radius() * Math.Sin(alpha) * D.XYZ());
+        prm = S.Radius() * Math.Cos(alpha);
+        nbSol = 1;
+        done = true;
+    }
+
+    /// <summary>The silhouette of a sphere for the eye <paramref name="Eye"/>.</summary>
+    public void Perform(in gp_Sphere S, in gp_Pnt Eye)
+    {
+        done = false;
+
+        double radius = S.Radius();
+        double dist = Eye.Distance(S.Location());
+        if (dist <= radius)
+        {
+            nbSol = 0;
+        }
+        else
+        {
+            prm = radius * Math.Sqrt(1.0 - radius * radius / (dist * dist));
+            if (prm < Tolpetit)
+            {
+                nbSol = 0;
+            }
+            else
+            {
+                gp_XYZ locxyz = S.Location().XYZ();
+                dir1.SetXYZ(Eye.XYZ() - locxyz);
+                pt1.SetXYZ(locxyz + (radius * radius / dist) * dir1.XYZ());
+                if (Math.Abs(dir1.Dot(S.XAxis().Direction())) < 0.9999999999999)
+                {
+                    dir2 = dir1.Crossed(S.XAxis().Direction());
+                }
+                else
+                {
+                    dir2 = dir1.Crossed(S.YAxis().Direction());
+                }
+                nbSol = 1;
+                typL = GeomAbs_Circle;
+            }
+        }
+        done = true;
+    }
+
+    /// <summary>The silhouette of a cylinder for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Cylinder C, in gp_Dir D)
+    {
+        done = false;
+
+        gp_XYZ normale = C.Position().Direction().XYZ();
+        normale.Cross(D.XYZ());
+        if (normale.Modulus() <= 1e-15)
+        {
+            nbSol = 0;
+        }
+        else
+        {
+            normale.Normalize();
+            typL = GeomAbs_Line;
+            dir1 = C.Position().Direction();
+            dir2 = dir1;
+            pt1.SetXYZ(C.Location().XYZ() + C.Radius() * normale);
+            pt2.SetXYZ(C.Location().XYZ() - C.Radius() * normale);
+            nbSol = 2;
+        }
+
+        done = true;
+    }
+
+    /// <summary>The draft contour of angle <paramref name="Angle"/> of a cylinder for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Cylinder C, in gp_Dir D, double Angle)
+    {
+        done = false;
+
+        double Coefcos = D.Dot(C.Position().XDirection());
+        double Coefsin = D.Dot(C.Position().YDirection());
+        double Coefcst = Math.Cos(M_PI * 0.5 + Angle);
+
+        double norm1 = Coefcos * Coefcos + Coefsin * Coefsin;
+        double norm2 = Math.Sqrt(norm1);
+
+        if (Math.Abs(Coefcst) < norm2)
+        {
+            typL = GeomAbs_Line;
+            nbSol = 2;
+            dir1 = dir2 = C.Position().Direction();
+
+            if (!C.Direct())
+            { // The normal is inverted.
+                Coefcos = -Coefcos;
+                Coefsin = -Coefsin;
+            }
+
+            // Necessary to solve Coefcos*cos(t) + Coefsin*sin(t) = Coefcst
+            // and the origins of solution are in the reference of the
+            // cylinder in (R*cost0, R*sint0,0) and (R*cost1,R*sint1,0)
+            // By setting cos(phi) = Coefcos/std::sqrt(Coefcos**2 + Coefsin**2) and
+            //           sin(phi) = Coefsin/std::sqrt(Coefcos**2 + Coefsin**2)
+            // and by using trigonometric relations the values of cosinus
+            // and sinus to the solutions are obtained.
+
+            prm = Math.Sqrt(norm1 - Coefcst * Coefcst);
+            double cost0, sint0, cost1, sint1;
+
+            cost0 = (Coefcos * Coefcst - Coefsin * prm) / norm1;
+            cost1 = (Coefcos * Coefcst + Coefsin * prm) / norm1;
+
+            sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
+            sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
+
+            gp_XYZ Xdir = C.Position().XDirection().XYZ();
+            gp_XYZ Ydir = C.Position().YDirection().XYZ();
+            gp_XYZ dirxyz = new();
+
+            dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir);
+            dirxyz.Multiply(C.Radius());
+            pt1.SetXYZ(C.Location().XYZ().Added(dirxyz));
+
+            dirxyz.SetLinearForm(cost1, Xdir, sint1, Ydir);
+            dirxyz.Multiply(C.Radius());
+            pt2.SetXYZ(C.Location().XYZ().Added(dirxyz));
+        }
+        else
+        {
+            nbSol = 0;
+        }
+
+        done = true;
+    }
+
+    /// <summary>The silhouette of a cylinder for the eye <paramref name="Eye"/>.</summary>
+    public void Perform(in gp_Cylinder C, in gp_Pnt Eye)
+    {
+        done = false;
+
+        double radius = C.Radius();
+        gp_Lin theaxis = new(C.Axis());
+        double dist = theaxis.Distance(Eye);
+        if (dist <= radius)
+        {
+            nbSol = 0;
+        }
+        else
+        {
+            typL = GeomAbs_Line;
+            prm = radius * Math.Sqrt(1.0 - radius * radius / (dist * dist));
+            dir1 = C.Axis().Direction();
+            dir2 = dir1;
+            gp_XYZ axeye = theaxis.Normal(Eye).Direction().XYZ(); // orientate the axis to the outside
+            gp_XYZ normale = (theaxis.Direction().Crossed(new gp_Dir(axeye))).XYZ();
+            //      normale.Normalize();
+            pt1.SetXYZ(C.Location().XYZ() + (radius * radius / dist) * axeye);
+            pt2.SetXYZ(pt1.XYZ() - prm * normale);
+            pt1.SetXYZ(pt1.XYZ() + prm * normale);
+            nbSol = 2;
+        }
+        done = true;
+    }
+
+    /// <summary>The silhouette of a cone for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Cone C, in gp_Dir D)
+    {
+        done = false;
+
+        double Tgtalpha = Math.Tan(C.SemiAngle());
+
+        double Coefcos = D.Dot(C.Position().XDirection());
+        double Coefsin = D.Dot(C.Position().YDirection());
+        double Coefcst = D.Dot(C.Axis().Direction()) * Tgtalpha;
+
+        double norm1 = Coefcos * Coefcos + Coefsin * Coefsin;
+        double norm2 = Math.Sqrt(norm1);
+
+        if (Math.Abs(Coefcst) < norm2)
+        {
+            typL = GeomAbs_Line;
+            nbSol = 2;
+            pt1 = C.Apex();
+            pt2 = pt1;
+            // Necessary to solve Coefcos*cos(t) + Coefsin*sin(t) = Coefcst
+            // and director vectors of solutions are
+            // cos(t0) * XDirection + sin(t0) * YDirection + ZDirection/Tgtalpha
+
+            prm = Math.Sqrt(norm1 - Coefcst * Coefcst);
+            double cost0, sint0, cost1, sint1;
+
+            cost0 = (Coefcos * Coefcst - Coefsin * prm) / norm1;
+            cost1 = (Coefcos * Coefcst + Coefsin * prm) / norm1;
+
+            sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
+            sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
+
+            gp_XYZ Xdir = C.Position().XDirection().XYZ();
+            gp_XYZ Ydir = C.Position().YDirection().XYZ();
+            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            gp_XYZ dirxyz = new();
+            dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, 1.0 / Tgtalpha, Zdir);
+            dir1.SetXYZ(dirxyz);
+            pt1.SetXYZ(pt1.XYZ() + dirxyz);
+            dirxyz.SetLinearForm(cost1, Xdir, sint1, Ydir, 1.0 / Tgtalpha, Zdir);
+            dir2.SetXYZ(dirxyz);
+            pt2.SetXYZ(pt2.XYZ() + dirxyz);
+        }
+        else
+        {
+            nbSol = 0;
+        }
+        done = true;
+    }
+
+    /// <summary>The draft contours of angle <paramref name="Angle"/> of a cone for the direction <paramref name="D"/>.</summary>
+    public void Perform(in gp_Cone C, in gp_Dir D, double Angle)
+    {
+        done = false;
+        nbSol = 0;
+
+        double Ang = C.SemiAngle();
+        double Cosa = Math.Cos(Ang);
+        double Sina = Math.Sin(Ang);
+
+        double Coefcos = D.Dot(C.Position().XDirection());
+        double Coefsin = D.Dot(C.Position().YDirection());
+
+        double Coefcst1 = Math.Cos(M_PI * 0.5 + Angle);
+
+        double norm1 = Coefcos * Coefcos + Coefsin * Coefsin;
+        double norm2 = Math.Sqrt(norm1);
+
+        double Coefnz = D.Dot(C.Axis().Direction()) * Sina;
+        double Coefcst = (Coefcst1 + Coefnz) / Cosa;
+
+        if (Math.Abs(Coefcst) < norm2)
+        {
+            typL = GeomAbs_Line;
+            nbSol += 2;
+            pt1 = C.Apex();
+            pt2 = pt1;
+
+            prm = Math.Sqrt(norm1 - Coefcst * Coefcst);
+            double cost0, sint0, cost1, sint1;
+
+            cost0 = (Coefcos * Coefcst - Coefsin * prm) / norm1;
+            cost1 = (Coefcos * Coefcst + Coefsin * prm) / norm1;
+
+            sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
+            sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
+
+            gp_XYZ Xdir = C.Position().XDirection().XYZ();
+            gp_XYZ Ydir = C.Position().YDirection().XYZ();
+            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            if (!C.Direct())
+            {
+                Zdir.Reverse();
+            }
+            gp_XYZ dirxyz = new();
+            dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, Cosa / Sina, Zdir);
+            dir1.SetXYZ(dirxyz);
+            pt1.SetXYZ(pt1.XYZ() + dirxyz);
+            dirxyz.SetLinearForm(cost1, Xdir, sint1, Ydir, Cosa / Sina, Zdir);
+            dir2.SetXYZ(dirxyz);
+            pt2.SetXYZ(pt2.XYZ() + dirxyz);
+        }
+
+        Coefcst = (Coefcst1 - Coefnz) / Cosa;
+
+        if (Math.Abs(Coefcst) < norm2)
+        {
+            typL = GeomAbs_Line;
+            nbSol += 2;
+            pt3 = C.Apex();
+            pt4 = pt3;
+
+            prm = Math.Sqrt(norm1 - Coefcst * Coefcst);
+            double cost0, sint0, cost1, sint1;
+
+            cost0 = (Coefcos * Coefcst - Coefsin * prm) / norm1;
+            cost1 = (Coefcos * Coefcst + Coefsin * prm) / norm1;
+
+            sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
+            sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
+
+            gp_XYZ Xdir = C.Position().XDirection().XYZ();
+            gp_XYZ Ydir = C.Position().YDirection().XYZ();
+            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            if (!C.Direct())
+            {
+                Zdir.Reverse();
+            }
+            gp_XYZ dirxyz = new();
+            dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, -Cosa / Sina, Zdir);
+            dir3.SetXYZ(dirxyz);
+            pt3.SetXYZ(pt3.XYZ() + dirxyz);
+            dirxyz.SetLinearForm(cost1, Xdir, sint1, Ydir, -Cosa / Sina, Zdir);
+            dir4.SetXYZ(dirxyz);
+            pt4.SetXYZ(pt4.XYZ() + dirxyz);
+            if (nbSol == 2)
+            {
+                pt1 = pt3;
+                pt2 = pt4;
+                dir1 = dir3;
+                dir2 = dir4;
+            }
+        }
+
+        done = true;
+    }
+
+    /// <summary>The silhouette of a cone for the eye <paramref name="Eye"/>.</summary>
+    public void Perform(in gp_Cone C, in gp_Pnt Eye)
+    {
+        done = false;
+
+        double Tgtalpha = Math.Tan(C.SemiAngle());
+
+        gp_XYZ apexeye = Eye.XYZ();
+        apexeye.Subtract(C.Apex().XYZ());
+
+        double Coefcos = apexeye.Dot(C.Position().XDirection().XYZ());
+        double Coefsin = apexeye.Dot(C.Position().YDirection().XYZ());
+        double Coefcst = apexeye.Dot(C.Axis().Direction().XYZ()) * Tgtalpha;
+
+        double norm1 = Coefcos * Coefcos + Coefsin * Coefsin;
+        double norm2 = Math.Sqrt(Coefcos * Coefcos + Coefsin * Coefsin);
+
+        if (Math.Abs(Coefcst) < norm2)
+        {
+            typL = GeomAbs_Line;
+            nbSol = 2;
+            pt1 = C.Apex();
+            pt2 = pt1;
+
+            prm = Math.Sqrt(norm1 - Coefcst * Coefcst);
+            double cost0, sint0, cost1, sint1;
+
+            cost0 = (Coefcos * Coefcst - Coefsin * prm) / norm1;
+            cost1 = (Coefcos * Coefcst + Coefsin * prm) / norm1;
+
+            sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
+            sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
+
+            gp_XYZ Xdir = C.Position().XDirection().XYZ();
+            gp_XYZ Ydir = C.Position().YDirection().XYZ();
+            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            gp_XYZ dirxyz = new();
+            dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, 1.0 / Tgtalpha, Zdir);
+            dir1.SetXYZ(dirxyz);
+            pt1.SetXYZ(pt1.XYZ() + dirxyz);
+            dirxyz.SetLinearForm(cost1, Xdir, sint1, Ydir, 1.0 / Tgtalpha, Zdir);
+            dir2.SetXYZ(dirxyz);
+            pt2.SetXYZ(pt2.XYZ() + dirxyz);
+        }
+        else
+        {
+            nbSol = 0;
+        }
+        done = true;
+    }
+
+    public bool IsDone() => done;
+
+    /// <summary>The number of contours; throws StdFail_NotDone before a computation.</summary>
+    public int NbContours()
+    {
+        if (!done)
+        {
+            throw new StdFail_NotDone();
+        }
+        return nbSol;
+    }
+
+    /// <summary>GeomAbs_Line or GeomAbs_Circle; throws StdFail_NotDone or Standard_DomainError (no contour).</summary>
+    public GeomAbs_CurveType TypeContour()
+    {
+        if (!done)
+        {
+            throw new StdFail_NotDone();
+        }
+        if (nbSol == 0)
+        {
+            throw new Standard_DomainError();
+        }
+        return typL;
+    }
+
+    /// <summary>The circle; throws StdFail_NotDone or Standard_DomainError.</summary>
+    public gp_Circ Circle()
+    {
+        if (!done)
+        {
+            throw new StdFail_NotDone();
+        }
+        if (typL != GeomAbs_Circle || nbSol == 0)
+        {
+            throw new Standard_DomainError();
+        }
+        return new gp_Circ(new gp_Ax2(pt1, dir1, dir2), prm);
+    }
+
+    /// <summary>The line <paramref name="Index"/>; throws StdFail_NotDone, Standard_DomainError or Standard_OutOfRange.</summary>
+    public gp_Lin Line(int Index)
+    {
+        if (!done)
+        {
+            throw new StdFail_NotDone();
+        }
+        if (typL != GeomAbs_Line || nbSol == 0)
+        {
+            throw new Standard_DomainError();
+        }
+        if (Index <= 0 || Index > nbSol)
+        {
+            throw new Standard_OutOfRange();
+        }
+        switch (Index)
+        {
+            case 1:
+                return new gp_Lin(pt1, dir1);
+            case 2:
+                return new gp_Lin(pt2, dir2);
+            case 3:
+                return new gp_Lin(pt3, dir3);
+            case 4:
+                return new gp_Lin(pt4, dir4);
+        }
+        throw new Standard_OutOfRange("Program error in Contap_ContAna");
+    }
+}

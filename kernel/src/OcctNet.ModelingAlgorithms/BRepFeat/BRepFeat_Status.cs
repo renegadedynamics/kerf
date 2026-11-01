@@ -1,0 +1,13 @@
+// Port of: src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_Status.hxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace Occt;
+
+/// <summary>The status of BRepFeat_MakeCylindricalHole.</summary>
+public enum BRepFeat_Status
+{
+    BRepFeat_NoError,
+    BRepFeat_InvalidPlacement,
+    BRepFeat_HoleTooLong,
+}

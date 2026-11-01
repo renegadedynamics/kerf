@@ -72,6 +72,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             {
                 aList.Add(anIt.Value());
             }
+            GC.KeepAlive(aC); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             return aList;
         }
         finally

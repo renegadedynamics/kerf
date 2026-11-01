@@ -96,6 +96,9 @@ internal sealed class BRepTools_CopyAtEntry
     /// <summary>The shape to run the algorithm on: the copy, or the input itself when it wasn't copied.</summary>
     public TopoDS_Shape Shape() => myCopy;
 
+    /// <summary>True once <see cref="Finish"/> has run.</summary>
+    public bool IsFinished() => myIsFinished;
+
     /// <summary>True if the input was copied.</summary>
     public bool IsCopied() => myCopies is not null;
 

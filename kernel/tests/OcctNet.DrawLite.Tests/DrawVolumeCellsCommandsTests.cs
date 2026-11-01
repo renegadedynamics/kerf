@@ -92,7 +92,8 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
 
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
                                            .Where(s => theCommands.Any(s.Commands.Contains)).ToList();
-        List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
+        // The cases that measure memory run one at a time, in DrawCheapGapsCorpusTests only
+        List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
         int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
         output.WriteLine($"{aScans.Count} cases use mkvolume or bc*: {aRunnableBefore} runnable before, {aRunnable.Count} after");
         // the cases that also need unit 6L's Boolean commands (the boolean grids' mkvolume cases) are run by
@@ -110,7 +111,7 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
 
         List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                                            .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(300), null))
+                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

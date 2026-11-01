@@ -258,6 +258,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // mpsetdefaultname) don't carry over to the next case
             Occt.BRepMesh_IncrementalMesh.SetParallelDefault(false);
             Occt.BRepMesh_DiscretFactory.Get().SetDefaultName("FastDiscret");
+            // nor ShapeProcess's cached resource file (unit 7C; its operator registry is the same in every DRAWEXE)
+            Occt.ShapeProcess_Context.ClearResourceCache();
         }
 
         string aText = aLog.ToString();
@@ -603,6 +605,13 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 return Literal(1) == "eval" && theIndex >= 3 ? ArgumentRole.Script : ArgumentRole.Data;
             case "after":
                 return theIndex >= 2 ? ArgumentRole.Script : ArgumentRole.Data;
+
+            // StandardCommands.tcl's procedures that run a script (unit 7W): `repeat n script`, `do var start end ?incr? body`;
+            // their scripts are often one line, which the guess for unknown commands (a braced multi-line word) misses
+            case "repeat":
+                return theIndex == 2 ? ArgumentRole.Script : ArgumentRole.Data;
+            case "do":
+                return theIndex == aCount - 1 && theIndex >= 4 ? ArgumentRole.Script : ArgumentRole.Data;
             case "dict":
                 return Literal(1) == "for" && theIndex == 4 ? ArgumentRole.Script : ArgumentRole.Data;
             case not null when s_dataCommands.Contains(theCommand):

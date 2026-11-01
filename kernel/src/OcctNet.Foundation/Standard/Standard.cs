@@ -259,8 +259,8 @@ public static class Standard
     /// <summary>The distance from <paramref name="theValue"/> to the next double away from zero.</summary>
     public static double Epsilon(double theValue)
         => theValue >= 0.0
-               ? Math.BitIncrement(theValue) - theValue
-               : theValue - Math.BitDecrement(theValue);
+               ? NextAfter(theValue, RealLast()) - theValue
+               : theValue - NextAfter(theValue, RealFirst()); // as OCCT: 0 for RealLast() and RealFirst() (decision 1080)
 
     public static double ACos(double theValue) => Math.Acos(theValue);
 
@@ -340,6 +340,11 @@ public static class Standard
         => theValue < int.MinValue ? int.MinValue
            : theValue > int.MaxValue ? int.MaxValue
            : (int)theValue;
+
+    // Standard_ShortReal.hxx
+
+    /// <summary>The largest float (FLT_MAX).</summary>
+    public static float ShortRealLast() => float.MaxValue;
 
     public static float RealToShortReal(double theValue)
         => theValue < -float.MaxValue ? -float.MaxValue

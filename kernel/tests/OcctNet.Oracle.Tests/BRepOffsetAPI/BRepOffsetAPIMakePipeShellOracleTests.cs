@@ -91,6 +91,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         {
             aN.Add(anIt.Value());
         }
+        GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         var aP = new List<TopoDS_Shape>();
         for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {
@@ -300,7 +301,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
     private static N.gp_Dir ToN(in gp_Dir theD) => Oracle.ToNative(theD);
 
-    private void Run(Case theCase)
+    private void Run(Case theCase, bool theRerun = false)
     {
         myCases++;
         // the inputs: spine, auxiliary shape, profiles
@@ -420,6 +421,16 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
         if (aNError is not null || aPError is not null)
         {
+            // Native reads uninitialised memory on a few cases and then crashes only now and then (case 220 once in a
+            // Release gate on 1 November 2026, never before): run such a case again once, and keep the difference only
+            // if native crashes again
+            if (aNError == "OSD_Exception_ACCESS_VIOLATION" && aPError is null && !theRerun)
+            {
+                output.WriteLine($"  rerun: {aWhat}: {aNError} natively, no exception in the port");
+                myCases--;
+                Run(theCase, true);
+                return;
+            }
             if (aNError == "OSD_Exception_ACCESS_VIOLATION" && aPError is "Standard_NullObject" or "NullReferenceException")
             {
                 myExceptions++; // a null handle natively (decision 930)

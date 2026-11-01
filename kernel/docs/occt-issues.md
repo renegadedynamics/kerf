@@ -1372,3 +1372,400 @@ otherwise.
 | `errorsweep`, `deletesweep` | Dereference the sweep maker without checking that `mksweep` made one | An access violation natively; a .NET NullReferenceException (a Tcl error) in Draw-lite |
 | `tanginterpol` | Checks `n < 3 * nbpoints + num_read` where reading the points needs one word more | With exactly one word too few the last coordinate is read from `argv[argc]`, a null pointer. Draw-lite throws (a Tcl error) |
 | `thrusections` | The `Null3DCurve` status message lacks the final newline the others have | Cosmetic. Reproduced |
+
+## Phase 7: unit 7A, ShapeCustom
+
+Found by porting ShapeCustom and comparing it with native OCCT (decisions 973 to 978). The port reproduces each
+(`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeCustom_SweptToElementary `NewCurve2d` | Calls `BRep_Tool::Surface(NewF, L)` on the null face BRepTools_Modifier passes from `CreateOtherVertices` (to ask whether an edge's vertices must be copied), which reaches it for edges without a new 3D curve (degenerated edges of revolutions) | An access violation natively (`OSD_Exception_ACCESS_VIOLATION` under the signal handler) on 16 of the heal group's and data/occ's shapes: `ShapeCustom::SweptToElementary` fails on any shape with such a face. The port throws a NullReferenceException there (decision 977) |
+| ShapeCustom_SweptToElementary `NewCurve2d` | Dereferences `SS` (null) when the face's surface isn't swept and only the edge was copied, if the new face is a torus or a sphere | An access violation natively; the port skipped the shift (`is` on null) until unit 7C, and now throws a NullReferenceException there (decision 1024): ShapeProcess's SweptToElementary, BRepTools_Modifier in its mutable-input mode, meets it on three heal inputs |
+| ShapeCustom_SweptToElementary `IsToConvert` | For a trimmed or offset surface, tests `S->IsKind(Geom_SweptSurface)` (known false) instead of its basis `Stmp` | Trimmed and offset surfaces of revolution or extrusion are never converted |
+| ShapeCustom_Surface `ConvertToAnalytical` | `if (substitute && !NHS.IsNull()) Init(newSurf)`: the adaptor is never null, so a surface rejected by the final check (null) replaces the tool's surface | With `substitute`, a failed conversion leaves the tool with no surface; a later `ConvertToPeriodic` returns null |
+| ShapeCustom_Surface `ConvertToAnalytical` | Computes the orientation check with `iso->D1(0., ...)` on the last iso-curve built (V at the middle), at parameter 0 rather than U1 | Reproduced |
+| ShapeCustom_Curve, ShapeCustom_Surface `ConvertToPeriodic` | Make the given B-spline periodic in place when its knots needn't be rearranged | Changes the caller's (shared) geometry; the port changes a copy (decision 974) |
+| ShapeCustom_Curve2d `SimplifyBSpline2d` | Removes knots from the caller's curve in place | As above; the port copies a frozen curve (decision 974) |
+| ShapeCustom_BSplineRestriction `ConvertCurve2d` | For an offset pcurve whose basis converts to C0, converts the curve into `ResCurve`, not `C`, and returns true | The caller's C is left as it was (null in NewCurve2d), and the modifier stores a null pcurve. Not met by the tests |
+| ShapeCustom_BSplineRestriction `ConvertCurve`, `ConvertCurve2d` | The `continue` meant to restart with the global limits (`aC = aC1`) is inside the inner `for (j = 1; j <= 2; j++)` loop: it retries once (ConvertCurve2d with the continuity computed before `aC = aC1`), and when the retry fails too and the curve isn't to be copied anyway, falls through to `myConvert = true; return true` | A failed approximation is returned as the converted curve, with its error as the tolerance. Reproduced |
+| ShapeCustom_BSplineRestriction `IsConvertCurve3d` / `IsConvertCurve2d` | A 3D B-spline is converted from `NbKnots - 1 >= NbSeg` spans, a 2D one from `> NbSeg` | Reproduced |
+| ShapeCustom_BSplineRestriction `NewPoint` | Answers from `myConvert`, the state of the last face or edge converted before the call; BRepTools_Modifier asks for points first | The vertices of a shape get new points only when the same modification converted something before (a compound's later children) |
+| ShapeCustom_RestrictionParameters | `ConvertToroidalSurf` returns the cylinders' field and `ConvertCylindricalSurf` the tori's | Harmless: each accessor always uses the same field |
+| BRepTools_Modifier `SetShapeFlags(S, S)` (reached by every ShapeCustom function) | Copies the flags of a sub-shape left alone onto itself; `Modified(true)` clears its Checked bit | Writes into the caller's shape natively; the port's frozen input keeps its flags (decision 347), the oracles mask the Checked column |
+| ShapeExtend::Init with Message_MsgFile::Msg | Init loads SHAPE.us only when `ShapeFix.FixSmallSolid.MSG0` is missing, and `Msg` stores an unknown keyword's error text under the keyword: a ShapeFix_FixSmallSolid warning sent before Init (ShapeAlgo::Init or ShapeProcess) leaves every other healing message unknown for the rest of the process | Reproduced; the message tests load the texts themselves, since the tests share one process |
+## Phase 7: unit 7W, Draw-lite's cheap gaps
+
+Found by investigating the four cases decision 972 made runnable and by porting Draw's commands. Draw-lite reproduces
+each (`// OCCT` at the line where it is code), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| bugs/modalg_7/bug26034 (`bopcheck` after `ttranslate Revolve002 0 0 -0.5`) | IntPatch_ImpImpIntersection of the sphere and a cone reaches `Standard_NumericError_Raise_if` in math_FunctionAllRoots (IntStart_SearchOnBoundaries::BoundedArc); BOPAlgo_CheckerSI turns the exception into the warning "Intersection of pair of shapes has failed", which the script reads as a fault | OCCT's default Release build compiles the check out (`No_Exception`), so OCCT's CI passes. build123d.NET's native build keeps the check, as the port does (decision 9): tools/cksirec (native BOPAlgo_CheckerSI) gives the same warning at -0.5 and none at 0, +0.5 and -0.25, as the port. The case fails on both |
+| `insertpole` (GeomliteTest_CurveCommands.cxx) | Returns 1 below 6 words, so the 2D form `insertpole name index x y` can't be given; with 6 words the 2D form takes `a[5]` as the weight | A 2D pole is always inserted with a weight. Reproduced |
+| `dmode`, `discr`, `defle` (DrawTrSurf.cxx) | With names, every iteration sets the drawable of `a[1]`, not `a[i]`; `dmode` with one word sets the uniform mode whatever the word | Display only: Draw-lite keeps the modal values and changes no drawable |
+| `lastrep` (Draw_VariableCommands.cxx) | With Z, divides the pick by `dout.Zoom`, which is `false` (0) in batch mode | X, Y and Z are NaN when no view exists. Reproduced |
+| `crvpoints`, `crvtpoints` (GeometryTest_CurveCommands.cxx) | Read `a[2]` and `a[3]` without checking the word count | Natively undefined; Draw-lite reads an empty word |
+| `2dintersect` (GeomliteTest_API2dCommands.cxx) | `-tol` as the last word reads `a[++i]` past the end; the output spells "parameter on the fist" | Draw-lite reads an empty word (0); the text is reproduced |
+| `xbounds`, `removeinternals` (BRepTest_OtherCommands.cxx, DBRep.cxx) | Messages without a space: " shape<name> must be a face", "<name>is a null shape" | Text only. Reproduced |
+| `XProgress` | Sets Draw_ProgressIndicator's process-wide defaults; the corpus's progress cases read the indicator's output in the commands' results | Draw-lite keeps the modes per interpreter and its commands make no progress indicator (decision 954), so those cases fail (decisions 984, 988) |
+| BRepPrimAPI_MakePrism's history on a sphere band from 0 to 2π (bugs/modalg_7/bug30346_2, `prism` then `savehistory`) | The port's IsDeleted says one edge of the base is deleted; native (build123d.NET's MakePrism on the same face) says none | Not OCCT's: a port difference in what BRepSweep marks used, found by decision 981 and not yet fixed. The case fails |
+
+## Phase 7: unit 7W's follow-up, the Boolean corpus in full
+
+| Where | What | Effect |
+|---|---|---|
+| bugs/modalg_7/bug83 (`bsection` of two planar B-spline sheets from BUC60912_sec_slow.brep) | Not OCCT's: the port's section takes 0.20 s warm in Release where native takes 0.03 s (and 0.34 s on a cold start, the JIT) | The case's 0.1 s limit fails. A performance gap to profile (plan 2.7), not a result difference |
+
+## Phase 7: unit 7D, helix (TKHelix)
+
+Found by porting TKHelix and BRepTest_HelixCommands.cxx. The port reproduces each (`// OCCT` at the line where it is
+code), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| HelixGeom_HelixCurve `Load` | `myTgBeta` is set only when \|taper\| > 1e-4, never reset: reloading a tapered adaptor with a (near) zero taper keeps the old taper | The second helix is tapered. Not reached by TKHelix's builders, which load a new adaptor each time. Reproduced, and pinned by a test |
+| HelixBRep_BuilderHelix `SetParameters` (spiral, by heights) | Reads `theHeights(1)` where the loop uses `theHeights.Lower()` | An array not starting at 1 is read at the wrong place or throws. Reproduced |
+| HelixBRep_BuilderHelix (class documentation) | Error 13 is documented for "TaperAngle < 0 or > π/2 - TolAng"; `BuildPart` checks only the upper bound, and returns 3 (undocumented) when an edge can't be made | Negative tapers (diameters decreasing) are built, as the corpus's spirals need |
+| HelixBRep_BuilderHelix `SmoothingEdges` | Changes the edges' curves in place; when no degree lets the tangent move, the curve keeps the raised degree though `UpdateEdge` isn't called | Native shares no curve with a caller, so harmless; the port changes copies (decision 994) |
+| HelixGeom_Tools `HelixGeom_Tools_Eval::Evaluate` | Sets error code 1 for a dimension other than 3, then writes three values anyway | Never reached (the dimension is always 3). Reproduced |
+| `helix2`, `spiral2` (BRepTest_HelixCommands.cxx) | The usage text for a wrong argument count names H and PF arguments the commands don't take | Text only. Reproduced |
+| helix/standard/D6, D7 | `CheckSpiral` compares lprops' centre and moments as strings, centre coordinates near 1e-15 included | OCCT's own TODO (OCC11111) on all platforms; BAD in Draw-lite as in DRAWEXE |
+## Phase 7: unit 7B, ShapeUpgrade and ShapeAlgo
+
+The port reproduces each, unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of linear extrusion whose basis curve had knots removed, `SetBasisCurve` on the surface it was given: the face's own surface (for a trimmed one, the basis shared by its faces) | Changes the caller's geometry (heal's BUC60173.rle with C2 criteria); the port changes a copy (decision 998), the one attributed oracle difference |
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of revolution, the knots removed from the basis curve aren't set into the surface (unlike the extrusion); DONE3 is reported anyway | Reproduced |
+| ShapeUpgrade::C0BSplineToSequenceOfC1BSplineCurve | `SetNotPeriodic` on the caller's curve | The port splits a copy of a frozen curve (decision 998) |
+| ShapeUpgrade_ShapeConvertToBezier `Perform` | Segments the edges' Bezier pcurves in place; where a seam's two pcurves are one curve, it is segmented twice (an arc ending at π/4 gets 0.49, data/occ's nuts and many heal inputs in curves-only mode) | Reproduced on copies (decision 998) |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | For the seam's second pcurve, compares the bounds with the first pcurve's range and lowers `First` with `if (First > f)` | Reproduced |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | Re-initializes the wire divider's own split tools, which WireDivide is still using | Reproduced |
+| ShapeUpgrade_ShapeDivide `Perform` | Dereferences the split face tool for the free wires without checking it | Reproduced (NullReferenceException) |
+| ShapeUpgrade_ShellSewing `ApplySewing` | Documented to return the input when no shell is sewn; returns a null shape | Reproduced |
+| ShapeUpgrade_ShapeDivideClosedEdges `SetNbSplitPoints` | Ignores the number | Reproduced |
+| ShapeUpgrade_SplitCurve2dContinuity `Compute` | After removing a knot completely, doesn't lower the last index as the 3D tool does | Reproduced |
+
+## Phase 7: unit 7E, the offset foundations
+
+Found by porting BRepOffset (but MakeOffset) and ChFi3d.cxx. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_Tool `IsOnSurface` (:577) | The sampling step is `(f - l)`, negative | Samples outside the curve's range. Reproduced |
+| BRepOffset_Tool `AngleWireEdge` (:931) | `Angle` is uninitialised when the edges aren't B-splines | Undefined natively; the port uses 0 |
+| BRepOffset_Tool `PutInBounds` (:113), `BuildPCurves` (:397) | The bounds are uninitialised when `FindPeriod` writes nothing; the pcurve can be null when `PutInBounds` dereferences it | Undefined natively; the port uses 0, and throws on the null curve |
+| BRepOffset_Tool `CheckBounds` (:3146) | `L.First()` on an empty list | Undefined in native release builds; the port throws Standard_NoSuchObject |
+| BRepOffset_Tool `Inter3D`, the closed-wire branch | Could loop forever if the edges don't chain | Looks unreachable (a built wire's Closed flag is never set). Reproduced |
+| BRepOffset_Inter2d `RefEdgeInter` ("keep Vmin") | `Remove` moves the iterators on, then the loop's `Next()` skips an element | A vertex after a removed one is kept. Reproduced |
+| BRepOffset_Inter2d `ExtentEdge` | `MinSurf` is replaced by a transformed copy, so `theSurf == MinSurf` never holds | The pcurve the 3D curve was built from is checked (and may be re-projected) too. Reproduced |
+| BRepOffset_MakeLoops (three places) | `NewTV->ChangePoints().Append(TV->ChangePoints())` moves the list | The replaced vertex loses its point representations, which matters only if it survives outside the images. Reproduced |
+| BRepOffset_Inter3d `ContextIntByInt` | `LOE` and `MV` are built and never used; on the vertex path `Generated(E)` gets a null edge | Harmless. Reproduced |
+| BRepOffset_SimpleOffset `FillVertexData` | A vertex with no offset edge divides by zero | Its new point is NaN. Reproduced |
+| BRepOffset_MakeSimpleOffset `GetSafeOffset` | Divides by `myMaxAngle`, which is 0 for a smooth shape | Infinite or NaN. Reproduced |
+| BRepOffset_MakeSimpleOffset `BuildMissingWalls` | `IsClosed` on a null shell when the quilt makes none (an edge in solid mode) | An access violation natively; Standard_NullObject in the port (decision 1010) |
+| BRepOffset_MakeSimpleOffset, solid mode | Writes the walls' pcurves into the input's free edges and raises their vertices' tolerances | A second run on the same input gives another result natively (decision 1010). The port copies at the entry (decision 1006), so the input is never written |
+## Phase 7: unit 7H, LocOpe
+
+Found by porting LocOpe and recording it natively (tools/locoperec). The port reproduces each, unless the last column
+says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| LocOpe_SplitShape, WiresOnShape, Spliter, Generator, Gluer, SplitDrafts, the sweeps | Write into the shapes they are given: vertices' point representations and tolerances, edges' pcurves and continuities, the split shape's faces (plan 2.2) | The caller's shapes change. The port works on copies of frozen shapes and gives back the unchanged ones (decisions 1013, 1014) |
+| LocOpe_SplitDrafts `Perform` | Builds a GeomFill_Pipe on the two drafted planes' intersection, an infinite Geom_Line, which GeomConvert can't convert ("No such curve") | Throws Standard_DomainError whenever the planes meet (natively on all 229 such recorded cases; the 133 others aren't done): the class can't draft a plane. Reproduced |
+| LocOpe_SplitDrafts `Perform` | After the right edge is built, tests the left one (`NewEdgg`) again; the tolerance compared is NewEdgg's twice | Reproduced |
+| LocOpe_DPrism (through BRepFill_Evolved) | The order of an edge's two pcurves in the result, and the last bits of the faces' areas, follow addresses | Native's BRep text varies run to run; the oracle compares the shapes canonically (decision 1017) |
+| LocOpe_CSIntersector `LocalizeBefore(I, FromInd, ...)` | No index version of `LocBefore` exists: the index converts to the double parameter `From` | Searches before the parameter equal to the index. Reproduced |
+| LocOpe_WiresOnShape `Add` | Puts each argument's box at the argument's index but its edges at the next free indices; an argument with several edges (a wire) leaves boxes and edges out of step | Edges tested against another edge's box. Reproduced |
+| LocOpe_WiresOnShape `Project` | The V resolution is computed with `UResolution` | Reproduced |
+| LocOpe_WiresOnShape `PutPCurve` | The branch for internal vertices (`!V1.IsNull() && V2.IsNull()`) reads the tolerance and point of the null V2 | Throws when reached. Reproduced |
+| LocOpe_FindEdges `Set` | Compares B-spline knots with `Kf(k) - Kt(k) > Tol`, not in absolute value | Knots smaller than the other's pass. Reproduced |
+| LocOpe_Pipe | Corrects the orientation of a fused planar face's normal with the reference plane's `Direct()`, not the face's own plane's | Reproduced |
+| LocOpe_Pipe `Curves`, `BarycCurve` | A straight spine's pipe lines are infinite lines, which GeomConvert can't convert; `BarycCurve` with no curve appends a null curve and goes on to read the first | Throws Standard_DomainError / Standard_OutOfRange. Reproduced |
+| LocOpe_Generator `Perform` | Computes whether a face's wire touches the removed edges (`isIncludedInW`) and doesn't use it | Reproduced |
+| LocOpe_Gluer `AddEdges` | Computes, for each face of the result, the new shape's edges touching it, and keeps nothing | Reproduced (for its cost) |
+| LocOpe_Revol, LocOpe_RevolutionForm | Declare constructors taking the base and the axis without defining them; RevolutionForm never sets its rotation (`myIsTrans` stays false) | The constructors are left out (decision 1015) |
+| LocOpe_LinearForm | Stores the two points it is given and never reads them | Reproduced |
+| LocOpe_Spliter `Perform` | Builds the left part from maps keyed by addresses | `Left()`'s order varies natively; the oracle compares it as a set |
+## Phase 7: unit 7C, ShapeProcess and the healing Draw commands
+
+Found by porting ShapeProcess, ShapeProcessAPI, `Resource_Manager` and SWDRAW's ShapeUpgrade, ShapeCustom and
+ShapeProcess commands. The port reproduces each, unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeProcess_OperLibrary `Init` | Sets its static `done` flag before registering the operators, without a lock | A second thread calling `Init` meanwhile returns at once and may find no operator. The port registers under a lock (decision 1021) |
+| ShapeProcess `RegisterOperator`, `FindOperator` | The static operator map has no lock | Registering while another thread performs can corrupt it. The port takes a lock (decision 1021) |
+| ShapeProcess_Context `LoadResourceManager` | `stat` of a file that doesn't exist isn't checked: the modification time is read from an uninitialised buffer; the cache compares the name only, not the directories | A missing file may look modified. The port takes 0 for a missing file and keys the cache by the files too (decision 1023) |
+| ShapeProcess_Context `GetReal`, `GetInteger` | Read the first character of a value that isn't a number (`Value(1)`), which throws Standard_OutOfRange for an empty value | The exception leaves the operator; the performer reports "failed with exception". Reproduced |
+| Resource_Manager (constructors) | The user resource file is loaded into the reference map (`Load(aUserPath, myRefMap)`), so the "User file loaded" trace can't be printed and `GetMap(false)` holds only what `SetResource` set | Reproduced |
+| ShapeProcess `settol` (SetTolerance), `sameparam` (SameParameter) | Change tolerances and pcurves in place and record nothing in the context ("WARNING: no update of context yet!") | The history has no entry for them. Reproduced; in the port the result holds changed copies (decision 1022) |
+| BRepLib `UpdateTolerances` (in place, from SetTolerance) | Sets the tolerances computed per (sub-shape, location) by iterating a map keyed by shape in hash order (TShape addresses); a TShape the shape holds at two locations, with different tolerances at each, ends with whichever OCCT iterates last | The port iterates in insertion order: 28 of the oracle's heal inputs (instances) get the other tolerance on a few vertices and edges, attributed |
+| ShapeProcessAPI_ApplySequence `PrepareShape`, `ClearMap` | `fillmap` and `until` are ignored; `ClearMap` does nothing | Reproduced |
+| SWDRAW `DT_SplitCurve`, `DT_SplitCurve2d`, `DT_SplitSurface` | Read `argv[argc]` (a null pointer) when the optional split flag is missing | Draw-lite takes a missing flag as 0 |
+| SWDRAW `splitface` | Prints ", " before every U value (`i > j` where `j > 1` is meant) | Reproduced |
+| SWDRAW `expshape` | Counts a seam twice per face | Reproduced |
+| SWDRAW `offset2dcurve` | On a C0 curve, Geom2d_OffsetCurve throws Standard_ConstructionError ("Offset on C0 curve") | Reproduced |
+
+## Phase 7: unit 7F, the 3D offset
+
+Found by porting BRepOffset_MakeOffset and the offset API, and by its oracle. The port reproduces each (`// OCCT` at
+the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_MakeOffset `TrimEdges` | `if (theNewEdges.Add(NE))` tests the index NCollection_IndexedMap::Add returns, never 0 | An edge already trimmed is trimmed again. Reproduced |
+| BRepOffset_BuildOffsetFaces `BuildSplitsOfFaces` | In the artificial case, `*pLFIm = aLFImages` when the face has no splits yet (`pLFIm` null) | An access violation natively; a NullReferenceException in the port. Not met by the oracle |
+| BRepOffset_MakeOffset (MakeLoops on the closing faces, `MakeMissingWalls`, `UpdateTolerance` with `Locked(false)`) | Writes into its input: new vertices on the closing faces' edges, the walls' pcurves on a thickened shell's edges, tolerances | Native changed its own input in 82 of the oracle's 724 runs; a second run on it differs. The port copies at the entry (decision 1030) |
+| BRepOffset_MakeOffset, the Arc join with Intersection on | Iterates shape-keyed maps by address (decision 1032) | The result's text varies from run to run natively (about 40 of the oracle's runs on primitives). The port's order is insertion order |
+| BRepOffset_MakeOffset, BRepOffsetAPI_MakeThickSolid | `IsDone()` with a null `Shape()` (open shells with nothing left to offset, a hollow sphere) | Reproduced (16 oracle runs); build123d.NET checks for it |
+| BSplCLib `AntiBoorScheme` through `RemoveKnot` (GeomLib::ExtendSurfByLength, the offset's face extension) | Steps outside its NCollection_LocalArray buffers, reading and writing the stack around them | Undefined natively (the tolerance test then fails); the port's `RemoveKnot` reports the removal impossible instead of throwing (decision 1034) |
+| BRepOffset_MakeOffset `SelfInter` | Throws Standard_NotImplemented | Never called. Reproduced |
+
+## Phase 7: unit 7J, the blend functions
+
+Found by porting Blend, BlendFunc and ChFiDS and by tools/blendrec. The port reproduces each (`// OCCT` at the line).
+
+| Where | What | Effect |
+|---|---|---|
+| BlendFunc_ConstRad, BlendFunc_EvolRad `ComputeValues` | The scratch values (the guide's point and derivatives, the surfaces' third derivatives) are `static thread_local`, shared by every instance on a thread, while the cache guards are per instance | An instance whose parameter is unchanged can read the guide point another instance computed last. Reproduced with `[ThreadStatic]` (decision 1037) |
+| BlendFunc_ConstRadInv `Derivatives` | `dnplan.SetLinearForm(theD, nplan, d2cur)` where `Values` has `-nplan.Dot(d2cur)` | The derivatives in the guide's parameter (rows 2 to 4) differ from `Values`' and from finite differences off the origin (decision 1038) |
+| BlendFunc_EvolRad `ComputeValues` | The order-2 positioning doesn't recompute `dns1u1`, `dns1v1`, `dns1u2`, `dns1v2` (ConstRad's does) | The second derivatives use the last order-1 values (decision 1039) |
+| BlendFunc_ConstThroatInv, ConstThroatWithPenetrationInv `Derivatives` | `temp1`, `temp2`, `tempmid`/`temp3` are computed from `pts1`, `pts2` before `D1` updates them | They are the previous call's points (the same point when `Values` calls `Value` first) |
+| BlendFunc_ChAsym `Section` (first order) | Writes `PointOnS1()`/`PointOnS2()` into the poles before computing the points | The poles are the previous computation's points |
+| BlendFunc_ChAsymInv `ComputeValues` | On the first surface's restriction, `DX(4,2)` uses `dnplan.Dot(tempVec)` with `tempVec = 2 * nps1` | Disagrees with finite differences on a curved guide (2 against 0 on the plane/cylinder case) |
+| BlendFunc_CSCircular `GetTolerance` | Passes the signed radius to GeomFill::GetTolerance (CSConstRad passes its absolute value) | A negative radius makes gp_Circ throw Standard_ConstructionError |
+| BlendFunc_EvolRad `GetTolerance` | `lengthmin / maxang` before any solution (both still at RealLast/RealFirst) gives a negative radius | gp_Circ throws Standard_ConstructionError |
+| BlendFunc_Chamfer, ConstThroat, ChAsym, Ruled (GenChamfer) `GetTolerance` | Leave `Tol1D` unset | The caller's vector keeps whatever it held (uninitialised memory natively) |
+| BlendFunc `Knots`, `Mults` | Declared, never defined | Left out |
+| ChFiDS_Stripe `Reset` | `pcrv1.Nullify()` twice | The last pcurve is kept |
+| ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost |
+| Blend_CurvPointFuncInv `NbVariables` | Documented as 3, returns 2 | Reproduced |
+## Phase 7: unit 7G, drafts and the rest of TKOffset
+
+Found by porting Draft, BRepOffsetAPI's draft and projection makers, BRepFill_Draft, BiTgte, BRepFill_AdvancedEvolved
+and their Draw commands, and by their oracle and recordings. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Draft_Modification `Remove` | A face whose `Add` failed was never added, so `Remove` throws Standard_NoSuchObject, though the documentation says to call it after a failed `Add` | Reproduced; `Clear` resets |
+| Draft_Modification `NewCurve2d` | Translates by a period the pcurve it returns, which may be the one it keeps for the edge | A second call for the same edge and face would translate it again. The port translates a frozen one on a copy (decision 1044) |
+| Draft_Modification `NewParameter` | `GC = down_cast<Geom_TrimmedCurve>(GC)` keeps the trimmed curve (its basis was meant) | Reproduced |
+| Draft_Modification (some drafts of several faces) | Dereferences a null handle | An access violation natively (24 oracle runs), a NullReferenceException in the port |
+| BRepOffsetAPI_DraftAngle `CorrectWires` | Frees and edits the modifier's result, which shares the input's unchanged sub-shapes | Native writes into its input (324 of the oracle's 870 runs changed native's input); build123d.NET copies ExtrudeTaper's profile for it. The port copies the result first (decision 1044) |
+| BRepAlgo_NormalProjection `Build` | The edges the face bounds trim (BRepAlgoAPI_Section) are added to the result but not to the list `Generated` returns | `Generated` is empty for them. Reproduced |
+| BRepOffsetAPI_FindContigousEdges `NbEdges` | Declared, never defined | Left out |
+| BRepFill_Draft `Generated` | For a vertex, `TopoDS::Edge` throws; the vertex branch runs only for a null shape, whose comparisons fail | Never answers for a vertex. Reproduced |
+| BiTgte_Blend `ContactType` | Two faces give BiTgte_FaceEdge, never BiTgte_FaceFace | Reproduced |
+| BiTgte_Blend `ContactType` (`SupportShape1`) | Throws Standard_NoSuchObject on some center lines (the recording's Boolean result and bug29861's cylinders) | Reproduced (17 recorded runs) |
+| BRepFill_AdvancedEvolved `GetSpineAndProfile` | Evaluates both tangents with the first edge's adaptor (`anAC1.D1(aPar2, ...)`), and takes `anExtr.Value()` for every solution | Reproduced |
+| BRepFill_AdvancedEvolved `RemoveExcessSolids` | `TopoDS::Solid(anExpSo.Current())` after the explorer passed its only solid: the explored compound, cast unchecked in release builds | The result is the compound. The port keeps it without the cast (decision 1047) |
+| BRepTest `offsetload`, `offsetonface`, `rollingball` | Read words past the arguments (`a[2]` with two words, `a[i + 1]` for an odd count, `a[2]`, `a[3]`, `a[n]`) | Draw-lite reads empty words |
+## Phase 7: unit 7I, BRepFeat
+
+Found by porting BRepFeat and the feature Draw commands, and by their oracle. The port reproduces each (`// OCCT` at
+the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepFeat_MakePrism, MakeDPrism, MakeRevol | Each declares its own private `myStatusError`, hiding BRepFeat_Form's; `CurrentStatusError` (the form's, not virtual) never reads it | A status the maker sets (IncTypes, NoIntersectU/F, NullToolU/F, InvFirstShape, IncParameter...) is never reported; a construction that never reaches GlobalPerform (a prism of a length without glued faces) reports NotInitialized. Reproduced (the oracle's statuses agree) |
+| BRepFeat_MakePipe | Declares its own `mySkface`, hiding the form's, which stays null | Reproduced |
+| BRepFeat_MakeRevolutionForm | Declares its own `mySliding`, hiding BRepFeat_RibSlot's, which stays false | Reproduced |
+| BRepFeat_MakePrism, MakeDPrism `PerformUntilHeight`, BRepFeat_MakeRevol `PerformUntilAngle` | `if (Until.IsNull()) Perform(Length);` and `if (Length == 0) Perform(Until);` don't return | A null Until throws Standard_ConstructionError after the prism of the length; a zero length builds the prism twice. Reproduced |
+| BRepFeat_MakeRevol `PerformUntilAngle` | The branches are the other way round from `Perform(Until)`: a finite until face is cut, a support glued | Reproduced |
+| BRepFeat_MakePipe `Perform(Until)`, `Perform(From, Until)` | `myFShape` becomes the pipe's first shape, which the map doesn't hold | `FirstShape()` then throws Standard_NoSuchObject. Reproduced |
+| BRepFeat_Form `GlobalPerform` | `if (myMap.IsEmpty())` where `myMap(fac).IsEmpty()` is meant (the until faces outside the shape) | An until face cut away entirely keeps an empty list. Reproduced |
+| BRepFeat_MakeRevolutionForm `Init` | Tests `proj.NbPoints()` again where `proj1` is meant | Reproduced |
+| BRepFeat_MakeRevol, RevolutionForm `ToFuse` | Down-casts the face's surface to a plane after testing the basis surface | A trimmed plane gives a null plane: an access violation natively, a NullReferenceException in the port |
+| BRepFeat_MakeCylindricalHole `PerformThruNext` | The `else` meant for `parbar > Last` hangs on `First - parbar < dmin` | Reproduced |
+| BRepFeat_Form `UpdateDescendants`, BRepFeat_RibSlot, BRepFeat_MakeDPrism `BossEdges` | Iterate maps keyed by shape address into the history lists and the lateral edges | Natively in address order; the port in insertion order (decision 1054) |
+| BRepFeat_Builder, BRepFeat_Form (the Booleans), BRepFeat_MakeLinearForm `Init` (`BB.UpdateVertex`, `myPln->Transform`), BRepFeat_RibSlot `LFPerform` (`BRepLib::SameParameter` on the glued result) | Write into the shapes and the plane the caller gives | The port works on copies (decision 1052) |
+
+## Phase 7: unit 7K, the walking (BRepBlend)
+
+Found by porting BRepBlend and by tools/blendrec. The port reproduces each (`// OCCT` at the line) except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepBlend_CSWalking `IsDone`, `Line` | Declared inline in the header, never defined (no .lxx) | The class can't be used natively (a link error); ChFi3d doesn't use it. The port defines them (decision 1059) |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | `math_Vector DEDT(1, 3); DEDT = secmember;` for the 2x2 system when Gauss fails | Release builds copy the two values and solve on them (the dimension checks are compiled out); the port's vector has two entries |
+| BRepBlend_RstRstConstRad, RstRstEvolRad `IsSolution` | The second restriction's 2D tangent is computed from `tgrst1` | `Tangent2dOnRst2` is the first restriction's tangent in the second surface's parameters |
+| BRepBlend_RstRstLineBuilder `PerformFirstSection`, `InternalPerform` | Leaving the first restriction's domain, `IsVtxrst2`/`Vtxrst2` take the vertex found on the first restriction | The second extremity can be marked on the first restriction's vertex |
+| BRepBlend_RstRstLineBuilder `MakeExtremity` | The second extremity's tangent is `TangentOnC1()` | The extremity on the second restriction has the first's tangent |
+| BRepBlend_SurfRstLineBuilder `InternalPerform` | On both restrictions at once, `sol(3) = solinvs(3)` (the parameter on the face's arc) where `PerformFirstSection` takes `solinvs(2)` (on the restriction) | The section is set at a wrong restriction parameter before `TestArret` |
+| BRepBlend_SurfRstLineBuilder `Perform` | The restriction's start extremity is built with the surface's (U, V) | Its parameter is the surface's U, not the restriction's |
+| BRepBlend_Walking `Perform`, `PerformFirstSection`, `InternalPerform`; ChFi3d's `UpdateLine` | Four-argument `BRepBlend_Extremity(P, sol(1), sol(2), tol)` and `SetValue` are the curve overload (P, W, Param, Tol) | The extremity's U is the surface's u and its guide parameter the surface's v |
+| BRepBlend_SurfRstConstRad, SurfRstEvolRad, RstRstConstRad, RstRstEvolRad | `myTConv` is not initialised by the constructors | Read only after `GetShape` sets it in OCCT's call order; the port starts it at its first value |
+| BRepBlend_SurfRstLineBuilder `ArcToRecadre` | The header names the 2D points (pt2d, lastpt2d), the definition (lastpt2d, pt2d) | The port follows the definition |
+| BRepBlend_CurvPointRadInv | `choix` is set and never read | None |
+
+## Phase 7: unit 7L, the legacy data structure's core
+
+Found by porting TopOpeBRepDS's core and TopOpeBRepTool_ShapeTool. The port reproduces each (`// OCCT` or a remark at
+the place).
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepDS_SurfaceIterator constructor | Sets the SURFACE condition after the base constructor has matched, without matching again | The first `Value()` is the list's first interference whatever its geometry (`HDataStructure::SolidSurfaces`); `Next()` then skips the others |
+| TopOpeBRepDS_DataStructure `Change*Interferences`, `ChangeCurve`, `ChangePoint`, `ChangeSurface` | Return the data structure's own empty list or value, for writing, when the shape or geometry is missing | What is written there is every later miss's list or value (decision 1066) |
+| TopOpeBRepDS_Point(shape) | Leaves `myKeep` unset; the default constructor leaves the tolerance unset | Uninitialised natively; the port keeps the point and uses 0 |
+| TopOpeBRepDS_Interference() | Leaves the indices and kinds unset | Uninitialised natively; the port uses 0 and POINT |
+| TopOpeBRepDS_SurfaceExplorer() | Leaves `myFindKeep` unset | Uninitialised natively; the port uses false |
+| TopOpeBRepDS_CurveIterator `PCurve`, TopOpeBRepDS_Curve `Curve1`/`Curve2` | Cast the interference to a surface/curve interference without checking | Undefined natively on another class; the port throws InvalidCastException |
+| TopOpeBRepDS_Surface | A new surface is not kept, a new point or curve is | `SurfaceExplorer` with its default `FindOnlyKeep` finds none of a fillet's surfaces |
+| TopOpeBRepDS_DataStructure `IsSectionEdge`, `SectionEdge` | Need the edge among the data structure's shapes too, not only among the section edges | A section edge added alone is not one |
+| TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
+| TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
+| TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
+## Phase 7: unit 7X, Quantity_Color and build123d.NET's phase 7 calls
+
+Found by porting Quantity_Color and Quantity_ColorRGBA and by replaying build123d.NET's phase 7 calls. The port
+reproduces each (`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Quantity_Color `ColorFromName` | The bare prefix `"Quantity_NOC_"` (any case) makes `SubString(14, 13)` raise Standard_OutOfRange inside a `noexcept` function | Native OCCT terminates the process (std::terminate). The port throws Standard_OutOfRange (decision 1070) |
+| Quantity_Color `Argb2color` | Reads the bytes as sRGB, where `Color2argb` writes the linear values | A colour doesn't come back from its ARGB integer; documented by OCCT. Reproduced |
+
+The replay found nothing new in the offsets, drafts and features: the null result after a reported success and native's
+run-to-run variation with the Arc join are unit 7F's (decisions 1031 and 1032).
+
+## Phase 7: unit 7P, the foundations of HLR
+
+Found by porting Intrv, TopBas, TopCnx, HLRAlgo and Contap and by tools/hlrrec. The port reproduces each (`// OCCT` at
+the line where it is code).
+
+| Where | What | Effect |
+|---|---|---|
+| HLRAlgo_Projector `Project(const gp_Pnt&, gp_Pnt2d&)` | For the first hard-coded axonometric view (`TrsfType` 0) computes X and Y and never writes `Pout` | The caller's point comes back unchanged (decision 1078); the other `Project` forms are right |
+| Contap_ArcFunction `Value`, `Values`; Contap_SurfFunction `Value`, `Derivatives`, `Values` | Contap_DraftPrs (a draft seen from an eye) computes nothing | The value is left unset (the port's ArcFunction returns 0, decision 1076; SurfFunction leaves the caller's vector and matrix); the derivatives are 0 |
+| Contap_HCurve2dTool `NbSamples` | `nbs *= (Last - First) / (U1 - U0)`, the inverse of IntPatch_HCurve2dTool's corrected ratio | More samples on a short range of a B-spline arc than on the whole arc |
+| HLRAlgo_EdgeIterator `InitHidden` | On a status neither wholly hidden nor with visible intervals (a default status) reads the first interval of an empty sequence | An access violation natively; Standard_OutOfRange in the port |
+| Intrv_Interval's default constructor | Its tolerances are `Epsilon(RealFirst())` and `Epsilon(RealLast())`, both 0 | The whole line has null tolerances (the port's `Epsilon` gave infinity there, decision 1080) |
+| TopCnx_EdgeFaceTransition `BoundaryTransition` | Both branches of the even/odd test return TopAbs_EXTERNAL | Reproduced |
+| Contap_Contour `LineConstructor` | `u2`, `v2` unset when a line or circle lies on a surface other than a cylinder, cone or sphere | Unreachable (ContAna only makes those); the port starts them at 0 |
+| HLRAlgo_EdgeStatus `Hide` | Ignores `OnBoundary` | Reproduced |
+
+## Phase 7: unit 7N1, the fillet construction data
+
+Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// OCCT` or a remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiKPart_ComputeData_ChAsymPlnCyl `MakeChAsym` (straight guide) | Projects the guide's point on the cylinder's axis with `gp_XYZ::Multiplied(gp_XYZ)`, a product coordinate by coordinate, where a dot product is meant | The point on the axis is right only for an axis parallel to a coordinate axis; on any other the distance-angle chamfer along a generatrix is built from a wrong point |
+| ChFiKPart_ComputeData_FilPlnCyl `MakeFillet` (circle, sphere case) | Evaluates the sphere with the cylinder's radius | The two radii are equal within the confusion there: no effect |
+| ChFi3d_Builder_0.hxx | Declares `ChFi3d_EnlargeFace`, defined nowhere | Not ported |
+| ChFi3d_Builder_0 `ChFi3d_IndexPointInDS` | Writes the point and tolerance into the common point's vertex ("it is necessary to implement a mechanism controlling tolerance") | Changes the input's vertices natively (plan 2.2); the port writes the builder's working copy (decision 1087) |
+| ChFi3d_Builder_0 `ChFi3d_Orientation`, `ChFi3d_FilDS` | The orientation is left unchanged when no interference matches; FilDS goes on with the previous transition | A fillet surface data on a surface without its solid interference takes the previous one's transitions |
+| ChFi3d_Builder_0 `ChFi3d_PerformElSpine` | Declares three arrays (`ExtrapPole`, `ExtraCoeffs`, `Cont`) it never uses | None |
+| ChFi3d_Builder_0 `ChFi3d_StripeEdgeInter` | Takes the data structure and never reads it | None |
+
+## Phase 7: unit 7Q1, the data model of HLR
+
+Found by porting HLRTopoBRep and HLRBRep's data model and by tools/hlrrec. The port reproduces each (`// OCCT` at the
+line where it is code).
+
+| Where | What | Effect |
+|---|---|---|
+| HLRTopoBRep_DSFiller `ProcessEdges`, HLRTopoBRep_FaceIsoLiner `MakeIsoLine` | Update the point representations of the input shape's vertices (the ends of the edges split, an isoline's ends) | Writes into the caller's shape; the port's outliner copies a frozen shape first (decision 1095) |
+| HLRTopoBRep_DSFiller `InsertFace` | `if (Maxz > Maxx) Maxx = Maxy;` where `Maxz` is meant | The approximation's 3D tolerance of a walking contour ignores its extent in Z |
+| HLRBRep_SurfaceTool, HLRBRep_BSurfaceTool `NbSamplesU(S, u1, u2)`, `NbSamplesV` | Divide by `first - last`, so the ratio is negative | Above 10 samples, the count is always 5 |
+| HLRBRep_ThePolyhedronOfInterCSurf | Its constructors leave the four singularity flags uninitialised and don't check the parameter arrays (IntCurveSurface_ThePolyhedronOfHInter does both) | The port's flags are false |
+| HLRBRep_Data `Write` | The copied faces share the source's wires blocks, whose edge indices are then shifted | The source data's faces point to the wrong edges afterwards |
+| HLRBRep_Data `NextInterference` | `if (AutoIntersectionDone()) { AutoIntersectionDone(true); ... }` sets the flag only when it is already set | A self-intersection is rejected only for edges marked done by `Update` (simple faces) |
+| HLRBRep_Data's rejection table `Set` | Tests `IndUV[i0][i] != -1` before `i < nbUV[i0]` | Reads one element past a full row; the port tests the bound first (same result) |
+| HLRBRep_Intersector `Perform` (two edges sharing a vertex) | The stop test is `aDecalageb2 <= 0` where the three others are `< 0` | Reproduced |
+| HLRBRep_ShapeToHLR `ExploreShape` | The closedness of an open shell counts the original shell's edges in the outlined shape's edge map; a split edge is not there (index 0) | Its orientations are counted in an unused slot: split edges don't make a shell open |
+| HLRBRep_Curve | `D3` writes nothing, `DN` returns the null vector, `Hyperbola` and `Parabola` default ones | Reproduced (HLRBRep_CLProps' third derivative keeps its previous value) |
+| HLRBRep_Surface | Declares `UIntervalContinuity` and `VIntervalContinuity` without defining them | Left out |
+## Phase 7: unit 7Y, follow-ups on the differences from native
+
+Found by unit 7Y's investigations. The port reproduces each except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_Tool `EnlargeGeometry` (through `EnLargeFace` with `ChangeGeom`) | On a Geom_OffsetSurface, `SetBasisSurface` on the face's own surface; on a B-spline basis, `ExtendSurfByLength` raises its degree in place | The face given lies on the enlarged surface afterwards, its bounds grown (BRepOffset_MakeOffset's `ExtentFace` relies on it, OCC5805's thick solid); a caller's face changes too. The port does the first on its working faces (decision 1101), never on a caller's, and not the degree raise |
+| BRepFill_Filling `AddConstraints` | An edge without a pcurve on its support face leaves the 2D adaptor unloaded, then evaluated (OCCT's comment says so) | A null dereference natively; the port takes the support's own edge on the same curve for a caller's frozen edge (decision 1103) |
+| LocOpe_DPrism (BRepFeat_MakeDPrism with a taper) | `BRepLib::UpdateTolerances` on the result raises the profile's vertex tolerances (1.06e-5), the profile being shared | The caller's profile changes; a later DPrism on it starts from the raised tolerances (decision 1105) |
+| build123d.NET's native binding, from several threads at once | (see decision 1109) | |
+
+## Phase 7: unit 7R, the fillets' reconstruction
+
+Found by comparing the reconstruction with native OCCT's fillets (tools/dsrec --recon). The reconstruction replaces
+TopOpeBRepBuild (decision 992), so these are native results it does not reproduce; each is attributed in
+`ReconstructionNativeTests.KnownDifferences`.
+
+| Where | What | Effect |
+|---|---|---|
+| TopOpeBRepBuild (a fillet reaching a cone's apex, blend/simple H8) | The degenerated edge at the apex is left whole although the fillet's curve reaches it inside its parametric range | Native's cone face fails BRepCheck (UnorientableShape); the reconstruction cuts the edge there (decision 1113) and its face is valid, the geometry equal |
+| ChFi3d / TopOpeBRepBuild (blend/complex A1, OCC22817, "TEST INCOMPLETE" in OCCT) | The result fails BRepCheck (a sub-shape badly oriented) and the face on one fillet surface has a negative area | The reconstruction builds no face on that surface and its result is valid; volumes differ |
+| TopOpeBRepBuild (a Bezier face cut, blend/complex A2) | The pieces are built on a B-spline copy of the Bezier surface | The reconstruction's pieces keep the Bezier surface; same geometry |
+| BRepFilletAPI_MakeFillet (all twelve edges of a cube of 10, radius 6) | `IsDone` is true and the result degenerate: negative volume, an area of -6e29, B-spline faces far outside the cube | Not compared; build123d.NET rejects the result |
+| TopOpeBRepBuild_HBuilder::Perform (blend/complex A3) | Its filters and reducers change the data structure before building (the only recorded case where they do) | The reconstruction reads the data structure as ChFi3d left it and gives native's result |
+
+## Phase 7: unit 7N2, the fillet builder
+
+Found by porting ChFi3d_Builder, ChFi3d_FilBuilder and ChFi3d_ChBuilder. The port reproduces each (`// OCCT` or a
+remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d_Builder_1 `PerformExtremity` | Tests `NCollection_IndexedMap::Add`, which returns an index, as a boolean | Always true: the reversed copy of a closed edge is always taken as one of the vertex's edges |
+| ChFi3d_Builder_SpKP `FillSD` | Keeps a pointer to a local copy of the domain's point that leaves its scope | Undefined natively; the port uses the copy |
+| ChFi3d_Builder_SpKP `Tri` | Casts the constness of the hatcher's domain and point away and edits them | The hatcher's domains change under it (reproduced through `ChangeDomain`) |
+| ChFi3d_Builder_CnCrn (OCCT .cxx:3280) | `tpt2.Tolerance(tpt1.Tolerance() + error)` | The second point takes the first's tolerance |
+| ChFi3d_Builder_C1 | `Crv.Tolerance(...)` on a local copy of a curve already added to the data structure | The raised tolerance is lost |
+| ChFi3d_Builder_C1, `_C2` | Booleans kept in integers and doubles (`proledge`, `sens`, `sameparam`) | None (0 and 1) |
+| ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
+| ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |
+
+## Phase 7: unit 7R2, the reconstruction's follow-up
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d (four base edges of a square pyramid, radius 5) | Native's result fails BRepCheck: a face UnorientableShape, a wire SelfIntersectingWire | The port (ChFi3d and the reconstruction) gives the same result and the same faults (decision 1125) |
+| BRepFilletAPI_MakeFillet (a box of 10, its top edges, radius 6) | `IsDone` is true; two corner faces have negative areas and the result fails BRepCheck (BadOrientationOfSubshape, IntersectingWires) | The reconstruction builds no face on the degenerate surfaces and keeps IntersectingWires; not compared further |
+## Phase 7: unit 7Q2, the hidden-line removal algorithms
+
+Found by porting HLRBRep's algorithms, HLRAppli and the HLR Draw commands. The port reproduces each except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| HLRBRep_Hider `Hide` (an ON interference with an INTERNAL transition and an UNKNOWN state before it) | `case TopAbs_UNKNOWN: break;` leaves the list's iterator where it is | The loop over the ON interferences never ends; the port moves to the next interference (the only fix: a hang) |
+| HLRBRep_EdgeBuilder.cxx | Defines `No_Exception`, compiling out its checks of an empty vertex list and of a list without interferences | The builder then dereferences a null area limit (caught by the hider's OCC_CATCH_SIGNALS); the port does the same |
+| HLRBRep_InternalAlgo `Hide(I, J)` | The shapes' min-max test checks both directions for indices 0 to 5 but one only for 6 and 7 (14 conditions, not 16) | Some pairs of shapes that cannot overlap are hidden by each other anyway (slower, same result) |
+| HLRBRep_InternalAlgo `Update` | The shape's min-max box starts from its first edge's: a shape without edges adds its faces' boxes to unset values | The port's start is zeros |
+| HLRBRep_PolyAlgo `InsertOnOutLine` | Keeps a reference to a segment of the array that `UpdateLinks` may reallocate | Not read after the reallocation: no effect |
+| HLRBRep_PolyAlgo's copy constructor | Shares the other's HLRAlgo_PolyAlgo | `Update` on either clears the other's results |
+| HLRBRep_HLRToShape `InternalCompound` | Scales the data structure's projector during the call (`Scaled(true)`, then `Scaled(false)`) | The algorithm's projector is unscaled afterwards whatever it was |
+| HLRBRep `MakeEdge3d`, HLRAppli_ReflectLines `GetCompoundOf3dEdges` | The 3D edges share the input edges' vertices, and `BRepLib::SameParameter` on the compound may raise their tolerances | Writes into the caller's vertices natively; the port's are the outliner's working copy's for a frozen input (decision 1128) |
+| HLRTest `houtl` | Reads `a[2]` after checking only `n < 2` | A null name with one argument; the port checks |
+| ViewerTest `vcomputehlr` | The projector's location is the negated centre of the near plane | On the view axis: the 2D results don't depend on it but through rounding |
+
+## Phase 7: unit 7N3, the public fillet and chamfer API
+
+Found by porting BRepFilletAPI, FilletSurf and the fillet and chamfer Draw commands. The port reproduces each, but
+for the hang in `chamf` (decision 1146).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiDS_FilSpine::SetRadius(Law_Function, IinC) (BRepFilletAPI_MakeFillet's `Add(L, E)` and `SetRadius(L, IC, IinC)`) | Builds a Law_Composite holding the law, drops it, and clears the radii | The law is lost; Build throws Standard_OutOfRange on the empty radii |
+| FilletSurf_InternalBuilder::Add | The loop over the edge's faces re-initializes the iterator of the loop over the edges | Only the first edge is checked for being sharp and on the shape; the outer loop then runs on over the first edge's faces |
+| FilletSurf_Builder::EndSectionStatus | Its StdFail_NotDone says "StartSectionStatus" | None but the message |
+| BRepTest_ChamferCommands.cxx, `chamf` | When an edge is followed by a face and fewer than two more words (`chamf r s e f 1`), neither branch advances `i` and the `while (i + 1 < narg)` loop never ends | Draw-lite stops reading the words there (decision 1146); no corpus case reaches it |
+| BRepTest_FilletCommands.cxx, `buildevol` and `blend` | `Rake`/`Rakk` are deleted only after a Build that returns | On an exception the maker stays; `checkhist` then says "Active Builder Not Done" (reproduced) |
+| Corpus cases that depend on the reconstruction's order (not OCCT bugs, for unit 7R) | blend/complex/G8 and bugs/modalg_7/bug27711_3 name the edges of a fillet's result by `explode` index for a second fillet | The reconstruction's faces and edges come in another order (decision 1114), so another edge is filleted and `blend` fails |
+
+## Phase 7: unit 7R3, the reconstruction's tail
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d (blend/simple Y1) | A fillet ending exactly at a vertex is recorded as a new point, with an interference at the edge's end whose transition says the edge is OUT | The reconstruction takes the point for the vertex and leaves the edge whole (decision 1157) |
+| ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 1160) |
+| TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 1162) |
+| BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |

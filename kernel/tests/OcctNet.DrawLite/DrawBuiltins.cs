@@ -15,10 +15,12 @@ internal static class DrawBuiltins
     /// </summary>
     internal static readonly string[] Ignored =
     [
-        "pload", "cpulimit", "checkview", "vfit", "vdump", "vglinfo",
-        "vmoveto", "vselect", "vtop", "vaxo", "vzoom", "smallview", "fit", "erase",
+        "pload", "cpulimit", "checkview", "vfit", "vzfit", "vdump", "vglinfo",
+        "vmoveto", "vselect", "vzoom", "smallview", "fit", "erase",
         "donly", "display", "clear", "xwd", "decho", "vrenderparams", "vcamera",
-        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit",
+        "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit", "repaint",
+        // unit 7Q2: Draw's view commands (Draw_Viewer's axonometric and 2D views)
+        "top", "axo", "front", "v2d",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -77,8 +79,29 @@ internal static class DrawBuiltins
         BOPTestUtilityCommands.Register(theInterpreter);
         BOPTestTolerCommands.Register(theInterpreter);
         BOPTestDebugCommands.Register(theInterpreter);
+        // unit 7W: the cheap gaps of the phase 7 plan (section 1.6)
+        DrawBasicCommands.Register(theInterpreter);
+        GeometryTestCurveCommands.Register(theInterpreter);
+        GeomliteTestAPI2dCommands.Register(theInterpreter);
+        BRepTestOtherCommands.Register(theInterpreter);
+        BRepTestFeatureCommands.RegisterOffsetCommands(theInterpreter);
+        BRepTestDraftAngleCommands.Register(theInterpreter);
+        BRepTestFilletCommands.Register(theInterpreter);
+        BRepTestChamferCommands.Register(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
+        // unit 7D: the helix commands
+        BRepTestHelixCommands.Register(theInterpreter);
+        // unit 7I: the feature commands (BRepTest_FeatureCommands.cxx, the offset commands apart)
+        BRepTestFeatureCommands.Register(theInterpreter);
+        // unit 7C: SWDRAW's ShapeCustom commands (the ShapeUpgrade ones are in SWDrawShapeUpgradeCommands). DRAWEXE's
+        // SWDRAW::Init loads Shape Healing's messages (ShapeExtend::Init, process-wide and once, decision 975)
+        SWDRAWShapeCustomCommands.Register(theInterpreter);
+        Occt.ShapeExtend.Init();
+        // unit 7C: SWDRAW's ShapeProcess commands (SPApply, DT_ApplySeq); registers ShapeProcess's operators
+        SWDRAWShapeProcessCommands.Register(theInterpreter);
+        // unit 7Q2: HLRTest's commands and build3d (vcomputehlr and the view projections are ViewerTestCommands)
+        HLRTestCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

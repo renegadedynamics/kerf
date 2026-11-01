@@ -65,7 +65,7 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
 
         var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                           TimeSpan.FromSeconds(300), null))
+                                                           TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                           .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                           .ToList();
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
@@ -97,8 +97,9 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
         Assert.True(aRunnable.Count > aRunnableBefore.Count);
         Assert.Contains(aRuns, r => r.Status == "OK");
         // a case failing is a port error to fix or a difference to attribute (docs/occt-issues.md); none is expected
+        // the Boolean cases' attributed failures (bugs/modalg_7/bug26034's bopcheck, bugs/modalg_5/bug23881's sewn shell)
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
-                                          && !DrawBooleanCorpusTests.NotYetAttributed.Contains(r.Case.Id));
+                                          && !DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id));
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 6L).</summary>

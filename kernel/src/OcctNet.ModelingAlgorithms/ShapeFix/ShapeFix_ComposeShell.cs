@@ -274,6 +274,21 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// </summary>
     public TopoDS_Shape Result()
     {
+        TopoDS_Shape aResult = InternalFinishedResult();
+        aResult.TShape()?.FreezeGraph();
+        return aResult;
+    }
+
+    /// <summary>The resulting shell or face, unfrozen, for ported callers (ShapeFix_Face).</summary>
+    internal TopoDS_Shape InternalResult() => myResult;
+
+    /// <summary>
+    /// <see cref="Result"/> without freezing it, for ported callers that may give a frozen face (ShapeUpgrade's face
+    /// dividers): where the face given was copied at the entry, the copy's unchanged sub-shapes are given back and the
+    /// context re-keyed, as <see cref="Result"/> does; else the result is the one built in place.
+    /// </summary>
+    internal TopoDS_Shape InternalFinishedResult()
+    {
         myToEnter = true;
         BRepTools_CopyAtEntry? anEntry = myEntry;
         myEntry = null;
@@ -282,12 +297,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             myResult = anEntry.Finish(myResult, [myFace]);
             myFace = TopoDS.Face(anEntry.Final(myFace));
         }
-        myResult.TShape()?.FreezeGraph();
         return myResult;
     }
-
-    /// <summary>The resulting shell or face, unfrozen, for ported callers (ShapeFix_Face).</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
 
     /// <summary>Queries the status of the last <see cref="Perform"/>.</summary>
     public bool Status(ShapeExtend_Status status) => ShapeExtend.DecodeStatus(myStatus, status);

@@ -448,6 +448,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             {
                 aNArgs.Add(anIt.Value());
             }
+            GC.KeepAlive(aN); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
             var aPArgs = new List<TopoDS_Shape>();
             for (var anIt = new TopoDS_Iterator(aP); anIt.More(); anIt.Next())
             {
@@ -464,6 +465,15 @@ public class BooleanOracleTests(ITestOutputHelper output)
     private static string? NativeErrors(N.BOPAlgo_Options theO) => theO.HasErrors() ? "errors" : null;
 
     internal static (N.TopoDS_Shape?, N.BRepTools_History?, string?) RunNative(Run theCase, List<N.TopoDS_Shape> theArgs, bool theParallel)
+    {
+        // Native failed now and then under a loaded machine where it otherwise succeeds (bopfuse_simple/F3's section,
+        // once in a merge gate on 1 November 2026; the port's result was the usual one): a failing native run is run once
+        // more, and only a second failure counts
+        var aFirst = RunNativeOnce(theCase, theArgs, theParallel);
+        return aFirst.Item3 is null ? aFirst : RunNativeOnce(theCase, theArgs, theParallel);
+    }
+
+    private static (N.TopoDS_Shape?, N.BRepTools_History?, string?) RunNativeOnce(Run theCase, List<N.TopoDS_Shape> theArgs, bool theParallel)
     {
         using var anObjects = new N.TopTools_ListOfShape();
         using var aTools = new N.TopTools_ListOfShape();

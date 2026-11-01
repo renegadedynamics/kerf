@@ -10,14 +10,41 @@ namespace Occt;
 /// <summary>General tools of Shape Healing: the coding of <see cref="ShapeExtend_Status"/> flags into bit masks.</summary>
 public static class ShapeExtend
 {
-    /// <summary>Inits using of ShapeExtend: in OCCT, loads the messages output by Shape Healing's algorithms.</summary>
+    private static bool init = false;
+    private static readonly Lock initLock = new();
+
+    /// <summary>
+    /// Inits using of ShapeExtend: loads the messages output by Shape Healing's algorithms (SHMessage's texts) into
+    /// <see cref="Message_MsgFile"/>, once per process, unless they are there already.
+    /// </summary>
     /// <remarks>
-    /// Message_MsgFile and Shape Healing's message resources (SHMessage) aren't ported yet (phase 7), so this does
-    /// nothing; no ported class reads those messages.
+    /// OCCT first tries the message file that the environment variable CSF_SHMessage names; the port loads only the
+    /// text compiled in, OCCT's SHAPE.us (decision 975). Process-wide state, as OCCT's, behind a lock.
     /// </remarks>
+    /// <exception cref="Standard_ProgramError">The messages can't be loaded (never with the compiled-in text).</exception>
     public static void Init()
     {
-        // TODO(phase 7): load SHMessage_SHAPE_us through Message_MsgFile, as OCCT does.
+        lock (initLock)
+        {
+            if (init)
+            {
+                return;
+            }
+
+            init = true;
+
+            // load Message File for Shape Healing
+            if (!Message_MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
+            {
+                // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_SHMessage", "SHAPE") left out (decision 975)
+                Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+                if (!Message_MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
+                {
+                    throw new Standard_ProgramError(
+                        "Critical Error - message resources for ShapeExtend are invalid or undefined!");
+                }
+            }
+        }
     }
 
     /// <summary>Encodes a status (enumeration) to a bit flag.</summary>

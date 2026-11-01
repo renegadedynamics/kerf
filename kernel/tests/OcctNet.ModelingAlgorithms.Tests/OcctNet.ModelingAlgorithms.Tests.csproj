@@ -44,6 +44,20 @@
     <EmbeddedResource Include="BRepAlgo\FaceRestrictorRecordings.txt.gz" LogicalName="BRepAlgo.FaceRestrictorRecordings.txt.gz" />
     <!-- Native OCCT's bisectors (Bisector_Bisec, Bisector_Inter), recorded by tools/bisrec (unit 5M) -->
     <EmbeddedResource Include="Bisector\Recordings\bisrec.txt.gz" LogicalName="Bisector.bisrec.txt.gz" />
+    <!-- Native OCCT's blend functions and fillet spines (BlendFunc, ChFiDS), recorded by tools/blendrec (unit 7J) -->
+    <EmbeddedResource Include="BlendFunc\Recordings\blendrec.txt.gz" LogicalName="BlendFunc.blendrec.txt.gz" />
+    <!-- Native OCCT's analytic fillets and ChFi3d_Builder_0's functions, recorded by tools/dsrec in its kpart mode (unit 7N1) -->
+    <EmbeddedResource Include="ChFiKPart\Recordings\kpartrec.txt.gz" LogicalName="ChFiKPart.kpartrec.txt.gz" />
+    <!-- Native OCCT's legacy data structure as fillets and chamfers hand it to TopOpeBRepBuild_HBuilder::Perform, recorded by tools/dsrec (unit 7L) -->
+    <EmbeddedResource Include="TopOpeBRepDS\Recordings\dsrec.txt.gz" LogicalName="TopOpeBRepDS.dsrec.txt.gz" />
+    <!-- Native OCCT's fillets and chamfers with their results and histories, recorded by tools/dsrec in its recon mode (unit 7R) -->
+    <EmbeddedResource Include="ChFi3d\Recordings\reconrec.txt.gz" LogicalName="ChFi3d.reconrec.txt.gz" />
+    <!-- Native OCCT HLR foundations (HLRAlgo, Intrv, Contap), recorded by tools/hlrrec (unit 7P) -->
+    <EmbeddedResource Include="Contap\Recordings\hlrrec.txt.gz" LogicalName="Contap.hlrrec.txt.gz" />
+    <!-- Native OCCT HLR data model (HLRTopoBRep, HLRBRep_Data), recorded by tools/hlrrec (unit 7Q1) -->
+    <EmbeddedResource Include="HLRBRep\Recordings\hlrdata.txt.gz" LogicalName="HLRBRep.hlrdata.txt.gz" />
+    <!-- Native OCCT exact and polygonal HLR and HLRAppli_ReflectLines, recorded by tools/hlrrec (unit 7Q2) -->
+    <EmbeddedResource Include="HLRBRep\Recordings\hlralgo.txt.gz" LogicalName="HLRBRep.hlralgo.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
@@ -56,6 +70,20 @@
     <EmbeddedResource Include="BRepFill\Recordings\cwrec.txt.gz" LogicalName="BRepFill.cwrec.txt.gz" />
     <!-- Native OCCT's BRepOffsetAPI_MakePipe and MiddlePath, recorded by tools/piperec (unit 5S2) -->
     <EmbeddedResource Include="BRepOffsetAPI\Recordings\piperec.txt.gz" LogicalName="BRepOffsetAPI.piperec.txt.gz" />
+    <!-- Native OCCT's ShapeCustom with other restriction parameters, and its geometry tools, recorded by tools/shcustomrec (unit 7A) -->
+    <EmbeddedResource Include="ShapeCustom\Recordings\shcustomrec.txt.gz" LogicalName="ShapeCustom.shcustomrec.txt.gz" />
+    <!-- Native OCCT's ShapeUpgrade divide and convert tools, recorded by tools/shupgraderec (unit 7B) -->
+    <EmbeddedResource Include="ShapeUpgrade\Recordings\shupgraderec.txt.gz" LogicalName="ShapeUpgrade.shupgraderec.txt.gz" />
+    <!-- Native OCCT's BRepOffset_Analyse, BRepOffset_Offset and BRepOffset_MakeSimpleOffset, recorded by tools/offsetrec (unit 7E) -->
+    <EmbeddedResource Include="BRepOffset\Recordings\offsetrec.txt.gz" LogicalName="BRepOffset.offsetrec.txt.gz" />
+    <!-- Native OCCT's BRepOffsetAPI_MakeDraft, BiTgte_Blend and MakeEvolved's volume mode, recorded by tools/draftrec (unit 7G) -->
+    <EmbeddedResource Include="Draft\Recordings\draftrec.txt.gz" LogicalName="Draft.draftrec.txt.gz" />
+    <!-- Native OCCT's LocOpe local operations, recorded by tools/locoperec (unit 7H) -->
+    <EmbeddedResource Include="LocOpe\Recordings\locoperec.txt.gz" LogicalName="LocOpe.locoperec.txt.gz" />
+    <!-- Native OCCT's BRepFeat makers that build123d.NET doesn't bind, recorded by tools/featrec (unit 7I) -->
+    <EmbeddedResource Include="BRepFeat\Recordings\featrec.txt.gz" LogicalName="BRepFeat.featrec.txt.gz" />
+    <!-- Native OCCT's ShapeProcess, recorded by tools/shprocrec (unit 7C) -->
+    <EmbeddedResource Include="ShapeProcess\Recordings\shprocrec.txt.gz" LogicalName="ShapeProcess.shprocrec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->
@@ -66,6 +94,8 @@
     <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
     <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
     <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
+    <!-- Native OCCT's TKHelix (HelixBRep_BuilderHelix and HelixGeom's builders) on the helix grid's parameters, recorded by tools/helixrec (unit 7D) -->
+    <EmbeddedResource Include="HelixBRep\Recordings\helixrec.txt.gz" LogicalName="HelixBRep.helixrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

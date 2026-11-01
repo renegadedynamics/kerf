@@ -45,10 +45,12 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
         Assert.Equal("", aDI.Eval("evolved r -s f -p q -a"));
         Assert.Equal(160.0, Mass(aDI, "sprops r"), 1e-9);
         Assert.Contains("This shape seems to be valid", aDI.Eval("checkshape r"));
-        // a wrong option, a missing profile, and the unported modes
+        // a wrong option and a missing profile
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r s p"));
         Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r -s s"));
-        Assert.ThrowsAny<Exception>(() => aDI.Eval("evolved r -s s -p p -v"));
+        // the volume mode (BRepFill_AdvancedEvolved, unit 7G): the square's 10 x 10 x 5 slab
+        Assert.Equal("", aDI.Eval("evolved r -s s -p p -solid -v"));
+        Assert.Equal(500.0, Mass(aDI, "vprops r"), 1e-6);
         // a slanted profile, swept by BRepFill_Pipe since unit 5S2 (native value from tools/evorec)
         aDI.Eval("polyline t 0 0 0 0 1 1");
         Assert.Equal("", aDI.Eval("evolved r -s s -p t"));
@@ -79,7 +81,7 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
 
         var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                              .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(300), null))
+                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5O2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

@@ -76,11 +76,14 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         List<DrawTestCase> aToRun = isFull
             ? aRunnable
             : aRunnable.OrderBy(c => c.Id, StringComparer.Ordinal).Where((_, i) => i % SampleStep == 0).ToList();
+        // The cases that measure memory run one at a time, in DrawCheapGapsCorpusTests only (left out after sampling,
+        // so the sample stays the same)
+        aToRun = aToRun.Where(c => !DrawCheapGapsCorpusTests.MeasuresMemory(aScans.First(s => s.Case == c))).ToList();
         output.WriteLine(isFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (OCCTNET_CORPUS_FULL=1 runs all)");
 
         var aRuns = aToRun.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                           TimeSpan.FromSeconds(300), null))
+                                                           TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
                           .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                           .ToList();
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
@@ -117,8 +120,10 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
 
         Assert.True(aRunnable.Count > aRunnableBefore.Count + 3000);
         Assert.Contains(aRuns, r => r.Status == "OK");
+        // and unit 7W's attributed failures among the cases using the Boolean commands (bugs/modalg_7/bug21264: progress)
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
-                                          && !DrawBooleanCorpusTests.NotYetAttributed.Contains(r.Case.Id));
+                                          && !DrawCheapGapsCorpusTests.KnownFailures.ContainsKey(r.Case.Id)
+                                          && !DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id));
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 6L).</summary>
@@ -130,18 +135,34 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         "boolean/bcut_complex/F2",
         // native OCCT (build123d.NET's build) gives the same 6 vertices on the port's bcommon result and on its own
         "bugs/heal/bug29382_3",
-    };
 
-    /// <summary>
-    /// Corpus cases that fail and are not yet attributed: runnable only since <see cref="DrawCorpus.FollowsCalledProcsOnly"/>
-    /// became the default (open question 29), when the modalg grids' unused OFFSETSHAPE stopped blocking them. Unit 7W
-    /// investigates them first (phase7-plan.md, running order step 1); each leaves this set as a fix or an attribution.
-    /// </summary>
-    internal static readonly HashSet<string> NotYetAttributed = new(StringComparer.Ordinal)
-    {
+        // The cases FollowsCalledProcsOnly made runnable (decision 972), attributed by unit 7W:
+        // decision 955 again: the section of the sewn shell by the plane y = 1 is the shell's common edge itself in
+        // DRAWEXE's destructive mode; non-destructively native OCCT (build123d.NET's build) gives the port's result, a
+        // copy of the edge (8 vertices and 8 edges in the compound of the section and the shell where the script wants
+        // 6 and 7)
         "bugs/modalg_5/bug23881",
+        // native OCCT (build123d.NET's build) gives the same warning on the translated shape: IntPatch_ImpImpIntersection
+        // of the sphere and a cone throws Standard_NumericError in math_FunctionAllRoots, which bopcheck reports as
+        // "Intersection of pair of shapes has failed"; OCCT's default Release build compiles that check out (No_Exception),
+        // the port and build123d.NET's build keep it (decision 9)
         "bugs/modalg_7/bug26034",
+        // decision 955 again: the general fuse of s1_sp and s_2 is non-destructive in the port, and native OCCT
+        // non-destructively gives the same counts (22 vertices, 41 edges, 5 solids in the compound of the result and
+        // s1_sp); DRAWEXE's destructive default keeps s1_sp's sub-shapes, as the script expects (16, 28, 3)
         "bugs/modalg_7/bug29333_2",
-        "bugs/modalg_7/bug29586",
+        // the same for its twin on two faces (8 vertices, 10 edges, 3 faces destructively; 11, 15, 5 non-destructively,
+        // natively as in the port); in the default run's sample since unit 7W's commands made more cases runnable
+        "bugs/modalg_7/bug29333_1",
+
+        // Attributed by unit 7W's follow-up (decisions 990 on):
+        // decision 955 again: the general fuse of the wire with the vertices v0 and v1 as tools; native OCCT
+        // (build123d.NET's BOPAlgo_Builder on the case's files) reports each vertex modified once non-destructively, as
+        // the port does, and not modified destructively, which the script expects ("The shape has not been modified.")
+        "bugs/modalg_6/bug26393",
+        // speed: the script wants each section within 0.1 s. The port takes 0.34 s for each on a cold start (the JIT) and
+        // 0.02 s and 0.20 s warm in Release; native (build123d.NET's BRepAlgoAPI_Section, the same options) takes 0.03 s
+        // for the second: a performance gap of about 6x on these B-spline sheets (occt-issues.md, unit 7W follow-up)
+        "bugs/modalg_7/bug83",
     };
 }

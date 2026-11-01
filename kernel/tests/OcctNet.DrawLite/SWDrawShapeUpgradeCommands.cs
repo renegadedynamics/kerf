@@ -17,13 +17,17 @@ namespace OcctNet.DrawLite;
 /// only the variables holding a changed one are rebound. The shapes to keep are taken on the copy. The history is
 /// recorded in the session (BRepTest_Objects), composed with the copy's.
 /// <para>
-/// Left out (phase 7, ShapeUpgrade's divide and convert tools, ShapeCustom and ShapeProcess): the <c>DT_*</c>
-/// commands, <c>splitface</c>, <c>offset2dcurve</c>, <c>offsetcurve</c>, <c>RemoveIntWires</c>; from SWDRAW's other
-/// files <c>expshape</c>, <c>directfaces</c>, <c>scaleshape</c>, <c>bsplres</c>, <c>convtorevol</c> (ShapeCustom),
-/// <c>SPApply</c> and <c>DT_ApplySeq</c> (ShapeProcess).
+/// Unit 7C's divide and convert commands (<c>DT_*</c>, <c>splitface</c>, <c>RemoveIntWires</c>) run the same way: OCCT's
+/// tools (ShapeFix_ComposeShell's edge splits, ShapeConvertToBezier's last step) and the ShapeFix::SameParameter that
+/// follows them write into the input and into the result, which shares the input's sub-shapes, so Draw-lite runs the
+/// tool on an unfrozen copy of the input (<see cref="SWDRAWShapeFixCommands.InPlace"/>, reading the tools' internal,
+/// unfrozen results) and SameParameter on a copy of the result (<see cref="SameParameterInPlace"/>), rebinding every
+/// variable that shares a changed sub-shape after each. <c>offsetcurve</c> and <c>offset2dcurve</c> make offset curves;
+/// the split commands bind the pieces of a curve or surface. Nothing of the file is left out (the commented-out OCCT
+/// commands aside).
 /// </para>
 /// </remarks>
-internal static class SWDrawShapeUpgradeCommands
+internal static partial class SWDrawShapeUpgradeCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -31,6 +35,22 @@ internal static class SWDrawShapeUpgradeCommands
         DrawCxx.Add(theInterpreter, "removeloc", RemoveLoc);
         DrawCxx.Add(theInterpreter, "copytranslate", CopyTranslate);
         DrawCxx.Add(theInterpreter, "reshape", ReShape);
+        // unit 7C: the divide and convert tools
+        DrawCxx.Add(theInterpreter, "DT_ShapeDivide", DT_ShapeDivide);
+        DrawCxx.Add(theInterpreter, "DT_SplitAngle", DT_SplitAngle);
+        DrawCxx.Add(theInterpreter, "DT_ShapeConvert", DT_ShapeConvert);
+        DrawCxx.Add(theInterpreter, "DT_ShapeConvertRev", DT_ShapeConvertRev);
+        DrawCxx.Add(theInterpreter, "DT_SplitCurve2d", DT_SplitCurve2d);
+        DrawCxx.Add(theInterpreter, "DT_SplitCurve", DT_SplitCurve);
+        DrawCxx.Add(theInterpreter, "DT_SplitSurface", DT_SplitSurface);
+        DrawCxx.Add(theInterpreter, "offset2dcurve", offset2dcurve);
+        DrawCxx.Add(theInterpreter, "offsetcurve", offsetcurve);
+        DrawCxx.Add(theInterpreter, "splitface", splitface);
+        DrawCxx.Add(theInterpreter, "DT_ToBspl", converttobspline);
+        DrawCxx.Add(theInterpreter, "DT_ClosedSplit", splitclosed);
+        DrawCxx.Add(theInterpreter, "DT_SplitByArea", splitarea);
+        DrawCxx.Add(theInterpreter, "DT_SplitByNumber", splitbynumber);
+        DrawCxx.Add(theInterpreter, "RemoveIntWires", removeinternalwires);
     }
 
     private static int UnifySameDom(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)

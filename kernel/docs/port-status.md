@@ -56,19 +56,19 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 83 / 470 | 22,565 / 132,410 | 17.0 |
+| FoundationClasses | TKernel | 90 / 470 | 28,971 / 132,410 | 21.9 |
 | ModelingAlgorithms | TKBO | 196 / 201 | 71,137 / 71,242 | 99.9 |
-| ModelingAlgorithms | TKBool | 132 / 464 | 51,912 / 152,788 | 34.0 |
+| ModelingAlgorithms | TKBool | 200 / 464 | 64,190 / 152,788 | 42.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
-| ModelingAlgorithms | TKFeat | 0 / 96 | 0 / 32,591 | 0.0 |
-| ModelingAlgorithms | TKFillet | 18 / 261 | 6,194 / 97,078 | 6.4 |
+| ModelingAlgorithms | TKFeat | 95 / 96 | 32,495 / 32,591 | 99.7 |
+| ModelingAlgorithms | TKFillet | 260 / 261 | 96,717 / 97,078 | 99.6 |
 | ModelingAlgorithms | TKGeomAlgo | 866 / 868 | 218,256 / 218,548 | 99.9 |
-| ModelingAlgorithms | TKHLR | 0 / 227 | 0 / 44,151 | 0.0 |
-| ModelingAlgorithms | TKHelix | 0 / 14 | 0 / 2,119 | 0.0 |
+| ModelingAlgorithms | TKHLR | 227 / 227 | 44,151 / 44,151 | 100.0 |
+| ModelingAlgorithms | TKHelix | 14 / 14 | 2,119 / 2,119 | 100.0 |
 | ModelingAlgorithms | TKMesh | 156 / 156 | 19,930 / 19,930 | 100.0 |
-| ModelingAlgorithms | TKOffset | 14 / 74 | 5,292 / 46,245 | 11.4 |
+| ModelingAlgorithms | TKOffset | 73 / 74 | 46,220 / 46,245 | 99.9 |
 | ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
-| ModelingAlgorithms | TKShHealing | 136 / 258 | 66,422 / 88,297 | 75.2 |
+| ModelingAlgorithms | TKShHealing | 257 / 258 | 88,011 / 88,297 | 99.7 |
 | ModelingAlgorithms | TKTopAlgo | 336 / 340 | 83,733 / 84,336 | 99.3 |
 | ModelingAlgorithms | TKXMesh | 2 / 2 | 100 / 100 | 100.0 |
 | ModelingData | TKBRep | 173 / 277 | 34,131 / 90,279 | 37.8 |
@@ -82,7 +82,7 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 1 / 380 | 28 / 69,480 | 0.0 |
 | Visualization | TKV3d | 5 / 493 | 2,282 / 112,071 | 2.0 |
-| **All** |  | 3688 | 1,143,438 / 2,897,781 | 39.5 |
+| **All** |  | 4526 | 1,393,927 / 2,897,781 | 48.1 |
 
 ## TKMath
 
@@ -121,13 +121,13 @@ broken down by package.
 | OSD | 2 / 94 | 646 / 19,678 | 3.3 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
-| Quantity | 0 / 14 | 0 / 6,917 | 0.0 |
-| Resource | 0 / 15 | 0 / 28,170 | 0.0 |
+| Quantity | 3 / 14 | 4,073 / 6,917 | 58.9 |
+| Resource | 3 / 15 | 815 / 28,170 | 2.9 |
 | Standard | 4 / 93 | 749 / 17,960 | 4.2 |
 | StdFail | 0 / 5 | 0 / 170 | 0.0 |
 | Storage | 1 / 38 | 34 / 3,922 | 0.9 |
 | TColStd | 0 / 2 | 0 / 84 | 0.0 |
-| TCollection | 0 / 11 | 0 / 8,299 | 0.0 |
+| TCollection | 1 / 11 | 1,518 / 8,299 | 18.3 |
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
 | UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
@@ -146,27 +146,34 @@ broken down by package.
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| BRepAlgo | 11 / 13 | 3,764 / 4,562 | 82.5 |
-| BRepFill | 62 / 68 | 30,750 / 33,916 | 90.7 |
+| BRepAlgo | 13 / 13 | 4,562 / 4,562 | 100.0 |
+| BRepFill | 68 / 68 | 33,916 / 33,916 | 100.0 |
 | BRepProj | 3 / 3 | 407 / 407 | 100.0 |
 | TopOpeBRep | 0 / 81 | 0 / 23,561 | 0.0 |
 | TopOpeBRepBuild | 33 / 112 | 8,646 / 42,632 | 20.3 |
-| TopOpeBRepDS | 2 / 114 | 1,768 / 25,098 | 7.0 |
-| TopOpeBRepTool | 21 / 73 | 6,577 / 22,612 | 29.1 |
+| TopOpeBRepDS | 60 / 114 | 9,264 / 25,098 | 36.9 |
+| TopOpeBRepTool | 23 / 73 | 7,395 / 22,612 | 32.7 |
+
+## TKFeat
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| BRepFeat | 39 / 40 | 16,673 / 16,769 | 99.4 |
+| LocOpe | 56 / 56 | 15,822 / 15,822 | 100.0 |
 
 ## TKFillet
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| BRepBlend | 0 / 75 | 0 / 19,287 | 0.0 |
-| BRepFilletAPI | 3 / 8 | 545 / 2,248 | 24.2 |
-| Blend | 0 / 24 | 0 / 2,722 | 0.0 |
-| BlendFunc | 0 / 44 | 0 / 14,650 | 0.0 |
+| BRepBlend | 75 / 75 | 19,287 / 19,287 | 100.0 |
+| BRepFilletAPI | 8 / 8 | 2,248 / 2,248 | 100.0 |
+| Blend | 24 / 24 | 2,722 / 2,722 | 100.0 |
+| BlendFunc | 44 / 44 | 14,650 / 14,650 | 100.0 |
 | ChFi2d | 15 / 15 | 5,649 / 5,649 | 100.0 |
-| ChFi3d | 0 / 26 | 0 / 38,964 | 0.0 |
-| ChFiDS | 0 / 34 | 0 / 5,826 | 0.0 |
-| ChFiKPart | 0 / 28 | 0 / 5,989 | 0.0 |
-| FilletSurf | 0 / 7 | 0 / 1,743 | 0.0 |
+| ChFi3d | 25 / 26 | 38,603 / 38,964 | 99.1 |
+| ChFiDS | 34 / 34 | 5,826 / 5,826 | 100.0 |
+| ChFiKPart | 28 / 28 | 5,989 / 5,989 | 100.0 |
+| FilletSurf | 7 / 7 | 1,743 / 1,743 | 100.0 |
 
 ## TKGeomAlgo
 
@@ -206,6 +213,26 @@ broken down by package.
 | TopClass | 2 / 2 | 405 / 405 | 100.0 |
 | TopTrans | 4 / 4 | 1,365 / 1,365 | 100.0 |
 
+## TKHLR
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| Contap | 39 / 39 | 7,479 / 7,479 | 100.0 |
+| HLRAlgo | 38 / 38 | 6,340 / 6,340 | 100.0 |
+| HLRAppli | 2 / 2 | 172 / 172 | 100.0 |
+| HLRBRep | 121 / 121 | 26,051 / 26,051 | 100.0 |
+| HLRTopoBRep | 16 / 16 | 2,653 / 2,653 | 100.0 |
+| Intrv | 7 / 7 | 1,057 / 1,057 | 100.0 |
+| TopBas | 2 / 2 | 194 / 194 | 100.0 |
+| TopCnx | 2 / 2 | 205 / 205 | 100.0 |
+
+## TKHelix
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| HelixBRep | 2 / 2 | 808 / 808 | 100.0 |
+| HelixGeom | 12 / 12 | 1,311 / 1,311 | 100.0 |
+
 ## TKMesh
 
 | Package | Files ported | Lines ported | % of lines |
@@ -219,10 +246,10 @@ broken down by package.
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| BRepOffset | 0 / 28 | 0 / 30,765 | 0.0 |
-| BRepOffsetAPI | 14 / 27 | 5,292 / 7,762 | 68.2 |
-| BiTgte | 0 / 7 | 0 / 3,745 | 0.0 |
-| Draft | 0 / 12 | 0 / 3,973 | 0.0 |
+| BRepOffset | 28 / 28 | 30,765 / 30,765 | 100.0 |
+| BRepOffsetAPI | 26 / 27 | 7,737 / 7,762 | 99.7 |
+| BiTgte | 7 / 7 | 3,745 / 3,745 | 100.0 |
+| Draft | 12 / 12 | 3,973 / 3,973 | 100.0 |
 
 ## TKPrim
 
@@ -238,17 +265,17 @@ broken down by package.
 
 | Package | Files ported | Lines ported | % of lines |
 |---|---:|---:|---:|
-| SHMessage | 0 / 2 | 0 / 572 | 0.0 |
-| ShapeAlgo | 0 / 7 | 0 / 1,048 | 0.0 |
+| SHMessage | 1 / 2 | 286 / 572 | 50.0 |
+| ShapeAlgo | 7 / 7 | 1,048 / 1,048 | 100.0 |
 | ShapeAnalysis | 44 / 44 | 19,056 / 19,056 | 100.0 |
 | ShapeBuild | 8 / 8 | 1,692 / 1,692 | 100.0 |
 | ShapeConstruct | 8 / 8 | 5,043 / 5,043 | 100.0 |
-| ShapeCustom | 0 / 27 | 0 / 6,081 | 0.0 |
+| ShapeCustom | 27 / 27 | 6,081 / 6,081 | 100.0 |
 | ShapeExtend | 18 / 18 | 3,427 / 3,427 | 100.0 |
 | ShapeFix | 53 / 53 | 31,777 / 31,777 | 100.0 |
-| ShapeProcess | 0 / 13 | 0 / 2,983 | 0.0 |
-| ShapeProcessAPI | 0 / 2 | 0 / 254 | 0.0 |
-| ShapeUpgrade | 5 / 76 | 5,427 / 16,364 | 33.2 |
+| ShapeProcess | 13 / 13 | 2,983 / 2,983 | 100.0 |
+| ShapeProcessAPI | 2 / 2 | 254 / 254 | 100.0 |
+| ShapeUpgrade | 76 / 76 | 16,364 / 16,364 | 100.0 |
 
 ## TKTopAlgo
 

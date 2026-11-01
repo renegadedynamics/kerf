@@ -6,11 +6,11 @@ namespace OcctNet.DrawLite;
 
 /// <summary>BRepTest's sweep commands (BRepTest_SweepCommands.cxx): prism, revol, pipe and evolved.</summary>
 /// <remarks>
-/// <para>Draw records the prism's and the revolution's history (BRepTest_Objects::SetHistory) for <c>savehistory</c>;
-/// Draw-lite records only the pipe's (unit 5W).</para>
+/// <para>Draw records the prism's, the revolution's and the pipe's history (BRepTest_Objects::SetHistory) for
+/// <c>savehistory</c> (the pipe's since unit 5W, the prism's and the revolution's since unit 7W).</para>
 /// <para><c>pipe</c> runs BRepOffsetAPI_MakePipe (unit 5S1, with unit 5S2's BRepFill_Sweep).</para>
-/// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved as far as units 5O2 and 5S2 port it: <c>-v</c> (volume mode)
-/// throws Standard_NotImplemented.</para>
+/// <para><c>evolved</c> runs BRepOffsetAPI_MakeEvolved (units 5O2 and 5S2; <c>-v</c>, the volume mode, since unit
+/// 7G).</para>
 /// <para>The file's other commands (pruled, gener, thrusections, the sweep commands, geompipe and middlepath) are
 /// <see cref="BRepTestPipeShellCommands"/>.</para>
 /// </remarks>
@@ -181,6 +181,11 @@ internal static class BRepTestSweepCommands
 
         theDI.SetShape(a[1], res);
 
+        // History
+        var anArgs = new NCollection_List<TopoDS_Shape>();
+        anArgs.Append(@base);
+        BRepTestHistoryCommands.SetHistory(theDI, anArgs, Prism);
+
         return 0;
     }
 
@@ -213,6 +218,11 @@ internal static class BRepTestSweepCommands
             TopoDS_Shape res = Revol.Shape();
 
             theDI.SetShape(a[1], res);
+
+            // History
+            var anArgs = new NCollection_List<TopoDS_Shape>();
+            anArgs.Append(@base);
+            BRepTestHistoryCommands.SetHistory(theDI, anArgs, Revol);
         }
         else
         {

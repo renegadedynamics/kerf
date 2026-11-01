@@ -58,6 +58,11 @@ internal static class ViewerTestCommands
         public readonly Dictionary<string, AisShape> Objects = new(StringComparer.Ordinal);
         public int NbViews;
 
+        // The view's camera, as V3d_View::SetProj leaves it (unit 7Q2): the projection axis (from the scene to the
+        // eye) and the up direction; the default view is V3d_XposYnegZpos with +Z up.
+        public gp_Dir ViewProj = new(1.0, -1.0, 1.0);
+        public gp_Dir ViewUp = new(0.0, 0.0, 1.0);
+
         public AisContext() => DefaultDrawer.SetupOwnDefaults();
     }
 
@@ -103,6 +108,12 @@ internal static class ViewerTestCommands
         DrawCxx.Add(theInterpreter, "verase", VErase);
         DrawCxx.Add(theInterpreter, "vremove", VRemove);
         DrawCxx.Add(theInterpreter, "vclear", VClear);
+        // unit 7Q2: the view projections and the hidden-line removal of the view
+        foreach (string aName in (string[])["vfront", "vback", "vtop", "vbottom", "vleft", "vright", "vaxo"])
+        {
+            DrawCxx.Add(theInterpreter, aName, VViewProj);
+        }
+        DrawCxx.Add(theInterpreter, "vcomputehlr", VComputeHLR);
     }
 
     /// <summary>Gives the shapes the context holds their rebound form (DrawShapeRebind).</summary>
@@ -684,5 +695,256 @@ internal static class ViewerTestCommands
         }
 
         return 0;
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+    // ViewerTest_ViewerCommands.cxx and ViewerTest_ObjectCommands.cxx: the view's projection and its hidden lines (7Q2)
+
+    /// <summary>
+    /// vfront, vback, vtop, vbottom, vleft, vright, vaxo: V3d_View::SetProj with OCCT's +Z-up orientations (VViewProj).
+    /// Only the camera's axis and up direction are kept: vcomputehlr reads them.
+    /// </summary>
+    private static int VViewProj(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgVec)
+    {
+        if (Context(theDI) is not { NbViews: > 0 } aContext)
+        {
+            theDI.Output.WriteLine("Error: no active viewer");
+            return 1;
+        }
+
+        // V3d::GetProjAxis of V3d_TypeOfOrientation_Zup_*
+        (double X, double Y, double Z) anAxis = theArgVec[0] switch
+        {
+            "vfront" => (0.0, -1.0, 0.0),  // V3d_Yneg
+            "vback" => (0.0, 1.0, 0.0),    // V3d_Ypos
+            "vtop" => (0.0, 0.0, 1.0),     // V3d_Zpos
+            "vbottom" => (0.0, 0.0, -1.0), // V3d_Zneg
+            "vleft" => (-1.0, 0.0, 0.0),   // V3d_Xneg
+            "vright" => (1.0, 0.0, 0.0),   // V3d_Xpos
+            _ => (1.0, -1.0, 1.0),         // vaxo: V3d_XposYnegZpos
+        };
+        aContext.ViewProj = new gp_Dir(anAxis.X, anAxis.Y, anAxis.Z);
+        // V3d_View::SetProj (Z up): +Z, but +Y looking down on Zpos and -Y looking up from Zneg
+        aContext.ViewUp = theArgVec[0] switch
+        {
+            "vtop" => new gp_Dir(0.0, 1.0, 0.0),
+            "vbottom" => new gp_Dir(0.0, -1.0, 0.0),
+            _ => new gp_Dir(0.0, 0.0, 1.0),
+        };
+        return 0;
+    }
+
+    /// <summary>
+    /// vcomputehlr shapeInput hlrResult [-algoType {algo|polyAlgo}=polyAlgo] [-showHiddenEdges] [-showTangentEdges]
+    /// [-nbIsolines N] [eyeX eyeY eyeZ dirX dirY dirZ upX upY upZ]: the hidden-line removal of the shape, its visible
+    /// (and hidden) edges in a compound bound to hlrResult (VComputeHLR).
+    /// </summary>
+    /// <remarks>
+    /// Without a view direction OCCT takes the projector from the view's camera (V3d_View::ConvertWithProj at the
+    /// window's centre and right edge): the direction to the eye, the camera's right as the X direction, and the
+    /// negated centre of the near plane as the location. Draw-lite has the camera's axis and up direction
+    /// (VViewProj); it places the projector at the origin, on the same axis line as OCCT's (the camera looks at the
+    /// origin), which moves the results along the view direction only: the 2D results are the same up to rounding.
+    /// The result isn't displayed (an AIS_ColoredShape of edges, which AIS doesn't mesh).
+    /// </remarks>
+    private static int VComputeHLR(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgVec)
+    {
+        int theArgNb = theArgVec.Count;
+        string aHlrName = "";
+        TopoDS_Shape aSh = new();
+        gp_Pnt anEye = new();
+        gp_Dir aDir;
+        gp_Ax2 aProjAx = new();
+        bool hasViewDirArg = false;
+        bool isPolyAlgo = true;
+        bool toShowCNEdges = false, toShowHiddenEdges = false;
+        int aNbIsolines = 0;
+        AisContext? aContext = Context(theDI);
+        if (aContext is { NbViews: > 0 })
+        {
+            gp_Dir aBck = aContext.ViewProj;
+            // Graphic3d_Camera: the view direction, the up direction orthogonalized, and the side (right) direction
+            gp_Dir aCamDir = aBck.Reversed();
+            gp_Dir aSide = aCamDir.Crossed(aContext.ViewUp);
+            aDir = aBck;
+            aProjAx.SetLocation(anEye);
+            aProjAx.SetDirection(aDir);
+            aProjAx.SetXDirection(aSide);
+        }
+        for (int anArgIter = 1; anArgIter < theArgNb; ++anArgIter)
+        {
+            string anArgCase = theArgVec[anArgIter].ToLowerInvariant();
+            if (anArgIter + 1 < theArgNb && (anArgCase == "-algotype" || anArgCase == "-algo" || anArgCase == "-type"))
+            {
+                string anArgNext = theArgVec[++anArgIter].ToLowerInvariant();
+                if (anArgNext == "polyalgo")
+                {
+                    isPolyAlgo = true;
+                }
+                else if (anArgNext == "algo")
+                {
+                    isPolyAlgo = false;
+                }
+                else
+                {
+                    theDI.Output.WriteLine("Syntax error: unknown algo type '" + anArgNext + "'");
+                    return 1;
+                }
+            }
+            else if (anArgCase is "-showhiddenedges" or "-hiddenedges" or "-hidden")
+            {
+                toShowHiddenEdges = true;
+                if (anArgIter + 1 < theArgNb && ParseOnOff(theArgVec[anArgIter + 1], ref toShowHiddenEdges))
+                {
+                    ++anArgIter;
+                }
+            }
+            else if (anArgCase is "-showtangentedges" or "-tangentedges" or "-tangent")
+            {
+                toShowCNEdges = true;
+                if (anArgIter + 1 < theArgNb && ParseOnOff(theArgVec[anArgIter + 1], ref toShowCNEdges))
+                {
+                    ++anArgIter;
+                }
+            }
+            else if (anArgIter + 1 < theArgNb && (anArgCase == "-nbiso" || anArgCase == "-nbisolines"))
+            {
+                aNbIsolines = theDI.Atoi(theArgVec[++anArgIter]);
+            }
+            else if (aSh.IsNull())
+            {
+                aSh = theDI.GetShape(theArgVec[anArgIter]);
+                if (aSh.IsNull())
+                {
+                    if (File.Exists(theArgVec[anArgIter]))
+                    {
+                        BRepTools.Read(out aSh, theArgVec[anArgIter]);
+                    }
+                    if (aSh.IsNull())
+                    {
+                        theDI.Output.WriteLine("Syntax error: no shape with name " + theArgVec[anArgIter] + " found");
+                        return 1;
+                    }
+                }
+            }
+            else if (aHlrName.Length == 0)
+            {
+                aHlrName = theArgVec[anArgIter];
+            }
+            else if (!hasViewDirArg && anArgIter + 8 < theArgNb)
+            {
+                hasViewDirArg = true;
+                anEye = new gp_Pnt(theDI.Atof(theArgVec[anArgIter + 0]), theDI.Atof(theArgVec[anArgIter + 1]),
+                                   theDI.Atof(theArgVec[anArgIter + 2]));
+                aDir = new gp_Dir(theDI.Atof(theArgVec[anArgIter + 3]), theDI.Atof(theArgVec[anArgIter + 4]),
+                                  theDI.Atof(theArgVec[anArgIter + 5]));
+                gp_Dir anUp = new(theDI.Atof(theArgVec[anArgIter + 6]), theDI.Atof(theArgVec[anArgIter + 7]),
+                                  theDI.Atof(theArgVec[anArgIter + 8]));
+                aProjAx.SetLocation(anEye);
+                aProjAx.SetDirection(aDir);
+                aProjAx.SetYDirection(anUp);
+                anArgIter += 8;
+            }
+            else
+            {
+                theDI.Output.WriteLine("Syntax error: unknown argument '" + theArgVec[anArgIter] + "'");
+                return 1;
+            }
+        }
+
+        if (aHlrName.Length == 0 || aSh.IsNull() || (aContext is not { NbViews: > 0 } && !hasViewDirArg))
+        {
+            theDI.Output.WriteLine("Syntax error: wrong number of arguments");
+            return 1;
+        }
+
+        HLRAlgo_Projector aProjector = new(aProjAx);
+        TopoDS_Shape[] aVisible = new TopoDS_Shape[6];
+        TopoDS_Shape[] aHidden = new TopoDS_Shape[6];
+        const int Sharp = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Sharp;
+        const int OutLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_OutLine;
+        const int Rg1Line = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Rg1Line;
+        const int RgNLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_RgNLine;
+        const int IsoLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_IsoLine;
+        if (isPolyAlgo)
+        {
+            HLRBRep_PolyAlgo aPolyAlgo = new();
+            aPolyAlgo.Projector(aProjector);
+            aPolyAlgo.Load(aSh);
+            aPolyAlgo.Update();
+
+            HLRBRep_PolyHLRToShape aHLRToShape = new();
+            aHLRToShape.Update(aPolyAlgo);
+
+            aVisible[Sharp] = aHLRToShape.VCompound();
+            aVisible[OutLine] = aHLRToShape.OutLineVCompound(); // extract visible outlines
+            aVisible[Rg1Line] = aHLRToShape.Rg1LineVCompound();
+            if (toShowCNEdges)
+            {
+                aVisible[RgNLine] = aHLRToShape.RgNLineVCompound();
+            }
+            if (toShowHiddenEdges)
+            {
+                aHidden[Sharp] = aHLRToShape.HCompound();
+                aHidden[OutLine] = aHLRToShape.OutLineHCompound();
+                aHidden[Rg1Line] = aHLRToShape.Rg1LineHCompound();
+                if (toShowCNEdges)
+                {
+                    aHidden[RgNLine] = aHLRToShape.RgNLineHCompound();
+                }
+            }
+        }
+        else
+        {
+            HLRBRep_Algo aHlrAlgo = new();
+            aHlrAlgo.Add(aSh, aNbIsolines);
+            aHlrAlgo.Projector(aProjector);
+            aHlrAlgo.Update();
+            aHlrAlgo.Hide();
+
+            HLRBRep_HLRToShape aHLRToShape = new(aHlrAlgo);
+            aVisible[Sharp] = aHLRToShape.VCompound();
+            aVisible[OutLine] = aHLRToShape.OutLineVCompound();
+            aVisible[Rg1Line] = aHLRToShape.Rg1LineVCompound();
+            if (toShowCNEdges)
+            {
+                aVisible[RgNLine] = aHLRToShape.RgNLineVCompound();
+            }
+            aVisible[IsoLine] = aHLRToShape.IsoLineVCompound();
+
+            if (toShowHiddenEdges)
+            {
+                aHidden[Sharp] = aHLRToShape.HCompound();
+                aHidden[OutLine] = aHLRToShape.OutLineHCompound();
+                aHidden[Rg1Line] = aHLRToShape.Rg1LineHCompound();
+                if (toShowCNEdges)
+                {
+                    aHidden[RgNLine] = aHLRToShape.RgNLineHCompound();
+                }
+                aHidden[IsoLine] = aHLRToShape.IsoLineHCompound();
+            }
+        }
+
+        TopoDS_Shape aCompVis = TopoDS_Builder.MakeCompound(aVisible.Where(v => !v.IsNull()).ToArray());
+        TopoDS_Shape aCompHid = TopoDS_Builder.MakeCompound(aHidden.Where(h => !h.IsNull()).ToArray());
+        TopoDS_Shape aCompRes = TopoDS_Builder.MakeCompound(aCompVis, aCompHid);
+        theDI.SetShape(aHlrName, aCompRes);
+        return 0;
+    }
+
+    // Draw::ParseOnOff
+    private static bool ParseOnOff(string theArg, ref bool theIsOn)
+    {
+        string aFlag = theArg.ToLowerInvariant();
+        if (aFlag is "on" or "1")
+        {
+            theIsOn = true;
+            return true;
+        }
+        if (aFlag is "off" or "0")
+        {
+            theIsOn = false;
+            return true;
+        }
+        return false;
     }
 }
