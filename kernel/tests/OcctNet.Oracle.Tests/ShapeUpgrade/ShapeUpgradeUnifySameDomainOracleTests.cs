@@ -592,7 +592,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Native Boolean results of random primitives, most placed so that faces share a plane or an axis.</summary>
-    private static IEnumerable<(string Name, N.TopoDS_Shape Shape)> BooleanResults(Oracle theO, int theCount)
+    internal static IEnumerable<(string Name, N.TopoDS_Shape Shape)> BooleanResults(Oracle theO, int theCount)
     {
         for (int i = 0; i < theCount; i++)
         {
