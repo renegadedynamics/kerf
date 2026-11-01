@@ -8,7 +8,7 @@ namespace Build123d.Tests.Errors;
 /// </summary>
 public class FaultTests
 {
-    [Fact]
+    [NativeFact]
     public void AnAccessViolationIsAnOcctException()
     {
         var e = Assert.Throws<OcctException>(() => Occt.Occt.FaultForTesting(0x10));
@@ -22,7 +22,7 @@ public class FaultTests
         }
     }
 
-    [Fact]
+    [NativeFact]
     public void FaultsAreTypedOnEveryThread()
     {
         // Pool threads and new threads alike: the translator is installed on each the first time it calls in
@@ -37,7 +37,7 @@ public class FaultTests
         Assert.Equal(expected, onNewThread);
     }
 
-    [Fact]
+    [NativeFact]
     public void AThreadIsUnchangedByAFault()
     {
         var thread = new Thread(() =>

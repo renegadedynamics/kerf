@@ -12,6 +12,7 @@ OpenCascade (OCCT).
 | Naming | Idiomatic .NET (PascalCase, `Try*`, properties instead of getters). A Python → .NET name map is kept in `docs/name-map.md`. |
 | OCCT | 8.0.x, built from source and linked dynamically (OCCT is LGPL 2.1 with an exception) |
 | Bindings | A thin C ABI over the subset of OCCT that build123d uses, generated from a whitelist, with C# `SafeHandle` wrappers on top |
+| Managed backend (spike) | `-p:Build123dBackend=OcctNet` builds `Build123d` on OCCT.NET, the managed port, through a second implementation of `Build123d.Occt`'s public API (`src/Build123d.OcctNet`) that forwards to OCCT.NET and is generated. Native stays the default. See "The OCCT.NET backend" |
 
 ## Principles
 
@@ -228,6 +229,77 @@ change every shape sharing it, and race between threads. So:
   algebra mode ignores it.
 - **Python's union arguments** become overloads: an arc's size is a `double` or a `CurveLimit` (a shape,
   axis, location, plane or point it's trimmed to). Constrained arcs and lines take `Tangent` targets.
+
+#### The OCCT.NET backend
+
+A spike: `Build123d` running on OCCT.NET, the managed C# port of OCCT 8 (class for class), with no native code.
+Native OCCT stays the default backend.
+
+- **The switch.** `Build123dBackend` (`Native` by default, or `OcctNet`) chooses which project `Build123d`
+  references: `src/Build123d.Occt` (the shim) or `src/Build123d.OcctNet`, which references OCCT.NET's projects at
+  `OcctNetRoot`. Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`). `OCCTNET` is defined for
+  the tests' few backend-specific cases.
+- **Why a second `Build123d.Occt`, rather than `Build123d` compiled against `Occt` directly.** OCCT.NET's API differs
+  from OCCT's in ways `Build123d` relies on:
+  - its shapes and `gp` types are structs, so `TopoDS_Edge` isn't a `TopoDS_Shape` and can't be null or
+    pattern-matched;
+  - its builders and in-place forms are internal, because it freezes every shape it hands out;
+  - its exceptions are `Standard_Failure`s, not `OcctException`s.
+
+  Adapting `Build123d` would touch most of its 18,000 lines and change its semantics. Instead
+  `src/Build123d.OcctNet` has the same namespace, types and members as `Build123d.Occt`, so `Build123d` compiles
+  unchanged against either.
+- **Generated.** `tools/OcctNetGen` reads both assemblies by reflection and writes a wrapper per class.
+  - A wrapper holds its OCCT.NET object: by reference for a class, or as a field of its own for a struct, as the
+    native wrapper holds a heap copy.
+  - Each member is matched to its OCCT.NET counterpart (overloads, optional parameters, `in`/`out`/`ref`, implicit
+    shape conversions) and forwards with conversions.
+  - Results are wrapped by the native signature's type, as the native binding's are. A collection OCCT returns by
+    reference is copied.
+  - Where OCCT.NET has only a functional twin of an in-place form on a struct (`gp_Trsf.SetRotation` as
+    `WithRotation`, `Bnd_Box.Add` as `Added`), the wrapper's struct is replaced by the twin's result.
+  - `bindings/occtnet.unforwarded.txt` lists what can't be forwarded, and why. `bindings/occtnet.handwritten.txt`
+    lists what `src/Build123d.OcctNet/Runtime` writes by hand.
+- **Errors.** Every forwarding call turns OCCT.NET's `Standard_Failure` into an `OcctException` with the same
+  `OcctType` (`StdFail_NotDone`…) and `OcctContext` operation, with OCCT.NET's exception as the inner one. Other
+  exceptions, such as an OCCT.NET bug's `NullReferenceException`, pass through unchanged, so they're seen.
+- **What isn't ported** throws `NotSupportedException`, with no native fallback:
+  - a class OCCT.NET doesn't have yet (its phase 7: 3D fillets, chamfers, offsets, drafts, `BRepFeat`) says "not yet
+    ported to OCCT.NET: BRepFilletAPI_MakeFillet";
+  - a member with no public counterpart says "not available through OCCT.NET's public API: …".
+- **Written by hand** (`Runtime`):
+  - the runtime classes;
+  - `Extras`, over OCCT.NET's `MeshExtraction`, BRep text I/O and alerts;
+  - a port of `Quantity_Color`, which OCCT.NET doesn't have;
+  - `TopoDS_Builder`: a shape it makes stays open while it's built, and is frozen the first time anything else reads
+    it, so OCCT.NET's frozen-shape guarantee holds for every shape `Build123d` passes on;
+  - `BRepMesh_IncrementalMesh`: OCCT.NET meshes a copy and returns it, so the wrapper it's given takes the meshed
+    shape, as the native one would carry the mesh (`Build123d` meshes only private copies);
+  - `BRepLib.BuildCurves3d`, over its functional twin, the same way;
+  - the shape's in-place forms (`Location(loc)`, `Reverse()`…), on the wrapper's own copy.
+- **OCCT.NET internals.** Three things have no public way in OCCT.NET yet, so they're reached with `UnsafeAccessor`
+  (no reflection). They're listed for OCCT.NET to make public:
+  - building shells and solids from parts: `TopoDS_Builder`'s internal constructor and its `Make*` and `Add`;
+  - freezing the result: `FreezeGraph`;
+  - copying a `BRepTools_History` as it is.
+- **Semantics kept.**
+  - Immutability: `InputsUnchangedTests` passes, the concurrent cases included.
+  - Exception types and messages, and thread safety.
+  - Tessellation (`Triangulate`, `ShapeMesh`), which matches native float for float.
+  - Native memory pressure doesn't apply: OCCT.NET's memory is managed, so the GC already counts it.
+- **Differences from native.**
+  - OCCT.NET never writes a caller's shape. Where OCCT adds pcurves to a profile it was given, OCCT.NET's result
+    holds a copy instead, so the prism of a circular face doesn't share the face. `Solid.ExtrudeUntil` then finds the
+    piece that holds the profile by place.
+  - The tests that depend on the native shim (faults, memory pressure) are `NativeFact`s, skipped under OCCT.NET.
+- **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's three assemblies load
+  and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
+  build output as `B3D_OCCTNET_LIB`.
+- **Measured** (OCCT.NET at bad099b, Windows x64, Release):
+  - 1,676 of 1,811 tests pass, 5 are skipped and 130 fail, 128 of them on phase 7;
+  - the 30 introductory examples that don't need phase 7 match native's volume and face count exactly
+    (`IntroductoryExamplesTests`);
+  - the suite takes about 3 times as long as on native, or 4.4 times summed over the tests both pass.
 
 ### 3. Behavioural parity is tested, not assumed
 

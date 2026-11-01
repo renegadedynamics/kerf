@@ -64,6 +64,22 @@ libraries came from that folder, and checks the context unloads. The test needs 
 isn't part of the solution's `dotnet test`. Changes are listed in [CHANGELOG.md](CHANGELOG.md), and the
 shipped native code's licences in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
+## The OCCT.NET backend (spike)
+
+`Build123d` can also run on OCCT.NET, the managed C# port of OCCT, with no native libraries. The native backend stays
+the default. To build and test on OCCT.NET, point `OcctNetRoot` at an OCCT.NET checkout (by default `../OCCT.NET`
+beside this repository):
+
+```powershell
+dotnet test tests/Build123d.Tests -p:Build123dBackend=OcctNet -p:OcctNetRoot=C:/src/OCCT.NET/
+```
+
+Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`), so the two don't mix. OCCT.NET hasn't
+ported 3D fillets, chamfers, offsets, drafts and `BRepFeat` yet: under this backend they throw
+`NotSupportedException` ("not yet ported to OCCT.NET: BRepFilletAPI_MakeFillet"). The wrappers in
+`src/Build123d.OcctNet/Generated` are regenerated with `./tools/generate-occtnet.ps1` when the native bindings or
+OCCT.NET change. See [docs/design.md](docs/design.md), "The OCCT.NET backend".
+
 ## Licence
 
 Apache License 2.0, as build123d's (see [LICENSE](LICENSE)). The native libraries the packages ship

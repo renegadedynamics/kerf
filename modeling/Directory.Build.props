@@ -11,6 +11,22 @@
     <NativeRid Condition="'$(NativeRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)</NativeRid>
   </PropertyGroup>
 
+  <!--
+    The OCCT backend: Native (the default) binds native OCCT through the b3docct shim (src/Build123d.Occt); OcctNet
+    builds the same API over OCCT.NET, the managed port (src/Build123d.OcctNet), from the checkout at OcctNetRoot.
+    Build123d compiles unchanged against either. dotnet build -p:Build123dBackend=OcctNet
+  -->
+  <PropertyGroup>
+    <Build123dBackend Condition="'$(Build123dBackend)' == ''">Native</Build123dBackend>
+    <OcctNetRoot Condition="'$(OcctNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../OCCT.NET/'))</OcctNetRoot>
+    <OcctNetRoot>$([MSBuild]::EnsureTrailingSlash('$(OcctNetRoot)'))</OcctNetRoot>
+    <!-- Each backend builds into folders of its own, so switching doesn't mix their outputs -->
+    <BaseOutputPath Condition="'$(Build123dBackend)' == 'OcctNet'">bin-occtnet\</BaseOutputPath>
+    <BaseIntermediateOutputPath Condition="'$(Build123dBackend)' == 'OcctNet'">obj-occtnet\</BaseIntermediateOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**;bin-occtnet/**;obj-occtnet/**</DefaultItemExcludes>
+    <DefineConstants Condition="'$(Build123dBackend)' == 'OcctNet'">$(DefineConstants);OCCTNET</DefineConstants>
+  </PropertyGroup>
+
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
   <PropertyGroup>
     <VersionPrefix>0.1.0</VersionPrefix>

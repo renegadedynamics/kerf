@@ -10,3 +10,7 @@ obj/
 # Native
 /native/out/
 /artifacts/
+
+# The OCCT.NET backend's outputs
+bin-occtnet/
+obj-occtnet/

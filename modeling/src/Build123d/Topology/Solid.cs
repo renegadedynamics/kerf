@@ -323,6 +323,13 @@ public partial class Solid : Shape3D
         foreach (var piece in pieces)
             if (piece.Faces().Any(f => f.TopoShape.IsSame(profile.TopoShape)))
                 return (Solid)piece;
+        // A kernel that never writes its inputs (OCCT.NET) gives the extrusion a copy of a profile it has to add pcurves
+        // to, so then the piece holding the profile is found by place: the face at the profile's centre, of its area
+        var center = profile.Center();
+        foreach (var piece in pieces)
+            if (piece.Faces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
+                                       && (f.Center() - center).Length <= Constants.Tolerance))
+                return (Solid)piece;
         throw new InvalidOperationException("Extrusion is None");
     }
 

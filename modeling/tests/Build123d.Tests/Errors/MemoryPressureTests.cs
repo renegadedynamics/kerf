@@ -11,7 +11,7 @@ public class MemoryPressureTests
 {
     private static long Pressure(Shape shape) => Extras.MemoryPressureOf(shape.TopoShape);
 
-    [Fact]
+    [NativeFact]
     public void ABooleanResultCarriesPressure()
     {
         var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1) - new Cylinder(2, 20);
@@ -60,7 +60,7 @@ public class MemoryPressureTests
         Assert.True(meshed > 1_000_000, $"a fine mesh is {meshed} bytes");
     }
 
-    [Fact]
+    [NativeFact]
     public void DisposingGivesThePressureBack()
     {
         var part = new Box(10, 10, 10) - new Sphere(6);
