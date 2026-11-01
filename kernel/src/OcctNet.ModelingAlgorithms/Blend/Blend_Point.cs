@@ -392,6 +392,17 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         prm = Param;
     }
 
+    /// <summary>
+    /// A copy that is a tangency point on two curves only (the twin of the five-argument <c>SetValue</c>; the
+    /// constructors are the twins of the others).
+    /// </summary>
+    public readonly Blend_Point WithValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double PC1, double PC2)
+    {
+        Blend_Point aCopy = this;
+        aCopy.SetValue(P1, P2, Param, PC1, PC2);
+        return aCopy;
+    }
+
     /// <summary>A copy with the guide's parameter <paramref name="Param"/>.</summary>
     public readonly Blend_Point WithParameter(double Param)
     {
