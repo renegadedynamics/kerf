@@ -50,5 +50,15 @@ try {
   $zip.Write($bytes, 0, $bytes.Length)
   $zip.Dispose(); $gz.Dispose()
   Write-Host "Recording in $Out\kpartrec.txt"
+  # The fillets with native's result and history, for the reconstruction (unit 7R):
+  # tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/Recordings/reconrec.txt.gz
+  & .\dsrec.exe --recon (Join-Path $Out 'reconrec.txt')
+  if ($LASTEXITCODE -ne 0) { throw "dsrec --recon failed ($LASTEXITCODE)" }
+  $bytes = [IO.File]::ReadAllBytes((Join-Path $Out 'reconrec.txt'))
+  $gz = [IO.File]::Create((Join-Path $Out 'reconrec.txt.gz'))
+  $zip = New-Object IO.Compression.GZipStream($gz, [IO.Compression.CompressionLevel]::Optimal)
+  $zip.Write($bytes, 0, $bytes.Length)
+  $zip.Dispose(); $gz.Dispose()
+  Write-Host "Recording in $Out\reconrec.txt"
 }
 finally { Pop-Location }
