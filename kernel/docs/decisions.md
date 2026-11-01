@@ -10168,3 +10168,14 @@ functions and the TopOpeBRepTool pieces they reach. Numbers from 8601 are placeh
         BRepOffset_Offset's pipe and sphere constructors.
       - Inter2d's ConnexIntByInt iterates a shape-keyed map (MVE) in insertion order, where OCCT's order is by address
         (an `// OCCT.NET:` comment). It decides only the order in which edges are extended and bound.
+
+## Phase 7: the merge gate's failure check
+
+1012. **The gate failed open once, and native's rare crashes are rerun.** With the detailed logger (decision 1004),
+      dotnet prints "Test Run Failed." rather than "Failed!" for a project with failures, so unit 7E's merge (2fe02e6)
+      was committed with one Oracle test failing. `merge-unit.sh` now also stops on "Test Run Failed", "Test Run
+      Aborted" and any `[FAIL]` line, and treats only compiler errors (`: error CS…`) as build errors, not any " error "
+      in test output. The failing test was `BRepOffsetAPIMakePipeShellOracleTests`' case 220, where native crashed with
+      an access violation and the port built the solid; it had passed in every run before. Native reads uninitialised
+      memory there now and then, so the test runs such a case once more, keeping the difference only if native crashes
+      again. The next gate (with unit 7H) tests the merged state in full.
