@@ -3,73 +3,429 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepOffset_MakeOffset : OcctObject
 {
+    internal BRepOffset_MakeOffset(global::Occt.BRepOffset_MakeOffset impl) : base(impl, true) { }
     private protected BRepOffset_MakeOffset(object raw, bool _) : base(raw, _) { }
+    internal global::Occt.BRepOffset_MakeOffset Impl => (global::Occt.BRepOffset_MakeOffset)RawImpl;
     private protected BRepOffset_MakeOffset(Unported u) : base(u) { }
 
-    public BRepOffset_MakeOffset(BRepOffset_MakeOffset other) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    public BRepOffset_MakeOffset(BRepOffset_MakeOffset other) : this(Unported.Throw(Unported.Member("BRepOffset_MakeOffset::.ctor(BRepOffset_MakeOffset)"))) { }
 
-    public BRepOffset_MakeOffset() : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    public BRepOffset_MakeOffset() : this(__New1()) { }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    private static global::Occt.BRepOffset_MakeOffset __New1()
+    {
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol) : this(__New2(S, Offset, Tol)) { }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    private static global::Occt.BRepOffset_MakeOffset __New2(TopoDS_Shape S, double Offset, double Tol)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode) : this(__New3(S, Offset, Tol, Mode)) { }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    private static global::Occt.BRepOffset_MakeOffset __New3(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection) : this(__New4(S, Offset, Tol, Mode, Intersection)) { }
 
-    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening, bool RemoveIntEdges) : this(Unported.Throw(Unported.Class("BRepOffset_MakeOffset"))) { }
+    private static global::Occt.BRepOffset_MakeOffset __New4(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol) => throw Unported.Class("BRepOffset_MakeOffset");
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter) : this(__New5(S, Offset, Tol, Mode, Intersection, SelfInter)) { }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode) => throw Unported.Class("BRepOffset_MakeOffset");
+    private static global::Occt.BRepOffset_MakeOffset __New5(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection) => throw Unported.Class("BRepOffset_MakeOffset");
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join) : this(__New6(S, Offset, Tol, Mode, Intersection, SelfInter, Join)) { }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter) => throw Unported.Class("BRepOffset_MakeOffset");
+    private static global::Occt.BRepOffset_MakeOffset __New6(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join) => throw Unported.Class("BRepOffset_MakeOffset");
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening) : this(__New7(S, Offset, Tol, Mode, Intersection, SelfInter, Join, Thickening)) { }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening) => throw Unported.Class("BRepOffset_MakeOffset");
+    private static global::Occt.BRepOffset_MakeOffset __New7(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join, Thickening);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening, bool RemoveIntEdges) => throw Unported.Class("BRepOffset_MakeOffset");
+    public BRepOffset_MakeOffset(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening, bool RemoveIntEdges) : this(__New8(S, Offset, Tol, Mode, Intersection, SelfInter, Join, Thickening, RemoveIntEdges)) { }
 
-    public void Clear() => throw Unported.Class("BRepOffset_MakeOffset");
+    private static global::Occt.BRepOffset_MakeOffset __New8(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening, bool RemoveIntEdges)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepOffset_MakeOffset(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join, Thickening, RemoveIntEdges);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void AllowLinearization(bool theIsAllowed) => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void AddFace(TopoDS_Face F) => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetOffsetOnFace(TopoDS_Face F, double Off) => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeOffsetShape() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolid() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool IsDone() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join, Thickening);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape Shape() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Initialize(TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool Thickening, bool RemoveIntEdges)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Initialize(S.V, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join, Thickening, RemoveIntEdges);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape InitShape() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void Clear()
+    {
+        try
+        {
+            this.Impl.Clear();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public BRepOffset_Error Error() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void AllowLinearization(bool theIsAllowed)
+    {
+        try
+        {
+            this.Impl.AllowLinearization(theIsAllowed);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public GeomAbs_JoinType GetJoinType() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void AddFace(TopoDS_Face F)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            this.Impl.AddFace(F.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_IndexedMapOfShape ClosingFaces() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void SetOffsetOnFace(TopoDS_Face F, double Off)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            this.Impl.SetOffsetOnFace(F.S, Off);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape GetBadShape() => throw Unported.Class("BRepOffset_MakeOffset");
+    public void MakeOffsetShape()
+    {
+        try
+        {
+            this.Impl.MakeOffsetShape();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape Generated(TopoDS_Shape theS) => throw Unported.Class("BRepOffset_MakeOffset");
+    public void MakeThickSolid()
+    {
+        try
+        {
+            this.Impl.MakeThickSolid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape Modified(TopoDS_Shape theS) => throw Unported.Class("BRepOffset_MakeOffset");
+    public bool IsDone()
+    {
+        try
+        {
+            var __r = this.Impl.IsDone();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool IsDeleted(TopoDS_Shape S) => throw Unported.Class("BRepOffset_MakeOffset");
+    public TopoDS_Shape Shape()
+    {
+        try
+        {
+            var __r = this.Impl.Shape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopoDS_Shape InitShape()
+    {
+        try
+        {
+            var __r = this.Impl.InitShape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public BRepOffset_Error Error()
+    {
+        try
+        {
+            var __r = this.Impl.Error();
+            return (BRepOffset_Error)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public GeomAbs_JoinType GetJoinType()
+    {
+        try
+        {
+            var __r = this.Impl.GetJoinType();
+            return (GeomAbs_JoinType)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopTools_IndexedMapOfShape ClosingFaces()
+    {
+        try
+        {
+            var __r = this.Impl.ClosingFaces();
+            return TopTools_IndexedMapOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopoDS_Shape GetBadShape()
+    {
+        try
+        {
+            var __r = this.Impl.GetBadShape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopTools_ListOfShape Generated(TopoDS_Shape theS)
+    {
+        ArgumentNullException.ThrowIfNull(theS);
+        try
+        {
+            var __r = this.Impl.Generated(theS.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopTools_ListOfShape Modified(TopoDS_Shape theS)
+    {
+        ArgumentNullException.ThrowIfNull(theS);
+        try
+        {
+            var __r = this.Impl.Modified(theS.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public bool IsDeleted(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            var __r = this.Impl.IsDeleted(S.V);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

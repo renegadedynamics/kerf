@@ -3,43 +3,231 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepFilletAPI_LocalOperation : BRepBuilderAPI_MakeShape
 {
+    internal BRepFilletAPI_LocalOperation(global::Occt.BRepFilletAPI_LocalOperation impl) : base(impl, true) { }
     private protected BRepFilletAPI_LocalOperation(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepFilletAPI_LocalOperation Impl => (global::Occt.BRepFilletAPI_LocalOperation)RawImpl;
     private protected BRepFilletAPI_LocalOperation(Unported u) : base(u) { }
 
-    public void Add(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public void Add(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Add(E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void ResetContour(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public void ResetContour(int IC)
+    {
+        try
+        {
+            this.Impl.ResetContour(IC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbContours() => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public int NbContours()
+    {
+        try
+        {
+            var __r = this.Impl.NbContours();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int Contour(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public int Contour(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            var __r = this.Impl.Contour(E.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbEdges(int I) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public int NbEdges(int I)
+    {
+        try
+        {
+            var __r = this.Impl.NbEdges(I);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Edge Edge(int I, int J) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public TopoDS_Edge Edge(int I, int J)
+    {
+        try
+        {
+            var __r = this.Impl.Edge(I, J);
+            return new TopoDS_Edge(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Remove(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public void Remove(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Remove(E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double Length(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public double Length(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.Length(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Vertex FirstVertex(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public TopoDS_Vertex FirstVertex(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.FirstVertex(IC);
+            return new TopoDS_Vertex(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Vertex LastVertex(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public TopoDS_Vertex LastVertex(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.LastVertex(IC);
+            return new TopoDS_Vertex(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double Abscissa(int IC, TopoDS_Vertex V) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public double Abscissa(int IC, TopoDS_Vertex V)
+    {
+        ArgumentNullException.ThrowIfNull(V);
+        try
+        {
+            var __r = this.Impl.Abscissa(IC, V.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double RelativeAbscissa(int IC, TopoDS_Vertex V) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public double RelativeAbscissa(int IC, TopoDS_Vertex V)
+    {
+        ArgumentNullException.ThrowIfNull(V);
+        try
+        {
+            var __r = this.Impl.RelativeAbscissa(IC, V.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool ClosedAndTangent(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public bool ClosedAndTangent(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.ClosedAndTangent(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool Closed(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public bool Closed(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.Closed(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Reset() => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public void Reset()
+    {
+        try
+        {
+            this.Impl.Reset();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Simulate(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public void Simulate(int IC)
+    {
+        try
+        {
+            this.Impl.Simulate(IC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbSurf(int IC) => throw Unported.Class("BRepFilletAPI_LocalOperation");
+    public int NbSurf(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.NbSurf(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

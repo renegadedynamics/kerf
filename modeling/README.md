@@ -74,9 +74,9 @@ beside this repository):
 dotnet test tests/Build123d.Tests -p:Build123dBackend=OcctNet -p:OcctNetRoot=C:/src/OCCT.NET/
 ```
 
-Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`), so the two don't mix. OCCT.NET hasn't
-ported 3D fillets, chamfers, offsets, drafts and `BRepFeat` yet: under this backend they throw
-`NotSupportedException` ("not yet ported to OCCT.NET: BRepFilletAPI_MakeFillet"). The wrappers in
+Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`), so the two don't mix. OCCT.NET's phase 7
+brings 3D fillets, chamfers, offsets, drafts and `BRepFeat`; what it still lacks (STEP) throws `NotSupportedException`
+("not yet ported to OCCT.NET: STEPControl_Writer"). The wrappers in
 `src/Build123d.OcctNet/Generated` are regenerated with `./tools/generate-occtnet.ps1` when the native bindings or
 OCCT.NET change. See [docs/design.md](docs/design.md), "The OCCT.NET backend".
 

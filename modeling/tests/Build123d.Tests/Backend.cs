@@ -19,13 +19,30 @@ public sealed class NativeFactAttribute : FactAttribute
 public class OcctNetBackendTests
 {
     [Fact]
+    public void FilletsAndChamfersRun()
+    {
+        // Phase 7 of OCCT.NET: 3D fillets and chamfers, offsets and drafts
+        var filleted = Build123d.Operations.Fillet(new Box(10, 10, 10).Edges(), 1);
+        Assert.True(filleted.IsValid);
+        Assert.Equal(26, filleted.Faces().Count);
+        // a box of 8 grown by 1: its faces, quarter cylinders along its edges and eighth spheres at its corners
+        Check.AlmostEqual(512 + 384 + 24 * Math.PI + 4 * Math.PI / 3, filleted.Volume, 4);
+        var chamfered = Build123d.Operations.Chamfer(new Box(10, 10, 10).Edges(), 1);
+        Assert.True(chamfered.IsValid);
+        Assert.Equal(26, chamfered.Faces().Count);
+    }
+
+    [Fact]
     public void WhatIsntPortedSaysSo()
     {
-        // Phase 7 of OCCT.NET: 3D fillets, chamfers, offsets and drafts throw, with no native fallback
-        var e = Assert.Throws<NotSupportedException>(() => Build123d.Operations.Fillet(new Box(10, 10, 10).Edges(), 1));
-        Assert.Equal("not yet ported to OCCT.NET: BRepFilletAPI_MakeFillet", e.Message);
-        e = Assert.Throws<NotSupportedException>(() => Build123d.Operations.Chamfer(new Box(10, 10, 10).Edges(), 1));
-        Assert.Equal("not yet ported to OCCT.NET: BRepFilletAPI_MakeChamfer", e.Message);
+        // STEP isn't ported to OCCT.NET: its classes throw, with no native fallback
+        var e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.STEPControl_Writer());
+        Assert.Equal("not yet ported to OCCT.NET: STEPControl_Writer", e.Message);
+        // nor are members OCCT.NET doesn't make public, such as the phase 7 algorithms' copy constructors
+        using var fillet = new Build123d.Occt.BRepFilletAPI_MakeFillet(new Box(10, 10, 10).TopoShape);
+        e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.BRepFilletAPI_MakeFillet(fillet));
+        Assert.Equal("not available through OCCT.NET's public API: BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet)",
+                     e.Message);
     }
 
     [Fact]

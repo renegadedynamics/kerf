@@ -3,31 +3,149 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
 {
+    internal BRepOffsetAPI_MakeThickSolid(global::Occt.BRepOffsetAPI_MakeThickSolid impl) : base(impl, true) { }
     private protected BRepOffsetAPI_MakeThickSolid(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepOffsetAPI_MakeThickSolid Impl => (global::Occt.BRepOffsetAPI_MakeThickSolid)RawImpl;
     private protected BRepOffsetAPI_MakeThickSolid(Unported u) : base(u) { }
 
-    public BRepOffsetAPI_MakeThickSolid(BRepOffsetAPI_MakeThickSolid other) : this(Unported.Throw(Unported.Class("BRepOffsetAPI_MakeThickSolid"))) { }
+    public BRepOffsetAPI_MakeThickSolid(BRepOffsetAPI_MakeThickSolid other) : this(Unported.Throw(Unported.Member("BRepOffsetAPI_MakeThickSolid::.ctor(BRepOffsetAPI_MakeThickSolid)"))) { }
 
-    public BRepOffsetAPI_MakeThickSolid() : this(Unported.Throw(Unported.Class("BRepOffsetAPI_MakeThickSolid"))) { }
+    public BRepOffsetAPI_MakeThickSolid() : this(__New1()) { }
 
-    public void MakeThickSolidBySimple(TopoDS_Shape theS, double theOffsetValue) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    private static global::Occt.BRepOffsetAPI_MakeThickSolid __New1()
+    {
+        try
+        {
+            return new global::Occt.BRepOffsetAPI_MakeThickSolid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidBySimple(TopoDS_Shape theS, double theOffsetValue)
+    {
+        ArgumentNullException.ThrowIfNull(theS);
+        try
+        {
+            this.Impl.MakeThickSolidBySimple(theS.V, theOffsetValue);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool RemoveIntEdges) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Build() => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public void MakeThickSolidByJoin(TopoDS_Shape S, TopTools_ListOfShape ClosingFaces, double Offset, double Tol, BRepOffset_Mode Mode, bool Intersection, bool SelfInter, GeomAbs_JoinType Join, bool RemoveIntEdges)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        ArgumentNullException.ThrowIfNull(ClosingFaces);
+        try
+        {
+            this.Impl.MakeThickSolidByJoin(S.V, ClosingFaces.Impl, Offset, Tol, (global::Occt.BRepOffset_Mode)Mode, Intersection, SelfInter, (global::Occt.GeomAbs_JoinType)Join, RemoveIntEdges);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopTools_ListOfShape Modified(TopoDS_Shape S) => throw Unported.Class("BRepOffsetAPI_MakeThickSolid");
+    public new void Build()
+    {
+        try
+        {
+            this.Impl.Build();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public new TopTools_ListOfShape Modified(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            var __r = this.Impl.Modified(S.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

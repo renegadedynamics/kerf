@@ -5,9 +5,10 @@ namespace Build123d.Tests.Examples;
 
 /// <summary>
 /// build123d's introductory examples (https://build123d.readthedocs.io/en/latest/introductory_examples.html), their
-/// algebra-mode forms (docs/general_examples_algebra.py) in C#: the 30 the OCCT.NET backend must run, which leave out
-/// those needing 3D fillets, chamfers and offsets (9, 10, 11, 18, 26, 29, 36) and text (34). Each result's volume and
-/// face count are native OCCT's, recorded here, so the same test checks the OCCT.NET backend against native.
+/// algebra-mode forms (docs/general_examples_algebra.py) in C#: all but 34, which needs text. Each result's volume and
+/// face count are native OCCT's, recorded here, so the same test checks the OCCT.NET backend against native. The seven
+/// that need OCCT.NET's phase 7 (3D fillets and chamfers, offsets, extrusion until: 9, 10, 11, 18, 26, 29, 36) were
+/// added with it.
 /// </summary>
 public class IntroductoryExamplesTests
 {
@@ -22,12 +23,16 @@ public class IntroductoryExamplesTests
         [6] = (188495.55921538753, 7),
         [7] = (21401.923788646673, 18),
         [8] = (5799.999999999997, 14),
+        [9] = (45706.9022894405, 14),
+        [10] = (40848.10405858136, 8),
+        [11] = (36177.365057283976, 36),
         [12] = (14627.106295339287, 6),
         [13] = (70872.25969468076, 23),
         [14] = (91398.2236861551, 10),
         [15] = (79999.99999999999, 10),
         [16] = (1297854.872805332, 75),
         [17] = (85595.08646656378, 10),
+        [18] = (44706.90228944052, 18),
         [19] = (41538.56826564553, 11),
         [20] = (123398.22368615503, 9),
         [21] = (9091.444627430465, 5),
@@ -35,18 +40,23 @@ public class IntroductoryExamplesTests
         [23] = (88619.09277001217, 7),
         [24] = (102969.87958520795, 12),
         [25] = (24387.59273282052, 26),
+        [26] = (13952, 11),
         [27] = (20465.708264711477, 8),
         [28] = (251188.19571967638, 7),
+        [29] = (15893.314536718122, 56),
         [30] = (64463.381199800904, 9),
         [31] = (4991.970032881474, 164),
         [32] = (14839.230484541327, 44),
         [33] = (10840, 36),
         [35] = (49219.02754903829, 18),
+        [36] = (30298.935241110394, 8),
         [37] = (5.53429173528852, 8),
         [38] = (2304, 18),
     };
 
-    public static TheoryData<int> Numbers => [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 28, 30, 31, 32, 33, 35, 37, 38];
+    public static TheoryData<int> Numbers =>
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+         33, 35, 36, 37, 38];
 
     [Theory]
     [MemberData(nameof(Numbers))]
@@ -62,9 +72,10 @@ public class IntroductoryExamplesTests
     internal static Shape Build(int number) => number switch
     {
         1 => Ex1(), 2 => Ex2(), 3 => Ex3(), 4 => Ex4(), 5 => Ex5(), 6 => Ex6(), 7 => Ex7(), 8 => Ex8(),
-        12 => Ex12(), 13 => Ex13(), 14 => Ex14(), 15 => Ex15(), 16 => Ex16(), 17 => Ex17(), 19 => Ex19(),
-        20 => Ex20(), 21 => Ex21(), 22 => Ex22(), 23 => Ex23(), 24 => Ex24(), 25 => Ex25(), 27 => Ex27(),
-        28 => Ex28(), 30 => Ex30(), 31 => Ex31(), 32 => Ex32(), 33 => Ex33(), 35 => Ex35(), 37 => Ex37(),
+        9 => Ex9(), 10 => Ex10(), 11 => Ex11(), 12 => Ex12(), 13 => Ex13(), 14 => Ex14(), 15 => Ex15(),
+        16 => Ex16(), 17 => Ex17(), 18 => Ex18(), 19 => Ex19(), 20 => Ex20(), 21 => Ex21(), 22 => Ex22(),
+        23 => Ex23(), 24 => Ex24(), 25 => Ex25(), 26 => Ex26(), 27 => Ex27(), 28 => Ex28(), 29 => Ex29(),
+        30 => Ex30(), 31 => Ex31(), 32 => Ex32(), 33 => Ex33(), 35 => Ex35(), 36 => Ex36(), 37 => Ex37(),
         38 => Ex38(),
         _ => throw new ArgumentOutOfRangeException(nameof(number)),
     };
@@ -129,6 +140,40 @@ public class IntroductoryExamplesTests
         ln += Mirror(ln, Plane.YZ);
         var sk8 = MakeFace(Plane.YZ * ln);
         return Extrude(sk8, -l).Clean();
+    }
+
+    // 9. Selectors, fillets and chamfers
+    private static Shape Ex9()
+    {
+        Shape ex9 = new Box(Length, Width, Thickness);
+        ex9 = Chamfer(ex9.Edges().GroupBy(Axis.Z)[^1], length: 4);
+        return Fillet(ex9.Edges().FilterBy(Axis.Z), radius: 5);
+    }
+
+    // 10. Select last edges and hole
+    private static Shape Ex10()
+    {
+        Shape ex10 = new Box(Length, Width, Thickness);
+        var snapshot = ex10.Edges();
+        ex10 -= new Hole(Width / 4, depth: Thickness);
+        var lastEdges = ex10.Edges() - snapshot;
+        return Fillet(lastEdges.GroupBy(Axis.Z)[^1], 2);
+    }
+
+    // 11. A face as a workplane, grid locations
+    private static Shape Ex11()
+    {
+        Shape ex11 = new Box(Length, Width, Thickness);
+        ex11 = Chamfer(ex11.Edges().GroupBy(Axis.Z)[^1], 4);
+        ex11 = Fillet(ex11.Edges().FilterBy(Axis.Z), 5);
+        var last = ex11.Edges();
+        ex11 -= new Hole(Width / 4, depth: Thickness);
+        ex11 = Fillet((ex11.Edges() - last).SortBy(Axis.Z).Last, 2);
+        var plane = new Plane(ex11.Faces().SortBy(Axis.Z).Last);
+        var polygons = new Sketch().Add(new GridLocations(Length / 2, Width / 2, 2, 2)
+            .Select(loc => (Shape?)(plane * loc * new RegularPolygon(5, 5))));
+        ex11 -= Extrude(polygons, -Thickness);
+        return ex11;
     }
 
     // 12. Defining an edge with a spline
@@ -198,6 +243,18 @@ public class IntroductoryExamplesTests
         Shape ex17 = Extrude(new RegularPolygon(a, 5), amount: b);
         ex17 += Mirror(ex17, new Plane(ex17.Faces().SortBy(Axis.Y).First));
         return ex17;
+    }
+
+    // 18. Creating workplanes on faces
+    private static Shape Ex18()
+    {
+        double a = 4, b = 5;
+        Shape ex18 = new Box(Length, Width, Thickness);
+        ex18 = Chamfer(ex18.Edges().GroupBy(Axis.Z)[^1], a);
+        ex18 = Fillet(ex18.Edges().FilterBy(Axis.Z), b);
+        var sk18 = new Plane(ex18.Faces().SortBy(Axis.Z).First) * new Rectangle(2 * b, 2 * b);
+        ex18 -= Extrude(sk18, -Thickness);
+        return ex18;
     }
 
     // 19. Locating a workplane on a vertex
@@ -276,6 +333,15 @@ public class IntroductoryExamplesTests
         return Extrude(sk25, 1);
     }
 
+    // 26. Offset part to create thin features
+    private static Shape Ex26()
+    {
+        double wall = 2.0;
+        Shape ex26 = new Box(Length, Width, Thickness);
+        var topf = ex26.Faces().SortBy(Axis.Z).Last;
+        return Offset(ex26, amount: -wall, openings: [topf]);
+    }
+
     // 27. Splitting an object
     private static Shape Ex27()
     {
@@ -294,6 +360,24 @@ public class IntroductoryExamplesTests
         foreach (var p in tmp28.Faces().GroupBy(Axis.Z)[1].Select(f => new Plane(f)))
             ex28 -= p * new Hole(thickness / 2, depth: width);
         return ex28;
+    }
+
+    // 29. The classic OCC bottle
+    private static Shape Ex29()
+    {
+        double l = 60.0, w = 18.0, t = 9.0, b = 0.9, h = 90.0, n = 8.0;
+        var l1 = new Line((0, 0), (0, w / 2));
+        var l2 = new ThreePointArc(l1.PositionAt(1), (l / 2.0, w / 2.0 + t), (l, w / 2.0));
+        var l3 = new Line(l2.PositionAt(1), (l2.PositionAt(1).X, 0, 0));
+        Shape ln29 = l1 + l2 + l3;
+        ln29 += Mirror(ln29);
+        var sk29 = MakeFace(ln29);
+        Shape ex29 = Extrude(sk29, -(h + b));
+        ex29 = Fillet(ex29.Edges(), radius: w / 6);
+        var neck = new Plane(ex29.Faces().SortBy(Axis.Z).Last) * new Circle(t);
+        ex29 += Extrude(neck, n);
+        var necktopf = ex29.Faces().SortBy(Axis.Z).Last;
+        return Offset(ex29, -b, openings: [necktopf]);
     }
 
     // 30. Bezier curve
@@ -344,6 +428,17 @@ public class IntroductoryExamplesTests
         sk += new SlotCurve(ln2.Edges()[0], Thickness);
         ex35 -= Extrude(plane * sk, -Thickness);
         return ex35;
+    }
+
+    // 36. Extrude until
+    private static Shape Ex36()
+    {
+        double rad = 6, rev = 50;
+        var sk36 = new Pos(0, rev) * new Circle(rad);
+        Shape ex36 = Revolve(sk36, Axis.X, revolutionArc: 180);
+        var sk36b = new Rectangle(rad, rev);
+        ex36 += Extrude(sk36b, until: Until.Next, target: ex36);
+        return ex36;
     }
 
     // 37. Positioning sketches within a plane (builder mode in build123d: the three sketches' faces, extruded)
