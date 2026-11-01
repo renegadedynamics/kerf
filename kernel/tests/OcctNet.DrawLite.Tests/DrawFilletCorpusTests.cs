@@ -161,7 +161,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(883, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 719, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 723, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
@@ -170,10 +170,6 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7N3).</summary>
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
-        ["blend/complex/C5"] = "port bug (7N3): PerformSetOfKGen reverses the frozen GeomFill_ConstrainedFilling surface (Standard_ImmutableObject)",
-        ["blend/complex/E1"] = "port bug (7N3): PerformSetOfKGen reverses the frozen GeomFill_ConstrainedFilling surface (Standard_ImmutableObject)",
-        ["blend/complex/F2"] = "port bug (7N3): PerformSetOfKGen reverses the frozen GeomFill_ConstrainedFilling surface (Standard_ImmutableObject)",
-        ["blend/simple/X1"] = "port bug (7N3): PerformSetOfKGen reverses the frozen GeomFill_ConstrainedFilling surface (Standard_ImmutableObject)",
         ["blend/buildevol/F7"] = "reconstruction: shells not closed, faces unorientable; area 74012.5 for 72838.2",
         ["blend/buildevol/F8"] = "reconstruction: shells not closed, faces unorientable",
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
