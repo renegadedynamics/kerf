@@ -1,6 +1,8 @@
 // Port of: src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C2.cxx
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// The corners (unit 7N2). OCCT_DEBUG blocks (traces, chronometers) are left out; the file's static functions are in
+// the static class named after it.
 
 #nullable disable warnings
 
@@ -41,17 +43,17 @@ public partial class ChFi3d_Builder
         //----------
         NCollection_List<ChFiDS_Stripe>.Iterator It = new();
         It.Initialize(myVDataMap[Index]);
-        ref ChFiDS_Stripe? Corner1 = ref It.ChangeValue();
+        ChFiDS_Stripe? Corner1 = It.ChangeValue();
         int Sens1 = 0;
         int IFd1 = ChFi3d_IndexOfSurfData(Vtx, Corner1, out Sens1);
         NCollection_Sequence<ChFiDS_SurfData> SeqFil1 = 
             Corner1.ChangeSetOfSurfData();
-        ref ChFiDS_SurfData? Fd1 = ref SeqFil1.ChangeValue(IFd1);
+        ChFiDS_SurfData? Fd1 = SeqFil1.ChangeValue(IFd1);
 
         // the second
         //----------
         It.Next();
-        ref ChFiDS_Stripe? Corner2 = ref It.ChangeValue();
+        ChFiDS_Stripe? Corner2 = It.ChangeValue();
         int Sens2 = 0;
         int IFd2 = 0;
         if (Corner2 == Corner1)
@@ -65,7 +67,7 @@ public partial class ChFi3d_Builder
         }
         NCollection_Sequence<ChFiDS_SurfData> SeqFil2 = 
             Corner2.ChangeSetOfSurfData();
-        ref ChFiDS_SurfData? Fd2 = ref SeqFil2.ChangeValue(IFd2);
+        ChFiDS_SurfData? Fd2 = SeqFil2.ChangeValue(IFd2);
 
         // The concavities are analysed in case of different concavities,
         // preview an evolutionary connection of type ThreeCorner of R to 0.
@@ -363,7 +365,8 @@ public partial class ChFi3d_Builder
             gp_Pnt PFaCo = SmaHS.Value(UVi.X(), UVi.Y());
 
             // Parfin (parameters of point PMil)
-            ChFiDS_FaceInterference FiArcSma = SmaFD.Interference(IFaArcSma);
+            // OCCT holds a reference: it sees the SetParameter below
+            ref ChFiDS_FaceInterference FiArcSma = ref SmaFD.ChangeInterference(IFaArcSma);
             Geom_Curve? ctg = DStr.Curve(FiArcSma.LineIndex()).Curve();
             GeomAdaptor_Curve? Hctg = new GeomAdaptor_Curve();
             GeomAdaptor_Curve bid = Hctg;
@@ -631,8 +634,8 @@ public partial class ChFi3d_Builder
         // tolesp = Precision::Infinite();
         for (itel.Initialize(myListStripe); itel.More(); itel.Next())
         {
-            ref ChFiDS_Stripe? curStripe = ref itel.ChangeValue();
-            ref ChFiDS_Spine? Spine = ref curStripe.ChangeSpine();
+            ChFiDS_Stripe? curStripe = itel.ChangeValue();
+            ChFiDS_Spine? Spine = curStripe.ChangeSpine();
             double current_stripe_tolesp = Spine.GetTolesp();
             if (tolesp > current_stripe_tolesp)
             {
