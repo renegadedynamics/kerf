@@ -1404,3 +1404,15 @@ Phase 7 (part): the reconstruction's tail (unit 7R3).
   native's).
 - 7N3's oracle: 1,252 of 1,255 primitive runs native's (1,220 before), the GTests' inputs 7 of 7, histories of solids
   compared; the fillet corpus: OK 736 (723), FAILED 20 (34), all attributed.
+
+Phase 7 complete (1 November 2026): finishing.
+- Healing (ShapeCustom, ShapeUpgrade, ShapeProcess), helix, offsets and drafts, features (LocOpe, BRepFeat), 3D
+  fillets and chamfers (ChFi3d on a reconstruction over the Boolean engine, option C, instead of TopOpeBRepBuild), and
+  hidden-line removal, each compared with native OCCT: byte for byte where native repeats itself, otherwise
+  canonically or geometrically, with every difference attributed.
+- build123d.NET's phase 7 calls (healing, offsets, drafts, features, fillets, chamfers, MaxFillet) replayed from its
+  tests: none different. Fillets and chamfers run at 0.5 to 1.05 times native's time.
+- The Draw corpus: 16,381 of 21,068 cases runnable (10,066 OK); port-status: 48.1% of OCCT's lines (TKFillet,
+  TKOffset, TKFeat, TKShHealing over 99%, TKHLR and TKHelix whole).
+- A faster merge gate (Release, about 15 minutes) and the native oracle's use-after-free found and fixed (decision
+  1109).

@@ -1,5 +1,9 @@
 # Phase 7 plan: finishing
 
+> **Done, 1 November 2026.** Every unit is merged but 7M1 to 7M3, dropped for option C (decision 992); the
+> fillet tail and the corpus figures at the close are decisions 11401 and 11402 (renumbered at the merge). What remains
+> after phase 7 is phases 8 and 9 (design.md) and the follow-ups those decisions list.
+
 This plan splits phase 7 into work units that can be ported in parallel, as [phase5-6-plan.md](phase5-6-plan.md) did
 for phases 5 and 6. Phase 7 is design.md's "finishing" phase:
 
