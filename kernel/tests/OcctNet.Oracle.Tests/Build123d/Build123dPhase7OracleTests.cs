@@ -223,6 +223,12 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
         }
         if (isSame && isNativeVarying)
         {
+            if (!aCanon.IsIdentical)
+            {
+                // the port's result is another of native's variants than the first, whose history describes that first
+                // one: the histories compare by size (OffsetABareSolid's Offset3D, decision 1032, under a gate's load)
+                theMatch = Match.Geometric;
+            }
             theTally.Canonical++;
             return true;
         }
@@ -363,6 +369,7 @@ public sealed class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisp
         {
             aList.Add(anIt.Value());
         }
+        GC.KeepAlive(theShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
         return aList;
     }
 
