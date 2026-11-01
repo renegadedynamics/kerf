@@ -56,6 +56,12 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
     // OCCT.NET: the working copies of the frozen shapes the feature is given (decision 9501)
     private protected LocOpe_WorkingShapes? myWork;
+    private LocOpe_WorkingShapes? myFinishedWork;
+
+    // OCCT.NET: OCCT's IsSame(sh, F) in the history, where sh may be the changed working copy of the caller's F: OCCT
+    // changes F in place, keeping its identity, so the copy counts as F (decision 9501)
+    private bool IsSameInHistory(in TopoDS_Shape sh, in TopoDS_Shape F) =>
+        sh.IsSame(F) || (myFinishedWork is not null && myFinishedWork.Original(sh).IsSame(F));
 
     /// <summary>Redefines the empty constructor.</summary>
     protected BRepFeat_Form()
@@ -116,7 +122,11 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// face or the until shape has its one copy); the result, the history and the lists are given back on the caller's
     /// shapes where the feature left them unchanged, at the first publication (<see cref="FinishWorkingShapes"/>).
     /// </summary>
-    private protected void StartWorkingShapes() => myWork = new LocOpe_WorkingShapes();
+    private protected void StartWorkingShapes()
+    {
+        myWork = new LocOpe_WorkingShapes();
+        myFinishedWork = null;
+    }
 
     /// <summary>The working shape standing for <paramref name="S"/> (decision 9501).</summary>
     private protected TopoDS_Shape Working(in TopoDS_Shape S)
@@ -140,6 +150,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             return;
         }
         LocOpe_WorkingShapes aWork = myWork;
+        myFinishedWork = aWork;
         var aShapes = new List<TopoDS_Shape> { myShape };
         foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
         {
@@ -1286,7 +1297,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             for (; ite.More(); ite.Next())
             {
                 TopoDS_Shape sh = ite.Value();
-                if (!sh.IsSame(F) && sh.ShapeType() == F.ShapeType())
+                if (!IsSameInHistory(sh, F) && sh.ShapeType() == F.ShapeType())
                 {
                     myGenerated.Append(sh);
                 }
@@ -1310,7 +1321,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             for (; ite.More(); ite.Next())
             {
                 TopoDS_Shape sh = ite.Value();
-                if (!sh.IsSame(S))
+                if (!IsSameInHistory(sh, S))
                 {
                     myGenerated.Append(sh);
                 }
