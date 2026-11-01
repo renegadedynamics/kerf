@@ -83,6 +83,7 @@ public readonly struct Contap_HCurve2dTool : IIntImp_CurveTool<Adaptor2d_Curve2d
             case GeomAbs_BSplineCurve:
                 nbs = C.NbKnots();
                 nbs *= C.Degree();
+                // OCCT: the inverse of IntPatch_HCurve2dTool's corrected ratio (U1 - U0) / (Last - First)
                 nbs *= C.LastParameter() - C.FirstParameter();
                 nbs /= U1 - U0;
                 if (nbs < 2.0)

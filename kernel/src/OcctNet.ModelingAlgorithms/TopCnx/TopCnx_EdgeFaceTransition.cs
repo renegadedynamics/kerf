@@ -106,6 +106,7 @@ public sealed class TopCnx_EdgeFaceTransition
         {
             return TopAbs_REVERSED;
         }
+        // OCCT: both branches of the even/odd test return TopAbs_EXTERNAL
         else if ((nbBoundReversed % 2) == 0)
         {
             return TopAbs_EXTERNAL;
