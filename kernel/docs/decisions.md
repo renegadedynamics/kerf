@@ -11039,3 +11039,95 @@ whole. Numbers from 10201 are placeholders, renumbered on merge.
          selects the solution).
        - `ChFi3d_FilDS` writes everything 7R reads (decision 9908): the solid's SSIs, the faces' and fillets' SCIs,
          the curves' CPIs, the edges' CPIs and the vertices cut; its regularities go into the builder's list.
+
+## Phase 7: unit 7N2, the fillet builder
+
+ChFi3d_Builder whole (its `.cxx` and the files `_1`, `_2`, `_6`, `_C1`, `_C2`, `_CnCrn`, `_SpKP`, `_NotImp`), with
+ChFi3d_FilBuilder, ChFi3d_ChBuilder, ChFi3d_SearchSing and ChFi3d_FilletShape. Numbers from 10501 are placeholders,
+renumbered on merge.
+
+10501. **Scope and shape.**
+       - **FilBuilder and ChBuilder are ported here, not in 7N3.** ChFi3d_Builder is abstract (its walking, sections,
+         corners of two and three fillets and extents are FilBuilder's and ChBuilder's), so the data structure can be
+         compared with native's only through a concrete builder. 7N3 keeps BRepFilletAPI, LocalOperation, FilletSurf
+         and the Draw commands.
+       - One C# file per OCCT file, each a part of the partial class; each file's static functions in an internal
+         static class named after it (`ChFi3d_Builder_2`, ..., `ChFi3d_FilBuilder_C3`), imported with `using static`
+         (Builder.cxx's, FilBuilder.cxx's and ChBuilder.cxx's few statics are private members, the class name being
+         taken). OCCT's protected members are `internal`, its pure virtuals `internal abstract`, the `_NotImp`
+         overloads `internal virtual` throwing OCCT's `Standard_Failure`.
+       - **`#nullable disable warnings`** in the builder files: 21,800 lines dereference handles that OCCT checks by
+         flow the compiler cannot follow; the annotations stay (`T?` where OCCT's handle may be null).
+       - The corner files (`_C1`, `_C2`, `_CnCrn`, FilBuilder's and ChBuilder's `_C2`, `_C3`) were ported by the one
+         sub-helper the unit brief allowed, on the signatures of a committed skeleton, and merged.
+       - Translation: OCCT's `OCC_CATCH_SIGNALS` catches catch `IMeshTools_ModelAlgo.IsCaughtFailure` (decision 529),
+         so the seam's NotImplementedException passes through; integers used as booleans (`intf`, `intl`, `Ok1`) stay
+         integers with explicit comparisons; StartSol's lambda capturing reference parameters is a static local
+         function taking them by `ref`; C# scoping renames are marked where they occur.
+10502. **The seam: `ChFi3d_Reconstruction`** (internal abstract class, `ChFi3d/ChFi3d_Reconstruction.cs`), committed
+       first for unit 7R. Its members are exactly the `TopOpeBRepBuild_HBuilder` members TKFillet calls, with OCCT's
+       names and parameters: `Perform(HDS)`, `MergeSolid(S, TB)`, `IsSplit(S, ToBuild)`, `Splits(S, ToBuild)`,
+       `Merged(S, ToBuild)`, `NewFaces(I)`, `NewEdges(I)`, `DataStructure()`. `ChFi3d_Reconstruction.Create(BT)` stands
+       for `new TopOpeBRepBuild_HBuilder(mkbuildtool())` (ChFi3d_Builder_1.cxx:346) and is where 7R plugs in; until
+       then it returns a stand-in whose `Perform` throws `NotImplementedException("7R: ...")`, so `Compute` stops
+       exactly where OCCT hands over, the data structure complete. `ChFi3d_Builder.Builder()` (OCCT's public accessor)
+       is internal until 7N3 decides its public form; `myCoup` is an internal field, which the tests set to a recording
+       reconstruction. Everything after Perform in `Compute` (MergeSolid, the split edges' vertex tolerances, the result
+       or `badShape`, `SetRegul`, same-parameter on `NewFaces`) is ported and runs against the seam.
+10503. **The working copy** (decisions 1005, 10203). The constructor copies a shape holding frozen TShapes
+       (`BRepTools_CopyAtEntry`) and builds the five maps from the copy, so the common points, the spines, the data
+       structure and every vertex OCCT raises the tolerance of (ChFi3d_IndexPointInDS, Compute's `UpdateVertex`) are
+       the copy's; the elementary spines' 3D curves are added to the copy's edges. Public members map the caller's
+       edges, vertices and faces onto the copy (`ToWork`: Add, Remove, Contains, SetRadius, UnSet, Radius, IsConstant,
+       GetBounds, GetLaw, SetLaw, SetDist(s), AddDA, SetDistAngle, Abscissa, Generated) and hand back the caller's
+       (`FromWork`: FirstVertex, LastVertex, FaultyVertex). `Value(I)` gives the spine itself, with the copy's edges.
+       **For 7R:** finish the copy at the end of a successful Compute (`myCopyAtEntry.Finish(result)`, so unchanged
+       sub-shapes are the caller's) and freeze the result at publication.
+10504. **References and outputs.** A non-const `handle&` parameter is `ref` only where the function assigns it, checked
+       transitively by script over all the builder files (a by-value parameter passed on as `ref`/`out` is flagged):
+       `StartSol`'s HS1/HS2 and `ChFi3d_CoupeParPlan`'s curves are `ref`; others are plain. Struct and scalar
+       references are `ref` (`out` where the callee always writes). C++ references to elements (`ChFiDS_CommonPoint&`,
+       `ChFiDS_FaceInterference&`, `occ::handle<..>&` into a sequence) are `ref` locals; `const&` copies of structs are
+       copies, as OCCT reads them only. `math_Vector` assignment copies the values (`Initialized`), as OCCT's
+       `operator=`. Adaptors referenced through `*handle` (`BRepAdaptor_Surface& Sb1 = *HS1`, `ChFiDS_ElSpine& Guide =
+       *HGuide`) are the same object.
+10505. **No process-wide state.** ChFi3d_Builder_6 `StoreData`'s `thread_local GeomAdaptor_Curve checkcurve` is loaded
+       before every use and never read across calls: a local (plan 2.3). The corner files and FilBuilder/ChBuilder have
+       no static or thread-local state. Nothing is `[ThreadStatic]`; two builders on one input give the same data
+       structure (tested).
+10506. **What OCCT edits in place.**
+       - `MakeOffsetEdge` reverses the intersection curve in place: a frozen one is reversed on a copy (decision 974).
+         The corner files: GeomFill_ConstrainedFilling's surface is taken unfrozen (`InternalSurface`) for `VReverse`;
+         FilBuilder_C2 copies a frozen pivot pcurve before `SetKnots`.
+       - ChFi3d_Builder_SpKP `Tri` casts the constness of `Geom2dHatch_Hatcher::Domain` away and changes the hatcher's
+         domain: the hatcher and its hatching get an internal `ChangeDomain` (OCCT.NET addition) for it.
+       - ChFiDS_SurfData's simulated sections (`Simul`) are an `object?`: OCCT stores a `Standard_Transient` handle to
+         a `ChFiDS_SecHArray1`, and the port's `NCollection_HArray1` is not a transient.
+       - BRepBlend's typedef names are written out as BlendFunc's (decision 1059).
+10507. **The oracle: tools/dsrec, extended.** Each case's input now goes through BRep text before native runs on it, as
+       the port reads it (the 7L recording ran on the in-memory shape: rotated and scaled inputs read back differed by
+       an ulp in their locations, which showed as ulp differences in 5 cases). Every case records its input, the
+       edges and parameters, and, for fillets, BRepFilletAPI_MakeFillet's diagnostics (contours, faulty contours,
+       `StripeStatus`, faulty vertices, `HasResult`). 23 new cases: a tangent chain (line-arc-line) filleted and
+       chamfered, a four-edge corner (a pyramid's apex) and its base edges, a concave edge alone, with convex edges and
+       chamfered, two evolving radii at a corner, a distance-angle chamfer, chamfers on two edges and on a corner with
+       two distances, a fillet on an open shell, and build123d.NET's test inputs (its centred Box and Cylinder: all
+       edges, top edges, vertical edges, top chamfers with one and two distances, a plate with a hole, a cylinder's
+       bottom edge, and the failures "fillet too large", "chamfer too large", a thin plate with radius 3). **Results:
+       38 cases; the 35 that reach Perform give native's data structure byte for byte; the diagnostics of all 27
+       fillet cases equal native's** (the three failures: StartsolFailure on every contour, or on 8 of 12, Perform
+       never reached, as natively). The kpart recording of 7N1 is unchanged.
+10508. **For unit 7R: what the corpus reaches** (the 35 data structures at Perform, and the queries Compute and
+       SetRegul make, counted by the tests' recording reconstruction):
+       - Interferences: CPI 1,027 (support kind CURVE: the DS curves' ends and the input edges cut, the edge given by
+         its shape index; geometry POINT; no VERTEX geometry in these cases), SCI 830 (support SURFACE: the faces'
+         trimming curves with their pcurves and the fillet surfaces' boundaries; geometry CURVE), SSI 136 (support the
+         solid, or the shell for a fillet on a shell; geometry SURFACE). Transitions IN/OUT and OUT/IN, FACE/FACE. No
+         new surfaces of faces and no section edges. Shapes added: faces, edges, their wires, shells and solids.
+       - Queries: `MergeSolid` (SOLID, IN) 34 and (SHELL, IN) 1; `IsSplit` (EDGE, IN) 148 (every DS edge), `Splits`
+         when split; `Merged` (SOLID/SHELL, IN) 35; `NewFaces` 237 (same-parameter over every DS surface, and
+         `SetRegul`); `NewEdges` 306 (`SetRegul`: up to 48 regularities a case, surface-surface only here). Not reached
+         in Compute: `Merged` of faces (SetRegul's face side) and the OUT/ON states (BRepFilletAPI's history, 7N3).
+       - Corners: PerformOneCorner 62, PerformTwoCorner 37 (fillets and chamfers), PerformThreeCorner 22,
+         PerformMoreThreeCorner 1 (the pyramid's apex); not reached: PerformIntersectionAtEnd, PerformMoreSurfdata,
+         PerformSingularCorner, and fillets ending on a free boundary inside a face (ExtentOneCorner only).

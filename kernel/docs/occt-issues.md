@@ -1636,3 +1636,19 @@ Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// O
 | ChFi3d_Builder_0 `ChFi3d_Orientation`, `ChFi3d_FilDS` | The orientation is left unchanged when no interference matches; FilDS goes on with the previous transition | A fillet surface data on a surface without its solid interference takes the previous one's transitions |
 | ChFi3d_Builder_0 `ChFi3d_PerformElSpine` | Declares three arrays (`ExtrapPole`, `ExtraCoeffs`, `Cont`) it never uses | None |
 | ChFi3d_Builder_0 `ChFi3d_StripeEdgeInter` | Takes the data structure and never reads it | None |
+
+## Phase 7: unit 7N2, the fillet builder
+
+Found by porting ChFi3d_Builder, ChFi3d_FilBuilder and ChFi3d_ChBuilder. The port reproduces each (`// OCCT` or a
+remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d_Builder_1 `PerformExtremity` | Tests `NCollection_IndexedMap::Add`, which returns an index, as a boolean | Always true: the reversed copy of a closed edge is always taken as one of the vertex's edges |
+| ChFi3d_Builder_SpKP `FillSD` | Keeps a pointer to a local copy of the domain's point that leaves its scope | Undefined natively; the port uses the copy |
+| ChFi3d_Builder_SpKP `Tri` | Casts the constness of the hatcher's domain and point away and edits them | The hatcher's domains change under it (reproduced through `ChangeDomain`) |
+| ChFi3d_Builder_CnCrn (OCCT .cxx:3280) | `tpt2.Tolerance(tpt1.Tolerance() + error)` | The second point takes the first's tolerance |
+| ChFi3d_Builder_C1 | `Crv.Tolerance(...)` on a local copy of a curve already added to the data structure | The raised tolerance is lost |
+| ChFi3d_Builder_C1, `_C2` | Booleans kept in integers and doubles (`proledge`, `sens`, `sameparam`) | None (0 and 1) |
+| ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
+| ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |
