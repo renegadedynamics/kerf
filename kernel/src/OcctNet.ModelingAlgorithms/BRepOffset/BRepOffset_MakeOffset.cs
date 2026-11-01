@@ -83,6 +83,7 @@ public sealed partial class BRepOffset_MakeOffset
 
     // OCCT.NET: the copy at the entry (decision 1005); null until a run starts, and after Initialize.
     private BRepTools_CopyAtEntry? myEntry;
+    private bool myIsEntryFinished; // OCCT.NET: a second run without Initialize finds the entry finished
 
     // OCCT_DEBUG: the globals AffichInt2d, AffichOffC, ChronBuild, NbAE, NbAF, NVP, NVM, NVN, the chronometer and
     // DEBVerticesControl are left out.
@@ -441,6 +442,7 @@ public sealed partial class BRepOffset_MakeOffset
         myIsPerformSewing = false;
         myIsPlanar = false;
         myEntry = null;
+        myIsEntryFinished = false;
         Clear();
     }
 
@@ -645,11 +647,14 @@ public sealed partial class BRepOffset_MakeOffset
     /// </summary>
     private void FinishCopy()
     {
-        if (myEntry is null || !myEntry.IsCopied() || myOffsetShape.IsNull())
+        // OCCT.NET (unit 7G): finished for a null result too, so that the history (InternalFinal) can be read after a
+        // run reported done with a null shape (decision 9406).
+        if (myEntry is null || !myEntry.IsCopied() || myIsEntryFinished)
         {
             return;
         }
         myOffsetShape = myEntry.Finish(myOffsetShape);
+        myIsEntryFinished = true;
     }
 
     /// <summary>The working copy of a sub-shape of the caller's shape (itself when the shape wasn't copied).</summary>
