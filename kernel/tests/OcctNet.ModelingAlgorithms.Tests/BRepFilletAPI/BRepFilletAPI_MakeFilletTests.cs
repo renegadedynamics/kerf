@@ -11,10 +11,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BRepFilletAPI_MakeFilletTests
 {
     /// <summary>
-    /// The tests whose result unit 7R's reconstruction gets wrong (BRepFilletAPIMakeFilletOracleTests: a face with a
-    /// seam cut by the fillet keeps the band the fillet removes; the fillet faces are native's).
+    /// The tests whose result the reconstruction gets wrong: none since unit 7R3 fixed the seam band (decision 11201),
+    /// which OCC1077 and OCC426 met.
     /// </summary>
-    private static readonly HashSet<string> KnownReconstructionGaps = ["OCC1077", "OCC426"];
+    private static readonly HashSet<string> KnownReconstructionGaps = [];
 
     private static double Area(in TopoDS_Shape S)
     {

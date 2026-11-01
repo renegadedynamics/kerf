@@ -787,12 +787,9 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 aIsolated.Add(aWE);
             }
         }
-        foreach (TopoDS_Shape E in aWhole)
+        foreach (TopoDS_Shape E in WholeEdgesKept(aWhole, aIsolatedEdges, aKeptVertices))
         {
-            if (!aIsolatedEdges.Contains(E))
-            {
-                aLE.Append(E);
-            }
+            aLE.Append(E);
         }
 
         NCollection_List<TopoDS_Shape> aPieces = BuildAreas(FF, aLE);
@@ -929,6 +926,52 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
             return false;
         }
         return false;
+    }
+
+    /// <summary>
+    /// The face's edges left whole, in touched wires, that it keeps: those connected through edges left whole to a
+    /// vertex of a kept edge (decision 11201). A chain of them between two parts dropped lies under the fillet: alone
+    /// it dangles and the face builder drops it, but round a seam two such chains close a loop (the rim of a hole that
+    /// crosses a cylinder's seam) that it would build into a band.
+    /// </summary>
+    private static List<TopoDS_Shape> WholeEdgesKept(NCollection_List<TopoDS_Shape> theWhole,
+                                                     NCollection_Map<TopoDS_Shape> theIsolated,
+                                                     NCollection_Map<TopoDS_Shape> theKeptVertices)
+    {
+        List<TopoDS_Shape> aEdges = [.. theWhole.Where(E => !theIsolated.Contains(E))];
+        int[] aParent = Enumerable.Range(0, aEdges.Count).ToArray();
+        int Root(int i)
+        {
+            while (aParent[i] != i)
+            {
+                i = aParent[i] = aParent[aParent[i]];
+            }
+            return i;
+        }
+        Dictionary<TopoDS_Shape, int> aFirst = new(TopTools_ShapeMapHasher.Instance);
+        for (int i = 0; i < aEdges.Count; i++)
+        {
+            for (TopExp_Explorer exv = new(aEdges[i], TopAbs_VERTEX); exv.More(); exv.Next())
+            {
+                if (aFirst.TryGetValue(exv.Current(), out int j))
+                {
+                    aParent[Root(i)] = Root(j);
+                }
+                else
+                {
+                    aFirst[exv.Current()] = i;
+                }
+            }
+        }
+        HashSet<int> aAnchored = [];
+        foreach ((TopoDS_Shape V, int i) in aFirst)
+        {
+            if (theKeptVertices.Contains(V))
+            {
+                aAnchored.Add(Root(i));
+            }
+        }
+        return [.. aEdges.Where((E, i) => aAnchored.Contains(Root(i)))];
     }
 
     private static void AddVertices(in TopoDS_Shape E, NCollection_Map<TopoDS_Shape> theMap)

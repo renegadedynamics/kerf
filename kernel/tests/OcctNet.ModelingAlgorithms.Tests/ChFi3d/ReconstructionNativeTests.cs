@@ -38,6 +38,15 @@ public class ReconstructionNativeTests
         // 7N2's end-to-end run reaches this case.
         ["complex_G1"] = ("the dump holds faces not in the input", null),
         ["complex_B3"] = ("the dump holds shapes not in the input", null),
+        // the T of two cylinders, its junction filleted with a radius of 28.9 (unit 7N3's oracle, "too large"): the
+        // small cylinder's end circle has 11 points whose transitions do not alternate; native keeps two pieces of
+        // zero area of that cylinder, the reconstruction also the band round its seam (decision 11202)
+        ["seam_cylinder_T_e2_too_large"] = ("a radius ten times the cylinder's",
+        [
+            "volume 993.213482 | 996.296576", "area 686.601963 | 691.226504", "TopAbs_SHELL 1 | 2", "TopAbs_EDGE 37 | 39",
+            "TopAbs_VERTEX 22 | 24", "valid True | False {FACE:UnorientableShape}",
+            "Modified(F2) [Cylinder -1.00575E-14, Cylinder -1.85438E-14] | [Cylinder -1.00575E-14, Cylinder 4.62454]",
+        ]),
         // a box of 10, its top edges filleted with a radius of 6, more than half its width (unit 7N2's case): native
         // says done, but two of its corner faces have negative areas (degenerate B-spline surfaces) and its result
         // fails BRepCheck (BadOrientationOfSubshape, IntersectingWires: the fillets cross on the top face). The
@@ -65,7 +74,7 @@ public class ReconstructionNativeTests
     {
         // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, voids, a compound,
         // pyramids, failures, blend/complex (the shapes in the dataset)
-        Assert.Equal(122, ReconRecordings.Cases.Count);
+        Assert.Equal(129, ReconRecordings.Cases.Count);
         Assert.All(ReconRecordings.Cases.Values, c => Assert.True(c.Done, c.Name));
         Assert.All(ReconRecordings.Cases.Values, c => Assert.NotNull(c.Result));
     }

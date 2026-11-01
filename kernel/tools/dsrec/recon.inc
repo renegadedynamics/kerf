@@ -5,6 +5,9 @@
 // (tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/ReconstructionNativeTests.cs).
 
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <cmath>
 #include <GCPnts_AbscissaPoint.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
@@ -437,6 +440,32 @@ static void RecordReconCases(const char* theDataDir)
     Record("pyramid_base_edges", aPyr, false, All(EdgesAtZ(aPyr, 0), 5));
     TopoDS_Shape b = ThroughText(CBox(10, 10, 10));
     Record("b3d_fail_box_top_edges_r6", b, false, All(EdgesAtZ(b, 5), 6));
+  }
+
+  // unit 7R3: faces with a seam cut by a fillet (unit 7N3's oracle: box common sphere, cylinder T; radius 3% of the
+  // box's diagonal as there)
+  {
+    auto aDiag = [](const TopoDS_Shape& S) {
+      Bnd_Box aBB;
+      BRepBndLib::Add(S, aBB);
+      return std::round(std::sqrt(aBB.SquareExtent()) * 0.03 * 1000.0) / 1000.0;
+    };
+    TopoDS_Shape aBCS = ThroughText(
+      BRepAlgoAPI_Common(BRepPrimAPI_MakeBox(10, 10, 10).Shape(), BRepPrimAPI_MakeSphere(gp_Pnt(5, 5, 5), 6.5).Shape())
+        .Shape());
+    double r = aDiag(aBCS);
+    Record("seam_box_common_sphere_e4", aBCS, false, {{4, r, -1}});
+    Record("seam_box_common_sphere_e7", aBCS, false, {{7, r, -1}});
+    Record("seam_box_common_sphere_all", aBCS, false, EdgesWhere(aBCS, r, [](const TopoDS_Edge&) { return true; }));
+    TopoDS_Shape aT = ThroughText(
+      BRepAlgoAPI_Fuse(BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 3, 20).Shape(),
+                       BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(-10, 0, 10), gp_Dir(1, 0, 0)), 2, 20).Shape())
+        .Shape());
+    r = aDiag(aT);
+    Record("seam_cylinder_T_e2", aT, false, {{2, r, -1}});
+    Record("seam_cylinder_T_e5", aT, false, {{5, r, -1}});
+    Record("seam_cylinder_T_e7", aT, false, {{7, r, -1}});
+    Record("seam_cylinder_T_e2_too_large", aT, false, {{2, 28.914, -1}}); // the oracle's "too large" radius
   }
 
   if (theDataDir != nullptr)

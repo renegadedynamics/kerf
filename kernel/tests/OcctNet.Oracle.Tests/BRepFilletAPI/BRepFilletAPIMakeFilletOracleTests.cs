@@ -820,19 +820,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // keys: a case's name or the start of its names, before a space
     internal static readonly Dictionary<string, string> KnownPrimitiveDifferences = new(StringComparer.Ordinal)
     {
-        ["box common sphere e4"] = SeamBand,
-        ["box common sphere e7"] = SeamBand,
-        ["box common sphere all"] = SeamBand,
-        ["box common sphere face2"] = SeamBand,
-        ["cylinder T e2"] = SeamBand,
-        ["cylinder T e5"] = SeamBand,
-        ["cylinder T e7"] = SeamBand,
-        ["cylinder T all"] = SeamBand,
-        ["cylinder T face1"] = SeamBand,
-        ["cylinder T face2"] = SeamBand,
+        // unit 7N3 attributed 33 runs here to the seam band (a face with a seam cut by the fillet kept the band the
+        // fillet removes); unit 7R3 fixed it (decision 11201). Left (decision 11202): a radius of 28.9 on the T's
+        // junction (cylinders of radius 3 and 2): the end circle of the small cylinder has 11 points whose
+        // transitions do not alternate, and native keeps two pieces of zero area of that cylinder; the reconstruction
+        // keeps the band round the seam the rim crosses. Not worth a rule.
+        ["cylinder T e2 too large"] = "reconstruction (7R3): a radius ten times the cylinder's, transitions that do not alternate on the end circle",
     };
-
-    private const string SeamBand = "reconstruction (7R): a face with a seam (cylinder, sphere) cut by the fillet keeps a second piece, the band the fillet removes: 2 shells, FACE UnorientableShape; the fillet faces are native's";
 
     internal static readonly Dictionary<string, string> KnownDataOccDifferences = new(StringComparer.Ordinal)
     {
@@ -840,8 +834,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
 
     internal static readonly Dictionary<string, string> KnownGTestDifferences = new(StringComparer.Ordinal)
     {
-        ["OCC1077 cut 3, section edges r0.7"] = SeamBand,
-        ["OCC426"] = SeamBand,
+        // OCC1077's third cut and OCC426: the seam band, fixed by unit 7R3 (decision 11201)
     };
 
     internal static readonly string[] KnownMaxFilletDifferences = [];

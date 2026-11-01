@@ -157,11 +157,12 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         // TODOs), IMPROVEMENT 8, SKIPPED 84 (data not public), FAILED 45 before the two fixes below; the 11 others miss
         // viewer commands and stepread. encoderegularity rebinding the variables (decision 11011): OK 719, FAILED 38.
         // The frozen ConstrainedFilling surface in ChFi3d_Builder_2's PerformSetOfKGen (a port bug, fixed in src by the
-        // unit): OK 723, FAILED 34. Every failure is attributed (KnownFailures).
+        // unit): OK 723, FAILED 34. Unit 7R3's seam band (decision 11201): OK 728, FAILED 29 (buildevol F7, F8, simple K2,
+        // K3, bug28828_4 pass). Every failure is attributed (KnownFailures).
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(883, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 723, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 728, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
@@ -170,11 +171,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7N3).</summary>
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
-        ["blend/buildevol/F7"] = "reconstruction: shells not closed, faces unorientable; area 74012.5 for 72838.2",
-        ["blend/buildevol/F8"] = "reconstruction: shells not closed, faces unorientable",
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["blend/simple/K2"] = "reconstruction: shells not closed, faces unorientable; area 73770.4 for 72564.2",
-        ["blend/simple/K3"] = "reconstruction: shells not closed, faces unorientable; area 73770.4 for 72440.6",
         ["blend/simple/V7"] = "reconstruction: face unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["blend/simple/W4"] = "reconstruction: shell not closed",
         ["blend/simple/Y1"] = "reconstruction: shell not closed; area 29449.3 for 61327.9 (faces missing)",
@@ -184,7 +181,6 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         ["blend/tolblend_simple/C7"] = "reconstruction: shell not closed; area 1.79673e+06 for 2.75048e+06 (faces missing)",
         ["blend/tolblend_simple/C8"] = "reconstruction: shell not closed; area 669358 for 1.85726e+06 (faces missing)",
         ["bugs/modalg_7/bug27711_2"] = "reconstruction: face unorientable, edge InvalidRange (OCCT's TODO expects other faults)",
-        ["bugs/modalg_7/bug28828_4"] = "reconstruction: shell not closed, face unorientable; 2 shells, 7 faces for 1 and 6",
         ["bugs/modalg_8/bug32929"] = "reconstruction: shell not closed; area 6341.42 for 13435.4",
         ["bugs/moddata_2/bug354_1"] = "reconstruction: shells not closed, face unorientable, edge InvalidRange; area 117.434 for 593.527",
         ["bugs/moddata_2/bug354_2"] = "reconstruction: shells not closed, face unorientable, edge InvalidRange; area 115.433 for 589.268",
