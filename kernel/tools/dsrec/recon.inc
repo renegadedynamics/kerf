@@ -376,6 +376,16 @@ static void RecordReconCases()
     gp_Trsf aT;
     aT.SetTranslation(gp_Vec(200, 0, 0));
     B.Add(aCo, BRepBuilderAPI_Transform(aBox, aT, true).Shape());
+    // a solid with a void (two shells): an edge of the outer shell, then an edge of the void (concave)
+    TopoDS_Shape aVoid = BRepAlgoAPI_Cut(aBox, BRepPrimAPI_MakeBox(gp_Pnt(30, 30, 30), 40, 40, 40).Shape()).Shape();
+    Record("solid_with_void_outer_edge", aVoid, false, EdgesWhere(aVoid, 10, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 1 && P.Z() < 99 && P.Y() < 1 && P.X() > 99;
+           }));
+    Record("solid_with_void_inner_edge", aVoid, false, EdgesWhere(aVoid, 5, [](const TopoDS_Edge& E) {
+             gp_Pnt P = MidPoint(E);
+             return P.Z() > 31 && P.Z() < 69 && std::abs(P.Y() - 30) < 1 && std::abs(P.X() - 70) < 1;
+           }));
     Record("compound_two_boxes", aCo, false, EdgesWhere(aCo, 10, [](const TopoDS_Edge& E) {
              gp_Pnt P = MidPoint(E);
              return P.Z() > 1 && P.Z() < 99 && P.Y() < 1 && (std::abs(P.X() - 100) < 1 || std::abs(P.X() - 300) < 1);

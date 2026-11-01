@@ -117,7 +117,8 @@ internal static class ReconRecordings
 
 /// <summary>A case of <see cref="ReconRecordings"/>.</summary>
 internal sealed record ReconCase(string Name, bool Done, string BRepText, string DsText, string ResultText,
-                                 List<int[]> NewFaces, List<double[]> NewEdges, List<bool> Deleted, List<int[]> Modified,
+                                 List<int[]> NewFaces, List<double[]> NewEdges, List<bool> Deleted,
+                                 List<int[]> Modified,
                                  List<int[]> GeneratedFromEdges, List<int[]> GeneratedFromVertices)
 {
     /// <summary>The input shape (a new one at each call).</summary>

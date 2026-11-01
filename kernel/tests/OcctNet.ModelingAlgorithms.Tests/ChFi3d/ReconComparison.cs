@@ -18,7 +18,7 @@ internal static class ReconComparison
     internal sealed record Run(TopoDS_Shape Input, TopOpeBRepDS_HDataStructure HDS, ChFi3d_BOPReconstruction Builder,
                                TopoDS_Shape Result);
 
-    /// <summary>Compute's part from <c>myCoup->Perform</c> to the result (without SetRegul and same-parameter).</summary>
+    /// <summary>Compute from <c>myCoup->Perform</c> to the result and the same-parameter (not SetRegul).</summary>
     internal static Run Reconstruct(ReconCase theCase, bool theFreezeInput = true)
     {
         TopoDS_Shape anInput = theCase.Input;
@@ -36,7 +36,8 @@ internal static class ReconComparison
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
             TopoDS_Shape S = aDS.Shape(i);
-            if (S.ShapeType() == TopAbs_SOLID || (S.ShapeType() == TopAbs_SHELL && aDS.ShapeInterferences(i).Extent() > 0))
+            if (S.ShapeType() == TopAbs_SOLID
+                || (S.ShapeType() == TopAbs_SHELL && aDS.ShapeInterferences(i).Extent() > 0))
             {
                 aSolids.Add(i);
             }
@@ -130,7 +131,8 @@ internal static class ReconComparison
         GCPnts_AbscissaPoint.Length(new BRepAdaptor_Curve(TopoDS.Edge(E)));
 
     private static string Lengths(IEnumerable<double> theLengths) =>
-        "[" + string.Join(", ", theLengths.Select(x => x.ToString("G6", CultureInfo.InvariantCulture)).Order(StringComparer.Ordinal)) + "]";
+        "[" + string.Join(", ", theLengths.Select(x => x.ToString("G6", CultureInfo.InvariantCulture))
+                                          .Order(StringComparer.Ordinal)) + "]";
 
     private static bool Close(double a, double b, double theRel) =>
         Math.Abs(a - b) <= theRel * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
@@ -140,7 +142,8 @@ internal static class ReconComparison
     {
         BRepCheck_Analyzer an = new(S);
         SortedSet<string> aFaults = [];
-        foreach (TopAbs_ShapeEnum T in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX })
+        TopAbs_ShapeEnum[] aTypes = [TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX];
+        foreach (TopAbs_ShapeEnum T in aTypes)
         {
             for (TopExp_Explorer exp = new(S, T); exp.More(); exp.Next())
             {
@@ -150,7 +153,8 @@ internal static class ReconComparison
                     {
                         if (st != BRepCheck_Status.BRepCheck_NoError)
                         {
-                            aFaults.Add(T.ToString().Replace("TopAbs_", "") + ":" + st.ToString().Replace("BRepCheck_", ""));
+                            aFaults.Add(T.ToString().Replace("TopAbs_", "") + ":"
+                                        + st.ToString().Replace("BRepCheck_", ""));
                         }
                     }
                 }
@@ -188,7 +192,8 @@ internal static class ReconComparison
         bool ok1 = new BRepCheck_Analyzer(aNative).IsValid(), ok2 = new BRepCheck_Analyzer(aMine).IsValid();
         if (ok1 != ok2)
         {
-            d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine)) + (ok1 ? "" : " native " + Faults(aNative)));
+            d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine))
+                  + (ok1 ? "" : " native " + Faults(aNative)));
         }
         Bnd_Box b1 = new(), b2 = new();
         BRepBndLib.AddOptimal(aNative, ref b1, false, false);
@@ -201,7 +206,8 @@ internal static class ReconComparison
             double[] e = [x1 - x2, y1 - y2, z1 - z2, X1 - X2, Y1 - Y2, Z1 - Z2];
             if (e.Any(x => Math.Abs(x) > 1.0e-4 * aDiag))
             {
-                d.Add($"box ({x1:G6} {y1:G6} {z1:G6} {X1:G6} {Y1:G6} {Z1:G6}) | ({x2:G6} {y2:G6} {z2:G6} {X2:G6} {Y2:G6} {Z2:G6})");
+                d.Add($"box ({x1:G6} {y1:G6} {z1:G6} {X1:G6} {Y1:G6} {Z1:G6})"
+                      + $" | ({x2:G6} {y2:G6} {z2:G6} {X2:G6} {Y2:G6} {Z2:G6})");
             }
         }
 

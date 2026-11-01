@@ -10,8 +10,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class ReconstructionNativeTests
 {
     /// <summary>
-    /// The differences attributed, case by case (decision 10706): the comparison's lines expected, or null when native's
-    /// result is not a solid to compare with.
+    /// The differences attributed, case by case (decision 10706): the comparison's lines expected, or null when
+    /// native's result is not a solid to compare with.
     /// </summary>
     private static readonly Dictionary<string, (string Why, string[]? Lines)> KnownDifferences = new()
     {
@@ -37,8 +37,9 @@ public class ReconstructionNativeTests
     [Fact]
     public void TheRecordingHasTheCases()
     {
-        // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, a compound, pyramids, failures
-        Assert.Equal(101, ReconRecordings.Cases.Count);
+        // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, voids, a compound,
+        // pyramids, failures
+        Assert.Equal(103, ReconRecordings.Cases.Count);
         Assert.All(ReconRecordings.Cases.Values, c => Assert.True(c.Done, c.Name));
         Assert.All(ReconRecordings.Cases.Values, c => Assert.NotNull(c.Result));
     }
