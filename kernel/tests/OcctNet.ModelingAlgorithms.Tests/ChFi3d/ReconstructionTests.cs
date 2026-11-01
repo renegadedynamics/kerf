@@ -50,6 +50,12 @@ public class ReconstructionTests
         Assert.Equal(TopAbs_SOLID, aMerged.First().ShapeType());
         Assert.Equal(7, ReconComparison.Count(aMerged.First(), TopAbs_FACE));
         Assert.Equal(1.0e6 - (100.0 - 25.0 * Math.PI) * 100.0, ReconComparison.Volume(aMerged.First()), 6);
+        // the solid and its shell are split too, as the HBuilder answers (decision 11207: BRepFilletAPI's history)
+        Assert.True(aRun.Builder.IsSplit(aSolid, TopAbs_IN));
+        Assert.True(aRun.Builder.Splits(aSolid, TopAbs_IN).First().IsSame(aMerged.First()));
+        TopoDS_Shape aShell = aDS.Shape(14);
+        Assert.Equal(TopAbs_SHELL, aShell.ShapeType());
+        Assert.Single(aRun.Builder.Splits(aShell, TopAbs_IN));
         Assert.Empty(aRun.Builder.Merged(aSolid, TopAbs_OUT));
         Assert.Empty(aRun.Builder.Merged(aSolid, TopAbs_ON));
         Assert.True(new BRepCheck_Analyzer(aRun.Result).IsValid());

@@ -22,14 +22,6 @@ public class ReconstructionNativeTests
         // a radius larger than the cube: native says done, but its result is degenerate (negative volume, an area of
         // -6e29, B-spline faces of 30 units on a cube of 10); build123d.NET rejects it. Nothing to compare.
         ["fail_cube_radius_6"] = ("native's result is degenerate", null),
-        // blend/complex A1 is "TEST INCOMPLETE" in OCCT (OCC22817): native's result fails BRepCheck (a sub-shape badly
-        // oriented) and its face on surface 7 has a negative area (-6.8). The reconstruction builds no face on that
-        // surface (BOPAlgo_BuilderFace finds no area in its edges) and its result is valid: the volumes differ.
-        ["complex_A1"] = ("native's result is invalid (OCC22817)",
-        [
-            "volume 7392.81961 | 7777.02287", "area 5239.85424 | 5246.65513", "TopAbs_FACE 16 | 15",
-            "valid False | True native {FACE:BadOrientationOfSubshape}", "NewFaces(7) [BSplineSurface -6.80089] | []",
-        ]),
         // a Bezier face cut: TopOpeBRepBuild's pieces are on a B-spline copy of its surface, the reconstruction's on
         // the face's Bezier surface itself. Same geometry.
         ["complex_A2"] = ("native's pieces of a Bezier face are B-splines",
@@ -46,17 +38,28 @@ public class ReconstructionNativeTests
             "volume 993.213482 | 996.296576", "area 686.601963 | 691.226504", "TopAbs_SHELL 1 | 2", "TopAbs_EDGE 37 | 39",
             "TopAbs_VERTEX 22 | 24", "valid True | False {FACE:UnorientableShape}",
             "Modified(F2) [Cylinder -1.00575E-14, Cylinder -1.85438E-14] | [Cylinder -1.00575E-14, Cylinder 4.62454]",
+            "Modified(So1) [993.213] | [996.297]",
         ]),
-        // a box of 10, its top edges filleted with a radius of 6, more than half its width (unit 7N2's case): native
-        // says done, but two of its corner faces have negative areas (degenerate B-spline surfaces) and its result
-        // fails BRepCheck (BadOrientationOfSubshape, IntersectingWires: the fillets cross on the top face). The
-        // reconstruction builds no face on those two surfaces; its result has native's IntersectingWires (decision
-        // 11101).
-        ["b3d_fail_box_top_edges_r6"] = ("native's result is degenerate (radius over half the width)",
+        // a degenerate fillet face (Draw's blend/simple W4): the face builder takes its loop for a hole, and the
+        // reconstruction builds the face on it as the HBuilder does (decision 11204); native's optimal box reaches
+        // 0.04 lower than its own face (its surface's bounds), the rest is equal
+        ["corpus_simple_W4"] = ("native's box of a degenerate fillet face",
+                                ["box (-1E-07 -0.071733 -0.0410123 2.98586 1 1) | (-1E-07 -0.071733 -1E-07 2.98586 1 1)"]),
+        // a Bezier face the fillet runs past (its curve's pcurve leaves [0, 1]): native's piece is a B-spline (the
+        // surface extended), the reconstruction's keeps the Bezier surface with the pcurve outside its domain:
+        // UnorientableShape (decision 11208). Not fixed: it needs the face's surface extended.
+        ["corpus_simple_V7"] = ("a Bezier face the fillet runs past",
         [
-            "volume 899.618661 | 996.763348", "area 576.611615 | 622.796447", "TopAbs_FACE 12 | 10",
-            "NewFaces(9) [BSplineSurface -23.7494] | []", "NewFaces(10) [BSplineSurface -22.4354] | []",
+            "volume -19024699.5 | -19024861.2", "area 1645676.11 | 1645677.82", "valid True | False {FACE:UnorientableShape}",
+            "Modified(F3) [BSplineSurface 417684] | [BezierSurface 417685]",
         ]),
+        ["corpus_tolblend_simple_C5"] = ("a Bezier face the fillet runs past",
+        [
+            "volume 288412.413 | 288387.989", "area 43290.4608 | 43288.8488", "valid True | False {FACE:UnorientableShape}",
+            "Modified(F1) [BSplineSurface 10426.6] | [BezierSurface 10426.1]",
+            "Modified(F3) [BSplineSurface 9319.44] | [BezierSurface 9318.24]",
+        ]),
+        ["corpus_bug32929"] = ("the dump holds shapes not in the input", null),
     };
 
     public static TheoryData<string> CaseNames()
@@ -74,7 +77,7 @@ public class ReconstructionNativeTests
     {
         // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, voids, a compound,
         // pyramids, failures, blend/complex (the shapes in the dataset)
-        Assert.Equal(129, ReconRecordings.Cases.Count);
+        Assert.Equal(138, ReconRecordings.Cases.Count);
         Assert.All(ReconRecordings.Cases.Values, c => Assert.True(c.Done, c.Name));
         Assert.All(ReconRecordings.Cases.Values, c => Assert.NotNull(c.Result));
     }
@@ -101,7 +104,7 @@ public class ReconstructionNativeTests
 
     [Theory]
     [InlineData("pyramid_base_edges", "{FACE:UnorientableShape WIRE:SelfIntersectingWire}")]
-    [InlineData("b3d_fail_box_top_edges_r6", "{FACE:IntersectingWires}")]
+    [InlineData("b3d_fail_box_top_edges_r6", "{FACE:BadOrientationOfSubshape FACE:IntersectingWires}")]
     public void InvalidWhereNativeIs(string theName, string theFaults)
     {
         // unit 7N2's two invalid results end to end (decision 1125): from native's data structure the reconstruction

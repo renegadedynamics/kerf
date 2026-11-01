@@ -502,6 +502,27 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
                 }
             }
+            // the input's solids (unit 7R3, decision 11207): IsDeleted, and the faces of the solids Modified gives
+            using var aSolids = new N.TopTools_IndexedMapOfShape();
+            N.TopExp.MapShapes(theInput, N.TopAbs_ShapeEnum.TopAbs_SOLID, aSolids);
+            for (int i = 1; i <= aSolids.Extent(); i++)
+            {
+                using N.TopoDS_Shape S = aSolids.FindKey(i);
+                using N.TopTools_ListOfShape aL = aMaker.Modified(S);
+                List<int> aSolidFaces = [];
+                foreach (N.TopoDS_Shape aSo in aL)
+                {
+                    using var aSoFaces = new N.TopTools_IndexedMapOfShape();
+                    N.TopExp.MapShapes(aSo, N.TopAbs_ShapeEnum.TopAbs_FACE, aSoFaces);
+                    for (int j = 1; j <= aSoFaces.Extent(); j++)
+                    {
+                        using N.TopoDS_Shape aFace = aSoFaces.FindKey(j);
+                        aSolidFaces.Add(aResFaces.FindIndex(aFace));
+                    }
+                }
+                GC.KeepAlive(aL); // decision 1109: the list outlives its native iterator
+                aHistory["So" + i] = (aMaker.IsDeleted(S), [.. aSolidFaces]);
+            }
             return new Outcome(null, aStatus, BooleanOracleTests.ReadPort(aText), aHistory);
         }
         catch (N.OcctException e)
@@ -599,6 +620,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 {
                     aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
                 }
+            }
+            NCollection_IndexedMap<TopoDS_Shape> aSolids = Map(theInput, TopAbs_SOLID);
+            for (int i = 1; i <= aSolids.Extent(); i++)
+            {
+                aHistory["So" + i] = (aMaker.IsDeleted(aSolids[i]),
+                                      [.. aMaker.Modified(aSolids[i]).SelectMany(x => Map(x, TopAbs_FACE)).Select(x => aResFaces.FindIndex(x))]);
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }

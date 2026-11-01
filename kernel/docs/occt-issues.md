@@ -1760,3 +1760,12 @@ for the hang in `chamf` (decision 11012).
 | BRepTest_ChamferCommands.cxx, `chamf` | When an edge is followed by a face and fewer than two more words (`chamf r s e f 1`), neither branch advances `i` and the `while (i + 1 < narg)` loop never ends | Draw-lite stops reading the words there (decision 11012); no corpus case reaches it |
 | BRepTest_FilletCommands.cxx, `buildevol` and `blend` | `Rake`/`Rakk` are deleted only after a Build that returns | On an exception the maker stays; `checkhist` then says "Active Builder Not Done" (reproduced) |
 | Corpus cases that depend on the reconstruction's order (not OCCT bugs, for unit 7R) | blend/complex/G8 and bugs/modalg_7/bug27711_3 name the edges of a fillet's result by `explode` index for a second fillet | The reconstruction's faces and edges come in another order (decision 1114), so another edge is filleted and `blend` fails |
+
+## Phase 7: unit 7R3, the reconstruction's tail
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d (blend/simple Y1) | A fillet ending exactly at a vertex is recorded as a new point, with an interference at the edge's end whose transition says the edge is OUT | The reconstruction takes the point for the vertex and leaves the edge whole (decision 11203) |
+| ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 11206) |
+| TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 11208) |
+| BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |

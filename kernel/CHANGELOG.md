@@ -1382,3 +1382,12 @@ Phase 7 (part): the public fillet and chamfer API (unit 7N3).
   `tolblend`'s tolerance; `encoderegularity` rebinds the variables sharing the shape. 883 corpus cases newly runnable
   (799 with data): OK 723, BAD 34, IMPROVEMENT 8, FAILED 34, all attributed (mostly the reconstruction's invalid
   results).
+
+Phase 7 (part): the reconstruction's tail (unit 7R3).
+
+- Fixed: the band a fillet removes from a face whose seam it crosses (box common sphere, cylinder T, OCC1077,
+  OCC426); fillets ending at a vertex given as a point; fillet sections overflowing an edge; fillet faces whose loop
+  reads as a hole; zero-length curve edges; the input solid's history (`Modified` and `IsDeleted` of the solid, as
+  native's).
+- 7N3's oracle: 1,252 of 1,255 primitive runs native's (1,220 before), the GTests' inputs 7 of 7, histories of solids
+  compared; the fillet corpus: OK 736 (723), FAILED 20 (34), all attributed.

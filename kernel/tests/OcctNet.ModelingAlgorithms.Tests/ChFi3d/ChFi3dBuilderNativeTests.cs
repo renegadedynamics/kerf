@@ -310,7 +310,7 @@ public class ChFi3dBuilderNativeTests
     /// <summary>
     /// Cases whose native result is degenerate (faces of negative area): not compared with it (decision 1125).
     /// </summary>
-    private static readonly HashSet<string> NativeDegenerate = ["b3d_fail_box_top_edges_r6"];
+    private static readonly HashSet<string> NativeDegenerate = []; // b3d_fail_box_top_edges_r6 is native's since unit 7R3 (decision 11204)
 
     [Theory]
     [MemberData(nameof(CaseNames))]

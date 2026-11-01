@@ -158,11 +158,12 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         // viewer commands and stepread. encoderegularity rebinding the variables (decision 11011): OK 719, FAILED 38.
         // The frozen ConstrainedFilling surface in ChFi3d_Builder_2's PerformSetOfKGen (a port bug, fixed in src by the
         // unit): OK 723, FAILED 34. Unit 7R3's seam band (decision 11201): OK 728, FAILED 29 (buildevol F7, F8, simple K2,
-        // K3, bug28828_4 pass). Every failure is attributed (KnownFailures).
+        // K3, bug28828_4 pass). Its points at edge ends, overflowing sections and hole-like fillet loops (11203-11206):
+        // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures).
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(883, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 728, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 736, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
@@ -172,18 +173,9 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
         ["blend/buildevol/J5"] = "reconstruction: shell not closed",
-        ["blend/simple/V7"] = "reconstruction: face unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["blend/simple/W4"] = "reconstruction: shell not closed",
-        ["blend/simple/Y1"] = "reconstruction: shell not closed; area 29449.3 for 61327.9 (faces missing)",
+        ["blend/simple/V7"] = "reconstruction (7R3, decision 11208): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
         ["blend/tolblend_buildvol/A9"] = "reconstruction: shell not closed; area 35767 for 33798.1",
-        ["blend/tolblend_simple/C4"] = "reconstruction: shell not closed; area 1364.29 for 6118.46 (faces missing)",
-        ["blend/tolblend_simple/C5"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
-        ["blend/tolblend_simple/C7"] = "reconstruction: shell not closed; area 1.79673e+06 for 2.75048e+06 (faces missing)",
-        ["blend/tolblend_simple/C8"] = "reconstruction: shell not closed; area 669358 for 1.85726e+06 (faces missing)",
-        ["bugs/modalg_7/bug27711_2"] = "reconstruction: face unorientable, edge InvalidRange (OCCT's TODO expects other faults)",
-        ["bugs/modalg_8/bug32929"] = "reconstruction: shell not closed; area 6341.42 for 13435.4",
-        ["bugs/moddata_2/bug354_1"] = "reconstruction: shells not closed, face unorientable, edge InvalidRange; area 117.434 for 593.527",
-        ["bugs/moddata_2/bug354_2"] = "reconstruction: shells not closed, face unorientable, edge InvalidRange; area 115.433 for 589.268",
+        ["blend/tolblend_simple/C5"] = "reconstruction (7R3, decision 11208): a Bezier face the fillet runs past keeps its surface; native extends it as a B-spline",
         ["chamfer/dist_angle_sequence/A5"] = "reconstruction: shell not closed after a step; then faces not found by position",
         ["chamfer/dist_angle_sequence/B8"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",
         ["chamfer/dist_angle_sequence/B9"] = "reconstruction: faces unorientable, edges InvalidCurveOnSurface and SameParameter flag",

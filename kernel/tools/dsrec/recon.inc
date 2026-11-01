@@ -113,10 +113,23 @@ static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput)
     OS << "generated E " << i << " " << aList(theMk.Generated(aIE(i))) << "\n";
   for (int i = 1; i <= aIV.Extent(); i++)
     OS << "generated V " << i << " " << aList(theMk.Generated(aIV(i))) << "\n";
+  // unit 7R3: the history of the input's solids (IsDeleted, Modified as indices in MapShapes(result, SOLID))
+  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aIS, aRS;
+  TopExp::MapShapes(theInput, TopAbs_SOLID, aIS);
+  TopExp::MapShapes(aRes, TopAbs_SOLID, aRS);
+  for (int i = 1; i <= aIS.Extent(); i++)
+  {
+    const NCollection_List<TopoDS_Shape>& L = theMk.Modified(aIS(i));
+    OS << "msolid " << i << " " << (theMk.IsDeleted(aIS(i)) ? 1 : 0) << " " << L.Extent();
+    for (NCollection_List<TopoDS_Shape>::Iterator it(L); it.More(); it.Next())
+      OS << " " << aRS.FindIndex(it.Value());
+    OS << "\n";
+  }
   return OS.str();
 }
 
 static void RecordComplexCases(const char* theDataDir);
+static void RecordCorpusCases(const char* theDataDir);
 
 static void RecordReconCases(const char* theDataDir)
 {
@@ -471,6 +484,7 @@ static void RecordReconCases(const char* theDataDir)
   if (theDataDir != nullptr)
   {
     RecordComplexCases(theDataDir);
+    RecordCorpusCases(theDataDir);
   }
 }
 
@@ -518,4 +532,55 @@ static void RecordComplexCases(const char* theDataDir)
                 {{9, 3, -1}, {7, 3, -1}, {5, 3, -1}, {3, 3, -1}, {1, 3, -1}, {2, 3, -1}, {4, 3, -1}, {6, 3, -1},
                  {8, 3, -1}});
   RecordComplex(theDataDir, "complex_G2", "CFI_pro14550.rle", 1, {{1, 5, -1}, {3, 5, -1}, {4, 5, -1}, {2, 5, -1}});
+}
+
+// unit 7R3: corpus cases that failed end to end with unit 7N3 (DrawFilletCorpusTests.KnownFailures), recorded as Draw's
+// blend makes them (its tolerances; .draw files are BRep text after a two-line header) to see whether the
+// reconstruction alone reproduces native's result from native's data structure
+static TopoDS_Shape ReadData(const char* theDataDir, const char* theFile)
+{
+  std::ifstream anIn(std::string(theDataDir) + "/brep/" + theFile, std::ios::binary);
+  std::stringstream aText;
+  aText << anIn.rdbuf();
+  std::string s = aText.str();
+  if (s.rfind("DBRep_DrawableShape", 0) == 0)
+  {
+    s = s.substr(s.find("CASCADE Topology"));
+  }
+  std::istringstream aStream(s);
+  TopoDS_Shape       S;
+  BRep_Builder       B;
+  BRepTools::Read(S, aStream, B);
+  return S;
+}
+
+static void RecordCorpus(const char* theDataDir, const char* theName, const char* theFile, double theScale,
+                         const std::vector<Edge>& theEdges)
+{
+  TopoDS_Shape S = ReadData(theDataDir, theFile);
+  if (S.IsNull())
+  {
+    std::fprintf(stderr, "dsrec: cannot read %s\n", theFile);
+    return;
+  }
+  if (theScale != 1.0)
+  {
+    S = Scaled(S, theScale);
+  }
+  gDrawParams = true;
+  Record(theName, S, false, theEdges);
+  gDrawParams = false;
+}
+
+static void RecordCorpusCases(const char* theDataDir)
+{
+  RecordCorpus(theDataDir, "corpus_simple_W4", "CCV_1_c12gsf.rle", 1, {{2, 0.2, -1}, {1, 0.2, -1}});
+  RecordCorpus(theDataDir, "corpus_simple_Y1", "CCV_1_n12gsq.rle", 1, {{7, 10, -1}});
+  RecordCorpus(theDataDir, "corpus_simple_V7", "8_J1.draw", 1000, {{3, 50, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C4", "CFI_11_a1few.rle", 5, {{17, 10, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C5", "CFI_11_a2fex.rle", 5, {{7, 50, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C7", "CFI_11_c1ffa.rle", 5, {{1, 40, -1}});
+  RecordCorpus(theDataDir, "corpus_tolblend_simple_C8", "CFI_11_d1ffc.rle", 5, {{8, 100, -1}});
+  RecordCorpus(theDataDir, "corpus_bug32929", "bug32929.brep", 1, {{8, 1, -1}});
+  RecordCorpus(theDataDir, "corpus_bug354_1", "OCC354a.brep", 1, {{18, 2, -1}});
 }
