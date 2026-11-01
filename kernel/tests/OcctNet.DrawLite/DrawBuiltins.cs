@@ -82,6 +82,9 @@ internal static class DrawBuiltins
         GeometryTestCurveCommands.Register(theInterpreter);
         GeomliteTestAPI2dCommands.Register(theInterpreter);
         BRepTestOtherCommands.Register(theInterpreter);
+        BRepTestFeatureCommands.RegisterOffsetCommands(theInterpreter);
+        BRepTestDraftAngleCommands.Register(theInterpreter);
+        BRepTestFilletCommands.RegisterRollingBallCommands(theInterpreter);
         ViewerTestCommands.Register(theInterpreter);
         DrawSourceFiles.Register(theInterpreter);
         // unit 7D: the helix commands

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Bento.Collections;
+using OcctNet.ModelingData.Tests;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -9,7 +10,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// parallels) and horizontal ones (faces between two parallels), on square and L-shaped spines given as a wire or a
 /// face, open and solid. The results are checked valid, with their exact areas and volumes; the caller's frozen spine
 /// and profile are never written. Profiles with slanted parts are swept by BRepFill_Pipe (unit 5S2) and compared with
-/// native values; the volume mode throws Standard_NotImplemented. OCCT V8_0_1 has no GTests for these classes, and
+/// native values; the volume mode (unit 7G) builds with BRepFill_AdvancedEvolved. OCCT V8_0_1 has no GTests for these classes, and
 /// native BRepOffsetAPI_MakeEvolved isn't bound for the oracle (tools/evorec records its values).
 /// </summary>
 public class BRepFill_EvolvedTests
@@ -193,13 +194,29 @@ public class BRepFill_EvolvedTests
     }
 
     [Fact]
+    public void Volume_mode_builds_the_evolved_volume_and_keeps_the_inputs()
+    {
+        // A square spine and a vertical segment on its edge: the volume is the square's 10x10x1 slab (unit 7G).
+        TopoDS_Wire aSpine = Square();
+        TopoDS_Wire aProfile = Polygon(false, 5, 0, 0, 5, 0, 1);
+        ShapeSnapshot aSpineSnap = ShapeSnapshot.Of(aSpine);
+        ShapeSnapshot aProfileSnap = ShapeSnapshot.Of(aProfile);
+        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, GeomAbs_JoinType.GeomAbs_Arc, true, true, false, 1e-7, true);
+        aSpineSnap.AssertUnchanged(aSpine);
+        aProfileSnap.AssertUnchanged(aProfile);
+        Assert.True(aMaker.IsDone());
+        TopoDS_Shape aResult = aMaker.Shape();
+        Assert.False(aResult.IsNull());
+        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.Equal(100.0, Volume(aResult), 1.0e-6);
+        Assert.Throws<Standard_TypeMismatch>(() => aMaker.Evolved());
+    }
+
+    [Fact]
     public void Unported_modes_throw()
     {
         TopoDS_Wire aSpine = Square();
         // (a slanted profile, swept by BRepFill_Pipe, works since unit 5S2: Slanted_profiles_are_swept_by_the_pipe)
-        // the volume mode needs BRepFill_AdvancedEvolved
-        Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
-                                                                                    GeomAbs_JoinType.GeomAbs_Arc, true, false, false, 1e-7, true));
         // only the arc join is implemented, as in OCCT
         Assert.Throws<Standard_NotImplemented>(() => new BRepOffsetAPI_MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
                                                                                     GeomAbs_JoinType.GeomAbs_Intersection));
