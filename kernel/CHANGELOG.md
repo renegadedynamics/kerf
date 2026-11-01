@@ -1115,3 +1115,7 @@ Phase 7 (part): Draw-lite's cheap gaps (unit 7W).
   attributed reasons (progress output, the viewer's mesh, phase 7's evolved volume mode). The four cases the new scan
   default exposed are fixed (bug29586) or attributed (bug23881 and bug29333_2: DRAWEXE's destructive Booleans;
   bug26034: native OCCT built with exceptions fails it too).
+
+- Corpus (unit 7W's follow-up): the Boolean corpus test run whole: 5,530 runnable, OK 4,095, BAD 129, 1,292 missing
+  data, 8 failing, all attributed (bugs/modalg_6/bug26393: DRAWEXE's destructive Booleans; bugs/modalg_7/bug83: the
+  port's section is about 6x slower than native's on two B-spline sheets).
