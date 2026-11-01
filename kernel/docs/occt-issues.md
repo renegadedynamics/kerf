@@ -1510,3 +1510,18 @@ ShapeProcess commands. The port reproduces each, unless the last column says oth
 | SWDRAW `splitface` | Prints ", " before every U value (`i > j` where `j > 1` is meant) | Reproduced |
 | SWDRAW `expshape` | Counts a seam twice per face | Reproduced |
 | SWDRAW `offset2dcurve` | On a C0 curve, Geom2d_OffsetCurve throws Standard_ConstructionError ("Offset on C0 curve") | Reproduced |
+
+## Phase 7: unit 7F, the 3D offset
+
+Found by porting BRepOffset_MakeOffset and the offset API, and by its oracle. The port reproduces each (`// OCCT` at
+the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_MakeOffset `TrimEdges` | `if (theNewEdges.Add(NE))` tests the index NCollection_IndexedMap::Add returns, never 0 | An edge already trimmed is trimmed again. Reproduced |
+| BRepOffset_BuildOffsetFaces `BuildSplitsOfFaces` | In the artificial case, `*pLFIm = aLFImages` when the face has no splits yet (`pLFIm` null) | An access violation natively; a NullReferenceException in the port. Not met by the oracle |
+| BRepOffset_MakeOffset (MakeLoops on the closing faces, `MakeMissingWalls`, `UpdateTolerance` with `Locked(false)`) | Writes into its input: new vertices on the closing faces' edges, the walls' pcurves on a thickened shell's edges, tolerances | Native changed its own input in 82 of the oracle's 724 runs; a second run on it differs. The port copies at the entry (decision 1030) |
+| BRepOffset_MakeOffset, the Arc join with Intersection on | Iterates shape-keyed maps by address (decision 1032) | The result's text varies from run to run natively (about 40 of the oracle's runs on primitives). The port's order is insertion order |
+| BRepOffset_MakeOffset, BRepOffsetAPI_MakeThickSolid | `IsDone()` with a null `Shape()` (open shells with nothing left to offset, a hollow sphere) | Reproduced (16 oracle runs); build123d.NET checks for it |
+| BSplCLib `AntiBoorScheme` through `RemoveKnot` (GeomLib::ExtendSurfByLength, the offset's face extension) | Steps outside its NCollection_LocalArray buffers, reading and writing the stack around them | Undefined natively (the tolerance test then fails); the port's `RemoveKnot` reports the removal impossible instead of throwing (decision 1034) |
+| BRepOffset_MakeOffset `SelfInter` | Throws Standard_NotImplemented | Never called. Reproduced |

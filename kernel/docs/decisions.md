@@ -10430,3 +10430,92 @@ Draw-lite. Numbers from 8701 are placeholders, renumbered on merge.
       `&Runtime.Tolerance` and `&Runtime.MaxTolerance`, which the translator sets in the context's resource manager.
       Draw-lite's `env(CSF_<name>Defaults)` lookup (SWDRAWShapeProcessCommands) is the model for other resource files a
       command reads.
+## Phase 7: unit 7F, the 3D offset
+
+BRepOffset_MakeOffset (its two files: `BRepOffset_MakeOffset.cs` and `BRepOffset_MakeOffset_1.cs`, the latter with the
+local class BRepOffset_BuildOffsetFaces of the Complete mode), BRepOffsetAPI_MakeOffsetShape and
+BRepOffsetAPI_MakeThickSolid. Numbers from 9201 are placeholders, renumbered on merge.
+
+1030. **Copy at entry in BRepOffset_MakeOffset** (decision 1005 applied). `MakeOffsetShape` and `MakeThickSolid` first
+      copy the caller's shape with `BRepTools_CopyAtEntry` (only when it holds frozen TShapes; a primitive's frozen
+      geometry is enough), map the closing faces (`AddFace`) and the faces with their own offsets (`SetOffsetOnFace`)
+      onto the copy, run OCCT's code unchanged on the copy (`InternalMakeOffsetShape`, `InternalMakeThickSolid`; the
+      thick solid calls the former, as OCCT's does), and end with `Finish`, so the copied sub-shapes left unchanged are
+      the caller's own again in the result (a hollowed box keeps the caller's bottom face; its side faces, whose edges
+      the closing face's loops give new vertices, are changed copies). `MakeMissingWalls`' pcurves, `UpdateTolerance`'s
+      `Locked(false)` and tolerances, the six `Free(true)` sites and MakeLoops' vertex substitutions on the closing
+      faces' edges all act on the copy. The copy is made once per `Initialize`.
+      - **The history answers for the caller's sub-shapes.** `Generated` and `Modified` look the shape up through its
+        copy and give back what stands in the result for each image (`Final`), then filter by the result as OCCT
+        does. `IsDeleted` is false when the result holds the shape or its copy: OCCT keeps its own input sub-shapes in
+        a thickened or thick result, changed in place (a thickened face's edges get the walls' pcurves), where the
+        port's result holds their changed copies. A sub-shape OCCT replaces in its input (a vertex swapped on an edge)
+        is deleted on both sides.
+      - `ClosingFaces()` returns the caller's faces; `OffsetFacesFromShapes()` and `OffsetEdgesFromShapes()` return a
+        copy of the image whose roots are the caller's sub-shapes and whose images are frozen shapes of the result.
+        Ported code reads `InternalClosingFaces`, `InternalOffsetFacesFromShapes`, `InternalOffsetEdgesFromShapes`,
+        `InternalShape`, `InternalGenerated`, `InternalModified`, `InternalCopied` and `InternalFinal` (MakeThickSolid's
+        `Modified` uses them). `InitShape()` is the caller's shape. `GetAnalyse` stays internal (decision 1007), so the
+        tangent treatment's faces never need freezing.
+      - Tested by the frozen-input tests (inputs unchanged, results and history frozen, the caller's faces kept, the
+        algorithm reused through `Initialize`) and by every oracle run (each port input checked unchanged; native
+        wrote into its own input in 82 of the 724 runs).
+1031. **The public API.** BRepOffset_MakeOffset is a working object (decision 21) with OCCT's methods; `Shape()`,
+      `Generated`, `Modified` and `GetBadShape` freeze what they hand out (`Generated`/`Modified` return
+      `IBentoList<TopoDS_Shape>`, freezing the whole result first, decision 414). `MakeOffsetShape`, `MakeThickSolid` and
+      `CheckInputData` take a `Message_ProgressRange` (default). BRepOffsetAPI_MakeOffsetShape and MakeThickSolid are
+      makers over BRepBuilderAPI_MakeShape: their `Generated`/`Modified` are `InternalGenerated`/`InternalModified`
+      overrides, `IsDeleted` an override; `MakeOffset()` returns the underlying algorithm. As in OCCT, a run reported
+      done may give a null shape (16 of the oracle's runs: data/occ's shells and a hollow sphere), and `Shape()` of a
+      run not done throws StdFail_NotDone. OCCT's `SelfInter` (never called) throws Standard_NotImplemented.
+1032. **Iteration order.** OCCT iterates several shape-keyed NCollection_DataMaps by the shapes' addresses: MapSF in
+      BuildOffsetByArc's update of the images, ToContext's `Created`, UpdateFaceOffset's copy of the face offsets,
+      CorrectConicalFaces' apexes, and in BuildOffsetFaces `myOEImages` (FilterEdgesImages, FillHistory),
+      `myArtInvalidFaces`, RemoveInvalidSplitsFromValid's `aDMFF`, and maps of faces and vertices (FindInvalidEdges,
+      GetInvalidEdges, GetInvalidEdgesByBounds' `theMECheckExt`). The port iterates them in insertion order
+      (`// OCCT.NET:` at each site). Native's result varies from run to run where these orders matter: the Arc join in
+      the Complete mode (Intersection on) gave a different BRep text from one native run to the next in about 40 of
+      the oracle's runs on primitives; the port matched one of native's variants or native's geometry (counts, volume,
+      area, centroid, validity) in all of them. The port is deterministic.
+1033. **Value semantics.** BRepOffset_Offset is a class in the port, a value in C++ (decision 1009): MakeOffset binds each
+      offset once in MapSF and never changes a copy (ToContext reads its copy and unbinds the original). In
+      BRepOffset_BuildOffsetFaces the lists, maps and indexed maps OCCT holds by value inside other maps are copied
+      wherever OCCT copies them (`Bind` of a local list reused in a loop, `aMECV = aME`, `aDMEFAll = theDMEF` with its
+      lists, `myOEImages.Bind(aE, aLENew)`, the empty list OCCT binds into two maps); `NCollection_List.Append(list)`
+      moves, as OCCT's does. OCCT's templates `TakeModified`/`AddToContainer` dispatch on the container's type at run
+      time.
+1034. **BSplCLib RemoveKnot and AntiBoorScheme's out-of-range steps.** On data/occ's MODERN shapes the offset's
+      `GeomLib::ExtendSurfByLength` removes knots where OCCT's `AntiBoorScheme` steps outside its local arrays, reading
+      and writing the stack around them (NCollection_LocalArray); its tolerance test then fails. The port's bounded
+      spans threw IndexOutOfRangeException out of the offset. `RemoveKnot` now treats such a removal as impossible
+      (returns false), which is what native almost surely does; logged in occt-issues.md. The port's results agree with
+      native's on every such case of the oracle.
+1035. **The oracle** (`BRepOffsetAPIMakeThickSolidOracleTests`, native through build123d.NET's bindings): MakeOffsetShape
+      (both joins, with and without intersection, RemoveIntEdges), MakeThickSolid (build123d.NET's Hollow with one and
+      two openings, Offset3D with none and RemoveIntEdges, and without intersection), BRepOffset_MakeOffset with the
+      nine-argument `Initialize` (Thicken, OffsetCore) and the three-argument one (OffsetTopodsFace), both signs, on 18
+      primitives and Boolean results, 7 faces and shells, and data/occ's shapes up to 300 kB. Compared: the exception,
+      IsDone and Error(), the result's BRep text (bytes, Free masked, canonically, then against native's other runs),
+      and Generated/Modified/IsDeleted of every vertex, edge and face of the input (as indices in the result, or as
+      canonical keys). Native's input sub-shapes are mapped before its run, since native writes into its input.
+      **724 runs: 599 with a result (16 of them null after a reported success), 118 not done on both sides, 7 the same
+      exception (Standard_ConstructionError 6, Standard_NoSuchObject 1). Of the results (one run; the split moves a
+      little between runs because native's own result does), 426 byte-identical, 133 canonically identical, 39 attributed
+      to native varying (7 the same as one of native's variants, 32 native's geometry, decision 1032), and 1 attributed
+      to native varying on an invalid result whose volume native itself gives differently from run to run
+      (MODERN_MVCooker_1, hollow with arcs: counts and area equal). Histories: 426 identical, 133 canonically equal,
+      none different.** OCCT's GTests (BRepOffset_MakeOffset's 19 cases,
+      MakeThickSolid's 4) pass.
+1036. **For 7G, 7X and the Draw commands.**
+      - **7G (drafts, BiTgte):** BiTgte_Blend runs BRepOffset_Inter3d, MakeLoops and Tool on its own working shapes
+        (decision 1005's working tools); copy its input at the entry as 9201 does. BRepOffsetAPI_DraftAngle doesn't use
+        MakeOffset. BRepOffset_MakeOffset's `Internal*` forms show how to compose a history through the copy
+        (`Generated`/`Modified` through `Copied` then `Final`; `IsDeleted` through `Copied`).
+      - **Offset Draw commands** (BRepTest_OffsetCommands: `offsetparameter`, `offsetload`, `offsetonface`,
+        `offsetperform`, `offsetshape`, `mkoffset`, `thickshell`, `offsetshapesimple`): OCCT keeps a global
+        BRepOffset_MakeOffset between `offsetload` and `offsetperform`, so the Draw-lite context must hold it per
+        script; `offsetperform` runs `MakeThickSolid` when faces were loaded, else `MakeOffsetShape`, then reads
+        `Error()`. The corpus' OFFSETSHAPE procedure (decision 972) becomes runnable. Expect canonical rather than byte
+        agreement with the Arc join and Intersection on (9203).
+      - **7X:** build123d.NET's Hollow, Offset3D, Thicken, OffsetCore and OffsetTopodsFace calls are covered here; its
+        `ForwardSolid` fix-up after Offset3D is its own.
