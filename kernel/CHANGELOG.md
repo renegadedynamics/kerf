@@ -1128,3 +1128,16 @@ Phase 7 (part): helix (unit 7D).
 - Draw-lite: `setaxis`, `comphelix`, `helix`, `spiral`, `comphelix2`, `helix2`, `spiral2`; `vzfit` as a viewer no-op.
 - Tests: TKHelix's six GTests; `tools/helixrec` records native TKHelix on the helix grid's parameters (56 cases,
   all byte-identical, BRep text included). Corpus: the 56 helix cases are runnable: OK 54, BAD 2 (OCCT's own TODO).
+
+Phase 7 (part): the offset foundations (unit 7E).
+
+- BRepOffset but BRepOffset_MakeOffset: Analyse (edge types: convex, concave, tangent, mixed; the tangent faces'
+  treatment), Tool, Inter2d, Inter3d, Offset (offset faces, pipes and spheres), Interval, MakeLoops, SimpleOffset,
+  MakeSimpleOffset, the package (`Surface`, `CollapseSingularities`) and the enums. Also ChFi3d's package functions
+  (DefineConnectType, IsTangentFaces, ConcaveSide, NextSide, SameSide) with ChFiDS_TypeOfConcavity, and
+  TopOpeBRepTool_TOOL's `Nt`.
+- Copy at entry for the offset family (decision 8601): the makers copy a frozen input before OCCT's in-place writes,
+  so `Locked(false)` and `Free(true)` act on the copy, and they give back the caller's unchanged sub-shapes.
+  MakeSimpleOffset's solid mode and BRepOffset_Offset's pipes and spheres never write into a caller's shape.
+- Tests: `tools/offsetrec` records native Analyse, Offset and MakeSimpleOffset on 40 primitives, Boolean and fillet
+  results and data/occ shapes: 1,984 records, all byte-identical (two are the same exception).

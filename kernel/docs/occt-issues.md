@@ -1431,3 +1431,24 @@ code), unless the last column says otherwise.
 | HelixGeom_Tools `HelixGeom_Tools_Eval::Evaluate` | Sets error code 1 for a dimension other than 3, then writes three values anyway | Never reached (the dimension is always 3). Reproduced |
 | `helix2`, `spiral2` (BRepTest_HelixCommands.cxx) | The usage text for a wrong argument count names H and PF arguments the commands don't take | Text only. Reproduced |
 | helix/standard/D6, D7 | `CheckSpiral` compares lprops' centre and moments as strings, centre coordinates near 1e-15 included | OCCT's own TODO (OCC11111) on all platforms; BAD in Draw-lite as in DRAWEXE |
+
+## Phase 7: unit 7E, the offset foundations
+
+Found by porting BRepOffset (but MakeOffset) and ChFi3d.cxx. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| BRepOffset_Tool `IsOnSurface` (:577) | The sampling step is `(f - l)`, negative | Samples outside the curve's range. Reproduced |
+| BRepOffset_Tool `AngleWireEdge` (:931) | `Angle` is uninitialised when the edges aren't B-splines | Undefined natively; the port uses 0 |
+| BRepOffset_Tool `PutInBounds` (:113), `BuildPCurves` (:397) | The bounds are uninitialised when `FindPeriod` writes nothing; the pcurve can be null when `PutInBounds` dereferences it | Undefined natively; the port uses 0, and throws on the null curve |
+| BRepOffset_Tool `CheckBounds` (:3146) | `L.First()` on an empty list | Undefined in native release builds; the port throws Standard_NoSuchObject |
+| BRepOffset_Tool `Inter3D`, the closed-wire branch | Could loop forever if the edges don't chain | Looks unreachable (a built wire's Closed flag is never set). Reproduced |
+| BRepOffset_Inter2d `RefEdgeInter` ("keep Vmin") | `Remove` moves the iterators on, then the loop's `Next()` skips an element | A vertex after a removed one is kept. Reproduced |
+| BRepOffset_Inter2d `ExtentEdge` | `MinSurf` is replaced by a transformed copy, so `theSurf == MinSurf` never holds | The pcurve the 3D curve was built from is checked (and may be re-projected) too. Reproduced |
+| BRepOffset_MakeLoops (three places) | `NewTV->ChangePoints().Append(TV->ChangePoints())` moves the list | The replaced vertex loses its point representations, which matters only if it survives outside the images. Reproduced |
+| BRepOffset_Inter3d `ContextIntByInt` | `LOE` and `MV` are built and never used; on the vertex path `Generated(E)` gets a null edge | Harmless. Reproduced |
+| BRepOffset_SimpleOffset `FillVertexData` | A vertex with no offset edge divides by zero | Its new point is NaN. Reproduced |
+| BRepOffset_MakeSimpleOffset `GetSafeOffset` | Divides by `myMaxAngle`, which is 0 for a smooth shape | Infinite or NaN. Reproduced |
+| BRepOffset_MakeSimpleOffset `BuildMissingWalls` | `IsClosed` on a null shell when the quilt makes none (an edge in solid mode) | An access violation natively; Standard_NullObject in the port (decision 8606) |
+| BRepOffset_MakeSimpleOffset, solid mode | Writes the walls' pcurves into the input's free edges and raises their vertices' tolerances | A second run on the same input gives another result natively (decision 8606). The port copies at the entry (decision 8602), so the input is never written |

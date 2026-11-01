@@ -9971,3 +9971,112 @@ helix Draw commands. Numbers from 8501 are placeholders, renumbered on merge.
       near 1e-15 included, and which OCCT expects to fail on every platform). The plan expected 60 (section 1.6); the
       grid has 56 cases. The construction corpus test, whose sweep commands the helix cases use, runs them too (1,017
       runnable there now).
+
+## Phase 7: unit 7E, the offset foundations
+
+BRepOffset without BRepOffset_MakeOffset (Analyse, Tool, Inter2d, Inter3d, Offset, Interval, MakeLoops, SimpleOffset,
+MakeSimpleOffset, the package and the enums) in `src/OcctNet.ModelingAlgorithms/BRepOffset`, with ChFi3d's package
+functions and the TopOpeBRepTool pieces they reach. Numbers from 8601 are placeholders, renumbered on merge.
+
+8601. **Copy at entry for the offset family (the pilot's rule, plan 2.2).** OCCT's offset algorithms write into the
+      shapes they work on: tolerances (`UpdateTolerance`), pcurves (`MakeMissingWalls`), vertices and ranges of the
+      images, `Free(true)` before re-adding sub-shapes, and `Locked(false)` to unlock a shape before writing. A frozen
+      shape can't be unlocked: `Locked(false)` on it throws `Standard_ImmutableObject`. The rule:
+      - **A public maker of the family copies its caller's shape at the entry** when the shape holds frozen TShapes
+        (`BRepTools_CopyAtEntry`, or `BRepTools.ExactCopyForWrite` plus `KeepUnchanged`), and runs OCCT's code unchanged
+        on the copy, so that `Locked(false)`, `Free(true)` and every in-place write act on the copy (its TShapes are
+        unfrozen and not locked). At the end it gives back the caller's own sub-shapes wherever nothing changed,
+        composing the history through the copy, and freezes once, at publication; between steps ported code reads the
+        `Internal*` accessors. An unfrozen input (a ported caller's working shape) is not copied and is written as OCCT
+        writes it.
+      - **The working tools** (BRepOffset_Tool, Inter2d, Inter3d, MakeLoops, and BRepOffset_Offset's `Created` edges)
+        write in place into the offset's own working shapes (the AsDes and image edges, the faces it built, the copy of
+        the caller's shape), as BRepAlgo_Loop does (phase 5). Their remarks say those shapes must be unfrozen; a frozen
+        one throws `TopoDS_LockedShape` at the first write, never a silent change to a caller's shape.
+      - **Geometry** OCCT changes in place is changed on a copy (decision 974's rule).
+      - 7F applies it to BRepOffset_MakeOffset: copy the input at the entry of `MakeOffsetShape`/`MakeThickSolid`
+        (before the analysis), so that `MakeMissingWalls`' pcurves, `UpdateTolerance`'s `Locked(false)` and tolerances
+        (:4196–4290) and the six `Free(true)` sites act on the copy; then `KeepUnchanged`. 7G applies it to the drafts
+        (`BRepOffsetAPI_DraftAngle` frees and edits the modifier's result, which is the modifier's own, decision 973)
+        and BiTgte.
+8602. **The write-into-input audit of 7E's classes.**
+      - **BRepOffset_Analyse** never writes into the analysed shape. Its tangent-faces treatment (only with a face
+        offset map, decision 8603) sweeps prisms on the tangent edges, which in OCCT writes the prisms' pcurves into
+        those edges. The port's BRepPrimAPI_MakePrism sweeps a copy of a frozen base, so a frozen shape is untouched
+        (and the new faces hold copies of its edges, where OCCT's hold the edges); MakeOffset's copy is unfrozen and is
+        written as OCCT writes it.
+      - **BRepOffset_Tool**: `Inter3D`, `TryProject`, `BuildPCurves` (through PipeInter, InterOrExtent, Inter2d,
+        ExtentFace), `Inter2d`, `ExtentFace` and `EnLargeFace` with `UpDatePCurve` write pcurves, ranges, tolerances and
+        vertex parameters into the faces and edges given: all the offset's working shapes. `Inter2d`'s
+        `UpdateVertex(V, U, E)` needs E unfrozen even when nothing changes (the port's `ChangeCurves`).
+        `CorrectOrientation` only reorders the AsDes lists.
+      - **BRepOffset_Inter2d, Inter3d, MakeLoops**: vertices, parameters, pcurves, `Free(true)` and the merge of vertex
+        point representations (TShape casts) on the AsDes and image edges and on new vertices; `ExtentEdge` works on
+        `EmptyCopied()` edges. All working shapes.
+      - **BRepOffset_Offset**: the face constructor only reads the face, and writes into the `Created` edges and the
+        seams of its map (working shapes). The pipe constructors (Edge1, Edge2, FirstEdge, LastEdge) and the sphere
+        constructor (LEdge) write into the caller's edges (UpdateEdge, Range, SameRange, SameParameter, Degenerated,
+        BuildCurve3d, ShapeFix_Shape on their wire): if any holds frozen TShapes, all are copied together in one
+        `BRepTools_CopyAtEntry` (shared vertices stay shared) and the caller's unchanged vertices are given back; if none
+        is frozen (MakeOffset's and BiTgte's working edges), they are written in place.
+      - **BRepOffset_MakeSimpleOffset**: the offset shell is BRepTools_Modifier's (its immutable mode: the modifier is
+        the copy, decision 973). The solid mode writes into the input's free edges and vertices (the walls' pcurves,
+        `BuildCurves3d`, `ShapeFix_Edge.FixSameParameter`): `Perform` copies the input at the entry with
+        `BRepTools_CopyAtEntry(input, myReShape)` and finishes it on every exit; `Generated` maps through the copy. One
+        difference from OCCT: `Modified` of an input edge changed on its copy returns the changed copy, where OCCT,
+        which changes the edge in place, returns nothing.
+      - Tested: frozen inputs in each class's tests (`ShapeSnapshot` unchanged), and every input of the native
+        comparison (decision 8606) unchanged with its results frozen.
+8603. **BRepOffset_Analyse's API.** A working object (decision 21): `Type`, `Ancestors`, `Descendants` (null for none)
+      and `NewFaces` return its own lists, as OCCT's const references. `SetOffsetValue` and `SetFaceOffsetMap` (which
+      only MakeOffset calls) are internal, so a public caller gets results holding only its own shapes and nothing needs
+      publishing. The shapes the tangent treatment generates (`NewFaces`, `Generated`, `EdgeReplacement`) appear only
+      for MakeOffset, which must publish (freeze) them if 7F makes `GetAnalyse` public. `SetFaceOffsetMap` copies the
+      map, as OCCT assigns it. `Perform` doesn't clear the edge-type map, as OCCT's doesn't (`Clear` does).
+      BRepOffset_Interval is a value type with `WithFirst`/`WithLast`/`WithType` twins.
+8604. **ChFi3d's package functions without the fillet builder (plan 1.3).** `ChFi3d.cs` ports the whole of ChFi3d.cxx
+      (DefineConnectType, IsTangentFaces, ConcaveSide, both NextSide, SameSide, Correct2dPoint), which reaches only
+      `ChFi3d_Coefficient` of ChFi3d_Builder_0.cxx: that function alone is in `ChFi3d_Builder_0.cs`, an internal static
+      partial class named after the file, for 7N1 to extend. `ChFiDS_TypeOfConcavity` is ported here (7J ports the rest
+      of ChFiDS). TopOpeBRepTool_TOOL gains `Nt`, `NggeomF` (with the file's `FUN_ngF`) and `minDUV`, extending phase
+      5's file, so 7L needn't port `Nt`. `Nt`'s output is `ref`: OCCT leaves it unchanged on failure.
+8605. **Geometry changed on copies, and values OCCT leaves undefined.** BRepOffset_Tool's `PutInBounds` translates a
+      copy of a frozen pcurve; `EnlargeGeometry` sets an offset surface's new basis with `WithBasisSurface` (OCCT changes
+      the face's own surface in place), only when the basis changed. `BRepOffset.CollapseSingularities` changes a copy,
+      as OCCT does. OCCT reads uninitialised locals in Tool's `AngleWireEdge` (`Angle`) and `PutInBounds` (the bounds
+      when `FindPeriod` finds nothing); the port uses 0 (occt-issues.md). BRepOffset_Offset is a sealed class (a value
+      type in C++, held by value in `NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset>`): no ported site mutates a
+      copy separately, and 7F checks MakeOffset's sites.
+8606. **The native comparison** (tools/offsetrec, `BRepOffsetNativeTests`). build123d.NET doesn't bind BRepOffset's
+      classes, so a recorder runs native OCCT:
+      - BRepOffset_Analyse at the angles 0.01 and Precision::Angular: every edge's intervals and types, and `Explode` by
+        tangency;
+      - BRepOffset_Offset on every face (up to 30 per input), with both signs of a twentieth of the box diagonal;
+      - BRepOffset_MakeSimpleOffset with both signs, with and without the solid (inputs up to 30 kB).
+
+      It runs them on 15 shapes it builds (box, cylinder, two cones, sphere, torus, a B-spline face, a NURBS cylinder,
+      four Boolean results, two filleted boxes, three faces), recording their BRep text as the input, and on data/occ's
+      25 shapes up to 300 kB. The port reads each input frozen and follows the recording's headers (the offset values'
+      bits). **40 inputs, 1,984 records: 1,982 byte-identical (intervals' bits, BRep text with every column), 2 the same
+      exception.** The two: native's access violation on a null shell in MakeSimpleOffset's solid mode on an edge, the
+      port's Standard_NullObject, counted as decision 977 counts them. Over both angles the edge types are 1,064
+      convex, 159 concave, 997 tangential, 278 free boundaries and 100 other (seams); no input is mixed.
+      - **Native writes into its input, and the recording showed it.** When one input was shared by the four
+        MakeSimpleOffset runs, native's later runs carried what the earlier solid runs had written into the input's
+        free edges: the walls' pcurves (four extra surfaces and pcurves in the text) and raised vertex tolerances
+        (different approximated 3D curves). The port's results were those of a clean input. The recorder now gives
+        each run a fresh copy, read again from the input's text.
+8607. **For 7F and 7G.**
+      - Decision 8601's rule. The `Internal*` accessors: `BRepOffset_Offset.InternalFace`/`InternalGenerated`;
+        `BRepOffset_MakeSimpleOffset.InternalGetResultShape`/`InternalGenerated`/`InternalModified`; the analysis'
+        internal `SetOffsetValue`/`SetFaceOffsetMap`. The working tools take NCollection maps and lists (shape-keyed
+        maps with `TopTools_ShapeMapHasher.Instance`), with `out` or `ref` as the C++ writes them: Tool's `EnLargeFace`
+        and `ExtentFace` take `ref NF`, `CheckBounds` and `OrientSection` `out`, Inter2d's `ExtentEdge` `out NE`.
+      - Unexercised until MakeOffset runs them: Tool's ExtentFace, CorrectOrientation, PipeInter, InterOrExtent and
+        Inter3D's gluing path; Inter2d's ConnexIntByInt/InVert; Inter3d's FaceInter, CompletInt, ConnexIntBy* and
+        ContextIntByInt; Offset's degenerated-cone branch. 7F's oracle (MakeThickSolid, MakeOffsetShape) is their test.
+      - tools/offsetrec records Analyse, Offset's faces and MakeSimpleOffset on generated or data/occ shapes, each
+        MakeSimpleOffset run on a fresh input. Extend its `Record` for what isn't bound: MakeOffset's `GetAnalyse`, and
+        BRepOffset_Offset's pipe and sphere constructors.
+      - Inter2d's ConnexIntByInt iterates a shape-keyed map (MVE) in insertion order, where OCCT's order is by address
+        (an `// OCCT.NET:` comment). It decides only the order in which edges are extended and bound.

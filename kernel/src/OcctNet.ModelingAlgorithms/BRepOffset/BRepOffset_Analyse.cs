@@ -25,7 +25,9 @@ namespace Occt;
 /// map, which only the 3D offset sets: <see cref="SetFaceOffsetMap"/> and <see cref="SetOffsetValue"/> are internal.
 /// It builds prisms on the tangent edges (<see cref="NewFaces"/>, <see cref="Generated"/>, <see cref="EdgeReplacement"/>),
 /// whose sweep writes pcurves into those edges, as OCCT's does; BRepOffset_MakeOffset analyses its own copy of the
-/// caller's shape (the offset family's copy at entry, unit 7E), so the edges written are the copy's.
+/// caller's shape (the offset family's copy at entry, unit 7E), so the edges written are the copy's. On a frozen shape
+/// BRepPrimAPI_MakePrism sweeps a copy of the edges instead (its own copy at entry), so the shape is never written, but
+/// the new faces then hold copies of the tangent edges where OCCT's hold the edges themselves.
 /// </para>
 /// </remarks>
 public sealed class BRepOffset_Analyse
