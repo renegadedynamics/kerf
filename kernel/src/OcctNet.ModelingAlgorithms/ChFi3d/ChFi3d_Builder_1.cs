@@ -13,7 +13,7 @@ public partial class ChFi3d_Builder
         throw new NotImplementedException("7N2: not ported yet");
     }
 
-    internal IChFi3d_Reconstruction Builder() => myCoup;
+    internal ChFi3d_Reconstruction Builder() => myCoup;
 
     public void SetParams(double Tang, double Tesp, double T2d, double TApp3d, double TolApp2d, double Fleche)
     {

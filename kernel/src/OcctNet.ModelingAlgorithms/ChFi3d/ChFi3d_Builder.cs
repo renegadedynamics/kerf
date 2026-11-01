@@ -30,7 +30,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>The seam</b> (decision 992): OCCT's <c>myCoup</c>, a <c>TopOpeBRepBuild_HBuilder</c>, is an
-/// <see cref="IChFi3d_Reconstruction"/>, which unit 7R implements. Until then <see cref="Compute"/> fills the data
+/// <see cref="ChFi3d_Reconstruction"/>, which unit 7R implements. Until then <see cref="Compute"/> fills the data
 /// structure exactly as OCCT does and stops at <c>myCoup->Perform(myDS)</c> with a <see cref="NotImplementedException"/>.
 /// </para>
 /// </remarks>
@@ -53,7 +53,7 @@ public abstract partial class ChFi3d_Builder
     internal ChFiDS_Map myVEMap = new();
     internal TopOpeBRepDS_HDataStructure myDS;
     /// <summary>OCCT's <c>TopOpeBRepBuild_HBuilder</c>: the reconstruction (unit 7R).</summary>
-    internal IChFi3d_Reconstruction myCoup;
+    internal ChFi3d_Reconstruction myCoup;
     internal NCollection_List<ChFiDS_Stripe> myListStripe = new();
     internal ChFiDS_StripeMap myVDataMap = new();
     internal NCollection_List<ChFiDS_Regul> myRegul = new();
