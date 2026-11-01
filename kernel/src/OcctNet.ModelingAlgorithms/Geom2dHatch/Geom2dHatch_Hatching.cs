@@ -185,6 +185,10 @@ public sealed class Geom2dHatch_Hatching
     /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is out of range.</exception>
     public HatchGen_Domain Domain(int Index) => myDomains.Value(Index);
 
+    /// <summary>The <paramref name="Index"/>-th domain, for writing (OCCT.NET: ChFi3d_Builder_SpKP's <c>Tri</c> casts the
+    /// constness of <c>Domain</c> away and edits the hatcher's domain in place).</summary>
+    internal ref HatchGen_Domain ChangeDomain(int Index) => ref myDomains.ChangeValue(Index);
+
     /// <summary>Removes the <paramref name="Index"/>-th domain.</summary>
     public void RemDomain(int Index)
     {

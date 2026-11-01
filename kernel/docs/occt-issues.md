@@ -1707,3 +1707,19 @@ TopOpeBRepBuild (decision 992), so these are native results it does not reproduc
 | TopOpeBRepBuild (a Bezier face cut, blend/complex A2) | The pieces are built on a B-spline copy of the Bezier surface | The reconstruction's pieces keep the Bezier surface; same geometry |
 | BRepFilletAPI_MakeFillet (all twelve edges of a cube of 10, radius 6) | `IsDone` is true and the result degenerate: negative volume, an area of -6e29, B-spline faces far outside the cube | Not compared; build123d.NET rejects the result |
 | TopOpeBRepBuild_HBuilder::Perform (blend/complex A3) | Its filters and reducers change the data structure before building (the only recorded case where they do) | The reconstruction reads the data structure as ChFi3d left it and gives native's result |
+
+## Phase 7: unit 7N2, the fillet builder
+
+Found by porting ChFi3d_Builder, ChFi3d_FilBuilder and ChFi3d_ChBuilder. The port reproduces each (`// OCCT` or a
+remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d_Builder_1 `PerformExtremity` | Tests `NCollection_IndexedMap::Add`, which returns an index, as a boolean | Always true: the reversed copy of a closed edge is always taken as one of the vertex's edges |
+| ChFi3d_Builder_SpKP `FillSD` | Keeps a pointer to a local copy of the domain's point that leaves its scope | Undefined natively; the port uses the copy |
+| ChFi3d_Builder_SpKP `Tri` | Casts the constness of the hatcher's domain and point away and edits them | The hatcher's domains change under it (reproduced through `ChangeDomain`) |
+| ChFi3d_Builder_CnCrn (OCCT .cxx:3280) | `tpt2.Tolerance(tpt1.Tolerance() + error)` | The second point takes the first's tolerance |
+| ChFi3d_Builder_C1 | `Crv.Tolerance(...)` on a local copy of a curve already added to the data structure | The raised tolerance is lost |
+| ChFi3d_Builder_C1, `_C2` | Booleans kept in integers and doubles (`proledge`, `sens`, `sameparam`) | None (0 and 1) |
+| ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
+| ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |

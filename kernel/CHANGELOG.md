@@ -1333,3 +1333,17 @@ Phase 7 (part): the fillets' reconstruction on the Boolean engine (unit 7R, opti
   (blend/simple A to H, blend/complex's shapes in the dataset, build123d.NET's, shells, voids, compounds, corners of
   four faces). Compared geometrically (volumes, areas, counts, validity, boxes, histories as sets): 114 equal, 3
   attributed to native (two invalid native results, Bezier pieces made B-splines), 3 not comparable.
+
+Phase 7 (part): the fillet builder (unit 7N2), up to the topological reconstruction.
+
+- ChFi3d_Builder, whole: the spines and stripes, the walking and approximation of the fillet surfaces, the analytic
+  cases and their splitting by the faces' restrictions, the extremities, the corners of one, two, three and more
+  fillets, and the writing of everything into the legacy data structure. ChFi3d_FilBuilder (constant and evolving
+  radii) and ChFi3d_ChBuilder (one distance, two distances, distance and angle) with their corners.
+- The builders work on a copy of a frozen input and never change the caller's shape.
+- `Compute` hands its data structure to `ChFi3d_Reconstruction`, the seam unit 7R implements on the Boolean engine;
+  until then it stops there with a NotImplementedException.
+- Tests: tools/dsrec records 38 native fillets and chamfers (boxes, cylinders, cones, a sphere, a torus, Boolean
+  results, a tangent chain, a four-edge corner, concave edges, a shell, build123d.NET's test inputs and failures): the
+  data structure at the reconstruction is native's byte for byte in all 35 that reach it, and the faulty contours and
+  stripe statuses build123d.NET reads are native's in all.

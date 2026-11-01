@@ -33,7 +33,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
     private double ulspine;
     private double myfirstextend;
     private double mylastextend;
-    private Standard_Transient? simul;
+    private object? simul; // OCCT: a Standard_Transient handle; the port's NCollection_HArray1 is not one (unit 7N2)
     private int indexOfS1;
     private int indexOfC1;
     private int indexOfS2;
@@ -370,12 +370,12 @@ public sealed class ChFiDS_SurfData : Standard_Transient
     }
 
     /// <summary>The simulated sections of the fillet (ChFiDS_SecHArray1, set by the simulation), or null.</summary>
-    public Standard_Transient? Simul()
+    public object? Simul()
     {
         return simul;
     }
 
-    internal void SetSimul(Standard_Transient? S)
+    internal void SetSimul(object? S)
     {
         simul = S;
     }
