@@ -105,6 +105,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         return myMap;
     }
 
+    /// <summary><see cref="Map"/> without freezing its values, for ported code.</summary>
+    internal NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> InternalMap() => myMap;
+
     /// <summary>The messages attached to the shape's sub-shapes (null if messages are off).</summary>
     public ShapeExtend_MsgRegistrator? Messages() => myMsg;
 
@@ -357,9 +360,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                     myMsg.Send(S, iter.Value(), Message_Warning);
                 }
             }
-            else if (msgmap.IsBound(S))
+            else if (msgmap.IsBound(theContext.working(S))) // OCCT.NET: S as the operator saw it (decision 8702)
             {
-                NCollection_List<Message_Msg> msglist = msgmap.Find(S);
+                NCollection_List<Message_Msg> msglist = msgmap.Find(theContext.working(S));
                 for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
                     myMsg.Send(S, iter.Value(), Message_Warning);
@@ -445,9 +448,10 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         {
             TopoDS_Shape cur, next = r;
             NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> msgmap = msg.MapShape();
-            if (msgmap.IsBound(S))
+            TopoDS_Shape aWorkS = theContext.working(S); // OCCT.NET: S as the operator saw it (decision 8702)
+            if (msgmap.IsBound(aWorkS))
             {
-                next = S;
+                next = aWorkS;
             }
             do
             {

@@ -60,6 +60,8 @@
     <EmbeddedResource Include="ShapeCustom\Recordings\shcustomrec.txt.gz" LogicalName="ShapeCustom.shcustomrec.txt.gz" />
     <!-- Native OCCT's ShapeUpgrade divide and convert tools, recorded by tools/shupgraderec (unit 7B) -->
     <EmbeddedResource Include="ShapeUpgrade\Recordings\shupgraderec.txt.gz" LogicalName="ShapeUpgrade.shupgraderec.txt.gz" />
+    <!-- Native OCCT's ShapeProcess, recorded by tools/shprocrec (unit 7C) -->
+    <EmbeddedResource Include="ShapeProcess\Recordings\shprocrec.txt.gz" LogicalName="ShapeProcess.shprocrec.txt.gz" />
     <!-- Native OCCT's GeomFill fillings, recorded by tools/fillrec (unit 5L3) -->
     <EmbeddedResource Include="GeomFill\Recordings\fillrec.txt.gz" LogicalName="GeomFill.fillrec.txt.gz" />
     <!-- Native OCCT's Gordon surfaces on random networks, recorded by tools/gordonrec (unit 5L3) -->

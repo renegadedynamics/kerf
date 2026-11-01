@@ -90,6 +90,8 @@ internal static class DrawBuiltins
         // SWDRAW::Init loads Shape Healing's messages (ShapeExtend::Init, process-wide and once, decision 975)
         SWDRAWShapeCustomCommands.Register(theInterpreter);
         Occt.ShapeExtend.Init();
+        // unit 7C: SWDRAW's ShapeProcess commands (SPApply, DT_ApplySeq); registers ShapeProcess's operators
+        SWDRAWShapeProcessCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

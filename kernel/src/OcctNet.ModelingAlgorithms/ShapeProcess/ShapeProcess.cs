@@ -216,7 +216,7 @@ public static class ShapeProcess
                 catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                 {
                     var SMSG2 = new Message_Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
-                    SMSG2.Arg(oper).Arg(anException.Message);
+                    SMSG2.Arg(oper).Arg(What(anException));
                     context.Messenger().Send(SMSG2.Get(), Message_Alarm);
                 }
             }
@@ -266,7 +266,7 @@ public static class ShapeProcess
                 catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                 {
                     var aMessage = new Message_Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
-                    aMessage.Arg(anOperationName).Arg(anException.Message);
+                    aMessage.Arg(anOperationName).Arg(What(anException));
                     theContext.Messenger().Send(aMessage.Get(), Message_Alarm);
                 }
             }
@@ -276,6 +276,19 @@ public static class ShapeProcess
             aShapeContext?.InternalEndWrite();
         }
         return anIsAnySuccess;
+    }
+
+    // OCCT's Standard_Failure::what(): the message, empty when there is none. A NullReferenceException is natively an
+    // access violation, which OCC_CATCH_SIGNALS turns into OSD_Exception_ACCESS_VIOLATION with Windows' text for a read
+    // at address 0 (decisions 977, 8704)
+    private static string What(Exception theException)
+    {
+        if (theException is NullReferenceException)
+        {
+            return "ACCESS VIOLATION at address 0x0000000000000000 during 'READ' operation";
+        }
+        string aMessage = theException.Message;
+        return aMessage == $"Exception of type '{theException.GetType().FullName}' was thrown." ? "" : aMessage;
     }
 
     /// <summary>The operation named <paramref name="theName"/>, and true; (First, false) if no operation has the name.</summary>

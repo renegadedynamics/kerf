@@ -10048,3 +10048,122 @@ ShapeUpgrade_CombineToCylinder. Numbers from 8401 are placeholders, renumbered o
       copies a frozen input at the entry and its context answers for the input's shapes (decision 999). Nothing in
       ShapeUpgrade is process-wide; ShapeAlgo's container is (8403). The "ShapeDivide.*.MSG0" messages need
       `ShapeExtend.Init`.
+## Phase 7: unit 7C, ShapeProcess and the healing Draw commands
+
+ShapeProcess (Context, ShapeContext, Operator, UOperator, OperFunc, OperLibrary and the package), ShapeProcessAPI's
+ApplySequence and TKernel's `Resource_Manager`; SWDRAW's ShapeUpgrade, ShapeCustom and ShapeProcess commands in
+Draw-lite. Numbers from 8701 are placeholders, renumbered on merge.
+
+8701. **ShapeProcess's process-wide state** (plan 2.3), with OCCT's semantics: the operator registry is one static map
+      (a name registered once, for every thread; `RegisterOperator` of a taken name is false), the library's `Init`
+      registers its eighteen operators once per process (OCCT's static `done` flag; it also loads Shape Healing's
+      messages through `ShapeExtend.Init`), and `ShapeProcess_Context.LoadResourceManager` keeps the last resource file
+      loaded behind a static lock and hands each context a copy. OCCT's map and `Init` have no lock (occt-issues.md):
+      the port's registry reads and writes under a lock, and `Init` registers under one, so a second caller waits for
+      every operator. Tests that register operators run in the non-parallel `ShapeProcessGlobalStateCollection`.
+      DrawCorpus clears the cached resource file after each case (`ShapeProcess_Context.ClearResourceCache`, internal),
+      as each DRAWEXE starts without one; the registry is the same in every DRAWEXE, so it stays. Draw-lite registers
+      the operators when it registers its commands, as SWDRAW does.
+8702. **The working copy: ShapeProcess never writes into a caller's shape** (decision 973's rule). OCCT's operators
+      write into the shape they process: SetTolerance (`ShapeFix_ShapeTolerance::LimitTolerance`,
+      `BRepLib::UpdateTolerances`, `EncodeRegularity`) and SameParameter in place; the modifiers (DirectFaces,
+      BSplineRestriction, ElementaryToRevolution, SweptToElementary, SurfaceToBSpline) through `ApplyModifier` with
+      BRepTools_Modifier's mutable-input mode, which updates the input's vertices; the ShapeFix and ShapeUpgrade tools
+      in place on a shape they own. So:
+      - While operators run (`ShapeProcess.Perform` with a sequence or with flags, or an operator run on its own through
+        `ShapeProcess_UOperator`), a ShapeContext whose result holds frozen shapes works on an exact copy of it
+        (`BRepTools_CopyAtEntry`, forced), its map's values moved onto the copy. The operators then run as OCCT's,
+        in place, with the modifiers in the mutable-input mode, and the tools don't copy again.
+      - The history keeps OCCT's keys, the sub-shapes of `Shape()`: where `RecModif` finds no entry for a sub-shape it
+        uses the sub-shape's working copy (OCCT uses the sub-shape itself, which is what the operator worked on), and
+        it finds a sub-shape's messages under its working copy too.
+      - At the end the copy's sub-shapes left unchanged are the caller's own again, in the result and in the map's
+        values (`Finish`, `Final`), so a shape needing nothing comes back itself. The map has OCCT's entries: a
+        sub-shape changed in place without a record (SetTolerance's tolerances) has none, as natively, where it is the
+        same TShape changed; in the port the result holds a changed copy of it.
+      - An operator that publishes the result through `Result()` mid-sequence makes the next operator take a new copy
+        (`InternalEnsureWritable`).
+      - `Result()` and `Map()` are publication points (they freeze the result and the map's values);
+        `ShapeProcessAPI_ApplySequence.PrepareShape` returns the frozen result. Ported code reads `InternalResult`,
+        `InternalMap` and `InternalPrepareShape`. The operators read the tools' unfrozen results (`InternalResult`,
+        `InternalShape`, `InternalMerge`/`InternalRemove`, `InternalModifiedShape`).
+      - The public `ShapeProcess_OperLibrary.ApplyModifier` runs the modifier in its immutable mode on a shape holding
+        frozen shapes, even when asked for the mutable one (the immutable mode never writes into its input, decision
+        973), and freezes its result; the operators call `InternalApplyModifier` on the working copy.
+      - Tested by the frozen-input unit tests (every operator alone on frozen primitives, an operator run on its own, a
+        sequence, a shape needing nothing) and by every oracle comparison (each input checked unchanged).
+8703. **Resource files: OCCT's defaults compiled in, other files only where the caller names them** (open question 26).
+      - `Resource_Manager(name)` reads OCCT's own resource file of that name, compiled in: resources/XSTEPResource's
+        `IGES` and `STEP` (the only ones holding ShapeProcess sequences: ToIGES, FromIGES, ToSTEP, FromSTEP), as if
+        `CSF_IGESDefaults` and `CSF_STEPDefaults` named OCCT's resources; any other name has no resources. No
+        environment variable is read: `GetResourcePath` is left out, `ResourcePath(directory, name)` composes the path,
+        and `Save(directory)` writes where the caller says (OCCT: `CSF_<name>UserDefaults`). The
+        `ResourceDebug`/`CSF_ResourceVerbose` switches, `ExtValue` and the extended-string `SetResource`
+        (Resource_Unicode's process-wide format) are left out.
+      - OCCT's constructor with directories reads the files there. ShapeProcess_Context, ShapeContext and
+        ShapeProcessAPI_ApplySequence take two optional directories (defaults, user defaults), an addition of the
+        port: without them the compiled-in file. The context's cache is reloaded when the name, the files or their
+        modification times change (OCCT compares the name only; occt-issues.md).
+      - Draw-lite's `DT_ApplySeq` and `SPApply` read the directories from the interpreter's `env(CSF_<name>Defaults)` and
+        `env(CSF_<name>UserDefaults)`, which the heal scripts set (`set env(CSF_dataDefaults) ...`).
+      - The parts of TCollection_AsciiString the parsing needs (`IntegerValue`, `IsIntegerValue`, `IsRealValue`,
+        `RealValue`, `Token`: strtol with MSVC's 32-bit long, OCCT's Strtod) are an internal static class in Foundation.
+8704. **Native access violations in ShapeProcess.** `ShapeCustom_SweptToElementary::NewCurve2d` dereferences a null
+      swept surface when the face's surface isn't swept but the edge was copied and the new face is a torus or a
+      sphere: under BRepTools_Modifier's mutable-input mode (ShapeProcess's SweptToElementary) three heal inputs meet it
+      (DSE3.rle, DSEwithTol1.rle, cts20960b.rle). 7A's port skipped the shift there; it now throws a
+      NullReferenceException, as natively an access violation, which the performer reports (7A's oracle is unchanged:
+      ShapeCustom never met it). The performer's "Operator %s failed with exception %s" message gives a
+      NullReferenceException the text Windows gives native's read at address 0 ("ACCESS VIOLATION at address
+      0x0000000000000000 during 'READ' operation", decision 977), and a failure without a message an empty text, as
+      OCCT's `what()`. Like every `OCC_CATCH_SIGNALS` block, it never catches Standard_ImmutableObject or
+      TopoDS_LockedShape (decision 423).
+8705. **API.** ShapeProcess is a static class; `Operation` keeps OCCT's values; `OperationsFlags` (OCCT's `std::bitset`)
+      is an immutable record struct with `With`, `Test` and `Count`. `ShapeProcess_OperFunc` is a delegate.
+      `ToOperationFlag` returns a tuple. The context's `GetReal`, `GetInteger`, `GetBoolean`, `GetString` and
+      `GetContinuity` take `ref` (OCCT leaves the value unchanged when they fail; BSplineRestriction passes the
+      restriction parameters' `ref` accessors). `FindOperator` uses `out`. OCCT's modifiable references `Messages()`
+      and `ApplySequence::Context()` get setters (`SetMessages`, `SetContext`). Contexts and ApplySequence are working
+      objects (decision 21); `Resource_Manager` is one too, with a copy constructor (OCCT's implicit one, which the
+      context's cache uses).
+8706. **The oracle** (`tools/shprocrec`, `ShapeProcessNativeTests`). build123d.NET doesn't bind ShapeProcess, so a native
+      recorder runs, on data/occ's shapes and the heal group's public inputs up to 60 kB (527 inputs), the sequences
+      data1 (heal's data), ToV4 (heal's MDTV: DirectFaces, ElementaryToRevolution, SplitAngle, SameParameter,
+      SplitClosedFaces, FixFaceSize, BSplineRestriction, DropSmallEdges), remove1v and merge1v (the dataset's res),
+      ToIGES, FromIGES, ToSTEP and FromSTEP (OCCT's defaults, through `CSF_*Defaults` natively, compiled in for the
+      port), and each of the eighteen operations alone through `Perform` with flags. It records Perform's result, an
+      FNV hash of the result's BRep text (Free and Checked masked, decision 347), the counts of faces, edges and
+      vertices, the history (its size and what each of the input's root, solids, shells and faces became), the
+      messages attached to the shapes (their sorted texts) and what the context's messenger printed. The port reads
+      each input frozen: **13,702 records, 13,673 identical, 29 attributed**: 28 SetTolerance runs on inputs holding a
+      TShape at two locations (BRepLib's in-place UpdateTolerances in hash order, occt-issues.md; only the result's
+      hash may differ, and only on inputs holding instances) and test.brep's merge1v (ShapeFix_FixSmallSolid's new
+      free faces in hash order, a ShapeFix issue). Every input unchanged.
+8707. **Draw-lite's healing commands** (a sub-unit, merged into 7C). SWDRAW_ShapeUpgrade.cxx's `DT_ShapeDivide`,
+      `DT_SplitAngle`, `DT_ShapeConvert`, `DT_ShapeConvertRev`, `DT_SplitCurve2d`, `DT_SplitCurve`, `DT_SplitSurface`,
+      `offset2dcurve`, `offsetcurve`, `splitface`, `DT_ToBspl`, `DT_ClosedSplit`, `DT_SplitByArea`, `DT_SplitByNumber`,
+      `RemoveIntWires`; SWDRAW_ShapeCustom.cxx's `directfaces`, `expshape`, `scaleshape`, `bsplres`, `convtorevol`;
+      SWDRAW_ShapeProcess.cxx's `SPApply` and SWDRAW_ShapeProcessAPI.cxx's `DT_ApplySeq`. Nothing is left out but the
+      commands OCCT comments out (and SWDRAW.cxx's `LocSet`/`LocDump`, which no corpus case calls).
+      - The tools that write into their input (the dividers and converters, `splitface`'s ShapeFix_ComposeShell, the
+        ShapeProcess sequences) run as decision 960's in-place commands: on an unfrozen copy of the input
+        (`SWDRAWShapeFixCommands.InPlace`, reading the unfrozen results), then every variable sharing a changed
+        sub-shape is rebound, as DRAWEXE's variables see OCCT's edits. OCCT's `ShapeFix::SameParameter` on the result,
+        which shares the input's sub-shapes, runs in a second in-place step (`SameParameterInPlace`), as for `DT_ToBspl`
+        and `bsplres`. ShapeCustom never writes into its input and `RemoveIntWires` only reads it: they run on it.
+      - ShapeProcess's messages go to DRAWEXE's standard output, which the harness logs: the commands give the context a
+        messenger writing to the interpreter's output (OCCT's Draw_Printer, at Message_PrinterOStream's default level),
+        not the process-wide default messenger.
+      - Draw-lite calls `ShapeExtend.Init` when it registers its commands (SWDRAW::Init does), so healing commands
+        print OCCT's message texts.
+8708. **Corpus** (`DrawHealDivideCorpusTests`, `Unit7CCommands`, `Before7C`). 2,618 cases use 7C's commands; none was
+      runnable before, 2,607 are now: **OK 1,584, BAD 41 (OCCT's TODOs), SKIPPED 982 (data not public), FAILED 0**
+      (1,625 with their data; the plan expected 2,604 and 1,618). The eleven others need commands of other units
+      (`testreadiges`, the offset commands, `vhlr`, `igesbrep`). Other corpus tests whose counts moved: the healing
+      corpus test (cases also using 6L's commands) and the pipe test (bug30140 uses `offsetcurve`: 107 runnable, OK 72).
+8709. **For later units.** ShapeProcess's operators and `ShapeProcess.Perform(context, flags)` are what DataExchange's
+      `XSAlgo_ShapeProcessor` (phase 8) runs: give it a ShapeContext and read `Result()`/`Map()`; its parameter maps
+      can be loaded into a `Resource_Manager` with `SetResource`. The FromIGES/FromSTEP sequences refer to
+      `&Runtime.Tolerance` and `&Runtime.MaxTolerance`, which the translator sets in the context's resource manager.
+      Draw-lite's `env(CSF_<name>Defaults)` lookup (SWDRAWShapeProcessCommands) is the model for other resource files a
+      command reads.

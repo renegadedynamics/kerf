@@ -223,8 +223,8 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
             if (NS is not null && NS is Geom_ToroidalSurface)
             {
                 // OCCT: SS is null when the face's surface isn't swept and only the edge was copied, an access
-                // violation natively; the port skips the shift (occt-issues.md)
-                if (SS is Geom_SurfaceOfRevolution SR)
+                // violation natively, a NullReferenceException in the port (occt-issues.md, decision 8704)
+                if ((SS ?? throw NullSweptSurface()) is Geom_SurfaceOfRevolution SR)
                 {
                     SR.Bounds(out double U1, out double U2, out double V1, out double V2);
                     SR.D0(U1, V1, out gp_Pnt P0);
@@ -236,7 +236,8 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
             }
             if (NS is not null && NS is Geom_SphericalSurface)
             {
-                if (SS is Geom_SurfaceOfRevolution SR)
+                // OCCT: as above
+                if ((SS ?? throw NullSweptSurface()) is Geom_SurfaceOfRevolution SR)
                 {
                     Geom_SphericalSurface SPH = (Geom_SphericalSurface)NS;
                     SPH.Bounds(out double US1, out double US2, out double VS1, out double VS2);
@@ -256,6 +257,10 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
         Tol = BRep_Tool.Tolerance(E);
         return true;
     }
+
+    // OCCT dereferences the null swept surface: an access violation natively (decision 8704)
+    private static NullReferenceException NullSweptSurface() =>
+        new("ShapeCustom_SweptToElementary::NewCurve2d: the face's surface isn't swept (OCCT dereferences a null handle)");
 
     /// <summary>False: parameters are never modified.</summary>
     public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)

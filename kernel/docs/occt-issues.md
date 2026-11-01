@@ -1381,7 +1381,7 @@ Found by porting ShapeCustom and comparing it with native OCCT (decisions 973 to
 | Where | What | Effect |
 |---|---|---|
 | ShapeCustom_SweptToElementary `NewCurve2d` | Calls `BRep_Tool::Surface(NewF, L)` on the null face BRepTools_Modifier passes from `CreateOtherVertices` (to ask whether an edge's vertices must be copied), which reaches it for edges without a new 3D curve (degenerated edges of revolutions) | An access violation natively (`OSD_Exception_ACCESS_VIOLATION` under the signal handler) on 16 of the heal group's and data/occ's shapes: `ShapeCustom::SweptToElementary` fails on any shape with such a face. The port throws a NullReferenceException there (decision 977) |
-| ShapeCustom_SweptToElementary `NewCurve2d` | Dereferences `SS` (null) when the face's surface isn't swept and only the edge was copied, if the new face is a torus or a sphere | An access violation natively; the port skips the shift (`is` on null). Not met by the tests |
+| ShapeCustom_SweptToElementary `NewCurve2d` | Dereferences `SS` (null) when the face's surface isn't swept and only the edge was copied, if the new face is a torus or a sphere | An access violation natively; the port skipped the shift (`is` on null) until unit 7C, and now throws a NullReferenceException there (decision 8704): ShapeProcess's SweptToElementary, BRepTools_Modifier in its mutable-input mode, meets it on three heal inputs |
 | ShapeCustom_SweptToElementary `IsToConvert` | For a trimmed or offset surface, tests `S->IsKind(Geom_SweptSurface)` (known false) instead of its basis `Stmp` | Trimmed and offset surfaces of revolution or extrusion are never converted |
 | ShapeCustom_Surface `ConvertToAnalytical` | `if (substitute && !NHS.IsNull()) Init(newSurf)`: the adaptor is never null, so a surface rejected by the final check (null) replaces the tool's surface | With `substitute`, a failed conversion leaves the tool with no surface; a later `ConvertToPeriodic` returns null |
 | ShapeCustom_Surface `ConvertToAnalytical` | Computes the orientation check with `iso->D1(0., ...)` on the last iso-curve built (V at the middle), at parameter 0 rather than U1 | Reproduced |
@@ -1447,3 +1447,23 @@ The port reproduces each, unless the last column says otherwise.
 | ShapeUpgrade_ShellSewing `ApplySewing` | Documented to return the input when no shell is sewn; returns a null shape | Reproduced |
 | ShapeUpgrade_ShapeDivideClosedEdges `SetNbSplitPoints` | Ignores the number | Reproduced |
 | ShapeUpgrade_SplitCurve2dContinuity `Compute` | After removing a knot completely, doesn't lower the last index as the 3D tool does | Reproduced |
+
+## Phase 7: unit 7C, ShapeProcess and the healing Draw commands
+
+Found by porting ShapeProcess, ShapeProcessAPI, `Resource_Manager` and SWDRAW's ShapeUpgrade, ShapeCustom and
+ShapeProcess commands. The port reproduces each, unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeProcess_OperLibrary `Init` | Sets its static `done` flag before registering the operators, without a lock | A second thread calling `Init` meanwhile returns at once and may find no operator. The port registers under a lock (decision 8701) |
+| ShapeProcess `RegisterOperator`, `FindOperator` | The static operator map has no lock | Registering while another thread performs can corrupt it. The port takes a lock (decision 8701) |
+| ShapeProcess_Context `LoadResourceManager` | `stat` of a file that doesn't exist isn't checked: the modification time is read from an uninitialised buffer; the cache compares the name only, not the directories | A missing file may look modified. The port takes 0 for a missing file and keys the cache by the files too (decision 8703) |
+| ShapeProcess_Context `GetReal`, `GetInteger` | Read the first character of a value that isn't a number (`Value(1)`), which throws Standard_OutOfRange for an empty value | The exception leaves the operator; the performer reports "failed with exception". Reproduced |
+| Resource_Manager (constructors) | The user resource file is loaded into the reference map (`Load(aUserPath, myRefMap)`), so the "User file loaded" trace can't be printed and `GetMap(false)` holds only what `SetResource` set | Reproduced |
+| ShapeProcess `settol` (SetTolerance), `sameparam` (SameParameter) | Change tolerances and pcurves in place and record nothing in the context ("WARNING: no update of context yet!") | The history has no entry for them. Reproduced; in the port the result holds changed copies (decision 8702) |
+| BRepLib `UpdateTolerances` (in place, from SetTolerance) | Sets the tolerances computed per (sub-shape, location) by iterating a map keyed by shape in hash order (TShape addresses); a TShape the shape holds at two locations, with different tolerances at each, ends with whichever OCCT iterates last | The port iterates in insertion order: 28 of the oracle's heal inputs (instances) get the other tolerance on a few vertices and edges, attributed |
+| ShapeProcessAPI_ApplySequence `PrepareShape`, `ClearMap` | `fillmap` and `until` are ignored; `ClearMap` does nothing | Reproduced |
+| SWDRAW `DT_SplitCurve`, `DT_SplitCurve2d`, `DT_SplitSurface` | Read `argv[argc]` (a null pointer) when the optional split flag is missing | Draw-lite takes a missing flag as 0 |
+| SWDRAW `splitface` | Prints ", " before every U value (`i > j` where `j > 1` is meant) | Reproduced |
+| SWDRAW `expshape` | Counts a seam twice per face | Reproduced |
+| SWDRAW `offset2dcurve` | On a C0 curve, Geom2d_OffsetCurve throws Standard_ConstructionError ("Offset on C0 curve") | Reproduced |

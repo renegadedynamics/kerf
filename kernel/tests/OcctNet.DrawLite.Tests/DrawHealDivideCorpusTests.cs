@@ -63,6 +63,14 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
         List<DrawTestCase> aNew = aRunnable.Where(c => !aRunnableBefore.Contains(c.Id)).ToList();
         output.WriteLine($"{aScans.Count} cases use the commands of 7C; runnable before 7C: {aRunnableBefore.Count}, after: {aRunnable.Count}, newly: {aNew.Count}");
 
+        // OCCTNET_7C_FILTER: only the cases whose id contains it (and their logs with OCCTNET_7C_LOG)
+        string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_7C_FILTER");
+        bool isFiltered = !string.IsNullOrEmpty(aFilter);
+        if (isFiltered)
+        {
+            aNew = aNew.Where(c => c.Id.Contains(aFilter!, StringComparison.Ordinal)).ToList();
+        }
+
         var aRuns = aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                         .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
                                                          TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
@@ -85,6 +93,10 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
                                                            || l.Contains("xception", StringComparison.Ordinal)
                                                            || l.Contains("Faulty", StringComparison.Ordinal));
                 output.WriteLine($"      {aLine ?? aLines.Reverse().Skip(1).FirstOrDefault()}");
+                if (Environment.GetEnvironmentVariable("OCCTNET_7C_LOG") is not null)
+                {
+                    output.WriteLine(aRun.Log);
+                }
             }
         }
 
@@ -95,9 +107,15 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
             output.WriteLine($"  {aGroup.Key,-20} {aGroup.Count()}");
         }
 
-        // unit 7C's Draw commands without DT_ApplySeq: 2,570 newly runnable (OK 1,560, BAD 40, SKIPPED 970)
-        Assert.True(aNew.Count >= 2570, $"{aNew.Count} newly runnable cases");
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 1560, $"{aRuns.Count(r => r.Status == "OK")} OK");
+        if (isFiltered)
+        {
+            return;
+        }
+
+        // unit 7C: 2,607 newly runnable (OK 1,584, BAD 41: OCCT's TODOs, SKIPPED 982: data not public); 11 cases using
+        // the commands still miss others (testreadiges, the offset commands, vhlr, igesbrep)
+        Assert.Equal(2607, aNew.Count);
+        Assert.Equal(1584, aRuns.Count(r => r.Status == "OK"));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
     }

@@ -1141,3 +1141,19 @@ Phase 7 (part): the rest of ShapeUpgrade, and ShapeAlgo (unit 7B).
 - Tests: OCCT's FaceDivide GTest, frozen-input unit tests; `tools/shupgraderec` records twelve tools with the heal
   group's Draw parameters on 527 inputs (6,324 records: 6,323 identical, 1 attributed to OCCT writing into the
   caller's surface).
+
+Phase 7 (part): ShapeProcess and the healing Draw commands (unit 7C).
+
+- ShapeProcess (the operator registry and performer, Context, ShapeContext, Operator, UOperator, the operator library
+  of eighteen operators), ShapeProcessAPI_ApplySequence and TKernel's Resource_Manager. OCCT's default resource files
+  (XSTEPResource's IGES and STEP) are compiled in; other files are read only from directories the caller gives, never
+  through CSF_ environment variables (decision 8703). The operators run on a copy of a frozen shape and give back its
+  unchanged sub-shapes, the history keyed by the caller's sub-shapes (decision 8702).
+- Draw-lite: SWDRAW's ShapeUpgrade commands (`DT_ShapeDivide`, `DT_SplitAngle`, `DT_ShapeConvert`,
+  `DT_ShapeConvertRev`, `DT_SplitCurve2d`, `DT_SplitCurve`, `DT_SplitSurface`, `offset2dcurve`, `offsetcurve`,
+  `splitface`, `DT_ToBspl`, `DT_ClosedSplit`, `DT_SplitByArea`, `DT_SplitByNumber`, `RemoveIntWires`), ShapeCustom
+  commands (`directfaces`, `expshape`, `scaleshape`, `bsplres`, `convtorevol`) and ShapeProcess commands (`SPApply`,
+  `DT_ApplySeq`).
+- Tests: Resource_Manager's GTests; `tools/shprocrec` records native ShapeProcess (OCCT's and the heal group's
+  sequences, each operator alone) on 527 inputs: 13,702 records, 13,673 identical, 29 attributed to OCCT's hash-ordered
+  maps. Corpus: 2,607 newly runnable cases (OK 1,584, BAD 41, 982 missing data, none failing).

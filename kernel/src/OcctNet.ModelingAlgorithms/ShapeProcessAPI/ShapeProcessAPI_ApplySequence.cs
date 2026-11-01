@@ -55,6 +55,15 @@ public class ShapeProcessAPI_ApplySequence
     public TopoDS_Shape PrepareShape(in TopoDS_Shape shape, bool fillmap = false, TopAbs_ShapeEnum until = TopAbs_SHAPE,
                                      Message_ProgressRange theProgress = default)
     {
+        TopoDS_Shape aResult = InternalPrepareShape(shape, theProgress);
+        return shape.IsNull() ? aResult : myContext.Result();
+    }
+
+    /// <summary>
+    /// <see cref="PrepareShape"/> without freezing the result, for ported code (Draw-lite runs it on a copy it owns).
+    /// </summary>
+    internal TopoDS_Shape InternalPrepareShape(in TopoDS_Shape shape, Message_ProgressRange theProgress = default)
+    {
         if (shape.IsNull())
         {
             return shape;
@@ -69,7 +78,7 @@ public class ShapeProcessAPI_ApplySequence
             ShapeProcess.Perform(myContext, mySeq, theProgress);
         }
 
-        return myContext.Result();
+        return myContext.InternalResult();
     }
 
     /// <summary>Clears the history map (OCCT: does nothing).</summary>
@@ -84,6 +93,6 @@ public class ShapeProcessAPI_ApplySequence
     /// <summary>Prints statistics on the history (shells and faces mapped, the preparation ratio) to the messenger.</summary>
     public void PrintPreparationResult()
     {
-        ShapeProcess_ShapeContext.PrintPreparation(myContext.Map(), myContext.Messenger());
+        ShapeProcess_ShapeContext.PrintPreparation(myContext.InternalMap(), myContext.Messenger());
     }
 }
