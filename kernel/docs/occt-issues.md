@@ -1723,3 +1723,10 @@ remark at the place).
 | ChFi3d_Builder_C1, `_C2` | Booleans kept in integers and doubles (`proledge`, `sens`, `sameparam`) | None (0 and 1) |
 | ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
 | ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |
+
+## Phase 7: unit 7R2, the reconstruction's follow-up
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d (four base edges of a square pyramid, radius 5) | Native's result fails BRepCheck: a face UnorientableShape, a wire SelfIntersectingWire | The port (ChFi3d and the reconstruction) gives the same result and the same faults (decision 1125) |
+| BRepFilletAPI_MakeFillet (a box of 10, its top edges, radius 6) | `IsDone` is true; two corner faces have negative areas and the result fails BRepCheck (BadOrientationOfSubshape, IntersectingWires) | The reconstruction builds no face on the degenerate surfaces and keeps IntersectingWires; not compared further |

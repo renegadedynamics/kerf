@@ -38,6 +38,16 @@ public class ReconstructionNativeTests
         // 7N2's end-to-end run reaches this case.
         ["complex_G1"] = ("the dump holds faces not in the input", null),
         ["complex_B3"] = ("the dump holds shapes not in the input", null),
+        // a box of 10, its top edges filleted with a radius of 6, more than half its width (unit 7N2's case): native
+        // says done, but two of its corner faces have negative areas (degenerate B-spline surfaces) and its result
+        // fails BRepCheck (BadOrientationOfSubshape, IntersectingWires: the fillets cross on the top face). The
+        // reconstruction builds no face on those two surfaces; its result has native's IntersectingWires (decision
+        // 11101).
+        ["b3d_fail_box_top_edges_r6"] = ("native's result is degenerate (radius over half the width)",
+        [
+            "volume 899.618661 | 996.763348", "area 576.611615 | 622.796447", "TopAbs_FACE 12 | 10",
+            "NewFaces(9) [BSplineSurface -23.7494] | []", "NewFaces(10) [BSplineSurface -22.4354] | []",
+        ]),
     };
 
     public static TheoryData<string> CaseNames()
@@ -55,7 +65,7 @@ public class ReconstructionNativeTests
     {
         // tools/dsrec --recon: dsrec's 15, blend/simple's A2 to H9, build123d.NET's, a shell, voids, a compound,
         // pyramids, failures, blend/complex (the shapes in the dataset)
-        Assert.Equal(120, ReconRecordings.Cases.Count);
+        Assert.Equal(122, ReconRecordings.Cases.Count);
         Assert.All(ReconRecordings.Cases.Values, c => Assert.True(c.Done, c.Name));
         Assert.All(ReconRecordings.Cases.Values, c => Assert.NotNull(c.Result));
     }
@@ -78,6 +88,21 @@ public class ReconstructionNativeTests
             return;
         }
         Assert.True(aDiffs.Count == 0, theName + ":\n" + string.Join("\n", aDiffs));
+    }
+
+    [Theory]
+    [InlineData("pyramid_base_edges", "{FACE:UnorientableShape WIRE:SelfIntersectingWire}")]
+    [InlineData("b3d_fail_box_top_edges_r6", "{FACE:IntersectingWires}")]
+    public void InvalidWhereNativeIs(string theName, string theFaults)
+    {
+        // unit 7N2's two invalid results end to end (decision 1125): from native's data structure the reconstruction
+        // gives native's faults (pyramid_base_edges: native's exactly, its geometry equal), so they are ChFi3d's data
+        ReconCase aCase = ReconRecordings.Cases[theName];
+        TopoDS_Shape aNative = aCase.Result!.Value;
+        Assert.False(new BRepCheck_Analyzer(aNative).IsValid());
+        Assert.Contains(theFaults.Trim('{', '}'), ReconComparison.Faults(aNative));
+        ReconComparison.Run aRun = ReconComparison.Reconstruct(aCase);
+        Assert.Equal(theFaults, ReconComparison.Faults(aRun.Result));
     }
 
     [Theory]
