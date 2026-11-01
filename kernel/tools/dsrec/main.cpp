@@ -414,7 +414,7 @@ struct Dumper
   }
 };
 
-static std::string DumpDS(const TopOpeBRepDS_DataStructure& DS, const TopoDS_Shape& theInput)
+std::string DumpDS(const TopOpeBRepDS_DataStructure& DS, const TopoDS_Shape& theInput) // kpart.cpp uses it too
 {
   Dumper d(DS, theInput);
   return d.Run();
@@ -621,14 +621,20 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
                anAfter == gBefore ? 1 : 0);
 }
 
+int RunKPart(const char* thePath); // kpart.cpp
+
 int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::fprintf(stderr, "usage: dsrec out.txt\n");
+    std::fprintf(stderr, "usage: dsrec out.txt | dsrec --kpart out.txt\n");
     return 2;
   }
   OSD::SetSignal(false);
+  if (argc >= 3 && std::strcmp(argv[1], "--kpart") == 0)
+  {
+    return RunKPart(argv[2]); // the analytic fillets and ChFi3d_Builder_0's functions (unit 7N1)
+  }
   if (!PatchImport())
   {
     std::fprintf(stderr, "dsrec: could not hook TopOpeBRepBuild_HBuilder::Perform in TKFillet.dll\n");

@@ -1622,3 +1622,17 @@ the place).
 | TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
 | TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
 | TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
+
+## Phase 7: unit 7N1, the fillet construction data
+
+Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// OCCT` or a remark at the place).
+
+| Where | What | Effect |
+|---|---|---|
+| ChFiKPart_ComputeData_ChAsymPlnCyl `MakeChAsym` (straight guide) | Projects the guide's point on the cylinder's axis with `gp_XYZ::Multiplied(gp_XYZ)`, a product coordinate by coordinate, where a dot product is meant | The point on the axis is right only for an axis parallel to a coordinate axis; on any other the distance-angle chamfer along a generatrix is built from a wrong point |
+| ChFiKPart_ComputeData_FilPlnCyl `MakeFillet` (circle, sphere case) | Evaluates the sphere with the cylinder's radius | The two radii are equal within the confusion there: no effect |
+| ChFi3d_Builder_0.hxx | Declares `ChFi3d_EnlargeFace`, defined nowhere | Not ported |
+| ChFi3d_Builder_0 `ChFi3d_IndexPointInDS` | Writes the point and tolerance into the common point's vertex ("it is necessary to implement a mechanism controlling tolerance") | Changes the input's vertices natively (plan 2.2); the port writes the builder's working copy (decision 10203) |
+| ChFi3d_Builder_0 `ChFi3d_Orientation`, `ChFi3d_FilDS` | The orientation is left unchanged when no interference matches; FilDS goes on with the previous transition | A fillet surface data on a surface without its solid interference takes the previous one's transitions |
+| ChFi3d_Builder_0 `ChFi3d_PerformElSpine` | Declares three arrays (`ExtrapPole`, `ExtraCoeffs`, `Cont`) it never uses | None |
+| ChFi3d_Builder_0 `ChFi3d_StripeEdgeInter` | Takes the data structure and never reads it | None |

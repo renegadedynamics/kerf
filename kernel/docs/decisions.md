@@ -10966,3 +10966,76 @@ AppSurf). Numbers from 9801 are placeholders, renumbered on merge.
         the shells and the solid are added as ancestors. Some surfaces have no interference (a second copy of a fillet
         surface). Surfaces are never kept (`Keep()` false): use `SurfaceExplorer(DS, false)`. `SolidSurfaces` keeps
         OCCT's unmatched first value (occt-issues 7L).
+
+## Phase 7: unit 7N1, the fillet construction data
+
+ChFiKPart (the analytic fillets, chamfers and corners) and ChFi3d_Builder_0 (the fillet builders' free functions),
+whole. Numbers from 10201 are placeholders, renumbered on merge.
+
+10201. **The shape of ChFiKPart and ChFi3d_Builder_0 in C#.**
+       - Each ChFiKPart file is an internal static class named after it (`ChFiKPart_ComputeData_FilPlnPln`, ...,
+         `ChFiKPart_ComputeData_Fcts`); OCCT's overloads of `ChFiKPart_MakeFillet`, `MakeChamfer` and `MakeChAsym`
+         across files meet again through `using static` in `ChFiKPart_ComputeData`. `ChFiKPart_RstMap` (OCCT 8,
+         deprecated) is only a typedef of `NCollection_DataMap<int, Adaptor2d_Curve2d>`; nothing in ChFiKPart uses
+         it. ChFiKPart_ComputeData_ChPlnCon's older construction, commented out in OCCT, is not ported.
+       - ChFi3d_Builder_0 is one partial static class (7E's `ChFi3d_Builder_0`) over files by area: PCurves, Points,
+         FilDS, Stripes, ComputeCurves, Intersections, ElSpine, Topology. The template `ChFi3d_BoundSrfImpl` is written
+         once over `Adaptor3d_Surface`, each adaptor loading its own bounds. `ChFi3d_EnlargeFace` is declared in OCCT's
+         header and defined nowhere: not ported. `OCCT_DEBUG`, `DRAW` and the IRIX retry are left out.
+       - C++ references a function writes on every path are `out`; those it may leave unchanged, where callers rely
+         on the old value, are `ref` (`ChFi3d_IsInFront`'s and `ChFi3d_SearchFD`'s outputs, `ChFi3d_ComputeCurves`'
+         curves, `ChFi3d_Orientation`'s orientation, since FilDS keeps the previous transition when it finds none, and
+         the `cherche_*` functions' results, which they test for null). ChFiDS_CommonPoint and ChFiDS_FaceInterference
+         are structs (decision 1041): what OCCT reads through a `const&` is a copy, what it edits goes through the
+         `Change*` refs. `ChFi3d_IsInFront`'s three identical blocks share a local function.
+10202. **The oracle: tools/dsrec in its kpart mode** (`dsrec --kpart`; ChFiKPart and ChFi3d_Builder_0 are not bound in
+       build123d.NET). `ChFiKPart_ComputeData::Compute` and the three `ComputeCorner` are exported by TKFillet; the
+       Builder_0 functions are not, so build.ps1 compiles OCCT's own `ChFi3d_Builder_0.cxx`, unchanged, into dsrec
+       against the same native OCCT: what the cases call is native's code. The cases: each fillet and chamfer case of
+       `Compute` on real faces of a box, a quarter cylinder, a cylinder and a cone, with OCCT's concavity
+       (`ChFi3d::ConcaveSide`), in both orders of the faces (plane/plane, plane/cylinder along a line and a circle,
+       the sphere when the radii are equal, plane/cone at both ends; symmetric, two-distance and distance-angle
+       chamfers, constant throat and throat with penetration), a pair that is not particular (Standard_NotImplemented),
+       the toric corner on a cylinder and a sphere, the spherical corner (one fails natively too), the rotule; then
+       ComputePCurv, BuildPCurve, mkbound, ComputeArete, ComputeCurves (analytic and GeomInt pairs, whole curve or
+       not), IntCS, InterPlaneEdge, Parameters, TrimCurve, CircularSpine, Spine, ConvTol2dToTol3d, EvalTolReached,
+       BoundSrf, ApproxByC2, IsSmooth, the topology helpers on a box, and PerformElSpine on a circle, an arc and an
+       extended line. Each records the surface data (surface, orientation, both interferences with their pcurves, the
+       four common points, the 2D points) and the data structure in dsrec's dump. The input shapes go through BRep
+       text on both sides, so both compute on the same input. **66 cases, all identical byte for byte**
+       (`KPartRecorder`, the same program in C#). dsrec's 15 fillet recordings are unchanged. FilDS, IsInFront,
+       SearchFD, StripeEdgeInter, the EnlargeBox and BoundSurf family, ComputesIntPC and the stripe and spine lookups
+       need a whole builder's stripes: 7N2's end-to-end comparison reaches them; unit tests cover IndexPointInDS,
+       FilCommonPoint, ReparamPcurv, the interference makers, KParticular and the small helpers.
+10203. **Writes into the input: the builder's working copy only.** `ChFi3d_IndexPointInDS` (OCCT's line 2333, plan 2.2)
+       sets the point and raises the tolerance of the common point's vertex (`BRep_Builder::UpdateVertex`) before
+       adding it to the data structure; `ChFi3d_FilDS` calls it for the points where the fillets end. Ported as is:
+       the vertex must be the working copy's, unlocked; a frozen vertex throws `TopoDS_LockedShape` and is never
+       changed (tested). `ChFi3d_PerformElSpine` calls `BRepLib::BuildCurve3d` on the spine's edges, which writes a 3D
+       curve into an edge that has none. Nothing else in ChFiKPart or Builder_0 writes a shape: they write the data
+       structure, the surface data, stripes and elementary spines, and geometry of their own. **For 7N2:** copy the
+       input at entry (`BRepTools.ExactCopyForWrite`), build the spines, maps and stripes from the copy, so that the
+       common points carry the copy's vertices and the data structure the copy's shapes, and give back the caller's
+       unchanged sub-shapes through the copy's history.
+10204. **Geometry OCCT changes in place is copied first when frozen** (decision 974's rule). `ChFi3d_ReparamPcurv`
+       segments the B-spline under a pcurve (an intersection's result, frozen by GeomInt_IntSS); ChFi3d_ComputeArete
+       and ChFi3d_ComputeCurves translate projected pcurves (ProjLib's results are frozen): a frozen curve is changed
+       on a copy, which takes its place as in OCCT. `ChFi3d_PerformElSpine` changes the concatenation's B-spline in
+       place and drops the concatenation, so it takes the curve unfrozen
+       (`GeomConvert_CompCurveToBSplineCurve.InternalBSplineCurve`); its other curves (conversions, approximations,
+       extensions) are its own.
+10205. **No process-wide state.** OCCT 8's ChFiKPart and ChFi3d_Builder_0 keep none: the `/*szv:static*/` adaptors of
+       `ChFi3d_ComputeArete` and `ChFi3d_SameParameter` are locals already. Nothing is `[ThreadStatic]`.
+10206. **For 7N2 (the builder) and 7R.**
+       - ChFi3d_Builder_* call these functions as `ChFi3d_Builder_0.ChFi3d_*` (with `using static`), the analytic
+         cases as `ChFiKPart_ComputeData.Compute(DStr, Data, S1, S2, Or1, Or2, Spine, Iedge)` and `ComputeCorner`
+         (OCCT's `handle&` data is a plain reference: Compute never replaces it). Compute reads the spine's
+         `CurrentElementarySpine(Iedge)`, `Line()`/`Circle()` and `Radius(Iedge)`, so the spine is loaded and its
+         radius set after `Load` (a FilSpine's constant radius is set at its first and last abscissa).
+       - Out parameters: `ChFi3d_ComputePCurv` and `ChFi3d_SameParameter` always write the tolerance (`out`);
+         `ChFi3d_ComputeArete` takes the 3D curve and pcurve by `ref` (an input for IFlag 1 and 2) and its range by
+         `ref`; `ChFi3d_ComputeCurves` the curves by `ref`, the tolerance `out`; `ChFi3d_FilCommonPoint` the common
+         point by `ref` (it reads its tolerance); `ChFi3d_IntCS` the 2D point and parameter by `ref` (the parameter
+         selects the solution).
+       - `ChFi3d_FilDS` writes everything 7R reads (decision 9908): the solid's SSIs, the faces' and fillets' SCIs,
+         the curves' CPIs, the edges' CPIs and the vertices cut; its regularities go into the builder's list.
