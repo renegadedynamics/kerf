@@ -1153,3 +1153,17 @@ Phase 7 (part): the offset foundations (unit 7E).
   MakeSimpleOffset's solid mode and BRepOffset_Offset's pipes and spheres never write into a caller's shape.
 - Tests: `tools/offsetrec` records native Analyse, Offset and MakeSimpleOffset on 40 primitives, Boolean and fillet
   results and data/occ shapes: 1,984 records, all byte-identical (two are the same exception).
+
+Phase 7 (part): the 3D offset (unit 7F).
+
+- BRepOffset_MakeOffset: the offset shape and the thick solid with the Arc and Intersection joins, the Complete mode's
+  splits of the offset faces (BRepOffset_BuildOffsetFaces, planar shapes), thickening with its missing walls, the
+  conical faces' correction, the history (`Generated`, `Modified`, `IsDeleted`); BRepOffsetAPI_MakeOffsetShape and
+  BRepOffsetAPI_MakeThickSolid (by join and by the simple algorithm).
+- The caller's shape is never written: the offset copies a frozen input at the entry, runs OCCT's in-place writes
+  (`Locked(false)`, pcurves, tolerances) on the copy and gives back the unchanged sub-shapes; the history answers for
+  the caller's sub-shapes (decision 9201).
+- Tests: OCCT's GTests (23 cases), frozen-input tests, and the oracle against native OCCT on primitives, Boolean
+  results, faces and shells and data/occ's shapes, both joins and signs, with and without intersection, and
+  build123d.NET's Hollow, Offset3D and Thicken calls: 724 runs, every result and history identical, canonically equal or
+  attributed to native varying from run to run (decision 9206).
