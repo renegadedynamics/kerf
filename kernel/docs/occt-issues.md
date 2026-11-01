@@ -1545,3 +1545,19 @@ Found by porting Blend, BlendFunc and ChFiDS and by tools/blendrec. The port rep
 | ChFiDS_Stripe `Reset` | `pcrv1.Nullify()` twice | The last pcurve is kept |
 | ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost |
 | Blend_CurvPointFuncInv `NbVariables` | Documented as 3, returns 2 | Reproduced |
+
+## Phase 7: unit 7P, the foundations of HLR
+
+Found by porting Intrv, TopBas, TopCnx, HLRAlgo and Contap and by tools/hlrrec. The port reproduces each (`// OCCT` at
+the line where it is code).
+
+| Where | What | Effect |
+|---|---|---|
+| HLRAlgo_Projector `Project(const gp_Pnt&, gp_Pnt2d&)` | For the first hard-coded axonometric view (`TrsfType` 0) computes X and Y and never writes `Pout` | The caller's point comes back unchanged (decision 10104); the other `Project` forms are right |
+| Contap_ArcFunction `Value`, `Values`; Contap_SurfFunction `Value`, `Derivatives`, `Values` | Contap_DraftPrs (a draft seen from an eye) computes nothing | The value is left unset (the port's ArcFunction returns 0, decision 10102; SurfFunction leaves the caller's vector and matrix); the derivatives are 0 |
+| Contap_HCurve2dTool `NbSamples` | `nbs *= (Last - First) / (U1 - U0)`, the inverse of IntPatch_HCurve2dTool's corrected ratio | More samples on a short range of a B-spline arc than on the whole arc |
+| HLRAlgo_EdgeIterator `InitHidden` | On a status neither wholly hidden nor with visible intervals (a default status) reads the first interval of an empty sequence | An access violation natively; Standard_OutOfRange in the port |
+| Intrv_Interval's default constructor | Its tolerances are `Epsilon(RealFirst())` and `Epsilon(RealLast())`, both 0 | The whole line has null tolerances (the port's `Epsilon` gave infinity there, decision 10106) |
+| TopCnx_EdgeFaceTransition `BoundaryTransition` | Both branches of the even/odd test return TopAbs_EXTERNAL | Reproduced |
+| Contap_Contour `LineConstructor` | `u2`, `v2` unset when a line or circle lies on a surface other than a cylinder, cone or sphere | Unreachable (ContAna only makes those); the port starts them at 0 |
+| HLRAlgo_EdgeStatus `Hide` | Ignores `OnBoundary` | Reproduced |

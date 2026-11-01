@@ -1208,3 +1208,17 @@ Phase 7 (part): the blend functions (unit 7J), the first step to 3D fillets.
 - Tests: `tools/blendrec` records native OCCT's functions on plane, cylinder, cone and B-spline pairs and its spines on
   a box, a cylinder and a B-spline solid: 235 cases, all identical bit for bit; derivatives against finite differences;
   unit tests of ChFiDS's data.
+
+Phase 7 (part): the foundations of hidden-line removal (unit 7P).
+
+- Intrv (intervals with tolerances and their Boolean operations), TopBas, TopCnx.
+- HLRAlgo: the projector (parallel and perspective), the edge status and its iterator, the min-max boxes, the edge and
+  wire blocks, interferences, and the polygonal algorithm's data (bi-points, triangles, hiding data, the internal
+  triangulation, shells) and PolyAlgo.
+- Contap: the contours (silhouettes) of a surface for a direction, a draft angle or an eye: in closed form on planes,
+  spheres, cylinders and cones, otherwise by the boundary search, the interior search and the walking (phase 5's
+  generics).
+- Fix: `Standard.Epsilon` of the largest reals is 0, as OCCT's.
+- Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
+  quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
+  the edge status and the contours.
