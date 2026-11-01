@@ -119,7 +119,6 @@ public class HLRBRep_HLRToShape
             int f1 = 1;
             int f2 = DS.NbFaces();
             bool explor = false;
-            HLRTopoBRep_OutLiner? anOutLiner = null;
             //    bool todraw;
             if (!S.IsNull())
             {
@@ -161,7 +160,7 @@ public class HLRBRep_HLRToShape
 
                 for (Exp.Init(S, TopAbs_FACE); Exp.More(); Exp.Next())
                 {
-                    int iface = Faces.FindIndex(WorkingImage(Exp.Current(), ref anOutLiner));
+                    int iface = Faces.FindIndex(WorkingImage(Exp.Current()));
                     if (iface != 0)
                     {
                         DrawFace(visible, typ, iface, DS, ref Result, ref added, In3d);
@@ -171,7 +170,7 @@ public class HLRBRep_HLRToShape
                 {
                     for (Exp.Init(S, TopAbs_EDGE, TopAbs_FACE); Exp.More(); Exp.Next())
                     {
-                        int ie = Edges.FindIndex(WorkingImage(Exp.Current(), ref anOutLiner));
+                        int ie = Edges.FindIndex(WorkingImage(Exp.Current()));
                         if (ie != 0)
                         {
                             HLRBRep_EdgeData EDataIE = DS.EDataArray()[ie];
@@ -215,13 +214,9 @@ public class HLRBRep_HLRToShape
 
     // A sub-shape of a loaded shape as the data structure knows it: its image in the outliner's working shape (the
     // copy at the entry of a frozen shape, decision 1095). OCCT finds the shape itself; the port looks in each
-    // outliner that copied, the first one holding the sub-shape.
-    private TopoDS_Shape WorkingImage(in TopoDS_Shape theSubShape, ref HLRTopoBRep_OutLiner? theOutLiner)
+    // outliner, the first one that copied the sub-shape.
+    private TopoDS_Shape WorkingImage(in TopoDS_Shape theSubShape)
     {
-        if (theOutLiner is not null)
-        {
-            return theOutLiner.InternalWorkingImage(theSubShape);
-        }
         for (int i = 1; i <= myAlgo.NbShapes(); i++)
         {
             HLRTopoBRep_OutLiner? anOutLiner = myAlgo.ShapeBounds(i).Shape();
