@@ -114,7 +114,11 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
             return;
         }
 
-        //COUNTS
+        // unit 7G: 1,687 newly runnable (471 with data): OK 405, BAD 63 (OCCT's TODOs), SKIPPED 1,216 (data not public),
+        // FAILED 3, attributed (KnownFailures); 67 cases using the commands still miss others (the viewer, IGES, the
+        // feature commands of 7I, blend)
+        Assert.Equal(1687, aNew.Count);
+        Assert.Equal(405, aRuns.Count(r => r.Status == "OK"));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
     }
@@ -122,5 +126,12 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7G).</summary>
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
+        // BRepOffsetAPI_MakeThickSolid (unit 7F) on OCC5805.brep with a closing face differs from native: four extra
+        // faces on offset surfaces, without edges, in shells of their own (decision 9406; native's result checked against
+        // build123d.NET's binding)
+        ["bugs/modalg_2/bug5805_3"] = "7F: thick solid on OCC5805.brep",
+        ["bugs/modalg_2/bug5805_4"] = "7F: thick solid on OCC5805.brep",
+        // the progress indicator's output (XProgress), which Draw-lite's commands don't make (decision 954)
+        ["bugs/modalg_7/bug32330"] = "progress",
     };
 }

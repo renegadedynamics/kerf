@@ -1525,3 +1525,25 @@ the line), unless the last column says otherwise.
 | BRepOffset_MakeOffset, BRepOffsetAPI_MakeThickSolid | `IsDone()` with a null `Shape()` (open shells with nothing left to offset, a hollow sphere) | Reproduced (16 oracle runs); build123d.NET checks for it |
 | BSplCLib `AntiBoorScheme` through `RemoveKnot` (GeomLib::ExtendSurfByLength, the offset's face extension) | Steps outside its NCollection_LocalArray buffers, reading and writing the stack around them | Undefined natively (the tolerance test then fails); the port's `RemoveKnot` reports the removal impossible instead of throwing (decision 1034) |
 | BRepOffset_MakeOffset `SelfInter` | Throws Standard_NotImplemented | Never called. Reproduced |
+
+## Phase 7: unit 7G, drafts and the rest of TKOffset
+
+Found by porting Draft, BRepOffsetAPI's draft and projection makers, BRepFill_Draft, BiTgte, BRepFill_AdvancedEvolved
+and their Draw commands, and by their oracle and recordings. The port reproduces each (`// OCCT` at the line), unless
+the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Draft_Modification `Remove` | A face whose `Add` failed was never added, so `Remove` throws Standard_NoSuchObject, though the documentation says to call it after a failed `Add` | Reproduced; `Clear` resets |
+| Draft_Modification `NewCurve2d` | Translates by a period the pcurve it returns, which may be the one it keeps for the edge | A second call for the same edge and face would translate it again. The port translates a frozen one on a copy (decision 9401) |
+| Draft_Modification `NewParameter` | `GC = down_cast<Geom_TrimmedCurve>(GC)` keeps the trimmed curve (its basis was meant) | Reproduced |
+| Draft_Modification (some drafts of several faces) | Dereferences a null handle | An access violation natively (24 oracle runs), a NullReferenceException in the port |
+| BRepOffsetAPI_DraftAngle `CorrectWires` | Frees and edits the modifier's result, which shares the input's unchanged sub-shapes | Native writes into its input (324 of the oracle's 870 runs changed native's input); build123d.NET copies ExtrudeTaper's profile for it. The port copies the result first (decision 9401) |
+| BRepAlgo_NormalProjection `Build` | The edges the face bounds trim (BRepAlgoAPI_Section) are added to the result but not to the list `Generated` returns | `Generated` is empty for them. Reproduced |
+| BRepOffsetAPI_FindContigousEdges `NbEdges` | Declared, never defined | Left out |
+| BRepFill_Draft `Generated` | For a vertex, `TopoDS::Edge` throws; the vertex branch runs only for a null shape, whose comparisons fail | Never answers for a vertex. Reproduced |
+| BiTgte_Blend `ContactType` | Two faces give BiTgte_FaceEdge, never BiTgte_FaceFace | Reproduced |
+| BiTgte_Blend `ContactType` (`SupportShape1`) | Throws Standard_NoSuchObject on some center lines (the recording's Boolean result and bug29861's cylinders) | Reproduced (17 recorded runs) |
+| BRepFill_AdvancedEvolved `GetSpineAndProfile` | Evaluates both tangents with the first edge's adaptor (`anAC1.D1(aPar2, ...)`), and takes `anExtr.Value()` for every solution | Reproduced |
+| BRepFill_AdvancedEvolved `RemoveExcessSolids` | `TopoDS::Solid(anExpSo.Current())` after the explorer passed its only solid: the explored compound, cast unchecked in release builds | The result is the compound. The port keeps it without the cast (decision 9404) |
+| BRepTest `offsetload`, `offsetonface`, `rollingball` | Read words past the arguments (`a[2]` with two words, `a[i + 1]` for an odd count, `a[2]`, `a[3]`, `a[n]`) | Draw-lite reads empty words |
