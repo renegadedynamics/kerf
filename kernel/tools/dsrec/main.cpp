@@ -567,7 +567,9 @@ static void Record(const char* theName, const TopoDS_Shape& S, bool theChamfer, 
       for (const Edge& e : theEdges)
       {
         TopoDS_Edge E = EdgeOf(S, e.k);
-        if (e.r2 < 0)
+        if (e.r2 == -2)
+          aMk.AddDA(e.r1, 60 * M_PI / 180, E, FaceOf(S, E)); // --recon only: a distance and an angle
+        else if (e.r2 < 0)
           aMk.Add(e.r1, E);
         else
           aMk.Add(e.r1, e.r2, E, FaceOf(S, E));

@@ -10,7 +10,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// The recordings of <c>tools/dsrec --recon</c> (unit 7R): for each case (a native fillet or chamfer), the input as
 /// BRep text, native's data structure as <c>ChFi3d_Builder::Compute</c> hands it to the HBuilder's <c>Perform</c>
 /// (<see cref="TopOpeBRepDS_TextDump"/>'s format), and native's result and history after <c>Build</c>: the result as
-/// BRep text, the faces of each surface (<c>Builder()->NewFaces</c>), <c>IsDeleted</c> and <c>Modified</c> of each
+/// BRep text, the faces of each surface (<c>Builder()->NewFaces</c>), the lengths of the edges of each curve
+/// (<c>Builder()->NewEdges</c>), <c>IsDeleted</c> and <c>Modified</c> of each
 /// input face, <c>Generated</c> of each input edge and vertex, as indices in <c>TopExp::MapShapes(result, FACE)</c>.
 /// </summary>
 /// <remarks>
@@ -74,13 +75,19 @@ internal static class ReconRecordings
             string aResult = Block("result");
             List<int[]> aNewFaces = [], aModified = [], aGenE = [], aGenV = [];
             List<bool> aDeleted = [];
+            List<double[]> aNewEdges = [];
             if (aResult.Length > 0)
             {
                 string[] h = aLines[k++].Split(' ');
-                int nS = Int(h[1]), nF = Int(h[2]), nE = Int(h[3]), nV = Int(h[4]);
+                int nS = Int(h[1]), nF = Int(h[2]), nE = Int(h[3]), nV = Int(h[4]), nC = Int(h[5]);
                 for (int i = 0; i < nS; i++)
                 {
                     aNewFaces.Add(Faces(aLines[k++].Split(' '), 2));
+                }
+                for (int i = 0; i < nC; i++)
+                {
+                    string[] w = aLines[k++].Split(' ');
+                    aNewEdges.Add(w.Skip(3).Select(x => double.Parse(x, CultureInfo.InvariantCulture)).ToArray());
                 }
                 for (int i = 0; i < nF; i++)
                 {
@@ -101,7 +108,8 @@ internal static class ReconRecordings
             {
                 throw new InvalidDataException("reconrec: end-case expected after " + aName);
             }
-            aCases[aName] = new ReconCase(aName, aDone, aBRep, aDs, aResult, aNewFaces, aDeleted, aModified, aGenE, aGenV);
+            aCases[aName] = new ReconCase(aName, aDone, aBRep, aDs, aResult, aNewFaces, aNewEdges, aDeleted, aModified,
+                                          aGenE, aGenV);
         }
         return aCases;
     }
@@ -109,7 +117,7 @@ internal static class ReconRecordings
 
 /// <summary>A case of <see cref="ReconRecordings"/>.</summary>
 internal sealed record ReconCase(string Name, bool Done, string BRepText, string DsText, string ResultText,
-                                 List<int[]> NewFaces, List<bool> Deleted, List<int[]> Modified,
+                                 List<int[]> NewFaces, List<double[]> NewEdges, List<bool> Deleted, List<int[]> Modified,
                                  List<int[]> GeneratedFromEdges, List<int[]> GeneratedFromVertices)
 {
     /// <summary>The input shape (a new one at each call).</summary>

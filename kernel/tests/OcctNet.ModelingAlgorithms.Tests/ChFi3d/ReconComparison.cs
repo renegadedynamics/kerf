@@ -126,6 +126,12 @@ internal static class ReconComparison
         return "[" + string.Join(", ", aKeys) + "]";
     }
 
+    internal static double EdgeLength(in TopoDS_Shape E) =>
+        GCPnts_AbscissaPoint.Length(new BRepAdaptor_Curve(TopoDS.Edge(E)));
+
+    private static string Lengths(IEnumerable<double> theLengths) =>
+        "[" + string.Join(", ", theLengths.Select(x => x.ToString("G6", CultureInfo.InvariantCulture)).Order(StringComparer.Ordinal)) + "]";
+
     private static bool Close(double a, double b, double theRel) =>
         Math.Abs(a - b) <= theRel * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
@@ -182,7 +188,7 @@ internal static class ReconComparison
         bool ok1 = new BRepCheck_Analyzer(aNative).IsValid(), ok2 = new BRepCheck_Analyzer(aMine).IsValid();
         if (ok1 != ok2)
         {
-            d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine)));
+            d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine)) + (ok1 ? "" : " native " + Faults(aNative)));
         }
         Bnd_Box b1 = new(), b2 = new();
         BRepBndLib.AddOptimal(aNative, ref b1, false, false);
@@ -212,6 +218,15 @@ internal static class ReconComparison
             if (s1 != s2)
             {
                 d.Add($"NewFaces({i}) {s1} | {s2}");
+            }
+        }
+        for (int i = 1; i <= theCase.NewEdges.Count; i++)
+        {
+            string s1 = Lengths(theCase.NewEdges[i - 1]);
+            string s2 = Lengths(theRun.Builder.NewEdges(i).Select(e => EdgeLength(e)));
+            if (s1 != s2)
+            {
+                d.Add($"NewEdges({i}) {s1} | {s2}");
             }
         }
         NCollection_IndexedMap<TopoDS_Shape> aIF = new(TopTools_ShapeMapHasher.Instance);

@@ -5,6 +5,7 @@
 // (tests/OcctNet.ModelingAlgorithms.Tests/ChFi3d/ReconstructionNativeTests.cs).
 
 #include <BRepAdaptor_Curve.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -12,6 +13,9 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepOffsetAPI_MakeThickSolid.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
+#include <BRepPrimAPI_MakeRevol.hxx>
+#include <Geom_BSplineCurve.hxx>
+#include <Geom_BezierCurve.hxx>
 #include <BRepPrimAPI_MakeWedge.hxx>
 #include <BRep_Builder.hxx>
 #include <TopExp_Explorer.hxx>
@@ -80,9 +84,23 @@ static std::string ResultText(Maker& theMk, const TopoDS_Shape& theInput)
     return s;
   };
   int nS = theMk.Builder()->DataStructure()->NbSurfaces(); // the HBuilder's
-  OS << "history " << nS << " " << aIF.Extent() << " " << aIE.Extent() << " " << aIV.Extent() << "\n";
+  int nC = theMk.Builder()->DataStructure()->NbCurves();
+  OS << "history " << nS << " " << aIF.Extent() << " " << aIE.Extent() << " " << aIV.Extent() << " " << nC << "\n";
   for (int i = 1; i <= nS; i++)
     OS << "newfaces " << i << " " << aList(theMk.Builder()->NewFaces(i)) << "\n";
+  // the edges of each curve, by their lengths (they need not be in the result: SetRegul reads them)
+  for (int i = 1; i <= nC; i++)
+  {
+    const NCollection_List<TopoDS_Shape>& L = theMk.Builder()->NewEdges(i);
+    OS << "newedges " << i << " " << L.Extent();
+    for (NCollection_List<TopoDS_Shape>::Iterator it(L); it.More(); it.Next())
+    {
+      char b[64];
+      std::snprintf(b, sizeof(b), " %.9g", GCPnts_AbscissaPoint::Length(BRepAdaptor_Curve(TopoDS::Edge(it.Value()))));
+      OS << b;
+    }
+    OS << "\n";
+  }
   for (int i = 1; i <= aIF.Extent(); i++)
   {
     bool aDel = theMk.IsDeleted(aIF(i));
@@ -189,6 +207,88 @@ static void RecordReconCases()
     Record("F9", aPr, false, {{2, 10, -1}, {6, 10, -1}});
   }
 
+  // tests/blend/simple G1 to H9: parabolic, Bezier and B-spline prisms, revolutions
+  {
+    gp_Parab    aPa(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0), gp_Dir(0, 0, 1)), 50);
+    TopoDS_Edge aE1 = BRepBuilderAPI_MakeEdge(aPa, -100, 100).Edge();
+    TopoDS_Edge aE2 = BRepBuilderAPI_MakeEdge(gp_Pnt(0, -100, 50), gp_Pnt(0, 100, 50)).Edge();
+    BRepBuilderAPI_MakeWire aW(aE1, aE2);
+    TopoDS_Shape aPr = Scaled(
+      BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(), gp_Vec(20, 0, 100)).Shape(), 10);
+    Record("G1", aPr, false, {{4, 1000, -1}});
+    Record("G2", aPr, false, {{4, 10, -1}, {6, 10, -1}, {1, 10, -1}});
+  }
+  {
+    NCollection_Array1<gp_Pnt> aP(1, 5);
+    aP(1) = gp_Pnt(0, 0, 0);
+    aP(2) = gp_Pnt(20, 0, 0);
+    aP(3) = gp_Pnt(20, 5, 0);
+    aP(4) = gp_Pnt(25, 10, 0);
+    aP(5) = gp_Pnt(10, 20, 0);
+    occ::handle<Geom_BezierCurve> aBz = new Geom_BezierCurve(aP);
+    BRepBuilderAPI_MakeWire       aW(BRepBuilderAPI_MakeEdge(aBz).Edge(),
+                               BRepBuilderAPI_MakeEdge(gp_Pnt(10, 20, 0), gp_Pnt(0, 0, 0)).Edge());
+    TopoDS_Shape aPr = Scaled(
+      BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(), gp_Vec(0, 2, 10)).Shape(), 10);
+    Record("G3", aPr, false, {{6, 10, -1}});
+    Record("G4", aPr, false, {{6, 10, -1}, {1, 10, -1}});
+    Record("G5", aPr, false, {{4, 10, -1}});
+    Record("G6", aPr, false, {{4, 10, -1}, {1, 10, -1}, {6, 10, -1}});
+  }
+  {
+    NCollection_Array1<gp_Pnt> aP(1, 4);
+    aP(1) = gp_Pnt(0, 0, 0);
+    aP(2) = gp_Pnt(2, 10, 0);
+    aP(3) = gp_Pnt(4, 6, 0);
+    aP(4) = gp_Pnt(10, 0, 0);
+    NCollection_Array1<double> aK(1, 2);
+    aK(1) = -1;
+    aK(2) = 1;
+    NCollection_Array1<int> aM(1, 2);
+    aM(1) = 4;
+    aM(2) = 4;
+    occ::handle<Geom_BSplineCurve> aBs = new Geom_BSplineCurve(aP, aK, aM, 3);
+    BRepBuilderAPI_MakeWire        aW(BRepBuilderAPI_MakeEdge(aBs).Edge(),
+                               BRepBuilderAPI_MakeEdge(gp_Pnt(10, 0, 0), gp_Pnt(0, 0, 0)).Edge());
+    TopoDS_Shape aPr = Scaled(
+      BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(), gp_Vec(0, 2, 10)).Shape(), 10);
+    Record("G7", aPr, false, {{1, 5, -1}});
+    Record("G8", aPr, false, {{1, 5, -1}, {6, 5, -1}});
+    Record("G9", aPr, false, {{4, 5, -1}});
+    Record("H1", aPr, false, {{4, 5, -1}, {6, 5, -1}, {2, 5, -1}});
+  }
+  {
+    gp_Elips    anEl(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1), gp_Dir(1, 0, 0)), 15, 10);
+    TopoDS_Edge aE1 = BRepBuilderAPI_MakeEdge(anEl, 0, M_PI / 2).Edge();
+    aE1             = TopoDS::Edge(Rotated(aE1, gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0)), 90));
+    BRepBuilderAPI_MakePolygon aPoly(gp_Pnt(0, 0, 10), gp_Pnt(0, 0, -10), gp_Pnt(25, 0, -10), gp_Pnt(15, 0, 0));
+    BRepBuilderAPI_MakeWire    aW(aE1);
+    aW.Add(aPoly.Wire());
+    TopoDS_Shape aRv = Scaled(BRepPrimAPI_MakeRevol(BRepBuilderAPI_MakeFace(aW.Wire(), true).Face(),
+                                                    gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 270 * D)
+                                .Shape(),
+                              10);
+    Record("H2", aRv, false, {{1, 10, -1}});
+    Record("H3", aRv, false, {{1, 10, -1}, {4, 10, -1}, {9, 10, -1}});
+    Record("H4", aRv, false, {{10, 10, -1}});
+    Record("H5", aRv, false, {{10, 10, -1}, {4, 10, -1}, {3, 10, -1}});
+  }
+  {
+    BRepBuilderAPI_MakePolygon aPoly;
+    for (const gp_Pnt& p : {gp_Pnt(0, 0, 25), gp_Pnt(20, 0, 5), gp_Pnt(5, 0, 5), gp_Pnt(5, 0, -5), gp_Pnt(20, 0, -5),
+                            gp_Pnt(0, 0, -25)})
+      aPoly.Add(p);
+    aPoly.Close();
+    TopoDS_Shape aRv = Scaled(BRepPrimAPI_MakeRevol(BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face(),
+                                                    gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 270 * D)
+                                .Shape(),
+                              10);
+    Record("H6", aRv, false, {{8, 10, -1}});
+    Record("H7", aRv, false, {{8, 10, -1}, {10, 10, -1}, {13, 10, -1}});
+    Record("H8", aRv, false, {{4, 10, -1}});
+    Record("H9", aRv, false, {{4, 10, -1}, {2, 10, -1}, {7, 10, -1}});
+  }
+
   // build123d.NET's fillets and chamfers (tests/Build123d.Tests: Operations, Topology)
   {
     TopoDS_Shape      aB = BRepPrimAPI_MakeBox(1, 2, 3).Shape();
@@ -280,6 +380,29 @@ static void RecordReconCases()
              gp_Pnt P = MidPoint(E);
              return P.Z() > 1 && P.Z() < 99 && P.Y() < 1 && (std::abs(P.X() - 100) < 1 || std::abs(P.X() - 300) < 1);
            }));
+  }
+
+  // corners of four faces: a pyramid's apex (ChFi3d_Builder::PerformMoreThreeCorner, the plate filling)
+  {
+    TopoDS_Shape aPy = BRepPrimAPI_MakeWedge(100, 100, 100, 50, 50, 50, 50).Shape();
+    auto         anApex = [](const TopoDS_Edge& E) {
+      BRepAdaptor_Curve C(E);
+      return C.Value(C.FirstParameter()).Y() > 99 || C.Value(C.LastParameter()).Y() > 99;
+    };
+    Record("pyramid_apex_edges", aPy, false, EdgesWhere(aPy, 10, anApex));
+    Record("pyramid_all_edges", aPy, false, EdgesWhere(aPy, 5, [](const TopoDS_Edge&) { return true; }));
+    Record("chamfer_pyramid_apex_edges", aPy, true, EdgesWhere(aPy, 5, anApex));
+  }
+  // a chamfer by a distance and an angle (build123d.NET's PartChamferAsymAngle)
+  {
+    TopoDS_Shape      aB    = BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+    std::vector<Edge> aVert = EdgesWhere(aB, 1, [](const TopoDS_Edge& E) {
+      BRepAdaptor_Curve C(E);
+      return C.GetType() == GeomAbs_Line && std::abs(C.Line().Direction().Z()) > 0.5;
+    });
+    for (Edge& e : aVert)
+      e.r2 = -2; // a distance and an angle of 60 degrees (Record's chamfer branch)
+    Record("chamfer_box_distance_angle", aB, true, aVert);
   }
 
   // failures: radii too large (Shape3DTests.Plate, PlainMessage)

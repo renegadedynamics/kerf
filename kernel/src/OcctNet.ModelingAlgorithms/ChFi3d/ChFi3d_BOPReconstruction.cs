@@ -612,6 +612,13 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
                     }
                 }
             }
+            else if (BRep_Tool.Degenerated(E) && SplitDegenerated(FF, E, aLE) is List<TopoDS_Edge> aDegParts)
+            {
+                foreach (TopoDS_Edge aPart in aDegParts)
+                {
+                    aLE.Append(aPart);
+                }
+            }
             else
             {
                 aWhole.Append(E);
@@ -713,6 +720,69 @@ internal sealed partial class ChFi3d_BOPReconstruction : IChFi3d_Reconstruction
         Trace?.Invoke($"face {DS.Shape(F)}: edges {aLE.Extent()} isolated {aIsolated.Count} pieces {aPieces.Extent()}");
         mySplitIN[F] = aPieces;
         return aPieces;
+    }
+
+    /// <summary>
+    /// The parts of a degenerated edge of the face (forward) cut where new edges reach its vertex in the face's
+    /// parametric space (a fillet ending at a cone's apex), oriented as the edge; null if none reaches it inside.
+    /// </summary>
+    /// <remarks>
+    /// All the parts are given to <see cref="BOPAlgo_BuilderFace"/>: its wire splitter follows the parametric space
+    /// at the degenerated vertex, so the part under the fillet is left over and dropped (decision 10704).
+    /// </remarks>
+    private static List<TopoDS_Edge>? SplitDegenerated(TopoDS_Face FF, TopoDS_Edge E, NCollection_List<TopoDS_Shape> theNew)
+    {
+        TopoDS_Vertex V = TopExp.FirstVertex(TopoDS.Edge(E.Oriented(TopAbs_FORWARD)));
+        Geom2d_Curve? aDC = BRep_Tool.CurveOnSurface(E, FF, out double f, out double l);
+        if (V.IsNull() || aDC is null)
+        {
+            return null;
+        }
+        double aTolPar = Precision.PConfusion();
+        List<double> aParams = [];
+        foreach (TopoDS_Shape S in theNew)
+        {
+            TopoDS_Edge NE = TopoDS.Edge(S.Oriented(TopAbs_FORWARD));
+            TopExp.Vertices(NE, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            bool a1 = V1.IsSame(V), a2 = V2.IsSame(V);
+            if (!a1 && !a2)
+            {
+                continue;
+            }
+            Geom2d_Curve? aNC = BRep_Tool.CurveOnSurface(NE, FF, out double nf, out double nl);
+            if (aNC is null)
+            {
+                continue;
+            }
+            foreach (double t in a1 && a2 ? new[] { nf, nl } : new[] { a1 ? nf : nl })
+            {
+                Geom2dAPI_ProjectPointOnCurve aProj = new(aNC.Value(t), aDC, f, l);
+                if (aProj.NbPoints() == 0)
+                {
+                    continue;
+                }
+                double u = aProj.LowerDistanceParameter();
+                if (u > f + aTolPar && u < l - aTolPar && aParams.TrueForAll(x => Math.Abs(x - u) > aTolPar))
+                {
+                    aParams.Add(u);
+                }
+            }
+        }
+        if (aParams.Count == 0)
+        {
+            return null;
+        }
+        aParams.Sort();
+        aParams.Insert(0, f);
+        aParams.Add(l);
+        TopoDS_Edge EF = TopoDS.Edge(E.Oriented(TopAbs_FORWARD));
+        List<TopoDS_Edge> aParts = [];
+        for (int k = 0; k + 1 < aParams.Count; k++)
+        {
+            BOPTools_AlgoTools.MakeSplitEdge(EF, V, aParams[k], V, aParams[k + 1], out TopoDS_Edge aPart);
+            aParts.Add(TopoDS.Edge(aPart.Oriented(E.Orientation())));
+        }
+        return aParts;
     }
 
     /// <summary>Whether a point inside an edge of the wire is inside one of the faces.</summary>
