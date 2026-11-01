@@ -2394,8 +2394,19 @@ public static partial class BSplCLib
         // Anti Boor Scheme
         // ----------------
 
-        bool result =
-          AntiBoorScheme(Knots[TheIndex], Degree, knots, Dimension, poles, depth, length, Tolerance);
+        // OCCT: AntiBoorScheme can step outside its local arrays (seen through GeomLib::ExtendSurfByLength in unit 7F's
+        // offsets of data/occ's shapes): OCCT reads and writes the stack around its NCollection_LocalArray there, and the
+        // tolerance test then almost surely fails. The port, whose spans are bounded, treats such a removal as impossible
+        // (occt-issues.md, unit 7F).
+        bool result;
+        try
+        {
+            result = AntiBoorScheme(Knots[TheIndex], Degree, knots, Dimension, poles, depth, length, Tolerance);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            result = false;
+        }
 
         // ----------------
         // copy the results

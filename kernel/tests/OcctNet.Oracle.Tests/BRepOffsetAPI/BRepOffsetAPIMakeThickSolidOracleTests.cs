@@ -205,7 +205,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         var aWatch = Stopwatch.StartNew();
         foreach (string aFile in Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal))
         {
-            if (new FileInfo(aFile).Length > 120_000)
+            if (new FileInfo(aFile).Length > 300_000)
             {
                 continue;
             }
@@ -227,6 +227,8 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 if (isSolid)
                 {
                     Compare(aRun, aTally, new Run($"{aName} hollow arc {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Arc, true, Closing: [1]), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} hollow inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Intersection, true, Closing: [1]), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} offset3d inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Intersection, true, RemoveIntEdges: true, Closing: []), aShape);
                 }
                 else
                 {
@@ -235,7 +237,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             }
         }
         output.WriteLine($"time {aWatch.Elapsed.TotalSeconds:F0} s");
-        Report(aTally, "data/occ shapes up to 120 kB");
+        Report(aTally, "data/occ shapes up to 300 kB");
     }
 
     internal static IEnumerable<Run> SolidRuns(string theName, double theD)
@@ -352,8 +354,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             {
                 // native's other runs: where native varies (its maps keyed by address), the port's result is compared
                 // with each variant, then geometrically
-                bool isNativeVarying = false, isVariant = false;
-                for (int k = 0; k < 5 && !isVariant; k++)
+                bool isNativeVarying = false, isVariant = false, isGeometricVariant = false;
+                var aVolumes = new SortedSet<string>(StringComparer.Ordinal);
+                for (int k = 0; k < 8 && !isVariant; k++)
                 {
                     Outcome aN2 = RunNative(theRun, theCase, theRun.Read(Native(theRun, theInput))!.Value.N);
                     if (aN2.Text == aN.Text)
@@ -364,9 +367,11 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     if (aN2.Text is not null && aN2.Status == aP.Status)
                     {
                         BRepTextDiff aDiff2 = BRepTextComparison.Compare(aN2.Text, aP.Text);
-                        isVariant = aDiff2.IsIdenticalMaskingFree
-                                    || CanonicalShapeComparer.Compare(BooleanOracleTests.ReadPort(aN2.Text), aPResP,
-                                                                      new CanonicalOptions { CheckValidity = false }).IsIdentical;
+                        TopoDS_Shape aN2ResP = BooleanOracleTests.ReadPort(aN2.Text);
+                        CanonicalComparison aCanon2 = CanonicalShapeComparer.Compare(aN2ResP, aPResP, new CanonicalOptions { CheckValidity = false });
+                        isVariant = aDiff2.IsIdenticalMaskingFree || aCanon2.IsIdentical;
+                        isGeometricVariant |= Geometric(aN2ResP, aPResP, aCanon2) is null;
+                        aVolumes.Add(Geometric(aN2ResP, aPResP, aCanon2) ?? "same");
                     }
                 }
                 if (isNativeVarying)
@@ -378,13 +383,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     theTally.NativeVariant++;
                     return;
                 }
-                if (isNativeVarying && Geometric(aNResP, aPResP, aCanon) is null)
+                if (isNativeVarying && (isGeometricVariant || Geometric(aNResP, aPResP, aCanon) is null))
                 {
                     theTally.NativeVariesGeometric++;
                     theTally.Attributed.Add($"{aWhat}: native varies; the port's result is geometrically native's");
                     return;
                 }
-                theTally.Differences.Add($"{aWhat}: {aDiff}; canonically {aCanon}{(isNativeVarying ? " (native varies; geometrically: " + Geometric(aNResP, aPResP, aCanon) + ")" : "")}");
+                theTally.Differences.Add($"{aWhat}: {aDiff}; canonically {aCanon}{(isNativeVarying ? " (native varies; geometrically: " + Geometric(aNResP, aPResP, aCanon) + "; native's variants: " + string.Join(" | ", aVolumes) + ")" : "")}");
                 return;
             }
         }
@@ -429,6 +434,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         BRepGProp.SurfaceProperties(theP, aPS);
         double aScale = Math.Max(1.0, Math.Abs(aNS.Mass()));
         bool Near(double a, double b, double s) => Math.Abs(a - b) <= 1.0e-7 * Math.Max(s, Math.Max(Math.Abs(a), Math.Abs(b)));
+        bool aNValid0 = new BRepCheck_Analyzer(theN).IsValid(), aPValid0 = new BRepCheck_Analyzer(theP).IsValid();
+        if (!aNValid0 && !aPValid0 && Near(aNS.Mass(), aPS.Mass(), 1.0))
+        {
+            // both invalid: the volume of an invalid result depends on how its shells happen to be oriented (native's own
+            // volume varies from run to run there); the counts and the area agree
+            return null;
+        }
         if (!Near(aNV.Mass(), aPV.Mass(), 1.0) || !Near(aNS.Mass(), aPS.Mass(), 1.0)
             || aNS.CentreOfMass().Distance(aPS.CentreOfMass()) > 1.0e-7 * Math.Sqrt(aScale))
         {
