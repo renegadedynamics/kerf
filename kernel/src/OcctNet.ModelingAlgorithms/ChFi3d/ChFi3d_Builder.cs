@@ -30,7 +30,7 @@ namespace Occt;
 /// (<c>ChFi3d_Builder_2</c>, ...), as <see cref="ChFi3d_Builder_0"/>'s.
 /// </para>
 /// <para>
-/// <b>The working copy</b> (decisions 1005, 10203): the constructor copies a shape holding frozen TShapes
+/// <b>The working copy</b> (decisions 1005, 1087): the constructor copies a shape holding frozen TShapes
 /// (<see cref="BRepTools_CopyAtEntry"/>) and builds its maps from the copy, so that the vertices whose tolerance OCCT
 /// raises (<c>ChFi3d_IndexPointInDS</c>, <c>Compute</c>'s <c>UpdateVertex</c>) and the edges the elementary spines
 /// give a 3D curve are the copy's. Edges and vertices given by the caller are mapped onto the copy at the entry of

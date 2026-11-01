@@ -23,7 +23,7 @@ public partial class ChFi3d_Builder
 
     /// <summary>
     /// Initializes the builder on <paramref name="S"/> with the angular tolerance <paramref name="Ta"/>; a shape
-    /// holding frozen TShapes is copied first and the maps are built on the copy (decision 10203).
+    /// holding frozen TShapes is copied first and the maps are built on the copy (decision 1087).
     /// </summary>
     protected ChFi3d_Builder(in TopoDS_Shape S, double Ta)
     {
@@ -1232,7 +1232,7 @@ internal static class ChFi3d_Builder_1
         return OffsetEdge;
     }
 
-    // OCCT reverses the intersection curve in place; a frozen one is reversed on a copy (decision 10204).
+    // OCCT reverses the intersection curve in place; a frozen one is reversed on a copy (decision 1088).
     private static Geom_Curve Reversible(Geom_Curve theCurve) =>
         theCurve.IsFrozen() ? (Geom_Curve)theCurve.Copy() : theCurve;
 

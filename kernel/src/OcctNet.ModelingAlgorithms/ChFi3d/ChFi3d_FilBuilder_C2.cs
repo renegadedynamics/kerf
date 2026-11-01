@@ -907,7 +907,7 @@ internal static class ChFi3d_FilBuilder_C2
         return Math.Abs(r1 - r2) < tolesp;
     }
 
-    // OCCT.NET: OCCT changes this curve in place; one frozen elsewhere is changed on a copy (decisions 974, 10204).
+    // OCCT.NET: OCCT changes this curve in place; one frozen elsewhere is changed on a copy (decisions 974, 1088).
     internal static T Writable<T>(T theCurve) where T : Geom2d_Geometry =>
         theCurve.IsFrozen() ? (T)theCurve.Copy() : theCurve;
 

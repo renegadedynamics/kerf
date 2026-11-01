@@ -11537,7 +11537,7 @@ ChFi3d_Builder whole (its `.cxx` and the files `_1`, `_2`, `_6`, `_C1`, `_C2`, `
 ChFi3d_FilBuilder, ChFi3d_ChBuilder, ChFi3d_SearchSing and ChFi3d_FilletShape. Numbers from 10501 are placeholders,
 renumbered on merge.
 
-10501. **Scope and shape.**
+1117. **Scope and shape.**
        - **FilBuilder and ChBuilder are ported here, not in 7N3.** ChFi3d_Builder is abstract (its walking, sections,
          corners of two and three fillets and extents are FilBuilder's and ChBuilder's), so the data structure can be
          compared with native's only through a concrete builder. 7N3 keeps BRepFilletAPI, LocalOperation, FilletSurf
@@ -11555,7 +11555,7 @@ renumbered on merge.
          so the seam's NotImplementedException passes through; integers used as booleans (`intf`, `intl`, `Ok1`) stay
          integers with explicit comparisons; StartSol's lambda capturing reference parameters is a static local
          function taking them by `ref`; C# scoping renames are marked where they occur.
-10502. **The seam: `ChFi3d_Reconstruction`** (internal abstract class, `ChFi3d/ChFi3d_Reconstruction.cs`), committed
+1118. **The seam: `ChFi3d_Reconstruction`** (internal abstract class, `ChFi3d/ChFi3d_Reconstruction.cs`), committed
        first for unit 7R. Its members are exactly the `TopOpeBRepBuild_HBuilder` members TKFillet calls, with OCCT's
        names and parameters: `Perform(HDS)`, `MergeSolid(S, TB)`, `IsSplit(S, ToBuild)`, `Splits(S, ToBuild)`,
        `Merged(S, ToBuild)`, `NewFaces(I)`, `NewEdges(I)`, `DataStructure()`. `ChFi3d_Reconstruction.Create(BT)` stands
@@ -11565,7 +11565,7 @@ renumbered on merge.
        is internal until 7N3 decides its public form; `myCoup` is an internal field, which the tests set to a recording
        reconstruction. Everything after Perform in `Compute` (MergeSolid, the split edges' vertex tolerances, the result
        or `badShape`, `SetRegul`, same-parameter on `NewFaces`) is ported and runs against the seam.
-10503. **The working copy** (decisions 1005, 10203). The constructor copies a shape holding frozen TShapes
+1119. **The working copy** (decisions 1005, 1087). The constructor copies a shape holding frozen TShapes
        (`BRepTools_CopyAtEntry`) and builds the five maps from the copy, so the common points, the spines, the data
        structure and every vertex OCCT raises the tolerance of (ChFi3d_IndexPointInDS, Compute's `UpdateVertex`) are
        the copy's; the elementary spines' 3D curves are added to the copy's edges. Public members map the caller's
@@ -11574,7 +11574,7 @@ renumbered on merge.
        (`FromWork`: FirstVertex, LastVertex, FaultyVertex). `Value(I)` gives the spine itself, with the copy's edges.
        **For 7R:** finish the copy at the end of a successful Compute (`myCopyAtEntry.Finish(result)`, so unchanged
        sub-shapes are the caller's) and freeze the result at publication.
-10504. **References and outputs.** A non-const `handle&` parameter is `ref` only where the function assigns it, checked
+1120. **References and outputs.** A non-const `handle&` parameter is `ref` only where the function assigns it, checked
        transitively by script over all the builder files (a by-value parameter passed on as `ref`/`out` is flagged):
        `StartSol`'s HS1/HS2 and `ChFi3d_CoupeParPlan`'s curves are `ref`; others are plain. Struct and scalar
        references are `ref` (`out` where the callee always writes). C++ references to elements (`ChFiDS_CommonPoint&`,
@@ -11582,11 +11582,11 @@ renumbered on merge.
        copies, as OCCT reads them only. `math_Vector` assignment copies the values (`Initialized`), as OCCT's
        `operator=`. Adaptors referenced through `*handle` (`BRepAdaptor_Surface& Sb1 = *HS1`, `ChFiDS_ElSpine& Guide =
        *HGuide`) are the same object.
-10505. **No process-wide state.** ChFi3d_Builder_6 `StoreData`'s `thread_local GeomAdaptor_Curve checkcurve` is loaded
+1121. **No process-wide state.** ChFi3d_Builder_6 `StoreData`'s `thread_local GeomAdaptor_Curve checkcurve` is loaded
        before every use and never read across calls: a local (plan 2.3). The corner files and FilBuilder/ChBuilder have
        no static or thread-local state. Nothing is `[ThreadStatic]`; two builders on one input give the same data
        structure (tested).
-10506. **What OCCT edits in place.**
+1122. **What OCCT edits in place.**
        - `MakeOffsetEdge` reverses the intersection curve in place: a frozen one is reversed on a copy (decision 974).
          The corner files: GeomFill_ConstrainedFilling's surface is taken unfrozen (`InternalSurface`) for `VReverse`;
          FilBuilder_C2 copies a frozen pivot pcurve before `SetKnots`.
@@ -11595,7 +11595,7 @@ renumbered on merge.
        - ChFiDS_SurfData's simulated sections (`Simul`) are an `object?`: OCCT stores a `Standard_Transient` handle to
          a `ChFiDS_SecHArray1`, and the port's `NCollection_HArray1` is not a transient.
        - BRepBlend's typedef names are written out as BlendFunc's (decision 1059).
-10507. **The oracle: tools/dsrec, extended.** Each case's input now goes through BRep text before native runs on it, as
+1123. **The oracle: tools/dsrec, extended.** Each case's input now goes through BRep text before native runs on it, as
        the port reads it (the 7L recording ran on the in-memory shape: rotated and scaled inputs read back differed by
        an ulp in their locations, which showed as ulp differences in 5 cases). Every case records its input, the
        edges and parameters, and, for fillets, BRepFilletAPI_MakeFillet's diagnostics (contours, faulty contours,
@@ -11608,7 +11608,7 @@ renumbered on merge.
        38 cases; the 35 that reach Perform give native's data structure byte for byte; the diagnostics of all 27
        fillet cases equal native's** (the three failures: StartsolFailure on every contour, or on 8 of 12, Perform
        never reached, as natively). The kpart recording of 7N1 is unchanged.
-10508. **For unit 7R: what the corpus reaches** (the 35 data structures at Perform, and the queries Compute and
+1124. **For unit 7R: what the corpus reaches** (the 35 data structures at Perform, and the queries Compute and
        SetRegul make, counted by the tests' recording reconstruction):
        - Interferences: CPI 1,027 (support kind CURVE: the DS curves' ends and the input edges cut, the edge given by
          its shape index; geometry POINT; no VERTEX geometry in these cases), SCI 830 (support SURFACE: the faces'
@@ -11622,6 +11622,111 @@ renumbered on merge.
        - Corners: PerformOneCorner 62, PerformTwoCorner 37 (fillets and chamfers), PerformThreeCorner 22,
          PerformMoreThreeCorner 1 (the pyramid's apex); not reached: PerformIntersectionAtEnd, PerformMoreSurfdata,
          PerformSingularCorner, and fillets ending on a free boundary inside a face (ExtentOneCorner only).
+
+## Phase 7: unit 7R2, the reconstruction's follow-up (7N2's invalid results)
+
+1125. **The two invalid results end to end are native's, not the reconstruction's.** Unit 7N2's pipeline gave
+       results BRepCheck rejects in two cases; `tools/dsrec --recon` now records native's result for both (built through
+       BRep text as dsrec builds them: their data structures equal dsrec.txt's byte for byte, and 7N2's equal native's).
+       `pyramid_base_edges`: native's result fails with the same faults (FACE UnorientableShape, WIRE
+       SelfIntersectingWire), and the reconstruction from native's data structure equals native's geometrically
+       (volume, area, counts, box, history). `b3d_fail_box_top_edges_r6` (a box of 10, its top edges with a radius
+       of 6, over half its width): native says done, but two corner faces have negative areas and its result fails
+       with BadOrientationOfSubshape and IntersectingWires (the fillets cross on the top face); the reconstruction
+       builds no face on those two degenerate surfaces and has native's IntersectingWires. So the data ChFi3d computes
+       (faithfully ported: the data structure is native's) is invalid there, and nothing is changed in the
+       reconstruction or in ChFi3d. `ReconstructionNativeTests.InvalidWhereNativeIs` checks the faults against
+       native's; 7N2's `KnownInvalidResults` keeps the two cases, attributed, and its end-to-end comparison with
+       native skips the degenerate one (`NativeDegenerate`).
+## Phase 7: unit 7Q2, the hidden-line removal algorithms
+
+The rest of HLRBRep (InternalAlgo, Algo, Hider, EdgeBuilder, HLRToShape, PolyAlgo, PolyHLRToShape, BiPoint, BiPnt2D,
+TypeOfResultingEdge, the package's `MakeEdge`, `MakeEdge3d` and `PolyHLRAngleAndDeflection`), HLRAppli_ReflectLines,
+and the HLR Draw commands. TKHLR is complete.
+
+1126. **The algorithms are OCCT's working objects.** HLRBRep_InternalAlgo, HLRBRep_Algo and HLRBRep_PolyAlgo are
+       transients with OCCT's public setters; HLRBRep_HLRToShape, HLRBRep_PolyHLRToShape, HLRBRep_Hider,
+       HLRBRep_EdgeBuilder and HLRAppli_ReflectLines are classes; HLRBRep_BiPoint and HLRBRep_BiPnt2D are structs with
+       internal setters and `With` twins (decision 1077's pattern). `Projector()` of the exact algorithm returns a
+       reference to the stored projector, as OCCT's; the polygonal one returns a copy (OCCT's const reference) and
+       `Shape(I)` a copy (OCCT's non-const reference is used only to read). OCCT's copy constructors are kept: the
+       exact one shares the data structure and copies the shapes' bounds (HLRBRep_ShapeBounds is a class, decision
+       1092, so each is copied), the polygonal one shares HLRAlgo_PolyAlgo. HLRBRep_EdgeBuilder.cxx defines
+       `No_Exception`, so its two `Standard_DomainError_Raise_if` are compiled out natively and left out here, so the
+       hider sees what native sees. `OCC_CATCH_SIGNALS` around each shape's loading (InternalAlgo's `Update`) and each
+       edge's hiding (the hider's `Hide`) catches Standard_Failure and the .NET exceptions standing for OCCT's signals,
+       as BRepCheck_Analyzer does.
+1127. **The compounds are published frozen.** HLRBRep_HLRToShape's and HLRBRep_PolyHLRToShape's compounds, the
+       polygonal algorithm's `OutLinedShape` and HLRAppli_ReflectLines' compounds are frozen when returned; the edges
+       are built unfrozen (`MakeEdge`, `MakeEdge3d`, BRepLib_MakeEdge2d's `InternalEdge`). HLRAppli_ReflectLines runs
+       `BRepLib::SameParameter` on its compound as OCCT does, so it reads HLRToShape's internal
+       `InternalCompoundOfEdges` and freezes afterwards. HLRBRep_HLRToShape scales the data structure's projector
+       while it builds a compound (`Scaled(true)` then `Scaled(false)`), as OCCT does: the projector is shared by the
+       curves (decision 1093).
+1128. **Copy at entry.** The exact algorithm writes into its input only through the outlining, which copies a frozen
+       shape (decision 1095); the caller's shapes are unchanged (checked on every native case). `MakeEdge3d` shares the
+       vertices of the edge it is built on: the working shape's, which carry the outlining's point representations as
+       native's input does, so the BRep text is native's. HLRBRep_HLRToShape's compounds of a sub-shape that isn't a
+       loaded shape (`VCompound(face)`) look the sub-shape up in the data structure's maps; for a copied shape the
+       port looks up its image in the copy (`HLRTopoBRep_OutLiner.InternalWorkingImage`, from the copy's map of
+       TShapes, new), where OCCT finds the shape itself. HLRBRep_PolyAlgo only reads its shapes (their triangulations,
+       polygons on them, free edges' polygons, surfaces and curves) and builds its own internal triangulation: nothing
+       is copied, and the shapes its segments come from (`Hide`, `Show`, PolyHLRToShape's `VCompound(S)`) are the
+       caller's edges and faces. A shape must be meshed first, as natively (vdisplay does it in Draw).
+1129. **HLRBRep_PolyAlgo's pointers.** OCCT keeps pointers to nodes' indices and data (`NodeIndices*`,
+       `NodeData*`) and moves them along a polygon; they are `ref` locals reassigned with `= ref` (C# 11), the nodes
+       being classes whose fields don't move. The arrays OCCT passes as `NCollection_Array1<T>*&` (moved when
+       HLRAlgo_PolyInternalData reallocates) are `ref` parameters on the caller's variables, `null!` where OCCT passes
+       `nullptr` (decision 1081); the 3x3 matrices are `double[3, 3]`; `theList.First().Points()` (OCCT's non-const
+       First) is `ChangeFirst()`. The file was pre-converted by a script (`ref` and `out` at call sites from the
+       compiler's CS1620) and reviewed line by line.
+1130. **Process-wide state** (plan 2.3). HLRBRep_InternalAlgo.cxx's `HLRBRep_InternalAlgo_TRACE` and `_TRACE10` are
+       file statics never written: constants. HideSelected's function static `rty` (a column counter of the debug
+       trace, process-wide in OCCT) is `[ThreadStatic]`; it only formats `Debug(true)`'s output. HLRBRep_Data's counters
+       (decision 1097) are only reset under OCCT_DEBUG, left out. A test hides a torus on eight threads at once and
+       compares with the serial results.
+1131. **Draw-lite: the HLR commands.** HLRTest's commands (`hprj`, `houtl`, `hfill`, `hsin`, `hsout`, `hload`,
+       `hremove`, `hsetprj`, `hupdate`, `hhide`, `hshowall`, `hdebug`, `hnullify`, `hres2d`, `reflectlines`, `hlrin3d`,
+       `hlrin2d`) share one HLRBRep_Algo per interpreter (OCCT's file static `hider`); projectors and outliners are Draw
+       values (`whatis`: projector, outliner). `build3d` (BRepLib::BuildCurves3d, in place natively) writes a copy and
+       rebinds the name, as `mkedgecurve`. ViewerTest's view projections `vfront`, `vback`, `vtop`, `vbottom`, `vleft`,
+       `vright`, `vaxo` (vtop and vaxo were no-ops) set the context's camera axis and up direction (V3d_View::SetProj
+       with +Z up; the default view is V3d_XposYnegZpos), and `vcomputehlr` hides the shape for that view and binds
+       the visible (and hidden) compounds. OCCT takes its projector from the camera's matrices (ConvertWithProj at the
+       window's centre and right edge: the direction to the eye, the right as X, the negated near-plane centre as the
+       location); Draw-lite builds it from the axis, at the origin on the same axis line. The polygonal result is
+       sensitive to the projector's last bits: OCCT's own TODOs give Windows and Linux different lengths, and two cases
+       give the port a third (hlr/poly_hlr/bug25813_3: native 301.999 on Windows, 302 on Linux, the port 301.996, and
+       301.999 with the same frame given explicitly; hlr/poly_hlr/Plate: 404.004, 404.386 and 404.007): attributed.
+       Draw's view commands `top`, `axo`, `front`, `v2d` are no-ops. The corpus (`DrawHlrCorpusTests`): 332 cases call
+       the commands, 188 now run (none before): OK 44, BAD (known problem) 5, FAILED 2 (the two above), SKIPPED 137
+       (data not public). The view commands also make two more of 7G's offset cases runnable (both SKIPPED, data not
+       public; `DrawOffsetDraftCorpusTests` now counts 1,698). The other DrawLite corpus classes are unchanged
+       (666 tests: all pass but DrawCheapGapsCorpusTests' bugs/modalg_5/bug24157_5, whose `bbuild` took 20.9 s against
+       its 20 s limit under the machine's load and 6 s alone).
+1132. **The oracle: tools/hlrrec records the algorithms** (`algo.cpp`, run with a fourth argument). Every input is
+       recorded as BRep text (primitives, a Boolean of two cylinders, the hlr group's six shapes, and each meshed by
+       BRepMesh_IncrementalMesh for the polygonal runs) and read back on both sides before every run. For six shapes in
+       eight views (isolines in the axonometric one), two pairs of shapes, and the hlr group's shapes in their tests'
+       views: the exact algorithm's sixteen compounds (visible and hidden sharp, smooth, sewn, outline and isoline edges,
+       3D outlines, sharp and smooth edges, one shape's and one face's), the polygonal algorithm's fourteen (hidden and
+       shown, one shape's, the outlined shape; eight on the larger shapes), and HLRAppli_ReflectLines' six on five
+       shapes. **133 cases, 1890 compounds: 897 byte-identical, 50 identical with the Free column masked (the polygonal
+       outlined shape holds the caller's frozen shape), 943 empty on both sides; none canonical or attributed.** The
+       recording (14.9 MB, 2.7 MB gzipped) is embedded; the port reads every input frozen and checks it unchanged and
+       every result frozen.
+1133. **vdisplay's wireframe meshing** (a note on decision 560, not changed). OCCT 8's StdPrs_WFShape::Add tessellates
+       the shape under automatic triangulation (StdPrs_ToolTriangulatedShape::Tessellate), so the wireframe mode
+       meshes; Draw-lite meshes it in the selection only (BRepMesh_IncrementalMesh with the same deflection and angle,
+       serial as the factory's), which gives the same triangulation on a shape without one. A shape already meshed
+       more coarsely would be kept by the selection and remeshed by Tessellate.
+1134. **For Bento: 2D drawings.** build123d's `project_to_viewport` is HLRBRep_Algo (exact, with HLRBRep_HLRToShape's
+       visible and hidden sharp, smooth and outline compounds, `BRepLib::BuildCurves3d` on them) or HLRBRep_PolyAlgo on
+       a meshed shape; all are ported, public and frozen, so Bento can offer it as a pure function (shape, viewport
+       origin and direction, up) returning the visible and hidden edge compounds. SVG and DXF export then need only the
+       2D edges' curves: lines, circles, ellipses, B-splines (Geom2d), sampled or converted (`GeomConvert`'s Bezier
+       pieces for SVG paths, DXF's SPLINE entities). The writers are not OCCT's (build123d uses ezdxf and its own SVG
+       code), so they are Bento's own code over the ported curves.
 
 ## Phase 7: unit 7N3, the public fillet and chamfer API
 

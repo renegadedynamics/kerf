@@ -1724,6 +1724,29 @@ remark at the place).
 | ChFi3d_ChBuilder `SimulSurf` (constant throat with penetration) | Prints "Construction of offset guide failed!" to std::cout and goes on with a null guide | The port does not print; the null guide fails as natively |
 | ChFi3d_ChBuilder `SetDistAngle` | Initializes two surface adaptors it never reads | None |
 
+## Phase 7: unit 7R2, the reconstruction's follow-up
+
+| Where | What | Effect |
+|---|---|---|
+| ChFi3d (four base edges of a square pyramid, radius 5) | Native's result fails BRepCheck: a face UnorientableShape, a wire SelfIntersectingWire | The port (ChFi3d and the reconstruction) gives the same result and the same faults (decision 1125) |
+| BRepFilletAPI_MakeFillet (a box of 10, its top edges, radius 6) | `IsDone` is true; two corner faces have negative areas and the result fails BRepCheck (BadOrientationOfSubshape, IntersectingWires) | The reconstruction builds no face on the degenerate surfaces and keeps IntersectingWires; not compared further |
+## Phase 7: unit 7Q2, the hidden-line removal algorithms
+
+Found by porting HLRBRep's algorithms, HLRAppli and the HLR Draw commands. The port reproduces each except where said.
+
+| Where | What | Effect |
+|---|---|---|
+| HLRBRep_Hider `Hide` (an ON interference with an INTERNAL transition and an UNKNOWN state before it) | `case TopAbs_UNKNOWN: break;` leaves the list's iterator where it is | The loop over the ON interferences never ends; the port moves to the next interference (the only fix: a hang) |
+| HLRBRep_EdgeBuilder.cxx | Defines `No_Exception`, compiling out its checks of an empty vertex list and of a list without interferences | The builder then dereferences a null area limit (caught by the hider's OCC_CATCH_SIGNALS); the port does the same |
+| HLRBRep_InternalAlgo `Hide(I, J)` | The shapes' min-max test checks both directions for indices 0 to 5 but one only for 6 and 7 (14 conditions, not 16) | Some pairs of shapes that cannot overlap are hidden by each other anyway (slower, same result) |
+| HLRBRep_InternalAlgo `Update` | The shape's min-max box starts from its first edge's: a shape without edges adds its faces' boxes to unset values | The port's start is zeros |
+| HLRBRep_PolyAlgo `InsertOnOutLine` | Keeps a reference to a segment of the array that `UpdateLinks` may reallocate | Not read after the reallocation: no effect |
+| HLRBRep_PolyAlgo's copy constructor | Shares the other's HLRAlgo_PolyAlgo | `Update` on either clears the other's results |
+| HLRBRep_HLRToShape `InternalCompound` | Scales the data structure's projector during the call (`Scaled(true)`, then `Scaled(false)`) | The algorithm's projector is unscaled afterwards whatever it was |
+| HLRBRep `MakeEdge3d`, HLRAppli_ReflectLines `GetCompoundOf3dEdges` | The 3D edges share the input edges' vertices, and `BRepLib::SameParameter` on the compound may raise their tolerances | Writes into the caller's vertices natively; the port's are the outliner's working copy's for a frozen input (decision 1128) |
+| HLRTest `houtl` | Reads `a[2]` after checking only `n < 2` | A null name with one argument; the port checks |
+| ViewerTest `vcomputehlr` | The projector's location is the negated centre of the near plane | On the view axis: the 2D results don't depend on it but through rounding |
+
 ## Phase 7: unit 7N3, the public fillet and chamfer API
 
 Found by porting BRepFilletAPI, FilletSurf and the fillet and chamfer Draw commands. The port reproduces each, but

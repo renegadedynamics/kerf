@@ -33,6 +33,7 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
     private TopoDS_Shape myOriginalShape = new();
     private TopoDS_Shape myOutLinedShape = new();
     private TopoDS_Shape myWorkingShape = new();
+    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myCopies; // the original's TShapes to the working shape's (7Q2)
     private readonly HLRTopoBRep_Data myDS = new();
 
     public HLRTopoBRep_OutLiner()
@@ -73,6 +74,22 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
     /// </summary>
     internal TopoDS_Shape InternalWorkingShape() => myWorkingShape.IsNull() ? myOriginalShape : myWorkingShape;
 
+    /// <summary>
+    /// The image of a sub-shape of the original shape in the working shape (the same place and orientation, the
+    /// copy's TShape); the shape itself when the original wasn't copied or the shape isn't one of its sub-shapes
+    /// (unit 7Q2: HLRBRep_HLRToShape finds a caller's sub-shapes in the data structure through it).
+    /// </summary>
+    internal TopoDS_Shape InternalWorkingImage(in TopoDS_Shape S)
+    {
+        if (myCopies is not null && !S.IsNull() && myCopies.TryGetValue(S.TShape()!, out TopoDS_TShape? anImage))
+        {
+            TopoDS_Shape aShape = S;
+            aShape.TShape(anImage);
+            return aShape;
+        }
+        return S;
+    }
+
     public HLRTopoBRep_Data DataStructure() => myDS;
 
     /// <summary>
@@ -86,8 +103,9 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
             if (myOutLinedShape.IsNull())
             {
                 // copy at the entry (decision 1095)
+                myCopies = null;
                 myWorkingShape = BRepTools.HoldsFrozen(myOriginalShape)
-                                     ? BRepTools.ExactCopyForWrite(myOriginalShape, out _)
+                                     ? BRepTools.ExactCopyForWrite(myOriginalShape, out _, out myCopies)
                                      : myOriginalShape;
 
                 gp_Vec Vecz = new(0.0, 0.0, 1.0);

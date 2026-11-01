@@ -42,7 +42,7 @@ public class ChFi3dBuilderTests
     {
         // OCCT raises the tolerances of the vertices the fillets end at (ChFi3d_IndexPointInDS, Compute's
         // UpdateVertex) and gives the elementary spines' edges 3D curves: on the builder's working copy, never on the
-        // caller's frozen shape (decisions 1005, 10203)
+        // caller's frozen shape (decisions 1005, 1087)
         TopoDS_Shape aBox = Box();
         Assert.True(BRepTools.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
