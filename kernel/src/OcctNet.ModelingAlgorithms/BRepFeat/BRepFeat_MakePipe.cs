@@ -49,13 +49,15 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
     public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in TopoDS_Wire Spine, int Mode,
                      bool Modify)
     {
-        mySbase = Sbase;
+        // OCCT.NET: the working copies of frozen inputs (decision 9501)
+        StartWorkingShapes();
+        mySbase = Working(Sbase);
         BasisShapeValid();
-        mySkface = Skface;
+        mySkface = Working(Skface);
         SketchFaceValid();
-        myPbase = Pbase;
+        myPbase = Working(Pbase);
         mySlface.Clear();
-        mySpine = Spine;
+        mySpine = TopoDS.Wire(Working(Spine));
         if (Mode == 0)
         {
             myFuse = false;
@@ -95,7 +97,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         TopExp_Explorer exp = new();
         for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(F))
+            if (exp.Current().IsSame(Working(F)))
             {
                 break;
             }
@@ -107,7 +109,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(E))
+            if (exp.Current().IsSame(Working(E)))
             {
                 break;
             }
@@ -201,7 +203,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         PerfSelectionValid();
         mySFrom.Nullify();
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         TransformShapeFU(1);
         ShapeUntilValid();
         LocOpe_Pipe thePipe = new(mySpine, myPbase);
@@ -229,12 +231,12 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         }
         if (!mySkface.IsNull())
         {
-            if (From.IsSame(mySkface))
+            if (Working(From).IsSame(mySkface))
             {
                 Perform(Until);
                 return;
             }
-            else if (Until.IsSame(mySkface))
+            else if (Working(Until).IsSame(mySkface))
             {
                 Perform(From);
                 return;
@@ -253,10 +255,10 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         {
             throw new Standard_ConstructionError();
         }
-        mySFrom = From;
+        mySFrom = Working(From);
         TransformShapeFU(0);
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         TransformShapeFU(1);
         ShapeUntilValid();
         LocOpe_Pipe thePipe = new(mySpine, myPbase);

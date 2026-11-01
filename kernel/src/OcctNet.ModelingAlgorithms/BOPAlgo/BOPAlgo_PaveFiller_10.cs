@@ -10,7 +10,8 @@ public partial class BOPAlgo_PaveFiller
 {
     /// <summary>
     /// Turns the non-destructive mode on if an argument is locked. Frozen shapes are locked, so every operation on
-    /// a published shape is non-destructive (decision 577).
+    /// a published shape is non-destructive (decision 577); so is one on an argument holding frozen sub-shapes
+    /// (decision 9505).
     /// </summary>
     protected void SetNonDestructive()
     {
@@ -27,7 +28,10 @@ public partial class BOPAlgo_PaveFiller
         for (; aItLS.More() && (!bFlag); aItLS.Next())
         {
             TopoDS_Shape aS = aItLS.Value();
-            bFlag = aS.Locked();
+            // OCCT.NET: an unfrozen argument may hold frozen sub-shapes (ported code's intermediate shapes sharing a
+            // caller's unchanged ones, decision 1013); a destructive operation would throw writing into them, so they
+            // count as locked too (decision 9505)
+            bFlag = aS.Locked() || BRepTools.HoldsFrozen(aS);
         }
         myNonDestructive = bFlag;
     }

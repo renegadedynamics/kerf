@@ -58,11 +58,13 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     public void Init(in TopoDS_Shape Sbase, in TopoDS_Face Pbase, in TopoDS_Face Skface, double Angle, int Mode,
                      bool Modify)
     {
-        mySkface = Skface;
+        // OCCT.NET: the working copies of frozen inputs (decision 9501)
+        StartWorkingShapes();
+        mySkface = Working(Skface);
         SketchFaceValid();
-        mySbase = Sbase;
+        mySbase = Working(Sbase);
         BasisShapeValid();
-        myPbase = Pbase;
+        myPbase = Working(Pbase);
         mySlface.Clear();
         if (Mode == 0)
         {
@@ -106,7 +108,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         TopExp_Explorer exp = new();
         for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(F))
+            if (exp.Current().IsSame(Working(F)))
             {
                 break;
             }
@@ -118,7 +120,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(E))
+            if (exp.Current().IsSame(Working(E)))
             {
                 break;
             }
@@ -228,7 +230,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         PerfSelectionValid();
         mySFrom.Nullify();
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
         Geom_Curve? C = TestCurve(myPbase);
@@ -340,7 +342,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         if (!mySkface.IsNull())
         {
-            if (From.IsSame(mySkface))
+            if (Working(From).IsSame(mySkface))
             {
                 myJustGluer = true;
                 Perform(Until);
@@ -349,7 +351,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                     return;
                 }
             }
-            else if (Until.IsSame(mySkface))
+            else if (Working(Until).IsSame(mySkface))
             {
                 myJustGluer = true;
                 Perform(From);
@@ -374,10 +376,10 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         {
             throw new Standard_ConstructionError();
         }
-        mySFrom = From;
+        mySFrom = Working(From);
         bool Trff = TransformShapeFU(0);
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         bool Trfu = TransformShapeFU(1);
         ShapeUntilValid();
         if (Trfu != Trff)
@@ -544,7 +546,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         {
             throw new Standard_ConstructionError();
         }
-        if (!mySkface.IsNull() && Until.IsSame(mySkface))
+        if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
         {
             PerformUntilEnd();
             return;
@@ -559,7 +561,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         PerfSelectionValid();
         mySFrom.Nullify();
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
         Geom_Curve? C = TestCurve(myPbase);
@@ -759,7 +761,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         PerfSelectionValid();
         mySFrom.Nullify();
         ShapeFromValid();
-        mySUntil = Until;
+        mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
         Geom_Curve? C = TestCurve(myPbase);

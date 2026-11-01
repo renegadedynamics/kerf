@@ -54,6 +54,9 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     private bool myPSOK;
     private BRepFeat_StatusError myStatusError;
 
+    // OCCT.NET: the working copies of the frozen shapes the feature is given (decision 9501)
+    private protected LocOpe_WorkingShapes? myWork;
+
     /// <summary>Redefines the empty constructor.</summary>
     protected BRepFeat_Form()
     {
@@ -104,6 +107,79 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
     /// <summary>The status of the last construction.</summary>
     public BRepFeat_StatusError CurrentStatusError() => myStatusError;
+
+    /// <summary>
+    /// OCCT.NET: starts the feature's working shapes (decision 9501). OCCT's feature writes into the shapes it is
+    /// given: the Booleans it runs are destructive (they raise tolerances and add pcurves in place) and the sweeps
+    /// write into the profile. Every shape entering the feature goes through <see cref="Working(in TopoDS_Shape)"/>, which gives the
+    /// exact copy for write of a frozen one, all copies sharing one map (a face of the basis shape given as the sketch
+    /// face or the until shape has its one copy); the result, the history and the lists are given back on the caller's
+    /// shapes where the feature left them unchanged, at the first publication (<see cref="FinishWorkingShapes"/>).
+    /// </summary>
+    private protected void StartWorkingShapes() => myWork = new LocOpe_WorkingShapes();
+
+    /// <summary>The working shape standing for <paramref name="S"/> (decision 9501).</summary>
+    private protected TopoDS_Shape Working(in TopoDS_Shape S)
+    {
+        myWork ??= new LocOpe_WorkingShapes();
+        return myWork.Working(S);
+    }
+
+    /// <summary>The working face standing for <paramref name="F"/> (decision 9501).</summary>
+    private protected TopoDS_Face Working(in TopoDS_Face F) => F.IsNull() ? F : TopoDS.Face(Working((TopoDS_Shape)F));
+
+    /// <summary>
+    /// OCCT.NET: ends the working shapes (decision 9501): every copy the feature left unchanged is replaced by the
+    /// caller's shape in the result and the lists, and the history is keyed by the caller's shapes. Once per
+    /// construction; called by every accessor of the result and the history.
+    /// </summary>
+    private protected virtual void FinishWorkingShapes()
+    {
+        if (myWork is null || myWork.IsFinished())
+        {
+            return;
+        }
+        LocOpe_WorkingShapes aWork = myWork;
+        var aShapes = new List<TopoDS_Shape> { myShape };
+        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+        {
+            aShapes.AddRange(anItem.Value);
+        }
+        aShapes.AddRange(myNewEdges);
+        aShapes.AddRange(myTgtEdges);
+        aWork.Finish(aShapes);
+        if (!aWork.IsCopied())
+        {
+            return;
+        }
+        myShape = aWork.Final(myShape);
+        var aMap = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+        {
+            TopoDS_Shape aKey = aWork.Original(anItem.Key);
+            if (!aMap.IsBound(aKey))
+            {
+                aMap.Bind(aKey, aWork.Final(anItem.Value));
+            }
+        }
+        myMap = aMap;
+        myNewEdges = aWork.Final(myNewEdges);
+        myTgtEdges = aWork.Final(myTgtEdges);
+        mySbase = aWork.Original(mySbase);
+        mySkface = TopoDS.Face(aWork.Original(mySkface));
+        mySFrom = aWork.Original(mySFrom);
+        mySUntil = aWork.Original(mySUntil);
+        myFShape = aWork.Original(myFShape);
+        myLShape = aWork.Original(myLShape);
+    }
+
+    /// <summary>The result, unfrozen, on the caller's shapes where they are unchanged (OCCT's virtual).</summary>
+    internal override TopoDS_Shape InternalShape()
+    {
+        base.InternalShape();
+        FinishWorkingShapes();
+        return myShape;
+    }
 
     /// <summary>General perform method: the topological reconstruction of the result.</summary>
     protected void GlobalPerform()
@@ -1180,6 +1256,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary>True if the face <paramref name="F"/> of the basis shape has no descendant in the result.</summary>
     public override bool IsDeleted(in TopoDS_Shape F)
     {
+        FinishWorkingShapes();
         if (myMap.IsBound(F))
         {
             return myMap.Find(F).IsEmpty();
@@ -1190,6 +1267,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary>The faces generated from the face <paramref name="F"/> (OCCT's virtual; unfrozen).</summary>
     internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
     {
+        FinishWorkingShapes();
         myGenerated.Clear();
         if (!IsDone())
         {
@@ -1220,6 +1298,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary>The faces created from the shape <paramref name="S"/> (OCCT's virtual; unfrozen).</summary>
     internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
     {
+        FinishWorkingShapes();
         myGenerated.Clear();
         if (!IsDone())
         {
@@ -1244,6 +1323,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     // The history's lists hold sub-shapes of the result: publishing them publishes the result (decision 414).
     private protected override void BeforePublishingLists()
     {
+        FinishWorkingShapes();
         myShape.TShape()?.FreezeGraph();
     }
 
@@ -1282,6 +1362,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary><see cref="FirstShape"/> without freezing, for ported code.</summary>
     internal NCollection_List<TopoDS_Shape> InternalFirstShape()
     {
+        FinishWorkingShapes();
         if (!myFShape.IsNull())
         {
             return myMap.Find(myFShape);
@@ -1299,6 +1380,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary><see cref="LastShape"/> without freezing, for ported code.</summary>
     internal NCollection_List<TopoDS_Shape> InternalLastShape()
     {
+        FinishWorkingShapes();
         if (!myLShape.IsNull())
         {
             return myMap.Find(myLShape);
@@ -1313,11 +1395,15 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     public IBentoList<TopoDS_Shape> NewEdges()
     {
         BeforePublishingLists();
-        return PublishedList(myNewEdges);
+        return PublishedList(InternalNewEdges());
     }
 
     /// <summary><see cref="NewEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalNewEdges() => myNewEdges;
+    internal NCollection_List<TopoDS_Shape> InternalNewEdges()
+    {
+        FinishWorkingShapes();
+        return myNewEdges;
+    }
 
     /// <summary>
     /// The tangent edges among <see cref="NewEdges"/>: no fillet is possible on them. It may be empty (frozen).
@@ -1325,11 +1411,15 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     public IBentoList<TopoDS_Shape> TgtEdges()
     {
         BeforePublishingLists();
-        return PublishedList(myTgtEdges);
+        return PublishedList(InternalTgtEdges());
     }
 
     /// <summary><see cref="TgtEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalTgtEdges() => myTgtEdges;
+    internal NCollection_List<TopoDS_Shape> InternalTgtEdges()
+    {
+        FinishWorkingShapes();
+        return myTgtEdges;
+    }
 
     /// <summary>Limitation of the from (flag 0) or until (flag 1) shape in the case of infinite faces.</summary>
     protected bool TransformShapeFU(int flag)
