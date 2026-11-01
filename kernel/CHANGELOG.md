@@ -1141,3 +1141,16 @@ Phase 7 (part): the rest of ShapeUpgrade, and ShapeAlgo (unit 7B).
 - Tests: OCCT's FaceDivide GTest, frozen-input unit tests; `tools/shupgraderec` records twelve tools with the heal
   group's Draw parameters on 527 inputs (6,324 records: 6,323 identical, 1 attributed to OCCT writing into the
   caller's surface).
+
+Phase 7 (part): LocOpe (unit 7H).
+
+- LocOpe, TKFeat's local operations: SplitShape, WiresOnShape, Spliter, BuildWires, BuildShape, Generator,
+  GeneratedShape, GluedShape, Gluer, SplitDrafts, Prism, DPrism, Revol, RevolutionForm, Pipe, LinearForm, FindEdges,
+  FindEdgesInFace, CSIntersector, CurveShapeIntersector, the package functions, PntFace and Operation.
+- The caller's shapes are never written: each operation works on copies of the frozen shapes it is given, all sharing
+  their copies, and gives back the caller's sub-shapes it left unchanged (decisions 8901, 8902). Results are frozen;
+  BRepFeat (unit 7I) reads the Internal forms.
+- Tests: unit tests per class on frozen inputs; `tools/locoperec` records native LocOpe on 119 inputs (primitives,
+  data/occ's shapes, the feat group's data files): 5,201 records, all identical (DPrism's shapes compared canonically:
+  native varies run to run).
+- Fix: BRepFill_OffsetWire down-casts its spine's plane as OCCT does (decision 8906).

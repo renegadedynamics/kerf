@@ -151,6 +151,8 @@ public sealed class LocOpe_SplitDrafts
 
             GeomFill_Pipe thePipe = new();
             thePipe.GenerateParticularCase(true);
+            // OCCT: the planes' intersection is an infinite line, which GeomFill_UniformSection can't convert to a
+            // B-spline: Standard_DomainError (occt-issues.md)
             thePipe.Init(theLinePipe, i2s.Line(1));
             thePipe.Perform(true);
             if (!thePipe.IsDone())
@@ -873,7 +875,7 @@ public sealed class LocOpe_SplitDrafts
                 double prmd = (fd + ld) / 2.0;
                 gp_Pnt pg = Cg.Value(prmg);
                 gp_Pnt pd = Cd.Value(prmd);
-                double Tol = Max(BRep_Tool.Tolerance(NewEdgg), BRep_Tool.Tolerance(NewEdgg));
+                double Tol = Max(BRep_Tool.Tolerance(NewEdgg), BRep_Tool.Tolerance(NewEdgg)); // OCCT: NewEdgg twice
                 if (pg.SquareDistance(pd) <= Tol * Tol)
                 {
                     isedg = true;

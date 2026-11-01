@@ -10048,3 +10048,125 @@ ShapeUpgrade_CombineToCylinder. Numbers from 8401 are placeholders, renumbered o
       copies a frozen input at the entry and its context answers for the input's shapes (decision 999). Nothing in
       ShapeUpgrade is process-wide; ShapeAlgo's container is (8403). The "ShapeDivide.*.MSG0" messages need
       `ShapeExtend.Init`.
+
+## Phase 7: unit 7H, LocOpe
+
+All of LocOpe (TKFeat's local operations): the package functions, SplitShape, WiresOnShape, Spliter, BuildWires,
+BuildShape, Generator, GeneratedShape, GluedShape, Gluer, SplitDrafts, Prism, DPrism, Revol, RevolutionForm, Pipe,
+LinearForm, FindEdges, FindEdgesInFace, CSIntersector, CurveShapeIntersector, PntFace and Operation. Numbers from 8901
+are placeholders, renumbered on merge.
+
+8901. **The local operations' working shapes** (plan 2.2's features row; the rule of decision 973 and of unit 7E's
+      offset family: public makers copy a frozen input first, working tools write in place). The audit of the writes:
+      - LocOpe_SplitShape: `Add(V, P, E)` adds point representations (and may raise the tolerance) to the split edge's
+        end vertices and to V, on the new edges (`UpdateVertex`, :198–246); `Add(W, F)` sets the continuity of W's
+        edges on F (`Continuity(edg, F, F, CN)`); `BRepTools::Update(F)`; `Rebuild` raises the tolerances of the new
+        split edges only.
+      - LocOpe_WiresOnShape (`BindAll`): pcurves and same-parameter on the bound edges (`PutPCurve`, `PutPCurves`),
+        raised tolerances of their vertices (`Project`), the bound edges crossing others split (new edges).
+      - LocOpe_Spliter: raises the tolerance of the wires' vertices lying on the shape's (`UpdateVertex(vsub, d)`), then
+        SplitShape on its shape; BRepTools_Substitution builds new shapes.
+      - LocOpe_Generator: point representations of the shape's vertices on the fused edges, pcurves of the generated
+        shape's edges on the rebuilt faces (`UpdateEdge(edg, C2d, newface)`); BRepAlgo_Loop replaces vertices in the
+        edges it is given.
+      - LocOpe_Gluer: through WiresOnShape, Spliter and Generator, on both shapes; then continuities of the new shape's
+        edges (`Continuity(edg, ff1, ff2)`, G1 on the tangent glued edges).
+      - LocOpe_SplitDrafts: through SplitShape (on the wire), WiresOnShape and Spliter (on the shape); point
+        representations of the shape's vertices on its new edges; `MakeFace` adds pcurves to edges and a wire to a face
+        of the split shape.
+
+      **LocOpe_WorkingShapes** (internal, OcctNet.ModelingAlgorithms, not a port) holds one operation's working shapes.
+      Every shape entering the operation goes through `Working`: a shape whose graph holds a frozen TShape is replaced
+      by its exact copy for write, all the copies sharing one map (a new `BRepTools.ExactCopyForWrite(shape, copies)`
+      overload goes on filling it), so a vertex of a splitting edge and the same vertex given alone, or a face given
+      with its shape, have one copy; ported code's unfrozen shapes are worked on in place, as in OCCT. `Copied` maps a
+      caller's shape given to a query (never copies), `Original` back. `Finish` replaces, in every shape the operation
+      built, each copy left equal to its original by that original (`BRepTools.KeepUnchangedIn` over the copied roots),
+      and `Final` maps a working shape to what stands for it. So the results share the caller's unchanged sub-shapes,
+      with the BRep text native writes (Free and Checked masked).
+
+      Who ends the working shapes: LocOpe_SplitShape at its first `DescendantShapes` (where OCCT ends the splitting);
+      LocOpe_Spliter at the end of `Perform`, using the wires-on-shape's working shapes (they are created with it, and
+      the spliter takes the same copy of the shape); LocOpe_Generator and LocOpe_Gluer at the end of `Perform`;
+      LocOpe_SplitDrafts at the end of `Perform`. The nested operations (the gluer's wires-on-shape, spliter and
+      generator, the spliter's and the drafts' SplitShape) share their caller's working shapes through internal
+      constructors and `InternalPerform`, and don't end them.
+      - LocOpe_WiresOnShape's public accessors (`Edge`, `OnFace`, `OnEdge`, `OnVertex`) answer with the caller's own
+        shapes for the copies, and with the operation's working shapes for the edges it made (splits of a crossing edge),
+        not frozen until the spliter's result is published; ported code reads the `Internal` forms. A wires-on-shape
+        serves one splitting.
+      - `LocOpe_SplitShape.LeftOf` before the splitting ends answers with the working faces (not frozen: later
+        additions may still change them); after, frozen.
+      - The generated shape given to `LocOpe_Generator.Perform` answers for its own (caller's) shapes: the generator
+        maps its answers to the working copies and the copies back when asking it.
+      - Geometry OCCT changes in place: the pcurves translated in PutPCurve(s), the generator's projections and
+        SplitDrafts' NewEdge are translated on a copy where frozen; LocOpe_Pipe's converted pipe lines likewise.
+      - Tested by the frozen-input unit tests (`LocOpeTests`: each class's inputs unchanged, results frozen, the
+        caller's sub-shapes shared where unchanged, ported code's unfrozen shape written in place) and by every oracle
+        run (each input checked unchanged).
+8902. **The sweeps copy a frozen base** (as BRepPrimAPI_MakePrism, decision 468, and MakePipe, decision 910).
+      LocOpe_Prism, Revol, RevolutionForm and LinearForm sweep the base with BRepSweep, LocOpe_Pipe with BRepFill_Pipe,
+      LocOpe_DPrism evolves its spine with BRepFill_Evolved and raises the result's tolerances in place
+      (`BRepLib::UpdateTolerances`): each works on the working copy of a frozen base (spine, profile) and ends it, so a
+      planar base's prism shares the caller's face and edges, and `Shapes(S)` answers for the caller's edges. With a
+      translation or rotation first (`Vtra`, `angledec`), the base swept is BRepTools_Modifier's new shape, and the
+      descendants are re-keyed on the caller's edges as in OCCT.
+8903. **LocOpe's API.**
+      - The classes are working objects (decision 21). Every accessor handing out shapes freezes them; ported code
+        (unit 7I's BRepFeat) reads the `Internal` forms: `InternalShape`, `InternalFirstShape`, `InternalLastShape`,
+        `InternalShapes` (Prism, DPrism, Revol, RevolutionForm, LinearForm, Pipe), `InternalResultingShape`,
+        `InternalDescendantShapes`, `InternalDirectLeft`, `InternalLeft` (Spliter), `InternalResultingShape`,
+        `InternalDescendantFaces`, `InternalEdges`, `InternalTgtEdges` (Gluer), `InternalDescendantFace` (Generator),
+        `InternalShape`, `InternalShapesFromShape` (SplitDrafts), `InternalShape` (BuildShape), `InternalResult`
+        (BuildWires). The Internal descendants' queries accept the caller's shape or its working copy.
+      - `Shape()` of SplitShape, Spliter and Generator, `BasisShape`, `GluedShape`, `Spine`, `Profile` (Pipe),
+        `OriginalShape`: the caller's shapes.
+      - OCCT's references to members returned and cleared on the next call (`LeftOf`, Pipe's `Shapes` of a vertex) are a
+        new list per call.
+      - LocOpe_PntFace is a value struct (`ChangeOrientation` an internal `ref`, a `WithOrientation` twin);
+        LocOpe_GeneratedShape an abstract class; the Localize methods take `ref` outputs (OCCT leaves them unchanged
+        when nothing is found); CSIntersector's curves are a sequence of nullable curves (OCCT skips the null ones).
+      - Left out: the constructors OCCT declares without defining (LocOpe_Revol(Base, Axis, Angle[, angledec]),
+        LocOpe_RevolutionForm(Base, Axe, Angle)), the `OCCT_DEBUG` traces and the std::cout messages of SplitShape and
+        SplitDrafts.
+8904. **Iteration orders.** OCCT iterates maps keyed by the shapes' addresses in several places; the port iterates them
+      in insertion order (NCollection_Map, DataMap), or as an IndexedMap where removals follow: LocOpe_Generator's
+      generating edges and maps of faces and edges to fuse (the order the result's faces are rebuilt), LocOpe_Spliter's
+      left part (`Left()`'s order natively follows addresses: the oracle compares it as a set), LocOpe_Pipe's planar
+      faces of an edge and the fused face's edges, LocOpe_GluedShape's glued faces, LocOpe_BuildShape's nested shells,
+      LocOpe_WiresOnShape's edge-on-edge bindings, LocOpe_SplitDrafts' descendants. LocOpe_BuildShape's integer maps
+      iterate in OCCT's order (NCollection_IntMap, decision 784).
+8905. **The oracle** (`tools/locoperec`, `LocOpeNativeTests`). build123d.NET binds no LocOpe class, so a native recorder
+      runs, on 7 primitives (box, cylinder, cone, sphere, torus, a box with a hole made by a Boolean, a hexagon), data/occ's
+      shapes up to 60 kB and the feat group's data files (a file of wires stands for the planar face of its first wire,
+      as the feat scripts' `mkplane`), 119 inputs: SplitShape (a vertex in the middle of each of the first 12 edges; an
+      open wire across, and a circle inside, each planar face), WiresOnShape and Spliter (each face's middle U iso,
+      bound; the isos of the first four faces, added), Prism (with and without a translation), Revol (with and without
+      a rotation), LinearForm, DPrism (one and two heights), SplitDrafts, FindEdges and FindEdgesInFace on the first
+      faces, recording results, first and last shapes, descendants, left parts (as sets), curves and barycentre lines.
+      5,201 records, all identical. The port reads each input frozen; every input is checked unchanged and every result
+      frozen. Native's DPrism varies run to run (the order of an edge's two pcurves, and with it the last bits of the
+      faces' areas, follow addresses in the evolved shape): its shapes are recorded canonically (the sorted faces'
+      areas, edges' tolerances and ends, vertices, rounded to 1e-6); everything else is byte-identical over five
+      native runs. Natively, SplitDrafts throws Standard_DomainError (229 cases) or isn't done (133) on every input:
+      occt-issues.md; the port does the same.
+8906. **BRepFill_OffsetWire down-casts the spine's plane as OCCT does.** `PerformWithBiLo` cast the surface with a C#
+      cast, which throws InvalidCastException for a planar face whose surface is a trimmed plane; OCCT's `down_cast`
+      gives a null plane, dereferenced next (an access violation natively). The port now gives a null reference
+      likewise (found by DPrism on the feat group's faces; the oracle counts both as the same exception, decision
+      977).
+8907. **For unit 7I (BRepFeat).**
+      - Read the `Internal` forms (decision 8903) and publish once, at BRepFeat's own publication point.
+      - The copy at the entry is LocOpe's own: BRepFeat_SplitShape needs nothing more (its `Modified(F)` is the spliter's
+        `DescendantShapes(F)`, which answers for the caller's faces), and BRepFeat_Form's gluer (`LocOpe_Gluer`) copies
+        both its frozen shapes, ends the working shapes in `Perform` and answers `DescendantFaces` for the caller's faces
+        (`InternalDescendantFaces` too); its `InternalEdges`/`InternalTgtEdges` are the result's own edges. The sweeps'
+        `InternalShapes(edge)` answer for the caller's edges. BRepFeat's own in-place writes (MakeLinearForm's vertex
+        tolerances, plan 2.2) need their own copy.
+      - A LocOpe_WiresOnShape serves one splitting: BRepFeat_SplitShape's `Init` makes a new one (it calls `Init` on
+        its own, which resets the working shapes).
+      - `tools/locoperec` records the classes above (see its header); BRepFeat's makers can add theirs to it, its
+        `LOCOPEREC_DUMP` variable writing every recorded shape's text (`OCCTNET_LOCOPE_DUMP` in the test).
+      - Native DPrism varies run to run (decision 8905): BRepFeat_MakeDPrism's oracle (bound) needs the same canonical
+        comparison of its shapes.
+      - LocOpe_SplitDrafts is unusable natively on planar drafts (occt-issues.md); BRepFeat doesn't call it.
