@@ -1243,3 +1243,15 @@ Phase 7 (part): the walking of blends (unit 7K, BRepBlend), the second step to 3
 - Tests: `tools/blendrec` now records native OCCT's walking step by step on planes, a plane and a cylinder, B-splines,
   a curve and a plane, and restrictions, with the lines' approximations: 112 cases (45 of them walk), all identical
   bit for bit; unit tests of the line, extremities, tools and approximation function.
+
+Phase 7 (part): the legacy data structure's core (unit 7L), which 3D fillets and chamfers write their results into.
+
+- TopOpeBRepDS: the data structure and its handle, points, curves, surfaces, the interferences (curve/point,
+  surface/curve, solid/surface, shape/shape, edge/vertex, face/edge), transitions, the iterators and explorers, the
+  shape data and the package's functions; TopOpeBRepTool_ShapeTool. Ported whole for what ChFi3d, ChFiKPart and the
+  reconstruction of unit 7R need; the legacy builder's filters and reducers are left out (decision 992).
+- The data structure is its own context: nothing in it is process-wide.
+- `tools/dsrec` records the data structure native fillets and chamfers hand to the legacy builder (15 cases: boxes,
+  cylinders, cones, a sphere, a torus, a Boolean result, chamfers), in a text format the port writes too
+  (`TopOpeBRepDS_TextDump`), so that the fillet units can compare theirs with native's byte for byte. Every recording
+  reads into the port's data structure and writes back as native's.
