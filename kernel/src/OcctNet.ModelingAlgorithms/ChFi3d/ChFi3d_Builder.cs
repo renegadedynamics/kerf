@@ -4,7 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 #nullable disable warnings
-#pragma warning disable CS0649, CS0169 // p7n2-TEMP until ported
+
+using static Occt.ChFi3d_Builder_0;
+using static Occt.ChFiDS_ErrorStatus;
+using static Occt.ChFiDS_State;
+using static Occt.TopAbs_ShapeEnum;
+using static Occt.TopAbs_State;
+using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
 
@@ -118,21 +124,715 @@ public abstract partial class ChFi3d_Builder
                                                math_Vector SolDep, ref TopAbs_State Pos1, ref TopAbs_State Pos2);
 
     //=================================================================================================
-    // ChFi3d_Builder.cxx (stubs until ported)
+    // ChFi3d_Builder.cxx
 
-    private void ExtentAnalyse() => throw new NotImplementedException("7N2: not ported yet");
+    private static void CompleteDS(TopOpeBRepDS_DataStructure DStr, in TopoDS_Shape S)
+    {
+        ChFiDS_Map MapEW = new(), MapFS = new();
+        MapEW.Fill(S, TopAbs_EDGE, TopAbs_WIRE);
+        MapFS.Fill(S, TopAbs_FACE, TopAbs_SHELL);
 
-    /// <summary>Computes the fillets: the stripes, the corners, the data structure; then the reconstruction.</summary>
-    public void Compute() => throw new NotImplementedException("7N2: not ported yet");
+        TopExp_Explorer ExpE = new();
+        for (ExpE.Init(S, TopAbs_EDGE); ExpE.More(); ExpE.Next())
+        {
+            TopoDS_Edge E = TopoDS.Edge(ExpE.Current());
+            bool hasgeom = DStr.HasGeometry(E);
+            if (hasgeom)
+            {
+                NCollection_List<TopoDS_Shape> WireListAnc = MapEW[E];
+                NCollection_List<TopoDS_Shape>.Iterator itaW = new(WireListAnc);
+                while (itaW.More())
+                {
+                    TopoDS_Shape WireAnc = itaW.Value();
+                    DStr.AddShape(WireAnc);
+                    itaW.Next();
+                }
+            }
+        }
 
-    private void PerformSingularCorner(int Index) => throw new NotImplementedException("7N2: not ported yet");
+        TopExp_Explorer ExpF = new();
+        for (ExpF.Init(S, TopAbs_FACE); ExpF.More(); ExpF.Next())
+        {
+            TopoDS_Face F = TopoDS.Face(ExpF.Current());
+            bool hasgeom = DStr.HasGeometry(F);
+            if (hasgeom)
+            {
+                NCollection_List<TopoDS_Shape> ShellListAnc = MapFS[F];
+                NCollection_List<TopoDS_Shape>.Iterator itaS = new(ShellListAnc);
+                while (itaS.More())
+                {
+                    TopoDS_Shape ShellAnc = itaS.Value();
+                    DStr.AddShape(ShellAnc);
+                    itaS.Next();
+                }
+            }
+        }
 
-    private void PerformFilletOnVertex(int Index) => throw new NotImplementedException("7N2: not ported yet");
+        // set the range on the DS Curves
+        for (int ic = 1; ic <= DStr.NbCurves(); ic++)
+        {
+            double parmin = RealLast(), parmax = RealFirst();
+            NCollection_List<TopOpeBRepDS_Interference> LI = 
+                DStr.CurveInterferences(ic);
+            for (TopOpeBRepDS_PointIterator it = new(LI); it.More(); it.Next())
+            {
+                double par = it.Parameter();
+                parmin = Min(parmin, par);
+                parmax = Max(parmax, par);
+            }
+            DStr.ChangeCurve(ic).SetRange(parmin, parmax);
+        }
+    }
 
-    /// <summary>Resets the stripes and the data computed.</summary>
-    public void Reset() => throw new NotImplementedException("7N2: not ported yet");
 
-    /// <summary>The faces generated from an edge or vertex of the shape.</summary>
-    public NCollection_List<TopoDS_Shape> Generated(in TopoDS_Shape EouV) =>
-        throw new NotImplementedException("7N2: not ported yet");
+
+    //=================================================================================================
+
+    //=================================================================================================
+
+
+    //=================================================================================================
+
+    private void ExtentAnalyse()
+    {
+        int nbedges = 0, nbs = 0;
+        for (int iv = 1; iv <= myVDataMap.Extent(); iv++)
+        {
+            nbs = myVDataMap[iv].Extent();
+            TopoDS_Vertex Vtx = myVDataMap.FindKey(iv);
+            // nbedges = ChFi3d_NumberOfEdges(Vtx, myVEMap);
+            nbedges = ChFi3d_NumberOfSharpEdges(Vtx, myVEMap, myEFMap);
+            switch (nbs)
+            {
+                case 1:
+                    ExtentOneCorner(Vtx, myVDataMap.FindFromIndex(iv).First());
+                    break;
+                case 2:
+                    if (nbedges <= 3)
+                    {
+                        ExtentTwoCorner(Vtx, myVDataMap.FindFromIndex(iv));
+                    }
+                    break;
+                case 3:
+                    if (nbedges <= 3)
+                    {
+                        ExtentThreeCorner(Vtx, myVDataMap.FindFromIndex(iv));
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    public void Compute()
+    {
+
+        UpdateTolesp();
+
+        if (myListStripe.IsEmpty())
+        {
+            throw new Standard_Failure("There are no suitable edges for chamfer or fillet");
+        }
+
+        Reset();
+        myDS = new TopOpeBRepDS_HDataStructure();
+        TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
+        done = true;
+        hasresult = false;
+
+        // filling of myVDatatMap
+        NCollection_List<ChFiDS_Stripe>.Iterator itel = new();
+
+        for (itel.Initialize(myListStripe); itel.More(); itel.Next())
+        {
+            if ((itel.Value().Spine().FirstStatus() <= ChFiDS_BreakPoint))
+            {
+                myVDataMap.Add(itel.Value().Spine().FirstVertex(), itel.Value());
+            }
+            else if (itel.Value().Spine().FirstStatus() == ChFiDS_FreeBoundary)
+            {
+                ExtentOneCorner(itel.Value().Spine().FirstVertex(), itel.Value());
+            }
+            if ((itel.Value().Spine().LastStatus() <= ChFiDS_BreakPoint))
+            {
+                myVDataMap.Add(itel.Value().Spine().LastVertex(), itel.Value());
+            }
+            else if (itel.Value().Spine().LastStatus() == ChFiDS_FreeBoundary)
+            {
+                ExtentOneCorner(itel.Value().Spine().LastVertex(), itel.Value());
+            }
+        }
+        // preanalysis to evaluate the extensions.
+        ExtentAnalyse();
+
+
+        // Construction of the stripe of fillet on each stripe.
+        for (itel.Initialize(myListStripe); itel.More(); itel.Next())
+        {
+            itel.Value().Spine().SetErrorStatus(ChFiDS_Ok);
+            try
+            {
+                PerformSetOfSurf(itel.ChangeValue());
+            }
+            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            {
+                badstripes.Append(itel.Value());
+                done = true;
+                if (itel.Value().Spine().ErrorStatus() == ChFiDS_Ok)
+                {
+                    itel.Value().Spine().SetErrorStatus(ChFiDS_Error);
+                }
+            }
+            if (!done)
+            {
+                badstripes.Append(itel.Value());
+            }
+            done = true;
+        }
+        done = (badstripes.IsEmpty());
+
+
+        // construct fillets on each vertex + feed the Ds
+        if (done)
+        {
+            int j = 0;
+            for (j = 1; j <= myVDataMap.Extent(); j++)
+            {
+                try
+                {
+                    PerformFilletOnVertex(j);
+                }
+                catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+                {
+                    badvertices.Append(myVDataMap.FindKey(j));
+                    hasresult = false;
+                    done = true;
+                }
+                if (!done)
+                {
+                    badvertices.Append(myVDataMap.FindKey(j));
+                }
+                done = true;
+            }
+            if (!hasresult)
+            {
+                done = badvertices.IsEmpty();
+            }
+        }
+
+
+        NCollection_IntMap MapIndSo = new(); // NCollection_Map<int>: iterated in OCCT's order
+        TopExp_Explorer expso = new(myShape, TopAbs_SOLID);
+        for (; expso.More(); expso.Next())
+        {
+            TopoDS_Shape cursol = expso.Current();
+            int indcursol = DStr.AddShape(cursol);
+            MapIndSo.Add(indcursol);
+        }
+        TopExp_Explorer expsh = new(myShape, TopAbs_SHELL, TopAbs_SOLID);
+        for (; expsh.More(); expsh.Next())
+        {
+            TopoDS_Shape cursh = expsh.Current();
+            int indcursh = DStr.AddShape(cursh);
+            MapIndSo.Add(indcursh);
+        }
+        if (done)
+        {
+            int i1 = 0;
+            for (itel.Initialize(myListStripe), i1 = 0; itel.More(); itel.Next(), i1++)
+            {
+                ChFiDS_Stripe? st = itel.Value();
+                // 05/02/02 akm vvv : (OCC119) First we'll check ain't there
+                //                    intersections between fillets
+                NCollection_List<ChFiDS_Stripe>.Iterator itel1 = new();
+                int i2 = 0;
+                for (itel1.Initialize(myListStripe), i2 = 0; itel1.More(); itel1.Next(), i2++)
+                {
+                    if (i2 <= i1)
+                    {
+                        // Do not twice intersect the stripes
+                        continue;
+                    }
+                    ChFiDS_Stripe? aCheckStripe = itel1.Value();
+                    try
+                    {
+                        ChFi3d_StripeEdgeInter(st, aCheckStripe, DStr, tol2d);
+                    }
+                    catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+                    {
+                        badstripes.Append(itel.Value());
+                        hasresult = false;
+                        done = false;
+                        break;
+                    }
+                }
+                // 05/02/02 akm ^^^
+                int solidindex = st.SolidIndex();
+                ChFi3d_FilDS(solidindex, st, DStr, myRegul, tolapp3d, tol2d);
+                if (!done)
+                {
+                    break;
+                }
+            }
+
+
+            if (done)
+            {
+                BRep_Builder B1 = new();
+                CompleteDS(DStr, myShape);
+                // Update tolerances on vertex to max adjacent edges or
+                // Update tolerances on degenerated edge to max of adjacent vertexes.
+                TopOpeBRepDS_CurveExplorer cex = new(DStr);
+                for (; cex.More(); cex.Next())
+                {
+                    // OCCT casts the constness of cex.Curve() away: the data structure's curve itself
+                    ref TopOpeBRepDS_Curve c = ref DStr.ChangeCurve(cex.Index());
+                    double tolc = 0.0;
+                    bool degen = c.Curve() is null;
+                    if (!degen)
+                    {
+                        tolc = c.Tolerance();
+                    }
+                    int ic = cex.Index();
+                    TopOpeBRepDS_PointIterator ItP = myDS.CurvePoints(ic); // It in OCCT
+                    for (; ItP.More(); ItP.Next())
+                    {
+                        TopOpeBRepDS_CurvePointInterference? II = null;
+                        II = (ItP.Value() as TopOpeBRepDS_CurvePointInterference);
+                        if (II is null)
+                        {
+                            continue;
+                        }
+                        TopOpeBRepDS_Kind gk = II.GeometryType();
+                        int gi = II.Geometry();
+                        if (gk == TopOpeBRepDS_VERTEX)
+                        {
+                            TopoDS_Vertex v = TopoDS.Vertex(myDS.Shape(gi));
+                            double tolv = BRep_Tool.Tolerance(v);
+                            if (tolv > 0.0001)
+                            {
+                                tolv += 0.0003;
+                                if (tolc < tolv)
+                                {
+                                    tolc = tolv + 0.00001;
+                                }
+                            }
+                            if (degen && tolc < tolv)
+                            {
+                                tolc = tolv;
+                            }
+                            else if (tolc > tolv)
+                            {
+                                B1.UpdateVertex(v, tolc);
+                            }
+                        }
+                        else if (gk == TopOpeBRepDS_POINT)
+                        {
+                            ref TopOpeBRepDS_Point p = ref DStr.ChangePoint(gi);
+                            double tolp = p.Tolerance();
+                            if (degen && tolc < tolp)
+                            {
+                                tolc = tolp;
+                            }
+                            else if (tolc > tolp)
+                            {
+                                p.Tolerance(tolc);
+                            }
+                        }
+                    }
+                    if (degen)
+                    {
+                        c.Tolerance(tolc);
+                    }
+                }
+                // The seam (decision 992): unit 7R's reconstruction; until then Perform throws
+                // NotImplementedException("7R") here, with the data structure complete.
+                myCoup.Perform(myDS);
+                NCollection_IntMap.Iterator It = new(MapIndSo);
+                for (; It.More(); It.Next())
+                {
+                    int indsol = It.Key();
+                    TopoDS_Shape curshape = DStr.Shape(indsol);
+                    myCoup.MergeSolid(curshape, TopAbs_IN);
+                }
+
+                int i = 1, n = DStr.NbShapes();
+                for (; i <= n; i++)
+                {
+                    TopoDS_Shape S = DStr.Shape(i);
+                    if (S.ShapeType() != TopAbs_EDGE)
+                    {
+                        continue;
+                    }
+                    bool issplitIN = myCoup.IsSplit(S, TopAbs_IN);
+                    if (!issplitIN)
+                    {
+                        continue;
+                    }
+                    NCollection_List<TopoDS_Shape>.Iterator it = new(myCoup.Splits(S, TopAbs_IN));
+                    for (; it.More(); it.Next())
+                    {
+                        TopoDS_Edge newE = TopoDS.Edge(it.Value());
+                        double tole = BRep_Tool.Tolerance(newE);
+                        TopExp_Explorer exv = new(newE, TopAbs_VERTEX);
+                        for (; exv.More(); exv.Next())
+                        {
+                            TopoDS_Vertex v = TopoDS.Vertex(exv.Current());
+                            double tolv = BRep_Tool.Tolerance(v);
+                            if (tole > tolv)
+                            {
+                                B1.UpdateVertex(v, tole);
+                            }
+                        }
+                    }
+                }
+                if (!hasresult)
+                {
+                    TopoDS_Compound aResult = new();
+                    B1.MakeCompound(ref aResult);
+                    myShapeResult = aResult;
+                    for (It = new NCollection_IntMap.Iterator(MapIndSo); It.More(); It.Next())
+                    {
+                        int indsol = It.Key();
+                        TopoDS_Shape curshape = DStr.Shape(indsol);
+                        NCollection_List<TopoDS_Shape>.Iterator its = new(myCoup.Merged(curshape, TopAbs_IN));
+                        if (!its.More())
+                        {
+                            B1.Add(myShapeResult, curshape);
+                        }
+                        else
+                        {
+                            // If the old type of Shape is Shell, Shell is placed instead of Solid,
+                            // However there is a problem for compound of open Shell.
+                            while (its.More())
+                            {
+                                TopAbs_ShapeEnum letype = curshape.ShapeType();
+                                if (letype == TopAbs_SHELL)
+                                {
+                                    TopExp_Explorer expsh2 = new(its.Value(), TopAbs_SHELL);
+                                    TopoDS_Shape cursh = expsh2.Current();
+                                    B1.Add(myShapeResult, cursh);
+                                    its.Next();
+                                }
+                                else
+                                {
+                                    B1.Add(myShapeResult, its.Value());
+                                    its.Next();
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    done = false;
+                    TopoDS_Compound aBad = new();
+                    B1.MakeCompound(ref aBad);
+                    badShape = aBad;
+                    for (It = new NCollection_IntMap.Iterator(MapIndSo); It.More(); It.Next())
+                    {
+                        int indsol = It.Key();
+                        TopoDS_Shape curshape = DStr.Shape(indsol);
+                        NCollection_List<TopoDS_Shape>.Iterator its = new(myCoup.Merged(curshape, TopAbs_IN));
+                        if (!its.More())
+                        {
+                            B1.Add(badShape, curshape);
+                        }
+                        else
+                        {
+                            while (its.More())
+                            {
+                                B1.Add(badShape, its.Value());
+                                its.Next();
+                            }
+                        }
+                    }
+                }
+
+                // Regularities are coded after cutting.
+                SetRegul();
+
+            }
+        }
+
+        // display of time for perfs
+
+        //
+        // Inspect the new faces to provide sameparameter
+        // if it is necessary
+        if (IsDone())
+        {
+            double SameParTol = Precision.Confusion();
+            int aNbSurfaces = 0, iF = 0;
+            NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+            //
+            aNbSurfaces = myDS.NbSurfaces();
+
+            for (iF = 1; iF <= aNbSurfaces; ++iF)
+            {
+                NCollection_List<TopoDS_Shape> aLF = myCoup.NewFaces(iF);
+                aIt.Initialize(aLF);
+                for (; aIt.More(); aIt.Next())
+                {
+                    TopoDS_Shape aF = aIt.Value();
+                    BRepLib.SameParameter(aF, SameParTol, true);
+                    ShapeFix.SameParameter(aF, false, SameParTol);
+                }
+            }
+        }
+    }
+
+    //=======================================================================
+    // function : PerformSingularCorner
+    // purpose  : Load vertex and degenerated edges.
+    //=======================================================================
+
+    private void PerformSingularCorner(int Index)
+    {
+        NCollection_List<ChFiDS_Stripe>.Iterator It = new();
+        ChFiDS_Stripe? stripe = null;
+        TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
+        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+
+        ChFiDS_SurfData? Fd = null;
+        int i = 0, Icurv = 0;
+        int Ivtx = 0;
+        for (It.Initialize(myVDataMap[Index]), i = 0; It.More(); It.Next(), i++)
+        {
+            stripe = It.Value();
+            // SurfData concerned and its CommonPoints,
+            int sens = 0;
+            int num = ChFi3d_IndexOfSurfData(Vtx, stripe, out sens);
+            bool isfirst = (sens == 1);
+            Fd = stripe.SetOfSurfData().Value(num);
+            ChFiDS_CommonPoint CV1 = Fd.Vertex(isfirst, 1);
+            ChFiDS_CommonPoint CV2 = Fd.Vertex(isfirst, 2);
+            // Is it always degenerated ?
+            if (CV1.Point().IsEqual(CV2.Point(), 0))
+            {
+                // if yes the vertex is stored in the stripe
+                // and the edge at end is created
+                if (i == 0)
+                {
+                    Ivtx = ChFi3d_IndexPointInDS(CV1, DStr);
+                }
+                double tolreached = 0.0;
+                double Pardeb = 0.0, Parfin = 0.0;
+                gp_Pnt2d VOnS1 = new(), VOnS2 = new();
+                Geom_Curve? C3d = null;
+                Geom2d_Curve? PCurv = null;
+                TopOpeBRepDS_Curve Crv = new();
+                if (isfirst)
+                {
+                    VOnS1 =
+                        Fd.InterferenceOnS1().PCurveOnSurf().Value(Fd.InterferenceOnS1().FirstParameter());
+                    VOnS2 =
+                        Fd.InterferenceOnS2().PCurveOnSurf().Value(Fd.InterferenceOnS2().FirstParameter());
+                }
+                else
+                {
+                    VOnS1 =
+                        Fd.InterferenceOnS1().PCurveOnSurf().Value(Fd.InterferenceOnS1().LastParameter());
+                    VOnS2 =
+                        Fd.InterferenceOnS2().PCurveOnSurf().Value(Fd.InterferenceOnS2().LastParameter());
+                }
+
+                ChFi3d_ComputeArete(CV1, VOnS1, CV2, VOnS2, DStr.Surface(Fd.Surf()).Surface(), ref C3d, ref PCurv, ref Pardeb,
+                                                        ref Parfin, tolapp3d, tolapp2d, out tolreached, 0);
+                Crv = new TopOpeBRepDS_Curve(C3d, tolreached);
+                Icurv = DStr.AddCurve(Crv);
+
+                stripe.SetCurve(Icurv, isfirst);
+                stripe.SetParameters(isfirst, Pardeb, Parfin);
+                stripe.ChangePCurve(isfirst) = PCurv;
+                stripe.SetIndexPoint(Ivtx, isfirst, 1);
+                stripe.SetIndexPoint(Ivtx, isfirst, 2);
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    private void PerformFilletOnVertex(int Index)
+    {
+
+        NCollection_List<ChFiDS_Stripe>.Iterator It = new();
+        ChFiDS_Stripe? stripe = null;
+        ChFiDS_Spine? sp = null;
+        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+
+        ChFiDS_SurfData? Fd = null;
+        int i = 0;
+        bool nondegenere = true;
+        bool toujoursdegenere = true;
+        bool isfirst = false;
+        for (It.Initialize(myVDataMap[Index]), i = 0; It.More(); It.Next(), i++)
+        {
+            stripe = It.Value();
+            sp = stripe.Spine();
+            // SurfData and its CommonPoints,
+            int sens = 0;
+            int num = ChFi3d_IndexOfSurfData(Vtx, stripe, out sens);
+            isfirst = (sens == 1);
+            Fd = stripe.SetOfSurfData().Value(num);
+            ChFiDS_CommonPoint CV1 = Fd.Vertex(isfirst, 1);
+            ChFiDS_CommonPoint CV2 = Fd.Vertex(isfirst, 2);
+            // Is it always degenerated ?
+            if (CV1.Point().IsEqual(CV2.Point(), 0))
+            {
+                nondegenere = false;
+            }
+            else
+            {
+                toujoursdegenere = false;
+            }
+        }
+
+        // calcul du nombre de faces = nombre d'aretes
+        /* NCollection_List<TopoDS_Shape>.Iterator ItF,JtF,ItE;
+            int nbf = 0, jf = 0;
+            for (ItF.Initialize(myVFMap[Vtx]); ItF.More(); ItF.Next()){
+                jf++;
+                int kf = 1;
+                TopoDS_Shape cur = ItF.Value();
+                for (JtF.Initialize(myVFMap[Vtx]); JtF.More() && (kf < jf); JtF.Next(), kf++){
+                    if(cur.IsSame(JtF.Value())) break;
+                }
+                if(kf == jf) nbf++;
+            }
+            int nba = myVEMap[Vtx].Extent();
+            for (ItE.Initialize(myVEMap[Vtx]); ItE.More(); ItE.Next()){
+                TopoDS_Edge cur = TopoDS.Edge(ItE.Value());
+                if (BRep_Tool.Degenerated(cur)) nba--;
+            }
+            nba=nba/2;*/
+        int nba = ChFi3d_NumberOfSharpEdges(Vtx, myVEMap, myEFMap);
+
+        if (nondegenere)
+        { // Normal processing
+            switch (i)
+            {
+                case 1: {
+                    if (sp.Status(isfirst) == ChFiDS_FreeBoundary)
+                    {
+                        return;
+                    }
+                    if (nba > 3)
+                    {
+                        PerformIntersectionAtEnd(Index);
+                    }
+                    else
+                    {
+                        if (MoreSurfdata(Index))
+                        {
+                            PerformMoreSurfdata(Index);
+                        }
+                        else
+                        {
+                            PerformOneCorner(Index);
+                        }
+                    }
+                }
+                break;
+                case 2: {
+                    if (nba > 3)
+                    {
+                        PerformMoreThreeCorner(Index, i);
+                    }
+                    else
+                    {
+                        PerformTwoCorner(Index);
+                    }
+                }
+                break;
+                case 3: {
+                    if (nba > 3)
+                    {
+                        PerformMoreThreeCorner(Index, i);
+                    }
+                    else
+                    {
+                        PerformThreeCorner(Index);
+                    }
+                }
+                break;
+                default: {
+                    PerformMoreThreeCorner(Index, i);
+                    break;
+                }
+            }
+        }
+        else
+        { // Single case processing
+            if (toujoursdegenere)
+            {
+                PerformSingularCorner(Index);
+            }
+            else
+            {
+                PerformMoreThreeCorner(Index, i); // Last chance...
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    public void Reset()
+    {
+        done = false;
+        myVDataMap.Clear();
+        myRegul.Clear();
+        myEVIMap.Clear();
+        badstripes.Clear();
+        badvertices.Clear();
+
+        NCollection_List<ChFiDS_Stripe>.Iterator itel = new();
+        for (itel.Initialize(myListStripe); itel.More();)
+        {
+            if (itel.Value().Spine() is not null)
+            {
+                itel.Value().Reset();
+                itel.Next();
+            }
+            else
+            {
+                myListStripe.Remove(itel);
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    public NCollection_List<TopoDS_Shape> Generated(in TopoDS_Shape EouV)
+    {
+        myGenerated.Clear();
+        if (EouV.IsNull())
+        {
+            return myGenerated;
+        }
+        if (EouV.ShapeType() != TopAbs_EDGE && EouV.ShapeType() != TopAbs_VERTEX)
+        {
+            return myGenerated;
+        }
+        TopoDS_Shape aWork = ToWork(EouV); // the working copy's shape (OCCT.NET)
+        if (myEVIMap.IsBound(aWork))
+        {
+            NCollection_List<int> L = myEVIMap.Find(aWork);
+            NCollection_List<int>.Iterator IL = new();
+            for (IL.Initialize(L); IL.More(); IL.Next())
+            {
+                int I = IL.Value();
+                NCollection_List<TopoDS_Shape> LS = myCoup.NewFaces(I);
+                NCollection_List<TopoDS_Shape>.Iterator ILS = new();
+                for (ILS.Initialize(LS); ILS.More(); ILS.Next())
+                {
+                    myGenerated.Append(ILS.Value());
+                }
+            }
+        }
+        return myGenerated;
+    }
 }
