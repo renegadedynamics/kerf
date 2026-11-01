@@ -341,6 +341,11 @@ public static class Standard
            : theValue > int.MaxValue ? int.MaxValue
            : (int)theValue;
 
+    // Standard_ShortReal.hxx
+
+    /// <summary>The largest float (FLT_MAX).</summary>
+    public static float ShortRealLast() => float.MaxValue;
+
     public static float RealToShortReal(double theValue)
         => theValue < -float.MaxValue ? -float.MaxValue
            : theValue > float.MaxValue ? float.MaxValue

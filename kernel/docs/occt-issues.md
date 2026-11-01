@@ -1622,3 +1622,15 @@ the place).
 | TopOpeBRepDS_HDataStructure `FUN_TopOpeBRepDS_SortOnParameter` | Counts all interferences but finds only point ones | With other interferences in the list, the last point found is appended again (a null one first if none was found, then `T(0)` out of range: undefined natively, the port throws) |
 | TopOpeBRepTool_ShapeTool `EdgeData` | Compares the curvature with `max(tol, Epsilon(0), RealLast())` | The normal is never computed |
 | TopOpeBRepTool_ShapeTool `SurfacesSameOriented`, `CurvesSameOriented` | Only planes and cylinders, and lines, are compared ("NYI") | Every other pair is "same oriented" |
+## Phase 7: unit 7X, Quantity_Color and build123d.NET's phase 7 calls
+
+Found by porting Quantity_Color and Quantity_ColorRGBA and by replaying build123d.NET's phase 7 calls. The port
+reproduces each (`// OCCT` at the line), unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| Quantity_Color `ColorFromName` | The bare prefix `"Quantity_NOC_"` (any case) makes `SubString(14, 13)` raise Standard_OutOfRange inside a `noexcept` function | Native OCCT terminates the process (std::terminate). The port throws Standard_OutOfRange (decision 1070) |
+| Quantity_Color `Argb2color` | Reads the bytes as sRGB, where `Color2argb` writes the linear values | A colour doesn't come back from its ARGB integer; documented by OCCT. Reproduced |
+
+The replay found nothing new in the offsets, drafts and features: the null result after a reported success and native's
+run-to-run variation with the Arc join are unit 7F's (decisions 1031 and 1032).
