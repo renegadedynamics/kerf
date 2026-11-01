@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   Builds blendrec, the native recorder of OCCT's blend functions (BlendFunc) and fillet spines (ChFiDS) (unit 7J), and
-  records them for the tests (tests/OcctNet.ModelingAlgorithms.Tests/BlendFunc/Recordings/blendrec.txt.gz).
+  records them for the tests (tests/OcctNet.ModelingAlgorithms.Tests/BlendFunc/Recordings/blendrec.txt.gz). Unit 7K
+  added the walking (BRepBlend).
     tools/blendrec/build.ps1 [-Build123dNetRoot ..\build123d.net] [-Out <dir>]
   Needs Visual Studio's C++ tools and build123d.NET's native OCCT build (its .deps/install/win-x64: headers, import
   libraries, DLLs).
