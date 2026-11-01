@@ -39,8 +39,8 @@ if git diff --name-only --diff-filter=U | grep -q .; then echo "Stopping: resolv
 perl "$S/renumber.pl" .
 note="Decisions renumbered into sequence."
 if [ $gate = 1 ]; then
-out=$(dotnet test OcctNet.slnx -c Release -nologo 2>&1)
-# the whole output, for the failures' messages (inside .git, so never committed)
+out=$(dotnet test OcctNet.slnx -c Release -nologo --logger "console;verbosity=normal" 2>&1)
+# the whole output, with each test's duration and the failures' messages (inside .git, so never committed)
 echo "$out" > .git/merge-unit-test.log
 echo "$out" | grep -E " error |Passed!|Failed!|\[FAIL\]" | sed 's/\[C:.*//' | sort -u
 if echo "$out" | grep -qE " error |Failed!"; then echo "Stopping: build or tests failed; merge left uncommitted."; exit 3; fi
