@@ -32,19 +32,42 @@ public class ChFi3dBuilderNativeTests
             Text = TopOpeBRepDS_TextDump.Write(HDS.DS(), myInput);
         }
 
-        public override void MergeSolid(in TopoDS_Shape S, TopAbs_State TB)
+        /// <summary>The queries the builder made after Perform, by member (OCCT.NET: unit 7R's measurements).</summary>
+        internal Dictionary<string, int> Calls { get; } = new();
+
+        private void count(string theMember) => Calls[theMember] = Calls.GetValueOrDefault(theMember) + 1;
+
+        public override void MergeSolid(in TopoDS_Shape S, TopAbs_State TB) => count("MergeSolid " + S.ShapeType() + " " + TB);
+
+        public override bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild)
         {
+            count("IsSplit " + S.ShapeType() + " " + ToBuild);
+            return false;
         }
 
-        public override bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild) => false;
+        public override NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild)
+        {
+            count("Splits " + S.ShapeType() + " " + ToBuild);
+            return new();
+        }
 
-        public override NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild) => new();
+        public override NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild)
+        {
+            count("Merged " + S.ShapeType() + " " + ToBuild);
+            return new();
+        }
 
-        public override NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild) => new();
+        public override NCollection_List<TopoDS_Shape> NewFaces(int I)
+        {
+            count("NewFaces");
+            return new();
+        }
 
-        public override NCollection_List<TopoDS_Shape> NewFaces(int I) => new();
-
-        public override NCollection_List<TopoDS_Shape> NewEdges(int I) => new();
+        public override NCollection_List<TopoDS_Shape> NewEdges(int I)
+        {
+            count("NewEdges");
+            return new();
+        }
 
         public override TopOpeBRepDS_HDataStructure? DataStructure() => HDS;
     }
