@@ -1431,3 +1431,19 @@ code), unless the last column says otherwise.
 | HelixGeom_Tools `HelixGeom_Tools_Eval::Evaluate` | Sets error code 1 for a dimension other than 3, then writes three values anyway | Never reached (the dimension is always 3). Reproduced |
 | `helix2`, `spiral2` (BRepTest_HelixCommands.cxx) | The usage text for a wrong argument count names H and PF arguments the commands don't take | Text only. Reproduced |
 | helix/standard/D6, D7 | `CheckSpiral` compares lprops' centre and moments as strings, centre coordinates near 1e-15 included | OCCT's own TODO (OCC11111) on all platforms; BAD in Draw-lite as in DRAWEXE |
+## Phase 7: unit 7B, ShapeUpgrade and ShapeAlgo
+
+The port reproduces each, unless the last column says otherwise.
+
+| Where | What | Effect |
+|---|---|---|
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of linear extrusion whose basis curve had knots removed, `SetBasisCurve` on the surface it was given: the face's own surface (for a trimmed one, the basis shared by its faces) | Changes the caller's geometry (heal's BUC60173.rle with C2 criteria); the port changes a copy (decision 998), the one attributed oracle difference |
+| ShapeUpgrade_SplitSurfaceContinuity `Compute` | For a surface of revolution, the knots removed from the basis curve aren't set into the surface (unlike the extrusion); DONE3 is reported anyway | Reproduced |
+| ShapeUpgrade::C0BSplineToSequenceOfC1BSplineCurve | `SetNotPeriodic` on the caller's curve | The port splits a copy of a frozen curve (decision 998) |
+| ShapeUpgrade_ShapeConvertToBezier `Perform` | Segments the edges' Bezier pcurves in place; where a seam's two pcurves are one curve, it is segmented twice (an arc ending at π/4 gets 0.49, data/occ's nuts and many heal inputs in curves-only mode) | Reproduced on copies (decision 998) |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | For the seam's second pcurve, compares the bounds with the first pcurve's range and lowers `First` with `if (First > f)` | Reproduced |
+| ShapeUpgrade_FixSmallBezierCurves `Approx` | Re-initializes the wire divider's own split tools, which WireDivide is still using | Reproduced |
+| ShapeUpgrade_ShapeDivide `Perform` | Dereferences the split face tool for the free wires without checking it | Reproduced (NullReferenceException) |
+| ShapeUpgrade_ShellSewing `ApplySewing` | Documented to return the input when no shell is sewn; returns a null shape | Reproduced |
+| ShapeUpgrade_ShapeDivideClosedEdges `SetNbSplitPoints` | Ignores the number | Reproduced |
+| ShapeUpgrade_SplitCurve2dContinuity `Compute` | After removing a knot completely, doesn't lower the last index as the 3D tool does | Reproduced |
