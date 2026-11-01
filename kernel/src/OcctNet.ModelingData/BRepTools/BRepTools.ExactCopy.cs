@@ -88,6 +88,24 @@ public static partial class BRepTools
         return aCopy;
     }
 
+    /// <summary>
+    /// <see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/> that goes on filling
+    /// <paramref name="theCopies"/>: a TShape already a key there is replaced by its value (an earlier copy, or itself
+    /// if the caller maps it to itself to keep it), the others are copied and added. So several arguments of one
+    /// operation copied one after the other share their common sub-shapes' copies (LocOpe's working shapes, unit 7H).
+    /// </summary>
+    internal static TopoDS_Shape ExactCopyForWrite(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies)
+    {
+        if (theShape.IsNull())
+        {
+            return new TopoDS_Shape();
+        }
+
+        TopoDS_Shape aCopy = theShape;
+        aCopy.TShape(exactCopy(theShape.TShape()!, theCopies));
+        return aCopy;
+    }
+
     // Records each sub-shape of the shape (as placed in it) whose TShape has another image as modified into the image,
     // at the same place, as CopyForWrite's history does.
     private static void recordImages(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theImages,
