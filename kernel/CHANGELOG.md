@@ -1222,3 +1222,17 @@ Phase 7 (part): the foundations of hidden-line removal (unit 7P).
 - Tests: `tools/hlrrec` records native OCCT's projectors, intervals, edge statuses, min-max boxes and contours (60 on
   quadrics, tori, a plane and a B-spline surface): 85 cases, all identical bit for bit; unit tests of the projector,
   the edge status and the contours.
+
+Phase 7 (part): the data model of hidden-line removal (unit 7Q1).
+
+- HLRTopoBRep: the outlining of a shape for a projector (its faces' contours as internal outlines and outlines, their
+  isolines, its edges split at their vertices), with its data.
+- HLRBRep's data model: the edge and face data, the data structure the hider walks (projection, min-max boxes, faces'
+  flags and orientations of outlines, interferences of an edge with a face's boundary, classification by a line of
+  sight), the loading of a shape, the shape bounds, the interference lists, vertex lists and area limits.
+- HLRBRep's projected curves and surfaces with their tools and local properties, and the 2D curve intersection and
+  line/surface intersection it uses (phase 5's generics instantiated).
+- The outliner copies a frozen shape at the entry: OCCT writes into its input's vertices.
+- Tests: `tools/hlrrec` records native OCCT's outlining, data structure and hider's walk on five primitives in eight
+  projectors and on the hlr group's shapes: 52 cases, all identical bit for bit; unit tests of the curves, surfaces,
+  data, merging and the copy at the entry.
