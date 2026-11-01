@@ -11,8 +11,11 @@ public partial class TopoDS_Iterator : OcctObject
     protected override void ReleaseNative(IntPtr ptr) => __N.b3d_TopoDS_Iterator_delete(ptr);
     internal virtual IntPtr PtrAs_TopoDS_Iterator() => Ptr;
 
+    /// <summary>The shape iterated, kept alive: OCCT's iterator holds no reference to it.</summary>
+    private TopoDS_Shape? __shape;
+
     /// <summary>A copy of another TopoDS_Iterator.</summary>
-    public TopoDS_Iterator(TopoDS_Iterator other) : this(__Copy(other)) { }
+    public TopoDS_Iterator(TopoDS_Iterator other) : this(__Copy(other)) { __shape = other.__shape; }
 
     private static IntPtr __Copy(TopoDS_Iterator other)
     {
@@ -32,7 +35,7 @@ public partial class TopoDS_Iterator : OcctObject
         return __r;
     }
 
-    public TopoDS_Iterator(TopoDS_Shape S) : this(__New1(S)) { }
+    public TopoDS_Iterator(TopoDS_Shape S) : this(__New1(S)) { __shape = S; }
 
     private static IntPtr __New1(TopoDS_Shape S)
     {
@@ -43,7 +46,7 @@ public partial class TopoDS_Iterator : OcctObject
         return __r;
     }
 
-    public TopoDS_Iterator(TopoDS_Shape S, bool cumOri) : this(__New2(S, cumOri)) { }
+    public TopoDS_Iterator(TopoDS_Shape S, bool cumOri) : this(__New2(S, cumOri)) { __shape = S; }
 
     private static IntPtr __New2(TopoDS_Shape S, bool cumOri)
     {
@@ -54,7 +57,7 @@ public partial class TopoDS_Iterator : OcctObject
         return __r;
     }
 
-    public TopoDS_Iterator(TopoDS_Shape S, bool cumOri, bool cumLoc) : this(__New3(S, cumOri, cumLoc)) { }
+    public TopoDS_Iterator(TopoDS_Shape S, bool cumOri, bool cumLoc) : this(__New3(S, cumOri, cumLoc)) { __shape = S; }
 
     private static IntPtr __New3(TopoDS_Shape S, bool cumOri, bool cumLoc)
     {
@@ -72,6 +75,7 @@ public partial class TopoDS_Iterator : OcctObject
         GC.KeepAlive(this);
         GC.KeepAlive(S);
         OcctException.ThrowIfError(__err);
+        __shape = S;
     }
 
     public void Initialize(TopoDS_Shape S, bool cumOri)
@@ -81,6 +85,7 @@ public partial class TopoDS_Iterator : OcctObject
         GC.KeepAlive(this);
         GC.KeepAlive(S);
         OcctException.ThrowIfError(__err);
+        __shape = S;
     }
 
     public void Initialize(TopoDS_Shape S, bool cumOri, bool cumLoc)
@@ -90,6 +95,7 @@ public partial class TopoDS_Iterator : OcctObject
         GC.KeepAlive(this);
         GC.KeepAlive(S);
         OcctException.ThrowIfError(__err);
+        __shape = S;
     }
 
     public bool More()

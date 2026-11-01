@@ -3,41 +3,212 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepFeat_MakeDPrism : BRepFeat_Form
 {
+    internal BRepFeat_MakeDPrism(global::Occt.BRepFeat_MakeDPrism impl) : base(impl, true) { }
     private protected BRepFeat_MakeDPrism(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepFeat_MakeDPrism Impl => (global::Occt.BRepFeat_MakeDPrism)RawImpl;
     private protected BRepFeat_MakeDPrism(Unported u) : base(u) { }
 
-    public BRepFeat_MakeDPrism(BRepFeat_MakeDPrism other) : this(Unported.Throw(Unported.Class("BRepFeat_MakeDPrism"))) { }
+    public BRepFeat_MakeDPrism(BRepFeat_MakeDPrism other) : this(Unported.Throw(Unported.Member("BRepFeat_MakeDPrism::.ctor(BRepFeat_MakeDPrism)"))) { }
 
-    public BRepFeat_MakeDPrism(TopoDS_Shape Sbase, TopoDS_Face Pbase, TopoDS_Face Skface, double Angle, int Fuse, bool Modify) : this(Unported.Throw(Unported.Class("BRepFeat_MakeDPrism"))) { }
+    public BRepFeat_MakeDPrism(TopoDS_Shape Sbase, TopoDS_Face Pbase, TopoDS_Face Skface, double Angle, int Fuse, bool Modify) : this(__New1(Sbase, Pbase, Skface, Angle, Fuse, Modify)) { }
 
-    public BRepFeat_MakeDPrism() : this(Unported.Throw(Unported.Class("BRepFeat_MakeDPrism"))) { }
+    private static global::Occt.BRepFeat_MakeDPrism __New1(TopoDS_Shape Sbase, TopoDS_Face Pbase, TopoDS_Face Skface, double Angle, int Fuse, bool Modify)
+    {
+        ArgumentNullException.ThrowIfNull(Sbase);
+        ArgumentNullException.ThrowIfNull(Pbase);
+        ArgumentNullException.ThrowIfNull(Skface);
+        try
+        {
+            return new global::Occt.BRepFeat_MakeDPrism(Sbase.V, Pbase.S, Skface.S, Angle, Fuse, Modify);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Init(TopoDS_Shape Sbase, TopoDS_Face Pbase, TopoDS_Face Skface, double Angle, int Fuse, bool Modify) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public BRepFeat_MakeDPrism() : this(__New2()) { }
 
-    public void Add(TopoDS_Edge E, TopoDS_Face OnFace) => throw Unported.Class("BRepFeat_MakeDPrism");
+    private static global::Occt.BRepFeat_MakeDPrism __New2()
+    {
+        try
+        {
+            return new global::Occt.BRepFeat_MakeDPrism();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Perform(double Height) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void Init(TopoDS_Shape Sbase, TopoDS_Face Pbase, TopoDS_Face Skface, double Angle, int Fuse, bool Modify)
+    {
+        ArgumentNullException.ThrowIfNull(Sbase);
+        ArgumentNullException.ThrowIfNull(Pbase);
+        ArgumentNullException.ThrowIfNull(Skface);
+        try
+        {
+            this.Impl.Init(Sbase.V, Pbase.S, Skface.S, Angle, Fuse, Modify);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Perform(TopoDS_Shape Until) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void Add(TopoDS_Edge E, TopoDS_Face OnFace)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        ArgumentNullException.ThrowIfNull(OnFace);
+        try
+        {
+            this.Impl.Add(E.S, OnFace.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Perform(TopoDS_Shape From, TopoDS_Shape Until) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void Perform(double Height)
+    {
+        try
+        {
+            this.Impl.Perform(Height);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PerformUntilEnd() => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void Perform(TopoDS_Shape Until)
+    {
+        ArgumentNullException.ThrowIfNull(Until);
+        try
+        {
+            this.Impl.Perform(Until.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PerformFromEnd(TopoDS_Shape FUntil) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void Perform(TopoDS_Shape From, TopoDS_Shape Until)
+    {
+        ArgumentNullException.ThrowIfNull(From);
+        ArgumentNullException.ThrowIfNull(Until);
+        try
+        {
+            this.Impl.Perform(From.V, Until.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PerformThruAll() => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void PerformUntilEnd()
+    {
+        try
+        {
+            this.Impl.PerformUntilEnd();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PerformUntilHeight(TopoDS_Shape Until, double Height) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void PerformFromEnd(TopoDS_Shape FUntil)
+    {
+        ArgumentNullException.ThrowIfNull(FUntil);
+        try
+        {
+            this.Impl.PerformFromEnd(FUntil.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new Geom_Curve? BarycCurve() => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void PerformThruAll()
+    {
+        try
+        {
+            this.Impl.PerformThruAll();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void BossEdges(int sig) => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void PerformUntilHeight(TopoDS_Shape Until, double Height)
+    {
+        ArgumentNullException.ThrowIfNull(Until);
+        try
+        {
+            this.Impl.PerformUntilHeight(Until.V, Height);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape TopEdges() => throw Unported.Class("BRepFeat_MakeDPrism");
+    public new Geom_Curve? BarycCurve()
+    {
+        try
+        {
+            var __r = this.Impl.BarycCurve();
+            return __r is null ? null : new Geom_Curve(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape LatEdges() => throw Unported.Class("BRepFeat_MakeDPrism");
+    public void BossEdges(int sig)
+    {
+        try
+        {
+            this.Impl.BossEdges(sig);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopTools_ListOfShape TopEdges()
+    {
+        try
+        {
+            var __r = this.Impl.TopEdges();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopTools_ListOfShape LatEdges()
+    {
+        try
+        {
+            var __r = this.Impl.LatEdges();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

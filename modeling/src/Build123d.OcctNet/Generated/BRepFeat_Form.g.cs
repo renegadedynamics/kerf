@@ -3,41 +3,214 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepFeat_Form : BRepBuilderAPI_MakeShape
 {
+    internal BRepFeat_Form(global::Occt.BRepFeat_Form impl) : base(impl, true) { }
     private protected BRepFeat_Form(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepFeat_Form Impl => (global::Occt.BRepFeat_Form)RawImpl;
     private protected BRepFeat_Form(Unported u) : base(u) { }
 
-    public new TopTools_ListOfShape Modified(TopoDS_Shape F) => throw Unported.Class("BRepFeat_Form");
+    public new TopTools_ListOfShape Modified(TopoDS_Shape F)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            var __r = this.Impl.Modified(F.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopTools_ListOfShape Generated(TopoDS_Shape S) => throw Unported.Class("BRepFeat_Form");
+    public new TopTools_ListOfShape Generated(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            var __r = this.Impl.Generated(S.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new bool IsDeleted(TopoDS_Shape S) => throw Unported.Class("BRepFeat_Form");
+    public new bool IsDeleted(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            var __r = this.Impl.IsDeleted(S.V);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape FirstShape() => throw Unported.Class("BRepFeat_Form");
+    public TopTools_ListOfShape FirstShape()
+    {
+        try
+        {
+            var __r = this.Impl.FirstShape();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape LastShape() => throw Unported.Class("BRepFeat_Form");
+    public TopTools_ListOfShape LastShape()
+    {
+        try
+        {
+            var __r = this.Impl.LastShape();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape NewEdges() => throw Unported.Class("BRepFeat_Form");
+    public TopTools_ListOfShape NewEdges()
+    {
+        try
+        {
+            var __r = this.Impl.NewEdges();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape TgtEdges() => throw Unported.Class("BRepFeat_Form");
+    public TopTools_ListOfShape TgtEdges()
+    {
+        try
+        {
+            var __r = this.Impl.TgtEdges();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void BasisShapeValid() => throw Unported.Class("BRepFeat_Form");
+    public void BasisShapeValid()
+    {
+        try
+        {
+            this.Impl.BasisShapeValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void GeneratedShapeValid() => throw Unported.Class("BRepFeat_Form");
+    public void GeneratedShapeValid()
+    {
+        try
+        {
+            this.Impl.GeneratedShapeValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void ShapeFromValid() => throw Unported.Class("BRepFeat_Form");
+    public void ShapeFromValid()
+    {
+        try
+        {
+            this.Impl.ShapeFromValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void ShapeUntilValid() => throw Unported.Class("BRepFeat_Form");
+    public void ShapeUntilValid()
+    {
+        try
+        {
+            this.Impl.ShapeUntilValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void GluedFacesValid() => throw Unported.Class("BRepFeat_Form");
+    public void GluedFacesValid()
+    {
+        try
+        {
+            this.Impl.GluedFacesValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SketchFaceValid() => throw Unported.Class("BRepFeat_Form");
+    public void SketchFaceValid()
+    {
+        try
+        {
+            this.Impl.SketchFaceValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PerfSelectionValid() => throw Unported.Class("BRepFeat_Form");
+    public void PerfSelectionValid()
+    {
+        try
+        {
+            this.Impl.PerfSelectionValid();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public Geom_Curve? BarycCurve() => throw Unported.Class("BRepFeat_Form");
+    public Geom_Curve? BarycCurve()
+    {
+        try
+        {
+            var __r = this.Impl.BarycCurve();
+            return __r is null ? null : new Geom_Curve(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public BRepFeat_StatusError CurrentStatusError() => throw Unported.Class("BRepFeat_Form");
+    public BRepFeat_StatusError CurrentStatusError()
+    {
+        try
+        {
+            var __r = this.Impl.CurrentStatusError();
+            return (BRepFeat_StatusError)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

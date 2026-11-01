@@ -43,162 +43,13 @@ BRepBuilderAPI_Sewing::IsKind(string): signatures differ in OCCT.NET
 BRepBuilderAPI_Transform::.ctor(BRepBuilderAPI_Transform): signatures differ in OCCT.NET
 BRepCheck_Analyzer::.ctor(BRepCheck_Analyzer): signatures differ in OCCT.NET
 BRepExtrema_DistShapeShape::.ctor(BRepExtrema_DistShapeShape): signatures differ in OCCT.NET
-BRepFeat_Form::BarycCurve(): class not in OCCT.NET
-BRepFeat_Form::BasisShapeValid(): class not in OCCT.NET
-BRepFeat_Form::CurrentStatusError(): class not in OCCT.NET
-BRepFeat_Form::FirstShape(): class not in OCCT.NET
-BRepFeat_Form::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_Form::GeneratedShapeValid(): class not in OCCT.NET
-BRepFeat_Form::GluedFacesValid(): class not in OCCT.NET
-BRepFeat_Form::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_Form::LastShape(): class not in OCCT.NET
-BRepFeat_Form::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_Form::NewEdges(): class not in OCCT.NET
-BRepFeat_Form::PerfSelectionValid(): class not in OCCT.NET
-BRepFeat_Form::ShapeFromValid(): class not in OCCT.NET
-BRepFeat_Form::ShapeUntilValid(): class not in OCCT.NET
-BRepFeat_Form::SketchFaceValid(): class not in OCCT.NET
-BRepFeat_Form::TgtEdges(): class not in OCCT.NET
-BRepFeat_MakeDPrism::.ctor(): class not in OCCT.NET
-BRepFeat_MakeDPrism::.ctor(BRepFeat_MakeDPrism): class not in OCCT.NET
-BRepFeat_MakeDPrism::.ctor(TopoDS_Shape, TopoDS_Face, TopoDS_Face, double, int, bool): class not in OCCT.NET
-BRepFeat_MakeDPrism::Add(TopoDS_Edge, TopoDS_Face): class not in OCCT.NET
-BRepFeat_MakeDPrism::BarycCurve(): class not in OCCT.NET
-BRepFeat_MakeDPrism::BossEdges(int): class not in OCCT.NET
-BRepFeat_MakeDPrism::Init(TopoDS_Shape, TopoDS_Face, TopoDS_Face, double, int, bool): class not in OCCT.NET
-BRepFeat_MakeDPrism::LatEdges(): class not in OCCT.NET
-BRepFeat_MakeDPrism::Perform(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_MakeDPrism::Perform(TopoDS_Shape, TopoDS_Shape): class not in OCCT.NET
-BRepFeat_MakeDPrism::Perform(double): class not in OCCT.NET
-BRepFeat_MakeDPrism::PerformFromEnd(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_MakeDPrism::PerformThruAll(): class not in OCCT.NET
-BRepFeat_MakeDPrism::PerformUntilEnd(): class not in OCCT.NET
-BRepFeat_MakeDPrism::PerformUntilHeight(TopoDS_Shape, double): class not in OCCT.NET
-BRepFeat_MakeDPrism::TopEdges(): class not in OCCT.NET
-BRepFeat_SplitShape::.ctor(): class not in OCCT.NET
-BRepFeat_SplitShape::.ctor(BRepFeat_SplitShape): class not in OCCT.NET
-BRepFeat_SplitShape::.ctor(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_SplitShape::Add(TopTools_SequenceOfShape): class not in OCCT.NET
-BRepFeat_SplitShape::Add(TopoDS_Compound, TopoDS_Face): class not in OCCT.NET
-BRepFeat_SplitShape::Add(TopoDS_Edge, TopoDS_Edge): class not in OCCT.NET
-BRepFeat_SplitShape::Add(TopoDS_Edge, TopoDS_Face): class not in OCCT.NET
-BRepFeat_SplitShape::Add(TopoDS_Wire, TopoDS_Face): class not in OCCT.NET
-BRepFeat_SplitShape::Build(): class not in OCCT.NET
-BRepFeat_SplitShape::DirectLeft(): class not in OCCT.NET
-BRepFeat_SplitShape::Init(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_SplitShape::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_SplitShape::Left(): class not in OCCT.NET
-BRepFeat_SplitShape::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepFeat_SplitShape::Right(): class not in OCCT.NET
-BRepFeat_SplitShape::SetCheckInterior(bool): class not in OCCT.NET
+BRepFeat_MakeDPrism::.ctor(BRepFeat_MakeDPrism): signatures differ in OCCT.NET
+BRepFeat_SplitShape::.ctor(BRepFeat_SplitShape): signatures differ in OCCT.NET
 BRepFill::.ctor(): OCCT.NET's class is static
 BRepFill::.ctor(BRepFill): OCCT.NET's class is static
-BRepFilletAPI_LocalOperation::Abscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Add(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Closed(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::ClosedAndTangent(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Contour(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Edge(int, int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::FirstVertex(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::LastVertex(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Length(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::NbContours(): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::NbEdges(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::NbSurf(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::RelativeAbscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Remove(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Reset(): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::ResetContour(int): class not in OCCT.NET
-BRepFilletAPI_LocalOperation::Simulate(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::.ctor(BRepFilletAPI_MakeChamfer): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::.ctor(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Abscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Add(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Add(double, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Add(double, double, TopoDS_Edge, TopoDS_Face): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::AddDA(double, double, TopoDS_Edge, TopoDS_Face): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Build(): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Closed(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::ClosedAndTangent(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Contour(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Dists(int, ref double, ref double): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Edge(int, int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::FirstVertex(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::GetDist(int, ref double): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::GetDistAngle(int, ref double, ref double): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::IsDistanceAngle(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::IsSymetric(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::IsTwoDistances(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::LastVertex(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Length(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::NbContours(): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::NbEdges(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::NbSurf(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::RelativeAbscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Remove(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Reset(): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::ResetContour(int): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::SetDist(double, int, TopoDS_Face): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::SetDistAngle(double, double, int, TopoDS_Face): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::SetDists(double, double, int, TopoDS_Face): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::SetMode(ChFiDS_ChamfMode): class not in OCCT.NET
-BRepFilletAPI_MakeChamfer::Simulate(int): class not in OCCT.NET
+BRepFilletAPI_MakeChamfer::.ctor(BRepFilletAPI_MakeChamfer): signatures differ in OCCT.NET
 BRepFilletAPI_MakeFillet2d::.ctor(BRepFilletAPI_MakeFillet2d): signatures differ in OCCT.NET
-BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::.ctor(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::.ctor(TopoDS_Shape, ChFi3d_FilletShape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Abscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Add(TColgp_Array1OfPnt2d, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Add(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Add(double, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Add(double, double, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::BadShape(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Build(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Closed(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::ClosedAndTangent(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::ComputedSurface(int, int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Contour(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Edge(int, int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::FaultyContour(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::FaultyVertex(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::FirstVertex(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::GetBounds(int, TopoDS_Edge, ref double, ref double): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::GetFilletShape(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::HasResult(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::IsConstant(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::IsConstant(int, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::LastVertex(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Length(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbComputedSurfaces(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbContours(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbEdges(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbFaultyContours(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbFaultyVertices(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbSurf(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NbSurfaces(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::NewFaces(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Radius(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Radius(int, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::RelativeAbscissa(int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Remove(TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Reset(): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::ResetContour(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetContinuity(GeomAbs_Shape, double): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetFilletShape(ChFi3d_FilletShape): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetParams(double, double, double, double, double, double): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetRadius(TColgp_Array1OfPnt2d, int, int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetRadius(double, double, int, int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetRadius(double, int, TopoDS_Edge): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetRadius(double, int, TopoDS_Vertex): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::SetRadius(double, int, int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::Simulate(int): class not in OCCT.NET
-BRepFilletAPI_MakeFillet::StripeStatus(int): class not in OCCT.NET
+BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet): signatures differ in OCCT.NET
 BRepGProp::.ctor(): OCCT.NET's class is static
 BRepGProp::.ctor(BRepGProp): OCCT.NET's class is static
 BRepGProp_Face::.ctor(BRepGProp_Face): signatures differ in OCCT.NET
@@ -247,86 +98,14 @@ BRepMesh_DiscretRoot::IncrementRefCounter(): no public counterpart in OCCT.NET
 BRepMesh_DiscretRoot::IsInstance(string): signatures differ in OCCT.NET
 BRepMesh_DiscretRoot::IsKind(string): signatures differ in OCCT.NET
 BRepMesh_IncrementalMesh::SetParallelDefault(bool): no public counterpart in OCCT.NET
-BRepOffsetAPI_DraftAngle::.ctor(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::.ctor(BRepOffsetAPI_DraftAngle): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::.ctor(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Add(TopoDS_Face, gp_Dir, double, gp_Pln): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Add(TopoDS_Face, gp_Dir, double, gp_Pln, bool): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::AddDone(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Build(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Clear(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::ConnectedFaces(TopoDS_Face): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::CorrectWires(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Init(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::ModifiedFaces(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::ModifiedShape(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::ProblematicShape(): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Remove(TopoDS_Face): class not in OCCT.NET
-BRepOffsetAPI_DraftAngle::Status(): class not in OCCT.NET
+BRepOffsetAPI_DraftAngle::.ctor(BRepOffsetAPI_DraftAngle): signatures differ in OCCT.NET
 BRepOffsetAPI_MakeFilling::.ctor(BRepOffsetAPI_MakeFilling): signatures differ in OCCT.NET
 BRepOffsetAPI_MakeOffset::.ctor(BRepOffsetAPI_MakeOffset): signatures differ in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::.ctor(): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::.ctor(BRepOffsetAPI_MakeOffsetShape): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::Build(): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::GetJoinType(): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::MakeOffset(): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double, BRepOffset_Mode): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double, BRepOffset_Mode, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformByJoin(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeOffsetShape::PerformBySimple(TopoDS_Shape, double): class not in OCCT.NET
+BRepOffsetAPI_MakeOffsetShape::.ctor(BRepOffsetAPI_MakeOffsetShape): signatures differ in OCCT.NET
 BRepOffsetAPI_MakePipeShell::.ctor(BRepOffsetAPI_MakePipeShell): signatures differ in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::.ctor(): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::.ctor(BRepOffsetAPI_MakeThickSolid): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::Build(): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double, BRepOffset_Mode): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double, BRepOffset_Mode, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double, BRepOffset_Mode, bool, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape, TopTools_ListOfShape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple(TopoDS_Shape, double): class not in OCCT.NET
-BRepOffsetAPI_MakeThickSolid::Modified(TopoDS_Shape): class not in OCCT.NET
+BRepOffsetAPI_MakeThickSolid::.ctor(BRepOffsetAPI_MakeThickSolid): signatures differ in OCCT.NET
 BRepOffsetAPI_ThruSections::.ctor(BRepOffsetAPI_ThruSections): signatures differ in OCCT.NET
-BRepOffset_MakeOffset::.ctor(): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(BRepOffset_MakeOffset): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::.ctor(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::AddFace(TopoDS_Face): class not in OCCT.NET
-BRepOffset_MakeOffset::AllowLinearization(bool): class not in OCCT.NET
-BRepOffset_MakeOffset::Clear(): class not in OCCT.NET
-BRepOffset_MakeOffset::ClosingFaces(): class not in OCCT.NET
-BRepOffset_MakeOffset::Error(): class not in OCCT.NET
-BRepOffset_MakeOffset::Generated(TopoDS_Shape): class not in OCCT.NET
-BRepOffset_MakeOffset::GetBadShape(): class not in OCCT.NET
-BRepOffset_MakeOffset::GetJoinType(): class not in OCCT.NET
-BRepOffset_MakeOffset::InitShape(): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::Initialize(TopoDS_Shape, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool, bool): class not in OCCT.NET
-BRepOffset_MakeOffset::IsDeleted(TopoDS_Shape): class not in OCCT.NET
-BRepOffset_MakeOffset::IsDone(): class not in OCCT.NET
-BRepOffset_MakeOffset::MakeOffsetShape(): class not in OCCT.NET
-BRepOffset_MakeOffset::MakeThickSolid(): class not in OCCT.NET
-BRepOffset_MakeOffset::Modified(TopoDS_Shape): class not in OCCT.NET
-BRepOffset_MakeOffset::SetOffsetOnFace(TopoDS_Face, double): class not in OCCT.NET
-BRepOffset_MakeOffset::Shape(): class not in OCCT.NET
+BRepOffset_MakeOffset::.ctor(BRepOffset_MakeOffset): signatures differ in OCCT.NET
 BRepPrimAPI_MakeBox::.ctor(BRepPrimAPI_MakeBox): signatures differ in OCCT.NET
 BRepPrimAPI_MakeCone::.ctor(BRepPrimAPI_MakeCone): signatures differ in OCCT.NET
 BRepPrimAPI_MakeCylinder::.ctor(BRepPrimAPI_MakeCylinder): signatures differ in OCCT.NET

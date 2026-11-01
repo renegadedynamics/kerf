@@ -66,6 +66,10 @@ no aliasing surprises.
   - Transients (`Standard_Transient` subclasses, held by `occ::handle`) are handed out with one
     reference taken, which the wrapper releases.
   - Wrappers free their object on `Dispose()` or finalisation.
+  - An object that walks another without holding it keeps that one's wrapper alive. OCCT 8's `TopoDS_Iterator`
+    holds an iterator into the shape's child list, not the shape, so once the shape's wrapper was unreachable its
+    finaliser could free the shape mid-iteration (found by OCCT.NET's oracle under GC pressure). Its wrapper keeps the
+    wrapper of the shape it was last given (`KeepShapeAlive` in `CsEmitter`).
 - **Returns** of `const T&` are copied. Returns of a non-const `T&` are skipped, because a copy can't
   honour writes into the object's state.
 - **Errors:** each shim function catches C++ exceptions and reports them through a trailing out-parameter,
@@ -264,9 +268,11 @@ Native OCCT stays the default backend.
   `OcctType` (`StdFail_NotDone`…) and `OcctContext` operation, with OCCT.NET's exception as the inner one. Other
   exceptions, such as an OCCT.NET bug's `NullReferenceException`, pass through unchanged, so they're seen.
 - **What isn't ported** throws `NotSupportedException`, with no native fallback:
-  - a class OCCT.NET doesn't have yet (its phase 7: 3D fillets, chamfers, offsets, drafts, `BRepFeat`) says "not yet
-    ported to OCCT.NET: BRepFilletAPI_MakeFillet";
-  - a member with no public counterpart says "not available through OCCT.NET's public API: …".
+  - a class OCCT.NET doesn't have yet (STEP: `STEPControl_Reader` and `Writer`) says "not yet ported to OCCT.NET:
+    STEPControl_Writer";
+  - a member with no public counterpart says "not available through OCCT.NET's public API: …", such as the copy
+    constructors of the phase 7 algorithms (`BRepFilletAPI_MakeFillet`, `BRepOffset_MakeOffset`…), which OCCT.NET
+    doesn't offer.
 - **Written by hand** (`Runtime`):
   - the runtime classes;
   - `Extras`, over OCCT.NET's `MeshExtraction`, BRep text I/O and alerts;
@@ -295,11 +301,13 @@ Native OCCT stays the default backend.
 - **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's three assemblies load
   and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
   build output as `B3D_OCCTNET_LIB`.
-- **Measured** (OCCT.NET at bad099b, Windows x64, Release):
-  - 1,676 of 1,811 tests pass, 5 are skipped and 130 fail, 128 of them on phase 7;
-  - the 30 introductory examples that don't need phase 7 match native's volume and face count exactly
-    (`IntroductoryExamplesTests`);
-  - the suite takes about 3 times as long as on native, or 4.4 times summed over the tests both pass.
+- **Measured** (OCCT.NET at 991bbe6, with its phase 7; Windows x64):
+  - 1,813 of 1,819 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
+    gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
+    phase 7). At bad099b, before phase 7, 1,676 passed and 130 failed, 128 of them on phase 7;
+  - the 37 introductory examples (all but 34, text) match native's volume to a part in 10⁹ and its face count
+    (`IntroductoryExamplesTests`), the seven with fillets, chamfers, offsets and extrusion until among them;
+  - the suite takes 27 s against native's 5 s, 7.6 times summed over the tests both pass.
 
 ### 3. Behavioural parity is tested, not assumed
 

@@ -3,41 +3,215 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
 {
+    internal BRepFeat_SplitShape(global::Occt.BRepFeat_SplitShape impl) : base(impl, true) { }
     private protected BRepFeat_SplitShape(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepFeat_SplitShape Impl => (global::Occt.BRepFeat_SplitShape)RawImpl;
     private protected BRepFeat_SplitShape(Unported u) : base(u) { }
 
-    public BRepFeat_SplitShape(BRepFeat_SplitShape other) : this(Unported.Throw(Unported.Class("BRepFeat_SplitShape"))) { }
+    public BRepFeat_SplitShape(BRepFeat_SplitShape other) : this(Unported.Throw(Unported.Member("BRepFeat_SplitShape::.ctor(BRepFeat_SplitShape)"))) { }
 
-    public BRepFeat_SplitShape() : this(Unported.Throw(Unported.Class("BRepFeat_SplitShape"))) { }
+    public BRepFeat_SplitShape() : this(__New1()) { }
 
-    public BRepFeat_SplitShape(TopoDS_Shape S) : this(Unported.Throw(Unported.Class("BRepFeat_SplitShape"))) { }
+    private static global::Occt.BRepFeat_SplitShape __New1()
+    {
+        try
+        {
+            return new global::Occt.BRepFeat_SplitShape();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool Add(TopTools_SequenceOfShape theEdges) => throw Unported.Class("BRepFeat_SplitShape");
+    public BRepFeat_SplitShape(TopoDS_Shape S) : this(__New2(S)) { }
 
-    public void Init(TopoDS_Shape S) => throw Unported.Class("BRepFeat_SplitShape");
+    private static global::Occt.BRepFeat_SplitShape __New2(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepFeat_SplitShape(S.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetCheckInterior(bool ToCheckInterior) => throw Unported.Class("BRepFeat_SplitShape");
+    public bool Add(TopTools_SequenceOfShape theEdges)
+    {
+        ArgumentNullException.ThrowIfNull(theEdges);
+        try
+        {
+            var __r = this.Impl.Add(theEdges.Impl);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(TopoDS_Wire W, TopoDS_Face F) => throw Unported.Class("BRepFeat_SplitShape");
+    public void Init(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            this.Impl.Init(S.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(TopoDS_Edge E, TopoDS_Face F) => throw Unported.Class("BRepFeat_SplitShape");
+    public void SetCheckInterior(bool ToCheckInterior)
+    {
+        try
+        {
+            this.Impl.SetCheckInterior(ToCheckInterior);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(TopoDS_Compound Comp, TopoDS_Face F) => throw Unported.Class("BRepFeat_SplitShape");
+    public void Add(TopoDS_Wire W, TopoDS_Face F)
+    {
+        ArgumentNullException.ThrowIfNull(W);
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            this.Impl.Add(W.S, F.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(TopoDS_Edge E, TopoDS_Edge EOn) => throw Unported.Class("BRepFeat_SplitShape");
+    public void Add(TopoDS_Edge E, TopoDS_Face F)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            this.Impl.Add(E.S, F.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape DirectLeft() => throw Unported.Class("BRepFeat_SplitShape");
+    public void Add(TopoDS_Compound Comp, TopoDS_Face F)
+    {
+        ArgumentNullException.ThrowIfNull(Comp);
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            this.Impl.Add(Comp.S, F.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape Left() => throw Unported.Class("BRepFeat_SplitShape");
+    public void Add(TopoDS_Edge E, TopoDS_Edge EOn)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        ArgumentNullException.ThrowIfNull(EOn);
+        try
+        {
+            this.Impl.Add(E.S, EOn.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape Right() => throw Unported.Class("BRepFeat_SplitShape");
+    public TopTools_ListOfShape DirectLeft()
+    {
+        try
+        {
+            var __r = this.Impl.DirectLeft();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Build() => throw Unported.Class("BRepFeat_SplitShape");
+    public TopTools_ListOfShape Left()
+    {
+        try
+        {
+            var __r = this.Impl.Left();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new bool IsDeleted(TopoDS_Shape S) => throw Unported.Class("BRepFeat_SplitShape");
+    public TopTools_ListOfShape Right()
+    {
+        try
+        {
+            var __r = this.Impl.Right();
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopTools_ListOfShape Modified(TopoDS_Shape F) => throw Unported.Class("BRepFeat_SplitShape");
+    public new void Build()
+    {
+        try
+        {
+            this.Impl.Build();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public new bool IsDeleted(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            var __r = this.Impl.IsDeleted(S.V);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public new TopTools_ListOfShape Modified(TopoDS_Shape F)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            var __r = this.Impl.Modified(F.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

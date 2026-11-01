@@ -48,7 +48,7 @@ internal sealed class Unported
 {
     private Unported() { }
 
-    /// <summary>A class not yet ported to OCCT.NET, such as phase 7's fillets and offsets.</summary>
+    /// <summary>A class not yet ported to OCCT.NET, such as STEP's.</summary>
     internal static NotSupportedException Class(string name) => new($"not yet ported to OCCT.NET: {name}");
 
     /// <summary>A member whose OCCT.NET counterpart isn't public, or differs.</summary>

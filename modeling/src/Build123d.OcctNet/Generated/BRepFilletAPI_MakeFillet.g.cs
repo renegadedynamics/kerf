@@ -3,113 +3,680 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 {
+    internal BRepFilletAPI_MakeFillet(global::Occt.BRepFilletAPI_MakeFillet impl) : base(impl, true) { }
     private protected BRepFilletAPI_MakeFillet(object raw, bool _) : base(raw, _) { }
+    internal new global::Occt.BRepFilletAPI_MakeFillet Impl => (global::Occt.BRepFilletAPI_MakeFillet)RawImpl;
     private protected BRepFilletAPI_MakeFillet(Unported u) : base(u) { }
 
-    public BRepFilletAPI_MakeFillet(BRepFilletAPI_MakeFillet other) : this(Unported.Throw(Unported.Class("BRepFilletAPI_MakeFillet"))) { }
+    public BRepFilletAPI_MakeFillet(BRepFilletAPI_MakeFillet other) : this(Unported.Throw(Unported.Member("BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet)"))) { }
 
-    public BRepFilletAPI_MakeFillet(TopoDS_Shape S) : this(Unported.Throw(Unported.Class("BRepFilletAPI_MakeFillet"))) { }
+    public BRepFilletAPI_MakeFillet(TopoDS_Shape S) : this(__New1(S)) { }
 
-    public BRepFilletAPI_MakeFillet(TopoDS_Shape S, ChFi3d_FilletShape FShape) : this(Unported.Throw(Unported.Class("BRepFilletAPI_MakeFillet"))) { }
+    private static global::Occt.BRepFilletAPI_MakeFillet __New1(TopoDS_Shape S)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepFilletAPI_MakeFillet(S.V);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetParams(double Tang, double Tesp, double T2d, double TApp3d, double TolApp2d, double Fleche) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public BRepFilletAPI_MakeFillet(TopoDS_Shape S, ChFi3d_FilletShape FShape) : this(__New2(S, FShape)) { }
 
-    public void SetContinuity(GeomAbs_Shape InternalContinuity, double AngularTolerance) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    private static global::Occt.BRepFilletAPI_MakeFillet __New2(TopoDS_Shape S, ChFi3d_FilletShape FShape)
+    {
+        ArgumentNullException.ThrowIfNull(S);
+        try
+        {
+            return new global::Occt.BRepFilletAPI_MakeFillet(S.V, (global::Occt.ChFi3d_FilletShape)FShape);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Add(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetParams(double Tang, double Tesp, double T2d, double TApp3d, double TolApp2d, double Fleche)
+    {
+        try
+        {
+            this.Impl.SetParams(Tang, Tesp, T2d, TApp3d, TolApp2d, Fleche);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(double Radius, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetContinuity(GeomAbs_Shape InternalContinuity, double AngularTolerance)
+    {
+        try
+        {
+            this.Impl.SetContinuity((global::Occt.GeomAbs_Shape)InternalContinuity, AngularTolerance);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(double R1, double R2, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void Add(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Add(E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void Add(TColgp_Array1OfPnt2d UandR, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void Add(double Radius, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Add(Radius, E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetRadius(double Radius, int IC, int IinC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void Add(double R1, double R2, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Add(R1, R2, E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetRadius(double R1, double R2, int IC, int IinC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void Add(TColgp_Array1OfPnt2d UandR, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(UandR);
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Add(UandR.Impl, E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetRadius(TColgp_Array1OfPnt2d UandR, int IC, int IinC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetRadius(double Radius, int IC, int IinC)
+    {
+        try
+        {
+            this.Impl.SetRadius(Radius, IC, IinC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void ResetContour(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetRadius(double R1, double R2, int IC, int IinC)
+    {
+        try
+        {
+            this.Impl.SetRadius(R1, R2, IC, IinC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool IsConstant(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetRadius(TColgp_Array1OfPnt2d UandR, int IC, int IinC)
+    {
+        ArgumentNullException.ThrowIfNull(UandR);
+        try
+        {
+            this.Impl.SetRadius(UandR.Impl, IC, IinC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double Radius(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void ResetContour(int IC)
+    {
+        try
+        {
+            this.Impl.ResetContour(IC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool IsConstant(int IC, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public bool IsConstant(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.IsConstant(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double Radius(int IC, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public double Radius(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.Radius(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetRadius(double Radius, int IC, TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public bool IsConstant(int IC, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            var __r = this.Impl.IsConstant(IC, E.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetRadius(double Radius, int IC, TopoDS_Vertex V) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public double Radius(int IC, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            var __r = this.Impl.Radius(IC, E.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool GetBounds(int IC, TopoDS_Edge E, ref double F, ref double L) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetRadius(double Radius, int IC, TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.SetRadius(Radius, IC, E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetFilletShape(ChFi3d_FilletShape FShape) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetRadius(double Radius, int IC, TopoDS_Vertex V)
+    {
+        ArgumentNullException.ThrowIfNull(V);
+        try
+        {
+            this.Impl.SetRadius(Radius, IC, V.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public ChFi3d_FilletShape GetFilletShape() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public bool GetBounds(int IC, TopoDS_Edge E, ref double F, ref double L)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            var __r = this.Impl.GetBounds(IC, E.S, ref F, ref L);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new int NbContours() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public void SetFilletShape(ChFi3d_FilletShape FShape)
+    {
+        try
+        {
+            this.Impl.SetFilletShape((global::Occt.ChFi3d_FilletShape)FShape);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new int Contour(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public ChFi3d_FilletShape GetFilletShape()
+    {
+        try
+        {
+            var __r = this.Impl.GetFilletShape();
+            return (ChFi3d_FilletShape)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new int NbEdges(int I) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new int NbContours()
+    {
+        try
+        {
+            var __r = this.Impl.NbContours();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopoDS_Edge Edge(int I, int J) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new int Contour(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            var __r = this.Impl.Contour(E.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Remove(TopoDS_Edge E) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new int NbEdges(int I)
+    {
+        try
+        {
+            var __r = this.Impl.NbEdges(I);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new double Length(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new TopoDS_Edge Edge(int I, int J)
+    {
+        try
+        {
+            var __r = this.Impl.Edge(I, J);
+            return new TopoDS_Edge(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopoDS_Vertex FirstVertex(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void Remove(TopoDS_Edge E)
+    {
+        ArgumentNullException.ThrowIfNull(E);
+        try
+        {
+            this.Impl.Remove(E.S);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopoDS_Vertex LastVertex(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new double Length(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.Length(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new double Abscissa(int IC, TopoDS_Vertex V) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new TopoDS_Vertex FirstVertex(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.FirstVertex(IC);
+            return new TopoDS_Vertex(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new double RelativeAbscissa(int IC, TopoDS_Vertex V) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new TopoDS_Vertex LastVertex(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.LastVertex(IC);
+            return new TopoDS_Vertex(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new bool ClosedAndTangent(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new double Abscissa(int IC, TopoDS_Vertex V)
+    {
+        ArgumentNullException.ThrowIfNull(V);
+        try
+        {
+            var __r = this.Impl.Abscissa(IC, V.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new bool Closed(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new double RelativeAbscissa(int IC, TopoDS_Vertex V)
+    {
+        ArgumentNullException.ThrowIfNull(V);
+        try
+        {
+            var __r = this.Impl.RelativeAbscissa(IC, V.S);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Build() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new bool ClosedAndTangent(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.ClosedAndTangent(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Reset() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new bool Closed(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.Closed(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopTools_ListOfShape Generated(TopoDS_Shape EorV) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void Build()
+    {
+        try
+        {
+            this.Impl.Build();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new TopTools_ListOfShape Modified(TopoDS_Shape F) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void Reset()
+    {
+        try
+        {
+            this.Impl.Reset();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new bool IsDeleted(TopoDS_Shape F) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new TopTools_ListOfShape Generated(TopoDS_Shape EorV)
+    {
+        ArgumentNullException.ThrowIfNull(EorV);
+        try
+        {
+            var __r = this.Impl.Generated(EorV.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbSurfaces() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new TopTools_ListOfShape Modified(TopoDS_Shape F)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            var __r = this.Impl.Modified(F.V);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopTools_ListOfShape NewFaces(int I) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new bool IsDeleted(TopoDS_Shape F)
+    {
+        ArgumentNullException.ThrowIfNull(F);
+        try
+        {
+            var __r = this.Impl.IsDeleted(F.V);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new void Simulate(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public int NbSurfaces()
+    {
+        try
+        {
+            var __r = this.Impl.NbSurfaces();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public new int NbSurf(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public TopTools_ListOfShape NewFaces(int I)
+    {
+        try
+        {
+            var __r = this.Impl.NewFaces(I);
+            return TopTools_ListOfShape.__Wrap(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbFaultyContours() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new void Simulate(int IC)
+    {
+        try
+        {
+            this.Impl.Simulate(IC);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int FaultyContour(int I) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public new int NbSurf(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.NbSurf(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbComputedSurfaces(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public int NbFaultyContours()
+    {
+        try
+        {
+            var __r = this.Impl.NbFaultyContours();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public Geom_Surface? ComputedSurface(int IC, int IS) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public int FaultyContour(int I)
+    {
+        try
+        {
+            var __r = this.Impl.FaultyContour(I);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbFaultyVertices() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public int NbComputedSurfaces(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.NbComputedSurfaces(IC);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Vertex FaultyVertex(int IV) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public Geom_Surface? ComputedSurface(int IC, int IS)
+    {
+        try
+        {
+            var __r = this.Impl.ComputedSurface(IC, IS);
+            return __r is null ? null : new Geom_Surface(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool HasResult() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public int NbFaultyVertices()
+    {
+        try
+        {
+            var __r = this.Impl.NbFaultyVertices();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape BadShape() => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public TopoDS_Vertex FaultyVertex(int IV)
+    {
+        try
+        {
+            var __r = this.Impl.FaultyVertex(IV);
+            return new TopoDS_Vertex(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public ChFiDS_ErrorStatus StripeStatus(int IC) => throw Unported.Class("BRepFilletAPI_MakeFillet");
+    public bool HasResult()
+    {
+        try
+        {
+            var __r = this.Impl.HasResult();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public TopoDS_Shape BadShape()
+    {
+        try
+        {
+            var __r = this.Impl.BadShape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public ChFiDS_ErrorStatus StripeStatus(int IC)
+    {
+        try
+        {
+            var __r = this.Impl.StripeStatus(IC);
+            return (ChFiDS_ErrorStatus)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }
