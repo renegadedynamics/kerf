@@ -48,6 +48,8 @@
     <EmbeddedResource Include="BlendFunc\Recordings\blendrec.txt.gz" LogicalName="BlendFunc.blendrec.txt.gz" />
     <!-- Native OCCT HLR foundations (HLRAlgo, Intrv, Contap), recorded by tools/hlrrec (unit 7P) -->
     <EmbeddedResource Include="Contap\Recordings\hlrrec.txt.gz" LogicalName="Contap.hlrrec.txt.gz" />
+    <!-- Native OCCT HLR data model (HLRTopoBRep, HLRBRep_Data), recorded by tools/hlrrec (unit 7Q1) -->
+    <EmbeddedResource Include="HLRBRep\Recordings\hlrdata.txt.gz" LogicalName="HLRBRep.hlrdata.txt.gz" />
     <!-- Native OCCT's bisecting loci of planar faces (BRepMAT2d, MAT2d, MAT), recorded by tools/matrec (unit 5M) -->
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
