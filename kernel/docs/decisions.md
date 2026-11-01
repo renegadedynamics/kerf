@@ -10709,3 +10709,81 @@ offset, draft, rolling-ball and `nproject` commands. Numbers from 9401 are place
       - BRepAlgo_NormalProjection is ported: 7N2 needn't port it.
       - 7N1/7N2: `tolblend`'s `t3d` should feed the rolling ball (BRepTestFilletCommands.RollingBall.cs has a constant).
       - 7I: BRepTestFeatureCommands is a partial class; the offset commands are in its `.Offset.cs` file.
+## Phase 7: unit 7I, BRepFeat and the feature Draw commands
+
+All of BRepFeat (TKFeat's features): the package functions, StatusError, Status, PerfSelection, Builder, Form, Gluer,
+SplitShape, MakePrism, MakeDPrism, MakeRevol, MakePipe, RibSlot, MakeLinearForm, MakeRevolutionForm,
+MakeCylindricalHole; BRepTest_FeatureCommands' feature commands in Draw-lite. Numbers from 9501 are placeholders,
+renumbered on merge.
+
+1052. **The features' working shapes** (plan 2.2's features row; decisions 973, 1005 and 1013). OCCT's features write
+      into what the caller gives: the Booleans BRepFeat_Form, MakePrism/DPrism/Revol/Pipe and BRepFeat_Builder run are
+      destructive (tolerances raised and pcurves added in place), the sweeps write into the profile,
+      BRepFeat_MakeLinearForm raises a profile vertex's tolerance (`BB.UpdateVertex`) that may be the contour's own and
+      translates the caller's plane, BRepFeat_RibSlot runs `BRepLib::SameParameter(myShape, 1e-7, true)` on a glued
+      result that shares the caller's sub-shapes.
+      - BRepFeat_Form keeps a LocOpe_WorkingShapes (decision 1013): each maker's `Init` starts it, and every shape
+        entering the feature (basis shape, profile, sketch face, spine, from and until shapes, the faces and edges of
+        `Add`) goes through `Working`, the exact copy for write of a frozen one, all sharing one map (a face of the
+        basis shape given as sketch face or until shape is that face's copy, so OCCT's `IsSame` tests hold). The
+        feature then runs as OCCT's, destructively, on the copies. At the first publication (`Shape`, the history,
+        `FirstShape`/`LastShape`/`NewEdges`/`TgtEdges`) `FinishWorkingShapes` gives the caller's sub-shapes back where
+        nothing changed them (`KeepUnchangedIn`), re-keys the history on the caller's shapes, and counts a changed copy
+        as its original in `Modified`/`Generated` (OCCT changes the original in place, keeping its identity).
+      - BRepFeat_MakeLinearForm works on BRepTools_CopyAtEntry's copy of a frozen contour, ended after `Perform` (the
+        contour's edges answer `Generated`); a frozen plane is translated on a copy (decision 974).
+      - BRepFeat_RibSlot's same-parameter pass runs on BRepTools_CopyAtEntry's copy of the glued result where it holds
+        frozen shapes, the history mapped through `Final`.
+      - BRepFeat_SplitShape and BRepFeat_Gluer need nothing: LocOpe's Spliter and Gluer copy (decision 1019).
+        BRepFeat_Builder and MakeCylindricalHole run the Boolean on the caller's shape, non-destructively (9505).
+      - Tested: every input of the oracle (480 DPrism and 44 SplitShape runs) and of the recording (1,631 runs) is
+        checked unchanged and every result frozen; BRepFeatTests.
+1053. **API.** The makers are working objects (decision 21). `Shape`, `Modified`, `Generated`, `FirstShape`,
+      `LastShape`, `NewEdges`, `TgtEdges`, `FacesForDraft`, `TopEdges`, `LatEdges`, `DirectLeft`, `Left`, `Right` publish
+      (frozen, `IBentoList`); ported code reads the `Internal` forms. `Curves` and `BarycCurve` are abstract on
+      BRepFeat_Form (`BarycCurve` nullable). `BRepFeat.Print` writes to a TextWriter; `BRepFeat.Description` gives the
+      text. BRepFeat_MakeRevolutionForm takes `Sliding` by value (OCCT's reference is never written). OCCT's protected
+      `using BRepFeat_Builder::Perform` can't narrow BOPAlgo_BOP's public `Perform` in C#: it stays public on
+      BRepFeat_MakeCylindricalHole. OCCT's hidden fields (occt-issues.md, unit 7I) are kept hidden. The `OCCT_DEBUG`
+      traces (BRepFeat_trace.cxx and the blocks) are left out.
+1054. **Iteration orders.** BRepFeat_Form's and BRepFeat_RibSlot's `UpdateDescendants` collect the new descendants in
+      an address-keyed NCollection_Map iterated into the history lists; the port keeps insertion order (an indexed map),
+      so `Modified` lists may come in another order than native's (the oracle compares their sizes, the recording the
+      results). BRepFeat_MakeDPrism's `BossEdges` adds and removes in an address-keyed map: the lateral edges come in the
+      order of the port's set. BRepFeat_Builder's search of an old pave block isn't observable.
+1055. **Draw-lite's feature commands** (BRepTestFeatureCommands): `localope`, `hole`, `firsthole`, `holend`,
+      `blindhole`, `holecontrol`, `wprism`, `fprism`, `wrotate`, `frotate`, `splitshape`, `glue`, `featprism`,
+      `featrevol`, `featpipe`, `featdprism`, `featlf`, `featrf`, `addslide`, `featperform`, `featperformval`, `endedges`.
+      OCCT's function-scope statics (the makers, the hole and its control flag, the prism's arguments, the definition
+      flags) are kept per interpreter. Left out: `fillet` and `bossage` (BRepFilletAPI_MakeFillet, unit 7N3), the offset
+      commands of the same file (unit 7G), the interactive picks of `glue` and `splitshape`.
+1056. **A Boolean argument holding frozen sub-shapes is locked** (amends decision 577). BOPAlgo_PaveFiller's
+      `SetNonDestructive` read `Locked()` on the arguments themselves; an unfrozen argument that shares a caller's frozen
+      sub-shapes (ported code's intermediate shapes: LocOpe_Prism's prism keeps the caller's unchanged profile edges,
+      decision 1014) ran destructively and failed (`BOPAlgo_AlertBuilderFailed`) writing into them. It now counts as
+      locked too (`BRepTools.HoldsFrozen`): fully frozen and fully unfrozen arguments behave as before. Found by
+      feat/featprism's A4 and 15 other cases.
+1057. **The oracle** (BRepFeatOracleTests, native through build123d.NET's bindings). BRepFeat_MakeDPrism as
+      build123d.NET's `DPrism` calls it: 4 basis shapes (box, cylinder, a box with a hole, a hexagonal prism), a
+      rectangle and a circle on each planar face, by a depth, through all and up to the opposite face, cutting and
+      fusing, taper 0 and 5 degrees, with and without the sketch face: 480 runs; statuses and histories (IsDeleted,
+      Modified sizes, Generated sizes) all equal; results 334 identical as BRep text (20 the same exception), 129 equal
+      by decision 1017's canonical record (native varies run to run), 17 attributed and open: in 11 (rectangles fused by
+      a depth with a taper) native's result, read by the port, fails BRepCheck where the port's passes, the records
+      otherwise equal; in 6 (rectangles cut through all on side faces) native gives four profile vertices a tolerance of
+      1.1e-5 where the port keeps 1e-7. BRepFeat_SplitShape as `SplitByPerimeter` (the face split by a closed sequence of
+      edges, then Left and Right): 44 runs, all identical. **build123d.NET's extrude until doesn't use
+      BRepFeat_MakePrism**: Solid.ExtrudeUntil runs BRepAlgoAPI_Common, sewing and a split.
+1058. **The recording** (tools/featrec, BRepFeatNativeTests) and the corpus. build123d.NET binds none of the other
+      makers: a native recorder runs MakePrism (a length, through all, up to a face, up to the end, from the end),
+      MakeRevol (an angle, all around), MakePipe (a straight spine), MakeCylindricalHole (the five modes) and Gluer on
+      primitives with profiles, fusing and cutting, with and without sliding, recording the result's masked text hash,
+      its canonical record, the status and the history. Native is repeatable (two runs identical). 1,631 records: 693
+      identical, 938 equal by the canonical record, status and history but not by text (the port works on copies where
+      native writes in place, which changes the text's order of shapes and locations), none different. MakeLinearForm
+      and MakeRevolutionForm are covered by the corpus. `DrawFeatureCorpusTests`: 356 cases use the commands, 328
+      runnable after 7I (none before): OK 280, BAD 2 (OCCT's TODOs, feat/featlf/A4 and feat/featrevol/H9), SKIPPED 46
+      (data not public); the 28 others wait for `depouille` and `blend` (7G, 7N3), `offsetshape` (7G), the viewer, STEP
+      and QA commands.
+      - **For 7X:** DPrism and SplitByPerimeter are covered here (9506); the 17 attributed DPrism differences are open.
+        Extrude until needs no BRepFeat.

@@ -1224,3 +1224,9 @@ Phase 7 (part): drafts and the rest of TKOffset (unit 7G).
 - Tests: unit and frozen-input tests; the draft angle against native OCCT (870 runs, every result and history identical
   or canonically equal); `tools/draftrec` records MakeDraft, BiTgte_Blend and the evolved volume (181 runs, all
   byte-identical but 4 attributed). Fixed: unit 7F's offset threw reading the history of a run with a null result.
+- BRepFeat (unit 7I): the form features (MakePrism, MakeDPrism, MakeRevol, MakePipe), the ribs and grooves
+  (MakeLinearForm, MakeRevolutionForm), MakeCylindricalHole, SplitShape, Gluer, Builder; the caller's shapes are never
+  written (the features work on copies and give back the unchanged sub-shapes; decision 9501). Draw-lite's feature
+  commands (`featprism`, `featperform`, `splitshape`, `hole`...): 280 more corpus cases pass. Oracle: DPrism and
+  SplitShape against native OCCT, the other makers against a native recording (tools/featrec). A Boolean argument
+  holding frozen sub-shapes now runs non-destructively (decision 9505).
