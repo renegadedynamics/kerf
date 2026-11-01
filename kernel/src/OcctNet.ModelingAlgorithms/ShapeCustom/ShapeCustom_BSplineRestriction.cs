@@ -133,6 +133,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         }
         if (aCurve is Geom_BSplineCurve BsC)
         {
+            // OCCT: '>=' here, '>' for 2D curves (occt-issues.md)
             if (BsC.Degree() > Degree || ((BsC.NbKnots() - 1) >= NbSeg))
             {
                 return true;
@@ -1233,6 +1234,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 MaxSeg = myParameters.GMaxSeg();
                                 aC = aC1;
+                                // OCCT: continues the inner loop (one retry), and a failed retry falls through to
+                                // success below (occt-issues.md)
                                 continue;
                             }
                             else
@@ -1627,6 +1630,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 MaxSeg = myParameters.GMaxSeg();
                                 aC = aC1;
+                                // OCCT: continues the inner loop with the same aCont (occt-issues.md)
                                 continue;
                             }
                             else
@@ -1694,6 +1698,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     {
         P = new gp_Pnt();
         Tol = BRep_Tool.Tolerance(V);
+        // OCCT: myConvert is the state of the last conversion before the call (occt-issues.md)
         if (myConvert)
         {
             gp_Pnt p1 = new gp_Pnt(BRep_Tool.Pnt(V).XYZ());

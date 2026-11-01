@@ -1085,3 +1085,19 @@ Phases 5 and 6 complete (integration).
   FEmTool criteria share unlocked caches between threads (decision 945, occt-issues.md); the sewing oracle sews
   natively until it meets the port's variant, up to 16 times (decision 946).
 - The full suite: 10,008 tests passing, 9 skipped.
+
+Phase 7 (part): ShapeCustom, the healing pilot (unit 7A).
+
+- `OcctNet.ModelingAlgorithms`: ShapeCustom whole: the package functions (`ApplyModifier`, `DirectFaces`,
+  `ScaleShape`, `BSplineRestriction`, `ConvertToRevolution`, `SweptToElementary`, `ConvertToBSpline`), the
+  modifications (DirectModification, ConvertToRevolution, SweptToElementary, ConvertToBSpline, BSplineRestriction with
+  its RestrictionParameters, TrsfModification), and the geometry tools ShapeCustom_Curve, Curve2d and Surface.
+  SHMessage: Shape Healing's message texts compiled in, which `ShapeExtend.Init` loads through
+  `Message_MsgFile.LoadFromString` (decision 8103).
+- The caller's shape is never written: the modifier rebuilds what changes and shares the rest, the results are frozen
+  once, at the end, and the caller's curves and surfaces that OCCT changes in place are copied first (decisions 8101,
+  8102). The rule for the later healing units is decision 8101's.
+- Tests: frozen-input unit tests; oracle tests of the six package functions against build123d.NET's bindings on
+  primitives, Boolean results, swept and mirrored shapes, the heal group's inputs and data/occ (5,919 runs, all
+  identical); `tools/shcustomrec` records BSplineRestriction with other restriction parameters and the geometry
+  tools on 556 inputs (8,878 records, all identical).

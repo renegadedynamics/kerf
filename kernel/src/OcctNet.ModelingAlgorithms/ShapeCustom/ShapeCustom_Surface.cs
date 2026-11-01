@@ -209,6 +209,7 @@ public sealed class ShapeCustom_Surface
                 R[i] = p3[i].Distance(p1[i]);
             }
 
+            // OCCT: the last iso built, at parameter 0 rather than U1 (occt-issues.md)
             iso!.D1(0.0, out origPnt, out origD1U);
             gp_Vec xVec = new gp_Vec(p3[3], p1[3]);
             gp_Vec aVec = new gp_Vec(p3[1], p3[2]);
