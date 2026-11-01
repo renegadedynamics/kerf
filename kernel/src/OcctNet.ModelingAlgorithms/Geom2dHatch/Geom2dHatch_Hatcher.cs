@@ -1613,6 +1613,15 @@ public class Geom2dHatch_Hatcher
         return Domain;
     }
 
+    /// <summary>The <paramref name="IDom"/>-th domain of the <paramref name="IndH"/>-th hatching, for writing (OCCT.NET:
+    /// ChFi3d_Builder_SpKP's <c>Tri</c> casts the constness of <see cref="Domain"/> away and edits it in place).</summary>
+    internal ref HatchGen_Domain ChangeDomain(int IndH, int IDom)
+    {
+        Geom2dHatch_Hatching Hatching = myHatchings.Find(IndH);
+        StdFail_NotDone_Raise_if(!Hatching.IsDone(), "Geom2dHatch_Hatcher::Domain");
+        return ref Hatching.ChangeDomain(IDom);
+    }
+
     //=======================================================================
     //  Category : Dump.
     //=======================================================================
