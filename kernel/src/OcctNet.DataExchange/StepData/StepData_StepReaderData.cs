@@ -141,9 +141,17 @@ public class StepData_StepReaderData : Interface_FileReaderData
         }
     }
 
-    // aResString.ToExtString() + theFrom: the rest of the text from a 0-based index (a copy, as C++'s temporary is)
-    private static string ExtTail(StringBuilder theStr, int theFrom) =>
-        theFrom >= theStr.Length ? "" : theStr.ToString(theFrom, theStr.Length - theFrom);
+    // aResString.ToExtString() + theFrom: the rest of the text from a 0-based index, as a C string (up to its first
+    // zero char), copied as C++'s temporary TCollection_ExtendedString is
+    private static string ExtTail(StringBuilder theStr, int theFrom)
+    {
+        int anEnd = theFrom;
+        while (anEnd < theStr.Length && theStr[anEnd] != '\0')
+        {
+            anEnd++;
+        }
+        return theFrom >= anEnd ? "" : theStr.ToString(theFrom, anEnd - theFrom);
+    }
 
     private static void ExtTrunc(StringBuilder theStr, int theHowMany)
     {

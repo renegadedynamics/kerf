@@ -239,7 +239,7 @@ public static class Resource_Unicode
     internal static string ToUtf8Equivalent(StringBuilder theExtString)
     {
         var aResult = new StringBuilder(theExtString.Length);
-        for (int i = 0; i < theExtString.Length; i++)
+        for (int i = 0; i < theExtString.Length && theExtString[i] != '\0'; i++) // a C string: up to its first zero
         {
             char aChar = theExtString[i];
             if (char.IsHighSurrogate(aChar) && i + 1 < theExtString.Length && char.IsLowSurrogate(theExtString[i + 1]))
@@ -267,6 +267,15 @@ public static class Resource_Unicode
 
     private static bool isshift(uint c) => c >= 0x80 && c <= 0xff;
 
+    // tostr.AssignCat(TCollection_ExtendedString(curcar)): a zero char makes an empty string, so nothing is added
+    private static void AssignCat(StringBuilder theStr, char theChar)
+    {
+        if (theChar != '\0')
+        {
+            theStr.Append(theChar);
+        }
+    }
+
     // TCollection_ExtendedString(char): the char of the byte's code
     private static char ToExtCharacter(byte theChar) => (char)theChar;
 
@@ -288,7 +297,7 @@ public static class Resource_Unicode
                 currentstr++;
                 Resource_sjis_to_unicode(ref ph, ref pl);
                 char curcar = (char)((ph << 8) | pl);
-                tostr.Append(curcar);
+                AssignCat(tostr, curcar);
             }
             else
             {
@@ -316,7 +325,7 @@ public static class Resource_Unicode
                 currentstr++;
                 Resource_euc_to_unicode(ref ph, ref pl);
                 char curcar = (char)((ph << 8) | pl);
-                tostr.Append(curcar);
+                AssignCat(tostr, curcar);
             }
             else
             {
@@ -344,7 +353,7 @@ public static class Resource_Unicode
                 currentstr++;
                 Resource_gb_to_unicode(ref ph, ref pl);
                 char curcar = (char)((ph << 8) | pl);
-                tostr.Append(curcar);
+                AssignCat(tostr, curcar);
             }
             else
             {
@@ -373,7 +382,7 @@ public static class Resource_Unicode
                 if (codepnt < 23940)
                 {
                     char curcar = (char)Resource_UnicodeTables.GbkUni((int)codepnt);
-                    tostr.Append(curcar);
+                    AssignCat(tostr, curcar);
                     currentch++;
                     continue; // OCCT: gb1, gb2 and gb3 stay set, so each following byte is read as a 4th byte
                 }
@@ -407,7 +416,7 @@ public static class Resource_Unicode
                     if (pointer < 23940)
                     {
                         char curcar = (char)Resource_UnicodeTables.GbkUni((int)pointer);
-                        tostr.Append(curcar);
+                        AssignCat(tostr, curcar);
                         currentch++;
                         continue;
                     }
@@ -491,7 +500,7 @@ public static class Resource_Unicode
                                 uint uni = Resource_UnicodeTables.Big5Uni((int)pointer);
                                 if (uni <= 0xFFFF)
                                 {
-                                    tostr.Append((char)uni);
+                                    tostr.Append((char)uni); // TCollection_ExtendedString::Insert: a zero is inserted too
                                 }
                                 else
                                 {
