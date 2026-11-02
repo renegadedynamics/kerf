@@ -1836,3 +1836,21 @@ reproduces each, but for `EntityCluster::Remove(num)` (decision 1190).
 | IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
 | LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
 | Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |
+
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+Found by porting Transfer, TransferBRep and XSAlgo and testing them on the toy norm. The port reproduces each.
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |

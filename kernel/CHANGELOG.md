@@ -1445,3 +1445,11 @@ Phase 8 (part): XSBase's foundation (unit 8A1).
   the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
   tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
 - IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
+Phase 8 (part): Transfer, TransferBRep and XSAlgo (unit 8A2).
+- Ported: Transfer (the transient and finder processes, binders, actors, iterators, dispatch, input and output tools,
+  results), TransferBRep (shape binders and mappers, the shape services, the reader), XSAlgo (the shape processor, the
+  algorithm container) and TKDE's DE_ShapeFixParameters.
+- XSAlgo reads its parameters from the caller's `Interface_StaticSet`; no process-wide state changes. The shape
+  processor never changes its input and returns frozen shapes; the reader publishes frozen shapes.
+- Compared with native OCCT (tools/xsalgorec) on data/occ's shapes with STEP's default sequences: 210 records, 207
+  identical, 3 attributed. Transfer tested on a toy norm. 11 OCCT bugs found, none fixed.

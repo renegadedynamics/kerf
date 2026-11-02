@@ -12282,3 +12282,79 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        runs below the array (a write out of bounds in C++, an endless loop in effect) whenever an inner rank is removed;
        the port shifts with `j++`, as the code means (occt-issues.md, 8A1). Removing the last rank, which OCCT handles,
        is unchanged.
+
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+The rest of XSBase but IFSelect and XSControl (unit 8A3): Transfer (the transfer processes, binders, actors and
+iterators), TransferBRep (shape binders and mappers, the shape services, the reader) and XSAlgo (shape processing for
+the translators), with TKDE's DE_ShapeFixParameters. Numbers from 12401 are placeholders, renumbered on merge.
+
+12401. **Transfer's two instantiations, file for file.** OCCT 8 keeps its former generic (Transfer_TransferProcess.gxx)
+       as two generated instantiations: Transfer_ProcessForTransient and Transfer_ProcessForFinder, with their actors
+       and iterators. They are ported as OCCT's files (translation rules 9: "once per instantiation"), the Finder files
+       kept line for line with the Transient ones (they differ only in the start type, and the Finder process has OCCT's
+       two `FindTypedTransient<T>`/`GetTypedTransient<T>` templates). Starting objects are keyed by reference (C++'s
+       handle hashing), finders by `Transfer_FindHasher` (a finder's code, then `Equates`). Both maps are indexed: every
+       iteration (results, roots, check lists, statistics) follows the order of binding, which doesn't depend on
+       hashing. The map's initial size is ignored and `Resize` does nothing (the map grows).
+12402. **A finder's hash code is .NET's `GetHashCode`.** OCCT's `Transfer_Finder::GetHashCode()` (a `size_t` set by
+       the subclass) overrides `object.GetHashCode` (an `int`), and equality stays by reference; maps of finders use
+       Transfer_FindHasher, as OCCT's. Transfer_TransientMapper hashes its object's identity
+       (`RuntimeHelpers.GetHashCode`, OCCT: the address), TransferBRep_ShapeMapper its shape with
+       TopTools_ShapeMapHasher (the same TShape and location, whatever the orientation).
+12403. **API.** OCCT's value classes (TransferIterator and the process iterators, TransferInput, TransferOutput,
+       TransferDispatch, TransferBRep_Reader) are classes (decision 1185); TransferIterator has a copy constructor.
+       `Standard_Type` is `System.Type`, and a null type is never matched (`Standard_Type::SubType`). Outputs that OCCT
+       leaves untouched on failure are `ref` (`GetTypedResult`, `FindTypedTransient`, `GetTypedTransient`,
+       `GetContext`), the others `out` (a finder's typed attributes, `TransferResultInfo`'s sequence); OCCT's modifiable
+       references are `ref` returns (`ModeTrans`, `ModeNewTransfer`, `CResult`, the TransferResultInfo counters).
+       `PrintTrace` writes to a `TextWriter` (StartTrace's stream buffer). Under `ErrorHandle`, Transferring catches what
+       `OCC_CATCH_SIGNALS` does: Standard_Failure and the .NET counterparts of system signals, never
+       Standard_ImmutableObject or TopoDS_LockedShape (decisions 423, 1183), with OCCT's `what()` text. XSAlgo's
+       `ParameterMap` is `NCollection_DataMap<string, string>`, its `ProcessingData` and `ProcessingFlags` are tuples;
+       the actors' `GetShapeFixParameters` return a copy (OCCT's callers copy the const reference before changing it);
+       the rvalue overloads are dropped. TKDE's `DE_ShapeFixParameters` is ported (a record struct with OCCT's fields
+       and defaults, as decision 489's IMeshTools_Parameters); the rest of TKDE waits (decision 1171).
+12404. **No process-wide state that changes** (plan 2.7). TransferOutput's `TransferRoots()` and the
+       TransferDispatch/ActorDispatch constructors without a protocol use the model's protocol, where OCCT uses the
+       active one (decision 1183). Transfer_ResultFromTransient's shared empty check is a new one per call. XSAlgo:
+       `Init(statics)` declares XSAlgo's statics once per `Interface_StaticSet` (after `Standards`) and registers the
+       shape processing operators once per process; the default AlgoContainer is created once and
+       `AlgoContainer()` returns it, even before `Init` (OCCT: null); `SetAlgoContainer` is left out.
+12405. **XSAlgo reads its statics from the caller's set** (decision 1181): `CheckPCurve` (read.stdsameparameter.mode),
+       `ReadProcessingData` (the statics naming the resource file and the scope) and the AlgoContainer's `ProcessShape`
+       and `CheckPCurve` take an `Interface_StaticSet`, after OCCT's parameters without defaults.
+       `XSAlgo_ShapeProcessor::PrepareForTransfer` and `XSAlgo_AlgoContainer::PrepareForTransfer`, which set
+       UnitsMethods' process-wide length unit from `xstep.cascade.unit`, are left out: the readers and writers (8F, 8G)
+       take the unit from their statics (`IVal("xstep.cascade.unit")`) and convert it with UnitsMethods (8B) where OCCT
+       calls `PrepareForTransfer()` then `UnitsMethods::GetCasCadeLengthUnit()`.
+12406. **Determinism: XSAlgo's merges into a finder process.** `XSAlgo_ShapeProcessor::MergeShapeTransferInfo(FP, ...)`
+       and `XSAlgo_AlgoContainer::MergeTransferInfo(FP, ...)` iterate the shape processing's history map and bind
+       mappers into the finder process: OCCT in its hash order (TShape addresses), so the order of the new mappers
+       varies natively; the port in the order ShapeProcess recorded the entries. The merges into a transient process
+       walk the process's own (indexed) map. A finder's attributes and a transient process's contexts are string-keyed
+       maps whose order isn't observable.
+12407. **Frozen shapes.** Binders hold the transfer's shapes as they are; the readers publish what they return:
+       TransferBRep_Reader freezes the shapes a transfer gave (`EndTransfer`) and `OneShape`'s compound.
+       `XSAlgo_ShapeProcessor::ProcessShape` and the AlgoContainer's `ProcessShape` never change their input
+       (ShapeProcess's working copy, decision 1022; the AlgoContainer's default ShapeFix copies at entry) and return a
+       frozen result. `CheckPCurve` writes into the edge and vertices it is given, as OCCT's: they are a reader's, under
+       construction (a frozen edge throws TopoDS_LockedShape). On a frozen input, a sub-shape that OCCT's operators
+       change in place (a history entry F → F) is a changed copy in the port (F → F'): merged into a finder process
+       whose input faces are already bound, such a face gets a new binder where natively it keeps its own. In the
+       writer's order (the processed shape transferred, then the history merged) the input's sub-shapes reach their
+       entities either way.
+12408. **The oracle: tools/xsalgorec** (MSVC, build123d.NET's native TKXSBase). On data/occ's 30 shapes up to 600 kB:
+       ReadProcessingData's parameters and operations for FromSTEP and ToSTEP (resources/XSTEPResource/STEP, compiled
+       into the port, decision 1023) and the default DE_ShapeFixParameters' map; per shape, the shape processor with
+       FromSTEP's parameters and operations (the tolerances set as STEPControl_ActorRead does), with DESTEP's write
+       operations (SplitCommonVertex, DirectFaces) and with ToSTEP's; the AlgoContainer's ProcessShape with STEP's
+       sequence, with an undefined read sequence (the default ShapeFix) and an undefined write one (DirectFaces); each
+       result's BRep hash, counts, history and messages, and the merge of the history into a transient process (every
+       sub-shape bound to a ShapeBinder) or a finder process (every face pre-bound); and CheckPCurve on every edge of
+       every face (its result, the tolerance after, the shape's BRep hash). **210 records: 207 identical, 3
+       attributed** (CrankArm.brep's three finder merges, decision 12407; identical on an unfrozen input, a test
+       checks). Each input unchanged. Not compared natively before STEPControl exists: transfer processes driven by
+       real STEP actors on StepData models (their traces, check lists and roots), TransferBRep_Reader (abstract
+       natively: OCCT has no concrete reader in the toolkits bound) and ResultFromModel; they are tested on the toy
+       norm, and unit 8F compares them through STEPControl.
