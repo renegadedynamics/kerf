@@ -101,6 +101,22 @@ internal static class Planner
             }
         }
 
+        if (map.Rule(NameMap.Rules.Methods))
+        {
+            foreach (INamedTypeSymbol type in sourceTypes.Where(scope.Contains))
+            {
+                foreach (IMethodSymbol method in type.GetMembers().OfType<IMethodSymbol>())
+                {
+                    string? key = Keys.Of(method);
+                    if (key is not null && method.OverriddenMethod is null && !plan.Names.ContainsKey(key) && !map.Keep.Contains(key)
+                        && !map.Members.ContainsKey(key) && Naming.Method(method) is { } newName)
+                    {
+                        plan.Add(key, method.Name, newName, Category.Member);
+                    }
+                }
+            }
+        }
+
         CheckMembers(plan, sourceTypes, scope);
         log.WriteLine($"Planned {plan.Names.Count} renames of types, members and fields; {plan.Cancelled.Count} cancelled");
         return plan;

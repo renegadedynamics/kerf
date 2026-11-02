@@ -44,9 +44,11 @@ internal static class Naming
     public static string Pascal(string name)
         => name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name[1..];
 
-    /// <summary><c>theX</c> to <c>x</c>; null when the name doesn't follow OCCT's convention.</summary>
+    /// <summary><c>theX</c> to <c>x</c>, and OCCT's older PascalCase <c>Index</c> to <c>index</c>; null if already camelCase.</summary>
     public static string? Parameter(string name)
-        => name.Length > 3 && name.StartsWith("the", StringComparison.Ordinal) && char.IsUpper(name[3]) ? Camel(name[3..]) : null;
+        => name.Length > 3 && name.StartsWith("the", StringComparison.Ordinal) && char.IsUpper(name[3]) ? Camel(name[3..])
+            : char.IsUpper(name[0]) && !name.Contains('_') ? Camel(name)
+            : null;
 
     /// <summary><c>aX</c>, <c>anX</c> to <c>x</c>; null when the name doesn't follow OCCT's convention.</summary>
     public static string? Local(string name)
@@ -56,13 +58,21 @@ internal static class Naming
             return Camel(name[2..]);
         }
 
-        return name.Length > 1 && name[0] == 'a' && char.IsUpper(name[1]) ? Camel(name[1..]) : null;
+        return name.Length > 1 && name[0] == 'a' && char.IsUpper(name[1]) ? Camel(name[1..])
+            : char.IsUpper(name[0]) && !name.Contains('_') ? Camel(name)
+            : null;
     }
 
-    /// <summary>The prefix-free stem of a field's name (<c>myX</c>, <c>theX</c>), camelCased, or the name itself.</summary>
+    /// <summary>A method's name in PascalCase (OCCT's file-static helpers are camelCase); null if it is already.</summary>
+    public static string? Method(IMethodSymbol method)
+        => method.MethodKind is MethodKind.Ordinary or MethodKind.LocalFunction && char.IsLower(method.Name[0]) && !method.Name.Contains('_')
+            ? Pascal(method.Name)
+            : null;
+
+    /// <summary>The prefix-free stem of a field's name (<c>myX</c>, <c>theX</c>, <c>s_X</c>), camelCased, or the name itself.</summary>
     private static string FieldStem(string name)
     {
-        foreach (string prefix in (string[])["my", "the"])
+        foreach (string prefix in (string[])["my", "the", "s_"])
         {
             if (name.Length > prefix.Length && name.StartsWith(prefix, StringComparison.Ordinal) && char.IsUpper(name[prefix.Length]))
             {
@@ -82,7 +92,8 @@ internal static class Naming
     {
         string name = field.Name;
         if (field.DeclaredAccessibility == Accessibility.Public || field.ContainingType.TypeKind == TypeKind.Enum
-            || field.IsImplicitlyDeclared || name.StartsWith('_') || name.Contains('_') || !char.IsLetter(name[0]))
+            || field.IsImplicitlyDeclared || name.StartsWith('_') || !char.IsLetter(name[0])
+            || (name.Contains('_') && !(name.StartsWith("s_", StringComparison.Ordinal) && name.LastIndexOf('_') == 1)))
         {
             return null;
         }

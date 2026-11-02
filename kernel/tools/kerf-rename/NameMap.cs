@@ -12,7 +12,7 @@ namespace Kerf.Tools.Rename;
 /// <c>M:Occt.math_FunctionRoot.IsDone</c>, <c>F:Occt.gp_TrsfForm.gp_Identity</c>). A parameter is its method's id,
 /// <c>#</c> and its name as declared. Kinds:
 /// <list type="bullet">
-/// <item><c>rule name on|off</c>: a systematic rule (<see cref="Rules"/>).</item>
+/// <item><c>rule name on|off</c>: a systematic rule (<see cref="Rules"/>): parameters, fields, statics, locals, methods.</item>
 /// <item><c>package prefix namespace</c>: where the drafter puts a package's types (<c>package gp Kerf.Geometry</c>).</item>
 /// <item><c>type id Full.New.Name</c>: a type's new name and namespace.</item>
 /// <item><c>member id NewName</c>: a member's new name: method, property, field, event, enum member.</item>
@@ -38,7 +38,10 @@ internal sealed class NameMap
         /// <summary><c>aX</c>/<c>anX</c> to <c>x</c>.</summary>
         public const string Locals = "locals";
 
-        public static readonly string[] All = [Parameters, Fields, Statics, Locals];
+        /// <summary>camelCase methods (OCCT's file-static helpers) to PascalCase.</summary>
+        public const string Methods = "methods";
+
+        public static readonly string[] All = [Parameters, Fields, Statics, Locals, Methods];
     }
 
     public Dictionary<string, bool> RuleSwitches { get; } = new(StringComparer.Ordinal);
