@@ -630,7 +630,7 @@ public partial class ShapeFix_Edge : Standard_Transient
         // reversed too); the port reverses a copy and puts it in the edge's representation in its place.
         Geom2d_Curve aReversed = (Geom2d_Curve)c2d.Copy();
         aReversed.Reverse();
-        replacePCurveObject(edge, c2d, aReversed);
+        InternalReplacePCurveObject(edge, c2d, aReversed);
         var B = new BRep_Builder();
         // will break seams!  B.UpdateEdge (edge, c2d, surface, location, Precision::Confusion());
         B.Range(edge, surface, location, newf, newl);
@@ -649,7 +649,7 @@ public partial class ShapeFix_Edge : Standard_Transient
 
     // OCCT.NET: frozen. Puts theNew in place of the pcurve object theOld wherever the edge's representations hold it
     // (as OCCT's in-place change of theOld would be seen through them).
-    private static void replacePCurveObject(in TopoDS_Edge edge, Geom2d_Curve theOld, Geom2d_Curve theNew)
+    internal static void InternalReplacePCurveObject(in TopoDS_Edge edge, Geom2d_Curve theOld, Geom2d_Curve theNew)
     {
         var anIt = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)edge.TShape()!).ChangeCurves());
         for (; anIt.More(); anIt.Next())
