@@ -58,6 +58,8 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
                                            .Select(c => aCorpus.Scan(c, anInterpreter))
                                            .Where(s => Unit6LHealCommands.Any(s.Commands.Contains))
+                                           // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
+                                           .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
@@ -100,7 +102,8 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
         // the Boolean cases' attributed failures (bugs/modalg_7/bug26034's bopcheck, bugs/modalg_5/bug23881's sewn shell)
         Assert.DoesNotContain(aRuns, r => r.Status.StartsWith("FAILED", StringComparison.Ordinal) && !KnownFailures.Contains(r.Case.Id)
                                           && !DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id)
-                                          && !DrawStepCorpusTests.KnownFailures.Contains(r.Case.Id));
+                                          && !DrawStepCorpusTests.KnownFailures.Contains(r.Case.Id)
+                                          && !DrawStepCafCorpusTests.KnownFailures.Contains(r.Case.Id));
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 6L).</summary>

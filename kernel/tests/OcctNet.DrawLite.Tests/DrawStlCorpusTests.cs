@@ -127,11 +127,11 @@ public class DrawStlCorpusTests(ITestOutputHelper output)
         }
         Assert.Empty(aRunnableBefore);
         Assert.Equal(88, aScans.Count);
-        Assert.Equal(67, aRunnable.Count);
-        // OK 7, SKIPPED 59 (data not public: de_mesh's models), FAILED 1 (attributed); the 21 others wait for XDE,
-        // STEP, IGES, VRML, the viewer's and the MeshVS commands, and exec
-        Assert.Equal(7, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(59, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        Assert.Equal(71, aRunnable.Count); // 67 before unit 8G2's ReadStep and WriteStep
+        // OK 8, SKIPPED 62 (data not public: de_mesh's models), FAILED 1 (attributed); the 17 others wait for IGES,
+        // VRML, the viewer's and the MeshVS commands, ReadFile/WriteFile and exec
+        Assert.Equal(8, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(62, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
