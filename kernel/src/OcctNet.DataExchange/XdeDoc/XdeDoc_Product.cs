@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 13101). Not a port.
+// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;
@@ -13,7 +13,7 @@ namespace Occt;
 /// <remarks>
 /// Immutable: the <c>With...</c> methods make new products, and products are shared between instances and between
 /// trees (a product placed twice is one object, as a label referred to twice in XCAF). A part's shape is frozen when
-/// the product is made (decision 13102); an assembly's shape is the compound of its components, made once when first
+/// the product is made (decision 1230); an assembly's shape is the compound of its components, made once when first
 /// asked for. Thread-safe.
 /// </remarks>
 public sealed class XdeDoc_Product

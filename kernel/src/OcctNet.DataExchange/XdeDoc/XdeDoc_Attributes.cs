@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 13101). Not a port.
+// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;

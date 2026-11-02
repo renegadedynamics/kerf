@@ -1,0 +1,180 @@
+// Port of: src/DataExchange/TKDESTEP/GeomToStep/GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface.hxx
+// Port of: src/DataExchange/TKDESTEP/GeomToStep/GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+#nullable disable warnings
+
+using static Occt.GeomAbs_BSplKnotDistribution;
+using static Occt.StepData_Logical;
+using static Occt.StepGeom_BSplineSurfaceForm;
+using static Occt.StepGeom_KnotType;
+
+namespace Occt;
+
+/// <summary>
+/// The mapping of BSplineSurface from Geom to a STEP rational b_spline_surface_with_knots (the complex entity
+/// BSplineSurfaceWithKnotsAndRationalBSplineSurface).
+/// </summary>
+public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface : GeomToStep_Root
+{
+    private StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface theBSplineSurfaceWithKnotsAndRationalBSplineSurface;
+
+    //=============================================================================
+    // Creation d' une bspline_Surface_with_knots_and_rational_bspline_Surface de
+    // prostep a partir d' une BSplineSurface de Geom
+    //=============================================================================
+
+    /// <summary>A B-spline surface with its weights, its poles divided by the length factor.</summary>
+    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(Geom_BSplineSurface BS, in StepData_Factors theLocalFactors)
+    {
+        StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface BSWK;
+        int aUDegree, aVDegree, NU, NV, i, j, NUknots, NVknots, itampon;
+        double rtampon;
+        StepGeom_CartesianPoint Pt;
+        NCollection_HArray2<StepGeom_CartesianPoint> aControlPointsList;
+        StepGeom_BSplineSurfaceForm aSurfaceForm;
+        StepData_Logical aUClosed, aVClosed, aSelfIntersect;
+        NCollection_HArray1<int> aUMultiplicities, aVMultiplicities;
+        NCollection_HArray1<double> aUKnots, aVKnots;
+        NCollection_HArray2<double> aWeightsData;
+        GeomAbs_BSplKnotDistribution UDistribution, VDistribution;
+        StepGeom_KnotType KnotSpec;
+
+        aUDegree = BS.UDegree();
+        aVDegree = BS.VDegree();
+
+        NU = BS.NbUPoles();
+        NV = BS.NbVPoles();
+        NCollection_Array2<gp_Pnt> P = BS.InternalPoles();
+        aControlPointsList = new NCollection_HArray2<StepGeom_CartesianPoint>(1, NU, 1, NV);
+        for (i = P.LowerRow(); i <= P.UpperRow(); i++)
+        {
+            for (j = P.LowerCol(); j <= P.UpperCol(); j++)
+            {
+                GeomToStep_MakeCartesianPoint MkPoint = new GeomToStep_MakeCartesianPoint(P.Value(i, j), theLocalFactors.LengthFactor());
+                Pt = MkPoint.Value();
+                aControlPointsList.SetValue(i, j, Pt);
+            }
+        }
+
+        aSurfaceForm = StepGeom_bssfUnspecified;
+
+        if (BS.IsUClosed())
+        {
+            aUClosed = StepData_LTrue;
+        }
+        else
+        {
+            aUClosed = StepData_LFalse;
+        }
+
+        if (BS.IsVClosed())
+        {
+            aVClosed = StepData_LTrue;
+        }
+        else
+        {
+            aVClosed = StepData_LFalse;
+        }
+
+        aSelfIntersect = StepData_LFalse;
+
+        NUknots = BS.NbUKnots();
+        NVknots = BS.NbVKnots();
+        NCollection_Array1<int> MU = BS.InternalUMultiplicities();
+        aUMultiplicities = new NCollection_HArray1<int>(1, NUknots);
+        for (i = MU.Lower(); i <= MU.Upper(); i++)
+        {
+            itampon = MU.Value(i);
+            aUMultiplicities.SetValue(i, itampon);
+        }
+        NCollection_Array1<int> MV = BS.InternalVMultiplicities();
+        aVMultiplicities = new NCollection_HArray1<int>(1, NVknots);
+        for (i = MV.Lower(); i <= MV.Upper(); i++)
+        {
+            itampon = MV.Value(i);
+            aVMultiplicities.SetValue(i, itampon);
+        }
+
+        NCollection_Array1<double> KU = BS.InternalUKnots();
+        NCollection_Array1<double> KV = BS.InternalVKnots();
+        aUKnots = new NCollection_HArray1<double>(1, NUknots);
+        aVKnots = new NCollection_HArray1<double>(1, NVknots);
+        for (i = KU.Lower(); i <= KU.Upper(); i++)
+        {
+            rtampon = KU.Value(i);
+            aUKnots.SetValue(i, rtampon);
+        }
+        for (i = KV.Lower(); i <= KV.Upper(); i++)
+        {
+            rtampon = KV.Value(i);
+            aVKnots.SetValue(i, rtampon);
+        }
+
+        UDistribution = BS.UKnotDistribution();
+        VDistribution = BS.VKnotDistribution();
+        if (UDistribution == GeomAbs_NonUniform && VDistribution == GeomAbs_NonUniform)
+        {
+            KnotSpec = StepGeom_ktUnspecified;
+        }
+        else if (UDistribution == GeomAbs_Uniform && VDistribution == GeomAbs_Uniform)
+        {
+            KnotSpec = StepGeom_ktUniformKnots;
+        }
+        else if (UDistribution == GeomAbs_QuasiUniform && VDistribution == GeomAbs_QuasiUniform)
+        {
+            KnotSpec = StepGeom_ktQuasiUniformKnots;
+        }
+        else if (UDistribution == GeomAbs_PiecewiseBezier && VDistribution == GeomAbs_PiecewiseBezier)
+        {
+            KnotSpec = StepGeom_ktPiecewiseBezierKnots;
+        }
+        else
+        {
+            KnotSpec = StepGeom_ktUnspecified;
+        }
+
+        NCollection_Array2<double> W = BS.InternalWeightsArray();
+        aWeightsData = new NCollection_HArray2<double>(1, NU, 1, NV);
+        for (i = W.LowerRow(); i <= W.UpperRow(); i++)
+        {
+            for (j = W.LowerCol(); j <= W.UpperCol(); j++)
+            {
+                aWeightsData.SetValue(i, j, W.Value(i, j));
+            }
+        }
+
+        BSWK = new StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface();
+        TCollection_HAsciiString name = new TCollection_HAsciiString("");
+        BSWK.Init(name,
+                  aUDegree,
+                  aVDegree,
+                  aControlPointsList,
+                  aSurfaceForm,
+                  aUClosed,
+                  aVClosed,
+                  aSelfIntersect,
+                  aUMultiplicities,
+                  aVMultiplicities,
+                  aUKnots,
+                  aVKnots,
+                  KnotSpec,
+                  aWeightsData);
+
+        theBSplineSurfaceWithKnotsAndRationalBSplineSurface = BSWK;
+        done = true;
+    }
+
+    /// <summary>A B-spline surface with its weights (default factors).</summary>
+    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(Geom_BSplineSurface BS) : this(BS, new StepData_Factors())
+    {
+    }
+
+    /// <summary>The rational b_spline_surface_with_knots made.</summary>
+    public StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface Value()
+    {
+        StdFail_NotDone_Raise_if(!done, "GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface::Value() - no result");
+        return theBSplineSurfaceWithKnotsAndRationalBSplineSurface;
+    }
+}

@@ -1911,15 +1911,68 @@ reproduces them all; the generated code carries no `// OCCT` marker (it is regen
 | RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
 | StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
 
+## Phase 8: unit 8A3, IFSelect, XSControl and APIHeaderSection_EditHeader
+
+Found by porting IFSelect (as traced) and XSControl and testing them on the toy norm and the corpus's STEP files
+(decision 1228). The port reproduces each but the one noted.
+
+| Where | What | Effect |
+|---|---|---|
+| Interface_CheckTool::VerifyCheckList and CheckList (8A1's code, met here) | One Interface_Check object is cleared and refilled for each entity and recorded for every entity with messages; when the model has semantic checks or report entities, it becomes the model's own check, which the next entity clears | Every recorded check ends with the last entity's messages (none if the last has none): IFSelect_WorkSession::ComputeCheck's semantic checks lose all but the last entity's, and the model's stored checks are cleared by the next lists. Reproduced; the native comparison agrees on the corpus |
+| IFSelect_CheckCounter::Analyse | Keeps `thesign->Text(ent, model).ToCString()`, the C string of a temporary destroyed at once | With a signature, the type in each message is garbage or empty natively. The port gives the text (not comparable natively) |
+| IFSelect_WorkSession::GiveListCombined | Never creates the list it appends to | A null dereference for any two lists |
+| IFSelect_WorkSession::SendAll, SendSelected | Clear `errhand` (a file static, shared by every session) and restore it on an exception only | After one successful call, every session's later calls run without the exception guard. The port keeps the flag per session |
+| IFSelect_WorkSession::RemoveName | Re-adds the item to the indexed map of items to drop its name; adding an existing key changes nothing | The item keeps its name as its attribute (HasName, Name, ItemLabel's lists), though the name is unbound |
+| IFSelect_WorkSession::ReadFile with OCCT 8's StepSelect_WorkLibrary | The library reads into the model it is given; the session gives a null one | XSControl_Reader::ReadFile on STEP fails (a null dereference caught as a signal: RetFail); STEPControl_Reader::ReadFile makes its model itself |
+| IFSelect_SignatureList::PrintList | Tests `if (num == IFSelect_ShortByItem)`, an entity number against the enumeration's value 2 | Entity n0 2 is printed "??" in the lists |
+| IFSelect_Functions::GiveDispatch | Sets '\0' at the positions of '(' and ')' (TCollection_AsciiString::SetValue) before testing that there are any | A name that is neither a dispatch nor has parentheses raises Standard_OutOfRange |
+| XSControl_TransferWriter::CheckList, ResultCheckList | Skip a check `if (NbFails() == 0 \|\| NbWarnings() == 0)` | Only checks with both fails and warnings are listed |
+| XSControl_TransferReader::EntitiesFromShapeList (modes 2 to 4) | Reads `list->Value(i)` (the entity number) in the loop over `ir` | The results compared are the wrong ones (or out of range) |
+| APIHeaderSection_EditHeader, IsTimeStamp | `[[fallthrough]]` after each separator test into the next digit test | A separator must also be a digit: no time stamp is ever accepted, so the editor can't set one |
+| IFSelect_EditForm::NbTouched, IFSelect_ContextModif::Search, IFSelect_IntParam::StaticName | Declared, never defined | The first two left out; StaticName ported |
 ## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
 
-Nothing of OCCT's is ported in this unit (decision 13101). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
-copy, for unit 8G (decision 13103):
+Nothing of OCCT's is ported in this unit (decision 1229). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
+copy, for unit 8G (decision 1231):
 
 | Where | What OCCT does | What the port does |
 |---|---|---|
 | XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
 | XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
+each, but for the first (decision 1240).
+
+| Where | What | Effect |
+|---|---|---|
+| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 1240) |
+| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
+| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
+| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
+| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
+| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
+| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
+| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
+
+## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
 
 ## Phase 8: unit 8G1, the XDE Draw-lite commands
 

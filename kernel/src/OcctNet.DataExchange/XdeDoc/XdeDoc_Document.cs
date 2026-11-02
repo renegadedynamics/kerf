@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 13101). Not a port; its methods
+// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port; its methods
 // follow XCAF's tools (src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool, _ColorTool, _LayerTool, _DocumentTool)
 // so that code ported from STEPCAFControl and the XDE Draw commands can call them in place of the tools'.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
@@ -11,7 +11,7 @@ namespace Occt;
 
 /// <summary>
 /// A mutable assembly document with XCAF's label interface: what STEPCAFControl's reader fills and its writer reads,
-/// in place of a <c>TDocStd_Document</c> with XCAF's tools (decision 13103). <see cref="ToTree"/> freezes it into an
+/// in place of a <c>TDocStd_Document</c> with XCAF's tools (decision 1231). <see cref="ToTree"/> freezes it into an
 /// <see cref="XdeDoc_Tree"/>; <see cref="FromTree"/> opens a tree.
 /// </summary>
 /// <remarks>
@@ -569,7 +569,7 @@ public sealed class XdeDoc_Document
     /// </summary>
     public XdeDoc_Label AddShape(in TopoDS_Shape theShape, bool makeAssembly = true, bool makePrepare = true)
     {
-        _ = makePrepare; // decision 13103: the compound isn't modified
+        _ = makePrepare; // decision 1231: the compound isn't modified
         if (!theShape.IsNull())
         {
             theShape.TShape()?.FreezeGraph();

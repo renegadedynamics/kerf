@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): 3MF written fresh over the assembly tree (decisions 1166, 13107); OCCT has no 3MF.
+// New in OCCT.NET (unit 8T): 3MF written fresh over the assembly tree (decisions 1166, 1235); OCCT has no 3MF.
 // The 3MF Core Specification 1.3: an OPC package (a zip) of the content types, the root relationship and the model
 // part; objects with meshes or components, build items with transforms, colours as core base materials.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).

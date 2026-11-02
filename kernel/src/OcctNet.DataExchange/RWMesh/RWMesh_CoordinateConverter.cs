@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): the mesh writers' and readers' change of coordinates, written fresh (decision 13104), with
+// New in OCCT.NET (unit 8T): the mesh writers' and readers' change of coordinates, written fresh (decision 1232), with
 // the conventions of OCCT's RWMesh_CoordinateSystemConverter (src/DataExchange/TKDE/RWMesh): a length scale and the
 // rotation from OCCT's Z-up system to glTF's Y-up one.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).

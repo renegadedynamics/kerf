@@ -179,6 +179,9 @@ oracle tests can show what changes.
     `occ::handle<Standard_Transient>`, `STANDARD_TYPE(NCollection_HArray1<...>)`: decision 1214). Nothing else of
     `Standard_Transient` applies to them (they aren't frozen).
   - `NCollection_Array1<T>::Iterator` → `NCollection_Array1<T>.Iterator` (More/Next/Value).
+  - An array of a value class (a STEP SELECT) holds references: storing one copies it as C++ does
+    (`a.SetValue(i, new StepShape_Shell(aSelect))`), and a new array's slots are null where C++ has empty values
+    (decisions 1244, 1254).
   - `a(i)`, `a[i]`, `a.ChangeValue(i)` → `a[i]` (a `ref` indexer, for reading and writing); `a.Value(i)` stays.
   - The "buffer" constructors (`NCollection_Array1<T> a(b(i), lower, upper)`, an array over another's memory) →
     `new(b, i, lower, upper)`, which shares `b`'s storage.

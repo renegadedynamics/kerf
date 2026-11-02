@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): glTF 2.0 read fresh into the assembly tree with System.Text.Json (decisions 1166, 13108).
+// New in OCCT.NET (unit 8T): glTF 2.0 read fresh into the assembly tree with System.Text.Json (decisions 1166, 1236).
 // Not a port of OCCT's RWGltf_CafReader, which needs XCAF and RapidJSON; its result is kept: each primitive a face
 // holding only its triangulation (BRep_Builder::MakeFace with a Poly_Triangulation, as RWMesh does), the meshes' names
 // and colours, the node hierarchy, glTF's Y-up turned Z-up and the metres turned into the model's unit.
@@ -21,7 +21,7 @@ namespace Occt;
 /// with a mesh and no children is an instance of the mesh's part (named by the node if its name differs from the
 /// mesh's); a node with children an assembly named by the node. A node's transformation that isn't rigid (a scale,
 /// shear or mirror) is applied to the meshes below it (copied for that node), since shape locations are rigid
-/// (decision 13108). The tree's roots are the default scene's nodes (all parentless nodes if there is no scene).
+/// (decision 1236). The tree's roots are the default scene's nodes (all parentless nodes if there is no scene).
 /// </para>
 /// <para>
 /// Hostile input (<see cref="RWGltf_ReadLimits"/>): the file and buffer sizes, the node count and depth, the triangle

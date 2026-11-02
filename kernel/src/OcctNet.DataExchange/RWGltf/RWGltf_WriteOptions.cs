@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): glTF written fresh over the assembly tree (decisions 1166, 13105). Not a port.
+// New in OCCT.NET (unit 8T): glTF written fresh over the assembly tree (decisions 1166, 1233). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 namespace Occt;

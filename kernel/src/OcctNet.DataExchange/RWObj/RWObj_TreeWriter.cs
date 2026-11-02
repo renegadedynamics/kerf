@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): Wavefront OBJ written fresh over the assembly tree (decisions 1166, 13106). Not a port of
+// New in OCCT.NET (unit 8T): Wavefront OBJ written fresh over the assembly tree (decisions 1166, 1234). Not a port of
 // OCCT's RWObj_CafWriter, which needs XCAF; its conventions are kept where they show: a group per placed part named by
 // its path, MTL diffuse colours in sRGB, transparency as "Tr".
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).

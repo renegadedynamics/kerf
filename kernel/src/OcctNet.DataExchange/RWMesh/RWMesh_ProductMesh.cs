@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): the mesh writers' common part, written fresh over the assembly tree (decision 13104).
+// New in OCCT.NET (unit 8T): the mesh writers' common part, written fresh over the assembly tree (decision 1232).
 // Its rules follow OCCT's RWMesh_FaceIterator (src/DataExchange/TKDE/RWMesh): each face's triangulation in the part's
 // coordinates, the winding swapped for a reversed face or a mirroring location, normals reversed for a reversed face.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
@@ -103,7 +103,7 @@ internal sealed class RWMesh_ProductMesh
     }
 
     // The styles the part's sub-shapes give its faces: the sub-shapes taken from the most general type (compound) to
-    // the most specific (face), so that a face's own colour overrides its solid's (decision 13104)
+    // the most specific (face), so that a face's own colour overrides its solid's (decision 1232)
     private static Dictionary<TopoDS_Shape, XdeDoc_Style> faceStyles(XdeDoc_Product thePart)
     {
         var aResult = new Dictionary<TopoDS_Shape, XdeDoc_Style>(TopTools_ShapeMapHasher.Instance);

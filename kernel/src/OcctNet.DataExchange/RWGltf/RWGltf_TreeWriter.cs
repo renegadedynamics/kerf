@@ -1,4 +1,4 @@
-// New in OCCT.NET (unit 8T): glTF 2.0 written fresh over the assembly tree with System.Text.Json (decisions 1166, 13105).
+// New in OCCT.NET (unit 8T): glTF 2.0 written fresh over the assembly tree with System.Text.Json (decisions 1166, 1233).
 // Not a port of OCCT's RWGltf_CafWriter, which needs XCAF and RapidJSON; its conventions are kept where they show in
 // the output: a node per instance and a mesh per part shared by its instances, Z-up turned Y-up and the length unit
 // turned into metres, a material per colour (PBR, metallic 0, roughness 1, the surface colour else the curve colour as
