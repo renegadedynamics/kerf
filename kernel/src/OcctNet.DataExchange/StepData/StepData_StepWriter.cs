@@ -387,12 +387,12 @@ public class StepData_StepWriter
                 thechecks.CCheck(num).AddWarning("Erroneous Entity, equivalent content");
                 if (und.IsComplex())
                 {
-                    AddString(" (", 2);
+                    AddCString(" (", 2);
                 }
                 und.WriteParams(this);
                 if (und.IsComplex())
                 {
-                    AddString(") ", 2);
+                    AddCString(") ", 2);
                 } // thelevel --; }
             }
             EndEntity(); // BEFORE Comments
@@ -551,7 +551,7 @@ public class StepData_StepWriter
             throw new Interface_InterfaceMismatch("StepWriter : Comment");
         }
         string aText = ToFileText(text.ToCString());
-        AddString(aText, aText.Length);
+        AddCString(aText, aText.Length);
     }
 
     /// <summary>Same as above but accepts a CString (ex.: "..." directly).</summary>
@@ -562,7 +562,7 @@ public class StepData_StepWriter
             throw new Interface_InterfaceMismatch("StepWriter : Comment");
         }
         string aText = ToFileText(text);
-        AddString(aText, aText.Length);
+        AddCString(aText, aText.Length);
     }
 
     /// <summary>
@@ -585,7 +585,7 @@ public class StepData_StepWriter
                 throw new Interface_InterfaceMismatch("StepWriter : StartEntity"); // bad parentheses count...
             }
             AddString(textendlist);
-            AddString(" ", 1); // skl 29.01.2003
+            AddCString(" ", 1); // skl 29.01.2003
         }
         themult = true;
         AddString(atype);
@@ -602,7 +602,7 @@ public class StepData_StepWriter
     /// </summary>
     public void StartComplex()
     {
-        AddString("( ", 2); // skl 29.01.2003
+        AddCString("( ", 2); // skl 29.01.2003
     } // thelevel unchanged
 
     /// <summary>
@@ -611,7 +611,7 @@ public class StepData_StepWriter
     /// </summary>
     public void EndComplex()
     {
-        AddString(") ", 2);
+        AddCString(") ", 2);
     } // thelevel unchanged
 
     //  ....                SendField and what goes with it
@@ -862,7 +862,7 @@ public class StepData_StepWriter
         AddParam();
         if (!string.IsNullOrEmpty(subtype))
         {
-            AddString(subtype, subtype.Length);
+            AddCString(subtype, subtype.Length);
         }
         AddString(textlist);
         thefirst = true;
@@ -895,7 +895,7 @@ public class StepData_StepWriter
     {
         AddParam();
         string lval = Standard.Sprintf("%d", val);
-        AddString(lval, lval.Length);
+        AddCString(lval, lval.Length);
     }
 
     /// <summary>Sends a real parameter (works with FloatWriter).</summary>
@@ -904,7 +904,7 @@ public class StepData_StepWriter
         //    Floating point value, cleaned of trailing "0000" and "E+00"
         int lng = thefloatw.Write(val, out string lval);
         AddParam();
-        AddString(lval, lng); // handles specific format: if needed
+        AddCString(lval, lng); // handles specific format: if needed
     }
 
     //  Send(String): note, we send a Text ... so between '  '
@@ -1062,7 +1062,7 @@ public class StepData_StepWriter
                 lident = Standard.Sprintf("%d:#%d", idnum, idtrue);
             }
             AddParam();
-            AddString(lident, lident.Length);
+            AddCString(lident, lident.Length);
         }
     }
 
@@ -1102,7 +1102,7 @@ public class StepData_StepWriter
     public void SendString(string val)
     {
         AddParam();
-        AddString(val, CLength(val));
+        AddCString(val, CLength(val));
     }
 
     //  SendEnum: note, we send an Enum label ... so between .  .
@@ -1194,11 +1194,11 @@ public class StepData_StepWriter
     /// </summary>
     private void AddString(string astr, int more = 0)
     {
-        AddString(astr, astr.Length, more);
+        AddCString(astr, astr.Length, more);
     }
 
-    /// <summary>Same as above, but the string is given by CString + Length.</summary>
-    private void AddString(string astr, int lnstr, int more)
+    /// <summary>Same as above, but the string is given by CString + Length (OCCT's overload on <c>const char*</c>).</summary>
+    private void AddCString(string astr, int lnstr, int more = 0)
     {
         void flushLine(int theRequired)
         {
