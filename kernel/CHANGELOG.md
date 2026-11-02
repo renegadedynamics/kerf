@@ -1428,3 +1428,11 @@ Phase 8 (part): STL (unit 8H1).
   text; 2 lines attributed (native runs out of memory reading text as binary).
 - Draw-lite: `readstl`, `writestl`; 67 corpus cases newly runnable (OK 7, SKIPPED 59 for data not public, FAILED 1
   attributed: the progress output).
+Phase 8 (part): the STEP parser (unit 8P).
+- `OcctNet.DataExchange`: StepFile_ReadData, and a hand-written, reentrant scanner and parser (`StepFile_Scanner`,
+  `StepFile_Parser`) in place of OCCT's flex and bison code, filling it as OCCT's do, error recovery and messages
+  included. They read a stream, with limits for hostile input (`StepFile_ReadLimits`: file size, records, nesting) and
+  cancellation through `Message_ProgressRange`.
+- Tests: tools/steprec compiles OCCT's own scanner and parser. All 340 STEP files of OCCT's dataset and data/step, and
+  1,329 hostile and mutated inputs, parse as natively, but for two inputs native crashes on. The port parses in 0.74×
+  native's time.
