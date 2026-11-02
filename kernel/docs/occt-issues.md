@@ -1927,3 +1927,18 @@ reproduces them all; the generated code carries no `// OCCT` marker (it is regen
 | StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
 | RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
 | StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
+
+## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
+
+| Where | What | Effect |
+|---|---|---|
+| StepToTopoDS_Builder::Init (EdgeBasedWireframeModel, FaceBasedSurfaceModel) | `myError = myResult.IsNull() ? Done : Other` | The error code says Done when nothing was made and Other when something was (IsDone is right) |
+| StepToTopoDS_TranslateEdge::MakeFromCurve3D | Reverses (UpdateParam3d) or adjusts (AdjustCurve) the 3D curve it took from the transient process's cache | An earlier edge sharing that STEP curve changes too. Fixed in the port: the change goes to a copy (decision 13005) |
+| TopoDSToStep_MakeFacetedBrep(Solid) | `if (!StepB.TessellatedValue())`: the test is inverted | Without a tessellated result (the usual case) it dereferences the null tessellated shell: an access violation natively, a NullReferenceException in the port; with one, the tessellation is dropped |
+| TopoDSToStep_MakeFacetedBrepAndBrepWithVoids | Passes `false` as the tessellation mode; copies each shell's tessellated items from index 1 | Never tessellates; with several shells the items would overwrite each other |
+| TopoDSToStep_MakeShellBasedSurfaceModel(Solid) | Makes a tessellated geometric set of the shells' tessellations and drops it; maps its "not AP242" warning to the still null shell | The tessellation is never returned |
+| TopoDSToStep_WireframeBuilder::GetTrimmedCurveFromEdge | Finds the edge's curve in the map, then makes it again | Each occurrence of an edge gives a new curve |
+| TopoDSToStep_FacetedTool::CheckTopoDSShape | Returns Done at the first linear pcurve of a planar face | The other faces and pcurves are not checked |
+| TopoDSToStep_MakeStepFace (degenerate torus under an offset surface) | `anOffsetSu->SetBasisSurface(Rev)` on the face's own surface | The writer changes the shape it writes. Fixed in the port: a copy (decision 13009) |
+| TopoDSToStep_MakeTessellatedItem (InitTriangulation) | `Poly::ComputeNormals` on the face's triangulation | The writer adds normals to the shape it writes. Fixed in the port: a copy (decision 13009) |
+| TopoDSToStep_MakeTessellatedItem::Init(Shell) | Calls the progress scope's Next twice per face | Progress only |

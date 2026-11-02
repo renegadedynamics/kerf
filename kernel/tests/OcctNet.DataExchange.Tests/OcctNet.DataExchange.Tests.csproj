@@ -47,6 +47,10 @@
     <EmbeddedResource Include="..\..\tools\geomsteprec\cases.txt" LogicalName="GeomToStep.cases.txt" />
     <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
     <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
+    <!-- Native OCCT's StepToTopoDS and TopoDSToStep (tools/toporec, unit 8E): the corpus's shape representation items
+         translated into BReps, and data/occ's shapes converted into STEP entities -->
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-s2t.txt.gz" LogicalName="TopoStep.toporec-s2t.txt.gz" />
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-t2s.txt.gz" LogicalName="TopoStep.toporec-t2s.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

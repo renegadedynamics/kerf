@@ -109,7 +109,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
             {
                 continue;
             }
-            j = newmap.Add(ent, bnd);
+            j = newmap.Add(ent ?? theNullStart, bnd);
             unbs.SetValue(i, j);
         }
         themap = newmap;
@@ -291,7 +291,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         {
             if (theindex == 0)
             {
-                theindex = themap.Add(start, binder);
+                theindex = themap.Add(start ?? theNullStart, binder);
             }
             else
             {
@@ -663,7 +663,8 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// <summary>Returns the Starting Object bound to an Index.</summary>
     public Standard_Transient? Mapped(int num)
     {
-        return themap.FindKey(num);
+        Standard_Transient aKey = themap.FindKey(num);
+        return ReferenceEquals(aKey, theNullStart) ? null : aKey;
     }
 
     /// <summary>Returns the Index value bound to a Starting Object, 0 if none.</summary>
@@ -723,7 +724,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         {
             ind = theroots.FindKey(num);
         }
-        return themap.FindKey(ind);
+        return Mapped(ind);
     }
 
     /// <summary>Returns the Binder bound with a Root Entity given its number.</summary>
@@ -1443,11 +1444,15 @@ public class Transfer_ProcessForTransient : Standard_Transient
         return 0;
     }
 
-    // The index of a starting object, 0 if none (a null object is never mapped)
+    // The index of a starting object, 0 if none. A null object is mapped as OCCT maps a null handle (a check
+    // attached to a missing entity, StepToTopoDS's for instance), under a key of its own (decision 13010)
     private int FindIndex(Standard_Transient? start)
     {
-        return start is null ? 0 : themap.FindIndex(start);
+        return themap.FindIndex(start ?? theNullStart);
     }
+
+    // The key standing for a null starting object in the map (.NET's dictionaries refuse null keys)
+    private static readonly Standard_Transient theNullStart = new Transfer_VoidBinder();
 
     private bool theerrh;
     private int thetrace;

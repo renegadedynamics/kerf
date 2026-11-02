@@ -1494,3 +1494,15 @@ Phase 8 (part): the other STEP entity packages and StepAP214's protocol (unit 8C
 - Round trips of the dataset's 338 STEP files with the real protocol: 98.9% of the 1,546,314 records are recognised
   (the rest are types OCCT doesn't know either); of those, 1,526,805 are written back the same and the 2,107 others
   differ as OCCT's own reading and writing make them (each attributed, 13 OCCT bugs logged).
+
+Phase 8 (part): STEP topology (unit 8E).
+- StepToTopoDS: the translation of STEP's shape representation items (manifold solid breps, breps with voids, faceted
+  breps, shell based surface models, wireframe and face based models, geometric sets, tessellated solids, shells,
+  faces and surface sets) into BReps, with its translators of vertices, edges, loops, faces and shells, its tools and
+  MakeTransformed. `Value()` gives frozen shapes; a reader works on `InternalValue()` and freezes at the end.
+- TopoDSToStep: the conversion of BReps into STEP entities (MakeManifoldSolidBrep, MakeBrepWithVoids,
+  MakeFacetedBrep, MakeFacetedBrepAndBrepWithVoids, MakeShellBasedSurfaceModel, MakeGeometricCurveSet, the builders
+  and the tessellated items). The shapes converted never change.
+- Compared with native OCCT (tools/toporec): 2,193 of the corpus's 2,194 shape items translated byte for byte (one
+  attributed to Shape Healing), and 1,726 conversions of data/occ's shapes written identically.
+- 8D's tests now read with StepAP214's protocol; the transient process takes checks on null entities as OCCT's does.

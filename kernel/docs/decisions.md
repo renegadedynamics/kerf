@@ -12625,3 +12625,81 @@ the translators), with TKDE's DE_ShapeFixParameters.
        typed), CHARACTERIZED_OBJECT written derived (3), application-defined element purposes (2), a boolean written as
        an integer (1). The test tries the two writers that can throw on a writer of their own first, as a throwing
        WriteStep leaves the writer inside the record. Native OCCT's writing is compared in unit 8F.
+
+## Phase 8: unit 8E, topology (StepToTopoDS, TopoDSToStep)
+
+13001. **StepToTopoDS and TopoDSToStep, class for class** (src/OcctNet.DataExchange/StepToTopoDS and TopoDSToStep, 59
+       files). OCCT's value classes (the translators, makers, builders, StepToTopoDS_Tool, StepToTopoDS_NMTool,
+       TopoDSToStep_Tool) are classes (decision 1185); their `T&` parameters are references, `bool&` is `ref bool`;
+       OCCT's default `StepData_Factors()` is an overload without it (decision 12901), progress ranges default.
+       StepToTopoDS_PointPair is a readonly struct, unordered and compared by reference (its hash symmetric, by
+       identity). The tools' maps are keyed by reference (TopoDSToStep_Tool's by TopTools_ShapeMapHasher, as OCCT's)
+       and never iterated but by TopoDSToStep::AddResult (13008); StepToTopoDS_Tool keeps OCCT's binding of a null item
+       (a file's missing reference) in a slot of its own, since .NET's dictionaries refuse null keys. Hand-written code
+       that stores a SELECT value into an array copies it, as C++'s assignment does (`new StepShape_Shell(aSelect)`):
+       NCollection's `SetValue` stores the reference, and a SELECT reused in a loop would otherwise end in every slot.
+       What OCCT's `catch (Standard_Failure)` under `OCC_CATCH_SIGNALS` catches is `StepToTopoDS_Root.CaughtBySignals`
+       (decisions 1183, 1201); a plain `catch (Standard_Failure)` stays one. `OCCT_DEBUG` blocks are left out.
+13002. **8D's tests on StepAP214's protocol**: see decision 12906, amended.
+13003. **The one static StepToTopoDS reads, through its model.** OCCT 8 moved the reader's parameters into
+       `StepData_StepModel::InternalParameters`, but XSAlgo_ShapeProcessor::CheckPCurve (which TranslateEdgeLoop calls)
+       still reads the static `read.stdsameparameter.mode`. The port passes the model's
+       `InternalParameters.ReadSameParamMode` (the same value: DESTEP_Parameters::InitFromStatic copies it) through a
+       new internal overload `CheckPCurve(..., bool theStdSameParameterMode)`, which the form with an
+       Interface_StaticSet (unit 8A2) calls. No other static is read: ReadSurfaceCurveMode, ReadMaxPrecisionMode,
+       WriteTessellated, WriteSchema, WriteSurfaceCurMode and WriteNonmanifold come from the models, as in OCCT.
+13004. **Frozen results.** Every translator's and the builder's `Value()` freezes what it returns; `InternalValue()`
+       (internal) gives the working shape. Inside a transfer the shapes are shared and changed after they are made:
+       the transient process's binders, the reading actor's non-manifold tool and the curves the transient process
+       caches (`BindTransient`) are reused by later items, tessellated faces add their triangulation to the face of
+       their geometric link in place, tolerances are limited at the end (ResetPreci). So StepToTopoDS works on unfrozen
+       shapes, and the reader (unit 8F's STEPControl_ActorRead, calling `InternalValue()`) freezes once at the end of
+       the transfer, as TransferBRep_Reader does (decision 1205). TranslateMappedItem moves a binder's shape (a
+       location change, allowed on a frozen shape).
+13005. **One OCCT bug fixed: shared curves changed in place.** TranslateEdge takes an edge's 3D curve from the transient
+       process when an earlier edge made it (`FindTransient`); StepToTopoDS_GeometricTool::UpdateParam3d may then
+       reverse it and DecodeMakeEdgeError's ShapeConstruct_Curve::AdjustCurve may move its poles, which natively changes
+       the earlier edge too. The port's curve is frozen once an edge holds it, so the reversal or adjustment applies to
+       a copy, which the new edge takes (an internal `UpdateParam3d(ref Geom_Curve, ..., theCopyFrozen)`; the public
+       form keeps OCCT's in-place reversal of a working curve). Not met in the corpus (its results are identical).
+13006. **The reading actor of a geometric set.** StepToTopoDS_Builder::Init(StepShape_GeometricSet, ..., RA) down-casts its
+       actor to STEPControl_ActorRead (unit 8F) for the geometric representation items it doesn't translate itself.
+       The port asks for an internal interface, `StepToTopoDS_IActorRead` (TransferShape with OCCT's parameters), which
+       8F's STEPControl_ActorRead implements: StepToTopoDS doesn't depend on STEPControl.
+13007. **TopoDSToStep_MakeStepWire's reorder.** OCCT runs ShapeFix_Wire::FixReorder on the face's wire and takes the
+       edges from its wire data. The port's ShapeFix_Wire works on copies of frozen edges (decision 583), which the tool
+       would key as other edges (one EDGE_CURVE per face instead of one per edge): MakeStepWire asks for the fix's
+       result (`Wire()`), which gives the wire data back the caller's own edges, then reads them.
+13008. **Determinism.** TopoDSToStep::AddResult(FP, Tool) iterates the tool's map, OCCT in its hash order (TShape
+       addresses), the port in the order the shapes were bound. It orders the finder process's mappers, not the
+       entities written (a model's entities follow AddWithRefs from the result, which doesn't depend on hashing).
+       StepToTopoDS iterates no hashed map.
+13009. **The writers never change their input** (plan 2.7). Two places where OCCT writes into the shape it converts work
+       on copies: TopoDSToStep_MakeStepFace's degenerate torus under an offset surface (OCCT sets the face's own offset
+       surface's basis, `SetBasisSurface`) and TopoDSToStep_MakeTessellatedItem's normals (OCCT computes them into the
+       face's triangulation, `Poly::ComputeNormals`). The STEP written is the same; a frozen input converts.
+13010. **Unit 8A2's transient process maps a null starting object, as OCCT's.** StepToTopoDS attaches checks to entities
+       a corrupted file leaves null (`TP->AddWarning(OrEdge1, ...)` with OrEdge1 null), which OCCT binds under a null
+       handle. Transfer_ProcessForTransient's map now keys a null start by a private sentinel (`Mapped` and `Root` give
+       null back); before, Bind threw ArgumentNullException (bug32314_corrupted.stp).
+13011. **Null SELECT values.** An array of SELECT values read from a corrupted file can hold null where C++ holds an
+       empty SELECT (a surface curve's associated geometry, a geometric set's elements, a model's shells, a surface's
+       boundaries); StepToTopoDS reads them with `?.` (an empty SELECT's value is null), so the result is OCCT's. A
+       note for unit 8C's generated readers.
+13012. **The oracle: tools/toporec** (MSVC, build123d.NET's native OCCT; recordings embedded in
+       tests/OcctNet.DataExchange.Tests/TopoStep). `s2t`: every shape representation item of the corpus's 338 STEP
+       files (read with STEPControl_Reader, the model's parameters reset to DESTEP_Parameters' defaults: manifold solid
+       breps, breps with voids, faceted breps, shell based surface models, edge based wireframe models, face based
+       surface models, geometric (curve) sets, tessellated solids, shells, faces and surface sets) translated by
+       StepToTopoDS_Builder on a transient process of its own, its BRep text hashed with the process's warning and fail
+       counts: **2,194 items, 2,193 byte-identical, 1 attributed** (tr9_r1001-ec.stp #12: ShapeFix_EdgeProjAux, phase
+       7, projects the vertex of four closed edges, full circles on cylinders, to the far side of their line pcurves, a
+       period earlier than native, so CheckPCurve drops those 4 of 2,468 pcurves; a follow-up for Shape Healing).
+       `t2s`: data/occ's 37 shapes, each solid through MakeManifoldSolidBrep, MakeBrepWithVoids (several shells),
+       MakeShellBasedSurfaceModel and MakeFacetedBrep (when TopoDSToStep_FacetedTool accepts it), each shell through
+       MakeManifoldSolidBrep, MakeShellBasedSurfaceModel and MakeFacetedBrep, the first 20 faces through
+       MakeShellBasedSurfaceModel and the whole shape through MakeGeometricCurveSet, with the default factors and with
+       inches and degrees, each result added with its references to a model and written by StepData_StepWriter:
+       **1,726 conversions, all identical** (entity order included), the inputs read frozen and unchanged. Not compared
+       natively here: the non-manifold and I-DEAS modes, mapped items and the actor's geometric representation items
+       (unit 8F compares them through STEPControl).
