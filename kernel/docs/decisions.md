@@ -13476,3 +13476,26 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        (its children in the order added) in place of each intermediate `Edge()`; the same on native, where they are the
        same shapes. Checked in a detached worktree of build123d.NET's main: Fillet tests 52/52 on OCCT.NET (FilletRecord
        passes) and 51/51 on native (scratchpad p9f2-b3d-wirefillet.diff).
+## Phase 9: unit 9E, the performance review
+
+1313. **Performance wins that keep native's results** (owner's answer, decision 1298: "only performance wins that keep
+       native's results"; docs/performance.md). Profiles of build123d.NET's suite and of Bento's examples on OCCT.NET
+       (EventPipe: CPU samples, allocations, exceptions, the JIT and the collector) found five cheap hot spots, each
+       fixed without changing values, iteration order or tolerances:
+       - `Intf_TangentZone` keeps its points in a deque: `PolygonInsert`'s insertions at the front were quadratic on a
+         .NET list (OCCT's sequence is linked). `MaxFillet` went from 28 s to 2.8 s (native 0.8 s).
+       - `NCollection_DynamicArray` takes its first capacity (the increment, at most 256) on the first element, as
+         OCCT allocates its first block, not at construction; elements move at the same sizes as before, so a `ref`
+         from `Append` stays valid as long as it did.
+       - `BRepMesh_DataStructureOfDelaun`'s deleted links are a `Queue<int>` (OCCT's list is used only as a queue);
+         `NCollection_CellFilter.Cell` copies its indexes with `ToArray`; `math_NewtonMinimum` subtracts in place.
+       Serially, build123d.NET's suite went from 3.7× native's time to 1.9×; in parallel from 43–46 s to 18–21 s
+       (native 3.4–3.9 s), where the garbage collector (17.5 GB allocated) and the JIT take most of what is left.
+       Bento's examples recalculate in 1.5× native's time and open in 3.5× (the JIT).
+1314. **Proposals left for the owner** (docs/performance.md, ranked): server GC or a larger gen-0 budget in hosts that
+       compute in parallel (the suite 2× faster in parallel); ReadyToRun for the packages (opening 37% faster);
+       `NCollection_List` as a linked list (5–10%, changes its public enumerator type); reusing
+       `math_NewtonMinimum`'s work arrays; small math vectors on the stack; a deque for `NCollection_Sequence`; a cheaper
+       identity hash for `TopoDS_TShape`, only if map iteration order is kept. Exceptions are not a cost (about 2,400
+       in the whole suite). `benchmarks/OcctNet.Bento.Benchmarks` measures Bento's workload on either backend; it needs
+       the build123d.NET checkout, so it is not in the solution.

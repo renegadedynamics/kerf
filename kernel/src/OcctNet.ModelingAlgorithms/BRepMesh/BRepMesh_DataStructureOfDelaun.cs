@@ -30,7 +30,9 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
     private readonly BRepMesh_VertexTool myNodes;
     private readonly NCollection_DataMap<int, LinkedListOfInteger> myNodeLinks;
     private readonly LinkMap myLinks;
-    private readonly NCollection_List<int> myDelLinks;
+    // OCCT's NCollection_List<int>, used only as a first-in first-out queue: a .NET queue, whose RemoveFirst
+    // doesn't move the rest (unit 9E)
+    private readonly Queue<int> myDelLinks;
     private readonly NCollection_DynamicArray<BRepMesh_Triangle> myElements;
     private readonly NCollection_PackedMapOfInteger myElementsOfDomain;
     private readonly NCollection_PackedMapOfInteger myLinksOfDomain;
@@ -41,7 +43,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
         myNodes = new BRepMesh_VertexTool();
         myNodeLinks = new NCollection_DataMap<int, LinkedListOfInteger>();
         myLinks = new LinkMap(theReservedNodeSize * 3);
-        myDelLinks = new NCollection_List<int>();
+        myDelLinks = new Queue<int>();
         myElements = new NCollection_DynamicArray<BRepMesh_Triangle>(theReservedNodeSize * 2);
         myElementsOfDomain = new NCollection_PackedMapOfInteger();
         myLinksOfDomain = new NCollection_PackedMapOfInteger();
@@ -121,11 +123,11 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
         }
 
         BRepMesh_PairOfIndex aPair = new();
-        if (!myDelLinks.IsEmpty())
+        if (myDelLinks.Count != 0)
         {
-            aLinkIndex = myDelLinks.First();
+            aLinkIndex = myDelLinks.Peek();
             myLinks.Substitute(aLinkIndex, theLink, aPair);
-            myDelLinks.RemoveFirst();
+            myDelLinks.Dequeue();
         }
         else
         {
@@ -197,7 +199,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
         aLink.SetMovability(BRepMesh_Deleted);
 
         myLinksOfDomain.Remove(theIndex);
-        myDelLinks.Append(theIndex);
+        myDelLinks.Enqueue(theIndex);
     }
 
     /// <summary>
@@ -359,7 +361,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
         Span<int> e = stackalloc int[3];
         Span<bool> o = stackalloc bool[3];
         int aLastLiveItem = NbLinks();
-        while (!myDelLinks.IsEmpty())
+        while (myDelLinks.Count != 0)
         {
             while (aLastLiveItem > 0)
             {
@@ -372,8 +374,8 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
                 --aLastLiveItem;
             }
 
-            int aDelItem = myDelLinks.First();
-            myDelLinks.RemoveFirst();
+            int aDelItem = myDelLinks.Peek();
+            myDelLinks.Dequeue();
 
             if (aDelItem > aLastLiveItem)
             {
