@@ -18,8 +18,8 @@ and the decisions it points to.
   - Record decisions as you go in `docs/decisions.md`, so the owner can review them.
   - Owner questions with provisional answers live in `docs/open-questions.md`. Follow the provisional answers; don't
     block on them.
-- **Repositories:** never write to `../build123d.net` or `../bento`. Building the oracle tests writes `bin`/`obj` into
-  `../build123d.net/src/Build123d.Occt`; that is expected.
+- **Repositories:** since unit 10R this is the `kernel/` folder of Kerf (github.com/renegadedynamics/kerf), with
+  build123d.NET in `../modeling/`. Never write to `../../bento` except on a branch.
 
 ## Environment
 
@@ -27,7 +27,7 @@ and the decisions it points to.
 |---|---|---|
 | OCCT V8_0_1 source | `.deps/occt-src` | `tools/get-occt.ps1` |
 | OCCT test dataset (99 MB) | `.deps/occt-testdata` | `tools/get-occt-testdata.ps1` |
-| Native oracle | `../build123d.net`, with its native build at `native/out/win-x64/bin/b3docct.dll` | build123d.NET's `native/build-deps.ps1` and `build-shim.ps1` |
+| Native oracle | build123d.NET's native build (`native/out/win-x64/bin/b3docct.dll`, `.deps/install`): in `../modeling/`, or elsewhere with `-p:Build123dNativeRoot=` | `modeling/native/build-deps.ps1` and `build-shim.ps1` |
 | Native recorders (`tools/*rec`) | MSVC 14.44 against build123d.NET's native OCCT | each tool's `build.ps1` |
 
 Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, pass

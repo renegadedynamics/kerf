@@ -12,11 +12,12 @@
     <OcctSourceDir>$(RepoRoot).deps/occt-src/</OcctSourceDir>
     <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->
     <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
-    <!-- A sibling build123d.NET checkout, whose native OCCT build the oracle tests compare against -->
-    <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../build123d.net/'))</Build123dNetRoot>
+    <!-- build123d.NET, in the repository's modeling folder, whose native OCCT build the oracle tests compare against -->
+    <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../modeling/'))</Build123dNetRoot>
     <!--
-      The checkout whose native build (.deps/install, native/out) build123d.NET's native backend uses: Build123dNetRoot
-      by default, another for a build123d.NET worktree without one
+      Where build123d.NET's native build (.deps/install, native/out) is: the modeling folder by default; give another
+      checkout's (-p:Build123dNativeRoot=...) where the modeling folder has none. Without one the oracle tests are
+      compiled out.
     -->
     <Build123dNativeRoot Condition="'$(Build123dNativeRoot)' == ''">$(Build123dNetRoot)</Build123dNativeRoot>
     <!--

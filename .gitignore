@@ -1,0 +1,6 @@
+# .NET
+.vs/
+*.user
+
+# Claude Code session data and worktrees
+/.claude/

@@ -18,7 +18,7 @@ Merges `<branch>` into the branch checked out in the repository that holds this 
 
    Any other conflict stops the merge (exit 2) and leaves it for you to resolve by hand.
 3. **Runs `renumber.pl`** to turn the unit's placeholder decision numbers into real ones.
-4. **Runs `dotnet test OcctNet.slnx -c Release`** and commits only if everything passes (exit 3 and the merge left uncommitted
+4. **Runs `dotnet test Kerf.slnx -c Release` (the kernel and the modeling layer)** and commits only if everything passes (exit 3 and the merge left uncommitted
    otherwise). The failing tests' names are printed. The whole test output is kept in `.git/merge-unit-test.log`, with the failures' messages.
 
 A full gate takes about 25 minutes on an idle machine and up to an hour when several helpers share it. Merge units one

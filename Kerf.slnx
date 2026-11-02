@@ -1,0 +1,34 @@
+<Solution>
+  <!--
+    Everything but what runs native OCCT: the kernel's oracle tests and native benchmarks (kernel/OcctNet.slnx), the
+    modeling layer's native backend and its generator (modeling/Build123d.slnx with -p:Build123dBackend=Native). One
+    restore can't serve the modeling projects on both backends at once. Phase 10 retires them (units 10A, 10B).
+  -->
+  <Folder Name="/kernel/" />
+  <Folder Name="/kernel/samples/">
+    <Project Path="kernel/samples/OcctNet.WasmDemo/OcctNet.WasmDemo.csproj" />
+  </Folder>
+  <Folder Name="/kernel/src/">
+    <Project Path="kernel/src/OcctNet.Analyzers/OcctNet.Analyzers.csproj" />
+    <Project Path="kernel/src/OcctNet.DataExchange/OcctNet.DataExchange.csproj" />
+    <Project Path="kernel/src/OcctNet.Foundation/OcctNet.Foundation.csproj" />
+    <Project Path="kernel/src/OcctNet.ModelingAlgorithms/OcctNet.ModelingAlgorithms.csproj" />
+    <Project Path="kernel/src/OcctNet.ModelingData/OcctNet.ModelingData.csproj" />
+  </Folder>
+  <Folder Name="/kernel/tests/">
+    <Project Path="kernel/tests/OcctNet.DataExchange.Tests/OcctNet.DataExchange.Tests.csproj" />
+    <Project Path="kernel/tests/OcctNet.DrawLite.Tests/OcctNet.DrawLite.Tests.csproj" />
+    <Project Path="kernel/tests/OcctNet.DrawLite/OcctNet.DrawLite.csproj" />
+    <Project Path="kernel/tests/OcctNet.Foundation.Tests/OcctNet.Foundation.Tests.csproj" />
+    <Project Path="kernel/tests/OcctNet.ModelingAlgorithms.Tests/OcctNet.ModelingAlgorithms.Tests.csproj" />
+    <Project Path="kernel/tests/OcctNet.ModelingData.Tests/OcctNet.ModelingData.Tests.csproj" />
+  </Folder>
+  <Folder Name="/modeling/" />
+  <Folder Name="/modeling/src/">
+    <Project Path="modeling/src/Build123d.OcctNet/Build123d.OcctNet.csproj" />
+    <Project Path="modeling/src/Build123d/Build123d.csproj" />
+  </Folder>
+  <Folder Name="/modeling/tests/">
+    <Project Path="modeling/tests/Build123d.Tests/Build123d.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1641,3 +1641,7 @@ Phase 9 complete (2 November 2026): the switch-over.
   attributed.
 - Two port bugs fixed (sweeps' histories, the filling's edges); a performance review halving build123d.NET's time on
   OCCT.NET (docs/performance.md).
+
+Phase 10 (part): one repository, Kerf (unit 10R).
+- OCCT.NET and build123d.NET move, with their histories, into one repository: `kernel/` and `modeling/`. The packages
+  keep their names until 0.2.0, when they become Kerf.Kernel and Kerf.Modeling.

@@ -13,8 +13,8 @@
 
   <!--
     The OCCT backend. OcctNet (the default) builds build123d.NET's API over OCCT.NET, the managed port of OCCT
-    (src/Build123d.OcctNet): from the OcctNet.* packages on nuget.org at OcctNetVersion, or, with OcctNetRoot given,
-    from that OCCT.NET checkout's projects (for working on both together, and for OCCT.NET's pack-nuget.ps1). Native
+    (src/Build123d.OcctNet): from the kernel's projects in the repository's kernel folder (OcctNetRoot, ../kernel/ by
+    default), or, with -p:UseOcctNetPackages=true, from the OcctNet.* packages on nuget.org at OcctNetVersion. Native
     binds native OCCT through the b3docct shim (src/Build123d.Occt), opt-in with -p:Build123dBackend=Native: it is the
     reference OCCT.NET's oracle compares against, and is no longer published. Build123d compiles unchanged against
     either.
@@ -22,6 +22,9 @@
   <PropertyGroup>
     <Build123dBackend Condition="'$(Build123dBackend)' == ''">OcctNet</Build123dBackend>
     <OcctNetVersion Condition="'$(OcctNetVersion)' == ''">0.1.0-preview.3</OcctNetVersion>
+    <!-- The kernel's projects, beside this folder in the Kerf repository; -p:UseOcctNetPackages=true builds against
+         the published packages instead -->
+    <OcctNetRoot Condition="'$(OcctNetRoot)' == '' and '$(UseOcctNetPackages)' != 'true' and Exists('$(RepoRoot)../kernel/src')">$([System.IO.Path]::GetFullPath('$(RepoRoot)../kernel/'))</OcctNetRoot>
     <OcctNetRoot Condition="'$(OcctNetRoot)' != ''">$([MSBuild]::EnsureTrailingSlash('$(OcctNetRoot)'))</OcctNetRoot>
     <!-- The checkout whose native build (.deps/install, native/out) the native backend uses: this one by default -->
     <Build123dNativeRoot Condition="'$(Build123dNativeRoot)' == ''">$(RepoRoot)</Build123dNativeRoot>
