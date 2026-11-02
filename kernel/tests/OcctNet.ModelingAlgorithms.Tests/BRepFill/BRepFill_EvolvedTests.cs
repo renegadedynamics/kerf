@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -82,7 +82,7 @@ public class BRepFill_EvolvedTests
         // each spine edge generates one wall from the profile's edge
         TopExp_Explorer aSpineEdges = new(aSpine, TopAbs_ShapeEnum.TopAbs_EDGE);
         TopExp_Explorer aProfileEdges = new(aProfile, TopAbs_ShapeEnum.TopAbs_EDGE);
-        IBentoList<TopoDS_Shape> aGenerated = aMaker.GeneratedShapes(aSpineEdges.Current(), aProfileEdges.Current());
+        ISchematiqList<TopoDS_Shape> aGenerated = aMaker.GeneratedShapes(aSpineEdges.Current(), aProfileEdges.Current());
         Assert.Single(aGenerated);
         Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, aGenerated[0].ShapeType());
         Assert.True(aGenerated[0].TShape()!.IsFrozen());

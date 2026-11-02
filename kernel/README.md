@@ -6,7 +6,7 @@ CAD kernel. Work in progress: see [docs/design.md](docs/design.md) for the desig
 
 - **Pure managed code**: no native libraries, no P/Invoke.
 - **Faithful**: ported class for class from OCCT V8_0_1, keeping OCCT's names, so OCCT's documentation applies.
-- **Immutable to callers**: every value you get back is immutable; collections are Bento.Collections lists.
+- **Immutable to callers**: every value you get back is immutable; collections are Schematiq.Collections lists.
 
 ```csharp
 using Occt;
@@ -22,7 +22,6 @@ Requirements: the .NET 10 SDK and git.
 ```powershell
 ./tools/get-occt.ps1          # OCCT V8_0_1 source into .deps/occt-src (for the corpus test and port status)
 ./tools/get-occt-testdata.ps1 # OCCT's test data (99 MB) into .deps/occt-testdata, for the Draw corpus
-./tools/pack-bento.ps1        # Bento.Collections from ../bento into the local feed .deps/nuget
 dotnet test
 ```
 

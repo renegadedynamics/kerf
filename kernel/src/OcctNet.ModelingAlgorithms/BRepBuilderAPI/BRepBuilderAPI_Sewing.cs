@@ -5,7 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Runtime.CompilerServices;
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -2335,7 +2335,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=================================================================================================
 
     /// <summary>The sections (edges) of the <paramref name="index"/>-th contiguous edge, frozen, in a new list.</summary>
-    public IBentoList<TopoDS_Shape> ContigousEdgeCouple(int index)
+    public ISchematiqList<TopoDS_Shape> ContigousEdgeCouple(int index)
     {
         NCollection_List<TopoDS_Shape> aList = InternalContigousEdgeCouple(index);
         var aShapes = new TopoDS_Shape[aList.Extent()];

@@ -2,7 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
-using Bento.Collections;
+using Schematiq.Collections;
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
@@ -228,7 +228,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 {
                     N.BRepLib.ReverseSortFaces(aN, aNList);
                 }
-                IBentoList<TopoDS_Shape> aPList = aReverse == 0 ? BRepLib.SortFaces(aP) : BRepLib.ReverseSortFaces(aP);
+                ISchematiqList<TopoDS_Shape> aPList = aReverse == 0 ? BRepLib.SortFaces(aP) : BRepLib.ReverseSortFaces(aP);
                 N.TopoDS_Shape[] aNArray = aNList.ToArray();
                 Assert.Equal(aNArray.Length, aPList.Count);
                 for (int k = 0; k < aNArray.Length; k++)

@@ -7,7 +7,7 @@
 // Add methods for supporting history.
 //  Modified by skv - Mon Jan 12 11:50:02 2004 OCC4455
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
 using static Occt.BRepOffset_Status;
@@ -4846,15 +4846,15 @@ public sealed partial class BRepOffset_MakeOffset
     /// The shapes generated from the caller's sub-shape <paramref name="theS"/> that are in the result (frozen, with the
     /// result).
     /// </summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape theS) => PublishList(InternalGenerated(theS));
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape theS) => PublishList(InternalGenerated(theS));
 
     /// <summary>
     /// The shapes modified from the caller's sub-shape <paramref name="theShape"/>: the images of a closing face (frozen,
     /// with the result).
     /// </summary>
-    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape theShape) => PublishList(InternalModified(theShape));
+    public ISchematiqList<TopoDS_Shape> Modified(in TopoDS_Shape theShape) => PublishList(InternalModified(theShape));
 
-    private IBentoList<TopoDS_Shape> PublishList(NCollection_List<TopoDS_Shape> theList)
+    private ISchematiqList<TopoDS_Shape> PublishList(NCollection_List<TopoDS_Shape> theList)
     {
         if (theList.IsEmpty())
         {

@@ -483,7 +483,7 @@ public class Geom2dConvertTests
     {
         Geom2d_Line aLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 1));
         Geom2dConvert_ApproxArcsSegments aLineApprox = new(new Geom2dAdaptor_Curve(aLine, 0.0, 5.0), 1e-3, 0.01);
-        Bento.Collections.IBentoList<Geom2d_Curve> aResult = aLineApprox.GetResult();
+        Schematiq.Collections.ISchematiqList<Geom2d_Curve> aResult = aLineApprox.GetResult();
         Assert.Single(aResult);
         Assert.True(aResult[0].IsFrozen());
         Assert.True(aResult[0].Value(aResult[0].LastParameter()).Distance(aLine.Value(5.0)) < 1e-9);
@@ -505,7 +505,7 @@ public class Geom2dConvertTests
         Geom2d_BSplineCurve aC = Cubic();
         const double aTol = 1e-2;
         Geom2dConvert_ApproxArcsSegments anApprox = new(new Geom2dAdaptor_Curve(aC), aTol, 0.1);
-        Bento.Collections.IBentoList<Geom2d_Curve> aResult = anApprox.GetResult();
+        Schematiq.Collections.ISchematiqList<Geom2d_Curve> aResult = anApprox.GetResult();
         Assert.True(aResult.Count > 1);
         Assert.True(aResult[0].Value(aResult[0].FirstParameter()).Distance(aC.StartPoint()) < 1e-7);
         Geom2d_Curve aLastCurve = aResult[aResult.Count - 1];

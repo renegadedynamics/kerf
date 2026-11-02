@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
@@ -60,10 +60,10 @@ public sealed class BRepExtrema_DistanceSS
     public double DistValue() => myDstRef;
 
     /// <summary>The solutions on the first shape (a copy).</summary>
-    public IBentoList<BRepExtrema_SolutionElem> Seq1Value() => PackedList.Own([.. mySeqSolShape1]);
+    public ISchematiqList<BRepExtrema_SolutionElem> Seq1Value() => PackedList.Own([.. mySeqSolShape1]);
 
     /// <summary>The solutions on the second shape (a copy).</summary>
-    public IBentoList<BRepExtrema_SolutionElem> Seq2Value() => PackedList.Own([.. mySeqSolShape2]);
+    public ISchematiqList<BRepExtrema_SolutionElem> Seq2Value() => PackedList.Own([.. mySeqSolShape2]);
 
     /// <summary>The solutions on the first shape, the object's own sequence (OCCT's const reference).</summary>
     internal NCollection_Sequence<BRepExtrema_SolutionElem> InternalSeq1Value() => mySeqSolShape1;

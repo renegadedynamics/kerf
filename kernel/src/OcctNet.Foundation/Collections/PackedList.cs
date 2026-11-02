@@ -1,7 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections;
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -24,7 +24,7 @@ public static class PackedList
 /// offer. Edits return ordinary Bento lists, which make further edits cheap.
 /// </summary>
 /// <typeparam name="T">The type of the elements, usually a gp struct or a number.</typeparam>
-public sealed class PackedList<T> : IBentoList<T>
+public sealed class PackedList<T> : ISchematiqList<T>
 {
     private readonly T[] myItems;
     private readonly int myOffset;
@@ -73,7 +73,7 @@ public sealed class PackedList<T> : IBentoList<T>
     public T PeekFront => myCount > 0 ? myItems[myOffset] : throw new InvalidOperationException("The list is empty.");
 
     /// <summary>Shares this list's array: O(1).</summary>
-    public IBentoList<T> Subset(int start, int count)
+    public ISchematiqList<T> Subset(int start, int count)
     {
         if (start < 0 || count < 0 || start > myCount - count)
         {
@@ -88,7 +88,7 @@ public sealed class PackedList<T> : IBentoList<T>
         return count == 0 ? Empty : new PackedList<T>(myItems, myOffset + start, count);
     }
 
-    public IBentoList<T> Reverse()
+    public ISchematiqList<T> Reverse()
     {
         if (myCount < 2)
         {
@@ -101,25 +101,25 @@ public sealed class PackedList<T> : IBentoList<T>
     }
 
     /// <summary>Already as compact as a list can be.</summary>
-    public IBentoList<T> Compact() => this;
+    public ISchematiqList<T> Compact() => this;
 
     // Edits hand over to Bento's own lists, which are built for them
 
-    public IBentoList<T> SetItem(int index, T value) => ToBentoList().SetItem(index, value);
+    public ISchematiqList<T> SetItem(int index, T value) => ToSchematiqList().SetItem(index, value);
 
-    public IBentoList<T> Push(T value) => ToBentoList().Push(value);
+    public ISchematiqList<T> Push(T value) => ToSchematiqList().Push(value);
 
-    public IBentoList<T> Pop() => myCount > 0 ? Subset(0, myCount - 1) : throw new InvalidOperationException("The list is empty.");
+    public ISchematiqList<T> Pop() => myCount > 0 ? Subset(0, myCount - 1) : throw new InvalidOperationException("The list is empty.");
 
-    public IBentoList<T> PushFront(T value) => ToBentoList().PushFront(value);
+    public ISchematiqList<T> PushFront(T value) => ToSchematiqList().PushFront(value);
 
-    public IBentoList<T> PopFront() => myCount > 0 ? Subset(1, myCount - 1) : throw new InvalidOperationException("The list is empty.");
+    public ISchematiqList<T> PopFront() => myCount > 0 ? Subset(1, myCount - 1) : throw new InvalidOperationException("The list is empty.");
 
-    public IBentoList<T> Insert(int index, T item) => ToBentoList().Insert(index, item);
+    public ISchematiqList<T> Insert(int index, T item) => ToSchematiqList().Insert(index, item);
 
-    public IBentoList<T> RemoveAt(int index) => ToBentoList().RemoveAt(index);
+    public ISchematiqList<T> RemoveAt(int index) => ToSchematiqList().RemoveAt(index);
 
-    private IBentoList<T> ToBentoList() => BentoList.Create(AsSpan());
+    private ISchematiqList<T> ToSchematiqList() => SchematiqList.Create(AsSpan());
 
     public Enumerator GetEnumerator() => new(this);
 

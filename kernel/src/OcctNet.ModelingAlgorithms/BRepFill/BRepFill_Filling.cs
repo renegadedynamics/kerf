@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.GeomAbs_Shape;
 using static Occt.TopAbs_Orientation;
 
@@ -719,7 +719,7 @@ public class BRepFill_Filling
     /// The new edge or vertex made from the boundary edge or vertex <paramref name="S"/> (a list of one shape, or
     /// empty; frozen, with the face).
     /// </summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
     {
         NCollection_List<TopoDS_Shape> aList = InternalGenerated(S);
         myFace.TShape()?.FreezeGraph();

@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -159,7 +159,7 @@ public sealed class BRepTools_Substitution
 
     /// <summary>The shapes substituted for <paramref name="S"/>, frozen.</summary>
     /// <exception cref="Standard_NoSuchObject">The shape hasn't been replaced.</exception>
-    public IBentoList<TopoDS_Shape> Copy(in TopoDS_Shape S)
+    public ISchematiqList<TopoDS_Shape> Copy(in TopoDS_Shape S)
     {
         NCollection_List<TopoDS_Shape> aList = InternalCopy(S);
         foreach (TopoDS_Shape aS in aList)

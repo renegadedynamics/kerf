@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepFill_ThruSectionErrorStatus;
 using static Occt.GeomAbs_CurveType;
 using static Occt.TopAbs_Orientation;
@@ -1209,7 +1209,7 @@ public sealed class BRepFill_Generator
     /// The faces created from the edge <paramref name="SSection"/> of a section, frozen (empty if none). As natively,
     /// each face is keyed by the edge that follows the one it was built on (see docs/occt-issues.md).
     /// </summary>
-    public IBentoList<TopoDS_Shape> GeneratedShapes(in TopoDS_Shape SSection) => published(InternalGeneratedShapes(SSection));
+    public ISchematiqList<TopoDS_Shape> GeneratedShapes(in TopoDS_Shape SSection) => published(InternalGeneratedShapes(SSection));
 
     private static readonly NCollection_List<TopoDS_Shape> theEmpty = new();
 
@@ -1228,15 +1228,15 @@ public sealed class BRepFill_Generator
     }
 
     /// <summary>All the shapes created, keyed by the sections' edges (frozen), in the order they were built.</summary>
-    public IBentoList<KeyValuePair<TopoDS_Shape, IBentoList<TopoDS_Shape>>> Generated()
+    public ISchematiqList<KeyValuePair<TopoDS_Shape, ISchematiqList<TopoDS_Shape>>> Generated()
     {
-        var aPairs = new KeyValuePair<TopoDS_Shape, IBentoList<TopoDS_Shape>>[myMap.Extent()];
+        var aPairs = new KeyValuePair<TopoDS_Shape, ISchematiqList<TopoDS_Shape>>[myMap.Extent()];
         int i = 0;
         foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anIt in myMap)
         {
             TopoDS_Shape aKey = myCopy is null ? anIt.Key : myCopy.Original(anIt.Key);
             aKey.TShape()?.FreezeGraph();
-            aPairs[i++] = new KeyValuePair<TopoDS_Shape, IBentoList<TopoDS_Shape>>(aKey, published(anIt.Value));
+            aPairs[i++] = new KeyValuePair<TopoDS_Shape, ISchematiqList<TopoDS_Shape>>(aKey, published(anIt.Value));
         }
         return PackedList.Own(aPairs);
     }
@@ -1244,7 +1244,7 @@ public sealed class BRepFill_Generator
     /// <summary>The algorithm's own map behind <see cref="Generated"/> (on the copies when the sections were copied).</summary>
     internal NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> InternalGenerated() => myMap;
 
-    private static IBentoList<TopoDS_Shape> published(NCollection_List<TopoDS_Shape> theList)
+    private static ISchematiqList<TopoDS_Shape> published(NCollection_List<TopoDS_Shape> theList)
     {
         if (theList.IsEmpty())
         {

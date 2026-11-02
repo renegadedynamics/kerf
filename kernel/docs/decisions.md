@@ -13307,3 +13307,16 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          tree (decision 1279); PLY; StepAP209_Construct and StepTidy (decisions 1218, 1271); native XCAF in
          build123d.NET's native backend (its STEP stays shape-only there); Bento on the nuget.org packages in place of
          its folder feed; and phase 7's follow-ups (decisions 1164, 1165).
+1297. **Schematiq.Collections in place of Bento.Collections** (unit 9A; owner, 2 November). Bento moved its collections
+       library to its own repository as Schematiq.Collections, published on nuget.org (1.0.0-beta.1), and no longer
+       ships Bento.Collections 0.4.0, which was never published. OcctNet.Foundation references Schematiq.Collections
+       1.0.0-beta.1, the version Bento ships and shares with extensions; returned collections are `ISchematiqList<T>`
+       (`PackedList<T>` implements it). The local feed `.deps/nuget` and `tools/pack-bento.ps1` are gone; nuget.config
+       lists nuget.org alone, and `tools/pack-nuget.ps1` no longer copies a collections package beside the others.
+       build123d.NET moves with it (its `occtnet/schematiq` branch). The `0.1.0-preview.1` packages depend on
+       Bento.Collections and are superseded (phase9-plan.md, question 43).
+1298. **Phase 9's questions** (owner, 2 November: "I would like the performance review but don't require the OBJ
+       reader. Go with phase 9"). Questions 40 to 45 as recommended: OCCT.NET becomes build123d.NET's default backend,
+       native kept for the oracle and no longer packed; no project URL until the repositories are public; Bento
+       references the published Build123d package; `0.1.0-preview.2` next; the performance review (9E) and the triage
+       (9F) join phase 9, the OBJ reader (9G) does not; only performance wins that keep native's results.

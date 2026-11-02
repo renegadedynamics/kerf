@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.Message_Status;
 using static Occt.TopAbs_Orientation;
@@ -245,7 +245,7 @@ public class BRepMeshShellTests
         }
         foreach (TopoDS_Face aF in Faces(aBox))
         {
-            IBentoList<TopoDS_Shape> aModified = aMesh.History().Modified(aF);
+            ISchematiqList<TopoDS_Shape> aModified = aMesh.History().Modified(aF);
             Assert.Single(aModified);
             Assert.NotNull(Triangulation(TopoDS.Face(aModified[0])));
         }

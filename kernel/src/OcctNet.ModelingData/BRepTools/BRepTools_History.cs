@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -233,7 +233,7 @@ public class BRepTools_History : Standard_Transient
     }
 
     /// <summary>The shapes generated from the shape (empty for an unsupported type).</summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape theInitial)
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape theInitial)
     {
         // Apply the limitations.
         if (!(theInitial.IsNull() || IsSupportedType(theInitial)))
@@ -248,7 +248,7 @@ public class BRepTools_History : Standard_Transient
     }
 
     /// <summary>The shapes modified from the shape (empty for an unsupported type).</summary>
-    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape theInitial)
+    public ISchematiqList<TopoDS_Shape> Modified(in TopoDS_Shape theInitial)
     {
         // Apply the limitations.
         if (!IsSupportedType(theInitial))

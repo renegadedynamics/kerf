@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -218,11 +218,11 @@ public sealed class BRepLib_FuseEdges
     /// The lists of connected edges to be fused, by index: each list is a set of connected edges, in the forward
     /// direction, that can be fused into one. The edges are the input shape's own.
     /// </summary>
-    public IReadOnlyDictionary<int, IBentoList<TopoDS_Shape>> Edges()
+    public IReadOnlyDictionary<int, ISchematiqList<TopoDS_Shape>> Edges()
     {
         var aMap = new NCollection_DataMap<int, NCollection_List<TopoDS_Shape>>();
         Edges(aMap);
-        var aResult = new Dictionary<int, IBentoList<TopoDS_Shape>>();
+        var aResult = new Dictionary<int, ISchematiqList<TopoDS_Shape>>();
         foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> anItem in aMap)
         {
             aResult.Add(anItem.Key, PackedList.Own([.. anItem.Value]));

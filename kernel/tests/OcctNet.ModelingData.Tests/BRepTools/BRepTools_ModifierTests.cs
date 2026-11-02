@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -96,7 +96,7 @@ public class BRepTools_ModifierTests
         Assert.False(aHistory.IsRemoved(aWire));
 
         // the returned lists are copies
-        IBentoList<TopoDS_Shape> aList = aHistory.Modified(aFaces[0]);
+        ISchematiqList<TopoDS_Shape> aList = aHistory.Modified(aFaces[0]);
         aHistory.AddModified(aFaces[0], aFaces[1]);
         Assert.Single(aList);
 

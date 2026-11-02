@@ -1591,3 +1591,8 @@ Phase 8 complete (2 November 2026): data exchange.
   port-status: 62.0% of OCCT's lines.
 - build123d.NET and Bento import and export STEP (with names, colours and assemblies), STL, glTF and 3MF on OCCT.NET;
   the first packages built for nuget.org as 0.1.0-preview.1.
+
+Phase 9 (part): Schematiq.Collections (unit 9A).
+
+- Returned collections are Schematiq.Collections' (`ISchematiqList<T>`), from nuget.org, in place of Bento.Collections
+  0.4.0: the same library, renamed and published by Bento's owner. `PackedList<T>` is an `ISchematiqList<T>`.

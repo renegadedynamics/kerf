@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace OcctNet.Foundation.Tests.Collections;
 
@@ -58,7 +58,7 @@ public class PackedListTests
     [Fact]
     public void Empty_list_behaves_as_Bento_s()
     {
-        IBentoList<double> anEmpty = PackedList.Create<double>();
+        ISchematiqList<double> anEmpty = PackedList.Create<double>();
 
         Assert.True(anEmpty.IsEmpty);
         Assert.Equal(0, anEmpty.Depth);

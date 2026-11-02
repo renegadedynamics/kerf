@@ -2,7 +2,7 @@
 // an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -133,7 +133,7 @@ public static partial class BRepLib
         var aList = new NCollection_List<TopoDS_Shape>();
         foreach (TopoDS_Shape anE in LE)
         {
-            IBentoList<TopoDS_Shape> aModified = aCopyHistory.Modified(anE);
+            ISchematiqList<TopoDS_Shape> aModified = aCopyHistory.Modified(anE);
             aList.Append(aModified.Count > 0 ? aModified[0].Oriented(anE.Orientation()) : anE);
         }
         EncodeRegularity(aCopy, aList, TolAng);

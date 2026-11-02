@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2014 OPEN CASCADE SAS; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.GeomAbs_CurveType;
 using static Occt.TopAbs_Orientation;
@@ -151,7 +151,7 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
         for (; wexp.More(); wexp.Next())
         {
             TopoDS_Shape anEdge = wexp.Current();
-            IBentoList<TopoDS_Shape> aLS = theUnifier.History()!.Modified(anEdge);
+            ISchematiqList<TopoDS_Shape> aLS = theUnifier.History()!.Modified(anEdge);
             if (aLS.Count != 0)
             {
                 foreach (TopoDS_Shape aShape in aLS)

@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.ChFi3d_FilletShape;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -444,7 +444,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The faces built on the surface <paramref name="I"/> (frozen).</summary>
-    public IBentoList<TopoDS_Shape> NewFaces(int I)
+    public ISchematiqList<TopoDS_Shape> NewFaces(int I)
     {
         BeforePublishingLists();
         return PublishedList(myBuilder.Builder().NewFaces(I));

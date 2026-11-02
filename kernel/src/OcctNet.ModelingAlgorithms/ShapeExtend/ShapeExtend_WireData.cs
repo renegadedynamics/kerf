@@ -626,7 +626,7 @@ public class ShapeExtend_WireData : Standard_Transient
 
     /// <summary>The non-manifold edges, as a new read-only list.</summary>
     /// <remarks>OCCT returns its own sequence; ported code reads it through <see cref="InternalNonmanifoldEdges"/>.</remarks>
-    public Bento.Collections.IBentoList<TopoDS_Shape> NonmanifoldEdges()
+    public Schematiq.Collections.ISchematiqList<TopoDS_Shape> NonmanifoldEdges()
     {
         var anArray = new TopoDS_Shape[myNonmanifoldEdges.Length()];
         for (int i = 1; i <= anArray.Length; i++)

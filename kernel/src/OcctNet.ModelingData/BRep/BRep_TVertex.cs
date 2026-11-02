@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -65,7 +65,7 @@ public class BRep_TVertex : TopoDS_TVertex
     }
 
     /// <summary>The point representations, as a new read-only list (OCCT.NET addition).</summary>
-    public IBentoList<BRep_PointRepresentation> PointRepresentations() => PackedList.Own([.. myPoints]);
+    public ISchematiqList<BRep_PointRepresentation> PointRepresentations() => PackedList.Own([.. myPoints]);
 
     /// <summary>A new vertex with the same point and tolerance, without representations.</summary>
     public override TopoDS_TShape EmptyCopy()

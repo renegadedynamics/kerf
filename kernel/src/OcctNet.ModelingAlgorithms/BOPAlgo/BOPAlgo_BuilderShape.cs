@@ -2,7 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -36,7 +36,7 @@ public abstract class BOPAlgo_BuilderShape : BOPAlgo_Algo
     internal TopoDS_Shape InternalShape() => myShape;
 
     /// <summary>The shapes modified from <paramref name="theS"/>.</summary>
-    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> Modified(in TopoDS_Shape theS)
     {
         if (myFillHistory && myHistory is not null)
         {
@@ -46,7 +46,7 @@ public abstract class BOPAlgo_BuilderShape : BOPAlgo_Algo
     }
 
     /// <summary>The shapes generated from <paramref name="theS"/>.</summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape theS)
     {
         if (myFillHistory && myHistory is not null)
         {

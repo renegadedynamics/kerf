@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -213,7 +213,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     public bool HasHistory() => myFillHistory;
 
     /// <summary>The section edges: the edges where the arguments intersect (frozen, with the whole result).</summary>
-    public IBentoList<TopoDS_Shape> SectionEdges()
+    public ISchematiqList<TopoDS_Shape> SectionEdges()
     {
         BeforePublishingLists();
         return PublishedList(InternalSectionEdges());
@@ -261,7 +261,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
                             continue;
                         }
 
-                        IBentoList<TopoDS_Shape> aLSEIm = mySimplifierHistory.Modified(aSE);
+                        ISchematiqList<TopoDS_Shape> aLSEIm = mySimplifierHistory.Modified(aSE);
                         if (aLSEIm.Count != 0)
                         {
                             foreach (TopoDS_Shape aSEIm in aLSEIm)

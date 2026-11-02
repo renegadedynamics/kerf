@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.GeomAbs_CurveType;
 using static Occt.GeomAbs_Shape;
 using static Occt.GeomAbs_SurfaceType;
@@ -2931,7 +2931,7 @@ public static partial class BRepLib
     }
 
     /// <summary>The faces of <paramref name="Sh"/> sorted as <see cref="SortFaces(in TopoDS_Shape, NCollection_List{TopoDS_Shape})"/> does.</summary>
-    public static IBentoList<TopoDS_Shape> SortFaces(in TopoDS_Shape Sh)
+    public static ISchematiqList<TopoDS_Shape> SortFaces(in TopoDS_Shape Sh)
     {
         var LF = new NCollection_List<TopoDS_Shape>();
         SortFaces(Sh, LF);
@@ -2992,14 +2992,14 @@ public static partial class BRepLib
     }
 
     /// <summary>The faces of <paramref name="Sh"/> sorted as <see cref="ReverseSortFaces(in TopoDS_Shape, NCollection_List{TopoDS_Shape})"/> does.</summary>
-    public static IBentoList<TopoDS_Shape> ReverseSortFaces(in TopoDS_Shape Sh)
+    public static ISchematiqList<TopoDS_Shape> ReverseSortFaces(in TopoDS_Shape Sh)
     {
         var LF = new NCollection_List<TopoDS_Shape>();
         ReverseSortFaces(Sh, LF);
         return toList(LF);
     }
 
-    private static IBentoList<TopoDS_Shape> toList(NCollection_List<TopoDS_Shape> theList)
+    private static ISchematiqList<TopoDS_Shape> toList(NCollection_List<TopoDS_Shape> theList)
     {
         var anArray = new TopoDS_Shape[theList.Extent()];
         int i = 0;

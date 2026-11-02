@@ -27,7 +27,6 @@ and the decisions it points to.
 |---|---|---|
 | OCCT V8_0_1 source | `.deps/occt-src` | `tools/get-occt.ps1` |
 | OCCT test dataset (99 MB) | `.deps/occt-testdata` | `tools/get-occt-testdata.ps1` |
-| Bento.Collections package | `.deps/nuget` | `tools/pack-bento.ps1` (needs `../bento`) |
 | Native oracle | `../build123d.net`, with its native build at `native/out/win-x64/bin/b3docct.dll` | build123d.NET's `native/build-deps.ps1` and `build-shim.ps1` |
 | Native recorders (`tools/*rec`) | MSVC 14.44 against build123d.NET's native OCCT | each tool's `build.ps1` |
 

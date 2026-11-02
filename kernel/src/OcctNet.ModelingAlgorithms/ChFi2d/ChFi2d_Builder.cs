@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 using static Occt.GccEnt_Position;
 using static Occt.TopAbs_Orientation;
@@ -1329,7 +1329,7 @@ public sealed partial class ChFi2d_Builder
     }
 
     /// <summary>The fillets built (frozen with the face that holds them).</summary>
-    public IBentoList<TopoDS_Shape> FilletEdges() => PublishedEdges(fillets);
+    public ISchematiqList<TopoDS_Shape> FilletEdges() => PublishedEdges(fillets);
 
     /// <summary>The builder's own sequence behind <see cref="FilletEdges"/>, unfrozen.</summary>
     internal NCollection_Sequence<TopoDS_Shape> InternalFilletEdges() => fillets;
@@ -1340,7 +1340,7 @@ public sealed partial class ChFi2d_Builder
     }
 
     /// <summary>The chamfers built (frozen with the face that holds them).</summary>
-    public IBentoList<TopoDS_Shape> ChamferEdges() => PublishedEdges(chamfers);
+    public ISchematiqList<TopoDS_Shape> ChamferEdges() => PublishedEdges(chamfers);
 
     /// <summary>The builder's own sequence behind <see cref="ChamferEdges"/>, unfrozen.</summary>
     internal NCollection_Sequence<TopoDS_Shape> InternalChamferEdges() => chamfers;
@@ -1391,7 +1391,7 @@ public sealed partial class ChFi2d_Builder
         return theEdge;
     }
 
-    private IBentoList<TopoDS_Shape> PublishedEdges(NCollection_Sequence<TopoDS_Shape> theEdges)
+    private ISchematiqList<TopoDS_Shape> PublishedEdges(NCollection_Sequence<TopoDS_Shape> theEdges)
     {
         FreezeResult();
         if (theEdges.IsEmpty())

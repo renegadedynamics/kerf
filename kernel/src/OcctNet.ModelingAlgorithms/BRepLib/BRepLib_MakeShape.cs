@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepLib_ShapeModification;
 
 namespace Occt;
@@ -100,7 +100,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
     }
 
     /// <summary>Returns the list of generated faces (a frozen copy of the maker's list).</summary>
-    public IBentoList<TopoDS_Shape> DescendantFaces(in TopoDS_Face F) => publishedList(InternalDescendantFaces(F));
+    public ISchematiqList<TopoDS_Shape> DescendantFaces(in TopoDS_Face F) => publishedList(InternalDescendantFaces(F));
 
     /// <summary>The maker's own list behind <see cref="DescendantFaces"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<TopoDS_Shape> InternalDescendantFaces(in TopoDS_Face F)
@@ -115,7 +115,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
     }
 
     /// <summary>Returns the faces of the surface <paramref name="I"/> (a frozen copy of the maker's list).</summary>
-    public IBentoList<TopoDS_Shape> NewFaces(int I) => publishedList(InternalNewFaces(I));
+    public ISchematiqList<TopoDS_Shape> NewFaces(int I) => publishedList(InternalNewFaces(I));
 
     /// <summary>The maker's own list behind <see cref="NewFaces"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<TopoDS_Shape> InternalNewFaces(int I)
@@ -124,7 +124,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
     }
 
     /// <summary>Returns the faces built from the edge <paramref name="E"/> (a frozen copy of the maker's list).</summary>
-    public IBentoList<TopoDS_Shape> FacesFromEdges(in TopoDS_Edge E) => publishedList(InternalFacesFromEdges(E));
+    public ISchematiqList<TopoDS_Shape> FacesFromEdges(in TopoDS_Edge E) => publishedList(InternalFacesFromEdges(E));
 
     /// <summary>The maker's own list behind <see cref="FacesFromEdges"/>, unfrozen, for ported code.</summary>
     internal virtual NCollection_List<TopoDS_Shape> InternalFacesFromEdges(in TopoDS_Edge E)
@@ -132,7 +132,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
         return myEdgFaces;
     }
 
-    private static IBentoList<TopoDS_Shape> publishedList(NCollection_List<TopoDS_Shape> theList)
+    private static ISchematiqList<TopoDS_Shape> publishedList(NCollection_List<TopoDS_Shape> theList)
     {
         if (theList.IsEmpty())
         {

@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepCheck_Status;
 using static Occt.GeomAbs_CurveType;
 using static Occt.GeomAbs_Shape;
@@ -86,7 +86,7 @@ public static class BRepAlgo
                 aMaxTol = aTol;
             }
             Geom2dConvert_ApproxArcsSegments anAlgo = new(aCurve, aTol, theAngleTol);
-            IBentoList<Geom2d_Curve> aResultApprox = anAlgo.GetResult();
+            ISchematiqList<Geom2d_Curve> aResultApprox = anAlgo.GetResult();
 
             // Form the array of approximated elementary curves
             if (anEdge.Orientation() == TopAbs_REVERSED)

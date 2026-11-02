@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.GeomAbs_Shape;
 using static Occt.TopAbs_Orientation;
@@ -175,14 +175,14 @@ public class BRepLibRegularityTests
             new Geom_RectangularTrimmedSurface(new Geom_Plane(new gp_Ax3()), 0, 1, 0, 1));
         TopoDS_Compound aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aMesh, aBSpline, aSphere, aTrimmedPlane, aCylinder, aPlane));
 
-        IBentoList<TopoDS_Shape> aSorted = BRepLib.SortFaces(aC);
+        ISchematiqList<TopoDS_Shape> aSorted = BRepLib.SortFaces(aC);
         TopoDS_Shape[] anIn = [aTrimmedPlane, aPlane, aCylinder, aSphere, aBSpline, aMesh];
         Assert.Equal("0 1 2 3 4 5", string.Join(" ", aSorted.Select(s => Array.FindIndex(anIn, f => f.IsEqual(s)))));
         Assert.Equal(new TopoDS_Shape[] { aTrimmedPlane, aPlane, aCylinder, aSphere, aBSpline, aMesh }, aSorted.ToList(),
                      EqualityComparer<TopoDS_Shape>.Default);
 
         // ReverseSortFaces doesn't unwrap the trimmed surface, but its adaptor does
-        IBentoList<TopoDS_Shape> aReversed = BRepLib.ReverseSortFaces(aC);
+        ISchematiqList<TopoDS_Shape> aReversed = BRepLib.ReverseSortFaces(aC);
         Assert.Equal(new TopoDS_Shape[] { aMesh, aBSpline, aSphere, aCylinder, aTrimmedPlane, aPlane }, aReversed.ToList(),
                      EqualityComparer<TopoDS_Shape>.Default);
 

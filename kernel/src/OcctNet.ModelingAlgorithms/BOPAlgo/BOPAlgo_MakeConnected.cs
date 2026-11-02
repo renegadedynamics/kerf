@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -163,14 +163,14 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
     public BOPAlgo_MakePeriodic PeriodicityTool() => myPeriodicityMaker;
 
     /// <summary>The materials (input shapes) on the positive side of the element (frozen).</summary>
-    public IBentoList<TopoDS_Shape> MaterialsOnPositiveSide(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> MaterialsOnPositiveSide(in TopoDS_Shape theS)
     {
         FreezeResults();
         return Published(InternalMaterialsOnPositiveSide(theS));
     }
 
     /// <summary>The materials (input shapes) on the negative side of the element (frozen).</summary>
-    public IBentoList<TopoDS_Shape> MaterialsOnNegativeSide(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> MaterialsOnNegativeSide(in TopoDS_Shape theS)
     {
         FreezeResults();
         return Published(InternalMaterialsOnNegativeSide(theS));
@@ -222,14 +222,14 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
     internal BRepTools_History? InternalHistory() => myHistory;
 
     /// <summary>The shapes modified from the input shape (frozen).</summary>
-    public IBentoList<TopoDS_Shape> GetModified(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> GetModified(in TopoDS_Shape theS)
     {
         FreezeResults();
         return myHistory is null ? PackedList<TopoDS_Shape>.Empty : myHistory.Modified(theS);
     }
 
     /// <summary>The input shapes the shape of the result comes from (frozen).</summary>
-    public IBentoList<TopoDS_Shape> GetOrigins(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> GetOrigins(in TopoDS_Shape theS)
     {
         FreezeResults();
         return Published(InternalGetOrigins(theS));
@@ -266,7 +266,7 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
         myPeriodicityMaker.InternalRepeatedShape().TShape()?.FreezeGraph();
     }
 
-    private static IBentoList<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theList)
+    private static ISchematiqList<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theList)
         => theList.IsEmpty() ? PackedList<TopoDS_Shape>.Empty : new PackedList<TopoDS_Shape>([.. theList]);
 
     /// <summary>Clears the contents of the algorithm from previous runs.</summary>
@@ -402,7 +402,7 @@ public class BOPAlgo_MakeConnected : BOPAlgo_Options
             // Get Modified & Generated shapes
             for (int j = 0; j < 2; ++j)
             {
-                IBentoList<TopoDS_Shape> aLH = j == 0 ? myHistory!.Modified(aS) : myHistory!.Generated(aS);
+                ISchematiqList<TopoDS_Shape> aLH = j == 0 ? myHistory!.Modified(aS) : myHistory!.Generated(aS);
                 foreach (TopoDS_Shape aHS in aLH)
                 {
                     if (!myOrigins.Find(aHS, out NCollection_List<TopoDS_Shape> pLOr))
