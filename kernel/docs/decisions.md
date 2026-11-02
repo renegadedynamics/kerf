@@ -12094,7 +12094,7 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        `RWStl_Reader::Read` tests between domains, `tellg`, `seekg`, `unget`, `>> std::ws`) runs on `Standard_IStream`,
        a new Foundation class giving a seekable `Stream` C++11's `std::istream` rules, with positions counted from the
        stream's position when it is made (so a stream in the middle of a file reads as a file). A stream that can't
-       seek is copied into memory first, within the size limit (12204). `Standard_ReadLineBuffer` is ported into
+       seek is copied into memory first, within the size limit (1170). `Standard_ReadLineBuffer` is ported into
        Foundation; its `const char*` line becomes a span (false at the end). `RWStl::ReadFile` gains stream forms (the
        format recognised from the content, multi-domain data), since OCCT's `ReadStream` only tests for a leading
        "solid" (occt-issues.md, 8H1). `Standard_Stream.Strtod` takes spans, and `FormatScientific` writes C++'s
