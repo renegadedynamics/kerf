@@ -12071,3 +12071,18 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
            - bugs/fclasses/bug1281: `pload ALL`.
 
          These are a follow-up.
+
+## Phase 8: preparation (2 November 2026)
+
+1166. **Phase 8 follows its plan's recommendations** (owner, 2 November; open questions 31 to 39, phase8-plan.md):
+       - no OCAF or XCAF: STEPControl first, then STEPCAFControl ported over an immutable assembly tree;
+       - STEP's entity classes and their readers and writers generated from OCCT 8's own C++, the odd classes and the
+         dispatch modules by hand; design.md's phase 8 row now says so;
+       - every STEP entity parsed; shapes, assemblies, names, colours, layers and validation properties transferred;
+         materials, GD&T, views, kinematics and FEA later;
+       - STL ported; glTF, OBJ and 3MF written fresh, with readers for STL and glTF;
+       - a reentrant C# STEP parser with limits for hostile input, in place of the flex/bison one;
+       - .NET's encodings in place of `Resource_Unicode`'s tables, checked against them;
+       - IFSelect ported as far as a member trace reaches;
+       - the XDE Draw commands implemented over the tree (unit 8G);
+       - NuGet publishing as 8X's last step, once the owner chooses package names and a feed.

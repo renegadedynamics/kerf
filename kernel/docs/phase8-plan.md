@@ -1,7 +1,7 @@
 # Phase 8 plan: data exchange
 
-*Draft for the owner's review, 1 November 2026. Questions 31 to 39 are at the end and in
-[open-questions.md](open-questions.md).*
+> **Approved, 2 November 2026.** The owner accepted every recommendation of questions 31 to 39 (decision 1166);
+> phase 8 started with step 1 (8A). Units merge into the integration branch `phase8/exchange`.
 
 ## The goal
 
