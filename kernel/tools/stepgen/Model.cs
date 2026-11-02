@@ -17,7 +17,7 @@ internal sealed class CppType
     /// <summary>Pointer constness (<c>const char* const</c>).</summary>
     public bool IsConstPointer;
 
-    public bool IsHandle => Name is "occ::handle" or "Handle" or "opencascade::handle";
+    public bool IsHandle => Name is "occ::handle" or "Handle" or "opencascade::handle" or "NCollection_Handle";
     public CppType Element => IsHandle ? Args[0] : this;
 
     public bool IsCString => (Name is "char" && Pointers == 1) || Name == "Standard_CString";

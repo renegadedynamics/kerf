@@ -876,6 +876,12 @@ internal sealed class Translator
                 return Emit(me.Obj);
             }
 
+            // TCollection_AsciiString is a string: its C string is itself
+            if (me.Name == "ToCString" && aRecv is { IsHandle: false, Pointers: 0 } && myDb.Map(aRecv) == "string")
+            {
+                return Emit(me.Obj);
+            }
+
             if (aRecv == null && me.Name is "IsNull" or "Nullify")
             {
                 c.Problems.Add($"{me.Name} on an expression of unknown type: assumed a handle");
@@ -1275,6 +1281,14 @@ internal sealed class Translator
                     {
                         Line("default:");
                         j += 2;
+                        continue;
+                    }
+
+                    // "return x; break;": C# refuses the unreachable break
+                    if (t[j].Is("break") && myLines.Count > 0
+                        && myLines[^1].TrimStart().StartsWith("return", StringComparison.Ordinal) && myLines[^1].TrimEnd().EndsWith(';'))
+                    {
+                        j = End(t, j, anEnd) + 1;
                         continue;
                     }
 
