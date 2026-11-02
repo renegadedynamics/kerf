@@ -39,6 +39,10 @@ internal static class Planner
         }
 
         CheckTypes(loaded, plan, sourceTypes);
+        foreach (string key in plan.Namespaces.Keys)
+        {
+            plan.MovedTypeNames[plan.NameOf(key)!] = 0;
+        }
 
         foreach ((string alias, string newAlias) in map.Aliases)
         {
@@ -294,6 +298,20 @@ internal static class Planner
                         }
 
                         group.TryAdd(key, member);
+                    }
+                }
+
+                // A method that becomes a property can't implement an interface's method any more
+                foreach (INamedTypeSymbol @interface in type.AllInterfaces)
+                {
+                    foreach (ISymbol member in @interface.GetMembers())
+                    {
+                        if (type.FindImplementationForInterfaceMember(member) is IMethodSymbol implementation
+                            && Keys.Of(implementation) is { } implementationKey && plan.Converts(implementationKey))
+                        {
+                            plan.Cancel(implementationKey, $"implements {member.ToDisplayString()} in {type.ToDisplayString()}");
+                            changed = true;
+                        }
                     }
                 }
 

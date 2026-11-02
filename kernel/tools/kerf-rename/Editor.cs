@@ -42,7 +42,7 @@ internal sealed class Editor(Plan plan)
                 && plan.Namespaces.TryGetValue(occurrence.Key, out string? target) && !occurrence.Ambiguous
                 && !Visible(target, moved.GetValueOrDefault(occurrence.NamespaceDeclaration, occurrence.Namespace)))
             {
-                if (_newNamesByNamespace[target].Overlaps(scan.Identifiers))
+                if (_newNamesByNamespace[target].Overlaps(scan.TypeNames))
                 {
                     qualifyIn.Add(target);
                 }
@@ -109,7 +109,7 @@ internal sealed class Editor(Plan plan)
                     // Qualified where the new name would mean something else, even in its own namespace
                     bool qualify = @namespace is not null && (occurrence.Ambiguous || (qualifyIn.Contains(@namespace)
                                    && !Visible(@namespace, moved.GetValueOrDefault(occurrence.NamespaceDeclaration, occurrence.Namespace))));
-                    changes.Add(new TextChange(occurrence.Span, qualify ? $"global::{@namespace}.{newName}" : newName));
+                    changes.Add(new TextChange(occurrence.Span, qualify ? $"{(occurrence.InInterpolation ? "" : "global::")}{@namespace}.{newName}" : newName));
                     break;
                 case OccurrenceKind.AccessorName:
                     changes.Add(new TextChange(occurrence.Span, "\"" + newName + "\""));

@@ -90,9 +90,10 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
             }
 
             string text = token.ValueText;
-            if (!token.Parent!.IsPartOfStructuredTrivia())
+            if (plan.MovedTypeNames.ContainsKey(text) && token.Parent is SimpleNameSyntax typeName && !typeName.IsPartOfStructuredTrivia()
+                && model.GetSymbolInfo(typeName, ct).Symbol is INamedTypeSymbol reached && !Encloses(reached.ContainingNamespace, typeName))
             {
-                scan.Identifiers.Add(text);
+                scan.TypeNames.Add(text);
             }
 
             if (text == "UnsafeAccessor" && token.Parent is IdentifierNameSyntax { Parent: AttributeSyntax attribute })
@@ -108,6 +109,14 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
         }
 
         return scan;
+    }
+
+    /// <summary>Whether a namespace is the one the node is declared in, or encloses it: its types are found before any using's.</summary>
+    private static bool Encloses(INamespaceSymbol? @namespace, SyntaxNode node)
+    {
+        string name = @namespace?.ToDisplayString() ?? "";
+        string from = node.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>() is { } declaration ? FullName(declaration) : "";
+        return @namespace is null || @namespace.IsGlobalNamespace || from == name || from.StartsWith(name + ".", StringComparison.Ordinal);
     }
 
     private static string FullName(BaseNamespaceDeclarationSyntax declaration)
@@ -411,7 +420,7 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
             {
                 Ambiguous = true,
                 Qualified = symbol.IsStatic || symbol is IFieldSymbol { IsConst: true }
-                    ? "global::" + QualifiedTypeName(symbol.ContainingType) + "." + newMemberName
+                    ? (name.FirstAncestorOrSelf<InterpolationSyntax>() is null ? "global::" : "") + QualifiedTypeName(symbol.ContainingType) + "." + newMemberName
                     : "this." + newMemberName,
             });
             return;
@@ -469,13 +478,18 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
 
         // On its own: would the new name mean something else here?
         string newName = plan.NameOf(key)!;
-        bool ambiguous = !name.IsPartOfStructuredTrivia() && model.LookupSymbols(name.SpanStart, name: newName).Length > 0;
+        // In a type-only context only types count; elsewhere a member of that name would win
+        bool ambiguous = !name.IsPartOfStructuredTrivia()
+                         && (SyntaxFacts.IsInTypeOnlyContext(name)
+                             ? model.LookupNamespacesAndTypes(name.SpanStart, name: newName)
+                             : model.LookupSymbols(name.SpanStart, name: newName)).Length > 0;
         BaseNamespaceDeclarationSyntax? enclosing = name.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
         scan.Occurrences.Add(new(name.Identifier.Span, key, OccurrenceKind.TypeUnqualified)
         {
             NamespaceDeclaration = enclosing?.SpanStart ?? -1,
             Namespace = enclosing is null ? "" : FullName(enclosing),
             Ambiguous = ambiguous,
+            InInterpolation = name.FirstAncestorOrSelf<InterpolationSyntax>() is not null,
         });
     }
 

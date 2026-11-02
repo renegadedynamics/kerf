@@ -71,6 +71,9 @@ internal sealed class Plan
     /// <summary>Old simple names of everything planned: the tokens worth binding.</summary>
     public ConcurrentDictionary<string, byte> OldNames { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>New simple names of the types that move to another namespace.</summary>
+    public ConcurrentDictionary<string, byte> MovedTypeNames { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Old simple names of the types planned, for noticing strings that name them.</summary>
     public ConcurrentDictionary<string, byte> TypeOldNames { get; } = new(StringComparer.Ordinal);
 
@@ -154,6 +157,9 @@ internal sealed record Occurrence(TextSpan Span, string Key, OccurrenceKind Kind
     /// <summary>For an ambiguous simple name: what to write instead (<c>this.X</c>, or the member qualified in full).</summary>
     public string? Qualified { get; init; }
 
+    /// <summary>Inside an interpolated string's hole, where <c>global::</c> would read as a format.</summary>
+    public bool InInterpolation { get; init; }
+
     /// <summary>The qualifier was written <c>global::</c> or through an alias: write the new one in full.</summary>
     public bool GlobalQualifier { get; init; }
 
@@ -168,8 +174,11 @@ internal sealed class DocumentScan(string path, SourceText text)
     public SourceText Text { get; } = text;
     public List<Occurrence> Occurrences { get; } = [];
 
-    /// <summary>Identifiers the document uses, to tell whether a new using directive would make one ambiguous.</summary>
-    public HashSet<string> Identifiers { get; } = new(StringComparer.Ordinal);
+    /// <summary>
+    /// Names of types the document reaches through a using directive that share a new name: a new using directive
+    /// would make them ambiguous.
+    /// </summary>
+    public HashSet<string> TypeNames { get; } = new(StringComparer.Ordinal);
 
     /// <summary>Namespace declarations: span start, name span, full name, and the keys of the types declared directly in it.</summary>
     public List<(int Start, TextSpan NameSpan, string Name, List<string> Types)> NamespaceDeclarations { get; } = [];
