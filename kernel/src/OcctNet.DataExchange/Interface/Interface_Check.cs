@@ -446,7 +446,7 @@ public class Interface_Check : Standard_Transient
         }
         if (status == Interface_CheckFail || status == Interface_CheckAny)
         {
-            int i, nb = NbWarnings();
+            int i, nb = NbWarnings(); // OCCT: the fails branch looks at the warnings (copied from above)
             for (i = nb; i > 0; i--)
             {
                 TCollection_HAsciiString ames = Warning(i);
@@ -578,7 +578,7 @@ public class Interface_Check : Standard_Transient
         }
         if (status == Interface_CheckFail || status == Interface_CheckAny)
         {
-            int i, nb = NbWarnings();
+            int i, nb = NbWarnings(); // OCCT: the fails branch looks at the warnings (copied from above)
             for (i = nb; i > 0; i--)
             {
                 bool rem = false;

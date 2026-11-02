@@ -269,7 +269,7 @@ public class Interface_CopyTool
     /// Search for the result of a Starting Object (i.e. an Entity) Returns True if a Result is Bound (and fills
     /// "result") Returns False if no result is Bound
     /// </summary>
-    public bool Search(Standard_Transient? ent, ref Standard_Transient? res)
+    public bool Search(Standard_Transient? ent, out Standard_Transient? res)
     {
         return themap.Search(ent, out res);
     }
@@ -440,9 +440,6 @@ public class Interface_CopyTool
         return iter;
     }
 
-    public Interface_CopyTool()
-    {
-    }
 
     /// <summary>
     /// Creates a new void instance (just created) of the same class as &lt;entfrom&gt;. Uses the general service

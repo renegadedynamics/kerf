@@ -25,7 +25,7 @@ public class IFGraph_Cycles : IFGraph_SubPartsIterator
     /// <summary>
     /// creates from a StrongComponants which was already computed
     /// </summary>
-    public IFGraph_Cycles(ref IFGraph_StrongComponants subparts) : base(subparts)
+    public IFGraph_Cycles(IFGraph_StrongComponants subparts) : base(subparts)
     {
 
     }
