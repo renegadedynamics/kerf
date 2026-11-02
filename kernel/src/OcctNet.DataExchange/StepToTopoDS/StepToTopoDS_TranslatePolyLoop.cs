@@ -11,7 +11,7 @@ using static Occt.TopAbs_Orientation;
 namespace Occt;
 
 /// <summary>Translates a poly_loop (of a faceted brep) into a wire of line edges on the given planar face.</summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 13004).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslatePolyLoopError myError;

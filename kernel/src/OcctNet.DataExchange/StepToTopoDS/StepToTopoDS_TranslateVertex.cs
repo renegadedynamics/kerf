@@ -11,7 +11,7 @@ namespace Occt;
 
 /// <summary>Translates a STEP vertex (a vertex_point) into a TopoDS_Vertex.</summary>
 /// <remarks>
-/// <see cref="Value"/> freezes the result (decision 13004); the translators use <c>InternalValue</c>, the working
+/// <see cref="Value"/> freezes the result (decision 1247); the translators use <c>InternalValue</c>, the working
 /// shape.
 /// </remarks>
 public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root

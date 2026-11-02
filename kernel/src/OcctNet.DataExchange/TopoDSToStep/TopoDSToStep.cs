@@ -138,7 +138,7 @@ public static class TopoDSToStep
 
     /// <summary>
     /// Adds every entity the tool recorded to the results (binders) in the finder process, in the order the tool
-    /// recorded them (OCCT: its map's hash order, decision 13008).
+    /// recorded them (OCCT: its map's hash order, decision 1251).
     /// </summary>
     public static void AddResult(Transfer_FinderProcess FP, TopoDSToStep_Tool Tool)
     {

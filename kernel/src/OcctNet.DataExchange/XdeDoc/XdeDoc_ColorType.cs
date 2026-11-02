@@ -1,0 +1,20 @@
+// New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace Occt;
+
+/// <summary>
+/// The kinds of colour a shape carries, as XCAF's <c>XCAFDoc_ColorType</c> (same names and values): a generic colour
+/// (for both surfaces and curves), a surface colour and a curve colour.
+/// </summary>
+public enum XdeDoc_ColorType
+{
+    /// <summary>The generic colour: the surfaces' and the curves' where they have none of their own.</summary>
+    XdeDoc_ColorGen = 0,
+
+    /// <summary>The surfaces' colour.</summary>
+    XdeDoc_ColorSurf = 1,
+
+    /// <summary>The curves' colour.</summary>
+    XdeDoc_ColorCurv = 2,
+}

@@ -346,7 +346,7 @@ public class XSAlgo_ShapeProcessor
 
     /// <summary>
     /// As the form with statics, given the value of <c>read.stdsameparameter.mode</c> (OCCT.NET addition: StepToTopoDS
-    /// takes it from its model's parameters, decision 13003).
+    /// takes it from its model's parameters, decision 1246).
     /// </summary>
     internal static bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
                                      bool theStdSameParameterMode)

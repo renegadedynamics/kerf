@@ -76,6 +76,12 @@ public sealed class DrawCorpus(string theTestsDirectory)
     [
         ("offset", "command", ["mkoffset"], ["mkoffset", "renamevar", "tolerance", "checksection", "mkplane", "whatis"]),
         ("offset", "command", ["withintersect", null], ["offsetparameter", "offsetload", "offsetperform", "vprops", "sprops", "bsection"]),
+        // unit 8G1: the xcaf group's end script writes and reads the document back by the case's TypeOfFile (OCAF
+        // storage for "", IGES, STEP; BRep files otherwise), and rescales it only in the mode RESCALE_ASSEMBLY
+        ("xcaf", "TypeOfFile", [""], ["SaveAs", "Open"]),
+        ("xcaf", "TypeOfFile", ["igs"], ["WriteIges", "ReadIges"]),
+        ("xcaf", "TypeOfFile", ["stp"], ["WriteStep", "ReadStep"]),
+        ("xcaf", "CompareDocumentsMode", ["RESCALE_ASSEMBLY"], ["XRescaleGeometry"]),
     ];
 
     /// <summary>Whether the scan knows the branches of <see cref="ValueBranches"/> (unit 5O2).</summary>
@@ -374,9 +380,11 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 // the value the grid's begin script or the case sets (the last set wins)
                 string aGridBegin = ReadIfExists(Path.Combine(TestsDirectory, theCase.Group, theCase.Grid, "begin"));
                 string aCaseText = File.ReadAllText(theCase.Path);
-                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+""?([^""\s]*)""?", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+                // a quoted value whole (unit 8G1: the xcaf group's "SHAPES VOLUME"), else the word
+                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+(?:""([^""]*)""|(\S+))", RegexOptions.Multiline | RegexOptions.CultureInvariant);
                 string aText = aGridBegin + "\n" + aCaseText;
-                string? aValue = aSetRegex.Matches(aText).LastOrDefault()?.Groups[1].Value;
+                Match? aSet = aSetRegex.Matches(aText).LastOrDefault();
+                string? aValue = aSet is null ? null : aSet.Groups[1].Success ? aSet.Groups[1].Value : aSet.Groups[2].Value;
                 bool isKnown = aBranches.Any(b => b.Values.Contains(aValue));
                 IReadOnlySet<string> anOwn = CommandsCalledBy(aText);
                 foreach ((string _, string _, string?[] aValues, string[] aBranchCommands) in aBranches)

@@ -14,7 +14,7 @@ namespace Occt;
 /// Translates a face_surface (its surface and its bounds: edge loops, poly loops, vertex loops) into a TopoDS_Face, or
 /// a triangulated face or surface set into a face carrying a triangulation.
 /// </summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 13004).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateFaceError myError;

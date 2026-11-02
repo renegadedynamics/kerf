@@ -10,7 +10,7 @@ namespace Occt;
 /// <summary>Translates a curve_bounded_surface into a TopoDS_Face.</summary>
 /// <remarks>
 /// Needs <see cref="ShapeAlgo.Init"/>. <see cref="Value"/> freezes the result; the translators use
-/// <c>InternalValue</c> (decision 13004).
+/// <c>InternalValue</c> (decision 1247).
 /// </remarks>
 public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Root
 {

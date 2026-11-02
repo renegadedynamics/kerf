@@ -11,7 +11,7 @@ using static Occt.TopAbs_Orientation;
 namespace Occt;
 
 /// <summary>Translates a vertex_loop into a wire of one degenerated edge.</summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 13004).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateVertexLoopError myError;

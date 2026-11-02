@@ -11,7 +11,7 @@ namespace Occt;
 /// <remarks>
 /// OCCT's GeomToStep classes are used by value: a maker converts in its constructor and gives the STEP entity
 /// through <c>Value()</c>, which throws StdFail_NotDone when the conversion wasn't done. The port's makers are
-/// classes; the entities they make are new (decision 12902).
+/// classes; the entities they make are new (decision 1239).
 /// </remarks>
 public abstract class GeomToStep_Root
 {

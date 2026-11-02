@@ -10,7 +10,7 @@ using static Occt.StepToTopoDS_TranslateShellError;
 namespace Occt;
 
 /// <summary>Translates a connected_face_set (an open or closed shell) or a tessellated_shell into a TopoDS_Shell.</summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 13004).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateShellError myError;

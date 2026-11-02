@@ -14,9 +14,9 @@ namespace Occt;
 /// <summary>Translates a STEP edge (an edge_curve, or an oriented_edge of one) into a TopoDS_Edge.</summary>
 /// <remarks>
 /// The edge is always built FORWARD, along its curve. <see cref="Value"/> freezes the result; the translators use
-/// <c>InternalValue</c> (decision 13004). The 3D curves are shared through the transient process
+/// <c>InternalValue</c> (decision 1247). The 3D curves are shared through the transient process
 /// (<c>BindTransient</c>): where OCCT reverses or adjusts such a curve in place after an earlier edge took it, the port
-/// works on a copy (decision 13005).
+/// works on a copy (decision 1248).
 /// </remarks>
 public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
 {
@@ -53,7 +53,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 TP.AddFail(orig, " Point with infinite Parameter");
                 break;
             case BRepLib_DifferentsPointAndParameter:
-                // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 13005)
+                // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
                 if (myCurve.IsFrozen())
                 {
                     myCurve = (Geom_Curve)myCurve.Copy();
@@ -360,7 +360,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         temp1 = sac.Project(C1, pnt1, preci, out pproj, out U1, false);
         temp2 = sac.Project(C1, pnt2, preci, out pproj, out U2, false);
 
-        // OCCT.NET: the curve an earlier edge took is frozen; reversed in a copy (decision 13005)
+        // OCCT.NET: the curve an earlier edge took is frozen; reversed in a copy (decision 1248)
         if (!StepToTopoDS_GeometricTool.UpdateParam3d(ref C1, ref U1, ref U2, preci, true))
         {
             TP.AddWarning(C3D, "Update of 3D-Parameters has failed");

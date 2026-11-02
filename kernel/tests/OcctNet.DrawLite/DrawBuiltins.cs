@@ -21,6 +21,8 @@ internal static class DrawBuiltins
         "dsetsignal", "dtracelevel", "dbreak", "wait", "pu", "pd", "pl", "pr", "2dfit", "repaint",
         // unit 7Q2: Draw's view commands (Draw_Viewer's axonometric and 2D views)
         "top", "axo", "front", "v2d",
+        // unit 8G1: the viewer's capabilities and lights
+        "vcaps", "vlight",
     ];
 
     public static void Register(DrawInterpreter theInterpreter)
@@ -107,6 +109,11 @@ internal static class DrawBuiltins
         // unit 8F: XSDRAW's session with the IFSelect and XSControl commands, XSDRAWSTEP's commands without a document
         XSDRAWCommands.Register(theInterpreter);
         XSDRAWSTEPCommands.Register(theInterpreter);
+        // unit 8G1: the XDE commands over Draw-lite's documents (XdeDoc), DDocStd's document commands, glTF and OBJ
+        DDocStdCommands.Register(theInterpreter);
+        XDEDRAWCommands.Register(theInterpreter);
+        XDEDRAWColorsLayersCommands.Register(theInterpreter);
+        XSDRAWMeshCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

@@ -34,7 +34,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
         if (!theMesh.HasNormals())
         {
             // OCCT.NET: OCCT computes the normals into the face's own triangulation; the port into a copy, so the
-            // shape written never changes (decision 13009)
+            // shape written never changes (decision 1252)
             theMesh = new Poly_Triangulation(theMesh);
             Poly.ComputeNormals(theMesh);
         }

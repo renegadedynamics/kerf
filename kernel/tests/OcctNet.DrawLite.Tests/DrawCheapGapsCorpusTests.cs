@@ -58,6 +58,10 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         ["lowalgos/progress/A4"] = "progress",
         // the triangulation DRAWEXE's `checkview -display` makes (the viewer); Draw-lite's checkview is a no-op
         ["bugs/mesh/bug32241"] = "viewer",
+        // runnable since unit 8G1's documents: `meminfo h` (the managed heap) grows by about 400 bytes a cycle, the
+        // lines each cycle prints, which Draw-lite keeps in its log and DRAWEXE writes to the console; the documents
+        // themselves are let go (DDocStdCommands.NewDocument drops those no longer bound)
+        ["bugs/caf/bug31075"] = "memory trend of the interpreter's log",
     };
 
     /// <summary>

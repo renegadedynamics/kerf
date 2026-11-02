@@ -778,7 +778,7 @@ unless the table says otherwise; "pinned" names the unit test that shows it. Nat
 | Where | What | Effect |
 |---|---|---|
 | `ShapeFix_ShapeTolerance::LimitTolerance`, TopAbs_WIRE | The edges' result isn't added to `fait` | A change to the edges' tolerances alone returns false. Pinned by `LimitTolerance_Wire_DoesntCountTheEdges` |
-| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port reverses a copy and never writes the edge (the reversed curve isn't read afterwards) |
+| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port puts a reversed copy in place of the curve on this edge only, unless the edge is frozen (decision 1263; the caller's range is set on the reversed curve, so it is read afterwards) |
 | `ShapeFix_Edge::FixReversed2d` | Reverses the stored pcurve in place | Other edges sharing the pcurve are reversed too. The port puts a reversed copy in place of the curve on this edge only (decision 700) |
 | `ShapeFix_WireVertex::FixSame` | Compares `V1 == V2` (orientation included); `B.Add`s the shared vertex without removing the edges' old ones; doesn't make the edges Free first, as `Fix` does | A shared vertex is never detected; the edges end with three or four vertices; on the edges of a wire `Add` throws `TopoDS_FrozenShape`. Pinned |
 | `ShapeFix_IntersectionTool::FixIntersectingWires` | Calls `sewd->Wire()` three times per modified wire | The face gets one new wire, the context records a second as the replacement and the loop goes on with a third: `Context()->Value(oldWire)` isn't the face's wire |
@@ -1930,15 +1930,24 @@ Found by porting IFSelect (as traced) and XSControl and testing them on the toy 
 | XSControl_TransferReader::EntitiesFromShapeList (modes 2 to 4) | Reads `list->Value(i)` (the entity number) in the loop over `ir` | The results compared are the wrong ones (or out of range) |
 | APIHeaderSection_EditHeader, IsTimeStamp | `[[fallthrough]]` after each separator test into the next digit test | A separator must also be a digit: no time stamp is ever accepted, so the editor can't set one |
 | IFSelect_EditForm::NbTouched, IFSelect_ContextModif::Search, IFSelect_IntParam::StaticName | Declared, never defined | The first two left out; StaticName ported |
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+Nothing of OCCT's is ported in this unit (decision 1229). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
+copy, for unit 8G (decision 1231):
+
+| Where | What OCCT does | What the port does |
+|---|---|---|
+| XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
+| XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
 
 ## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
 
 Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
-each, but for the first (decision 12903).
+each, but for the first (decision 1240).
 
 | Where | What | Effect |
 |---|---|---|
-| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 12903) |
+| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 1240) |
 | StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
 | StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
 | StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
@@ -1952,16 +1961,28 @@ each, but for the first (decision 12903).
 
 | Where | What | Effect |
 |---|---|---|
-| StepToTopoDS_Builder::Init (EdgeBasedWireframeModel, FaceBasedSurfaceModel) | `myError = myResult.IsNull() ? Done : Other` | The error code says Done when nothing was made and Other when something was (IsDone is right) |
-| StepToTopoDS_TranslateEdge::MakeFromCurve3D | Reverses (UpdateParam3d) or adjusts (AdjustCurve) the 3D curve it took from the transient process's cache | An earlier edge sharing that STEP curve changes too. Fixed in the port: the change goes to a copy (decision 13005) |
-| TopoDSToStep_MakeFacetedBrep(Solid) | `if (!StepB.TessellatedValue())`: the test is inverted | Without a tessellated result (the usual case) it dereferences the null tessellated shell: an access violation natively, a NullReferenceException in the port; with one, the tessellation is dropped |
-| TopoDSToStep_MakeFacetedBrepAndBrepWithVoids | Passes `false` as the tessellation mode; copies each shell's tessellated items from index 1 | Never tessellates; with several shells the items would overwrite each other |
-| TopoDSToStep_MakeShellBasedSurfaceModel(Solid) | Makes a tessellated geometric set of the shells' tessellations and drops it; maps its "not AP242" warning to the still null shell | The tessellation is never returned |
-| TopoDSToStep_WireframeBuilder::GetTrimmedCurveFromEdge | Finds the edge's curve in the map, then makes it again | Each occurrence of an edge gives a new curve |
-| TopoDSToStep_FacetedTool::CheckTopoDSShape | Returns Done at the first linear pcurve of a planar face | The other faces and pcurves are not checked |
-| TopoDSToStep_MakeStepFace (degenerate torus under an offset surface) | `anOffsetSu->SetBasisSurface(Rev)` on the face's own surface | The writer changes the shape it writes. Fixed in the port: a copy (decision 13009) |
-| TopoDSToStep_MakeTessellatedItem (InitTriangulation) | `Poly::ComputeNormals` on the face's triangulation | The writer adds normals to the shape it writes. Fixed in the port: a copy (decision 13009) |
-| TopoDSToStep_MakeTessellatedItem::Init(Shell) | Calls the progress scope's Next twice per face | Progress only |
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
+
+## Phase 8: unit 8G1, the XDE Draw-lite commands
+
+Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands keep OCCT's behaviour where it shows.
+
+| Where | What | Effect |
+|---|---|---|
+| TDF_Tool::Label (entry) | Skips the entry's first tag without checking it is 0 | "5:1:1" names 0:1:1, so a shape named "1" or "7:1" passed to an XDE command is taken as a label, not the shape (the port's label lookup does the same) |
+| XCAFDoc_ShapeTool::RemoveShape, RemoveComponent | Forget the label's attributes but leave it in the tool's maps (myShapeLabels, mySubShapes) | SearchUsingMap can return a removed label; the port's document forgets the label in its maps too (decision 1258) |
+| XDEDRAW_Layers.cxx setVisibility; XDEDRAW.cxx XDumpAssemblyGraph | The usage line misses a space ("Use: XSetVisibilityDocName"); the graph dump's usage names `-verbose`, the command parses `-names` | Messages only; reproduced |
 
 ## Phase 8: unit 8F, STEPControl
 

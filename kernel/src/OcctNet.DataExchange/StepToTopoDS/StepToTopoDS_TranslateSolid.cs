@@ -10,7 +10,7 @@ using static Occt.StepToTopoDS_TranslateSolidError;
 namespace Occt;
 
 /// <summary>Translates a tessellated_solid into a TopoDS_Solid of faces carrying triangulations.</summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 13004).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateSolidError myError;

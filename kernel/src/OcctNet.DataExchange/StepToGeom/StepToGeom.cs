@@ -22,7 +22,7 @@ namespace Occt;
 /// The units of the file are applied through <see cref="StepData_Factors"/> (lengths multiplied by
 /// <see cref="StepData_Factors.LengthFactor"/>, angles by <see cref="StepData_Factors.PlaneAngleFactor"/>); the
 /// overloads without factors use the defaults (millimetres and radians). The results are new, unfrozen geometry.
-/// <c>MakeYprRotation</c> was added by unit 8F (decision 12901).
+/// <c>MakeYprRotation</c> was added by unit 8F (decision 1238).
 /// </remarks>
 public static class StepToGeom
 {
@@ -1259,7 +1259,7 @@ public static class StepToGeom
             return null;
         }
         // OCCT recurses without limit along a file's references (replicas, offsets, trimmed and surface curves): a
-        // stack overflow in C++, which ends a .NET process, so the port throws when the stack runs low (decision 12903)
+        // stack overflow in C++, which ends a .NET process, so the port throws when the stack runs low (decision 1240)
         RuntimeHelpers.EnsureSufficientExecutionStack();
         if (SC is StepGeom_Line)
         {
@@ -1332,7 +1332,7 @@ public static class StepToGeom
     /// <summary>Converts a curve into a 2D curve: lines, conics, bounded curves and curve replicas.</summary>
     public static Geom2d_Curve? MakeCurve2d(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
     {
-        // as in MakeCurve (decision 12903)
+        // as in MakeCurve (decision 1240)
         RuntimeHelpers.EnsureSufficientExecutionStack();
         if (SC is StepGeom_Line)
         {
@@ -1886,7 +1886,7 @@ public static class StepToGeom
         try
         {
             // OCC_CATCH_SIGNALS
-            // as in MakeCurve (decision 12903): the exception is caught below, as OCCT catches its stack overflow
+            // as in MakeCurve (decision 1240): the exception is caught below, as OCCT catches its stack overflow
             RuntimeHelpers.EnsureSufficientExecutionStack();
             if (SS is StepGeom_BoundedSurface)
             {
@@ -2556,7 +2556,7 @@ public static class StepToGeom
     /// Converts a spatial rotation (a ypr_rotation, or a rotation_about_direction in the plane angle unit of the
     /// context) into yaw, pitch and roll angles; null when it can't.
     /// </summary>
-    /// <remarks>OCCT.NET: ported by unit 8F, with STEPConstruct_UnitContext (decision 12901).</remarks>
+    /// <remarks>OCCT.NET: ported by unit 8F, with STEPConstruct_UnitContext (decision 1238).</remarks>
     public static NCollection_HArray1<double>? MakeYprRotation(StepKinematics_SpatialRotation SR, StepRepr_GlobalUnitAssignedContext? theCntxt)
     {
         // If rotation is already a ypr_rotation, return it immediately
