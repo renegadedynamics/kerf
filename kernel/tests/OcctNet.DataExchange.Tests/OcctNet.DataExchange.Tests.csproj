@@ -39,10 +39,20 @@
     <EmbeddedResource Include="StepData\Recordings\stepdatarec-text.txt.gz" LogicalName="StepData.stepdatarec-text.txt.gz" />
     <EmbeddedResource Include="StepData\Recordings\stepdatarec-tables.gz" LogicalName="StepData.stepdatarec-tables.gz" />
     <EmbeddedResource Include="..\..\tools\stepdatarec\text-cases.txt" LogicalName="StepData.text-cases.txt" />
+    <!-- Native OCCT's StepToGeom and GeomToStep (tools/geomsteprec, unit 8D): the corpus's geometric entities
+         converted, and the constructed cases (tools/geomsteprec/cases.txt) and data/occ's geometry converted, written
+         and converted back, with the default factors and with inches and degrees -->
+    <EmbeddedResource Include="GeomToStep\Recordings\geomsteprec-s2g.txt.gz" LogicalName="GeomToStep.geomsteprec-s2g.txt.gz" />
+    <EmbeddedResource Include="GeomToStep\Recordings\geomsteprec-g2s.txt.gz" LogicalName="GeomToStep.geomsteprec-g2s.txt.gz" />
+    <EmbeddedResource Include="..\..\tools\geomsteprec\cases.txt" LogicalName="GeomToStep.cases.txt" />
     <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
     <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
     <!-- Native OCCT's work session on the corpus's STEP files (tools/xscontrolrec, unit 8A3) -->
     <EmbeddedResource Include="XSControl\Recordings\xscontrolrec.txt.gz" LogicalName="XSControl.xscontrolrec.txt.gz" />
+    <!-- Native OCCT's StepToTopoDS and TopoDSToStep (tools/toporec, unit 8E): the corpus's shape representation items
+         translated into BReps, and data/occ's shapes converted into STEP entities -->
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-s2t.txt.gz" LogicalName="TopoStep.toporec-s2t.txt.gz" />
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-t2s.txt.gz" LogicalName="TopoStep.toporec-t2s.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

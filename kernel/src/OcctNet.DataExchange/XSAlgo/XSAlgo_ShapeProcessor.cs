@@ -27,7 +27,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <see cref="ProcessShape"/> never writes into its input (ShapeProcess's working copy, decision 1022) and returns a
-/// frozen shape. <see cref="CheckPCurve"/> writes into the edge it is given, as OCCT's: it is for a reader's edges
+/// frozen shape. <see cref="CheckPCurve(in TopoDS_Edge, in TopoDS_Face, double, bool, Interface_StaticSet)"/> writes into the edge it is given, as OCCT's: it is for a reader's edges
 /// under construction, not for published shapes (a frozen edge throws).
 /// </para>
 /// </remarks>
@@ -317,6 +317,14 @@ public class XSAlgo_ShapeProcessor
     /// <remarks>Writes into <paramref name="theEdge"/> and its vertices, which must not be frozen.</remarks>
     public static bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
                                    Interface_StaticSet theStatics)
+        => CheckPCurve(theEdge, theFace, thePrecision, theIsSeam, theStatics.IVal("read.stdsameparameter.mode") != 0);
+
+    /// <summary>
+    /// As the form with statics, given the value of <c>read.stdsameparameter.mode</c> (OCCT.NET addition: StepToTopoDS
+    /// takes it from its model's parameters, decision 1258).
+    /// </summary>
+    internal static bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
+                                     bool theStdSameParameterMode)
     {
         var anEdgeAnalyzer = new ShapeAnalysis_Edge();
 
@@ -390,7 +398,7 @@ public class XSAlgo_ShapeProcessor
         }
         aBuilder.Range(aTmpEdge, theFace, aCurve2DParam1, aCurve2DParam2);
         aBuilder.SameRange(aTmpEdge, false);
-        if (theStatics.IVal("read.stdsameparameter.mode") != 0)
+        if (theStdSameParameterMode)
         {
             aBuilder.SameParameter(aTmpEdge, false);
         }
