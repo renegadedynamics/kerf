@@ -117,16 +117,16 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         Assert.Empty(aRunnableBefore);
         Assert.Equal(2028, aScans.Count); // 2858 less the de group's STEP cases (unit 8G2's class)
         // 109 with 8G1 alone; 120 with 8F's commands; 268 with 8G2's ReadStep; 284 with 8W's commands (exec, ReadFile,
-        // WriteFile, xnorm), one of which measures memory and is left to DrawCheapGapsCorpusTests (bugs/caf/bug31075)
+        // WriteFile, xnorm), two of which measure memory and are left to DrawCheapGapsCorpusTests (bugs/caf/bug31075)
         Assert.Equal(284, aRunnable.Count);
-        Assert.Equal(1, aMemoryCases.Count(aRunnable.Contains));
+        Assert.Equal(2, aMemoryCases.Count(aRunnable.Contains));
         // OK 63 (xcaf's BRep grids 44, bugs/xde 11, de_mesh's glTF 5, three others); SKIPPED 37 (data not public);
         // FAILED 9, attributed. Most of de, xcaf and bugs/xde wait for STEP (unit 8G2), IGES, OCAF storage, the
         // parameter commands (unit 8F), GD&T, notes and views.
         // with unit 8G2's ReadStep and WriteStep: OK 141, SKIPPED 112; with unit 8W's commands and Tcl's encodings:
-        // OK 153, SKIPPED 120, FAILED 10 (attributed)
+        // OK 153, SKIPPED 119, FAILED 10 (attributed), the two cases measuring memory left out
         Assert.Equal(153, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(120, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        Assert.Equal(119, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));

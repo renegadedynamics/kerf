@@ -119,8 +119,9 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
         // feature commands of 7I, blend). With 7I's feature commands merged: 1,696 newly runnable, OK 414, FAILED 3 as before.
         // Unit 7Y: bug5805_3 and _4 pass (decision 1101): OK 416, FAILED 1. Unit 7Q2's view commands: 2 more, SKIPPED
         // (data not public). With 7N3's fillet commands (blend): 1,713 newly runnable, OK 425, FAILED 7 (six draft/angle
-        // cases drafting a reconstructed fillet, attributed in DrawFilletCorpusTests.KnownFailures)
-        Assert.Equal(1713, aNew.Count);
+        // cases drafting a reconstructed fillet, attributed in DrawFilletCorpusTests.KnownFailures). With unit 8W's exec:
+        // 1,714 (bugs/modalg_2/bug22864_1, SKIPPED: data not public)
+        Assert.Equal(1714, aNew.Count);
         Assert.Equal(425, aRuns.Count(r => r.Status == "OK"));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
                                            || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id)

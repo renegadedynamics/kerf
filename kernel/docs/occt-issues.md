@@ -2012,3 +2012,10 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | STEPCAFControl_Reader::collectRepresentationItems | Follows representation relationships without a guard | A cycle of relationships recurses without end; the port stops after 1,000 levels (decision 1280) |
 | XCAFDoc_ShapeTool::GetExternRefs | Returns the names of the label's children, not the external references SetExternRefs keeps in a child label of its own | Its callers (none in STEPCAFControl) get the components' names of an assembly; the port's GetExternRefs returns the references |
 | (port) XSControl_TransferReader::ShapeResult | The port encoded the regularity of a result holding frozen shapes into a copy (decision 1224) | An assembly whose parts were published before was copied whole, so its parts were no longer its product definitions' results and STEPCAFControl_Reader read it as one part (trj4_s1-ai-214.stp written and read back). Fixed: an unfrozen shape holding frozen ones is encoded in place around them; the STEPControl comparisons are unchanged |
+
+## Phase 8: unit 8W, the data-exchange corpus
+
+| Where | What | Effect |
+|---|---|---|
+| DEBREP_Provider::Write (`write.binary : 0`) | Writes the text form with BRepTools::Write, without Draw's `DBRep_DrawableShape` line, while DEBREP_Provider::Read takes a file for text only when it starts with that line | A text BRep file `writefile` wrote is read back as binary by `readfile`, which fails. Kept in Draw-lite's stand-in (decision 13601) |
+| DE_ConfigurationContext (WhatKindOfLine) | `!aLine.EndsWith(' ') \|\| !aLine.EndsWith('\t') \|\| !aLine.EndsWith('\n')` is always true | A space is always appended to the line before it is split; harmless (the value is trimmed) |
