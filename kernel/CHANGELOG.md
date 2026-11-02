@@ -1600,8 +1600,8 @@ Phase 9 (part): Schematiq.Collections (unit 9A).
 Phase 9 (part): the differential run (unit 9D2).
 
 - build123d.NET's whole test suite compared op by op on native OCCT and OCCT.NET, through a shape log in build123d.NET
-  and `Build123dDifferentialTests` (`tools/b3d-differential.ps1`): of 16,044 shapes compared, 15,118 are identical
-  as BRep text (with the Free and Checked flags masked), 160 canonically and 750 in another order or representation;
-  the first divergence of each of the 18 other tests is attributed: native varying from run to run (11 tests), backend-specific code in
-  build123d.NET (5), OCCT.NET not writing a caller's face (1), a test mutating a canonically identical result's text
-  (1). No port bug.
+  and `Build123dDifferentialTests` (`tools/b3d-differential.ps1`): of 16,044 shapes compared, 15,118 are identical as
+  BRep text (with the Free and Checked flags masked), 160 canonically and 750 in another order or representation; the
+  first divergence of each of the 18 other tests is attributed: native varying from run to run (11 tests), backend-
+  specific code in build123d.NET (5), OCCT.NET not writing a caller's face (1), a test mutating a canonically identical
+  result's text (1). No port bug.
