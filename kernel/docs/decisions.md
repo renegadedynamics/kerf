@@ -13166,3 +13166,54 @@ STEPCAFControl (Reader, Writer, Controller, ActorWrite, ExternFile) over `XdeDoc
        `write.step.unit`...) or a `DESTEP_Parameters`, `Transfer(doc)`, `WriteStream(stream)`; a repeatable header
        through `new APIHeaderSection_MakeHeader(writer.Writer().Model())` before writing (decision 1267). Keep the
        document's AutoNaming off for Bento (names only as given); turn it on to match DRAWEXE's names.
+
+## Phase 8: unit 8Z, STEP external references read and written safely
+
+STEPCAFControl_Reader's external references (OCCT's `ReadExternFile`, which reads them from the disk beside the main
+file, ignoring the caller's limits and cancellation and following any absolute path a file names) made safe for
+untrusted input, and STEPCAFControl_Writer's multifile mode given a stream form. Additions in the port's style:
+OCCT's names, `OCCT.NET (unit 8Z)` in the documentation, the defaults of the file API OCCT's.
+
+1284. **A resolver opens the external files.** `STEPCAFControl_ExternFileResolver(theFileName, theReferencingName)`
+       returns a readable stream (the reader disposes it) or null (the reference stays unresolved). The reader's
+       `SetExternFileResolver`/`GetExternFileResolver`; `STEPCAFControl_Reader.FileSystemResolver` is OCCT's way (an
+       absolute name as it is, a relative one beside the referencing file, `OSD_Path::AbsolutePath`), and
+       `STEPCAFControl_Reader.FolderResolver(root)` confines the reads to a folder: a reference is resolved beside the
+       referencing file inside the folder and refused if it is absolute, drive-relative, UNC or a device path, holds a
+       colon (alternate data streams) or a NUL, leaves the folder by `..`, or reaches a link (a reparse point) below the
+       folder. `ReadExternFile` (protected, not virtual in OCCT) keeps its signature and goes through the resolver.
+       Under OCCT's resolver the files keep OCCT's names (the full path); under another the names are lexical (the
+       referencing file's folder and the reference, `.` and `..` folded, `/` between), so neither the disk nor the
+       current directory is consulted, and a file's own references are resolved against that name. OCCT's
+       `STEPConstruct_ExternRefs::FileName` looks on the disk to choose between the names a reference gives (the
+       AEIA's or the document file's): it asks the resolver instead (`InternalFileExists`; the probe's stream is
+       disposed unread), or answers no when nothing is read.
+1285. **The defaults.** ReadFile (and Perform) read external files from the disk as OCCT (the corpus and the native
+       comparisons rely on it). ReadStream reads none unless a resolver is set: a stream's name is a label, not a
+       licence to open its siblings (the issue build123d.NET found: `ReadStream(path, stream)` then `Transfer` read the
+       files beside `path`, and any absolute path the file named). `SetExternFilesMode(false)` reads none in either
+       form. Draw-lite's ReadStep, which reads through the stream form, sets `FileSystemResolver` (DRAWEXE's behaviour,
+       decision 1281).
+1286. **An unread reference is a missing file.** With no resolver, reads disabled or the resolver's null, the reference
+       stays unresolved exactly as OCCT leaves a reference to a missing file: the ExternFile's load status
+       `IFSelect_RetError` (StepFile_Read's "not opened"), the shape's label recording the file's name
+       (`SetExternRefs`), and OCCT's fail "Can not read external file ..." in the transient process; the document is the
+       one OCCT reads when the files are missing (tested).
+1287. **Limits, budget, cycles, cancellation.** Each external file is read with the caller's `StepFile_ReadLimits`
+       (from the new `ReadFile(name, progress, limits)` or `ReadStream(name, stream, progress, limits)`), its
+       `MaxFileSize` lowered to what is left of the budget, `STEPCAFControl_ExternFileLimits` (`SetExternFileLimits`):
+       at most `MaxFiles` files opened (1,000), `MaxTotalSize` bytes read from them all (16 GiB; the main file is
+       limited by its own limits) and a chain `MaxDepth` files deep (100), counted from each ReadFile/ReadStream. A
+       counting stream stops one byte past the limit, so an endless stream is read no further. A reference to a file
+       being read (A refers to B refers to A) or past the budget stays unresolved with a warning on its document file
+       in the transient process ("External reference file is being read already (a cycle of references)", "...
+       not read: more than N files", "deeper than N files", "the external files' N bytes are read"). OCCT recurses
+       without end on a cycle (the file is recorded as read only after its transfer); the port's check applies under
+       every resolver, OCCT's included (logged in occt-issues). Transfer's progress range covers the external reads:
+       each file's read (the parser's cancellation) and its transfer, and a cancelled transfer opens no more files.
+1288. **The writer.** `Write(path)` keeps OCCT's multifile behaviour: the external files beside the main one, named by
+       the prefix and the labels' names, which come from the document and may hold separators, `..` or a drive (a
+       document read from an untrusted file can name where its parts are written). `WriteStream(stream)` refuses the
+       multifile mode as OCCT; the new `WriteStream(stream, STEPCAFControl_ExternFileWriter)` writes the main model and
+       hands each external file's name to the caller, who returns the stream to write it to (disposed after writing) or
+       null to refuse it (that file's write status and the result `IFSelect_RetError`). The stream forms open no file.

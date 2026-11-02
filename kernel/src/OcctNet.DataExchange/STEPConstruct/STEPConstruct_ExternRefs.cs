@@ -277,6 +277,22 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
         return myShapes.Length();
     }
 
+    /// <summary>
+    /// OCCT.NET (unit 8Z): when set, tells <see cref="FileName"/> whether an external file exists (its name as the
+    /// file gives it, the session's loaded file), in place of OCCT's look on the disk beside the loaded file.
+    /// STEPCAFControl_Reader sets it from its resolver, or to false when it reads no external files.
+    /// </summary>
+    internal Func<string, string, bool>? InternalFileExists { get; set; }
+
+    private bool probe(string theName, string theFullName)
+    {
+        if (InternalFileExists is null)
+        {
+            return fileExists(theFullName);
+        }
+        return InternalFileExists(theName, WS().LoadedFile() ?? "");
+    }
+
     // OSD_Path's folder of the session's loaded file, and OSD_Path::AbsolutePath
     private static string directoryOf(string theFile)
     {
@@ -446,7 +462,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
             {
                 fullname = aCStringFileName;
             }
-            if (!fileExists(fullname))
+            if (!probe(aCStringFileName, fullname))
             {
                 oldFileName = aCStringFileName;
                 aCStringFileName = null;
@@ -494,7 +510,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
             {
                 fullname = aCStringFileName;
             }
-            if (!fileExists(fullname))
+            if (!probe(aCStringFileName, fullname))
             {
                 if (oldFileName is not null)
                 {
