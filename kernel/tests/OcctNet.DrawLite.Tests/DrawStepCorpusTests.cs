@@ -100,6 +100,8 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
                                            .Select(c => aCorpus.Scan(c, anInterpreter))
                                            .Where(s => Unit8FCommands.Any(s.Commands.Contains))
+                                           // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
+                                           .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8F_FILTER");
@@ -154,9 +156,10 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
                                            $"{r.Case.Id}: {r.Status}"));
     }
 
-    // the corpus's counts after unit 8F (285 with unit 8G1's documents: the de grid's step cases E1, E2, G9 and others)
-    private const int GainedCount = 285;
-    private const int OkCount = 44;
+    // the corpus's counts after unit 8F (with unit 8G1's documents and unit 8G2's ReadStep and WriteStep; the de
+    // group's STEP cases, which read with ReadStep, are DrawStepCafCorpusTests')
+    private const int GainedCount = 305;
+    private const int OkCount = 54;
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
     internal static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
@@ -165,10 +168,12 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
         // parameters Draw-lite's session doesn't load (resource files: decision 1181)
         "bugs/modalg_7/bug30273",
         "bugs/xde/bug6283",
-        // the de grid's end script, runnable with 8F's commands and 8G1's documents together: its document reading
-        // (ReadStep, XGetOneShape on what it reads) is unit 8G2's
-        "de/step_1/E1",
-        "de/step_1/E2",
-        "de/step_1/G9",
+        // they write their STEP files with Tcl's encodings (`encoding convertfrom`, `fconfigure -encoding`), which
+        // Draw-lite's Tcl has as stubs: the names they compare are not the ones written (unit 8G2)
+        "bugs/step/bug28454_1",
+        "bugs/step/bug30694",
+        "bugs/step/bug31670",
+        "bugs/step/bug31670_1",
+        "bugs/step/bug31923",
     };
 }

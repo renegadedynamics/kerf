@@ -12,7 +12,8 @@ namespace OcctNet.DrawLite;
 /// <summary>
 /// XSDRAWSTEP's commands without a document (unit 8F): <c>stepread</c>, <c>testreadstep</c>, <c>steptrans</c>,
 /// <c>stepwrite</c>, <c>testwritestep</c>, <c>stepfileunits</c>. The document commands (ReadStep, WriteStep) are unit
-/// 8G's; <c>countexpected</c> and <c>dumpassembly</c> (STEPSelections' counter and assembly explorer) are left out.
+/// 8G2's (XSDRAWSTEPDocCommands); <c>countexpected</c> and <c>dumpassembly</c> (STEPSelections' counter and assembly
+/// explorer) are left out.
 /// </summary>
 /// <remarks>
 /// They work on the interpreter's session (XSDRAWCommands.Session) and its parameter set (decision 1274): the readers

@@ -13080,3 +13080,89 @@ without a document.
        messenger of the current flow of execution (`Message.SetFlowMessenger`, internal, an AsyncLocal): Draw-lite
        installs one printing to the command's result while such a command runs; parallel interpreters don't see each
        other's. Outside those commands nothing changes (decision 493's empty default messenger).
+
+## Phase 8: unit 8G2, STEPCAFControl over the assembly document
+
+STEPCAFControl (Reader, Writer, Controller, ActorWrite, ExternFile) over `XdeDoc_Document`, the rest of STEPConstruct
+(the package class, Tool, Styles, RenderingProperties, ValidationProps, ExternRefs), XdeDoc additions, Draw-lite's
+`ReadStep` and `WriteStep`, compared with native XCAF documents through tools/stepcafrec.
+
+1276. **STEPCAFControl and STEPConstruct are ported class for class with XdeDoc_Document in place of OCAF and XCAF**
+       (decisions 1166, 1231): `TDF_Label` becomes `XdeDoc_Label`, the XCAFDoc tools' calls the document's methods of the
+       same names, `TDataStd_Name` `SetName`/`GetName`, `XCAFDoc_Volume`/`Area`/`Centroid` the validation properties,
+       `XCAFDoc_DocumentTool::SetLengthUnit` the document's unit (named by `UnitsMethods::DumpLengthUnit`). OCCT's order
+       of operations is kept, so the documents read and the texts written are native's. STEPConstruct_RenderingProperties
+       leaves out its constructors and `Init`s from XCAF's visual materials and `CreateXCAFMaterial` (no materials);
+       `STEPConstruct_Styles::DecodeColor` takes its colour by reference and leaves it unchanged when the colour isn't
+       recognised (OCCT's callers rely on Quantity_Color's default, yellow); `EncodeColor`'s cache of RGB colours is
+       keyed by their sRGB values (OCCT: a gp_Pnt of them). The value classes (Tool, Styles, ValidationProps,
+       ExternRefs, RenderingProperties) are C# classes (decision 1185). A name read from the file is taken as the parser
+       decoded it (OCCT's `convertName` makes an extended string, UTF-8 unless the code page is NoConversion).
+1277. **The STEPCAF controller and sessions** (as decision 1264 for STEPControl): `STEPCAFControl_Controller.Init()`
+       records one under "STEP" once per process (replacing STEPControl's there, as OCCT); the readers and writers give
+       their sessions a STEPCAFControl_Controller of their own (`STEPCAFControl_Controller.SelectFor`), and its
+       `InitStatics` declares `write.stepcaf.subshapes.name` and `read.stepcaf.subshapes.name` per parameter set (taken
+       over from Draw-lite's session). As in OCCT, the controller's write actor is a fresh STEPCAFControl_ActorWrite,
+       without the shape fix parameters and processing flags STEPControl_Controller gives its own: a STEPCAFControl_Writer
+       writes the shapes unprocessed unless the caller sets them (Draw-lite's WriteStep does, from the session's
+       resources, as DRAWEXE). External files are read from the disk, beside the session's loaded file
+       (`Path.GetFullPath` in place of `OSD_Path::AbsolutePath`, `File.Exists` in place of `OSD_File::Exists`), by a
+       session on the main session's parameter set; WriteStream refuses the multifile mode, as OCCT.
+1278. **XdeDoc_Document additions for STEPCAFControl.** `FindComponent` (XCAFDoc_ShapeTool's, with its checkForShape
+       and IsSame: TShape, orientation and location), `SetInstanceColor` (the component's colour for a component of a
+       top-level assembly; for a component of a sub-assembly placed in another, XCAF's SHUO, false: not kept),
+       `HasChild`, `NbChildren`, `FindChild`, `IsDescendant`, `Descendants` (TDF_ChildIterator's all-levels order).
+       **A fix of unit 8T's map of sub-shapes:** it held the shape itself, where XCAFDoc_ShapeMapTool holds only its
+       sub-shapes, so `AddSubShape(label, the label's own shape)` added a label XCAF doesn't (data/occ's face1.brep
+       written with a face sub-shape differed from native). XCAFDoc_ColorTool::ReverseChainsOfTreeNodes (the order of
+       the labels linked to a colour label) has no counterpart: the document doesn't list a colour's users.
+1279. **What is not transferred.** Reading: ReadSHUOs (off by default in OCCT), ReadGDTs, ReadMaterials, ReadViews,
+       ReadMetadata, ReadProductMetadata read nothing and return false (their modes kept); with them
+       setDatumToXCAF, readDatumsAP242, createGDTObjectInXCAF, collectBinders, findReprItems, fillAttributes,
+       getNamedData, collectPropertyDefinitions, collectShapeLabels, getShapeLabelFromProductDefinition,
+       getProductFromProductDefinition and the file's GD&T helpers (readPMIPresentation, readAnnotation,
+       readConnectionPoints, ReadDatums, setDimObjectToXCAF, setGeomTolObjectToXCAF, createMesh...). Writing:
+       writeSHUOs, writeDGTs, writeDGTsAP242, writeMaterials, writeMetadata (with writeMetadataForLabel,
+       writeMetadataRepresentationItem, writeShapeAspect, writePresentation, writeDatumAP242, writeToleranceZone,
+       writeGeomTolerance and the file's static helpers) write nothing: OCCT writes nothing for a document without
+       them, so the texts are native's; the visual material mode has no materials to write; CleanDuplicates (StepTidy,
+       decision 1271) is accepted and does nothing. STEPCAFControl_GDTProperty, STEPCAFControl_ConfigurationNode and
+       STEPCAFControl_Provider are not ported. The corpus files whose GD&T or materials native reads differ: 5 documents
+       read (GD&T's sub-shape labels), 7 texts written back.
+1280. **Map orders and guards.** The reader's map of shapes to product definitions (ExpandSubShapes iterates it) and
+       the writer's map of top-level shapes to their styles' representations (MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION
+       _REPRESENTATION, added to the model in the map's order) are keyed by shapes, by address in OCCT: the port
+       iterates them in insertion order. Native's order of the representations is not repeatable, so the comparison
+       with native takes a text whose records are the same but in another order as canonically identical (70 of 458
+       writes). The documents a writer transfers are kept in a list (OCCT: a map of root labels). collectRepresentation
+       Items stops after 1,000 levels of representation relationships (OCCT recurses without end on a cycle).
+1281. **Draw-lite's ReadStep and WriteStep** (XSDRAWSTEP.cxx) on the interpreter's session, which now gets
+       STEPCAFControl's controller and statics as DRAWEXE's (XSDRAWSTEP::Factory): ReadStep reads Draw-lite's file
+       through the reader's stream form under the file's name (external references beside it on the disk) into the
+       named document or a new one (DDocStdCommands.NewDocument, the interpreter's auto-naming); WriteStep writes the
+       main file and the external ones (multifile mode) to the overlay, a label's sub-assembly when given; the
+       options (modes, `-stream`, the multifile prefix) as OCCT's; the progress indicators and
+       XSDRAW::CollectActiveWorkSessions left out. `XStat` counts a label's external references as XCAF's labels (XCAF
+       keeps them in an unnamed child label whose children are named by the files). The corpus scan learns the de
+       group's end script, which reads and writes through `$ReadCommand` and `$WriteCommand` (ReadIges/WriteIges for an
+       IGES file, ReadStep/WriteStep otherwise: `DrawCorpus.DataFileCommands`) and calls the case's
+       `de_before_script` and `de_after_script` only if it sets `de_use_custom_scripts`; the de group's STEP cases are
+       DrawStepCafCorpusTests', left out of DrawStepCorpusTests' and DrawXdeCorpusTests'.
+1282. **The oracle is tools/stepcafrec** (native XCAF and STEPCAFControl, which build123d.NET doesn't bind): (1) the
+       corpus's 338 STEP files read into XCAF documents and dumped (each label's entry, kind, shape type and counts,
+       referred label and location, name, colours as floats, visibility, layers, validation properties, external
+       references; the layers; the length unit): 332 documents identical, 6 attributed (GD&T, and a name native reads
+       past its end); (2) documents written: data/occ's 37 shapes each with a name, colours (generic, surface,
+       translucent, curve on a sub-shape), layers (one hidden), a hidden part and validation properties, and three
+       assemblies with names, an instance colour and layers, in AP203, AP214IS and AP242DIS, then the corpus's files
+       read and written back in AP214IS: 458 texts, 377 identical, 70 canonically identical (decision 1280), 11
+       attributed (the AP203 assemblies as decision 1272, GD&T and materials, the name read past its end). The texts are
+       unwrapped before being masked as stepctlrec masks them (the masked occurrence identifiers move the line breaks).
+1283. **The API for unit 8X.** Import: `new STEPCAFControl_Reader()`, `ReadStream(name, stream, progress, limits)` (or
+       `ReadFile`), `Transfer(new XdeDoc_Document(), progress)`, then `doc.ToTree()` (an immutable `XdeDoc_Tree`: roots,
+       products shared, instances with locations, names, colours, layers, validation properties, length unit).
+       Export: `XdeDoc_Document.FromTree(tree)` (or a document built with AddShape/AddComponent/SetName/SetColor/
+       SetLayer), `new STEPCAFControl_Writer()`, the parameters on `Writer().WS().Statics()` (`write.step.schema`,
+       `write.step.unit`...) or a `DESTEP_Parameters`, `Transfer(doc)`, `WriteStream(stream)`; a repeatable header
+       through `new APIHeaderSection_MakeHeader(writer.Writer().Model())` before writing (decision 1267). Keep the
+       document's AutoNaming off for Bento (names only as given); turn it on to match DRAWEXE's names.

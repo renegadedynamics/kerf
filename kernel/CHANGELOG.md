@@ -1556,3 +1556,13 @@ Phase 8 (part): STEPControl, the first milestone (unit 8F).
   `listtypes`, `newmodel`, `tpstat`, `tpdraw`, `tpcompound`, and `stepread`, `stepwrite`, `testreadstep`,
   `testwritestep`, `stepfileunits`, `steptrans`: 274 corpus cases made runnable (44 OK, 224 skipped for missing data,
   4 BAD as in OCCT, 2 failures attributed).
+- Phase 8, unit 8G2: STEPCAFControl's reader and writer over the assembly document (`XdeDoc_Document`): assemblies,
+  external references, names, colours (surface, curve, per sub-shape, instance, visibility), layers, validation
+  properties, the length unit and sub-shape names to and from STEP, from and to streams; the rest of STEPConstruct
+  (Styles, RenderingProperties, ValidationProps, ExternRefs, Tool). GD&T, materials, views, metadata and SHUOs are
+  not transferred.
+- Compared with native XCAF documents (tools/stepcafrec): the corpus's 338 STEP files read into identical documents
+  (332; 6 attributed to GD&T and a native misread name); 458 documents written, 377 identical, 70 identical but for
+  the order of the style representations, 11 attributed.
+- Draw-lite: `ReadStep` and `WriteStep` over its documents; the de group's STEP grids run (999 corpus cases made
+  runnable: 255 OK, 76 BAD as in OCCT, 660 skipped for missing data, 8 failures attributed).

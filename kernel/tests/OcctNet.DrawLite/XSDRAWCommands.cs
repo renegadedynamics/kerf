@@ -101,30 +101,9 @@ internal static class XSDRAWCommands
         // XSDRAW::LoadSession calls XSAlgo::Init; XSDRAWSTEP::Factory STEPCAFControl_Controller::Init, which records
         // the STEP controller and declares its statics (decision 1274)
         XSAlgo.Init(aStatics);
-        STEPControl_Controller.Init();
-        new STEPControl_Controller().InitStatics(aStatics);
-        InitStepCafStatics(aStatics);
+        STEPCAFControl_Controller.Init();
+        new STEPCAFControl_Controller().InitStatics(aStatics);
         return aSession;
-    }
-
-    // STEPCAFControl_Controller::Init's own statics (unit 8G2 ports the controller)
-    private static void InitStepCafStatics(Interface_StaticSet theStatics)
-    {
-        if (!theStatics.StartInit("STEPCAFControl_Controller"))
-        {
-            return;
-        }
-        theStatics.Init("stepcaf", "write.stepcaf.subshapes.name", 'e', "");
-        theStatics.Init("stepcaf", "write.stepcaf.subshapes.name", '&', "enum 0");
-        theStatics.Init("stepcaf", "write.stepcaf.subshapes.name", '&', "eval Off"); // 0
-        theStatics.Init("stepcaf", "write.stepcaf.subshapes.name", '&', "eval On");  // 1
-        theStatics.SetIVal("write.stepcaf.subshapes.name", 0);                      // Disabled by default
-
-        theStatics.Init("stepcaf", "read.stepcaf.subshapes.name", 'e', "");
-        theStatics.Init("stepcaf", "read.stepcaf.subshapes.name", '&', "enum 0");
-        theStatics.Init("stepcaf", "read.stepcaf.subshapes.name", '&', "eval Off"); // 0
-        theStatics.Init("stepcaf", "read.stepcaf.subshapes.name", '&', "eval On");  // 1
-        theStatics.SetIVal("read.stepcaf.subshapes.name", 0);                      // Disabled by default
     }
 
     /// <summary>XSDRAW::GetLengthUnit without a document: the session's <c>xstep.cascade.unit</c>, in millimetres.</summary>

@@ -62,6 +62,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
     public static IReadOnlyList<(string Group, string[] Commands, string Variable)> VariableBranches { get; } =
     [
         ("fillet2d", ["CheckTriArea"], "rel_tol"),
+        // unit 8G2: the de group's end script calls the case's own procedures around the reading only if the case
+        // sets de_use_custom_scripts
+        ("de", ["de_before_script", "de_after_script"], "de_use_custom_scripts"),
     ];
 
     /// <summary>
@@ -83,6 +86,20 @@ public sealed class DrawCorpus(string theTestsDirectory)
         ("xcaf", "TypeOfFile", ["stp"], ["WriteStep", "ReadStep"]),
         ("xcaf", "CompareDocumentsMode", ["RESCALE_ASSEMBLY"], ["XRescaleGeometry"]),
     ];
+
+    /// <summary>
+    /// Commands a group's end script calls through a variable it sets from the case's data file (unit 8G2): the de
+    /// group's reads and writes the case's <c>filename</c> with <c>$ReadCommand</c> and <c>$WriteCommand</c>, ReadIges
+    /// and WriteIges for an IGES file, ReadStep and WriteStep for another. The scan doesn't see calls through a
+    /// variable: the case needs the commands its file takes.
+    /// </summary>
+    public static IReadOnlyList<(string Group, Regex File, string[] Commands)> DataFileCommands { get; } =
+    [
+        ("de", new Regex(@"\.(igs|iges)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase), ["ReadIges", "WriteIges"]),
+        ("de", new Regex(@"^(?!.*\.(igs|iges)$)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase), ["ReadStep", "WriteStep"]),
+    ];
+
+    private static readonly Regex s_theDeFileName = new(@"^\s*set\s+filename\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     /// <summary>Whether the scan knows the branches of <see cref="ValueBranches"/> (unit 5O2).</summary>
     public bool KnowsValueBranches { get; init; } = true;
@@ -343,6 +360,20 @@ public sealed class DrawCorpus(string theTestsDirectory)
             {
                 aCommands.Add(aCall);
                 aPending.Push(aCall);
+            }
+        }
+
+        // unit 8G2: commands a group's end script calls through a variable chosen by the case's data file
+        foreach ((string aGroup, Regex aFilePattern, string[] aFileCommands) in DataFileCommands)
+        {
+            if (aGroup != theCase.Group)
+            {
+                continue;
+            }
+            Match? aFile = s_theDeFileName.Matches(File.ReadAllText(theCase.Path)).LastOrDefault();
+            if (aFile is not null && aFilePattern.IsMatch(aFile.Groups[1].Value))
+            {
+                aCommands.UnionWith(aFileCommands);
             }
         }
 

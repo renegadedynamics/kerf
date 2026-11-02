@@ -1999,3 +1999,16 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | STEPConstruct_AP203Context | Date, time zone, user name and host address read from the system | AP203 output is not repeatable; settable through the context (decision 1267) |
 | STEPControl_Writer (AP203 assemblies) | Native omits the AP203 management entities of the last occurrences of data/occ's assemblies | 12 of 720 writes differ: cause not found, attributed (decision 1272) |
 | IFSelect_WorkSession::ModelCheckList (bug25013_25013faces.stp) | Native throws Standard_OutOfRange (NCollection_Sequence::Value) walking the check list after the transfer | The port's check list is complete; attributed (decision 1272) |
+
+## Phase 8: unit 8G2, STEPCAFControl
+
+| Where | What | Effect |
+|---|---|---|
+| STEPCAFControl_Controller | Replaces the write actor STEPControl_Controller's constructor configures with a fresh STEPCAFControl_ActorWrite, without its shape fix parameters and processing flags | Once STEPCAFControl is initialised (it records itself under "STEP"), STEPControl_Writer in the same process writes shapes unprocessed unless its caller sets the parameters (decision 1277) |
+| STEPCAFControl_Writer::ExternFile (by name) | `if (!myFiles.IsEmpty() \|\| !myFiles.IsBound(theName)) return false;` | Fails whenever there are external files: the test is inverted. Kept (decision 1276) |
+| STEPCAFControl_Writer (map of styles' representations) | Adds the MDGPRs to the model in the order of a map keyed by shapes' addresses | The entity order of a written file with several styled parts is not repeatable (decision 1280) |
+| STEPCAFControl_Reader::ReadNames | A NAUO no PRODUCT_DEFINITION_SHAPE refers to takes the name found for the previous entity, or a null handle at the first | A null dereference for a file whose first NAUO has no shape definition; the port names it "" |
+| STEPCAFControl_Reader (bug31670_russian.stp) | A product name of the file is read past its end (bytes of other memory in the name) | The document's name and the text written back differ from run to run; attributed in the comparisons |
+| STEPCAFControl_Reader::collectRepresentationItems | Follows representation relationships without a guard | A cycle of relationships recurses without end; the port stops after 1,000 levels (decision 1280) |
+| XCAFDoc_ShapeTool::GetExternRefs | Returns the names of the label's children, not the external references SetExternRefs keeps in a child label of its own | Its callers (none in STEPCAFControl) get the components' names of an assembly; the port's GetExternRefs returns the references |
+| (port) XSControl_TransferReader::ShapeResult | The port encoded the regularity of a result holding frozen shapes into a copy (decision 1224) | An assembly whose parts were published before was copied whole, so its parts were no longer its product definitions' results and STEPCAFControl_Reader read it as one part (trj4_s1-ai-214.stp written and read back). Fixed: an unfrozen shape holding frozen ones is encoded in place around them; the STEPControl comparisons are unchanged |

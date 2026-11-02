@@ -241,7 +241,10 @@ public sealed class XdeDoc_Document
     /// <summary>True for a sub-shape label: a simple shape whose father is a shape.</summary>
     public bool IsSubShape(in XdeDoc_Label theLabel) => IsSimpleShape(theLabel) && IsShape(theLabel.Father());
 
-    /// <summary>True if the shape is a sub-shape of the label's shape (with its location there), or the shape itself.</summary>
+    /// <summary>
+    /// True if the shape is a sub-shape of the label's shape, with its location there (XCAF's map of sub-shapes, which
+    /// leaves the shape itself out).
+    /// </summary>
     public bool IsSubShape(in XdeDoc_Label theShapeLabel, in TopoDS_Shape theSub)
     {
         NCollection_IndexedMap<TopoDS_Shape>? aMap = subShapeMap(index(theShapeLabel));
@@ -262,12 +265,16 @@ public sealed class XdeDoc_Document
                 return null;
             }
             aNode.SubShapeMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            addSubShapes(aShape, aNode.SubShapeMap);
+            // XCAFDoc_ShapeMapTool::SetShape: the shape's sub-shapes, not the shape (unit 8G2's fix)
+            for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+            {
+                addSubShapes(anIt.Value(), aNode.SubShapeMap);
+            }
         }
         return aNode.SubShapeMap;
     }
 
-    // XCAFDoc_ShapeMapTool's UpdateMap: the shape and its sub-shapes, with their locations in it
+    // XCAFDoc_ShapeMapTool's AddSubShape: the shape and its sub-shapes, with their locations in it
     private static void addSubShapes(in TopoDS_Shape theShape, NCollection_IndexedMap<TopoDS_Shape> theMap)
     {
         var aStack = new Stack<TopoDS_Shape>();
@@ -877,6 +884,180 @@ public sealed class XdeDoc_Document
             }
         }
         return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------- shape tool: components
+
+    // XCAFDoc_ShapeTool.cxx's IsSame: the same TShape, orientation and location
+    private static bool isSameInstance(in TopoDS_Shape theShape1, in TopoDS_Shape theShape2)
+        => ReferenceEquals(theShape1.TShape(), theShape2.TShape()) && theShape1.Orientation() == theShape2.Orientation()
+           && theShape1.Location().IsEqual(theShape2.Location());
+
+    // XCAFDoc_ShapeTool.cxx's checkForShape: the component, or a chain of components up the assemblies, placing the
+    // shape where the given shape is
+    private bool checkForShape(in TopoDS_Shape theShape, in TopoDS_Shape theCurSh, int theUserL,
+                               NCollection_Sequence<XdeDoc_Label> theLabels, int theDepth)
+    {
+        if (theDepth > myNodes.Count)
+        {
+            return false;
+        }
+        // the label of an assembly which contains this component
+        int aSuperUserL = myNodes[theUserL].Father;
+        if (aSuperUserL < 0)
+        {
+            return false;
+        }
+        TopLoc_Location aSupLoc = GetLocation(label(aSuperUserL));
+        TopLoc_Location aCompLoc = GetLocation(label(theUserL));
+        aCompLoc = aCompLoc.Multiplied(theCurSh.Location());
+        aSupLoc = aSupLoc.Multiplied(aCompLoc);
+        TopoDS_Shape aCopySh = theCurSh.Located(aSupLoc);
+        if (isSameInstance(theShape, aCopySh))
+        {
+            theLabels.Prepend(label(theUserL));
+            return true;
+        }
+        // try to search deeply (upper by assembly structure)
+        var aNewLabels = new NCollection_Sequence<XdeDoc_Label>();
+        for (int j = 1; j <= theLabels.Length(); j++)
+        {
+            aNewLabels.Append(theLabels.Value(j));
+        }
+        aNewLabels.Prepend(label(theUserL));
+        var aUsers = new NCollection_Sequence<XdeDoc_Label>();
+        GetUsers(label(aSuperUserL), aUsers);
+        for (int i = 1; i <= aUsers.Length(); i++)
+        {
+            if (checkForShape(theShape, aCopySh, aUsers.Value(i).Index, aNewLabels, theDepth + 1))
+            {
+                // get solution
+                theLabels.Clear();
+                foreach (XdeDoc_Label aLabel in aNewLabels)
+                {
+                    theLabels.Append(aLabel);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// The chain of component labels placing a located shape (<c>XCAFDoc_ShapeTool::FindComponent</c>): from the
+    /// top-level assembly's component down to the one referring to the shape's own label; false if there is none
+    /// (unit 8G2).
+    /// </summary>
+    public bool FindComponent(in TopoDS_Shape theShape, NCollection_Sequence<XdeDoc_Label> theLabels)
+    {
+        theLabels.Clear();
+        // search for a top-level shape that corresponds to this component
+        TopoDS_Shape S0 = theShape.Located(new TopLoc_Location());
+        XdeDoc_Label aRefL = FindShape(S0);
+        if (aRefL.IsNull())
+        {
+            return false; // cannot find top-level shape.
+        }
+
+        var aUsers = new NCollection_Sequence<XdeDoc_Label>();
+        GetUsers(aRefL, aUsers);
+        for (int i = 1; i <= aUsers.Length(); i++)
+        {
+            if (checkForShape(theShape, S0, aUsers.Value(i).Index, theLabels, 0))
+            {
+                break;
+            }
+        }
+
+        return theLabels.Length() > 0;
+    }
+
+    /// <summary>
+    /// Sets the colour of an instance of a component (<c>XCAFDoc_ColorTool::SetInstanceColor</c>): the colour of the
+    /// component found by <see cref="FindComponent"/>. False if there is none, or if the instance is a component of a
+    /// sub-assembly placed in an assembly (XCAF's SHUO, which the document hasn't: decision 1278).
+    /// </summary>
+    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Quantity_ColorRGBA theColor)
+    {
+        // find shuo label structure
+        var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+        if (!FindComponent(theShape, aLabels))
+        {
+            return false;
+        }
+        if (aLabels.Length() == 1)
+        {
+            // set color directly for component as NAUO
+            SetColor(aLabels.Value(1), theColor, theType);
+            return true;
+        }
+        // OCCT: a SHUO (SetSHUO) carries the colour; not there
+        return false;
+    }
+
+    /// <summary>As <see cref="SetInstanceColor(in TopoDS_Shape, XdeDoc_ColorType, in Quantity_ColorRGBA)"/>, opaque.</summary>
+    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Quantity_Color theColor)
+        => SetInstanceColor(theShape, theType, new Quantity_ColorRGBA(theColor));
+
+    // ---------------------------------------------------------------------------------------------- labels: OCAF's tree
+
+    /// <summary>True if the label has children (<c>TDF_Label::HasChild</c>).</summary>
+    public bool HasChild(in XdeDoc_Label theLabel) => node(theLabel).Children.Count > 0;
+
+    /// <summary>The number of the label's children (<c>TDF_Label::NbChildren</c>).</summary>
+    public int NbChildren(in XdeDoc_Label theLabel) => node(theLabel).Children.Count;
+
+    /// <summary>The label's child of the tag, or the null label (<c>TDF_Label::FindChild(tag, false)</c>).</summary>
+    public XdeDoc_Label FindChild(in XdeDoc_Label theLabel, int theTag)
+    {
+        foreach (int aChild in node(theLabel).Children)
+        {
+            if (myNodes[aChild].Tag == theTag)
+            {
+                return label(aChild);
+            }
+        }
+        return default;
+    }
+
+    /// <summary>True if the label is the other one or below it (<c>TDF_Label::IsDescendant</c>).</summary>
+    public bool IsDescendant(in XdeDoc_Label theLabel, in XdeDoc_Label theAncestor)
+    {
+        if (!isMine(theLabel) || !isMine(theAncestor))
+        {
+            return false;
+        }
+        for (int i = theLabel.Index; i >= 0; i = myNodes[i].Father)
+        {
+            if (i == theAncestor.Index)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>The label's descendants, depth first, in order (<c>TDF_ChildIterator(label, true)</c>).</summary>
+    public IReadOnlyList<XdeDoc_Label> Descendants(in XdeDoc_Label theLabel)
+    {
+        var aResult = new List<XdeDoc_Label>();
+        var aStack = new Stack<int>();
+        List<int> aRoot = node(theLabel).Children;
+        for (int i = aRoot.Count - 1; i >= 0; i--)
+        {
+            aStack.Push(aRoot[i]);
+        }
+        while (aStack.Count > 0)
+        {
+            int anIndex = aStack.Pop();
+            aResult.Add(label(anIndex));
+            List<int> aChildren = myNodes[anIndex].Children;
+            for (int i = aChildren.Count - 1; i >= 0; i--)
+            {
+                aStack.Push(aChildren[i]);
+            }
+        }
+        return aResult;
     }
 
     // ---------------------------------------------------------------------------------------------- shape tool: sub-shapes
