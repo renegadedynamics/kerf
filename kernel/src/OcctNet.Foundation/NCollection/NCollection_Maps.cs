@@ -195,6 +195,9 @@ public class NCollection_DataMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
 
     public void Clear() => myItems.Clear();
 
+    /// <summary>OCCT's ReSize: room for <paramref name="theExtent"/> items (the bindings are kept).</summary>
+    public void ReSize(int theExtent) => myItems.EnsureCapacity(theExtent);
+
     /// <summary>Binds the key to the value, replacing any existing value; false if the key was already bound.</summary>
     public bool Bind(TKey theKey, TValue theItem)
     {
