@@ -113,7 +113,10 @@ internal enum OccurrenceKind
     /// <summary>A name to replace.</summary>
     Name,
 
-    /// <summary>A call of a method that becomes a property: <see cref="Occurrence.Extra"/> is the argument list.</summary>
+    /// <summary>
+    /// A call of a method that becomes a property: <see cref="Occurrence.Extra"/> is the argument list; a non-empty
+    /// <see cref="Occurrence.Body"/> start is where a call made as a statement needs a discard.
+    /// </summary>
     Invoked,
 
     /// <summary>A method used as a delegate: the method can't become a property.</summary>

@@ -72,6 +72,11 @@ internal sealed class Editor(Plan plan)
                 case OccurrenceKind.MethodGroup:
                     changes.Add(new TextChange(occurrence.Span, occurrence.Qualified ?? newName));
                     break;
+                case OccurrenceKind.Invoked when converts && occurrence.Body.Start > 0:
+                    changes.Add(new TextChange(occurrence.Body, "_ = "));
+                    changes.Add(new TextChange(occurrence.Span, newName));
+                    changes.Add(new TextChange(occurrence.Extra, ""));
+                    break;
                 case OccurrenceKind.Invoked:
                 case OccurrenceKind.Cref:
                 case OccurrenceKind.DeclaredExpression:

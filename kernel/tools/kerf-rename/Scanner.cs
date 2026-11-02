@@ -337,7 +337,17 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
             return;
         }
 
-        // A using alias (math_Vector)
+        // A using alias (math_Vector), where it's declared and where it's used
+        if (name.Parent is NameEqualsSyntax { Parent: UsingDirectiveSyntax })
+        {
+            if (map.Aliases.ContainsKey(name.Identifier.ValueText))
+            {
+                scan.Occurrences.Add(new(name.Identifier.Span, "A:" + name.Identifier.ValueText, OccurrenceKind.Name));
+            }
+
+            return;
+        }
+
         if (model.GetAliasInfo(name, ct) is { } alias)
         {
             if (map.Aliases.ContainsKey(alias.Name))
@@ -392,7 +402,12 @@ internal sealed class Scanner(Plan plan, NameMap map, Scope scope)
                 : name;
             if (expression.Parent is InvocationExpressionSyntax invocation && invocation.Expression == expression)
             {
-                scan.Occurrences.Add(new(name.Identifier.Span, key, OccurrenceKind.Invoked) { Extra = invocation.ArgumentList.Span });
+                // A call made only for its effects becomes a discard: a property read isn't a statement
+                scan.Occurrences.Add(new(name.Identifier.Span, key, OccurrenceKind.Invoked)
+                {
+                    Extra = invocation.ArgumentList.Span,
+                    Body = invocation.Parent is ExpressionStatementSyntax ? new TextSpan(invocation.SpanStart, 0) : default,
+                });
             }
             else if (IsInNameof(name))
             {

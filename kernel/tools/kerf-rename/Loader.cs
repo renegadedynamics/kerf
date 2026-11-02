@@ -87,10 +87,12 @@ internal sealed class Loaded
         return new Loaded { Solution = solution, Compilations = compilations, Documents = documents, Workspace = workspace };
     }
 
-    /// <summary>Files under obj (global usings, assembly attributes) come from MSBuild: they're regenerated, not edited.</summary>
+    /// <summary>
+    /// Files under obj (global usings, assembly attributes) come from MSBuild: they're regenerated, not edited. Generated
+    /// files that are committed (a generator's output) are edited like any other, and reported.
+    /// </summary>
     public static bool IsGenerated(string path)
-        => path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-           || path.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase);
+        => path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Every type declared in source, nested ones included.</summary>
     public IEnumerable<INamedTypeSymbol> SourceTypes()
