@@ -30,8 +30,7 @@ public enum STEPControl_StepModelType
 /// <remarks>
 /// A C++ value class with public members, a struct here, so that assigning it copies it as C++ does (unit 8B ports it
 /// for <see cref="StepData_StepModel.InternalParameters"/>; its use belongs to STEPControl, unit 8F). Its default is
-/// OCCT's: write <c>new DESTEP_Parameters()</c>, never <c>default</c>. <c>GetDefaultShapeFixParameters</c> (TKDE's
-/// DE_ShapeFixParameters) is left to unit 8F.
+/// OCCT's: write <c>new DESTEP_Parameters()</c>, never <c>default</c>.
 /// </remarks>
 public struct DESTEP_Parameters
 {
@@ -188,6 +187,12 @@ public struct DESTEP_Parameters
     {
         DESTEP_Parameters aParameters = new DESTEP_Parameters();
         this = aParameters;
+    }
+
+    /// <summary>Returns default parameters for shape fixing.</summary>
+    public static DE_ShapeFixParameters GetDefaultShapeFixParameters()
+    {
+        return new DE_ShapeFixParameters();
     }
 
     public readonly string GetString(ReadMode_ProductContext theMode)

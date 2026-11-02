@@ -13,7 +13,7 @@ namespace OcctNet.DataExchange.Tests.StepGen;
 /// </summary>
 public sealed class StepRoundTripTests(ITestOutputHelper theOutput)
 {
-    private static string Metadata(string theKey) =>
+    internal static string Metadata(string theKey) =>
         typeof(StepRoundTripTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == theKey).Value!;
 
     /// <summary>StepAP214's protocol, with its modules in the global libraries (once per process, decision 1182).</summary>
