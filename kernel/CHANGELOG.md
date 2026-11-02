@@ -1496,3 +1496,13 @@ Phase 8 (part): the assembly tree and the fresh mesh formats (unit 8T).
   `Message_ProgressRange`, deterministic output.
 - Checked against OCCT's de_mesh cases on the dataset's Lantern (native's counts and structure), round trips, and the
   formats' rules in the tests.
+Phase 8 (part): the XDE Draw-lite commands over the document (unit 8G1).
+- Draw-lite documents: an `XdeDoc_Document` under a Draw variable (`XNewDoc`, `NewDocument`, `Close`), with XDEDRAW's
+  shape, colour, layer, validation property and dump commands (`XAddShape`, `XGetOneShape`, `XStat`, `Xdump`,
+  `XSetColor`, `XGetAllColors`, `XAddLayer`, `XGetAllLayers`, `XSetProps`, `XDumpAssemblyTree`... about 70) with
+  OCCT's output, and the glTF and OBJ commands (`ReadGltf`, `WriteGltf`, `WriteObj` and their shape forms) over
+  unit 8T's reader and writers.
+- XdeDoc: XCAF's auto-naming (per document), colour labels, removal of shapes, components, colours and layers; a fix
+  of `AddShape` for compounds; glTF's per-face primitives (`RWGltf_WriteOptions.MergeFaces`).
+- Corpus: 109 cases using the commands become runnable (none before): 63 OK (xcaf's BRep grids, bugs/xde, de_mesh's
+  glTF), 37 skipped for data that isn't public, 9 failures attributed. Most of de and xcaf wait for STEP (unit 8G2).

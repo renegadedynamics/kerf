@@ -37,9 +37,11 @@ internal sealed class RWMesh_ProductMesh
     /// <summary>
     /// The part's mesh: its faces (in TopExp_Explorer's order), each with its triangulation placed by the face's
     /// location; with normals (the triangulation's, else computed from the surface if <paramref name="toComputeNormals"/>).
-    /// Faces of hidden sub-shapes are left out.
+    /// Faces of hidden sub-shapes are left out. Faces of a colour make one group, unless
+    /// <paramref name="toMergeFaces"/> is false: then each face is a group of its own (unit 8G1, OCCT's glTF writer
+    /// without <c>-mergeFaces</c>).
     /// </summary>
-    public static RWMesh_ProductMesh Make(XdeDoc_Product thePart, bool toComputeNormals)
+    public static RWMesh_ProductMesh Make(XdeDoc_Product thePart, bool toComputeNormals, bool toMergeFaces = true)
     {
         Dictionary<TopoDS_Shape, XdeDoc_Style> aFaceStyles = faceStyles(thePart);
         var aGroups = new List<Group>();
@@ -65,7 +67,12 @@ internal sealed class RWMesh_ProductMesh
             }
 
             Group aGroup;
-            if (aColor is Quantity_ColorRGBA aKey)
+            if (!toMergeFaces)
+            {
+                aGroup = new Group { Color = aColor };
+                aGroups.Add(aGroup);
+            }
+            else if (aColor is Quantity_ColorRGBA aKey)
             {
                 if (!aByColor.TryGetValue(aKey, out aGroup!))
                 {
