@@ -12,7 +12,7 @@ namespace Occt;
 /// porting notes apply as for <see cref="NCollection_Array1{T}"/>: it is a class (copy with <c>new(other)</c> or
 /// <c>Assign</c>), and elements are default-constructed.
 /// </summary>
-public class NCollection_Array2<T>
+public class NCollection_Array2<T> : Standard_Transient
 {
     private T[] myData;
     private int myOffset;
