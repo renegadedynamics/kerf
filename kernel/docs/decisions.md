@@ -6635,7 +6635,8 @@ are cited by their merged numbers.
       - `ShapeFix_Edge.FixReversed2d`: OCCT reverses the stored pcurve in place; the port puts a reversed copy in place
         of that curve object in the edge's representations (both pcurves of a seam). Other edges sharing the curve
         keep it (occt-issues.md).
-      - `ShapeFix_EdgeProjAux.Init2d` and `UpdateParam2d`: the reverse is done on a copy, which nothing reads after.
+      - `ShapeFix_EdgeProjAux.Init2d` and `UpdateParam2d`: the reverse is done on a copy, which nothing reads after
+        (wrong: replaced by decision 1263).
       - `ShapeFix_Wire`'s `TryBendingPCurve`: a frozen B-spline is copied before its poles move and it is segmented
         (OCCT's B-spline branch already copies; the guard never triggers on OCCT's paths).
       - `ShapeFix_Wire_1`: FixGap3d/2d edit poles only on curves they made (copies of basis curves, conversions); the
@@ -12890,7 +12891,8 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        StepToTopoDS_Builder on a transient process of its own, its BRep text hashed with the process's warning and fail
        counts: **2,194 items, 2,193 byte-identical, 1 attributed** (tr9_r1001-ec.stp #12: ShapeFix_EdgeProjAux, phase
        7, projects the vertex of four closed edges, full circles on cylinders, to the far side of their line pcurves, a
-       period earlier than native, so CheckPCurve drops those 4 of 2,468 pcurves; a follow-up for Shape Healing).
+       period earlier than native, so CheckPCurve drops those 4 of 2,468 pcurves; a follow-up for Shape Healing; all
+       2,194 identical since unit 8Y, decision 1263).
        `t2s`: data/occ's 37 shapes, each solid through MakeManifoldSolidBrep, MakeBrepWithVoids (several shells),
        MakeShellBasedSurfaceModel and MakeFacetedBrep (when TopoDSToStep_FacetedTool accepts it), each shell through
        MakeManifoldSolidBrep, MakeShellBasedSurfaceModel and MakeFacetedBrep, the first 20 faces through
@@ -12974,3 +12976,18 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        `WriteStep D file` takes `DDocStdCommands.GetDocument(theDI, name)` (null: not a document) and writes it.
        Labels from arguments: `DDocStdCommands.Label(doc, entry)`. The de grid then still needs unit 8F's `param`,
        `data`, `tpstat` and `newmodel`; its begin script's `NewDocument`, `UndoLimit` and `NewCommand` run.
+## Phase 8: unit 8Y, ShapeFix_EdgeProjAux's reversed pcurves
+
+1263. **ShapeFix_EdgeProjAux puts its reversed pcurve into the edge** (replaces decision 700's line on it). OCCT's
+       `Init2d` and `UpdateParam2d` reverse the edge's own pcurve in place when they reverse the parameters they
+       return (`ReversedParameter`), and the caller (StepToTopoDS_TranslateEdgeLoop, the only one) sets the edge's
+       range on that pcurve to those parameters: the curve the parameters refer to is the reversed one. Phase 7 reversed
+       a copy that nothing read, believing the curve unused afterwards, so the edge kept the unreversed line with the
+       reversed range, its ends a mirror image away from its vertices; that was unit 8E's one attributed item
+       (tr9_r1001-ec.stp #12: four full circles on cylinders, line pcurves from 3π/2 to -π/2, the only reversal in the
+       corpus, which CheckPCurve then dropped). Now a private `reverse` copies the curve, reverses the copy and, unless
+       the edge is frozen, puts it in place of the curve in the edge's representations (both pcurves of a seam), as
+       `ShapeFix_Edge.FixReversed2d` does (its helper made `internal`: `InternalReplacePCurveObject`); `UpdateParam2d`
+       takes the curve by `ref` so a second call in the same Init2d sees the reversed curve, as OCCT's handle does.
+       Other edges sharing the curve keep it (OCCT reverses theirs too: occt-issues.md); a frozen edge isn't written,
+       its parameters then refer to a curve it doesn't hold. Result: StepToTopoDS 2,194 of 2,194 items identical.

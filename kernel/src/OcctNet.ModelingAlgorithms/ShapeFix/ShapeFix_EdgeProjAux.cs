@@ -17,8 +17,9 @@ namespace Occt;
 /// of the pcurve at the edge's ends.
 /// </summary>
 /// <remarks>
-/// A working object (decision 21). It only reads the edge and the face: where OCCT reverses the edge's own pcurve in
-/// place (an OCCT bug, occt-issues.md), the port reverses a copy.
+/// A working object (decision 21). Where OCCT reverses the edge's own pcurve in place (occt-issues.md), the port
+/// puts a reversed copy in its place in the edge's representations when the edge isn't frozen (decision 1263), so
+/// the parameters it computes are read on the curve they were computed for.
 /// </remarks>
 public class ShapeFix_EdgeProjAux : Standard_Transient
 {
@@ -362,10 +363,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         {
             myFirstParam = theCurve2d.ReversedParameter(Usup);
             myLastParam  = theCurve2d.ReversedParameter(Uinf);
-            // OCCT: reverses the edge's own pcurve in place (when it wasn't copied above), changing the edge and every
-            // shape sharing the pcurve. OCCT.NET: frozen: the port reverses a copy, which nothing reads afterwards.
-            theCurve2d = (Geom2d_Curve)theCurve2d.Copy();
-            theCurve2d.Reverse();
+            reverse(ref theCurve2d);
             return;
         }
         //: abv 29.08.01: SAT: fix for closed case
@@ -396,7 +394,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
             myLastParam = w2;
             if (!sae.Curve3d(myEdge, out Geom_Curve? C3d1, out cf, out cl, false))
             {
-                UpdateParam2d(theCurve2d);
+                UpdateParam2d(ref theCurve2d);
                 return;
             }
             gp_Pnt mid = C3d1!.Value((cf + cl) / 2);
@@ -410,7 +408,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                 }
                 else if (w1 > wmid)
                 {
-                    UpdateParam2d(theCurve2d);
+                    UpdateParam2d(ref theCurve2d);
                 }
                 else
                 {
@@ -422,16 +420,16 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                 if (w1 > wmid)
                 {
                     myLastParam -= period;
-                    UpdateParam2d(theCurve2d);
+                    UpdateParam2d(ref theCurve2d);
                 }
                 else if (w2 < wmid)
                 {
                     myFirstParam += period;
-                    UpdateParam2d(theCurve2d);
+                    UpdateParam2d(ref theCurve2d);
                 }
             }
         }
-        UpdateParam2d(theCurve2d);
+        UpdateParam2d(ref theCurve2d);
     }
 
     protected void Init3d(double preci)
@@ -495,7 +493,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
             {
                 myFirstParam = w1;
                 myLastParam  = w2;
-                UpdateParam2d(theCurve2d);
+                UpdateParam2d(ref theCurve2d);
                 myFirstDone = myLastDone = true;
                 return;
             }
@@ -503,7 +501,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         myFirstDone = myLastDone = true;
     }
 
-    protected void UpdateParam2d(Geom2d_Curve theCurve2d)
+    protected void UpdateParam2d(ref Geom2d_Curve theCurve2d)
     {
         if (myFirstParam < myLastParam)
         {
@@ -557,10 +555,23 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
             double tmp1 = myFirstParam, tmp2 = myLastParam;
             myFirstParam = theCurve2d.ReversedParameter(tmp1);
             myLastParam  = theCurve2d.ReversedParameter(tmp2);
-            // OCCT: reverses the caller's pcurve in place (the edge's own, from Init3d or Init2d). OCCT.NET: frozen: the
-            // port reverses a copy, which nothing reads afterwards.
-            Geom2d_Curve aCopy = (Geom2d_Curve)theCurve2d.Copy();
-            aCopy.Reverse();
+            reverse(ref theCurve2d);
         }
+    }
+
+    // OCCT.NET: frozen (decision 1263). OCCT reverses theCurve2d in place: the edge's own pcurve (unless Init2d copied
+    // it to reparametrize it), seen reversed by the edge, by the caller (who sets the edge's range on it to the
+    // reversed parameters) and by every other shape sharing the curve. The port reverses a copy and puts it in place
+    // of the curve in the edge's representations (both pcurves of a seam), unless the edge is frozen; other edges
+    // sharing the curve keep it, as in ShapeFix_Edge.FixReversed2d.
+    private void reverse(ref Geom2d_Curve theCurve2d)
+    {
+        var aReversed = (Geom2d_Curve)theCurve2d.Copy();
+        aReversed.Reverse();
+        if (!myEdge.TShape()!.IsFrozen())
+        {
+            ShapeFix_Edge.InternalReplacePCurveObject(myEdge, theCurve2d, aReversed);
+        }
+        theCurve2d = aReversed;
     }
 }

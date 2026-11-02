@@ -1525,8 +1525,8 @@ Phase 8 (part): STEP topology (unit 8E).
 - TopoDSToStep: the conversion of BReps into STEP entities (MakeManifoldSolidBrep, MakeBrepWithVoids,
   MakeFacetedBrep, MakeFacetedBrepAndBrepWithVoids, MakeShellBasedSurfaceModel, MakeGeometricCurveSet, the builders
   and the tessellated items). The shapes converted never change.
-- Compared with native OCCT (tools/toporec): 2,193 of the corpus's 2,194 shape items translated byte for byte (one
-  attributed to Shape Healing), and 1,726 conversions of data/occ's shapes written identically.
+- Compared with native OCCT (tools/toporec): all 2,194 of the corpus's shape items translated byte for byte, and
+  1,726 conversions of data/occ's shapes written identically.
 - 8D's tests now read with StepAP214's protocol; the transient process takes checks on null entities as OCCT's does.
 Phase 8 (part): the XDE Draw-lite commands over the document (unit 8G1).
 - Draw-lite documents: an `XdeDoc_Document` under a Draw variable (`XNewDoc`, `NewDocument`, `Close`), with XDEDRAW's
@@ -1538,3 +1538,6 @@ Phase 8 (part): the XDE Draw-lite commands over the document (unit 8G1).
   of `AddShape` for compounds; glTF's per-face primitives (`RWGltf_WriteOptions.MergeFaces`).
 - Corpus: 109 cases using the commands become runnable (none before): 63 OK (xcaf's BRep grids, bugs/xde, de_mesh's
   glTF), 37 skipped for data that isn't public, 9 failures attributed. Most of de and xcaf wait for STEP (unit 8G2).
+- ShapeFix_EdgeProjAux: when it reverses the parameters of an edge's ends, the edge now holds the reversed pcurve
+  they refer to (as OCCT, which reverses it in place), where before it kept the unreversed one (four edges of
+  tr9_r1001-ec.stp lost their pcurves on reading).
