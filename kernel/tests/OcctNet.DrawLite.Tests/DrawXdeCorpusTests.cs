@@ -61,6 +61,8 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
                                            .Select(c => aCorpus.Scan(c, anInterpreter))
                                            .Where(s => Unit8G1Commands.Any(s.Commands.Contains))
+                                           // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
+                                           .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8G1_FILTER");
@@ -109,13 +111,14 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
             return;
         }
         Assert.Empty(aRunnableBefore);
-        Assert.Equal(2858, aScans.Count);
-        Assert.Equal(120, aRunnable.Count); // 109 with 8G1 alone; 120 with 8F's commands
+        Assert.Equal(2028, aScans.Count); // 2858 less the de group's STEP cases (unit 8G2's class)
+        Assert.Equal(268, aRunnable.Count); // 109 with 8G1 alone; 120 with 8F's commands; 268 with 8G2's ReadStep
         // OK 63 (xcaf's BRep grids 44, bugs/xde 11, de_mesh's glTF 5, three others); SKIPPED 37 (data not public);
         // FAILED 9, attributed. Most of de, xcaf and bugs/xde wait for STEP (unit 8G2), IGES, OCAF storage, the
         // parameter commands (unit 8F), GD&T, notes and views.
-        Assert.Equal(63, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(45, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        // with unit 8G2's ReadStep and WriteStep: OK 141, SKIPPED 112
+        Assert.Equal(141, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(112, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
@@ -127,10 +130,16 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         // unit 8T's glTF reader (decision 1236) turns glTF's Y-up into Z-up in the coordinates, where OCCT's places the
         // scene's nodes at a rotation, so OCCT's document has a reference (INSTANCE) per root node where the tree's has
         // a part; boxinterleaved's unnamed root node holding a rotation is also folded into its child
-        // the de grid's end script (with 8F's commands): its document reading is unit 8G2's
-        "de/step_1/E1",
-        "de/step_1/E2",
-        "de/step_1/G9",
+        // they write their STEP files with Tcl's encodings (`encoding convertfrom`, `fconfigure -encoding`), which
+        // Draw-lite's Tcl has as stubs: the names they compare are not the ones written (unit 8G2)
+        "bugs/step/bug28454_1",
+        "bugs/step/bug30694",
+        "bugs/step/bug31670",
+        "bugs/step/bug31670_1",
+        "bugs/step/bug31923",
+        // runnable with unit 8G2's ReadStep: `incmesh` meshes the shape XGetOneShape gives, which in OCCT meshes the
+        // document's shapes in place; the document's shapes are frozen (design 4.1), so WriteGltf finds no triangles
+        "de_mesh/gltf_write/as1",
         "de_mesh/gltf_read/boxinterleaved",
         "de_mesh/gltf_read/cubeemb",
         // OCCT's glTF writer leaves out nodes without triangles (a part not meshed, an empty compound) and its reader

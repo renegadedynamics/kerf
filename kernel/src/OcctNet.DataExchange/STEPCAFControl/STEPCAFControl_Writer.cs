@@ -183,7 +183,7 @@ public class STEPCAFControl_Writer
     /// gives prefix for names of extern files (can be empty string) Returns True if translation is OK
     /// </summary>
     public bool Transfer(XdeDoc_Document theDoc, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string theMulti = null, Message_ProgressRange theProgress = default)
+                         string? theMulti = null, Message_ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         // OCCT: InitFromStatic(), the process-wide statics; here the session's (decision 1181)
@@ -193,7 +193,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Transfers a document (or single label) to a STEP model with the given parameters</summary>
     public bool Transfer(XdeDoc_Document theDoc, in DESTEP_Parameters theParams, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string theMulti = null, Message_ProgressRange theProgress = default)
+                         string? theMulti = null, Message_ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
         myRootLabels.Add(theDoc);
@@ -206,7 +206,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to transfer part of the document specified by label</summary>
     public bool Transfer(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string theIsMulti = null, Message_ProgressRange theProgress = default)
+                         string? theIsMulti = null, Message_ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         aModel.InternalParameters.InitFromStatic(myWriter.WS().Statics());
@@ -215,7 +215,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to transfer part of the document specified by label with the given parameters</summary>
     public bool Transfer(in XdeDoc_Label theLabel, in DESTEP_Parameters theParams,
-                         STEPControl_StepModelType theMode = STEPControl_AsIs, string theIsMulti = null,
+                         STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
                          Message_ProgressRange theProgress = default)
     {
         if (theLabel.IsNull())
@@ -233,7 +233,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
     public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string theIsMulti = null, Message_ProgressRange theProgress = default)
+                         string? theIsMulti = null, Message_ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         aModel.InternalParameters.InitFromStatic(myWriter.WS().Statics());
@@ -242,7 +242,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
     public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, in DESTEP_Parameters theParams,
-                         STEPControl_StepModelType theMode = STEPControl_AsIs, string theIsMulti = null,
+                         STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
                          Message_ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
@@ -387,7 +387,7 @@ public class STEPCAFControl_Writer
     /// method
     /// </summary>
     protected bool transfer(STEPControl_Writer theWriter, NCollection_Sequence<XdeDoc_Label> theLabels,
-                            STEPControl_StepModelType theMode, string theIsMulti, bool theIsExternFile,
+                            STEPControl_StepModelType theMode, string? theIsMulti, bool theIsExternFile,
                             Message_ProgressRange theProgress)
     {
         if (theLabels.IsEmpty())
@@ -1410,7 +1410,7 @@ public class STEPCAFControl_Writer
     }
 
     private static bool WritePropsForLabel(XSControl_WorkSession theWS, NCollection_DataMap<XdeDoc_Label, TopoDS_Shape> theLabels,
-                                           in XdeDoc_Label theLabel, string theIsMulti)
+                                           in XdeDoc_Label theLabel, string? theIsMulti)
     {
         _ = theLabels;
         if (theLabel.IsNull())
@@ -1462,7 +1462,7 @@ public class STEPCAFControl_Writer
     }
 
     /// <summary>Write validation properties assigned to specified labels, to STEP model</summary>
-    protected bool writeValProps(XSControl_WorkSession theWS, NCollection_Sequence<XdeDoc_Label> theLabels, string theIsMulti)
+    protected bool writeValProps(XSControl_WorkSession theWS, NCollection_Sequence<XdeDoc_Label> theLabels, string? theIsMulti)
     {
         if (theLabels.IsEmpty())
         {

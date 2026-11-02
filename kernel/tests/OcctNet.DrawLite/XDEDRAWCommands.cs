@@ -296,6 +296,38 @@ internal static class XDEDRAWCommands
         {
             statAssembly(theDoc, aChild, level + 1, theStat, PrintStructMode, di);
         }
+
+        // unit 8G2: XCAF keeps a label's external references (XCAFDoc_ShapeTool::SetExternRefs) in a child label of its
+        // own, unnamed, whose children are named by the files; the document keeps them as an attribute: counted as
+        // XCAF's labels (decision 13506)
+        var aRefs = new NCollection_Sequence<string>();
+        theDoc.GetExternRefs(L, aRefs);
+        if (aRefs.Length() > 0 && level + 2 <= 20)
+        {
+            string aRefEntry = L.Entry() + ":" + (theDoc.Children(L).Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (PrintStructMode)
+            {
+                for (int j = 0; j <= level + 1; j++)
+                {
+                    di.Append("  ");
+                }
+                di.Append(aRefEntry).Append(" NoName  has attributes: \n");
+            }
+            theStat.HAI[level + 1]++;
+            for (int i = 1; i <= aRefs.Length(); i++)
+            {
+                if (PrintStructMode)
+                {
+                    for (int j = 0; j <= level + 2; j++)
+                    {
+                        di.Append("  ");
+                    }
+                    di.Append(aRefEntry).Append(':').Append(i).Append(' ').Append(aRefs.Value(i)).Append("  has attributes: \n");
+                }
+                theStat.NbShapesWithName++;
+                theStat.HAI[level + 2]++;
+            }
+        }
     }
 
     private static int statdoc(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)

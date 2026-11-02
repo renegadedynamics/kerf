@@ -109,6 +109,7 @@ internal static class DrawBuiltins
         // unit 8F: XSDRAW's session with the IFSelect and XSControl commands, XSDRAWSTEP's commands without a document
         XSDRAWCommands.Register(theInterpreter);
         XSDRAWSTEPCommands.Register(theInterpreter);
+        XSDRAWSTEPDocCommands.Register(theInterpreter);
         // unit 8G1: the XDE commands over Draw-lite's documents (XdeDoc), DDocStd's document commands, glTF and OBJ
         DDocStdCommands.Register(theInterpreter);
         XDEDRAWCommands.Register(theInterpreter);

@@ -624,8 +624,34 @@ public class XSControl_TransferReader : Standard_Transient
             ShapeFix.EncodeRegularity(sh, tolang);
             return sh;
         }
-        sh = BRepLib.RegularityEncoded(sh, tolang);
+        if (sh.TShape()!.IsFrozen())
+        {
+            sh = BRepLib.RegularityEncoded(sh, tolang);
+            return sh;
+        }
+        // OCCT.NET (unit 8G2): an unfrozen shape holding frozen ones (an assembly whose parts were published before):
+        // encoded in place into its unfrozen parts, the frozen ones (results encoded when published) kept, so that the
+        // shape keeps sharing its parts with the results of their entities (a copy broke STEPCAFControl_Reader's
+        // search of the parts in the assembly: occt-issues.md, unit 8G2)
+        encodeRegularityAround(sh, tolang);
         return sh;
+    }
+
+    private static void encodeRegularityAround(in TopoDS_Shape theShape, double theTolAng)
+    {
+        if (theShape.TShape()!.IsFrozen())
+        {
+            return;
+        }
+        if (!BRepTools.HoldsFrozen(theShape))
+        {
+            ShapeFix.EncodeRegularity(theShape, theTolAng);
+            return;
+        }
+        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        {
+            encodeRegularityAround(anIt.Value(), theTolAng);
+        }
     }
 
     /// <summary>

@@ -165,4 +165,25 @@ public sealed class STEPCAFControlTests
         byte[] aText = Write(XdeDoc_Document.FromTree(aTree));
         Assert.NotEmpty(aText);
     }
+
+    [Fact]
+    public void ReadsBackTheAssemblyItWrote()
+    {
+        // the assembly's compound shares its parts with their product definitions' results (the regularity encoded
+        // in place around the parts published before: XSControl_TransferReader.ShapeResult, unit 8G2)
+        string aFile = Path.Combine(StepRoundTripTests.Metadata("OcctTestDataDir"), "step", "trj4_s1-ai-214.stp");
+        if (!File.Exists(aFile))
+        {
+            return;
+        }
+        var aReader = new STEPCAFControl_Reader();
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aReader.ReadFile(aFile));
+        var aDoc = new XdeDoc_Document();
+        Assert.True(aReader.Transfer(aDoc));
+        XdeDoc_Document aRead = Read(Write(aDoc));
+        XdeDoc_Tree aTree = aRead.ToTree();
+        Assert.Single(aTree.Roots);
+        Assert.True(aTree.Roots[0].Product.IsAssembly);
+        Assert.Equal(8, aTree.Roots[0].Product.Components.Length);
+    }
 }
