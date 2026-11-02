@@ -65,7 +65,17 @@ public class Transfer_ActorDispatch : Transfer_ActorOfTransientProcess
     public override Transfer_Binder? Transfer(Standard_Transient? start, Transfer_TransientProcess? TP,
                                               Message_ProgressRange theProgress = default)
     {
-        thetool.TransferEntity(start);
+        // OCCT.NET fix (decision 12409): the copy of <start> is the copy tool's own, not the process's again
+        Standard_Transient? aFormer = thetool.myDispatched;
+        thetool.myDispatched = start;
+        try
+        {
+            thetool.TransferEntity(start);
+        }
+        finally
+        {
+            thetool.myDispatched = aFormer;
+        }
         return thetool.TransientProcess().Find(start);
     }
 

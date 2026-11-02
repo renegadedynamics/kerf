@@ -54,6 +54,12 @@ public class Transfer_TransferDispatch : Interface_CopyTool
     /// </summary>
     public override bool Copy(Standard_Transient? entfrom, ref Standard_Transient? entto, bool mapped, bool errstat)
     {
+        // OCCT.NET fix (decision 12409): the entity Transfer_ActorDispatch is copying gets the standard copy. OCCT asks
+        // the process again, which calls the same actor again: an endless recursion (a stack overflow)
+        if (entfrom is not null && entfrom == myDispatched)
+        {
+            return base.Copy(entfrom, ref entto, mapped, errstat);
+        }
         Transfer_Binder? result = TransientProcess().Transferring(entfrom);
         if (result is null)
         {
@@ -66,4 +72,7 @@ public class Transfer_TransferDispatch : Interface_CopyTool
         entto = (result as Transfer_SimpleBinderOfTransient).Result();
         return true;
     }
+
+    // The entity Transfer_ActorDispatch.Transfer is copying (decision 12409)
+    internal Standard_Transient? myDispatched;
 }

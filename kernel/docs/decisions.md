@@ -12358,3 +12358,9 @@ the translators), with TKDE's DE_ShapeFixParameters. Numbers from 12401 are plac
        real STEP actors on StepData models (their traces, check lists and roots), TransferBRep_Reader (abstract
        natively: OCCT has no concrete reader in the toolkits bound) and ResultFromModel; they are tested on the toy
        norm, and unit 8F compares them through STEPControl.
+12409. **One OCCT bug fixed: Transfer_ActorDispatch's endless recursion.** The dispatch actor transfers an entity by
+       `TransferEntity`, whose copy (`Transfer_TransferDispatch::Copy`) asks the transient process again, which calls
+       the same actor again: no binding happens before, so it recurses until the stack overflows (natively too; nothing
+       in OCCT uses the class). A stack overflow ends a .NET process, so the port breaks the cycle minimally: while the
+       actor transfers an entity, TransferDispatch's copy of that entity is the copy tool's own (`Interface_CopyTool::Copy`),
+       which binds the result through the dispatch control, and the actor returns that binder as OCCT means to.

@@ -41,7 +41,7 @@ public class XSAlgoTests
 
         var aMap = new NCollection_DataMap<string, string>();
         XSAlgo_ShapeProcessor.FillParameterMap(aDefaults, false, aMap);
-        Assert.Equal(56, aMap.Extent());
+        Assert.Equal(54, aMap.Extent()); // the native map's hash is checked by XSAlgoNativeTests
         Assert.Equal("1e-06", aMap.Find("FixShape.Tolerance3d"));
         Assert.Equal("1", aMap.Find("FixShape.MaxTolerance3d"));
         Assert.Equal("7", aMap.Find("DetalizationLevel"));
@@ -83,14 +83,14 @@ public class XSAlgoTests
         anActor.GetShapeFixParameters().Bind("c", "3");
         Assert.Equal(1, anActor.GetShapeFixParameters().Extent()); // a copy at the exit
         anActor.SetShapeFixParameters(new DE_ShapeFixParameters());
-        Assert.Equal(57, anActor.GetShapeFixParameters().Extent());
+        Assert.Equal(55, anActor.GetShapeFixParameters().Extent());
         var aFlags = new ShapeProcess.OperationsFlags(ShapeProcess.Operation.FixShape);
         anActor.SetProcessingFlags(aFlags);
         Assert.Equal((aFlags, true), anActor.GetProcessingFlags());
 
         var aWriter = new Transfer_ActorOfFinderProcess();
         aWriter.SetShapeFixParameters(new DE_ShapeFixParameters(), aMap);
-        Assert.Equal(58, aWriter.GetShapeFixParameters().Extent());
+        Assert.Equal(56, aWriter.GetShapeFixParameters().Extent());
         aWriter.SetShapeProcessFlags(aFlags);
         Assert.True(aWriter.GetShapeProcessFlags().Item2);
     }

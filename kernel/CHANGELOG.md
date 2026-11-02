@@ -1452,4 +1452,5 @@ Phase 8 (part): Transfer, TransferBRep and XSAlgo (unit 8A2).
 - XSAlgo reads its parameters from the caller's `Interface_StaticSet`; no process-wide state changes. The shape
   processor never changes its input and returns frozen shapes; the reader publishes frozen shapes.
 - Compared with native OCCT (tools/xsalgorec) on data/occ's shapes with STEP's default sequences: 210 records, 207
-  identical, 3 attributed. Transfer tested on a toy norm. 11 OCCT bugs found, none fixed.
+  identical, 3 attributed. Transfer tested on a toy norm. 12 OCCT bugs found, one fixed (an endless recursion in
+  Transfer_ActorDispatch).
