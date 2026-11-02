@@ -12332,8 +12332,10 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        maps' one-time initialisation), RWStepAP214_GeneralModule and StepAP214_Protocol (the static type map;
        `DESTEP_Parameters` in SchemaName), StepAP214 (`StaticHandle`), StepAP209_Construct (`OSD_Process`,
        `Quantity_Date` for today's date), and StepFEA_SymmetricTensor43d's `SetFeaIsotropicSymmetricTensor43d`,
-       declared but not defined in OCCT (left out). The dispatch modules are 8C2's to write by hand (or as overrides);
-       the rest is expected to generate and compile as 8C1's did.
+       declared but not defined in OCCT (left out). The dispatch modules are 8C2's to write by hand (or as overrides).
+       Without those six files, 8C2's packages compile with 26 errors, all where OCCT treats an `NCollection_HArray1`
+       as a `Standard_Transient` (arrays in SELECT members, `SW.Send` of an array, `STANDARD_TYPE` of an array type),
+       which the port's arrays aren't: a question for 8C2 (decision 1166's packages need it).
 12606. **Round trips** (StepRoundTripTests): every STEP file of OCCT's dataset and of data/step (338 files, 1,546,314
        records) is read with a test protocol that recognises the four packages (its type names, cases, classes and
        RW tools read from OCCT's RWStepAP214_ReadWriteModule.cxx and StepAP214_Protocol.cxx, standing in for 8C2's
