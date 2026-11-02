@@ -1445,3 +1445,15 @@ Phase 8 (part): XSBase's foundation (unit 8A1).
   the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
   tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
 - IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
+Phase 8 (part): StepData and the STEP header (unit 8B).
+- Ported: StepData (the reader data with its text decoding, the reader tool, the model, the writer, the dumper,
+  protocols, modules and libraries, select types and members, fields, descriptors, undefined and free-form entities,
+  factors), StepFile_Read on unit 8P's parser, HeaderSection, RWHeaderSection, APIHeaderSection_MakeHeader,
+  UnitsMethods, DESTEP_Parameters, and Resource_Unicode's decoding over .NET's encodings corrected by OCCT's tables.
+- Texts are .NET strings, written back as UTF-8; no process-wide state changes (protocols registered once; the
+  CasCade length unit read from the parameter set); StepFile_Read reads streams, without a global mutex, with limits
+  and cancellation.
+- Compared with native OCCT (tools/stepdatarec): the 340 STEP files of the corpus read into a model and written back
+  identically (1.5 million texts decoded, 2.7 million lines written); 248 crafted texts decoded under every code page
+  (105 decodings attributed: the system locale, reads past a text's end); the code tables equal OCCT's on all 71,374
+  entries its conversions reach. One OCCT bug fixed (an endless recursion copying a named select member).

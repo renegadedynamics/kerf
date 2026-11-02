@@ -446,8 +446,23 @@ public sealed class StepFile_ReadData
         }
     }
 
-    // ErrorHandle (transfers error messages to an Interface_Check, each as a fail with the original
-    // "Undefined Parsing") comes with Interface_Check, in StepData's unit (8B): it reads InternalErrors.
+    /// <summary>
+    /// Transfers error messages to a check: each one as a fail, with the original "Undefined Parsing". Returns
+    /// True if there was no error.
+    /// </summary>
+    public bool ErrorHandle(Interface_Check theCheck)
+    {
+        if (myFirstError != null)
+        {
+            ErrorsPage? aCurrent = myFirstError;
+            while (aCurrent != null)
+            {
+                theCheck.AddFail(aCurrent.ErrorMessage(), "Undefined Parsing");
+                aCurrent = aCurrent.NextErrorPage();
+            }
+        }
+        return myFirstError == null;
+    }
 
     /// <summary>The error messages, in order (what ErrorHandle hands to its Interface_Check).</summary>
     internal IEnumerable<string> InternalErrors()

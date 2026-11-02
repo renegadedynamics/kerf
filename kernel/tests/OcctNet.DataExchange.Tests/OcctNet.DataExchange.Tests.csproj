@@ -31,6 +31,12 @@
     <EmbeddedResource Include="StepFile\Recordings\cases.pack.gz" LogicalName="StepFile.cases.pack.gz" />
     <!-- Native OCCT's recording of TKXSBase's foundation (tools/xsbaserec, unit 8A1) -->
     <EmbeddedResource Include="Interface\Recordings\xsbaserec.txt.gz" LogicalName="Interface.xsbaserec.txt.gz" />
+    <!-- Native OCCT's StepData (tools/stepdatarec, unit 8B): the corpus read and written back, the texts of
+         tools/stepdatarec/text-cases.txt decoded under every code page, Resource_Unicode's code tables -->
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-corpus.txt.gz" LogicalName="StepData.stepdatarec-corpus.txt.gz" />
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-text.txt.gz" LogicalName="StepData.stepdatarec-text.txt.gz" />
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-tables.gz" LogicalName="StepData.stepdatarec-tables.gz" />
+    <EmbeddedResource Include="..\..\tools\stepdatarec\text-cases.txt" LogicalName="StepData.text-cases.txt" />
   </ItemGroup>
 
   <ItemGroup>
