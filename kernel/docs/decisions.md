@@ -12484,7 +12484,7 @@ the translators), with TKDE's DE_ShapeFixParameters.
        one, the generator gives the base class a non-virtual twin named `<Class>_<Method>` (`StepShape_Edge_EdgeStart`),
        found by scanning TKDESTEP's sources for such calls, and the call site calls it.
 1212. **Nothing in 8C1's packages is written by hand**: tools/stepgen/overrides (whole classes, or single methods) is
-       empty, and the generator reports no problem but the bool-to-int promotion it reproduces (12602). Over 8C2's
+       empty, and the generator reports no problem but the bool-to-int promotion it reproduces (1209). Over 8C2's
        packages (805 files, about 93,800 lines) it reports: RWStepAP214_ReadWriteModule (a static mutex around the type
        maps' one-time initialisation), RWStepAP214_GeneralModule and StepAP214_Protocol (the static type map;
        `DESTEP_Parameters` in SchemaName), StepAP214 (`StaticHandle`), StepAP209_Construct (`OSD_Process`,
@@ -12524,7 +12524,7 @@ the translators), with TKDE's DE_ShapeFixParameters.
        construction, RWStepAP214::Init's registration behind a flag. In the port: the generator turns a constructor
        that starts `if (FLAG) return; FLAG = 1;` on a file static into an empty constructor plus a static
        constructor with the rest of the body (StepAP214_Protocol's 713 `types.Bind`); the other statics are
-       `static readonly` fields filled by their initialisers (overrides, 12803); RWStepAP214.Init is a `Lazy<bool>`,
+       `static readonly` fields filled by their initialisers (overrides, 1216); RWStepAP214.Init is a `Lazy<bool>`,
        as RWHeaderSection.Init (unit 8B). Nothing changes after first use (decisions 1182, 1183); the modules are
        registered in the global libraries once.
 1216. **What is written by hand: 106 lines in tools/stepgen/overrides, eight files**, which the generator copies:
