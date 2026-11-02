@@ -6,34 +6,22 @@ using Xunit.Abstractions;
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
-/// Round trips through the generated readers and writers (unit 8C1): every STEP file of OCCT's dataset and of
-/// data/step is read with a test protocol recognising StepBasic, StepGeom, StepShape and StepRepr (the other records
-/// stay unknown entities), written back with the files' own labels, and each record of those packages compared with
-/// the input's (texts, enumerations and references exactly, reals to the writer's 13 significant digits).
+/// Round trips through the generated readers and writers (units 8C1 and 8C2): every STEP file of OCCT's dataset and of
+/// data/step is read with StepAP214's protocol and modules (RWStepAP214.Init), written back with the files' own
+/// labels, and each record the protocol recognises compared with the input's (texts, enumerations and references
+/// exactly, reals to the writer's 13 significant digits).
 /// </summary>
 public sealed class StepRoundTripTests(ITestOutputHelper theOutput)
 {
-    internal static readonly string[] Packages = ["StepBasic", "StepGeom", "StepShape", "StepRepr"];
-
     private static string Metadata(string theKey) =>
         typeof(StepRoundTripTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == theKey).Value!;
 
-    internal static readonly Lazy<StepTestProtocol?> TheProtocol = new(() =>
+    /// <summary>StepAP214's protocol, with its modules in the global libraries (once per process, decision 1182).</summary>
+    internal static StepAP214_Protocol Protocol()
     {
-        var aTable = StepTestTable.Load(Metadata("OcctSourceDir"), Packages);
-        if (aTable is null)
-        {
-            return null;
-        }
-
-        var aProtocol = new StepTestProtocol(aTable);
-        var aRw = new StepTestReadWriteModule(aTable);
-        // the libraries' global lists (decision 1182): a protocol of its own, which no other test uses
-        Interface_GeneralLib.SetGlobal(new StepTestGeneralModule(aTable), aProtocol);
-        Interface_ReaderLib.SetGlobal(aRw, aProtocol);
-        StepData_WriterLib.SetGlobal(aRw, aProtocol);
-        return aProtocol;
-    });
+        RWStepAP214.Init();
+        return StepAP214.Protocol();
+    }
 
     internal static List<string> CorpusFiles()
     {
@@ -53,28 +41,41 @@ public sealed class StepRoundTripTests(ITestOutputHelper theOutput)
     [Fact]
     public void CorpusRoundTrips()
     {
-        var aProtocol = TheProtocol.Value;
         var aFiles = CorpusFiles();
-        if (aProtocol is null || aFiles.Count == 0)
+        if (aFiles.Count == 0)
         {
-            return; // OCCT's source or dataset not fetched
+            return; // OCCT's dataset not fetched
         }
 
+        var aProtocol = Protocol();
         var aRun = new StepRoundTrip();
         foreach (string aPath in aFiles)
         {
             aRun.Run(aPath, aProtocol);
         }
 
-        theOutput.WriteLine($"{aRun.Files} files ({aRun.Unread} not read), {aRun.Records} records, {aRun.Compared} of the four packages "
-                            + $"({aRun.Types.Count} types): {aRun.Same} written back the same; {aRun.WrappedStrings} with a string wrapped by the writer");
+        long anUnknown = aRun.Unknown.Values.Sum();
+        theOutput.WriteLine($"{aRun.Files} files ({aRun.Unread} not read), {aRun.Records} records, {aRun.Compared} recognised ({aRun.Types.Count} types), "
+                            + $"{anUnknown} not ({aRun.Unknown.Count} types): {aRun.Same} written back the same; {aRun.WrappedStrings} with a string wrapped by the writer");
         foreach (var (aCause, (aCount, anExample)) in aRun.Explained.Concat(aRun.Unexplained))
         {
             theOutput.WriteLine($"{aCount}: {aCause}\n  e.g. {anExample}");
         }
 
+        foreach (var (aType, aCount) in aRun.Unknown)
+        {
+            theOutput.WriteLine($"not recognised: {aCount} {aType}");
+        }
+
         Assert.Equal(0, aRun.Unread);
-        Assert.True(aRun.Compared > 1_400_000, $"{aRun.Compared} records compared");
+        Assert.True(aRun.Compared > 1_500_000, $"{aRun.Compared} records compared");
+        Assert.Equal(KnownUnknown, anUnknown);
         Assert.True(aRun.Unexplained.Count == 0, string.Join("\n", aRun.Unexplained.Select(d => $"{d.Value.Count}: {d.Key}\n  {d.Value.Example}")));
     }
+
+    /// <summary>
+    /// The corpus's records StepAP214's protocol doesn't recognise, in OCCT either (decision 12806): 88 types, none in
+    /// OCCT's type tables (simple ones) or complex type lists, read as unknown entities and written back as read.
+    /// </summary>
+    private const long KnownUnknown = 17_402;
 }

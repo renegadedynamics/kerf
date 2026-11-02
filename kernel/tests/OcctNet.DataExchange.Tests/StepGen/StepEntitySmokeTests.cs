@@ -5,13 +5,15 @@ using System.Reflection;
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
-/// Smoke tests of the generated entity packages (unit 8C1): every class constructs, every Init runs, and the
+/// Smoke tests of the generated entity packages (units 8C1 and 8C2): every class constructs, every Init runs, and the
 /// accessors named after Init's parameters give back what Init stored; the SELECT types copy as C++ does; the RW
 /// enum tools convert every value both ways.
 /// </summary>
 public sealed class StepEntitySmokeTests
 {
-    private static readonly string[] Packages = ["StepBasic", "StepGeom", "StepShape", "StepRepr"];
+    private static readonly string[] Packages =
+        ["StepBasic", "StepGeom", "StepShape", "StepRepr", "StepVisual", "StepAP214", "StepAP203", "StepAP209", "StepAP242", "StepDimTol",
+         "StepKinematics", "StepFEA", "StepElement"];
 
     private static IEnumerable<Type> EntityTypes(string thePackage) =>
         typeof(StepData_SelectType).Assembly.GetTypes()
@@ -115,11 +117,26 @@ public sealed class StepEntitySmokeTests
         return theParam;
     }
 
+    /// <summary>
+    /// Complex entities whose Init (all fields) calls Init on the field of their second supertype, which the default
+    /// constructor leaves null: a null dereference in OCCT too (occt-issues.md, unit 8C2). The readers use the setters.
+    /// </summary>
+    private static readonly HashSet<string> NullInit =
+        ["StepDimTol_CommonDatum", "StepAP214_ExternallyDefinedClass", "StepAP214_ExternallyDefinedGeneralProperty", "StepAP214_RepItemGroup"];
+
     [Theory]
     [InlineData("StepBasic")]
     [InlineData("StepGeom")]
     [InlineData("StepShape")]
     [InlineData("StepRepr")]
+    [InlineData("StepVisual")]
+    [InlineData("StepAP214")]
+    [InlineData("StepAP203")]
+    [InlineData("StepAP242")]
+    [InlineData("StepDimTol")]
+    [InlineData("StepKinematics")]
+    [InlineData("StepFEA")]
+    [InlineData("StepElement")]
     public void ConstructInitAndRead(string thePackage)
     {
         int aClasses = 0, anInits = 0, aChecked = 0;
@@ -141,6 +158,10 @@ public sealed class StepEntitySmokeTests
                 {
                     anInit.Invoke(anEnt, anArgs);
                     anInits++;
+                }
+                catch (TargetInvocationException ex) when (ex.InnerException is NullReferenceException && NullInit.Contains(aType.Name))
+                {
+                    continue; // OCCT's Init calls Init on a null handle (occt-issues.md, 8C2)
                 }
                 catch (TargetInvocationException ex)
                 {
@@ -178,9 +199,11 @@ public sealed class StepEntitySmokeTests
             }
         }
 
-        Assert.True(aClasses > 50, $"{aClasses} classes");
-        Assert.True(anInits > 30, $"{anInits} Init calls");
-        Assert.True(aChecked > 50, $"{aChecked} accessors checked");
+        // StepAP242 is the smallest package (6 classes)
+        int aMin = thePackage is "StepAP242" or "StepAP203" ? 3 : 20;
+        Assert.True(aClasses > aMin, $"{aClasses} classes");
+        Assert.True(anInits > aMin / 2, $"{anInits} Init calls");
+        Assert.True(aChecked > aMin, $"{aChecked} accessors checked");
         Assert.True(aFailures.Count == 0, string.Join("\n", aFailures));
     }
 

@@ -6,14 +6,17 @@ using System.Text;
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
-/// Round trips of STEP files through the generated readers and writers (unit 8C1): read with a
-/// <see cref="StepTestProtocol"/>, written back with the files' own labels, and each record of the protocol's
-/// packages compared with the input's, token by token. Differences OCCT's own reading and writing make are counted
-/// under their causes; anything else is unexplained.
+/// Round trips of STEP files through the generated readers and writers (units 8C1 and 8C2): read with
+/// <see cref="StepAP214_Protocol"/> and its modules, written back with the files' own labels, and each record the
+/// protocol recognises compared with the input's, token by token. Differences OCCT's own reading and writing make are
+/// counted under their causes; anything else is unexplained.
 /// </summary>
 internal sealed class StepRoundTrip
 {
     public long Files, Unread, Records, Compared, Same, WrappedStrings;
+    /// <summary>The records the protocol doesn't recognise, by type (read as unknown entities, not compared).</summary>
+    public readonly SortedDictionary<string, long> Unknown = new(StringComparer.Ordinal);
+    private readonly RWStepAP214_ReadWriteModule myModule = new();
     public readonly SortedDictionary<string, (long Count, string Example)> Explained = new(StringComparer.Ordinal);
     public readonly SortedDictionary<string, (long Count, string Example)> Unexplained = new(StringComparer.Ordinal);
     public readonly HashSet<string> Types = new(StringComparer.Ordinal);
@@ -25,9 +28,23 @@ internal sealed class StepRoundTrip
     public const string LostReference = "a reference to a record the parser dropped (a syntax error in the file)";
     public const string ComplexUncertainty = "CATIA's complex LENGTH_MEASURE_WITH_UNIT and UNCERTAINTY_MEASURE_WITH_UNIT is written simple (RWStepBasic_RWUncertaintyMeasureWithUnit)";
     public const string DerivedDimensions = "an SI unit's dimensions are written derived (*): StepBasic_SiUnit computes them";
+    public const string SizeMember = "an untyped size is written POSITIVE_LENGTH_MEASURE(...) (StepBasic_SizeMember always names itself)";
+    public const string NotComplex = "OCCT's IsComplex misses the complex cases 800 and 802: written as a record of type '?' followed by the components";
+    public const string BoolAsInt = "a boolean written as an integer (C++ promotes the bool passed to Send(int), RWStepRepr_RWBooleanRepresentationItem)";
+    public const string StyledItemTarget = "a styled item's target that isn't a representation item is written $: the writer sends Item(), which only returns representation items";
+    public const string RenderingMethod = "a rendering method read through inverted strcmp tests: anything but .CONSTANT_SHADING. becomes .CONSTANT_SHADING. (and it .COLOUR_SHADING.)";
+    public const string ElementPurpose = "APPLICATION_DEFINED_ELEMENT_PURPOSE read as the enumerated purpose (CompareNames gives both case 1), written ENUMERATED_..._ELEMENT_PURPOSE";
+    public const string NestedSize = "a doubly typed size, POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)), keeps its outer type only (StepBasic_SizeMember)";
+    public const string DerivedCharacterized = "CHARACTERIZED_OBJECT's name and description written derived (*,*) by RWStepVisual_RWCharacterizedObjAndRepresentationAndDraughtingModel";
+    public const string NormalsOutOfRange = "not written: OCCT's writer reads the normals (or control triangles) with rows and columns exchanged, out of range (occt-issues.md, 8C2)";
+
+    /// <summary>The entities whose OCCT writer can throw (rows and columns exchanged): tried on a writer of their own first.</summary>
+    private static readonly HashSet<Type> MayThrow = [typeof(StepVisual_ComplexTriangulatedFace), typeof(StepVisual_CubicBezierTriangulatedFace)];
 
     /// <summary>Reads a file with the protocol and writes it back (the DATA records, with the file's labels).</summary>
-    public static string? ReadWrite(string thePath, StepTestProtocol theProtocol)
+    public static string? ReadWrite(string thePath, StepData_Protocol theProtocol) => ReadWrite(thePath, theProtocol, []);
+
+    public static string? ReadWrite(string thePath, StepData_Protocol theProtocol, HashSet<int> theNotWritten)
     {
         var aModel = new StepData_StepModel();
         aModel.SetProtocol(theProtocol);
@@ -44,6 +61,20 @@ internal sealed class StepRoundTrip
         var aLib = new StepData_WriterLib(theProtocol);
         for (int i = 1; i <= aModel.NbEntities(); i++)
         {
+            if (aModel.Value(i) is { } anEnt && MayThrow.Contains(anEnt.GetType()))
+            {
+                // a throwing WriteStep leaves the writer inside the record: tried on a writer of its own first
+                try
+                {
+                    new StepData_StepWriter(aModel).SendEntity(i, aLib);
+                }
+                catch (Standard_OutOfRange)
+                {
+                    theNotWritten.Add(aModel.IdentLabel(anEnt));
+                    continue;
+                }
+            }
+
             aWriter.SendEntity(i, aLib);
         }
 
@@ -52,11 +83,28 @@ internal sealed class StepRoundTrip
         return aText.ToString();
     }
 
-    public void Run(string thePath, StepTestProtocol theProtocol)
+    /// <summary>True if StepAP214's module recognises the record's type (or its complex type's components).</summary>
+    private bool Recognised(StepRecord theRec)
+    {
+        if (theRec.Type is not null)
+        {
+            return myModule.CaseStep(theRec.Type) > 0;
+        }
+
+        var aTypes = new NCollection_Sequence<string>();
+        foreach (string aType in theRec.Complex ?? [])
+        {
+            aTypes.Append(aType);
+        }
+
+        return aTypes.Length() > 0 && myModule.CaseStep(aTypes) > 0;
+    }
+
+    public void Run(string thePath, StepData_Protocol theProtocol)
     {
         Files++;
-        var aTable = theProtocol.Table;
-        string? aWritten = ReadWrite(thePath, theProtocol);
+        var aNotWritten = new HashSet<int>();
+        string? aWritten = ReadWrite(thePath, theProtocol, aNotWritten);
         if (aWritten is null)
         {
             Unread++;
@@ -68,10 +116,10 @@ internal sealed class StepRoundTrip
         foreach (var (anId, aRec) in anIn)
         {
             Records++;
-            bool isMine = aRec.Type is not null ? aTable.CaseOfType.ContainsKey(aRec.Type)
-                                                : aRec.Complex is not null && aTable.CaseOfComplex.ContainsKey(string.Join(",", aRec.Complex.Order(StringComparer.Ordinal)));
-            if (!isMine)
+            if (!Recognised(aRec))
             {
+                string aName = aRec.Type ?? "(" + string.Join(" ", aRec.Complex ?? []) + ")";
+                Unknown[aName] = Unknown.GetValueOrDefault(aName) + 1;
                 continue;
             }
 
@@ -83,14 +131,15 @@ internal sealed class StepRoundTrip
                 WrappedStrings++;
             }
 
-            string? aCause = aWrittenRec is null ? "(not written)" : Compare(aRec, aWrittenRec);
+            string? aCause = aWrittenRec is null ? aNotWritten.Contains(anId) ? NormalsOutOfRange : "(not written)" : Compare(aRec, aWrittenRec);
             if (aCause is null)
             {
                 Same++;
                 continue;
             }
 
-            bool isExplained = aCause is ParameterValue or IntegerAsReal or Text or LostReference or DerivedDimensions or ComplexUncertainty;
+            bool isExplained = aCause is ParameterValue or IntegerAsReal or Text or LostReference or DerivedDimensions or ComplexUncertainty or NormalsOutOfRange
+                               or SizeMember or NestedSize or DerivedCharacterized or NotComplex or BoolAsInt or StyledItemTarget or RenderingMethod or ElementPurpose;
             var aDict = isExplained ? Explained : Unexplained;
             string aKey = isExplained ? aCause : (aRec.Type ?? "(complex)") + ": " + aCause;
             var e = aDict.GetValueOrDefault(aKey);
@@ -180,6 +229,16 @@ internal sealed class StepRoundTrip
             return LostReference;
         }
 
+        if (theInRec.Complex is not null && theOutRec.Text.StartsWith("?(", StringComparison.Ordinal))
+        {
+            return NotComplex;
+        }
+
+        if (theInRec.Type is { } aStyled && aStyled.EndsWith("STYLED_ITEM", StringComparison.Ordinal) && theOutRec.Text.Contains("NUL REF", StringComparison.Ordinal))
+        {
+            return StyledItemTarget;
+        }
+
         if (theInRec.Text.Contains('\\') || theInRec.Text.Any(c => c > 126))
         {
             return Text;
@@ -207,13 +266,15 @@ internal sealed class StepRoundTrip
             }
         }
 
-        // PARAMETER_VALUE(x) written for an untyped x
+        // PARAMETER_VALUE(x) or POSITIVE_LENGTH_MEASURE(x) written for an untyped x
         var anUnwrapped = new List<string>();
+        string? aWrapper = null;
         for (int i = 0; i < theOut.Count; i++)
         {
-            if (theOut[i] == "PARAMETER_VALUE" && i + 3 < theOut.Count && theOut[i + 1] == "(" && theOut[i + 3] == ")" && !theIn.Contains("PARAMETER_VALUE"))
+            if (theOut[i] is "PARAMETER_VALUE" or "POSITIVE_LENGTH_MEASURE" && i + 3 < theOut.Count && theOut[i + 1] == "(" && theOut[i + 3] == ")" && !theIn.Contains(theOut[i]))
             {
                 anUnwrapped.Add(theOut[i + 2]);
+                aWrapper = theOut[i];
                 i += 3;
                 continue;
             }
@@ -221,14 +282,47 @@ internal sealed class StepRoundTrip
             anUnwrapped.Add(theOut[i]);
         }
 
+        // CHARACTERIZED_OBJECT(a,b) written CHARACTERIZED_OBJECT(*,*)
+        int aChar = theIn.IndexOf("CHARACTERIZED_OBJECT");
+        if (aChar >= 0 && aChar + 5 < theIn.Count && theIn[aChar + 3] == "," && theIn[aChar + 5] == ")")
+        {
+            var aDerived = new List<string>(theIn);
+            aDerived[aChar + 2] = "*";
+            aDerived[aChar + 4] = "*";
+            if (Same2(aDerived, theOut))
+            {
+                return DerivedCharacterized;
+            }
+        }
+
+        // POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)) read as POSITIVE_LENGTH_MEASURE(x)
+        var anInner = new List<string>();
+        for (int i = 0; i < theIn.Count; i++)
+        {
+            if (theIn[i] == "POSITIVE_LENGTH_MEASURE" && i + 6 < theIn.Count && theIn[i + 1] == "(" && theIn[i + 3] == "(" && theIn[i + 5] == ")" && theIn[i + 6] == ")")
+            {
+                anInner.AddRange([theIn[i], "(", theIn[i + 4], ")"]);
+                i += 6;
+                continue;
+            }
+
+            anInner.Add(theIn[i]);
+        }
+
+        if (anInner.Count != theIn.Count && Same2(anInner, theOut))
+        {
+            return NestedSize;
+        }
+
         if (anUnwrapped.Count != theOut.Count && Same2(theIn, anUnwrapped))
         {
-            return ParameterValue;
+            return aWrapper == "PARAMETER_VALUE" ? ParameterValue : SizeMember;
         }
 
         if (theIn.Count == theOut.Count)
         {
-            bool isIntAsReal = true, isText = true;
+            bool isIntAsReal = true, isText = true, isBool = true, isRendering = theInRec.Type?.StartsWith("SURFACE_STYLE_RENDERING", StringComparison.Ordinal) == true,
+                 isPurpose = true;
             for (int i = 0; i < theIn.Count; i++)
             {
                 string a = theIn[i], b = theOut[i];
@@ -246,6 +340,21 @@ internal sealed class StepRoundTrip
                 {
                     isText = false;
                 }
+
+                if (!((a == ".T." && b == "I1") || (a == ".F." && b == "I0")))
+                {
+                    isBool = false;
+                }
+
+                if (!(a.EndsWith("_SHADING.", StringComparison.Ordinal) && b.EndsWith("_SHADING.", StringComparison.Ordinal)))
+                {
+                    isRendering = false;
+                }
+
+                if (!(a == "APPLICATION_DEFINED_ELEMENT_PURPOSE" && b.StartsWith("ENUMERATED_", StringComparison.Ordinal) && b.EndsWith("_ELEMENT_PURPOSE", StringComparison.Ordinal)))
+                {
+                    isPurpose = false;
+                }
             }
 
             if (isIntAsReal)
@@ -256,6 +365,21 @@ internal sealed class StepRoundTrip
             if (isText)
             {
                 return Text;
+            }
+
+            if (isBool)
+            {
+                return BoolAsInt;
+            }
+
+            if (isRendering)
+            {
+                return RenderingMethod;
+            }
+
+            if (isPurpose)
+            {
+                return ElementPurpose;
             }
         }
 

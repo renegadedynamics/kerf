@@ -5,7 +5,7 @@ using System.Reflection;
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
-/// tools/stepgen (unit 8C1): the committed STEP entity classes are the generator's output, and the generator is
+/// tools/stepgen (units 8C1 and 8C2): the committed STEP entity classes are the generator's output, and the generator is
 /// deterministic.
 /// </summary>
 public sealed class StepGenTests
@@ -32,8 +32,7 @@ public sealed class StepGenTests
         throw new InvalidOperationException("not inside the repository");
     }
 
-    private static readonly string[] Packages =
-        ["StepBasic", "StepGeom", "StepShape", "StepRepr", "RWStepBasic", "RWStepGeom", "RWStepShape", "RWStepRepr"];
+    private static readonly string[] Packages = global::StepGen.Generator.AllPackages;
 
     [Fact]
     public void CommittedSourcesAreTheGeneratorsOutput()
@@ -75,7 +74,7 @@ public sealed class StepGenTests
             var aFiles = Directory.GetFiles(a, "*.cs", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(a, f)).Order(StringComparer.Ordinal).ToList();
             var bFiles = Directory.GetFiles(b, "*.cs", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(b, f)).Order(StringComparer.Ordinal).ToList();
             Assert.Equal(aFiles, bFiles);
-            Assert.True(aFiles.Count > 800);
+            Assert.True(aFiles.Count > 1600);
             foreach (string f in aFiles)
             {
                 Assert.True(File.ReadAllBytes(Path.Combine(a, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(b, f))), f);

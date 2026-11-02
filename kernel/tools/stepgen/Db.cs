@@ -16,8 +16,41 @@ internal sealed class Db
     /// <summary>The C++ value classes the generator gives a copy constructor (SELECT types and the plain ones).</summary>
     public readonly HashSet<string> ValueClasses = new(StringComparer.Ordinal);
     public readonly List<string> Log = [];
+    /// <summary>Type aliases of the sources (<c>using StringViewDataMap = NCollection_DataMap&lt;...&gt;;</c>).</summary>
+    public readonly Dictionary<string, CppType> Aliases = new(StringComparer.Ordinal);
+
+    /// <summary>The type with an alias at its top replaced by the aliased type (const, reference and pointers kept).</summary>
+    public CppType Resolve(CppType t)
+    {
+        if (t.Args.Count == 0 && Aliases.TryGetValue(t.Name, out var a))
+        {
+            var r = a.Clone();
+            r.IsConst |= t.IsConst;
+            r.IsRef |= t.IsRef;
+            r.Pointers += t.Pointers;
+            return r;
+        }
+
+        return t;
+    }
+
+    /// <summary>The C# type arguments of NCollection's maps: OCCT's hasher argument dropped (.NET's comparers hash).</summary>
+    private static readonly Dictionary<string, int> MapArity = new(StringComparer.Ordinal)
+    {
+        ["NCollection_DataMap"] = 2, ["NCollection_Map"] = 1, ["NCollection_IndexedMap"] = 1, ["NCollection_IndexedDataMap"] = 2,
+    };
     /// <summary>Handles passed by non-const reference that C# passes by value (the callee never reassigns them).</summary>
     public static readonly HashSet<string> ByValueHandles = ["Interface_Check"];
+    /// <summary>
+    /// Parameters of the virtual methods the generated modules override whose C# modifier StepData's and Interface's
+    /// ports chose (unit 8B): (method, parameter count) to (parameter index, modifier). An "out " parameter is
+    /// assigned null first, as C# requires.
+    /// </summary>
+    public static readonly Dictionary<(string Method, int Arity), (int Index, string Modifier)> BaseModifiers = new()
+    {
+        [("NewVoid", 2)] = (1, "out "),
+        [("CheckCase", 4)] = (3, "ref "),
+    };
     /// <summary>
     /// "Class::Method" called as obj->Class::Method() somewhere in TKDESTEP's sources: a virtual one gets a
     /// non-virtual twin Class_Method (decision 12604).
@@ -127,6 +160,7 @@ internal sealed class Db
     /// <summary>The C# type for a C++ type (without ref/out).</summary>
     public string Map(CppType t)
     {
+        t = Resolve(t);
         if (t.IsHandle)
         {
             return Map(t.Args[0]);
@@ -158,9 +192,18 @@ internal sealed class Db
         }
 
         string aName = t.Name.Replace("::", ".");
+        if (MapArity.TryGetValue(t.Name, out int anArity) && t.Args.Count > anArity)
+        {
+            t = t.Clone();
+            t.Args.RemoveRange(anArity, t.Args.Count - anArity);
+        }
+
         if (t.Args.Count > 0)
         {
-            aName += "<" + string.Join(", ", t.Args.Select(Map)) + ">";
+            // a nested type of a template (NCollection_Array1<T>::Iterator): the arguments are the outer type's
+            int aDot = aName.IndexOf('.');
+            string anArgs = "<" + string.Join(", ", t.Args.Select(Map)) + ">";
+            aName = aDot < 0 ? aName + anArgs : aName[..aDot] + anArgs + aName[aDot..];
         }
 
         return aName;

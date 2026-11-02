@@ -2,7 +2,8 @@
 //
 // Per-class and per-method C# written by hand, for what the generator can't translate (decision 12602):
 //   overrides/<Class>.cs               the whole file
-//   overrides/<Class>.<Method>.<n>.cs  one method with n parameters (indented as a class member)
+//   overrides/<Class>.<Method>.<n>.cs  one method (or file-level helper) with n parameters (indented as a class member)
+//   overrides/<Class>.statics.cs       the source file's statics that aren't constants (process-wide state), as members
 
 namespace StepGen;
 
@@ -28,6 +29,8 @@ internal sealed class Overrides
     public string? WholeClass(string theClass) => Read(theClass + ".cs");
 
     public string? Method(string theClass, string theMethod, int theArity) => Read($"{theClass}.{theMethod}.{theArity}.cs");
+
+    public string? Statics(string theClass) => Read(theClass + ".statics.cs");
 
     public IEnumerable<string> All() =>
         Directory.Exists(myDir) ? Directory.EnumerateFiles(myDir, "*.cs").Select(Path.GetFileName).OfType<string>().OrderBy(x => x, StringComparer.Ordinal) : [];
