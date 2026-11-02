@@ -259,7 +259,7 @@ until OCCT.NET's phase 9, which made it the default backend.
   `obj-occtnet`; those are still excluded from the projects' items, in case an old checkout has them.)
 - **Tests on one backend only.** `Build123d.Occt.Tests`, the binding's tests, is a test project on the native backend
   only (`IsTestProject` false otherwise, so `dotnet test` skips it). In `Build123d.Tests`, `NativeFact` skips the
-  shim's tests under OCCT.NET, and `KnownOcctNetDifferenceFact` the one test that differs (`FilletRecord`, below).
+  shim's tests under OCCT.NET.
   The packaging tests skip without their inputs: the native packages (`B3D_PACKAGES`, set by `tools/pack.ps1`) or
   OCCT.NET's build output (`B3D_OCCTNET_LIB`).
 - **Why a second `Build123d.Occt`, rather than `Build123d` compiled against `Occt` directly.** OCCT.NET's API differs
@@ -325,10 +325,10 @@ until OCCT.NET's phase 9, which made it the default backend.
   and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
   build output as `B3D_OCCTNET_LIB`.
 - **Measured** (OCCT.NET at be3b97db, with its phase 8 through STEPCAFControl; Windows x64):
-  - 1,875 of 1,881 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
-    gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
-    phase 7). Since the switch to OCCT.NET by default it is skipped there (`KnownOcctNetDifferenceFact`), so 1,875
-    pass and 6 are skipped. Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
+  - 1,876 of 1,881 tests pass and 5 are skipped. `Fillet2DTests.FilletRecord` failed until OCCT.NET's phase 9: the 2D
+    fillet recorded each edge MakeWire returned as it went, and when the wire closed, OCCT.NET's MakeWire enlarged the
+    first vertex's tolerance in a copy where native does it in place, so the first vertex had two modified shapes. The
+    fillet now records the finished wire's edges (OCCT.NET's unit 9F2; the same shapes natively). Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
     (STEPControl), 1,856 of 1,862 passed; at 991bbe6, with
     phase 7, 1,813 of 1,819 passed; at bad099b, before it, 1,676 passed and 130 failed, 128 of them on phase 7;
   - the 37 introductory examples (all but 34, text) match native's volume to a part in 10⁹ and its face count

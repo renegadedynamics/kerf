@@ -5,6 +5,8 @@ All notable changes to the build123d.NET packages. Versions follow [SemVer](http
 
 ## 0.1.0 (unreleased)
 
+- `Wire.Fillet2D`'s history matches native's on OCCT.NET: the fillet records the finished wire's edges, not each edge
+  MakeWire returned on the way, which OCCT.NET may since have replaced in a copy (`Fillet2DTests.FilletRecord`).
 - `ShapeList<T>` is over Schematiq.Collections (`ISchematiqList<T>`, 1.0.0-beta.1 from nuget.org), the version Bento
   ships, in place of Bento.Collections 0.4.0; the local feed and `tools/pack-bento.ps1` are gone.
 - OCCT.NET is the default backend, from its packages on nuget.org (`OcctNetVersion`, 0.1.0-preview.2), or from an

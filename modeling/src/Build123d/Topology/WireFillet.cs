@@ -205,13 +205,21 @@ internal static class WireFillet
         edges.Insert(insertIndex, solution.FilletEdge);
         sources.Insert(insertIndex, null);   // the arc comes from the vertex, not an edge
 
-        // MakeWire copies each edge so neighbours share vertices: add them one at a time, recording each as placed
+        // MakeWire copies each edge so neighbours share vertices: record each as the finished wire places it
         var cornerVertex = corner.Vertex.TopoShape;
         using var builder = new BRepBuilderAPI_MakeWire();
+        foreach (var edge in edges)
+            builder.Add(edge!);
+        builder.Build();
+        // The edges as the finished wire holds them, in the order added: a later merge may have moved or enlarged an
+        // earlier edge's vertex, which native OCCT does in place and OCCT.NET in a copy of the wire built so far
+        var placedEdges = new List<TopoDS_Shape>();
+        using (var wireIt = new TopoDS_Iterator(builder.Wire()))
+            for (; wireIt.More(); wireIt.Next())
+                placedEdges.Add(wireIt.Value());
         for (int i = 0; i < edges.Count; i++)
         {
-            builder.Add(edges[i]!);
-            var placed = builder.Edge();
+            var placed = placedEdges[i];
             if (sources[i] is not { } source)
             {
                 history.AddGenerated(cornerVertex, placed);
