@@ -30,6 +30,7 @@ its native build: see [docs/oracle-testing.md](docs/oracle-testing.md).
 
 ## Contributing a port
 
+[docs/design-rules.md](docs/design-rules.md) gives the rules for new and redesigned code (phase 10);
 [docs/translation-rules.md](docs/translation-rules.md) says how C++ becomes C#, and
 [docs/porting-playbook.md](docs/porting-playbook.md) the steps for a package.
 

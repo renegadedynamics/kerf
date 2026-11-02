@@ -1,5 +1,8 @@
 # Translating OCCT C++ to C#
 
+> **The rules the port followed until phase 10.** New and redesigned code follows [design-rules.md](design-rules.md)
+> (unit 10C, decision 15108). These stay for reading code not yet redesigned, and for porting a fix from OCCT into it.
+
 These rules turn OCCT's C++ into OCCT.NET's C#. They aim for two things at once:
 
 - **The port stays mechanical.** A C++ file and its C# file can be read side by side, line for line, and a

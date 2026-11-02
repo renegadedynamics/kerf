@@ -13,8 +13,22 @@ namespace Kerf.Tools.Rename;
 /// </summary>
 internal static class Drafter
 {
-    public static void Draft(Loaded loaded, Scope scope, NameMap seed, string output, TextWriter log)
+    public static void Draft(Loaded loaded, Scope scope, NameMap seed, string output, string? engineNamespace, TextWriter log)
     {
+        // Every package without a namespace of its own goes under the engine's: Kerf.Engine.BSplCLib
+        if (engineNamespace is not null)
+        {
+            foreach (INamedTypeSymbol type in loaded.SourceTypes().Where(t => t.ContainingType is null && scope.Contains(t)))
+            {
+                int underscore = type.Name.IndexOf('_');
+                string package = underscore > 0 ? type.Name[..underscore] : type.Name;
+                if (!seed.Packages.ContainsKey(package) && !type.Name.StartsWith('_'))
+                {
+                    seed.Packages[package] = engineNamespace + "." + Naming.Pascal(package);
+                }
+            }
+        }
+
         var map = new NameMap();
         foreach (string rule in NameMap.Rules.All)
         {
@@ -39,7 +53,7 @@ internal static class Drafter
             {
                 string stem = type.Name == package ? Naming.Pascal(type.Name) : type.Name[(package.Length + 1)..];
                 map.Types[key] = seed.Packages[package] + "." + Naming.Pascal(stem);
-                map.Notes["type " + key] = "draft" + (type.Name == package ? ": the package's own class" : "");
+                map.Notes["type " + key] = "draft" + (type.Name == package ? ": the package's own class, named like its namespace" : "");
             }
 
             if (type.TypeKind == TypeKind.Enum)

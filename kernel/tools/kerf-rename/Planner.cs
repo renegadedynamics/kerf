@@ -33,6 +33,9 @@ internal static class Planner
             plan.TypeOldNames[type.Name] = 0;
             if (type.ContainingType is null && newNamespace != oldNamespace)
             {
+                // A type that only moves keeps its key in the plan, as a property that keeps its name does
+                plan.Names[id] = newName;
+                plan.Categories[id] = Category.Type;
                 plan.Namespaces[id] = newNamespace;
                 plan.OldNamespaces[id] = oldNamespace;
             }

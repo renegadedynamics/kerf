@@ -1645,3 +1645,14 @@ Phase 9 complete (2 November 2026): the switch-over.
 Phase 10 (part): one repository, Kerf (unit 10R).
 - OCCT.NET and build123d.NET move, with their histories, into one repository: `kernel/` and `modeling/`. The packages
   keep their names until 0.2.0, when they become Kerf.Kernel and Kerf.Modeling.
+
+Phase 10 (part): conventions and tooling (unit 10C).
+- `tools/kerf-rename`: the renamer that unit 10E uses to move the kernel and the modelling layer to .NET names, from a
+  reviewed name map (types and namespaces, members, methods that become properties, and the systematic rules for
+  parameters, fields, locals and methods), reporting every rename it drops rather than guessing. It drafts the
+  systematic part of a map from the code, and applies a map to another repository (Bento) as well.
+- `docs/design-rules.md`: the rules for new and redesigned code (names, values and references, immutability,
+  operations, results and errors, collections, spans, nullability, modern C#, state); translation-rules.md stays as the
+  rules the port followed.
+- A root `.editorconfig` with .NET's naming rules, inert until 10E turns them on folder by folder.
+- No change to the libraries: the pilot rename of gp and math stays on an unmerged branch.

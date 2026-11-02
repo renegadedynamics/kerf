@@ -3,6 +3,7 @@
 // kerf-rename: renames to .NET conventions from a reviewed name map. See README.md.
 //
 //   kerf-rename draft --solution Kerf.slnx --assembly OcctNet.Foundation [--package gp ...] --seed seed.map --out draft.map
+//                     [--engine-namespace Kerf.Engine]
 //   kerf-rename apply --solution Kerf.slnx --assembly OcctNet.Foundation [--package gp ...] --map reviewed.map
 //                     [--report report.txt] [--applied applied.map] [--rename-files] [--dry-run] [-p:Name=Value ...]
 
@@ -69,7 +70,7 @@ internal static class Program
         if (args[0] == "draft")
         {
             NameMap seed = One("--seed") is { } seedPath ? NameMap.Load(seedPath) : new NameMap();
-            Drafter.Draft(loaded, scope, seed, One("--out") ?? "draft.map", log);
+            Drafter.Draft(loaded, scope, seed, One("--out") ?? "draft.map", One("--engine-namespace"), log);
             return 0;
         }
 

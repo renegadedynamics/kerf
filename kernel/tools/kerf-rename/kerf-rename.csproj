@@ -11,6 +11,7 @@
     <IsPackable>false</IsPackable>
     <!-- The tool follows .NET's naming rules, not OCCT's -->
     <NoWarn>$(NoWarn.Replace('IDE1006', ''))</NoWarn>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <ItemGroup>
