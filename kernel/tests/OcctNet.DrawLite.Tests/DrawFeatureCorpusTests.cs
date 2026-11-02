@@ -126,12 +126,13 @@ public class DrawFeatureCorpusTests(ITestOutputHelper output)
         // unit 7I: 356 cases use the commands, 328 runnable after 7I (none before): OK 280, BAD 2 (OCCT's TODOs: feat/featlf/A4,
         // feat/featrevol/H9), SKIPPED 46 (data not public); the 28 others wait for depouille and blend (7G, 7N3), offsetshape
         // (7G), the viewer, STEP and QA commands. With 7G's offset and draft commands merged: 337 runnable, OK 289. With
-        // 7N3's fillet commands (blend, fillet, bossage): 349 runnable, OK 301
+        // 7N3's fillet commands (blend, fillet, bossage): 349 runnable, OK 301. With 8F's STEP commands: 350
+        // runnable, SKIPPED 47
         Assert.Empty(aRunnableBefore);
         Assert.Equal(356, aScans.Count);
-        Assert.Equal(349, aRunnable.Count);
+        Assert.Equal(350, aRunnable.Count);
         Assert.Equal(301, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(46, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        Assert.Equal(47, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));

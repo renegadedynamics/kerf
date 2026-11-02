@@ -104,6 +104,9 @@ internal static class DrawBuiltins
         HLRTestCommands.Register(theInterpreter);
         // unit 8H1: XSDRAWSTL's STL commands (readstl, writestl)
         XSDRAWSTLCommands.Register(theInterpreter);
+        // unit 8F: XSDRAW's session with the IFSelect and XSControl commands, XSDRAWSTEP's commands without a document
+        XSDRAWCommands.Register(theInterpreter);
+        XSDRAWSTEPCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

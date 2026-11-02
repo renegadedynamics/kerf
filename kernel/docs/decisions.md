@@ -12805,3 +12805,92 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        **1,726 conversions, all identical** (entity order included), the inputs read frozen and unchanged. Not compared
        natively here: the non-manifold and I-DEAS modes, mapped items and the actor's geometric representation items
        (unit 8F compares them through STEPControl).
+
+## Phase 8: unit 8F, STEPControl (the first milestone)
+
+STEPControl (controller, reader, writer, their actors), STEPConstruct's writing and reading tools (UnitContext,
+Part, Assembly, AP203Context, ContextTool), StepSelect (work library, step type, file and model modifiers), STEPEdit,
+the STEPSelections selections the controller records, DESTEP_Parameters' default shape fix parameters, StepToGeom's
+yaw-pitch-roll rotation; Draw-lite's XSDRAW session with the IFSelect and XSControl commands and XSDRAWSTEP's commands
+without a document.
+
+13201. **A STEP session works with a controller of its own.** OCCT's STEPControl_Reader and STEPControl_Writer select
+       "STEP" in their session (`SelectNorm`), the controller recorded process-wide, whose write actor holds state the
+       writer changes (SetTolerance, the shape fix parameters, the group mode) and counters (the product names' index,
+       the assembly occurrences' identifiers): native output depends on what the process wrote before. The port's
+       `STEPControl_Controller.Init()` still records one controller under "STEP" and "step" (for `SelectNorm`), but the
+       reader and the writer select STEP through `STEPControl_Controller.SelectFor(session)`: a session already on a
+       STEP controller keeps it, another gets a new STEPControl_Controller, so that the write actor's settings and
+       counters are the session's (a fresh writer numbers its products and occurrences from 1, as a fresh DRAWEXE
+       does). The controller's constructor registers the STEP modules once per process; STEP's statics are declared
+       per parameter set by `InitStatics` (with XSAlgo's), as decision 1222 set out.
+13202. **Parameters and the length unit come from the session's parameter set.** `InitFromStatic()` reads the session's
+       statics (decision 1181); the readers and writers take a `DESTEP_Parameters` too, as OCCT's do. OCCT's actors take
+       the length unit of a model whose unit isn't initialised from the process-wide unit (`xstep.cascade.unit`,
+       through XSAlgo_ShapeProcessor::PrepareForTransfer); the port has none (decision 1195): STEPControl_Reader sets a
+       read model's unit from its session's `xstep.cascade.unit` after reading, STEPControl_Writer before the first
+       transfer, and an actor given a model nobody initialised takes millimetres.
+13203. **Assembly occurrences are numbered by the writer.** STEPConstruct_Assembly::MakeRelationship numbers the
+       NEXT_ASSEMBLY_USAGE_OCCURRENCEs from a function-static counter; the port's write actor passes its context's
+       counter (`STEPConstruct_ContextTool.NauoId`, `MakeRelationship(ref int)`); `MakeRelationship()` keeps a
+       process-wide counter for other callers. The comparisons with native mask the identifiers and the product
+       names' index.
+13204. **Repeatable output.** The header's FILE_NAME (time stamp, author) is made at the first transfer from the local
+       time; a caller wanting repeatable bytes sets it on the model before writing
+       (`new APIHeaderSection_MakeHeader(writer.Model()).SetTimeStamp(...)`, `SetAuthorValue`...), which Write and
+       WriteStream keep. AP203's default date and person (STEPConstruct_AP203Context: the local time and time zone,
+       the user's name, the host's address, as OCCT's OSD_Process and OSD_Host give them) are set through
+       `STEPControl_ActorWrite.ContextTool().AP203Context()` (`SetDefaultDateAndTime`,
+       `SetDefaultPersonAndOrganization`, OCCT's own setters; the accessor is the port's).
+13205. **The reading actor's state is its own.** STEPControl_ActorRead's file-level `NM_DETECTED` (a global telling
+       the callers the representation just read was non-manifold) is a field of the actor. A cycle of assembly links in
+       a file (NAUO to product definition and back) recurses without end in OCCT (a stack overflow); the port checks the
+       stack at each shape transfer (`RuntimeHelpers.EnsureSufficientExecutionStack`), which the transient process
+       records as a fail.
+13206. **The writer never changes its input** (plan 2.7). In non-manifold mode OCCT marks a solid's shells closed in
+       place (`Closed(true)`); the port marks a copy of a shell that isn't closed (the same faces). The STEP text is
+       the same.
+13207. **STEPSelections' thread-local state is the selection's.** STEPSelections_SelectGSCurves keeps its "first
+       geometric set" flag, and STEPSelections_SelectInstances its graph and instances of the last model, in
+       thread-local variables shared by all instances of the class; the port keeps them in the selection.
+       STEPEdit::SignType's signature, created once under a mutex, is a static readonly field (decision 1215).
+13208. **What is left out.** StepTidy (`STEPControl_Writer::CleanDuplicateEntities`, `write.step.cleanduplicates`) and
+       STEPEdit's activator; StepSelect_Activator (with IFSelect's command machinery, decision 1220) and
+       StepSelect_FloatFormat (only the activator creates it); STEPSelections' counter and assembly explorer (Draw's
+       `countexpected` and `dumpassembly`); StepAP209_Construct (decision 1218: an AP209 FEA tool no STEPControl path
+       reaches, left for when FEA is asked for); STEPConstruct's Styles, ValidationProps, ExternRefs,
+       RenderingProperties, Tool and the package class (STEPCAFControl's: unit 8G2 ports them with it, against the
+       assembly tree); DESTEP's provider and configuration node (TKDE's framework, decision 1171).
+13209. **The comparisons with native** (milestone 1). In process (tests/OcctNet.Oracle.Tests/STEPControl, the bound
+       STEPControl_Reader and STEPControl_Writer, OCCT's default statics): the corpus's 338 STEP files read by both,
+       331 byte-identical BRep texts and 7 identical but for TShapes' Free flag, statuses, roots and shape counts
+       equal; data/occ's 37 shapes and three assemblies of located instances written in each model type (AsIs,
+       ManifoldSolidBrep, BrepWithVoids, FacetedBrep, ShellBasedSurfaceModel, GeometricCurveSet; AP214IS), the 240
+       STEP texts identical with FILE_NAME, the occurrences' identifiers and the product index masked; the round trips
+       (the port's files read natively, native files read by the port), 148 each way, 118 identical and 30 canonically
+       identical (the canonical ones: closed edges on surfaces of revolution, whose line pcurves native recomputes on reading where
+       the port keeps the file's, a Shape Healing follow-up of decision 13012). Through tools/stepctlrec
+       (STEPControl/Recordings): the corpus read with the model's and the transfer's check lists and every distinct
+       transfer message counted, 337 of 338 files identical (bug25013_25013faces.stp: native throws while walking its
+       model check list); 720 writes in AP203, AP214IS and AP242DIS, 708 identical (the 12 others: AP203 assemblies,
+       where native omits the AP203 management entities of the last occurrences).
+13210. **Reading processes the working shapes in place.** OCCT's ShapeFix changes a reader's shapes in place, so the
+       representations sharing an item (a solid in several shape representations) keep sharing it. The port's
+       XSAlgo_ShapeProcessor.ProcessShape freezes its result (decision 1205), which made the next item's processing
+       copy: STEPControl_ActorRead uses `InternalProcessShape` and `InternalMergeTransferInfo` (unfrozen results, the
+       history unfrozen), and XSControl_TransferReader.ShapeResult encodes the regularity into an unfrozen shape in
+       place, as OCCT (into a copy only for a shape holding frozen shapes). The reader freezes what it publishes
+       (decision 1224). Before this, 4 corpus files read with copies of shared solids.
+13211. **Draw-lite's data exchange session.** XSDRAW's process-wide session is one per interpreter, made with the
+       standard, XSAlgo's, STEP's and STEPCAFControl's statics declared (as DRAWEXE declares them at loading); `param`
+       edits that set, and the readers and writers the commands make on the fly (testreadstep, testwritestep,
+       stepfileunits) get sessions on it. The commands read Draw-lite's files (the overlay, then the disk) through the
+       readers' stream forms and write the overlay through the writers' stream forms; testreadstep and testwritestep
+       run their files one after the other. The interactive modes of stepread read nothing (DRAWEXE without input).
+       tpdraw reports a non-shape result without binding it to a variable.
+13212. **A messenger per flow of execution.** DRAWEXE's IFSelect and XSControl commands run with the default messenger
+       printing to the Tcl result (XSTEPDRAWRUN with Draw_Printer), so the libraries' messages are part of the result
+       (`writeent`'s "Write ... Done"). Foundation's `Message.DefaultMessenger()` now returns, when one is installed, the
+       messenger of the current flow of execution (`Message.SetFlowMessenger`, internal, an AsyncLocal): Draw-lite
+       installs one printing to the command's result while such a command runs; parallel interpreters don't see each
+       other's. Outside those commands nothing changes (decision 493's empty default messenger).

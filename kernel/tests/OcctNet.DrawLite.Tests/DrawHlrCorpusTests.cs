@@ -168,11 +168,11 @@ public class DrawHlrCorpusTests(ITestOutputHelper output)
         }
         Assert.Empty(aRunnableBefore);
         Assert.Equal(332, aScans.Count);
-        Assert.Equal(188, aRunnable.Count);
+        Assert.Equal(255, aRunnable.Count);
         // OK 44, BAD 5 (OCCT's TODOs), FAILED 2 (attributed), SKIPPED 137 (data not public); the 144 others wait for the
-        // viewer's other commands, STEP and QA commands
-        Assert.Equal(44, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(137, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        // viewer's other commands, STEP and QA commands. With 8F's STEP commands: 255 runnable, OK 45, SKIPPED 203
+        Assert.Equal(45, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(203, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));

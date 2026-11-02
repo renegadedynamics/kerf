@@ -1962,3 +1962,19 @@ each, but for the first (decision 12903).
 | TopoDSToStep_MakeStepFace (degenerate torus under an offset surface) | `anOffsetSu->SetBasisSurface(Rev)` on the face's own surface | The writer changes the shape it writes. Fixed in the port: a copy (decision 13009) |
 | TopoDSToStep_MakeTessellatedItem (InitTriangulation) | `Poly::ComputeNormals` on the face's triangulation | The writer adds normals to the shape it writes. Fixed in the port: a copy (decision 13009) |
 | TopoDSToStep_MakeTessellatedItem::Init(Shell) | Calls the progress scope's Next twice per face | Progress only |
+
+## Phase 8: unit 8F, STEPControl
+
+| Where | What | Effect |
+|---|---|---|
+| STEPControl_ActorRead (file level) | `NM_DETECTED`, a global flag the actor sets and reads across calls | Not reentrant: readers in parallel share it. A field in the port (decision 13205) |
+| STEPControl_ActorRead::TransferEntity (product definition, NAUO) | Follows assembly links without a guard | A file whose assembly links form a cycle overflows the stack. The port checks the stack (decision 13205) |
+| STEPConstruct_Assembly::MakeRelationship | Numbers occurrences from a function-static counter | The identifiers written depend on what the process wrote before (decision 13203) |
+| STEPControl_Controller (write actor) | The controller recorded process-wide holds the write actor: tolerance, shape fix parameters, product index | A writer's settings leak into the next writer's output; not thread-safe (decision 13201) |
+| STEPControl_ActorWrite (non-manifold mode) | `aSubShell.Closed(true)` on the input's shells | The writer changes the shape it writes. A copy in the port (decision 13206) |
+| StepSelect_WorkLibrary::WriteFile | `filemod->Label()` after a downcast that may give null | A file modifier of another kind is dereferenced null |
+| STEPSelections_SelectDerived::Matches | `atype->SubType(checker)` with `atype` null for an unknown type name | A null dereference; false in the port |
+| STEPSelections_SelectGSCurves, SelectInstances | Thread-local state shared by all instances of the class | A selection's result depends on other instances; the selection's own in the port (decision 13207) |
+| STEPConstruct_AP203Context | Date, time zone, user name and host address read from the system | AP203 output is not repeatable; settable through the context (decision 13204) |
+| STEPControl_Writer (AP203 assemblies) | Native omits the AP203 management entities of the last occurrences of data/occ's assemblies | 12 of 720 writes differ: cause not found, attributed (decision 13209) |
+| IFSelect_WorkSession::ModelCheckList (bug25013_25013faces.stp) | Native throws Standard_OutOfRange (NCollection_Sequence::Value) walking the check list after the transfer | The port's check list is complete; attributed (decision 13209) |
