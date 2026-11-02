@@ -150,6 +150,24 @@ public class XSControlTests
         var aText = new StringWriter();
         TR.PrintStats(aText, 10, 0);
         Assert.Contains("Nb Recorded : 4", aText.ToString());
+        // the statistics of the transient process (Draw's tpstat): every mode runs
+        var aPrinter = new OcctNet.DataExchange.Tests.Transfer.StringPrinter();
+        TR.TransientProcess()!.Messenger().AddPrinter(aPrinter);
+        for (int what = 0; what <= 5; what++)
+        {
+            for (int mode = 0; mode <= 6; mode++)
+            {
+                XSControl_TransferReader.PrintStatsProcess(TR.TransientProcess(), what, mode);
+            }
+        }
+        XSControl_TransferReader.PrintStatsOnList(TR.TransientProcess(), WS.GiveList("(1,2)"), 2, 5);
+        Assert.Contains("Statistics on Transfer Process (Read)", aPrinter.Text.ToString());
+        Assert.Contains("Percentages according Transfer Status", aPrinter.Text.ToString());
+        TR.TransientProcess()!.Messenger().RemovePrinter(aPrinter);
+        var aStatus = new StringWriter();
+        Assert.True(WS.PrintTransferStatus(1, false, aStatus));
+        Assert.Contains("Transfer Read item n0.1", aStatus.ToString());
+        Assert.False(WS.PrintTransferStatus(1, true, aStatus)); // nothing written
         // skipping, clearing a result
         Assert.True(TR.Skip(WS.StartingEntity(6)));
         Assert.True(TR.IsSkipped(WS.StartingEntity(6)));
