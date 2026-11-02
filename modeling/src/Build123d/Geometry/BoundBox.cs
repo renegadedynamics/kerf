@@ -59,7 +59,8 @@ public sealed class BoundBox
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
-    /// shape is ignored, as it can affect the box.
+    /// shape is ignored, as it can affect the box, unless the shape has nothing else (faces holding only triangles, as
+    /// STL and glTF are read).
     /// </summary>
     public static BoundBox FromShape(Shape shape, double? tolerance = null, bool optimal = true) =>
         shape.IsEmpty ? Empty : FromTopoDS(shape.TopoShape, tolerance, optimal);
@@ -74,6 +75,9 @@ public sealed class BoundBox
             BRepBndLib.AddOptimal(shape, box, false);
         else
             BRepBndLib.Add(shape, box, false);
+        // A shape with faces holding only triangles (STL, glTF) has no geometry to bound but its mesh: use it then
+        if (box.IsVoid())
+            BRepBndLib.Add(shape, box, true);
         return new BoundBox(box);
     }
 

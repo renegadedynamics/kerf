@@ -111,7 +111,19 @@ public class InputsUnchangedTests
             C("is valid", [Fused], () => Fused.IsValid),
             C("show topology", [Box], () => Box.ShowTopology()),
             C("is inside", [Sphere], () => ((Solid)Sphere.Solids()[0]).IsInside(new Vector(1, 1, 1))),
+            // Import and export
+            C("export brep", [Fused], () => Exporters3D.ExportBrep(Fused, new MemoryStream())),
+            C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(Compound.Assembly([Fused, MovedBox]), new MemoryStream())),
         };
+#if OCCTNET
+        // The mesh formats are OCCT.NET's (the native binding doesn't bind them)
+        cases.AddRange(
+        [
+            C("export stl", [Fused], () => Exporters3D.ExportStl(Fused, new MemoryStream())),
+            C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(Compound.Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), binary: true)),
+            C("export 3mf", [Fused, Sphere], () => Exporters3D.Export3mf(Compound.Assembly([Fused, Sphere]), new MemoryStream())),
+        ]);
+#endif
         return cases;
     }
 

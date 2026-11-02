@@ -118,10 +118,29 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Mode.SUBTRACT` → `Mode.S
 | `full_round` (scipy's Voronoi) | `FullRound`, over a small Delaunay triangulation of its own |
 | `insert`, `add`, `make_brake_formed`, sheet-metal `thicken` | Not yet ported (builder mode; sheet metal in phase 7) |
 
+## Import and export
+
+| Python | .NET |
+|---|---|
+| `import_brep(path)` | `Importers.ImportBrep(stream or path, limits, token)` |
+| `import_step(path)` | `Importers.ImportStep(stream or path, limits, token)`: the file's tree, assemblies as compounds with `AssemblyChildren`, labels and colours (OCCT.NET backend); natively one shape, or a compound of the file's shapes |
+| `import_stl(path, model_unit)` | `Importers.ImportStl(stream or path, modelUnit, limits, token)`: a `Face` holding the triangles (OCCT.NET backend) |
+| (none) | `Importers.ImportGltf(stream or path, modelUnit, limits, token)`: parts and assemblies with names and colours (OCCT.NET backend) |
+| `export_brep(shape, path)` | `Exporters3D.ExportBrep(shape, stream or path)` |
+| `export_step(shape, path, unit, write_pcurves, precision_mode, timestamp=…)` | `Exporters3D.ExportStep(shape, stream or path, unit, writePcurves, precisionMode, timestamp, token)`: a `string` time stamp (`datetime.isoformat()`'s); assemblies, product names and colours on the OCCT.NET backend, natively the shape's compound alone |
+| `export_stl(shape, path, tolerance, angular_tolerance, ascii_format)` | `Exporters3D.ExportStl(…)`, the same parameters (OCCT.NET backend) |
+| `export_gltf(shape, path, unit, binary, linear_deflection, angular_deflection)` | `Exporters3D.ExportGltf(…)`, the same parameters; to a stream, a `.gltf` embeds its buffer (OCCT.NET backend) |
+| `Mesher(unit).add_shape(shape, linear_deflection, angular_deflection)` then `write("x.3mf")` | `Exporters3D.Export3mf(shape, stream or path, unit, linearDeflection, angularDeflection)` (OCCT.NET backend) |
+| `ValueError` from a reader | `ArgumentException`; past an `ImportLimits` limit, `InvalidDataException` |
+| `FileNotFoundError` (no file, or `export_stl`'s missing folder) | `FileNotFoundException`, `DirectoryNotFoundException` (every exporter) |
+
 ## Not yet ported
 
 - Text (`Compound.make_text`, fonts and the `Text` object): phase 7.
 - Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
+- `export_obj`, `export_to_pcbway`, `Mesher` as a class (its metadata, `read`, STL through lib3mf), `import_svg` and
+  the 2D exporters (SVG, DXF); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF
+  export's UVs and PBR materials.
 
 ## Deliberate differences
 

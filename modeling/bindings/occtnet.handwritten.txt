@@ -87,3 +87,10 @@ TColStd_HArray2OfReal::GetEnumerator
 TopoDS_Shape::StdHash
 BRepLib::BuildCurves3d
 BRepMesh_IncrementalMesh::.ctor
+
+# Data exchange: the stream forms with limits and cancellation (src/Build123d.OcctNet/Runtime/Exchange.cs), which the
+# native binding writes by hand too (src/Build123d.Occt/Runtime/Exchange.Native.cs)
+STEPControl_Reader::ReadStream
+STEPControl_Reader::TransferRoots(global::System.Threading.CancellationToken)
+STEPControl_Writer::Transfer(TopoDS_Shape, STEPControl_StepModelType, StepWriteSettings, global::System.Threading.CancellationToken)
+STEPControl_Writer::WriteStream

@@ -570,38 +570,9 @@ Poly_Triangulation::MeshPurpose(): signatures differ in OCCT.NET
 Poly_Triangulation::SetMeshPurpose(uint): signatures differ in OCCT.NET
 Precision::.ctor(): OCCT.NET's class is static
 Precision::.ctor(Precision): OCCT.NET's class is static
-STEPControl_Reader::.ctor(): class not in OCCT.NET
-STEPControl_Reader::.ctor(STEPControl_Reader): class not in OCCT.NET
-STEPControl_Reader::ClearShapes(): class not in OCCT.NET
-STEPControl_Reader::NbRootsForTransfer(): class not in OCCT.NET
-STEPControl_Reader::NbShapes(): class not in OCCT.NET
-STEPControl_Reader::OneShape(): class not in OCCT.NET
-STEPControl_Reader::PrintCheckLoad(bool, IFSelect_PrintCount): class not in OCCT.NET
-STEPControl_Reader::PrintCheckTransfer(bool, IFSelect_PrintCount): class not in OCCT.NET
-STEPControl_Reader::PrintStatsTransfer(int): class not in OCCT.NET
-STEPControl_Reader::PrintStatsTransfer(int, int): class not in OCCT.NET
-STEPControl_Reader::ReadFile(string): class not in OCCT.NET
-STEPControl_Reader::SetNorm(string): class not in OCCT.NET
-STEPControl_Reader::SetSystemLengthUnit(double): class not in OCCT.NET
-STEPControl_Reader::Shape(): class not in OCCT.NET
-STEPControl_Reader::Shape(int): class not in OCCT.NET
-STEPControl_Reader::SystemLengthUnit(): class not in OCCT.NET
-STEPControl_Reader::TransferOne(int): class not in OCCT.NET
-STEPControl_Reader::TransferOneRoot(): class not in OCCT.NET
-STEPControl_Reader::TransferOneRoot(int): class not in OCCT.NET
-STEPControl_Reader::TransferRoot(): class not in OCCT.NET
-STEPControl_Reader::TransferRoot(int): class not in OCCT.NET
-STEPControl_Reader::TransferRoots(): class not in OCCT.NET
-STEPControl_Writer::.ctor(): class not in OCCT.NET
-STEPControl_Writer::.ctor(STEPControl_Writer): class not in OCCT.NET
-STEPControl_Writer::CleanDuplicateEntities(): class not in OCCT.NET
-STEPControl_Writer::PrintStatsTransfer(int): class not in OCCT.NET
-STEPControl_Writer::PrintStatsTransfer(int, int): class not in OCCT.NET
-STEPControl_Writer::SetTolerance(double): class not in OCCT.NET
-STEPControl_Writer::Transfer(TopoDS_Shape, STEPControl_StepModelType): class not in OCCT.NET
-STEPControl_Writer::Transfer(TopoDS_Shape, STEPControl_StepModelType, bool): class not in OCCT.NET
-STEPControl_Writer::UnsetTolerance(): class not in OCCT.NET
-STEPControl_Writer::Write(string): class not in OCCT.NET
+STEPControl_Reader::.ctor(STEPControl_Reader): signatures differ in OCCT.NET
+STEPControl_Writer::.ctor(STEPControl_Writer): signatures differ in OCCT.NET
+STEPControl_Writer::CleanDuplicateEntities(): no public counterpart in OCCT.NET
 ShapeAnalysis_Curve::.ctor(ShapeAnalysis_Curve): signatures differ in OCCT.NET
 ShapeAnalysis_Edge::.ctor(ShapeAnalysis_Edge): signatures differ in OCCT.NET
 ShapeAnalysis_FreeBounds::.ctor(ShapeAnalysis_FreeBounds): signatures differ in OCCT.NET

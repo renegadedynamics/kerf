@@ -44,7 +44,8 @@ internal sealed class Model
 {
     // Build123d.Occt's runtime, written by hand for the backend (src/Build123d.OcctNet/Runtime)
     private static readonly HashSet<string> RuntimeTypes =
-        ["OcctObject", "OcctTransient", "OcctException", "OcctContext", "Extras", "MeshBuffers", "Occt", "DoingScope"];
+        ["OcctObject", "OcctTransient", "OcctException", "OcctContext", "Extras", "MeshBuffers", "Occt", "DoingScope",
+         "ExchangeNode", "ExchangeReadLimits", "StepWriteSettings", "ExchangeIO"];
 
     // OCCT's collection typedefs, which OCCT.NET writes as the NCollection templates
     private static readonly Dictionary<string, (string Template, string[] Args)> Collections = new()

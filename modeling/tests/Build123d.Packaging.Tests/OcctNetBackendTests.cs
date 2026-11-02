@@ -51,7 +51,8 @@ public class OcctNetBackendTests
         var lib = Path.Combine(Path.GetTempPath(), "b3d-occtnet-extension-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(lib);
         var source = Environment.GetEnvironmentVariable("B3D_OCCTNET_LIB")!;
-        foreach (var name in new[] { "Build123d", "Build123d.OcctNet", "OcctNet.Foundation", "OcctNet.ModelingData", "OcctNet.ModelingAlgorithms" })
+        foreach (var name in new[] { "Build123d", "Build123d.OcctNet", "OcctNet.Foundation", "OcctNet.ModelingData", "OcctNet.ModelingAlgorithms",
+                                  "OcctNet.DataExchange" })
             File.Copy(Path.Combine(source, name + ".dll"), Path.Combine(lib, name + ".dll"));
         Assert.DoesNotContain(Directory.GetFiles(lib, "*.dll"), f => Path.GetFileName(f) is "b3docct.dll" or "TKernel.dll");
 
