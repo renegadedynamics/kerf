@@ -1,7 +1,9 @@
 # Phase 9 plan: the switch-over
 
-> **Agreed, 2 November 2026.** The owner accepted questions 40 to 45 as recommended, with the performance review
-> (9E) and without the OBJ reader (9G dropped): decision 1298.
+> **Done, 2 November 2026.** The owner accepted questions 40 to 45 as recommended, with the performance review
+> (9E) and without the OBJ reader (9G dropped): decision 1298. Every unit is merged, with 9D split in two (9D1, the
+> default backend; 9D2, the differential run), 9F2 added (build123d.NET's FilletRecord) and 9R (ReadyToRun packages);
+> the milestones are decision 1316. Phase 10 follows: [phase10-plan.md](phase10-plan.md).
 
 ## The goal
 

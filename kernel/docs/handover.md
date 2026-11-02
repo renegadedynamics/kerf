@@ -35,7 +35,8 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
 
 ## State
 
-- `main`: phases 0–8 (phase 7 merged on 1 November 2026 from `phase7/finishing`, phase 8 on 2 November 2026 from
+- `main`: phases 0–9 (phase 7 merged on 1 November 2026 from `phase7/finishing`, phases 8 and 9 on 2 November 2026,
+  phase 9 from `phase9/switch`; phase 8 from
   `phase8/exchange`; see each plan's banner).
 - `phase5/construction`: the integration branch for phases 5 and 6. Merged so far:
   - **Intersections:** 5A, 5B, 5C, 5D, 5E, 5F, 5G.

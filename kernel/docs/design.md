@@ -67,7 +67,7 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | **6. Booleans** (done) | TKBO (IntTools, BOPDS, BOPTools, BOPAlgo, BRepAlgoAPI; not the legacy TopOpeBRep), about 135k lines with what build123d's Boolean and face-making paths need from TKShHealing and TKTopAlgo (provisional, open question 16): `ShapeUpgrade_UnifySameDomain`, ShapeFix, the rest of ShapeAnalysis, ShapeConstruct, ShapeBuild_ReShape, `BRepBuilderAPI_Sewing`; Message_Report and the alerts | build123d.NET's algebra-mode Boolean tests' operations reproduce native results through BRep bytes; parallel = serial; the corpus's 4,880 Boolean, sewing and healing cases |
 | **7. Finishing** (done; [phase7-plan.md](phase7-plan.md)) | The rest of ShapeHealing (ShapeUpgrade's divide and convert tools, ShapeCustom, ShapeProcess), fillets and chamfers (TKFillet but ChFi2d), offsets and drafts (TKOffset but phase 5's wrappers, BRepFill_Draft, AdvancedEvolved), features (TKFeat), helix, then HLR | build123d parity |
 | **8. Data exchange** (done; [phase8-plan.md](phase8-plan.md)) | STEP's entity classes generated from OCCT's own C++ (decision 1166), StepData/XSBase/STEPControl ported; immutable assembly tree; STL, glTF, 3MF, OBJ written fresh | Bytes in and out without native code |
-| **9. Switch-over** ([phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
+| **9. Switch-over** (done; [phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
 
 ## Not ported
 
