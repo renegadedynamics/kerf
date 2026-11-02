@@ -13406,3 +13406,73 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          of it on OCCT.NET (decisions 468, 1102), so their fuse differs; a test mutating the text of a fillet's result.
        - **Port bugs:** none found. Everything the suite makes is native's, byte for byte or canonically, or differs
          where native differs from itself or where OCCT.NET doesn't write a caller's shape.
+## Phase 9: unit 9F, the triage of decision 1165's five cases
+
+1307. **A sweep's copy for write is left as the sweep made it** (bugs/modalg_6/bug26406, a port bug; fixed). When the
+       generating shape holds frozen TShapes, MakePrism, MakeRevol and MakePipe sweep an exact copy of it, then give
+       back in the result the caller's sub-shapes the sweep left unchanged (`KeepUnchangedGenerating`). That step gave
+       a changed copy (the paraboloid face's wire) its kept children in place, so the copy no longer held the sweep's
+       own seam edge. BRepSweep reads its generating shape again for the history: `BRepSweep_Rotation::HasShape` finds
+       a seam by walking the generating shape's faces, so `Generated(seam)` no longer saw a seam, built a face from it
+       on demand and wrote a pcurve into the published result: `TopoDS_LockedShape` in Draw's `revol` (its history).
+       Without copy, `IsDeleted(seam)` said true where native says false: bugs/modalg_7/bug30346_2 (decision 981) had
+       the same cause and now passes. `BRepTools.KeepUnchangedIn` gains `theToLeaveCopies`: a changed copy holding kept
+       children is replaced in the result by a new TShape (the copy's data and flags, the kept children), and the copy
+       stays as it was; only MakeSweep asks for it (sewing and BRepFill go on reading the result's own TShapes).
+       Second part: OCCT's history builds on demand the edge a vertex generates when no face built it (here the vertex
+       on the paraboloid's seam and degenerated edge; native's `Generated` gives an edge that isn't in the result),
+       and sets its vertices' parameters with `UpdateVertex(V, Par, E, PConfusion)`. On a FORWARD or REVERSED vertex
+       that call changes only the edge's ranges and raises the vertex's tolerance to at least 1e-9, so natively it
+       leaves the result's vertex as it is; the port threw on the frozen vertex. `BRep_Builder.UpdateVertexOfFrozen`
+       (internal, `// OCCT.NET: frozen`) sets only the ranges then, as MakeWire's `transfert` does (decision 417's
+       rule: writes that change nothing are skipped); any other write still throws. BRepSweep_Rotation and
+       BRepSweep_Translation's `SetDirectingParameter` use it. Test: the oracle's
+       `Sweeps_of_faces_with_a_seam_have_native_OCCTs_histories` (a cylinder, a sphere band and a sphere cap, frozen,
+       revolved by π and 2π and extruded, with and without copy: 18 results equal to native's, 615 history values
+       equal; it fails on both parts without the fix). bug26406's `revol` + `checkshape` pass.
+1308. **The filling binds the boundary edges MakeWire copied** (bugs/filling/bug23380, a port bug; fixed).
+       `BRepFill_Filling::BuildWires` joins the boundary edges with BRepLib_MakeWire; an edge meeting the wire only
+       geometrically (b_3 at b_2's end) has its vertex merged onto the wire's, which MakeWire moves and enlarges in
+       place natively. The caller's edges are frozen in the port, so MakeWire goes on with a copy for write of the
+       wire built so far (decision 417); the filling then built its final edges from the caller's b_2 and f_1, whose
+       vertices were not the copies the new b_3 ends at: WireFromList found no next edge and the face had 3 edges for
+       4. `BuildWires` now binds, when MakeWire copied, each boundary edge to the edge standing for it in the finished
+       wire (through MakeWire's `InternalHistory()`), as OCCT binds the geometrically joined ones, and records the
+       copied vertices so that `Generated` of the caller's vertex answers as native's. bug23380's face is now byte for
+       byte native's BRep text. The oracle's `MakeFilling_on_the_corpus_case_bug23380_matches_native_OCCT` read the
+       case's words without the initial surface (filling's `a[5]`, here the face i) and so never met the merge; it now
+       loads it as Draw does, and fails without the fix.
+1309. **lowalgos/extss/bug29712_44 is OCCT's script**: it runs `extrema s1 s1` and `extrema s2 s2`, each plane against
+       itself (distance 0), and expects 10, the distance between s1 and s2. Native OCCT gives 0 too
+       (GeomAPI_ExtremaSurfaceSurface on the same planes: parallel, distance 0; 10 for s1 against s2). Attributed in
+       DrawCheapGapsCorpusTests' known failures; occt-issues.md.
+1310. **demo/samples/anc101 fails natively too.** The sample (resources/samples/tcl/ANC101.tcl) welds the platform
+       and the wedge with `blend _model _model 2 _model_27`, then `_model_28`, numbered by one `explode _model e`;
+       after the first blend the edge `_model_28` is no longer in the model, so the second blend has no suitable edge.
+       Replayed natively from the port's primitives (a scratch recorder of the case's bcut, bfuse, unifysamedom and
+       blend calls), native's own chain of Booleans gives the same model (the same counts at every step; the texts
+       equal call by call in non-destructive mode, up to a few last-digit differences) and fails the same way on
+       `_model_28`, destructive or not. The case then needs the viewer (`vbackground`, `vaspects`), outside the port
+       anyway. Attributed in DrawFilletCorpusTests' known failures; occt-issues.md.
+1311. **bugs/fclasses/bug1281 tests Draw's plugin loader**: `pload` reading a plugin resource file, loading the
+       libraries it names and their Tcl scripts, going on past a missing one and failing when none loads. Draw-lite's
+       commands are built in and its `pload` loads nothing (DrawBuiltins), so both checks fail. Out of scope;
+       attributed in DrawCheapGapsCorpusTests' known failures.
+
+## Phase 9: unit 9F2, build123d.NET's 2D fillet record
+
+1312. **The 2D fillet's record differs because build123d.NET keeps MakeWire's intermediate edges; not a port bug.**
+       build123d.NET's `Fillet2DTests.FilletRecord` (OCCT.NET backend) gave Modified(first vertex) = 2 where native
+       gives 1. `WireFillet.Splice` adds the trimmed edges, the arc and the untouched edges to one
+       BRepBuilderAPI_MakeWire and records, after each `Add`, the edge `Edge()` returns. Closing the wire, the last edge's
+       vertex at the first corner (the same point, tolerance 1.0000000011e-7 from the splitter) merges onto the wire's
+       first vertex (1e-7, the trimmed edge's), whose tolerance must grow. Native OCCT raises it in place, so the edge
+       recorded first stays the wire's. That vertex is the caller's (frozen): the port's MakeWire goes on with a copy for
+       write of the wire built so far (decision 417) and records the replacement in its history (`Modified`), so the
+       first recorded edge and vertex are no longer the wire's, and the first vertex is recorded as modified into both
+       copies. The port's MakeWire is right under the immutability rule; 9D2's abandoned change (`movesPoint`) concerned
+       moved located vertices and would not prevent this copy (here the point is unchanged; the tolerance grows).
+       Remedy, in build123d.NET (not made here): `Splice` adds all edges, builds, and records the finished wire's edges
+       (its children in the order added) in place of each intermediate `Edge()`; the same on native, where they are the
+       same shapes. Checked in a detached worktree of build123d.NET's main: Fillet tests 52/52 on OCCT.NET (FilletRecord
+       passes) and 51/51 on native (scratchpad p9f2-b3d-wirefillet.diff).

@@ -136,6 +136,24 @@ public static partial class BRepTools
         // children first (an iterative walk isn't needed: shapes nest a few levels deep, and a compound nesting is
         // bounded by the stack check)
         RuntimeHelpers.EnsureSufficientExecutionStack();
+        TopoDS_TShape aCopy = copyData(theTShape);
+        for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(theTShape.myShapes); anIt.More(); anIt.Next())
+        {
+            TopoDS_Shape aChild = anIt.Value();
+            TopoDS_TShape aChildCopy = exactCopy(aChild.TShape()!, theCopies);
+            aChildCopy.Free(false); // as TopoDS_Builder::Add clears it (a frozen original keeps its own, design 4.4)
+            aChild.TShape(aChildCopy);
+            aCopy.myShapes.Append(aChild);
+        }
+
+        copyFlags(theTShape, aCopy);
+        theCopies[theTShape] = aCopy;
+        return aCopy;
+    }
+
+    // A new TShape with the BRep data of theTShape (its geometry shared), without its children and flags.
+    private static TopoDS_TShape copyData(TopoDS_TShape theTShape)
+    {
         TopoDS_TShape aCopy;
         switch (theTShape)
         {
@@ -194,26 +212,18 @@ public static partial class BRepTools
                 aCopy = theTShape.EmptyCopy();
                 break;
         }
-
-        for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(theTShape.myShapes); anIt.More(); anIt.Next())
-        {
-            TopoDS_Shape aChild = anIt.Value();
-            TopoDS_TShape aChildCopy = exactCopy(aChild.TShape()!, theCopies);
-            aChildCopy.Free(false); // as TopoDS_Builder::Add clears it (a frozen original keeps its own, design 4.4)
-            aChild.TShape(aChildCopy);
-            aCopy.myShapes.Append(aChild);
-        }
-
-        aCopy.Free(theTShape.Free());
-        aCopy.Modified(theTShape.Modified());
-        aCopy.Checked(theTShape.Checked());
-        aCopy.Orientable(theTShape.Orientable());
-        aCopy.Closed(theTShape.Closed());
-        aCopy.Infinite(theTShape.Infinite());
-        aCopy.Convex(theTShape.Convex());
-
-        theCopies[theTShape] = aCopy;
         return aCopy;
+    }
+
+    private static void copyFlags(TopoDS_TShape theFrom, TopoDS_TShape theTo)
+    {
+        theTo.Free(theFrom.Free());
+        theTo.Modified(theFrom.Modified());
+        theTo.Checked(theFrom.Checked());
+        theTo.Orientable(theFrom.Orientable());
+        theTo.Closed(theFrom.Closed());
+        theTo.Infinite(theFrom.Infinite());
+        theTo.Convex(theFrom.Convex());
     }
 
     /// <summary>
@@ -255,7 +265,8 @@ public static partial class BRepTools
     }
 
     private static TopoDS_TShape keepUnchanged(TopoDS_TShape theOriginal, TopoDS_TShape theCopy,
-                                               Dictionary<TopoDS_TShape, TopoDS_TShape> theResults, bool theIgnoreToleranceGuard)
+                                               Dictionary<TopoDS_TShape, TopoDS_TShape> theResults, bool theIgnoreToleranceGuard,
+                                               bool theToLeaveCopies = false)
     {
         if (theResults.TryGetValue(theOriginal, out TopoDS_TShape? aDone))
         {
@@ -295,7 +306,8 @@ public static partial class BRepTools
             bool isAllOriginal = true, isAllCopies = true;
             for (int i = 0; i < aCopies.Count; i++)
             {
-                aChildren[i] = keepUnchanged(anOriginals[i].TShape()!, aCopies[i].TShape()!, theResults, theIgnoreToleranceGuard);
+                aChildren[i] = keepUnchanged(anOriginals[i].TShape()!, aCopies[i].TShape()!, theResults, theIgnoreToleranceGuard,
+                                             theToLeaveCopies);
                 isAllOriginal &= ReferenceEquals(aChildren[i], anOriginals[i].TShape());
                 isAllCopies &= ReferenceEquals(aChildren[i], aCopies[i].TShape());
             }
@@ -307,6 +319,18 @@ public static partial class BRepTools
             else if (isAllCopies)
             {
                 aResult = theCopy;
+            }
+            else if (theToLeaveCopies)
+            {
+                // a new TShape with the copy's data and the kept children; the copy stays as it is
+                aResult = copyData(theCopy);
+                for (int i = 0; i < aCopies.Count; i++)
+                {
+                    TopoDS_Shape aChild = aCopies[i];
+                    aChild.TShape(aChildren[i]);
+                    aResult.myShapes.Append(aChild);
+                }
+                copyFlags(theCopy, aResult);
             }
             else
             {
@@ -507,12 +531,18 @@ public static partial class BRepTools
     /// sub-shapes, as an in-place sweep holds its profile's: each copy the operation left equal to its original is
     /// replaced by that original in the result's unfrozen graph too (and <paramref name="theResult"/> itself if it is
     /// one). The returned map gives, for each copied TShape, the TShape that stands for it now (the original or the
-    /// copy); <paramref name="theHistory"/> records the original's sub-shapes whose result is another TShape.
+    /// copy, or a new one); <paramref name="theHistory"/> records the original's sub-shapes whose result is another
+    /// TShape.
+    /// <para>A changed copy holding kept children is given those children in place of its own, or, with
+    /// <paramref name="theToLeaveCopies"/>, replaced by a new TShape holding them (its data and flags copied), so the
+    /// copy's own graph stays as the operation left it: for an operation that still reads its copy afterwards (a sweep
+    /// answering its history from its generating shape).</para>
     /// </summary>
     internal static Dictionary<TopoDS_TShape, TopoDS_TShape> KeepUnchangedIn(in TopoDS_Shape theOriginal, in TopoDS_Shape theCopy,
                                                                           Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies,
                                                                           ref TopoDS_Shape theResult,
-                                                                          out BRepTools_History theHistory)
+                                                                          out BRepTools_History theHistory,
+                                                                          bool theToLeaveCopies = false)
     {
         theHistory = new BRepTools_History();
         var aFinal = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
@@ -522,7 +552,7 @@ public static partial class BRepTools
         }
 
         var aResults = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-        keepUnchanged(theOriginal.TShape()!, theCopy.TShape()!, aResults, false);
+        keepUnchanged(theOriginal.TShape()!, theCopy.TShape()!, aResults, false, theToLeaveCopies);
         recordImages(theOriginal, aResults, theHistory);
 
         var aReplaced = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);

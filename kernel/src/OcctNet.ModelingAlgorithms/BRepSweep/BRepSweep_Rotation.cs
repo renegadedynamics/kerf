@@ -198,7 +198,8 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         }
         TopoDS_Vertex V_wnt = TopoDS.Vertex(aNewVertex);
         V_wnt.Orientation(ori);
-        myBuilder.Builder().UpdateVertex(V_wnt, param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
+        // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
+        myBuilder.Builder().UpdateVertexOfFrozen(V_wnt, param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenE,

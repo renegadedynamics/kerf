@@ -128,7 +128,8 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         {
             param = myVec.Magnitude();
         }
-        myBuilder.Builder().UpdateVertex(TopoDS.Vertex(aNewVertex), param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
+        // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
+        myBuilder.Builder().UpdateVertexOfFrozen(TopoDS.Vertex(aNewVertex), param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenE,

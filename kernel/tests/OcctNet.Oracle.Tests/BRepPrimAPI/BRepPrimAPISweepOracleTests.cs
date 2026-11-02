@@ -601,5 +601,67 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         }
         Finish(aT);
     }
+
+    // ------------------------------------------------------------ faces with a seam (unit 9F)
+
+    /// <summary>
+    /// Sweeps of frozen faces with a seam edge and a degenerated edge (bugs/modalg_6/bug26406 revolves a paraboloid
+    /// face): the history of the seam, which sweeps nothing, and of the vertices, whose edges the sweep builds on
+    /// demand after the result is published. The port used to give the copy for write of such a face back its
+    /// unchanged sub-shapes in place, so the sweep no longer found the seam in its face, built a face from it on
+    /// demand and wrote into the published result (TopoDS_LockedShape); without copy it said the seam was deleted.
+    /// </summary>
+    [Fact]
+    public void Sweeps_of_faces_with_a_seam_have_native_OCCTs_histories()
+    {
+        var aT = new Tally("seamed faces");
+        var anAx = new gp_Ax3(new gp_Pnt(100, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0));
+        using var aNAx = Oracle.ToNative(anAx);
+        // made again for each sweep: native OCCT's sweep without copy writes into its profile
+        var aFaces = new List<(Func<N.TopoDS_Shape>, Func<TopoDS_Shape>, string)>
+        {
+            (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Cylinder(aNAx, 15), 0, 2 * Math.PI, 0, 40).Face(),
+             () => new BRepBuilderAPI_MakeFace(new gp_Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
+            (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(),
+             () => new BRepBuilderAPI_MakeFace(new gp_Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
+            (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(),
+             () => new BRepBuilderAPI_MakeFace(new gp_Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
+        };
+        using var aNZ = Oracle.ToNative(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        var aZ = new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aV = new gp_Vec(0, 0, 25);
+        using var aNV = Oracle.ToNative(aV);
+        foreach ((Func<N.TopoDS_Shape> aNF, Func<TopoDS_Shape> aPF, string aKind) in aFaces)
+        {
+            foreach (bool aCopy in new[] { false, true })
+            {
+                foreach (double anAngle in new[] { Math.PI, 2 * Math.PI })
+                {
+                    string aWhat = $"{aKind}, revolved by {anAngle:R}{(aCopy ? ", copy" : "")}";
+                    N.TopoDS_Shape aNS = aNF();
+                    TopoDS_Shape aPS = aPF();
+                    var aNM = new N.BRepPrimAPI_MakeRevol(aNS, aNZ, anAngle, aCopy);
+                    var aPM = new BRepPrimAPI_MakeRevol(aPS, aZ, anAngle, aCopy);
+                    Assert.True(aNM.IsDone() && aPM.IsDone(), aWhat);
+                    N.TopoDS_Shape aNR = aNM.Shape();
+                    TopoDS_Shape aPR = aPM.Shape();
+                    Compare(aT, aWhat, aNR, aPR);
+                    Count(aT, aKind);
+                    CompareHistories(aT, aWhat, new RevolPair(aNM, aPM), aNS, aPS, aNR, aPR);
+                }
+
+                string aPrism = $"{aKind}, prism{(aCopy ? ", copy" : "")}";
+                N.TopoDS_Shape aNPS = aNF();
+                TopoDS_Shape aPPS = aPF();
+                var aNP = new N.BRepPrimAPI_MakePrism(aNPS, aNV, aCopy, true);
+                var aPP = new BRepPrimAPI_MakePrism(aPPS, aV, aCopy, true);
+                N.TopoDS_Shape aNPR = aNP.Shape();
+                TopoDS_Shape aPPR = aPP.Shape();
+                Compare(aT, aPrism, aNPR, aPPR);
+                CompareHistories(aT, aPrism, new PrismPair(aNP, aPP), aNPS, aPPS, aNPR, aPPR);
+            }
+        }
+        Finish(aT);
+    }
 }
 #endif

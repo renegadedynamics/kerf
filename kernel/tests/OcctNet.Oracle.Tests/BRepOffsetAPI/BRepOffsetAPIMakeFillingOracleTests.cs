@@ -733,8 +733,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     [Fact]
     public void MakeFilling_on_the_corpus_case_bug23380_matches_native_OCCT()
     {
-        // bugs/filling/bug23380: "filling result 4 0 0 i f_1 f 1 d_3 d 1 b_2 0 b_3 0", which Draw reads as the bounds
-        // i (C0), the face f as a free constraint (G1), d_3 on d (G1) and b_2 (C0)
+        // bugs/filling/bug23380: "filling result 4 0 0 i f_1 f 1 d_3 d 1 b_2 0 b_3 0", which Draw reads as the initial
+        // surface i (filling's a[5], a face) and the bounds f_1 on f (G1), d_3 on d (G1), b_2 and b_3 (C0). The bounds
+        // b_2 and b_3 meet only geometrically, at a vertex that must move and grow (unit 9F).
         string aRoot = Metadata("OcctTestDataDir");
         string? aFile = string.IsNullOrEmpty(aRoot) || !Directory.Exists(aRoot) ? null
             : Directory.EnumerateFiles(aRoot, "bug23380.brep", SearchOption.AllDirectories).FirstOrDefault();
@@ -783,6 +784,14 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             => theWord < aWords.Length && aVars.TryGetValue(aWords[theWord], out N.TopoDS_Shape? aS) && aS.ShapeType() == theType ? aS : null;
         int w = 0;
         var aParsed = new List<string>();
+        // filling's a[5]: the initial surface if it names a face, the bounds then starting at a[6]
+        N.TopoDS_Shape? anInit = Get(0, N.TopAbs_ShapeEnum.TopAbs_FACE);
+        if (anInit is not null)
+        {
+            aCase.Steps.Add(new Step(Op.Init, Index(anInit)));
+            aParsed.Add(aCase.Steps[^1].ToString());
+            w = 1;
+        }
         for (int k = 1; k <= 4; k++)
         {
             N.TopoDS_Shape? anE = Get(w, N.TopAbs_ShapeEnum.TopAbs_EDGE);

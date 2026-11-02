@@ -1611,3 +1611,12 @@ Phase 9 (part): the differential run (unit 9D2).
   first divergence of each of the 18 other tests is attributed: native varying from run to run (11 tests), backend-
   specific code in build123d.NET (5), OCCT.NET not writing a caller's face (1), a test mutating a canonically identical
   result's text (1). No port bug.
+Phase 9 (part): the triage of five corpus failures (unit 9F).
+
+- Fixed: a frozen face with a seam swept with MakeRevol or MakePrism (and MakePipe's profiles) now answers its history
+  as native OCCT does; `Generated` threw TopoDS_LockedShape (bugs/modalg_6/bug26406), and `IsDeleted` called a seam
+  deleted (bugs/modalg_7/bug30346_2).
+- Fixed: BRepOffsetAPI_MakeFilling with frozen boundary edges that meet only within tolerance lost an edge of the
+  face (bugs/filling/bug23380); the face is now native's.
+- Attributed, not the port: lowalgos/extss/bug29712_44 (OCCT's script), demo/samples/anc101 (OCCT's sample fails
+  natively too), bugs/fclasses/bug1281 (Draw's plugin loader).
