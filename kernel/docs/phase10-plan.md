@@ -1,0 +1,474 @@
+# Phase 10 plan: a .NET library
+
+> **Agreed, 2 November 2026** (decision 1316). The project becomes **Kerf**, in Renegade Dynamics' organisation:
+> `Kerf.Kernel` from OCCT and `Kerf.Modeling` from build123d, in one repository. Questions 46 to 52 are settled
+> (section 6): Bento's spreadsheet names follow Kerf's, and collections cross into Bento as standard .NET read-only types.
+> Phase 9 closed at `0.1.0-preview.3`. Not started.
+
+## The goal
+
+Phases 0 to 9 ported OCCT class for class and proved the port against native OCCT. Phase 10 turns that port into a
+library designed for .NET. It does the same for build123d.NET, which then runs on it directly.
+
+The owner's brief (2 November):
+
+- **.NET first.** Favour .NET conventions over OCCT's and build123d's: type and member names, return types and error
+  reporting. The functionality must stay; OCCT's and Python's shapes of it need not.
+- **Full immutability, and no copy at entry.** Algorithms never write into their inputs. Results share the faces they
+  don't change.
+- **Divergence is accepted.** OCCT's bugs may be fixed. The oracle may go, provided the testing that replaces it shows
+  every feature still works as intended.
+- **Errors without "expected" exceptions.**
+- **The latest .NET 10 and C# features,** where they simplify code or make it faster.
+- **Value types and spans in place of needless heap allocation; collections chosen for their use.**
+- **build123d.NET:** it uses OCCT.NET's types directly, without wrappers, keeps no Python conventions, and its native
+  backend is retired.
+- **One repository** for the two projects (owner, 2 November), and possibly a new name for them now they diverge, still
+  crediting OCCT and build123d (2.10, 2.11, question 47).
+
+This replaces beyond-compatibility.md's "decision points". Point A, retiring native build123d.NET, is yes. Point B,
+diverging from OCCT, is yes everywhere, under the testing rules of section 3.
+
+## 1. What phase 10 starts from
+
+Measured on 2 November, at `phase9/switch` and build123d.NET's `occtnet/p9f2`.
+
+### 1.1 OCCT.NET
+
+| | Foundation | ModelingData | ModelingAlgorithms | DataExchange | Total |
+|---|---:|---:|---:|---:|---:|
+| Lines of C# | 123k | 270k | 576k | 248k | 1.22M |
+| Public types | 564 | 654 | 1,502 | 1,307 | 4,027 |
+| of them named `Package_Class` | 325 | 576 | 1,411 | 1,288 | 3,600 |
+
+- **Names:** OCCT's throughout.
+  - Methods: `IsDone()` 299, `NbXxx()` 818, `Perform(…)` 509.
+  - Parameters `theX` and fields `myX` on about 67,000 lines each.
+  - The build suppresses the naming warnings (`NoWarn IDE1006`), and translation-rules.md tells additions to follow
+    OCCT's style too.
+- **Immutability:**
+  - Published shapes are frozen (`FreezeGraph`, 236 call sites).
+  - Geometry's mutators are `internal`, guarded by `CheckMutable()`, with 482 public `With…` twins.
+  - The gp types are structs.
+  - 2,544 public `Set…` methods remain, 1,556 of them on STEP's generated entity classes.
+- **Copy at entry:** about 45 call sites in about 20 packages. ShapeFix has 17 files. BRepFill, BRepTools and BRepOffset
+  have 4–5 each.
+  - They cause the unshared faces of decisions 468 and 1102: the prism of a frozen face holds a copy of it.
+- **Errors:**
+  - 2,961 `throw` sites of OCCT's exception types, and 235 sites that catch them.
+  - 299 `IsDone()` methods and about 32 status enums.
+  - `Message_Report` alerts in the Booleans.
+  - 37 try-pattern methods.
+- **Process-wide state:** about 215 mutable static fields, 25 `[ThreadStatic]` scratch fields and 71 locks.
+- **Heap:**
+  - `math_Vector` and `math_Matrix` are classes, constructed at 338 sites, many in inner loops.
+  - `NCollection_Array1` is a class derived from `Standard_Transient`, constructed at 1,131 sites.
+  - There are already 634 `stackalloc`s and about 3,000 span uses.
+  - 9E found 18 GB allocated in build123d.NET's suite, against native's 0.5 GB.
+- **Collections:**
+  - `NCollection_List`, `Sequence` and `DynamicArray` wrap `List<T>`; maps wrap `HashSet`/`Dictionary`; all are reference
+    types with OCCT's 1-based, `More`/`Next`/`Value` API.
+  - 48 of 59 `new List<…>` have no capacity.
+  - Returned collections are `ISchematiqList<T>`/`PackedList<T>`.
+- **Language:** .NET 10, C# latest, nullable enabled, warnings as errors.
+  - Modern features are rare: 36 records, no `required` members, no extension members, a handful of `field` uses.
+- **Visibility:** every assembly and test project sees every other's internals.
+
+### 1.2 Tests
+
+| Suite | Tests | Needs native OCCT |
+|---|---:|---|
+| OCCT.NET unit tests | about 8,200 | No |
+| OCCT.NET oracle tests | 362 | **Yes, live** (build123d.NET's native build) |
+| Native recordings embedded in unit tests | 52 files, 47 MB, read by 61 test files | No: already data |
+| Draw-lite corpus | 17,872 runnable cases of OCCT's own scripts | No |
+| build123d.NET | 1,881 | 5 native-only; 30 STEP references regenerable only natively; 2 JSON files generated by Python build123d |
+| build123d.NET differential run (9D2) | 16,044 shapes compared | **Yes, live** |
+| Bento's CAD tests | 83 + 38 | No |
+
+The Draw-lite corpus is the strongest test that doesn't need native OCCT:
+- its scripts are OCCT's own, with OCCT's reference values;
+- its commands are C# calling the ported classes, so they follow any rename.
+
+### 1.3 build123d.NET
+
+| | Files | Lines |
+|---|---:|---:|
+| src/Build123d (the library) | 56 | 18,751 |
+| Native backend: wrappers, shim, generator, bindings, native build | about 556 | about 136,000 |
+| OCCT.NET forwarding layer and its generator | about 270 | about 71,000 (3,300 written by hand) |
+
+- **Its OCCT use:** 202 OCCT types and about 271 methods, all through the wrapper namespace `Build123d.Occt`.
+  - 860 `using var` disposals.
+  - 66 public signatures expose OCCT types.
+  - 15 `UnsafeAccessor`s reach OCCT.NET's internals: freezing, the shape builders, the history's fields.
+- **Python conventions:**
+  - Python emulation: `PyFormat`, `PySet`, `PyMath`, `PyComparer`, with Python's `str()` and `repr()`.
+  - String selectors (`FilterBy("is_closed")`).
+  - `Pos`/`Rotation` shorthand classes.
+  - A `Mode` parameter on 99 constructors, unused.
+  - Union returns: `Shape`/`Compound` standing for a Part, Sketch or Curve.
+  - Python's operators: `%`, `^`, `>>`, `<<`, `Location * shape`.
+  - 338 signatures with optional parameters in place of keyword arguments; 24 with five or more.
+  - Tuples converting to vectors (26 conversions).
+  - Python's error messages.
+- **Immutable already:** shapes are immutable, with `With…` copies. Two ambient scopes remain (`SkipClean`, `Warnings`),
+  plus a per-thread `OcctContext`.
+
+### 1.4 Bento
+
+- **Surface:** the 3D models extension uses about 120 members of build123d.NET. Only one of its operators is used
+  (`Location *`).
+- **Errors:** they reach the sheet as `#VALUE!` with the exception's message (`ModelFunctions.Run`).
+- **Names:** the spreadsheet-facing names (`CAD_PT_BOX`, option keys such as `z_dir`) are Bento's own, registered
+  explicitly. Three couplings reach into build123d.NET's C# names:
+  - enum text parsed against C# enum names;
+  - `FilterBy`/`SortBy`/`GroupBy` property names looked up by reflection;
+  - `A1.Volume`-style property reads by reflection.
+
+## 2. Design
+
+### 2.1 Public API and engine
+
+Of OCCT.NET's 4,027 public types, most are algorithm internals: the Boolean pave filler, the intersection walkers,
+ChFi3d's corner builders, STEP's 1,300 entity classes. A caller should see only a small, deliberately designed surface.
+
+- **The public API** is designed area by area, in .NET style:
+  - geometry: points, vectors, transforms, curves, surfaces;
+  - topology: shapes, sub-shapes, traversal;
+  - construction: primitives, sweeps, lofts;
+  - Booleans;
+  - fillets and chamfers;
+  - offsets and features;
+  - healing;
+  - properties and measurement: mass, bounds, distance;
+  - meshing;
+  - exchange: STEP, STL, glTF, 3MF, BREP.
+
+  Each area gets a short API review (a document of signatures and examples) before it is written. The design rules are
+  in 2.2.
+- **The engine** is everything else. It becomes `internal`, renamed to .NET conventions by tool (2.3), and changes
+  only where 2.4 to 2.8 need it to. beyond-compatibility.md's "leave the core alone" still holds for the algorithms:
+  they keep OCCT's mathematics, renamed and retyped rather than re-derived.
+- **Assemblies** keep their split, but `InternalsVisibleTo` between them goes. An assembly reaches another only through
+  its public API, or through a small `Engine` surface marked as such.
+
+### 2.2 .NET conventions in the public API
+
+- **Names:**
+  - Types and members in PascalCase, organised by namespaces rather than prefixes: `BRepAlgoAPI_Fuse` becomes, say,
+    `Booleans.Fuse`.
+  - Properties for values (`PoleCount`, not `NbPoles()`). Parameters in camelCase without `the`.
+  - Question 46 settles the namespace scheme.
+- **Indexing:** 0-based everywhere in public. OCCT's 1-based arrays and `More`/`Next` iterators become spans,
+  `IReadOnlyList<T>` and `IEnumerable<T>`.
+- **Values:**
+  - Small mathematical values are `readonly struct`s: points, vectors, directions, axes, transforms, boxes.
+  - Geometry and topology are sealed immutable classes, or `readonly struct`s where they're a reference plus a few
+    fields, as `TopoDS_Shape` already is.
+  - Records for options and results.
+  - `required`/`init` for construction.
+- **Operations:** static methods or immutable operation objects that take inputs and an options record and return a
+  result. No `Perform()`/`IsDone()` protocol, and no `Build()` on a mutable algorithm object.
+- **Errors (2.5):** results, not exceptions, for failures a caller should expect. Exceptions only for misuse: a null
+  argument, a negative radius.
+- **Cancellation and progress:** `CancellationToken` and `IProgress<T>`, in place of `Message_ProgressRange` at the
+  boundary.
+- **No process-wide state (2.7).**
+
+### 2.3 Renaming 1.2 million lines
+
+Renaming by hand isn't realistic. It is done by a **Roslyn-based renamer** driven by a reviewed name map:
+- type to new name and namespace;
+- member to new name;
+- the systematic rules: `theX` to `x`, `myX` to `_x`, `NbXxx()` to a `XxxCount` property, `IsXxx()` to a property where
+  it takes no arguments.
+
+The renamer updates every reference, including Draw-lite's commands, build123d.NET and Bento, from the same map. It
+runs one assembly at a time, with every test green after each step.
+
+- Analyzers then enforce .NET naming (IDE1006 back on), and the `OcctNet.Analyzers` rules that the redesign makes
+  obsolete are retired.
+- The map is kept, so anyone porting a fix from OCCT can find the new names, and so Draw-lite's scripts keep working
+  through their commands.
+
+### 2.4 Immutability without copy at entry
+
+- **The rule:** no algorithm writes into a shape or geometry it didn't create in the same operation. Inputs are read;
+  results are built.
+- **The mechanism:** a per-operation **working overlay**. Where OCCT changes an input in place, the operation instead
+  records a replacement for that sub-shape in the overlay. Examples: a vertex's tolerance grows, a pcurve is added, an
+  edge's range is set.
+  - Downstream code in the same operation reads through the overlay.
+  - The result is assembled with new TShapes only for the sub-shapes that changed, and shares everything else.
+  - The machinery exists in embryo: `BRepTools_ReShape`, `ShapeBuild_ReShape`, phase 7's `KeepUnchanged`. It becomes the
+    one way algorithms change topology.
+- **Histories become direct** ("this face came from that face"), without re-keying through copies.
+- **Order:** module by module, Booleans first (everything uses them), then construction (prisms, revolutions, sweeps:
+  decisions 468 and 1102), healing (ShapeFix, the most sites), offsets, fillets and features. Each module removes its
+  copy-at-entry sites and their helpers. The last removes `BRepTools_CopyAtEntry`, `ExactCopyForWrite` and the
+  frozen-shape exceptions (`TopoDS_LockedShape`).
+- **Geometry:**
+  - Construction-time mutation stays: a B-spline is built, then published.
+  - Geometry can't be changed after publication; the internal mutators that algorithms call on published objects
+    become `With…` copies or builders.
+  - STEP's entity classes get `init` properties and builders in place of their 1,556 public setters.
+
+### 2.5 Errors
+
+- **One result type:** `Result<T>` (value or failure), carrying `Diagnostics` (warnings and errors, each with a code, a
+  message and the sub-shapes concerned). It maps directly onto Bento's `#VALUE!` with a message.
+  - For callers who want exceptions, a `Value` that throws, or `GetValueOrThrow()`.
+  - `TryXxx(out …)` where a single bool is enough.
+- **Expected failures** return results: a fillet that can't be built, a Boolean on invalid input, unreadable STEP.
+  Exceptions are kept for misuse.
+- **Inside the engine,** OCCT's exceptions-as-statuses (2,961 throws, 235 catches) are replaced where they sit on hot
+  paths or cross the boundary. The rest are converted as modules are touched; the long tail can stay internal for a
+  while without breaking the public rule.
+- **One model replaces four:** OCCT's status enums, `Message_Report` alerts and Draw-style messages become diagnostics.
+
+### 2.6 Heap, spans and collections
+
+- **Small fixed-size maths:**
+  - `math_Vector`/`math_Matrix` and the small `NCollection_Array1`s in inner loops become `Span<double>` over
+    `stackalloc` or pooled buffers.
+  - `[InlineArray]` structs where the size has a small bound.
+  - `ref struct` views for matrices.
+- **Collections:** the NCollection classes go.
+  - Ordinary lists, sets and maps become `List<T>` (with capacity), `HashSet<T>` and `Dictionary<TKey,TValue>`, or
+    `FrozenDictionary`/`FrozenSet` where built once.
+  - Queues become `Queue<T>`; deques get one deque type.
+  - A linked list only where an algorithm splices.
+  - Shape maps keep an explicit comparer: OCCT's `IsSame`/`IsEqual`, as OCCTNET0002 enforces today.
+  - Iteration order is free to change once 3.2's tests no longer need byte equality. Changes are made where measured.
+- **Returned collections:** `ReadOnlySpan<T>` for numeric arrays, `IReadOnlyList<T>`/`ImmutableArray<T>` for the rest.
+  Neither Kerf layer depends on Schematiq.Collections (question 50). Bento accepts the standard read-only types and
+  converts to Schematiq.Collections only where a function returns a modified collection; Schematiq.Collections already
+  implements `IReadOnlyList<T>` and `IReadOnlyDictionary<TKey,TValue>`, so values pass the other way without conversion.
+  Its hash set gains `IReadOnlySet<T>` (in its own repository, unit 10N).
+- **9E's proposals** 3 to 7 come for free with these changes. Each change is measured with 9E's benchmarks (Bento's
+  examples and build123d.NET's suite) before and after.
+
+### 2.7 State
+
+- **Per-operation context:** the about 215 mutable statics and 25 `[ThreadStatic]` scratch fields become per-operation
+  context or locals. That covers the message table, ShapeProcess's operator registry, `Resource_Manager`, debug flags,
+  HLR's data and BlendFunc's scratch.
+- **The constant tables stay static.**
+- **Locks:** none remain except around one-time initialisation.
+
+### 2.8 OCCT's bugs
+
+docs/occt-issues.md lists the bugs the port reproduced deliberately. They become a triaged list:
+- **fix:** they change results a user sees, such as open-questions.md item 10's;
+- **fix when touched;**
+- **leave:** harmless.
+
+Each fix gets a test of the corrected behaviour and a line in the issues file. The `// OCCT` markers go as their bugs
+are fixed.
+
+### 2.9 build123d.NET
+
+- **Native backend retired** (unit 10B): its wrappers, shim, native build, generator and bindings (about 136,000 lines),
+  and the backend switch.
+- **On OCCT.NET directly** (10B):
+  - the forwarding layer and its generator go (about 71,000 lines);
+  - build123d.NET calls OCCT.NET's types;
+  - its 3,300 hand-written runtime lines move to where they belong: mesh extraction, the exchange glue, colours
+    (OCCT.NET gains a colour type) and history access. Those that are really missing OCCT.NET API (the 15
+    `UnsafeAccessor`s) become public OCCT.NET API.
+- **A .NET API** (10M):
+  - **Removed:** Python's emulation (`PyFormat`, `PySet`, `PyMath`, `PyComparer`, `repr`), `Mode`, the string selectors,
+    tuple conversions, Python's operators and messages.
+  - **Typed results:** a fuse of parts is a `Part`, so union returns go.
+  - **Options records** in place of long optional-parameter lists.
+  - **Selectors** as LINQ-friendly methods taking delegates and typed keys.
+  - **Errors** through OCCT.NET's `Result<T>`.
+  - **Kept:** what's natural in .NET, such as `+`/`-` on vectors.
+  - **Renaming:** build123d's vocabulary (Box, Extrude, Fillet) stays where it names the concept well, and is renamed
+    where it was Python-shaped.
+- **Bento's couplings** become explicit: its own enum and property tables in place of reflection over build123d.NET's
+  names.
+- **Bento's spreadsheet-facing names follow Kerf's** (question 48): no workbooks depend on them yet, so `CAD_` functions,
+  their parameters and option keys (such as `z_dir`) are renamed to match Kerf.Modeling's names.
+
+### 2.10 One repository, two layers
+
+The two projects move into one repository, keeping two families of assemblies and packages.
+
+- **Why separate repositories no longer pay:** build123d.NET and OCCT.NET were separate so that build123d.NET could
+  choose between native OCCT and the port. Phase 10 retires native, so that reason goes. Phase 9 showed the cost of
+  keeping them apart:
+  - two branches and two worktrees for every change that touched both;
+  - version pins and two build modes (`OcctNetRoot` or the packages);
+  - NuGet indexing waits before build123d.NET would restore;
+  - 15 `UnsafeAccessor`s reaching across the boundary.
+- **Phase 10 would multiply that cost.** The rename and the public API design must move both together, and two public
+  APIs designed apart would overlap: two Boxes, two Fillets, two error models.
+- **What stays separate: the layers, as assemblies and packages.**
+  - **The kernel:** OCCT.NET's assemblies, under LGPL 2.1 with OCCT's exception, as a derived work of OCCT.
+  - **The modelling layer:** build123d.NET's successor, under Apache 2.0, as a derived work of build123d.
+  - The licences differ, and the FSF considers Apache 2.0 code incompatible with LGPL 2.1 code in one work. So no source
+    file moves between the layers: the modelling layer references the kernel's assemblies, as it does today.
+  - Each layer keeps its licence files and notices in its own folder; the root README explains the split.
+- **The line between the layers:**
+  - **The kernel's public API (2.1):** geometry, topology and the operations, with options and results.
+  - **The modelling layer:** the ergonomic API Bento uses. Parts, sketches and curves as typed values; locations and
+    placement; selectors; the algebra of combining parts.
+
+  The modelling layer adds no geometry of its own: what it needs from the kernel becomes kernel API.
+- **How (unit 10R):**
+  - A new repository. Each project's history is moved into its own folder (`git filter-repo --to-subdirectory-filter`),
+    and the two are merged with `--allow-unrelated-histories`, so `git log` and `blame` still work.
+  - One solution and one `Directory.Build.props`.
+  - Docs: OCCT.NET's docs carry on as the repository's (decisions, issues, plans), with build123d.NET's design and
+    integration notes beside them.
+  - The old repositories are archived as bundles.
+  - On nuget.org, the old package IDs are deprecated in favour of the new ones at 0.2.0. Bento moves to the new IDs then.
+- **No behaviour changes in 10R.** It is a move, tested by both suites passing unchanged.
+
+### 2.11 A name, and credit to the originals
+
+Diverging from OCCT and build123d makes their names misleading, and possibly unwelcome:
+- **"OCCT.NET"** suggests a faithful binding or port of Open CASCADE Technology. "Open CASCADE" is Open Cascade SAS's
+  trademark, and a diverging derivative shouldn't look endorsed by them.
+- **"build123d.NET"** suggests the Python library's API, which phase 10 removes.
+
+The name is **Kerf** (question 47): `Kerf.Kernel` and `Kerf.Modeling`, hosted in Renegade Dynamics' organisation. The
+credit stays, and the licences require it:
+
+| | The kernel (from OCCT) | The modelling layer (from build123d) |
+|---|---|---|
+| Licence | LGPL 2.1 with the Open CASCADE exception, unchanged | Apache 2.0, unchanged |
+| Required | The licence and exception texts; OCCT's copyright notices; a statement that it is a modified version of OCCT 8.0.1, and what changed; the source available | The licence; a NOTICE with build123d's attribution; copyright notices kept; modified files marked as changed |
+| Shown | README, NOTICE and package descriptions: "derived from Open CASCADE Technology 8.0.1 (Open Cascade SAS), ported to C# and redesigned"; the `// Port of:` headers kept in derived files | README, NOTICE and package descriptions: "derived from build123d (the build123d contributors)" |
+| Avoided | OCCT's names and logos in the product's name or branding | Presenting it as build123d |
+
+## 3. Testing without the oracle
+
+The oracle goes only after its knowledge is kept as data. Every feature's behaviour must be pinned by a test that
+doesn't need native OCCT.
+
+### 3.1 Keep what native OCCT told us (first, before anything diverges)
+
+1. **Freeze the live oracle tests.** Record native's results for each of the 362 live oracle tests and for 9D2's
+   differential run (16,044 shapes), and commit them as data: shapes as BRep text, plus properties, histories and
+   messages. The tests then compare against the recordings, as the 61 test files with embedded recordings already do.
+2. **Regenerate build123d.NET's native-only references** (the 30 STEP files) once more, then fix them as data.
+3. **Keep Python build123d's JSON** (geometry.json, topology.json) as data; drop the Python generator.
+
+### 3.2 From byte equality to intended behaviour
+
+Recordings pin today's behaviour; deliberate divergence then has to be told apart from regressions.
+
+- **Every recorded comparison has three levels:**
+  - **identical:** the default until the module diverges;
+  - **geometrically equal:** same validity, topology counts, volume/area/length, bounding box, and point-to-shape
+    distances within tolerance;
+  - **intended difference:** a recorded reason, as occt-issues.md records bugs.
+
+  When a module diverges (2.4's overlay, 2.6's collection order, 2.8's fixes), its tests drop to the second level. The
+  third needs a written reason.
+- **Invariant and property-based tests** per public API area. Generate inputs and check laws:
+  - a Boolean's volume against inclusion–exclusion;
+  - mass properties under transforms;
+  - a fillet's faces tangent to their neighbours;
+  - STEP and BREP round trips;
+  - a mesh's area against the exact area.
+- **Coverage as the gate:** measure line coverage of the public API and the engine under the unit tests, corpus,
+  build123d.NET and Bento suites. Every public member needs a test of its own; every engine package needs coverage
+  above an agreed floor (question 49).
+
+### 3.3 The Draw-lite corpus stays
+
+Its 17,872 runnable cases keep judging the engine by OCCT's own checks. Its scripts keep OCCT's command names, and its
+commands follow the renames because the renamer updates them. When a fix changes an OCCT reference value, the case's
+expectation is overridden with a recorded reason.
+
+## 4. Units
+
+Sizes are rough, in OCCT.NET lines touched.
+
+| Unit | Content | Needs |
+|---|---|---|
+| **10R** One repository | 2.10: both histories in one repository, one solution, licences per layer, docs merged; no behaviour change; the new name (question 47) in the repository, solution and folder names, the package IDs following at 0.2.0 (10E) | – |
+| **10A** Test independence | 3.1: freeze the live oracle tests and 9D2's logs as recordings; build123d.NET's native references and Python data as data; coverage measured and reported (3.2) | – |
+| **10B** build123d.NET on OCCT.NET alone | Retire native (about 136k lines); drop the forwarding layer (about 71k); build123d.NET calls OCCT.NET's types (structs, no disposal, OCCT.NET's exceptions until 10F); OCCT.NET gains the public API the 15 `UnsafeAccessor`s reach for, a colour type, mesh extraction | 10A |
+| **10C** Conventions and tooling | The renamer and its name map; .editorconfig and analyzers for .NET naming and immutability; translation-rules.md replaced by a design-rules document; a pilot on gp and math | – |
+| **10D** Public API design | Per-area API reviews (2.1, 2.2), the result and diagnostics types (2.5), options records; the public/engine split decided per type | 10C |
+| **10E** The rename | The map applied assembly by assembly (Foundation, ModelingData, ModelingAlgorithms, DataExchange), with Draw-lite, build123d.NET and Bento updated by the same tool; engine types made internal | 10C, 10D's split |
+| **10F** Errors | `Result<T>` at the public boundary; `IsDone`/`Perform` replaced by operations returning results; hot-path exceptions-as-statuses removed | 10D, 10E |
+| **10G** Immutability | Public setters removed: STEP's entities get `init` and builders; geometry's post-publication mutators become copies; `InternalsVisibleTo` removed | 10E |
+| **10H1–10H6** No copy at entry | 2.4's overlay; then Booleans, construction (sharing the profile face: decisions 468 and 1102), healing, offsets, fillets, features. Each removes its sites and keeps its tests at level 1 or 2 | 10A, 10E |
+| **10I** State | 2.7: statics and thread statics into per-operation context | 10E |
+| **10J** Heap and collections | 2.6: NCollection replaced, small maths on spans and inline arrays, capacities, returned types; measured with 9E's benchmarks | 10E |
+| **10K** OCCT's bugs | 2.8's triage, then the "fix" list | 10A |
+| **10L** Public API implementation | The reviewed public API (10D) over the engine, area by area | 10D, 10F, 10G |
+| **10M** build123d.NET's .NET API | 2.9: Python conventions removed; typed results; options; selectors; results for errors | 10B, 10L |
+| **10N** Bento | Bento's extension on Kerf.Modeling; explicit tables for its couplings; `CAD_` functions, parameters and option keys renamed to Kerf's names; standard .NET read-only types accepted, converted to Schematiq.Collections only when modified; `IReadOnlySet<T>` on Schematiq.Collections' hash set | 10M |
+
+### Running order
+
+With at most three OCCT.NET units at once; build123d.NET and Bento work runs outside that limit.
+
+| Step | Units | Notes |
+|---:|---|---|
+| 1 | 10R | The move; everything after it happens in one repository |
+| 2 | 10A ‖ 10C | Nothing diverges before 10A is in |
+| 3 | 10B ‖ 10D ‖ 10K's triage | 10B simplifies the modelling layer first, so later renames reach one code base |
+| 4 | 10E | The rename: mechanical, but it touches every file, so it runs alone |
+| 5 | 10F ‖ 10G ‖ 10H1 | |
+| 6 | 10H2 ‖ 10H3 ‖ 10I | |
+| 7 | 10H4 ‖ 10H5 ‖ 10J | |
+| 8 | 10H6 ‖ 10L ‖ 10K's fixes | |
+| 9 | 10M, then 10N | |
+
+**Releases:**
+- **0.2.0-preview.N:** the packages, under their new IDs, after step 4, when the names change.
+- **0.2.0:** at the end.
+- **The 0.1.0 previews** are deprecated on nuget.org.
+
+**Size:** larger than any phase since 5 and 6, but mostly not new algorithms.
+- **10E** touches every file, by tool.
+- **10H** is the hard part: about 45 sites, each needing understanding, not just mechanics. ShapeFix's 17 files are the
+  largest.
+- **10D and 10L** are design work: small in lines, large in judgement.
+
+## 5. Risks
+
+- **Losing correctness while diverging.** That is why 10A comes first, comparisons drop levels explicitly, and coverage
+  is measured.
+- **The rename's churn.** It is done by tool, assembly by assembly, all tests green after each, and never mixed with
+  behaviour changes in one commit.
+- **Load-bearing in-place edits.** OC5805's offset surface is the known one. The overlay can carry them, but each needs
+  understanding: 10H's units are bounded per module, and anything unclear stays on its copy until understood.
+- **Upstream OCCT fixes stop carrying across.** The name map keeps them findable, but each becomes a manual port.
+- **Bento's workbooks.** None depend on the 3D models functions yet, so renaming them now (question 48) costs nothing;
+  after a Bento release it would.
+
+## 6. The owner's answers
+
+All settled on 2 November (decision 1316).
+
+46. **Namespaces and names** (2.2). *Agreed:*
+    - the kernel's public namespaces by area: `Kerf.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,
+      `.Exchange`;
+    - engine types in `Kerf.Engine.<Area>`, with .NET names derived from OCCT's (`BOPAlgo_PaveFiller` →
+      `Kerf.Engine.Booleans.PaveFiller`);
+    - the modelling layer in `Kerf.Modeling`.
+47. **The name** (2.11). *Agreed:* **Kerf**, hosted in Renegade Dynamics' organisation: `Kerf.Kernel` (from OCCT,
+    LGPL) and `Kerf.Modeling` (from build123d, Apache 2.0), each crediting its origin. Before the first `Kerf.*`
+    publish, reserve the `Kerf.*` ID prefix on nuget.org.
+48. **Bento's spreadsheet-facing names.** *Agreed:* no workbooks depend on them yet, so `CAD_` functions, parameters and
+    option keys are renamed to follow Kerf's names (10N).
+49. **The coverage floor** (3.2). *Agreed:* every public member tested; at least 80% line coverage in each engine
+    package, lower where the corpus already exercises a package and the gap is listed.
+50. **Collections** (2.6). *Agreed:*
+    - Kerf returns standard .NET types (`ReadOnlySpan<T>`, `ImmutableArray<T>`, `IReadOnlyList<T>`), and the
+      modelling layer drops Schematiq.Collections too;
+    - Bento accepts the standard read-only types and converts to Schematiq.Collections only where a modified version
+      is needed;
+    - Schematiq.Collections implements the .NET read-only interfaces wherever it can, so no conversion is needed calling
+      Bento.Cad's functions. It already does for lists and dictionaries; its hash set gains `IReadOnlySet<T>`.
+51. **Draw-lite** (3.3). *Agreed:* kept permanently as the corpus test harness.
+52. **Phase 9's close.** *Agreed:* phase 9 closes at `0.1.0-preview.3`; phase 10 starts with 10R, then 10A and 10C.

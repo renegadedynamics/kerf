@@ -13510,3 +13510,21 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        ReadyToRun code (the CLI header's ManagedNativeHeader). The packages grow about 2.5× (about 20 MB for the six);
        unit 9E measured the first opening of Bento's example workbook a third faster. `-NoReadyToRun` packs IL only.
        Proposal 1, the server garbage collector, is Bento's (its branch `perf/server-gc`).
+
+## Phase 10: preparation
+
+1316. **Phase 10: Kerf** (owner, 2 November; phase10-plan.md). The owner's brief: .NET conventions over OCCT's and
+       build123d's; full immutability with no copy at entry, sharing unchanged faces; OCCT's bugs may be fixed; the
+       oracle may go once testing shows every feature works; results rather than expected exceptions; .NET 10 and C#'s
+       latest features; value types, spans and fitting collections; build123d.NET on OCCT.NET's types directly, without
+       Python conventions, its native backend retired. Then:
+       - **One repository** for OCCT.NET and build123d.NET (unit 10R), the layers kept as separate assemblies and
+         packages under their own licences (LGPL 2.1 with OCCT's exception; Apache 2.0).
+       - **The name is Kerf**, in Renegade Dynamics' organisation: `Kerf.Kernel` (from OCCT 8.0.1) and `Kerf.Modeling`
+         (from build123d), each crediting its origin as its licence requires; OCCT's names and marks kept out of the
+         product's name.
+       - Questions 46 to 52: the namespaces `Kerf.<Area>`, `Kerf.Engine.<Area>` and `Kerf.Modeling`; Bento's
+         spreadsheet-facing names renamed to follow Kerf's; the coverage floor (every public member, 80% per engine
+         package); standard .NET read-only collections in both layers, Bento converting to Schematiq.Collections only
+         when it modifies one and Schematiq.Collections implementing the .NET read-only interfaces; Draw-lite kept;
+         phase 9 closed at `0.1.0-preview.3`.

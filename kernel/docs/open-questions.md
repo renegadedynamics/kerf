@@ -205,6 +205,25 @@ The numbers in brackets are the plan's (section 7).
 **Owner (2 November):** "I would like the performance review but don't require the OBJ reader. Go with phase 9"
 (decision 1298). Phase 9 started.
 
+## Phase 10 (a .NET library: Kerf), from the plan in [phase10-plan.md](phase10-plan.md)
+
+46. **Namespaces and names.** *Agreed:* `Kerf.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,
+    `.Exchange` for the kernel's public API; `Kerf.Engine.<Area>` for the engine; `Kerf.Modeling` for the modelling
+    layer.
+47. **The name.** *Agreed:* **Kerf**, in Renegade Dynamics' organisation: `Kerf.Kernel` (from OCCT) and `Kerf.Modeling`
+    (from build123d), crediting both.
+48. **Bento's spreadsheet-facing names.** *Agreed:* renamed to follow Kerf's; no workbooks depend on them yet.
+49. **The coverage floor.** *Agreed:* every public member tested; 80% per engine package, lower where the corpus covers it
+    and the gap is listed.
+50. **Collections.** *Agreed:* standard .NET read-only types in both Kerf layers, no Schematiq.Collections; Bento
+    accepts them and converts only when it needs a modified collection; Schematiq.Collections implements the .NET
+    read-only interfaces wherever it can.
+51. **Draw-lite.** *Agreed:* kept as the corpus test harness.
+52. **Phase 9's close.** *Agreed:* at `0.1.0-preview.3`; phase 10 starts with 10R, 10A and 10C.
+
+**Owner (2 November):** "Let's go with `Kerf`", the recommendations for 46, 49, 51 and 52, and the answers above for
+47, 48 and 50 (decision 1316). The merged repository (unit 10R) was the owner's decision before the questions.
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and

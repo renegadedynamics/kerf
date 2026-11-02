@@ -2,6 +2,11 @@
 
 *Written 1 November 2026, during phase 7, at the owner's request, for reference later. Nothing here is planned yet.*
 
+> **Superseded by [phase10-plan.md](phase10-plan.md) (2 November 2026).** The owner chose .NET conventions and full
+> immutability over compatibility: decision point A (retire native build123d.NET) is yes; decision point B (diverge from
+> OCCT) is yes everywhere, under that plan's testing rules; OCCT's bugs may be fixed and copy at entry goes. This document
+> stays as the reasoning behind the plan.
+
 ## The question
 
 What should change in OCCT.NET and build123d.NET if we stopped requiring them to behave exactly like native OCCT and
