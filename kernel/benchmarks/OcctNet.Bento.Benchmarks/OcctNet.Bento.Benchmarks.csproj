@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Bento's CAD workload (unit 9E): a handful of the introductory examples as Bento's guide writes them
+    (docs/cad/build123d-in-bento.md in Bento), through build123d.NET's algebra API, each built, triangulated as the
+    viewer does, and measured, as a workbook does on opening and on every recalculation.
+
+    It builds build123d.NET from the sibling checkout (Build123dNetRoot) on OCCT.NET from this checkout;
+    Native/OcctNet.Bento.Benchmarks.Native.csproj runs the same program on native OCCT, for comparison
+    (build123d.NET's native build must exist). Run it in Release; Program.cs has the command line.
+    Not in the solution: it needs the build123d.NET checkout.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Native/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The backend's assembly is referenced directly too, with the same properties: restore doesn't see them -->
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj"
+                      AdditionalProperties="Build123dBackend=OcctNet;OcctNetRoot=$(RepoRoot)" />
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d.OcctNet/Build123d.OcctNet.csproj"
+                      AdditionalProperties="Build123dBackend=OcctNet;OcctNetRoot=$(RepoRoot)" />
+  </ItemGroup>
+
+</Project>

@@ -1596,3 +1596,12 @@ Phase 9 (part): Schematiq.Collections (unit 9A).
 
 - Returned collections are Schematiq.Collections' (`ISchematiqList<T>`), from nuget.org, in place of Bento.Collections
   0.4.0: the same library, renamed and published by Bento's owner. `PackedList<T>` is an `ISchematiqList<T>`.
+
+Phase 9 (part): the performance review (unit 9E).
+
+- docs/performance.md: where build123d.NET's suite and Bento's examples spend their time on OCCT.NET, against native.
+  Five fixes that keep native's results: a quadratic in `Intf_TangentZone` (BRepCheck on filleted solids), the eager
+  allocation of every `NCollection_DynamicArray`, the Delaunay mesher's queue of deleted links, the cell filter's
+  index copies and a temporary in `math_NewtonMinimum`. The suite now takes 1.9× native's time run serially (3.7×
+  before); the rest is mostly the garbage collector and the JIT, with proposals for both.
+- `benchmarks/OcctNet.Bento.Benchmarks`: Bento's guide examples, built, meshed and measured, on OCCT.NET or native.

@@ -154,7 +154,7 @@ public class math_NewtonMinimum
             {
                 // Project point on bounds or nullify TheStep coords if point lies on boundary.
 
-                suivant.Initialized(precedent - TheStep);
+                suivant.Subtract(precedent, TheStep); // OCCT: suivant = precedent - TheStep, without the temporary (unit 9E)
                 double aMult = RealLast();
                 for (int anIdx = 1; anIdx <= myLeft.Upper(); anIdx++)
                 {
@@ -203,7 +203,7 @@ public class math_NewtonMinimum
             bool hasProblem = false;
             do
             {
-                suivant.Initialized(precedent - TheStep);
+                suivant.Subtract(precedent, TheStep); // OCCT: suivant = precedent - TheStep, without the temporary (unit 9E)
                 //  Gestion de la convergence
                 hasProblem = !(F.Value(suivant, out TheMinimum));
                 if (hasProblem)
@@ -229,7 +229,7 @@ public class math_NewtonMinimum
             while (VItere > VPrecedent && Nreduction < 10)
             {
                 TheStep *= 0.4;
-                suivant.Initialized(precedent - TheStep);
+                suivant.Subtract(precedent, TheStep); // OCCT: suivant = precedent - TheStep, without the temporary (unit 9E)
                 F.Value(suivant, out VItere);
                 Nreduction++;
             }

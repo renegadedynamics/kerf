@@ -12,10 +12,15 @@ namespace Occt;
 /// <c>new Intf_TangentZone(other)</c>. Its mutators are internal, so a zone returned by
 /// <see cref="Intf_Interference.ZoneValue"/> (the stored one, as OCCT's const reference) can't be changed by callers.
 /// OCCT's operator== is <see cref="IsEqual"/>; <c>Dump</c> prints only in a debug build and is left out.
+/// <para>
+/// OCCT's sequence is a linked list, so <see cref="PolygonInsert"/>'s insertions at the front cost nothing; the
+/// points are kept here in a <see cref="Points"/> deque for the same reason (unit 9E: with a .NET list, merging the
+/// zones of two long coincident polygons was quadratic). The order of the points is OCCT's.
+/// </para>
 /// </remarks>
 public sealed class Intf_TangentZone
 {
-    private readonly NCollection_Sequence<Intf_SectionPoint> Result;
+    private readonly Points Result;
     private double ParamOnFirstMin;
     private double ParamOnFirstMax;
     private double ParamOnSecondMin;
@@ -24,7 +29,7 @@ public sealed class Intf_TangentZone
     /// <summary>Builds an empty tangent zone.</summary>
     public Intf_TangentZone()
     {
-        Result = new NCollection_Sequence<Intf_SectionPoint>();
+        Result = new Points();
         ParamOnFirstMin = ParamOnSecondMin = RealLast();
         ParamOnFirstMax = ParamOnSecondMax = RealFirst();
     }
@@ -32,7 +37,7 @@ public sealed class Intf_TangentZone
     /// <summary>C++'s copy constructor.</summary>
     public Intf_TangentZone(Intf_TangentZone theOther)
     {
-        Result = new NCollection_Sequence<Intf_SectionPoint>(theOther.Result);
+        Result = new Points(theOther.Result);
         ParamOnFirstMin = theOther.ParamOnFirstMin;
         ParamOnFirstMax = theOther.ParamOnFirstMax;
         ParamOnSecondMin = theOther.ParamOnSecondMin;
@@ -259,6 +264,63 @@ public sealed class Intf_TangentZone
         if (ParamOnSecondMax < Pi.ParamOnSecond())
         {
             ParamOnSecondMax = Pi.ParamOnSecond();
+        }
+    }
+
+    /// <summary>
+    /// OCCT's sequence of section points, indexed from 1, as a deque: the points before the first appended one are
+    /// held in reverse in <c>myFront</c>, the others in <c>myBack</c>, so inserting at either end is cheap.
+    /// </summary>
+    private sealed class Points
+    {
+        private readonly List<Intf_SectionPoint> myFront;
+        private readonly List<Intf_SectionPoint> myBack;
+
+        public Points()
+        {
+            myFront = [];
+            myBack = [];
+        }
+
+        public Points(Points theOther)
+        {
+            myFront = [.. theOther.myFront];
+            myBack = [.. theOther.myBack];
+        }
+
+        public int Length() => myFront.Count + myBack.Count;
+
+        public Intf_SectionPoint this[int theIndex]
+        {
+            get
+            {
+                Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > Length(), "NCollection_Sequence::Value");
+                int aNbFront = myFront.Count;
+                return theIndex <= aNbFront ? myFront[aNbFront - theIndex] : myBack[theIndex - aNbFront - 1];
+            }
+        }
+
+        public void Append(in Intf_SectionPoint thePoint) => myBack.Add(thePoint);
+
+        public void InsertBefore(int theIndex, in Intf_SectionPoint thePoint)
+        {
+            Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > Length() + 1, "NCollection_Sequence::InsertBefore");
+            int aPosition = theIndex - 1;
+            int aNbFront = myFront.Count;
+            if (aPosition <= aNbFront)
+            {
+                myFront.Insert(aNbFront - aPosition, thePoint);
+            }
+            else
+            {
+                myBack.Insert(aPosition - aNbFront, thePoint);
+            }
+        }
+
+        public void InsertAfter(int theIndex, in Intf_SectionPoint thePoint)
+        {
+            Standard_OutOfRange_Raise_if(theIndex < 0 || theIndex > Length(), "NCollection_Sequence::InsertAfter");
+            InsertBefore(theIndex + 1, thePoint);
         }
     }
 

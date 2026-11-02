@@ -353,11 +353,29 @@ public class NCollection_List<T> : IEnumerable<T>
 public class NCollection_DynamicArray<T> : IEnumerable<T>
 {
     private readonly List<T> myItems;
+    private readonly int myIncrement;
 
-    /// <summary>The increment is an allocation hint in OCCT and is ignored.</summary>
-    public NCollection_DynamicArray(int theIncrement = 256) => myItems = new List<T>(Math.Max(0, Math.Min(theIncrement, 256)));
+    /// <summary>
+    /// OCCT's increment is the size of its blocks; here it is the list's first capacity (at most 256), taken when
+    /// the first element is added, as OCCT allocates its first block (unit 9E: most arrays stay empty). Elements move
+    /// only when the list grows past it, as before.
+    /// </summary>
+    public NCollection_DynamicArray(int theIncrement = 256)
+    {
+        myItems = [];
+        myIncrement = Math.Max(0, Math.Min(theIncrement, 256));
+    }
 
     public NCollection_DynamicArray(NCollection_DynamicArray<T> theOther) => myItems = [.. theOther.myItems];
+
+    /// <summary>Takes the first capacity before the first element is added.</summary>
+    private void Reserve()
+    {
+        if (myItems.Capacity == 0 && myIncrement > 0)
+        {
+            myItems.Capacity = myIncrement;
+        }
+    }
 
     public int Size() => myItems.Count;
 
@@ -376,6 +394,7 @@ public class NCollection_DynamicArray<T> : IEnumerable<T>
         if (!ReferenceEquals(this, theOther))
         {
             myItems.Clear();
+            Reserve();
             myItems.AddRange(theOther.myItems);
         }
 
@@ -384,6 +403,7 @@ public class NCollection_DynamicArray<T> : IEnumerable<T>
 
     public ref T Append(T theValue)
     {
+        Reserve();
         myItems.Add(theValue);
         return ref CollectionsMarshal.AsSpan(myItems)[^1];
     }
@@ -393,6 +413,7 @@ public class NCollection_DynamicArray<T> : IEnumerable<T>
 
     public ref T InsertBefore(int theIndex, T theValue)
     {
+        Reserve();
         myItems.Insert(theIndex, theValue);
         return ref CollectionsMarshal.AsSpan(myItems)[theIndex];
     }
@@ -424,6 +445,7 @@ public class NCollection_DynamicArray<T> : IEnumerable<T>
     /// <summary>Sets an element, first growing the array with default elements if the index is beyond the end.</summary>
     public ref T SetValue(int theIndex, T theValue)
     {
+        Reserve();
         while (myItems.Count <= theIndex)
         {
             myItems.Add(NCollection_Default<T>.Value);
