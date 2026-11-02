@@ -31,6 +31,8 @@
     <EmbeddedResource Include="StepFile\Recordings\cases.pack.gz" LogicalName="StepFile.cases.pack.gz" />
     <!-- Native OCCT's recording of TKXSBase's foundation (tools/xsbaserec, unit 8A1) -->
     <EmbeddedResource Include="Interface\Recordings\xsbaserec.txt.gz" LogicalName="Interface.xsbaserec.txt.gz" />
+    <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
+    <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

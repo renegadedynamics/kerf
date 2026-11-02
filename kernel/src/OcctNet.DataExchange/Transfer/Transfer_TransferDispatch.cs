@@ -1,0 +1,69 @@
+// Port of: src/DataExchange/TKXSBase/Transfer/Transfer_TransferDispatch.hxx
+// Port of: src/DataExchange/TKXSBase/Transfer/Transfer_TransferDispatch.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+#nullable disable warnings
+
+namespace Occt;
+
+/// <summary>
+/// A TransferDispatch is aimed to dispatch Entities between two Interface Models, by default by copying them, as
+/// CopyTool, but with more capabilities of adapting : Copy is redefined to firstly pass the hand to a TransferProcess.
+/// If this gives no result, standard Copy is called.
+/// </summary>
+/// <remarks>
+/// This allow, for instance, to modify the copied Entity (such as changing a Name for a VDA Entity), or to do a deeper
+/// work (such as Substituting a kind of Entity to another one).
+/// </remarks>
+public class Transfer_TransferDispatch : Interface_CopyTool
+{
+    /// <summary>
+    /// Creates a TransferDispatch from a Model. Works with a General Service Library, given as an Argument. A
+    /// TransferDispatch is created as a CopyTool in which the Control is set to TransientProcess.
+    /// </summary>
+    public Transfer_TransferDispatch(Interface_InterfaceModel amodel, Interface_GeneralLib lib)
+        : base(amodel, lib)
+    {
+        SetControl(new Transfer_DispatchControl(amodel, new Transfer_TransientProcess(amodel.NbEntities())));
+    }
+
+    /// <summary>Same as above, but Library is defined through a Protocol.</summary>
+    public Transfer_TransferDispatch(Interface_InterfaceModel amodel, Interface_Protocol? protocol)
+        : base(amodel, protocol)
+    {
+        SetControl(new Transfer_DispatchControl(amodel, new Transfer_TransientProcess(amodel.NbEntities())));
+    }
+
+    /// <summary>Same as above, but works with the model's protocol (OCCT: the active protocol, decision 1183).</summary>
+    public Transfer_TransferDispatch(Interface_InterfaceModel amodel)
+        : base(amodel)
+    {
+        SetControl(new Transfer_DispatchControl(amodel, new Transfer_TransientProcess(amodel.NbEntities())));
+    }
+
+    /// <summary>Returns the content of Control Object, as a TransientProcess.</summary>
+    public Transfer_TransientProcess TransientProcess()
+    {
+        return (Control() as Transfer_DispatchControl).TransientProcess();
+    }
+
+    /// <summary>
+    /// Copies an Entity by calling the method Transferring from the TransferProcess. If this called produces a Null
+    /// Binder, then the standard, inherited Copy is called.
+    /// </summary>
+    public override bool Copy(Standard_Transient? entfrom, ref Standard_Transient? entto, bool mapped, bool errstat)
+    {
+        Transfer_Binder? result = TransientProcess().Transferring(entfrom);
+        if (result is null)
+        {
+            return base.Copy(entfrom, ref entto, mapped, errstat);
+        }
+        if (!result.IsKind(typeof(Transfer_SimpleBinderOfTransient)))
+        {
+            return false; // Produces something, but what ?
+        }
+        entto = (result as Transfer_SimpleBinderOfTransient).Result();
+        return true;
+    }
+}
