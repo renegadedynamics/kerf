@@ -1836,3 +1836,28 @@ reproduces each, but for `EntityCluster::Remove(num)` (decision 1190).
 | IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
 | LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
 | Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |
+
+## Phase 8: unit 8B, StepData and the STEP header
+
+Found by porting StepData, the header packages and Resource_Unicode's conversions, and by recording them natively
+(tools/stepdatarec). The port reproduces each, but for the first (decision 12508).
+
+| Where | What | Effect |
+|---|---|---|
+| StepData_Field::CopyFrom | For a SelectNamed, copies `*this` (still holding the member) into the copy's field | Endless recursion; fixed in the port |
+| StepData_Field::CopyFrom | Names the SelectNamed copy with its own (empty) name | The copy loses the member's name |
+| StepData_Field::CopyFrom, SetEntity(num) | Build the copied or converted list, then drop it | Lists are shared, not copied; SetEntity on a list of integers, reals or strings changes nothing |
+| StepData_Field::Set | For an HArray2 of reals sets the kind Integer, and reads `hi2` (null) for the row length of reals and transients | A crash (NullReferenceException) |
+| StepData_Field::ItemKind | `if (!ht.IsNull()) return kind;`: the test is inverted | "Any" for a list of transients; a null dereference for others |
+| StepData_Field::Real(n1, n2) | Returns a member's integer value for a list of lists | Reals truncated |
+| StepData_SelectMember::SetLogical | Stores 0 for every value | A logical member reads back False |
+| StepData_EnumTool::AddDefinition | After a blank, the next term starts with that blank; "$" gets a dot too ("$."); a term ending with a blank reads before the buffer | ". B." for "A B"; NullValue never finds "$" and returns -1 |
+| StepData_EnumTool::NullValue | Returns `false` (0) where it documents -1 when not optional | 0 |
+| StepData_StepReaderData::ReadAny | An integer parameter read into a given member is set as a real | |
+| StepData_StepReaderData::cleanText | Lead bytes near the end make the UTF-8 decoder read the terminating zero and the memory past it; an empty decoding (an overlong zero) makes `Trunc(-1)` throw | Garbage or Standard_OutOfRange from ReadString |
+| Resource_Unicode::ConvertGBKToUnicode, ConvertBig5ToUnicode | Insert the bytes read so far "at 0" (`Insert(0, ...)`) when a lead byte is followed by ASCII | Standard_OutOfRange |
+| Resource_Unicode::ConvertGBKToUnicode | After a 4-byte sequence, keeps its three bytes, so every following byte reads as a fourth; the 4-byte code point indexes the 2-byte table | Garbage after the first 4-byte character |
+| RWHeaderSection::Init | Registers the header protocol again at each call | From the second call, the header protocol is a FileProtocol |
+| APIHeaderSection_MakeHeader::SetDescription | Tests `fs`, then sets `fd` | A crash if there is a schema and no description |
+| StepData_StepWriter (undefined entities) | A sub-list's type is the parser's "/* (SUB) */", which OpenTypedSub writes | Written sub-lists start with a comment (valid STEP) |
+| StepData_StepDumper::Dump | Lists the proper idents under `nbi < 0`, never true; `nbu` and `nbq` are reset to 0 instead of counted | Never lists entities without ident or with ident = number |

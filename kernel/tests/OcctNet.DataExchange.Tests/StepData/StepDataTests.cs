@@ -336,6 +336,6 @@ public class StepDataTests
         // Not UTF-8 (a code point beyond U+10FFFF): one char per byte
         Assert.Equal("ÿÿ", Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_UTF8, "ÿÿ"));
         // OCCT's GBK and Big5 converters insert an ASCII byte after a lead byte "at 0", which throws
-        Assert.Throws<Standard_OutOfRange>(() => Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_Big5, "¤0"));
+        Assert.Throws<Standard_OutOfRange>(() => Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_Big5, "¤" + "0"));
     }
 }
