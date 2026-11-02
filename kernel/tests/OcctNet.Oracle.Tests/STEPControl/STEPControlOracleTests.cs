@@ -181,7 +181,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         Assert.DoesNotContain(aDifferent, d => !KnownReadDifferences.Contains(d.Split(":")[0]));
     }
 
-    // Files whose reading differs from native's, each attributed (decision 13209)
+    // Files whose reading differs from native's, each attributed (decision 1272)
     private static readonly HashSet<string> KnownReadDifferences = new(StringComparer.Ordinal)
     {
     };
@@ -351,7 +351,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         Assert.DoesNotContain(aDifferent, d => !KnownWriteDifferences.Contains(d.Split(":")[0]));
     }
 
-    // Cases whose writing or round trip differs from native's, each attributed (decision 13209)
+    // Cases whose writing or round trip differs from native's, each attributed (decision 1272)
     private static readonly HashSet<string> KnownWriteDifferences = new(StringComparer.Ordinal)
     {
     };

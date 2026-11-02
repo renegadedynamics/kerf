@@ -75,7 +75,7 @@ public class XSAlgo_ShapeProcessor
     }
 
     /// <summary>
-    /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 13210):
+    /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 1273):
     /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
     /// </summary>
     internal TopoDS_Shape InternalProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
@@ -89,7 +89,7 @@ public class XSAlgo_ShapeProcessor
         return ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.InternalResult() : theShape;
     }
 
-    /// <summary>As <see cref="MergeTransferInfo(Transfer_TransientProcess, int)"/>, without freezing the history's shapes (OCCT.NET, decision 13210).</summary>
+    /// <summary>As <see cref="MergeTransferInfo(Transfer_TransientProcess, int)"/>, without freezing the history's shapes (OCCT.NET, decision 1273).</summary>
     internal void InternalMergeTransferInfo(Transfer_TransientProcess theTransientProcess, int theFirstTPItemIndex)
     {
         if (myContext is null)

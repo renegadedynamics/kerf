@@ -18,7 +18,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// OCCT.NET (decisions 13004, 13006, 13202, 13205):
+/// OCCT.NET (decisions 1247, 1249, 1265, 1268):
 /// </para>
 /// <list type="bullet">
 /// <item>the shapes are made unfrozen (StepToTopoDS's <c>InternalValue</c>), bound and reused through the transient
@@ -185,7 +185,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         if (!aStepModel.IsInitializedUnit())
         {
             // OCCT: XSAlgo_ShapeProcessor::PrepareForTransfer() then the process-wide unit; the port has no
-            // process-wide unit: millimetres (decision 13202)
+            // process-wide unit: millimetres (decision 1265)
             double aCascadeUnit = UnitsMethods.GetCasCadeLengthUnit(null);
             aStepModel.SetLocalLengthUnit(aCascadeUnit);
             aLocalFactors.SetCascadeUnit(aCascadeUnit);
@@ -1827,7 +1827,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         {
             return NullResult();
         }
-        // OCCT.NET: a cycle of assembly links overflows OCCT's stack; here an exception (decision 13205)
+        // OCCT.NET: a cycle of assembly links overflows OCCT's stack; here an exception (decision 1268)
         RuntimeHelpers.EnsureSufficientExecutionStack();
 
         // TRANSLOG

@@ -29,7 +29,7 @@ namespace Occt;
 /// WS-&gt;TransferReader()-&gt;ShapeResult(ent);
 /// </summary>
 /// <remarks>
-/// <para>OCCT.NET (plan 2.7, decisions 1225, 13202):</para>
+/// <para>OCCT.NET (plan 2.7, decisions 1225, 1265):</para>
 /// <list type="bullet">
 /// <item>the parameters come from the session's parameter set (<see cref="IFSelect_WorkSession.Statics"/>), where
 /// OCCT reads the process-wide statics; or from a <see cref="DESTEP_Parameters"/> given to the read;</item>
@@ -56,7 +56,7 @@ public class STEPControl_Reader : XSControl_Reader
     }
 
     // OCCT: SetNorm("STEP"), which selects the controller recorded process-wide; here one of the session's own
-    // (STEPControl_Controller.SelectFor, decision 13201), then the transfer reader initialised as SetNorm does
+    // (STEPControl_Controller.SelectFor, decision 1264), then the transfer reader initialised as SetNorm does
     private void SelectStep()
     {
         if (WS() is null)
@@ -191,7 +191,7 @@ public class STEPControl_Reader : XSControl_Reader
         {
             return status;
         }
-        // OCCT.NET: the length unit, from the session's statics (decision 13202)
+        // OCCT.NET: the length unit, from the session's statics (decision 1265)
         if (!aStepModel.IsInitializedUnit())
         {
             aStepModel.SetLocalLengthUnit(UnitsMethods.GetCasCadeLengthUnit(WS().Statics()));

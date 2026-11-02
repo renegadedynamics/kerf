@@ -154,8 +154,8 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
                                            $"{r.Case.Id}: {r.Status}"));
     }
 
-    // the corpus's counts after unit 8F
-    private const int GainedCount = 274;
+    // the corpus's counts after unit 8F (285 with unit 8G1's documents: the de grid's step cases E1, E2, G9 and others)
+    private const int GainedCount = 285;
     private const int OkCount = 44;
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
@@ -165,5 +165,10 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
         // parameters Draw-lite's session doesn't load (resource files: decision 1181)
         "bugs/modalg_7/bug30273",
         "bugs/xde/bug6283",
+        // the de grid's end script, runnable with 8F's commands and 8G1's documents together: its document reading
+        // (ReadStep, XGetOneShape on what it reads) is unit 8G2's
+        "de/step_1/E1",
+        "de/step_1/E2",
+        "de/step_1/G9",
     };
 }

@@ -166,7 +166,7 @@ public class STEPSelections_SelectFaces : IFSelect_SelectExplore
 /// <summary>The curves of the geometric sets of the input.</summary>
 /// <remarks>
 /// OCCT keeps the flag that lets the first composite curve's geometric set through in a thread-local variable, reset
-/// by every construction; the port keeps it in the selection (decision 13207).
+/// by every construction; the port keeps it in the selection (decision 1270).
 /// </remarks>
 public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
 {
@@ -343,7 +343,7 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
 /// <summary>The instances (the entities used by the assembly structure) of the model's roots.</summary>
 /// <remarks>
 /// OCCT caches the graph and the instances of its last model in thread-local variables shared by every instance of
-/// the class; the port caches them in the selection (decision 13207).
+/// the class; the port caches them in the selection (decision 1270).
 /// </remarks>
 public class STEPSelections_SelectInstances : IFSelect_SelectExplore
 {

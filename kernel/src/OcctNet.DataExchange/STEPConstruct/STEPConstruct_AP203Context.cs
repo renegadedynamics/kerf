@@ -20,7 +20,7 @@ namespace Occt;
 /// A C++ value class, a C# class here (decision 1185). The default date and person come, as in OCCT, from the system
 /// (the local time and time zone, the user's name, the host's address) the first time they are asked; a writer that
 /// must be repeatable sets its own with <see cref="SetDefaultDateAndTime"/> and
-/// <see cref="SetDefaultPersonAndOrganization"/> (decision 13204).
+/// <see cref="SetDefaultPersonAndOrganization"/> (decision 1267).
 /// </remarks>
 public class STEPConstruct_AP203Context
 {

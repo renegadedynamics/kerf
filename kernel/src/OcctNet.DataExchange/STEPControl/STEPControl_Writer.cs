@@ -16,7 +16,7 @@ namespace Occt;
 /// outputs a distinct root entity in the STEP file.
 /// </summary>
 /// <remarks>
-/// <para>A C++ value class, a C# class here (decision 1185). OCCT.NET (plan 2.7, decisions 13201, 13202, 13204):</para>
+/// <para>A C++ value class, a C# class here (decision 1185). OCCT.NET (plan 2.7, decisions 1264, 1265, 1267):</para>
 /// <list type="bullet">
 /// <item>the writer never changes the shape it is given;</item>
 /// <item>the parameters come from the session's parameter set (<see cref="IFSelect_WorkSession.Statics"/>), or from
@@ -69,7 +69,7 @@ public class STEPControl_Writer
     public void SetWS(XSControl_WorkSession WS, bool scratch = true)
     {
         thesession = WS;
-        // OCCT: SelectNorm("STEP"), the controller recorded process-wide; here one of the session's own (decision 13201)
+        // OCCT: SelectNorm("STEP"), the controller recorded process-wide; here one of the session's own (decision 1264)
         STEPControl_Controller.SelectFor(thesession);
         thesession.InitTransferReader(0);
         Model(scratch);
@@ -150,7 +150,7 @@ public class STEPControl_Writer
         if (!Model().IsInitializedUnit())
         {
             // OCCT: XSAlgo_ShapeProcessor::PrepareForTransfer() then the process-wide unit; here the session's
-            // xstep.cascade.unit (decision 13202)
+            // xstep.cascade.unit (decision 1265)
             Model().SetLocalLengthUnit(UnitsMethods.GetCasCadeLengthUnit(thesession.Statics()));
         }
         Model().InternalParameters = theParams;
@@ -216,7 +216,7 @@ public class STEPControl_Writer
         thesession.TransferWriter().PrintStats(what, mode);
     }
 
-    // CleanDuplicateEntities (StepTidy_DuplicateCleaner, write.step.cleanduplicates) is not ported (decision 13208)
+    // CleanDuplicateEntities (StepTidy_DuplicateCleaner, write.step.cleanduplicates) is not ported (decision 1271)
 
     /// <summary>Sets parameters for shape processing.</summary>
     public void SetShapeFixParameters(NCollection_DataMap<string, string> theParameters)

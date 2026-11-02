@@ -29,7 +29,7 @@ public static class Message
 {
     private static volatile Message_Messenger theDefaultMessenger = Message_Messenger.Empty();
 
-    // OCCT.NET (decision 13212): a messenger standing for the default one in the current flow of execution, as
+    // OCCT.NET (decision 1275): a messenger standing for the default one in the current flow of execution, as
     // DRAWEXE's data exchange commands (XSTEPDRAWRUN) give the default messenger a printer to the Tcl result while
     // they run; Draw-lite installs one per command, and parallel interpreters don't see each other's
     private static readonly AsyncLocal<Message_Messenger?> theFlowMessenger = new();

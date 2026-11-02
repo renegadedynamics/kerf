@@ -15,7 +15,7 @@ namespace OcctNet.DrawLite;
 /// 8G's; <c>countexpected</c> and <c>dumpassembly</c> (STEPSelections' counter and assembly explorer) are left out.
 /// </summary>
 /// <remarks>
-/// They work on the interpreter's session (XSDRAWCommands.Session) and its parameter set (decision 13211): the readers
+/// They work on the interpreter's session (XSDRAWCommands.Session) and its parameter set (decision 1274): the readers
 /// and writers made on the fly (testreadstep, testwritestep, stepfileunits), which OCCT makes on sessions of their own
 /// reading the process-wide statics, are given sessions on the interpreter's set. Files are read from Draw-lite's
 /// files (its in-memory overlay first) through the readers' stream forms, and written to the overlay through the
@@ -343,7 +343,7 @@ internal static class XSDRAWSTEPCommands
         XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
         if (aWS.NormAdaptor() is not STEPControl_Controller)
         {
-            STEPControl_Controller.SelectFor(aWS); // OCCT: aWS->SelectNorm("STEP") (decision 13201)
+            STEPControl_Controller.SelectFor(aWS); // OCCT: aWS->SelectNorm("STEP") (decision 1264)
         }
         if (theNbArgs < 3)
         {

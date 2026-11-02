@@ -110,12 +110,12 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         }
         Assert.Empty(aRunnableBefore);
         Assert.Equal(2858, aScans.Count);
-        Assert.Equal(109, aRunnable.Count);
+        Assert.Equal(120, aRunnable.Count); // 109 with 8G1 alone; 120 with 8F's commands
         // OK 63 (xcaf's BRep grids 44, bugs/xde 11, de_mesh's glTF 5, three others); SKIPPED 37 (data not public);
         // FAILED 9, attributed. Most of de, xcaf and bugs/xde wait for STEP (unit 8G2), IGES, OCAF storage, the
         // parameter commands (unit 8F), GD&T, notes and views.
         Assert.Equal(63, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(37, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        Assert.Equal(45, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
@@ -127,6 +127,10 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         // unit 8T's glTF reader (decision 1236) turns glTF's Y-up into Z-up in the coordinates, where OCCT's places the
         // scene's nodes at a rotation, so OCCT's document has a reference (INSTANCE) per root node where the tree's has
         // a part; boxinterleaved's unnamed root node holding a rotation is also folded into its child
+        // the de grid's end script (with 8F's commands): its document reading is unit 8G2's
+        "de/step_1/E1",
+        "de/step_1/E2",
+        "de/step_1/G9",
         "de_mesh/gltf_read/boxinterleaved",
         "de_mesh/gltf_read/cubeemb",
         // OCCT's glTF writer leaves out nodes without triangles (a part not meshed, an empty compound) and its reader

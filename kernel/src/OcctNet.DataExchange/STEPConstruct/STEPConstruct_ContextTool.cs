@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A C++ value class, a C# class here (decision 1185). OCCT.NET: it also holds the writer's counter of
-/// NEXT_ASSEMBLY_USAGE_OCCURRENCE identifiers (<see cref="NauoId"/>, decision 13203).
+/// NEXT_ASSEMBLY_USAGE_OCCURRENCE identifiers (<see cref="NauoId"/>, decision 1266).
 /// </remarks>
 public class STEPConstruct_ContextTool
 {
@@ -404,7 +404,7 @@ public class STEPConstruct_ContextTool
 
     /// <summary>
     /// The last identifier given to a NEXT_ASSEMBLY_USAGE_OCCURRENCE by this writer (OCCT.NET: OCCT numbers them
-    /// from a process-wide counter, decision 13203).
+    /// from a process-wide counter, decision 1266).
     /// </summary>
     public ref int NauoId() => ref myNauoId;
 

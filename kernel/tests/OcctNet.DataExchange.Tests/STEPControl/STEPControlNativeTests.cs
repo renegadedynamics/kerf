@@ -133,7 +133,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         Assert.DoesNotContain(aDifferent, d => !KnownReadDifferences.Contains(d.Split(':')[0]));
     }
 
-    // Files whose checks differ from native's, each attributed (decision 13209)
+    // Files whose checks differ from native's, each attributed (decision 1272)
     private static readonly HashSet<string> KnownReadDifferences = new(StringComparer.Ordinal)
     {
         // native throws Standard_OutOfRange ("NCollection_Sequence::Value") while the recorder walks the model's check
@@ -306,7 +306,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         Assert.DoesNotContain(aDifferent, d => !KnownWriteDifferences.Contains(d.Split(':')[0]));
     }
 
-    // Writes that differ from native's, each attributed (decision 13209): the AP203 assemblies, where native leaves
+    // Writes that differ from native's, each attributed (decision 1272): the AP203 assemblies, where native leaves
     // out the AP203 management entities (security classification, its officer, date and approval) of the last two
     // assembly occurrences, those of the second instance of the sub-assembly, which the port writes; the same
     // assemblies are identical in AP214 and AP242 (cause not found: occt-issues.md, 8F)

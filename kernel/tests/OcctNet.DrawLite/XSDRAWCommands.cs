@@ -15,7 +15,7 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// The data exchange session of an interpreter (XSDRAW's) and the IFSelect and XSControl commands the corpus uses
-/// (unit 8F, decisions 1221, 13211): <c>param</c>, <c>data</c>, <c>entity</c>, <c>xload</c>/<c>xread</c>,
+/// (unit 8F, decisions 1221, 1274): <c>param</c>, <c>data</c>, <c>entity</c>, <c>xload</c>/<c>xread</c>,
 /// <c>writeall</c>, <c>writeent</c>/<c>writent</c>, <c>listtypes</c>, <c>newmodel</c>, <c>tpstat</c>, <c>tpdraw</c>,
 /// <c>tpcompound</c>.
 /// </summary>
@@ -26,7 +26,7 @@ namespace OcctNet.DrawLite;
 /// the standard, XSAlgo's, STEP's and STEPCAFControl's statics are declared when the session is made (as DRAWEXE
 /// declares them when it loads the plugin). The commands are written on the session directly (decision 1221): no
 /// session pilot. As XSTEPDRAWRUN gives the default messenger a printer to the Tcl result while such a command runs,
-/// Draw-lite gives the command's flow a messenger printing to its result (decision 13212): the libraries' messages
+/// Draw-lite gives the command's flow a messenger printing to its result (decision 1275): the libraries' messages
 /// (StepSelect_WorkLibrary's "Write ... Done") reach the result as in DRAWEXE, each followed by a new line, and the
 /// command's own message comes when it returns, after them. Files are Draw-lite's (its in-memory overlay for those
 /// written).
@@ -54,7 +54,7 @@ internal static class XSDRAWCommands
     }
 
     // XSTEPDRAWRUN: while the command runs, the default messenger prints to the Tcl result (Draw_Printer: each message
-    // and a new line, from Message_Info up), here through a messenger of the command's flow (decision 13212)
+    // and a new line, from Message_Info up), here through a messenger of the command's flow (decision 1275)
     private static void Pilot(DrawInterpreter theInterpreter, string theName, DrawCxxCommand theCommand)
         => DrawCxx.Add(theInterpreter, theName, (theDI, di, argv) =>
         {
@@ -99,7 +99,7 @@ internal static class XSDRAWCommands
         aSession.SetVars(new XSControl_Vars());
         Interface_StaticSet aStatics = aSession.Statics();
         // XSDRAW::LoadSession calls XSAlgo::Init; XSDRAWSTEP::Factory STEPCAFControl_Controller::Init, which records
-        // the STEP controller and declares its statics (decision 13211)
+        // the STEP controller and declares its statics (decision 1274)
         XSAlgo.Init(aStatics);
         STEPControl_Controller.Init();
         new STEPControl_Controller().InitStatics(aStatics);

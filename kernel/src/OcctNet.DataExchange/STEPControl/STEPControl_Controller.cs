@@ -13,7 +13,7 @@ namespace Occt;
 /// <summary>defines basic controller for STEP processor</summary>
 /// <remarks>
 /// <para>
-/// OCCT.NET (plan 2.7, decisions 1181, 1222, 13201): OCCT's constructor registers the STEP modules and declares STEP's
+/// OCCT.NET (plan 2.7, decisions 1181, 1222, 1264): OCCT's constructor registers the STEP modules and declares STEP's
 /// statics in the process-wide <c>Interface_Static</c> the first time; the port registers the modules once per process
 /// (<see cref="Init"/> and the constructor, idempotent) and declares the statics in each session's parameter set
 /// (<see cref="InitStatics"/>, once per set). <see cref="Init"/> records one controller under "STEP" and "step", as
@@ -453,7 +453,7 @@ public class STEPControl_Controller : XSControl_Controller
     /// Standard Initialisation. It creates a Controller for STEP and records it to various names, available to
     /// select it later Returns True when done, False if could not be done
     /// </summary>
-    /// <remarks>OCCT.NET: once per process, thread-safe; also initialises ShapeAlgo (decision 12904).</remarks>
+    /// <remarks>OCCT.NET: once per process, thread-safe; also initialises ShapeAlgo (decision 1241).</remarks>
     public static bool Init()
     {
         lock (theInitLock)

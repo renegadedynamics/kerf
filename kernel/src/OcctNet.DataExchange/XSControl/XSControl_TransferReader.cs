@@ -611,7 +611,7 @@ public class XSControl_TransferReader : Standard_Transient
         //   Ooh the ugly wart
         // OCCT.NET: the static is the reader's parameter set's (OCCT: the process-wide one; without a set, its
         // default 0.01); OCCT encodes the regularity into the recorded shape itself (ShapeFix::EncodeRegularity), as
-        // the port does into a reader's working shape (unfrozen: STEPControl_ActorRead's, decision 13210), so that
+        // the port does into a reader's working shape (unfrozen: STEPControl_ActorRead's, decision 1273), so that
         // results sharing it keep sharing it; a shape holding frozen shapes is encoded into a copy (BRepLib's
         // functional twin, decision 1224)
         double tolang = (myStatics is null ? 0.01 : myStatics.RVal("read.encoderegularity.angle"));

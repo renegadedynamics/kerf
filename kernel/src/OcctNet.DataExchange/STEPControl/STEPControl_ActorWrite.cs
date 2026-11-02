@@ -13,7 +13,7 @@ namespace Occt;
 
 /// <summary>This class performs the transfer of a Shape from TopoDS to AP203 or AP214 (CD2 or DIS)</summary>
 /// <remarks>
-/// OCCT.NET (plan 2.7, decisions 13203, 13206): the writer never changes the shape it is given. OCCT marks the shells
+/// OCCT.NET (plan 2.7, decisions 1266, 1269): the writer never changes the shape it is given. OCCT marks the shells
 /// of a non-manifold solid closed in place (<c>Closed(true)</c>); the port marks a copy of a shell that isn't closed
 /// (the same faces). The writer numbers its assembly occurrences from its context's counter
 /// (<see cref="STEPConstruct_ContextTool.NauoId"/>), where OCCT uses a process-wide one. <see cref="ContextTool"/>
@@ -125,7 +125,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     }
 
     // OCCT.NET: OCCT marks a non-manifold solid's shell closed in place (aSubShell.Closed(true)), changing the caller's
-    // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 13206)
+    // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 1269)
     private static TopoDS_Shell ClosedShell(TopoDS_Shell theShell)
     {
         if (theShell.Closed())
@@ -1751,7 +1751,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             AX1 = aMaker.Value();
         }
 
-        // OCCT numbers the occurrence from a process-wide counter: here the writer's (decision 13203)
+        // OCCT numbers the occurrence from a process-wide counter: here the writer's (decision 1266)
         mkitem.MakeRelationship(ref myContext.NauoId());
         NCollection_HSequence<Standard_Transient> roots = myContext.GetRootsForAssemblyLink(mkitem);
 

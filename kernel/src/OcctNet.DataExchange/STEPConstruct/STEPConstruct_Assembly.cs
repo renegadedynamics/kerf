@@ -14,7 +14,7 @@ namespace Occt;
 /// <remarks>
 /// A C++ value class, a C# class here (decision 1185). OCCT numbers the NEXT_ASSEMBLY_USAGE_OCCURRENCEs it makes from a
 /// process-wide counter (a function static); the port's writer passes its own counter
-/// (<see cref="MakeRelationship(ref int)"/>, decision 13203), and <see cref="MakeRelationship()"/> keeps a
+/// (<see cref="MakeRelationship(ref int)"/>, decision 1266), and <see cref="MakeRelationship()"/> keeps a
 /// process-wide one for other callers.
 /// </remarks>
 public class STEPConstruct_Assembly
@@ -74,7 +74,7 @@ public class STEPConstruct_Assembly
 
     /// <summary>
     /// As <see cref="MakeRelationship()"/>, numbering the occurrence from the caller's counter (OCCT.NET: the
-    /// writer's own, decision 13203).
+    /// writer's own, decision 1266).
     /// </summary>
     public void MakeRelationship(ref int theNauoId)
     {
