@@ -21,10 +21,10 @@ $exchange = Join-Path $OcctNetRoot 'src/OcctNet.DataExchange/OcctNet.DataExchang
 dotnet build $exchange -c Release -nologo -v q
 if ($LASTEXITCODE) { throw "OCCT.NET failed to build ($LASTEXITCODE)" }
 
-# OCCT.NET's Bento.Collections, for its signatures
+# OCCT.NET's Schematiq.Collections, for its signatures
 $nuget = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $HOME '.nuget/packages' }
-$bento = Get-ChildItem (Join-Path $nuget 'bento.collections') -Directory | Sort-Object Name | Select-Object -Last 1
-$bentoLib = Join-Path $bento.FullName 'lib/net8.0'
+$collections = Get-ChildItem (Join-Path $nuget 'schematiq.collections') -Directory | Sort-Object Name | Select-Object -Last 1
+$collectionsLib = Join-Path $collections.FullName 'lib/net8.0'
 
 dotnet run --project (Join-Path $root 'tools/OcctNetGen') -c Release -- `
   (Join-Path $root 'src/Build123d.Occt/bin/Release/net10.0/Build123d.Occt.dll') `
@@ -32,5 +32,5 @@ dotnet run --project (Join-Path $root 'tools/OcctNetGen') -c Release -- `
   (Join-Path $root 'src/Build123d.OcctNet/Generated') `
   (Join-Path $root 'bindings/occtnet.handwritten.txt') `
   (Join-Path $root 'bindings/occtnet.unforwarded.txt') `
-  $bentoLib
+  $collectionsLib
 if ($LASTEXITCODE) { throw "OcctNetGen failed ($LASTEXITCODE)" }

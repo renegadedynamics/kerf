@@ -32,7 +32,7 @@ version, and its source is available from the link above.
   FreeType Project (https://freetype.org). All rights reserved. See
   [licenses/FreeType-FTL.txt](licenses/FreeType-FTL.txt).
 
-## Bento.Collections
+## Schematiq.Collections
 
 - **What:** the immutable collections under `ShapeList`. It is a NuGet dependency and isn't shipped
   in these packages.

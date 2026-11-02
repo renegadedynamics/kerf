@@ -31,7 +31,6 @@
   <PropertyGroup>
     <VersionPrefix>0.1.0</VersionPrefix>
     <Authors>build123d.NET contributors</Authors>
-    <PackageProjectUrl>https://github.com/gumyr/build123d</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Copyright>Copyright (c) 2026 The build123d.NET Contributors; based on build123d, copyright (c) 2022–2025 The build123d Contributors</Copyright>

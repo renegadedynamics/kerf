@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
-using Bento.Collections;
+using Schematiq.Collections;
 using Build123d.Occt;
 
 namespace Build123d;
@@ -9,7 +9,7 @@ namespace Build123d;
 public static class ShapeList
 {
     /// <summary>A list of the given shapes.</summary>
-    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : Shape => new(BentoList.Create(shapes));
+    public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes) where T : Shape => new(SchematiqList.Create(shapes));
 }
 
 /// <summary>
@@ -23,15 +23,15 @@ public static class ShapeList
 [CollectionBuilder(typeof(ShapeList), nameof(ShapeList.Create))]
 public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> where T : Shape
 {
-    private readonly IBentoList<T> _items;
+    private readonly ISchematiqList<T> _items;
 
-    internal ShapeList(IBentoList<T> items) => _items = items;
+    internal ShapeList(ISchematiqList<T> items) => _items = items;
 
     /// <summary>A list of the given shapes, in order.</summary>
-    public ShapeList(IEnumerable<T> shapes) => _items = BentoList.Create(shapes);
+    public ShapeList(IEnumerable<T> shapes) => _items = SchematiqList.Create(shapes);
 
     /// <summary>The empty list.</summary>
-    public static ShapeList<T> Empty { get; } = new(BentoList.Empty<T>());
+    public static ShapeList<T> Empty { get; } = new(SchematiqList.Empty<T>());
 
     /// <summary>The number of shapes.</summary>
     public int Count => _items.Count;
@@ -65,7 +65,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
     public ShapeList<T> Add(T shape) => new(_items.Push(shape));
 
     /// <summary>This list with shapes added at the end.</summary>
-    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.Concat(BentoList.Create(shapes)));
+    public ShapeList<T> AddRange(IEnumerable<T> shapes) => new(_items.Concat(SchematiqList.Create(shapes)));
 
     /// <summary>The list as a list of a base class of its shapes.</summary>
     public ShapeList<TBase> Upcast<TBase>() where TBase : Shape => new(_items.View(s => (TBase)(Shape)s));
