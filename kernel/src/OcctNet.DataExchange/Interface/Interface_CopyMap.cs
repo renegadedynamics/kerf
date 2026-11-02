@@ -1,0 +1,86 @@
+// Port of: src/DataExchange/TKXSBase/Interface/Interface_CopyMap.hxx
+// Port of: src/DataExchange/TKXSBase/Interface/Interface_CopyMap.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+#nullable disable warnings
+
+namespace Occt;
+
+/// <summary>
+/// Manages a Map for the need of single Transfers, such as Copies In such transfer, Starting Entities are
+/// read from a unique Starting Model, and each transferred Entity is bound to one and only one Result, which
+/// cannot be changed later.
+/// </summary>
+public class Interface_CopyMap : Interface_CopyControl
+{
+
+    /// <summary>
+    /// Creates a CopyMap adapted to work from a Model
+    /// </summary>
+    public Interface_CopyMap(Interface_InterfaceModel? amodel)
+    {
+        theres = new NCollection_Array1<Standard_Transient>(0, amodel.NbEntities());
+        themod = amodel;
+    }
+
+    /// <summary>
+    /// Clears Transfer List. Gets Ready to begin another Transfer
+    /// </summary>
+    public override void Clear()
+    {
+        int nb = theres.Upper();
+        Standard_Transient bid = null; // Null
+        for (int i = 1; i <= nb; i++)
+        {
+            theres.SetValue(i, bid);
+        }
+    }
+
+    /// <summary>
+    /// Returns the InterfaceModel used at Creation time
+    /// </summary>
+    public Interface_InterfaceModel? Model()
+    {
+        return themod;
+    }
+
+    /// <summary>
+    /// Binds a Starting Entity identified by its Number &lt;num&gt; in the Starting Model, to a Result of
+    /// Transfer &lt;res&gt;
+    /// </summary>
+    public override void Bind(Standard_Transient? ent, Standard_Transient? res)
+    {
+        int num = themod.Number(ent);
+        if (num == 0 || num > theres.Upper())
+        {
+            throw new Interface_InterfaceError(
+                "CopyMap : Bind, Starting Entity not issued from Starting Model");
+        }
+        if (theres.Value(num) is not null)
+        {
+            throw new Interface_InterfaceError("CopyMap : Bind, Starting Entity already bound");
+        }
+        theres.SetValue(num, res);
+    }
+
+    /// <summary>
+    /// Search for the result of a Starting Object (i.e. an Entity, identified by its Number &lt;num&gt; in the
+    /// Starting Model) Returns True if a Result is Bound (and fills &lt;res&gt;) Returns False if no result is
+    /// Bound (and nullifies &lt;res&gt;)
+    /// </summary>
+    public override bool Search(Standard_Transient? ent, out Standard_Transient? res)
+    {
+        int num = themod.Number(ent);
+        if (num == 0)
+        {
+            res = null; // OCCT leaves <res> as it was
+            return false;
+        }
+        res = theres.Value(num);
+        return (res is not null);
+    }
+
+    private Interface_InterfaceModel? themod;
+    private NCollection_Array1<Standard_Transient> theres;
+}
