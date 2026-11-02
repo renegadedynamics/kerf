@@ -1436,3 +1436,12 @@ Phase 8 (part): the STEP parser (unit 8P).
 - Tests: tools/steprec compiles OCCT's own scanner and parser. All 340 STEP files of OCCT's dataset and data/step, and
   1,329 hostile and mutated inputs, parse as natively, but for two inputs native crashes on. The port parses in 0.74×
   native's time.
+Phase 8 (part): XSBase's foundation (unit 8A1).
+- Ported: MoniTool (but its timers and case data), Interface (but STAT and the message dictionary), IFGraph, LibCtl's
+  library as C# generics, XSMessage's texts, and TCollection_HAsciiString.
+- The statics become a parameter object, `Interface_StaticSet`, passed to each read and write; the protocols'
+  module lists are initialised once; no other process-wide state changes.
+- Compared with native OCCT: 19,400 recorded lines identical (the formatting of reals STEP writes, the line buffer,
+  the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
+  tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
+- IFSelect's member trace for unit 8A2: 41 of 76 classes reached.

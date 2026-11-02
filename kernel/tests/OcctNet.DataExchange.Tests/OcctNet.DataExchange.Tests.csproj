@@ -29,9 +29,12 @@
     <EmbeddedResource Include="StepFile\Recordings\steprec-corpus.txt.gz" LogicalName="StepFile.steprec-corpus.txt.gz" />
     <EmbeddedResource Include="StepFile\Recordings\steprec-cases.txt.gz" LogicalName="StepFile.steprec-cases.txt.gz" />
     <EmbeddedResource Include="StepFile\Recordings\cases.pack.gz" LogicalName="StepFile.cases.pack.gz" />
+    <!-- Native OCCT's recording of TKXSBase's foundation (tools/xsbaserec, unit 8A1) -->
+    <EmbeddedResource Include="Interface\Recordings\xsbaserec.txt.gz" LogicalName="Interface.xsbaserec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="Occt" />
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 
