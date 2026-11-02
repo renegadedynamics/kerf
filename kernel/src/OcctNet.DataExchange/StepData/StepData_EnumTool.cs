@@ -68,7 +68,7 @@ public sealed class StepData_EnumTool
                     }
                     text[n1] = '\0';
                 }
-                thetexts.Append(CString(text));
+                thetexts.Append(CString(text)); // OCCT: no continue, so the next term starts with this blank
                 n1 = 0;
             }
             if (n1 == 0 && term[n0] != '.' && term[n0] != '$')
