@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.Analyzers\OcctNet.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!-- tools/stepgen, run in-process to check the generated STEP entity classes (unit 8C1) -->
+    <ProjectReference Include="..\..\tools\stepgen\stepgen.csproj" />
     <!-- OCCT's source (tools/get-occt.ps1), for its resource files and the STEP and STL files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OcctSourceDir</_Parameter1>
