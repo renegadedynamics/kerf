@@ -35,6 +35,8 @@ public abstract partial class Shape : IEquatable<Shape>
         _wrapped = obj is null ? TopoUtil.EmptyCompound() : TopoUtil.Downcast(obj);
         Label = label;
         Color = color;
+        if (ShapeLog.Folder is not null)
+            ShapeLog.Record(this, _wrapped);
     }
 
     // ---- Metadata ----
@@ -132,6 +134,8 @@ public abstract partial class Shape : IEquatable<Shape>
         copy._wrapped = TopoUtil.Downcast(wrapped);
         copy.History = null;
         copy._historyAt = null;
+        if (ShapeLog.Folder is not null)
+            ShapeLog.Record(copy, copy._wrapped);
         return Result(copy);
     }
 

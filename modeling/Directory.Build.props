@@ -21,7 +21,7 @@
   -->
   <PropertyGroup>
     <Build123dBackend Condition="'$(Build123dBackend)' == ''">OcctNet</Build123dBackend>
-    <OcctNetVersion Condition="'$(OcctNetVersion)' == ''">0.1.0-preview.2</OcctNetVersion>
+    <OcctNetVersion Condition="'$(OcctNetVersion)' == ''">0.1.0-preview.3</OcctNetVersion>
     <OcctNetRoot Condition="'$(OcctNetRoot)' != ''">$([MSBuild]::EnsureTrailingSlash('$(OcctNetRoot)'))</OcctNetRoot>
     <!-- The checkout whose native build (.deps/install, native/out) the native backend uses: this one by default -->
     <Build123dNativeRoot Condition="'$(Build123dNativeRoot)' == ''">$(RepoRoot)</Build123dNativeRoot>
