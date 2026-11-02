@@ -13,7 +13,7 @@ using static Occt.TopAbs_ShapeEnum;
 namespace Occt;
 
 /// <summary>Translates the edge_loop of a face bound into a wire on the face, with the edges' pcurves.</summary>
-/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1259).</remarks>
+/// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
 public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateEdgeLoopError myError;

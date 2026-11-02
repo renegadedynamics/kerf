@@ -162,7 +162,7 @@ public static class StepToTopoDS_GeometricTool
 
     /// <summary>
     /// As the public form; with <paramref name="theCopyFrozen"/>, a frozen curve (one an earlier edge took) is
-    /// reversed in a copy that replaces it, where OCCT reverses the shared curve in place (decision 1260).
+    /// reversed in a copy that replaces it, where OCCT reverses the shared curve in place (decision 1248).
     /// </summary>
     internal static bool UpdateParam3d(ref Geom_Curve theCurve, ref double w1, ref double w2, double preci, bool theCopyFrozen)
     {
@@ -284,7 +284,7 @@ public static class StepToTopoDS_GeometricTool
                 w2 = theCurve.ReversedParameter(w2);
                 if (theCopyFrozen && theCurve.IsFrozen())
                 {
-                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1260
+                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
 
                 theCurve.Reverse();
@@ -308,7 +308,7 @@ public static class StepToTopoDS_GeometricTool
                 w2 = theCurve.ReversedParameter(w2);
                 if (theCopyFrozen && theCurve.IsFrozen())
                 {
-                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1260
+                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
 
                 theCurve.Reverse();

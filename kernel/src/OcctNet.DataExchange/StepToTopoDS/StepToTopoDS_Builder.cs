@@ -27,7 +27,7 @@ namespace Occt;
 /// <para>
 /// <see cref="Value"/> freezes the result. A reader that goes on working on the shapes of a transfer (sharing them
 /// between items, through the transient process or a non-manifold tool) uses <c>InternalValue</c> and freezes once
-/// at the end of the transfer (decision 1259).
+/// at the end of the transfer (decision 1247).
 /// </para>
 /// </remarks>
 public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
@@ -775,7 +775,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 StepGeom_GeometricRepresentationItem GRI = ent as StepGeom_GeometricRepresentationItem;
                 if (RA is not null)
                 {
-                    // OCCT down-casts the actor to STEPControl_ActorRead (unit 8F), which implements this (decision 1261)
+                    // OCCT down-casts the actor to STEPControl_ActorRead (unit 8F), which implements this (decision 1249)
                     StepToTopoDS_IActorRead anActor = RA as StepToTopoDS_IActorRead;
                     Transfer_Binder binder = null;
                     if (anActor is not null)
@@ -951,7 +951,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         return aShape;
     }
 
-    /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape (decision 1259).</summary>
+    /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape (decision 1247).</summary>
     internal TopoDS_Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_Builder::Value() - no result");
@@ -964,7 +964,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 /// <summary>
 /// What StepToTopoDS_Builder asks of STEPControl_ActorRead (unit 8F) for the geometric representation items of a
 /// geometric set: OCCT down-casts the actor to that class; the port asks for this interface, which the actor
-/// implements (decision 1261).
+/// implements (decision 1249).
 /// </summary>
 internal interface StepToTopoDS_IActorRead
 {

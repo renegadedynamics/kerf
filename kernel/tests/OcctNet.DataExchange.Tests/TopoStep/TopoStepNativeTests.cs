@@ -61,7 +61,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     private static string Safe(string theName) => theName.Replace('/', '_').Replace(':', '_');
 
     /// <summary>
-    /// The items whose BRep differs from native's, each attributed (decision 1267): tr9_r1001-ec.stp's solid #12, where
+    /// The items whose BRep differs from native's, each attributed (decision 1255): tr9_r1001-ec.stp's solid #12, where
     /// ShapeFix_EdgeProjAux (phase 7) projects the vertex of four closed edges, full circles on cylinders, to the
     /// opposite side of their line pcurves (a period earlier, -3π/2..π/2 where native gets 3π/2..7π/2), so
     /// XSAlgo_ShapeProcessor::CheckPCurve drops those pcurves: 4 of 2,468 pcurves missing, nothing else.

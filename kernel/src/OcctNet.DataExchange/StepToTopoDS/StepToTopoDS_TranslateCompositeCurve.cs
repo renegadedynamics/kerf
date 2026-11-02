@@ -17,7 +17,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A segment may itself be a composite_curve; only one-level protection against cyclic references is implemented.
-/// <see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1259).
+/// <see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).
 /// </remarks>
 public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
 {
@@ -154,7 +154,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                         for (int j = 1; j <= sc.NbAssociatedGeometry(); j++)
                         {
                             StepGeom_PcurveOrSurface PCorS = sc.AssociatedGeometryValue(j);
-                            StepGeom_Pcurve pc = PCorS?.Pcurve(); // a null SELECT: C++ has an empty one (decision 1266)
+                            StepGeom_Pcurve pc = PCorS?.Pcurve(); // a null SELECT: C++ has an empty one (decision 1254)
                             if (pc is null || pc.BasisSurface() != S)
                             {
                                 continue;

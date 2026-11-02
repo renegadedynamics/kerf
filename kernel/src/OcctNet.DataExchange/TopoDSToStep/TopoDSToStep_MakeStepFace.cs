@@ -190,7 +190,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                         if (aSurfaceIsOffset)
                         {
                             // OCCT.NET: OCCT changes the face's own offset surface; the port changes a copy, so the
-                            // shape written never changes (decision 1264)
+                            // shape written never changes (decision 1252)
                             anOffsetSu = (Geom_OffsetSurface)anOffsetSu.Copy();
                             anOffsetSu.SetBasisSurface(Rev);
                             var MkRev = new GeomToStep_MakeSurface(anOffsetSu, theLocalFactors);

@@ -152,7 +152,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             // edges
             STW.FixReorder(true);
             // OCCT.NET: the fix works on copies of frozen edges; a result gives the wire data back the caller's own
-            // edges, which the tool keys the edges' entities by (decision 1262)
+            // edges, which the tool keys the edges' entities by (decision 1250)
             STW.Wire();
             ShapeExtend_WireData anExtWire = STW.WireData();
 

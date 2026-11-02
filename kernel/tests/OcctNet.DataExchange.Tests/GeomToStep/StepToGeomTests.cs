@@ -173,7 +173,7 @@ public sealed class StepToGeomTests
     public void Cyclic_replicas_end_without_a_stack_overflow()
     {
         // two curve replicas of each other: OCCT recurses until the stack overflows; the port throws a catchable
-        // exception (decision 1246), and MakeSurface's catch-all turns a surface cycle into null as OCCT does
+        // exception (decision 1240), and MakeSurface's catch-all turns a surface cycle into null as OCCT does
         var anOperator = new StepGeom_CartesianTransformationOperator3d();
         anOperator.SetLocalOrigin(Point(0, 0, 0));
         var A = new StepGeom_CurveReplica();

@@ -1445,7 +1445,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     // The index of a starting object, 0 if none. A null object is mapped as OCCT maps a null handle (a check
-    // attached to a missing entity, StepToTopoDS's for instance), under a key of its own (decision 1265)
+    // attached to a missing entity, StepToTopoDS's for instance), under a key of its own (decision 1253)
     private int FindIndex(Standard_Transient? start)
     {
         return themap.FindIndex(start ?? theNullStart);

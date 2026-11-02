@@ -1883,71 +1883,6 @@ Found by porting Transfer, TransferBRep and XSAlgo and testing them on the toy n
 ## Phase 8: unit 8C1, the STEP entity generator
 
 Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
-reproduces it (decision 1239).
-
-| Where | What | Effect |
-|---|---|---|
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
-
-## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
-
-Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
-each, but for the first (decision 1246).
-
-| Where | What | Effect |
-|---|---|---|
-| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 1246) |
-| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
-| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
-| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
-| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
-| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
-| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
-| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
-
-## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
-
-Found by generating StepVisual, StepAP214/203/242, StepDimTol, StepKinematics, StepFEA, StepElement, their RW
-packages and StepAP214's dispatch from OCCT's C++, and by the corpus's round trips (decision 1255). The port
-reproduces them all; the generated code carries no `// OCCT` marker (it is regenerated), the tests name them.
-
-| Where | What | Effect |
-|---|---|---|
-| RWStepVisual_RWSurfaceStyleRenderingWithProperties::ReadStep | Tests `if (strcmp(text, ".CONSTANT_SHADING."))`, true when the text differs, and so on down the list | Every rendering method but .CONSTANT_SHADING. is read as .CONSTANT_SHADING., and .CONSTANT_SHADING. as .COLOUR_SHADING. (545 records of the corpus) |
-| RWStepVisual_RWComplexTriangulatedFace::WriteStep, RWStepVisual_RWCubicBezierTriangulatedFace::WriteStep (normals, control triangles) | Loop the rows up to `RowLength()` and the columns up to `ColLength()`, which are the numbers of columns and rows | Out of range unless the array is square: OCCT's release build writes values from the wrong places, a checked build (build123d.NET's, the port's) throws Standard_OutOfRange. 552 faces of the corpus can't be written |
-| StepVisual_StyledItem::Item, RWStepVisual_RWStyledItem::WriteStep | Init keeps the target as a transient and as a representation item (null if it isn't one); the writer sends `Item()`, the representation item | A styled item whose target is a representation (or anything but a representation item) is written with `$` for its item (68 records) |
-| RWStepAP214_ReadWriteModule::IsComplex | Lists every case of ComplexType but 800 (ActuatedKinPairAndOrderKinPair) and 802 (RepositionedTessellatedGeometricSet) | The writer starts them as simple records, of type `?` (StepType's default), followed by the components: `?() GEOMETRIC_REPRESENTATION_ITEM() ...` (30 records) |
-| RWStepAP214_ReadWriteModule::ComplexType and CaseStep (cases 694-697, 705, 706, 800) | ComplexType gives the generic GEOMETRIC_TOLERANCE (or kinematic pair) components, CaseStep wants a specific kind | The components ComplexType gives aren't recognised back (no effect on reading or writing files) |
-| RWStepAP214_GeneralModule::NewVoid case 106 | Creates a StepVisual_AnnotationOccurrence for DRAUGHTING_ANNOTATION_OCCURRENCE | Such a record is read into an annotation occurrence and written back ANNOTATION_OCCURRENCE (none in the corpus as a simple record) |
-| RWStepAP214_ReadWriteModule, cases 825 and 826 (SurfaceStyleReflectanceAmbientDiffuse(Specular)) and 708 (TESSELLATED_ITEM) | 825 and 826 have no type name in StepType or the type map; 708 is named by StepType but missing from the type map | SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written (written `?`); TESSELLATED_ITEM can be written, not read |
-| StepElement_VolumeElementPurposeMember and StepElement_SurfaceElementPurposeMember, `CompareNames` | Returns case 1 for both the enumerated purpose and APPLICATION_DEFINED_ELEMENT_PURPOSE (the curve one gives 2) | An application-defined purpose is written back as the enumerated one (2 records) |
-| StepBasic_SizeMember | Always names itself POSITIVE_LENGTH_MEASURE | An untyped curve width is written typed (15 records); POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)) keeps its outer type only (16) |
-| RWStepVisual_RWCharacterizedObjAndRepresentationAndDraughtingModel::WriteStep | Writes CHARACTERIZED_OBJECT's name and description as derived | `CHARACTERIZED_OBJECT(*,*)` for the read values (3 records) |
-| StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
-| RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
-| StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
-
-## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
-
-| Where | What | Effect |
-|---|---|---|
-| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
-| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
-| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
-| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
-| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
-| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
-| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
-| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
-| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
-| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
-| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
-| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
-
-## Phase 8: unit 8C1, the STEP entity generator
-
-Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
 reproduces it (decision 1209).
 
 | Where | What | Effect |
@@ -2004,13 +1939,37 @@ copy, for unit 8G (decision 1231):
 |---|---|---|
 | XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
 | XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
-| StepToTopoDS_Builder::Init (EdgeBasedWireframeModel, FaceBasedSurfaceModel) | `myError = myResult.IsNull() ? Done : Other` | The error code says Done when nothing was made and Other when something was (IsDone is right) |
-| StepToTopoDS_TranslateEdge::MakeFromCurve3D | Reverses (UpdateParam3d) or adjusts (AdjustCurve) the 3D curve it took from the transient process's cache | An earlier edge sharing that STEP curve changes too. Fixed in the port: the change goes to a copy (decision 1260) |
-| TopoDSToStep_MakeFacetedBrep(Solid) | `if (!StepB.TessellatedValue())`: the test is inverted | Without a tessellated result (the usual case) it dereferences the null tessellated shell: an access violation natively, a NullReferenceException in the port; with one, the tessellation is dropped |
-| TopoDSToStep_MakeFacetedBrepAndBrepWithVoids | Passes `false` as the tessellation mode; copies each shell's tessellated items from index 1 | Never tessellates; with several shells the items would overwrite each other |
-| TopoDSToStep_MakeShellBasedSurfaceModel(Solid) | Makes a tessellated geometric set of the shells' tessellations and drops it; maps its "not AP242" warning to the still null shell | The tessellation is never returned |
-| TopoDSToStep_WireframeBuilder::GetTrimmedCurveFromEdge | Finds the edge's curve in the map, then makes it again | Each occurrence of an edge gives a new curve |
-| TopoDSToStep_FacetedTool::CheckTopoDSShape | Returns Done at the first linear pcurve of a planar face | The other faces and pcurves are not checked |
-| TopoDSToStep_MakeStepFace (degenerate torus under an offset surface) | `anOffsetSu->SetBasisSurface(Rev)` on the face's own surface | The writer changes the shape it writes. Fixed in the port: a copy (decision 1264) |
-| TopoDSToStep_MakeTessellatedItem (InitTriangulation) | `Poly::ComputeNormals` on the face's triangulation | The writer adds normals to the shape it writes. Fixed in the port: a copy (decision 1264) |
-| TopoDSToStep_MakeTessellatedItem::Init(Shell) | Calls the progress scope's Next twice per face | Progress only |
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
+each, but for the first (decision 1240).
+
+| Where | What | Effect |
+|---|---|---|
+| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 1240) |
+| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
+| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
+| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
+| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
+| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
+| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
+| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
+
+## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
