@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -34,7 +32,7 @@ namespace OcctNet.Oracle.Tests;
 /// </remarks>
 public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
 {
-    private const int CasesPerKind = 40;
+    private static readonly int CasesPerKind = Tape.Cases(40, 6);
 
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-bndlib-").FullName;
     private int myFileNumber;
@@ -953,4 +951,3 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     private int UndefinedCases;
     private int PcaCases;
 }
-#endif

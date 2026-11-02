@@ -1,11 +1,9 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
 
@@ -346,8 +344,8 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         var aWatch = Stopwatch.StartNew();
         int aShapes = 0;
 
-        foreach (string aFile in Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep")
-                                          .Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep")
+                                                      .Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
         {
             if (NativeRead(aFile) is N.TopoDS_Shape aShape)
             {
@@ -359,8 +357,8 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         string aRoot = Metadata("OcctTestDataDir");
         if (!string.IsNullOrEmpty(aRoot) && Directory.Exists(aRoot))
         {
-            foreach (string aFile in Directory.EnumerateFiles(aRoot, "*.brep", SearchOption.AllDirectories)
-                                              .Order(StringComparer.Ordinal))
+            foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(aRoot, "*.brep", SearchOption.AllDirectories)
+                                                          .Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
             {
                 if (new FileInfo(aFile).Length > 1_000_000 || NativeRead(aFile) is not N.TopoDS_Shape aShape
                     || Occurrences(aShape, 50_000) > 50_000)
@@ -389,4 +387,3 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         Assert.Empty(myDifferences);
     }
 }
-#endif

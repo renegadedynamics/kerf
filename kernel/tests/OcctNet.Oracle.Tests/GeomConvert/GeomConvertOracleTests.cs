@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -125,7 +123,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aNbThrows = 0;
-        for (int i = 0; i < 1500; i++)
+        foreach (int i in Tape.Budget(1500))
         {
             (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = RandomInputCurve(anOracle);
             using N.Geom_Curve aNCOwned = aNC;
@@ -156,7 +154,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         // Arcs of 6 radians or more with Convert_RationalC1: OCCT converts two halves and joins them with
         // GeomConvert_CompCurveToBSplineCurve. Whole turns (exactly 2 Pi) included.
         var anOracle = new Oracle(output);
-        for (int i = 0; i < 400; i++)
+        foreach (int i in Tape.Budget(400))
         {
             (N.Geom_Curve aNB, Geom_Curve aPB, _) = RandomCurve(anOracle, anOracle.Int(1, 2));
             using N.Geom_Curve aNBOwned = aNB;
@@ -179,7 +177,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aNbThrows = 0;
-        for (int i = 0; i < 800; i++)
+        foreach (int i in Tape.Budget(800))
         {
             (N.Geom_BSplineCurve aNC, Geom_BSplineCurve aPC) = RandomBSplineCurve(anOracle);
             using N.Geom_BSplineCurve aNCOwned = aNC;
@@ -229,7 +227,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aNbThrows = 0;
-        for (int i = 0; i < 600; i++)
+        foreach (int i in Tape.Budget(600))
         {
             (N.Geom_BSplineSurface aNS, Geom_BSplineSurface aPS) = RandomBSplineSurface(anOracle, anOracle.Int(0, 2));
             using N.Geom_BSplineSurface aNSOwned = aNS;
@@ -313,7 +311,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         int aNbThrows = 0;
         var aCounts = new Dictionary<string, int>();
-        for (int i = 0; i < 700; i++)
+        foreach (int i in Tape.Budget(700))
         {
             int aKind = anOracle.Int(0, 10);
             // offset surfaces without an equivalent surface are approximated (AdvApp2Var): fewer of them
@@ -356,7 +354,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         // Offsets without an equivalent surface go through GeomConvert_ApproxSurface (AdvApp2Var); trimmed or not
         var anOracle = new Oracle(output);
         int aNbThrows = 0, aNbApprox = 0;
-        for (int i = 0; i < 80; i++)
+        foreach (int i in Tape.Budget(80))
         {
             (N.Geom_Surface aNS, Geom_Surface aPS) = RandomOffsetSurface(anOracle);
             if (anOracle.Bool())
@@ -402,7 +400,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         int aNbThrows = 0, aNbNoResult = 0, aNbDone = 0;
         var aReasons = new Dictionary<string, int>();
-        for (int i = 0; i < 400; i++)
+        foreach (int i in Tape.Budget(400))
         {
             (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = RandomInputCurve(anOracle);
             using N.Geom_Curve aNCOwned = aNC;
@@ -478,7 +476,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aNbAdded = 0, aNbRefused = 0, aNbThrows = 0;
-        for (int i = 0; i < 500; i++)
+        foreach (int i in Tape.Budget(500))
         {
             // A basis curve cut into consecutive pieces, some reversed, added in order or not
             int aKind = anOracle.Int(0, 7);
@@ -576,4 +574,3 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         anOracle.Report("GeomConvert_CompCurveToBSplineCurve");
     }
 }
-#endif

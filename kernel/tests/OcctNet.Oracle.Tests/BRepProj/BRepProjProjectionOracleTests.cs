@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -471,7 +469,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     public void Cylindrical_projections_along_a_direction()
     {
         var anOracle = new Oracle(output, 20261111);
-        for (int aCase = 0; aCase < 140; aCase++)
+        foreach (int aCase in Tape.Budget(140))
         {
             (TopoDS_Shape aTarget, string aTK) = Target(anOracle);
             gp_Dir aDir = Oracle.Settled(new gp_Dir(anOracle.Real(-0.4, 0.4), anOracle.Real(-0.4, 0.4), -1));
@@ -488,7 +486,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     public void Conical_projections_from_a_point()
     {
         var anOracle = new Oracle(output, 20261112);
-        for (int aCase = 0; aCase < 120; aCase++)
+        foreach (int aCase in Tape.Budget(120))
         {
             (TopoDS_Shape aTarget, string aTK) = Target(anOracle);
             gp_Pnt aCenter = new(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(14, 20));
@@ -533,4 +531,3 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         Assert.Empty(myDifferences);
     }
 }
-#endif

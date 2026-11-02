@@ -1,15 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Compares the port with native OCCT, through the generated bindings of a sibling build123d.NET checkout
-    (Build123dNetRoot, ../build123d.net by default), which builds the same OCCT release (V8_0_1).
-    Without that checkout and its native build, the project builds one test that says why it is skipped.
+    Compares the port with native OCCT as recorded (unit 10A, decision 15001; docs/oracle-testing.md). The tests call
+    native OCCT through N, the facade OcctNative (Recorded/), which replays native's results from the recordings embedded
+    here (Recordings/*.tape.gz): no native code runs. With native OCCT built in (the generated bindings of build123d.NET,
+    Build123dNetRoot, with the native build of Build123dNativeRoot: HAS_ORACLE), OCCTNET_ORACLE_RECORD=1 records them
+    again from native OCCT. OracleDirect=true compiles the tests against the native bindings themselves (N =
+    Build123d.Occt), live, as before 10A: tools/oracle-facade.cs reads that build to generate the facade.
   -->
   <PropertyGroup>
     <Build123dOcctProject>$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj</Build123dOcctProject>
     <HasOracle Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNativeRoot)native/out/win-x64/bin/b3docct.dll')">true</HasOracle>
     <DefineConstants Condition="'$(HasOracle)' == 'true'">$(DefineConstants);HAS_ORACLE</DefineConstants>
+    <DefineConstants Condition="'$(OracleDirect)' == 'true'">$(DefineConstants);ORACLE_DIRECT</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="OcctNative" Alias="N" Condition="'$(OracleDirect)' != 'true'" />
+    <Using Include="Build123d.Occt" Alias="N" Condition="'$(OracleDirect)' == 'true'" />
+    <Using Include="OcctNative.Tape" Alias="Tape" />
+    <!-- Native OCCT's results, one file per test class -->
+    <EmbeddedResource Include="Recordings\*.tape.gz" LogicalName="Recordings.%(Filename)%(Extension)" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OracleRecordingsDir</_Parameter1>
+      <_Parameter2>$(MSBuildProjectDirectory)\Recordings\</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />

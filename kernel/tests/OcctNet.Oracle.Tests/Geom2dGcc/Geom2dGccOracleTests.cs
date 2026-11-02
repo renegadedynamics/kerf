@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -28,7 +26,7 @@ namespace OcctNet.Oracle.Tests;
 /// </remarks>
 public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 {
-    private const int CasesPerConstructor = 500;
+    private static readonly int CasesPerConstructor = Tape.Cases(500, 167);
 
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-gcc-").FullName;
     private int myFileNumber;
@@ -1099,4 +1097,3 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         Assert.True(aFailures.Count == 0, $"{aFailures.Count} unattributed differences; first: {aFailures.FirstOrDefault()}");
     }
 }
-#endif

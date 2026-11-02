@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -7,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopTools_FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
@@ -314,7 +312,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         var aRandom = new Random(3202);
         double Real(double a = -100, double b = 100) => a + (b - a) * aRandom.NextDouble();
 
-        for (int c = 0; c < 60; c++)
+        foreach (int c in Tape.Budget(60))
         {
             DrawInterpreter aDI = Interpreter();
 
@@ -627,7 +625,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         var aRandom = new Random(3203);
         string Real(double a, double b) => R(Math.Round(a + (b - a) * aRandom.NextDouble(), 3));
         string[] aMoves = ["X", "Y", "L", "XX", "YY", "T", "TT", "R", "RR", "D", "C", "IX", "IY"];
-        for (int c = 0; c < 200; c++)
+        foreach (int c in Tape.Budget(200))
         {
             var aWords = new List<string> { "profile", "p" };
             if (aRandom.Next(3) == 0)
@@ -722,7 +720,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
     {
         var aTally = new Tally("modifications");
         var aRandom = new Random(3204);
-        foreach (string aSource in SmallFiles())
+        foreach (string aSource in Tape.Budget(SmallFiles(), isSpread: true, isRollingBack: true))
         {
             string aName = Path.GetFileName(aSource);
             (string aFile, N.TopoDS_Shape aShape) = NativeRead(aSource);
@@ -835,4 +833,3 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         Finish(aTally);
     }
 }
-#endif

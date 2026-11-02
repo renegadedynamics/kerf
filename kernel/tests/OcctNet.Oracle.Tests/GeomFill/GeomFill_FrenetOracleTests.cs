@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -25,7 +23,7 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 20261031);
         int aNbSingular = 0;
-        for (int i = 0; i < 150; i++)
+        foreach (int i in Tape.Budget(150))
         {
             int aDeg = anOracle.Int(2, 5);
             int aNbKnots = anOracle.Int(2, 5);
@@ -70,4 +68,3 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
         anOracle.Report("GeomFill_Frenet on planar B-splines");
     }
 }
-#endif

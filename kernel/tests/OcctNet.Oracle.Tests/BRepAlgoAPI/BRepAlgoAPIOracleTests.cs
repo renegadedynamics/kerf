@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -7,7 +6,6 @@ using System.Text;
 using OcctNet.DrawLite;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using Op = OcctNet.Oracle.Tests.BooleanOracleTests.Op;
 using Run = OcctNet.Oracle.Tests.BooleanOracleTests.Run;
 using Tally = OcctNet.Oracle.Tests.BooleanOracleTests.Tally;
@@ -39,7 +37,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261110);
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "bop");
-        foreach (Run aCase in BooleanOracleTests.RandomRuns(anOracle, aRun, 240))
+        foreach (Run aCase in Tape.Budget(BooleanOracleTests.RandomRuns(anOracle, aRun, 240)))
         {
             aHarness.Compare(aRun, aTally, aCase with { Simplify = true });
         }
@@ -53,7 +51,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "bop");
         int k = 0;
-        foreach (Run aCase in BooleanOracleTests.RecordedRuns())
+        foreach (Run aCase in Tape.Budget(BooleanOracleTests.RecordedRuns(), isSpread: true, isRollingBack: true))
         {
             // every third case's own operation, simplified
             if (k++ % 3 == 0)
@@ -72,7 +70,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "bop");
         int k = 0;
-        foreach (Run aCase in BooleanOracleTests.RandomRuns(anOracle, aRun, 160))
+        foreach (Run aCase in Tape.Budget(BooleanOracleTests.RandomRuns(anOracle, aRun, 160)))
         {
             // native writes into its arguments; the port's are frozen, so its operation stays non-destructive (decision
             // 577); every fourth also simplified (the unifier's unsafe input mode) and every fifth without the check of
@@ -110,7 +108,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "bop");
         int aRecorded = 0, aScriptsWithRuns = 0;
         var aStops = new List<string>();
-        foreach (string aScript in aScripts)
+        foreach (string aScript in Tape.Budget(aScripts, isSpread: true, isRollingBack: true))
         {
             string aRel = Path.GetRelativePath(aTests, aScript).Replace('\\', '/');
             string[] aParts = aRel.Split('/');
@@ -301,7 +299,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         var aDifferences = new List<string>();
         int[] aDegrees = [.. new[] { 2, 3, 4, 8, Environment.ProcessorCount }.Distinct()];
         int k = 0;
-        foreach (Run aCase0 in BooleanOracleTests.RandomRuns(anOracle, aRun, 96))
+        foreach (Run aCase0 in Tape.Budget(BooleanOracleTests.RandomRuns(anOracle, aRun, 96)))
         {
             Run aCase = aCase0 with { Simplify = k++ % 3 == 0 };
             if (BooleanOracleTests.ReadArgs(aRun, aCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<TopoDS_Shape> aPArgs))
@@ -361,4 +359,3 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         Assert.Equal(0, aPortDiffer);
     }
 }
-#endif

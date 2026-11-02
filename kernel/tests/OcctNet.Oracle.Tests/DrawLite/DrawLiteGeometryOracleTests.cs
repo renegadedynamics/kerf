@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -692,4 +690,3 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
         Report(aBits, "cvalue, 2dcvalue, svalue, sderivative, bounds");
     }
 }
-#endif

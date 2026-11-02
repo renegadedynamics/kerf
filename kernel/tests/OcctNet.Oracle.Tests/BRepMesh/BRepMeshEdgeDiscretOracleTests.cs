@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Reflection;
@@ -7,7 +6,6 @@ using static Occt.IMeshData_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -353,7 +351,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     {
         var anOracle = new Oracle(output, 40301);
         var aTally = new Tally();
-        foreach (string aFile in Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
         {
             if (new FileInfo(aFile).Length > 1_000_000)
             {
@@ -375,7 +373,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     {
         var anOracle = new Oracle(output, 40302);
         var aTally = new Tally();
-        for (int i = 0; i < 60; i++)
+        foreach (int i in Tape.Budget(60))
         {
             gp_Dir aZ = anOracle.Dir();
             gp_Dir aRef = anOracle.Dir();
@@ -427,4 +425,3 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
         Assert.True(aTally.Reused > 0);
     }
 }
-#endif

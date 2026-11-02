@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -13,7 +11,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 300;
+    private static readonly int Cases = Tape.Cases(300, 30);
 
     private static readonly GeomAbs_Shape[] Shapes =
         { GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3, GeomAbs_Shape.GeomAbs_CN };
@@ -330,4 +328,3 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom2dAdaptor_Curve on lines, circles and ellipses");
     }
 }
-#endif

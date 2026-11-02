@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Concurrent;
@@ -7,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -514,7 +512,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         List<Pair> aPairs = AnalyticPairs(57001, 4);
         var aTally = new Tally("analytic pairs (plane, cylinder, cone, sphere, torus; random and special placements)");
-        foreach (Pair aPair in aPairs)
+        foreach (Pair aPair in Tape.Budget(aPairs))
         {
             Compare(aPair, aTally);
         }
@@ -528,7 +526,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         List<Pair> aPairs = FreeFormPairs(57002, 4);
         var aTally = new Tally("pairs with a revolution, extrusion, Bezier, B-spline, offset or trimmed surface");
-        foreach (Pair aPair in aPairs)
+        foreach (Pair aPair in Tape.Budget(aPairs))
         {
             Compare(aPair, aTally);
         }
@@ -596,7 +594,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         var anO = new Oracle(output, 57004);
         var aTally = new Tally("data/occ faces' surfaces");
-        foreach (string aFile in Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
         {
             using var aShape = new N.TopoDS_Shape();
             using var aBuilder = new N.BRep_Builder();
@@ -655,4 +653,3 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 }
-#endif

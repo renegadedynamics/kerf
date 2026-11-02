@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -6,7 +5,6 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopTools_FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
@@ -558,7 +556,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
                                    .Order(StringComparer.Ordinal).ToArray();
         var aTally = new Tally("data/occ exploded faces");
         int aSkipped = 0;
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
         {
             string? aF1 = NativeF1(aFile, true);
             if (aF1 is null)
@@ -633,7 +631,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         var aTight = new Tally("sewing group's data at 1e-6");
         var aSeenData = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         int anUnreadable = 0;
-        foreach ((string aCase, string aData, double aTol) in aCases)
+        foreach ((string aCase, string aData, double aTol) in Tape.Budget(aCases, isSpread: true, isRollingBack: true))
         {
             string? aF1 = NativeF1(aData, false);
             if (aF1 is null)
@@ -652,4 +650,3 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         Finish(aTally, aTight);
     }
 }
-#endif

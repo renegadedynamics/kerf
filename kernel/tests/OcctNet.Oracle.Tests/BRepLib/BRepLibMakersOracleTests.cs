@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -175,7 +173,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3401);
         var aT = new Tally("edges");
-        for (int aCase = 0; aCase < 600; aCase++)
+        foreach (int aCase in Tape.Budget(600))
         {
             int aKind = aCase % 12;
             N.BRepBuilderAPI_MakeEdge aNM;
@@ -412,7 +410,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3402);
         var aT = new Tally("wires");
-        for (int aCase = 0; aCase < 400; aCase++)
+        foreach (int aCase in Tape.Budget(400))
         {
             int aKind = aCase % 5;
             int n = anO.Int(3, 7);
@@ -535,7 +533,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3403);
         var aT = new Tally("faces on surfaces");
-        for (int aCase = 0; aCase < 500; aCase++)
+        foreach (int aCase in Tape.Budget(500))
         {
             int aKind = aCase % 6;
             gp_Ax3 anAx = Ax3(anO, anO.Int(0, 3) != 0);
@@ -676,7 +674,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3404);
         var aT = new Tally("faces from wires");
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             int aKind = aCase % 3;
             gp_Ax3 anAx = Ax3(anO);
@@ -755,7 +753,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3405);
         var aT = new Tally("shells");
-        for (int aCase = 0; aCase < 120; aCase++)
+        foreach (int aCase in Tape.Budget(120))
         {
             int aDegU = anO.Int(1, 3), aDegV = anO.Int(1, 3);
             anO.BSplineKnots(aDegU, false, out NCollection_Array1<double> aUKnots, out NCollection_Array1<int> aUMults);
@@ -818,7 +816,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     {
         var anO = new Oracle(output, 3406);
         var aT = new Tally("solids");
-        for (int aCase = 0; aCase < 60; aCase++)
+        foreach (int aCase in Tape.Budget(60))
         {
             gp_Ax3 anAx = Ax3(anO);
             double dx = anO.Real(0.5, 10), dy = anO.Real(0.5, 10), dz = anO.Real(0.5, 10);
@@ -901,7 +899,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         var anO = new Oracle(output, 3407);
         var aT = new Tally("surfaces found");
         int aFound = 0, anExisted = 0, aValues = 0;
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             gp_Ax3 anAx = Ax3(anO);
             gp_Pnt[] aPts = StarPolygon(anO, anAx, anO.Int(3, 8), anO.Real(1, 20));
@@ -973,4 +971,3 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         Finish(aT);
     }
 }
-#endif

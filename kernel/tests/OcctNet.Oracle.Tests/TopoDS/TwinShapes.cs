@@ -1,7 +1,5 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using N = Build123d.Occt;
 using static Occt.TopAbs_Orientation;
 
 namespace OcctNet.Oracle.Tests;
@@ -437,4 +435,3 @@ internal sealed class TwinShapes
         _ => throw new ArgumentException("not a shape"),
     };
 }
-#endif

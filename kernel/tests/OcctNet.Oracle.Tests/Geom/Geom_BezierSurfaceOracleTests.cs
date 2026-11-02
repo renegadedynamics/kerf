@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -13,7 +11,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 200;
+    private static readonly int Cases = Tape.Cases(200, 6);
 
     private static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) RandomSurface(Oracle theOracle)
     {
@@ -411,4 +409,3 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -6,7 +5,6 @@ using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using Call = OcctNet.Oracle.Tests.Build123dBooleanCapture.Call;
 using Kind = OcctNet.Oracle.Tests.Build123dBooleanCapture.Kind;
-using N = Build123d.Occt;
 using Op = OcctNet.Oracle.Tests.BooleanOracleTests.Op;
 using Run = OcctNet.Oracle.Tests.BooleanOracleTests.Run;
 
@@ -46,7 +44,7 @@ public class Build123dBooleanOracleTests(ITestOutputHelper output)
     public void Build123d_Booleans_and_cleans_as_native()
     {
         var aFailures = new List<string>();
-        Build123dBooleanCapture aCapture = Build123dBooleanCapture.Capture(aFailures.Add);
+        List<Call> aCalls = Build123dBooleanCapture.Recorded(aFailures);
         foreach (string aFailure in aFailures)
         {
             output.WriteLine("scenario failed: " + aFailure);
@@ -58,7 +56,7 @@ public class Build123dBooleanOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261131);
         using var aRun = new ShapeFixOracleRun(output, "b3db");
         var aTally = new Tally();
-        foreach (Call aCall in aCapture.Calls)
+        foreach (Call aCall in aCalls)
         {
             aTally.Calls++;
             if (aCall.Kind == Kind.Clean)
@@ -332,4 +330,3 @@ public class Build123dBooleanOracleTests(ITestOutputHelper output)
         Assert.Empty(theTally.TranscriptionDifferences);
     }
 }
-#endif

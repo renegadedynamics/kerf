@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -52,7 +50,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261030);
         using var aRun = new ShapeFixOracleRun(output, "usd");
         var aTally = new Tally();
-        foreach ((string aName, N.TopoDS_Shape aShape) in BooleanResults(anOracle, 480))
+        foreach ((string aName, N.TopoDS_Shape aShape) in Tape.Budget(BooleanResults(anOracle, 480)))
         {
             Compare(aRun, aTally, aName, aShape, [s_clean], anOracle);
         }
@@ -65,7 +63,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261031);
         using var aRun = new ShapeFixOracleRun(output, "usd");
         var aTally = new Tally();
-        foreach ((string aName, N.TopoDS_Shape aShape) in BooleanResults(anOracle, 160))
+        foreach ((string aName, N.TopoDS_Shape aShape) in Tape.Budget(BooleanResults(anOracle, 160)))
         {
             Compare(aRun, aTally, aName, aShape, s_others, anOracle);
         }
@@ -82,7 +80,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261101);
         using var aRun = new ShapeFixOracleRun(output, "usd");
         var aTally = new Tally();
-        foreach ((string aFile, string _) in aRun.Inputs(300_000))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true, isRollingBack: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -747,4 +745,3 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

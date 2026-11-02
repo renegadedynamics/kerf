@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -239,7 +237,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
     public void The_primitive_makers_build_the_shapes_native_OCCT_builds()
     {
         var anOracle = new Oracle(output, 20261029);
-        for (int iCase = 0; iCase < 700; iCase++)
+        foreach (int iCase in Tape.Budget(700))
         {
             switch (iCase % 7)
             {
@@ -606,4 +604,3 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         }
     }
 }
-#endif

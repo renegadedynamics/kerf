@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using System.Reflection;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -303,7 +301,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Extraction_of_the_same_mesh_matches_native_float_for_float()
     {
         var aTally = new Tally();
-        foreach (string aFile in DataOccFiles())
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -326,7 +324,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Mesh_and_extract_matches_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in DataOccFiles())
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -385,7 +383,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Mesh_group_data_meshes_and_extracts_as_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in MeshGroupFiles())
+        foreach (string aFile in Tape.Budget(MeshGroupFiles(), isSpread: true, isRollingBack: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -404,7 +402,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Unmeshed_shapes_extract_edges_by_tangential_deflection_as_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in DataOccFiles())
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -522,4 +520,3 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
         }
     }
 }
-#endif

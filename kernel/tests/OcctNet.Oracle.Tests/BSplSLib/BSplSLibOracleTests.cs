@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -14,8 +12,8 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class BSplSLibOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 300;
-    private const int CasesBezier = 150;
+    private static readonly int Cases = Tape.Cases(300, 15);
+    private static readonly int CasesBezier = Tape.Cases(150, 7);
 
     /// <summary>A random B-spline surface: what the port and the native surface share.</summary>
     private sealed class Surface
@@ -840,4 +838,3 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
         anOracle.Report("BSplSLib_Cache through GeomAdaptor_Surface: D0, D1, D2");
     }
 }
-#endif

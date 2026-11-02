@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Reflection;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -100,7 +98,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         var anOracle = new Oracle(output);
         var aCounter = new Counter(output, "3D curves");
         using var aBuilder = new N.BRep_Builder();
-        for (int i = 0; i < 1000; i++)
+        foreach (int i in Tape.Budget(1000))
         {
             int aKind = i % CurveKinds.Length;
             (N.Geom_Curve aNative, Geom_Curve aPort, _) = RandomCurve(anOracle, aKind);
@@ -138,7 +136,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         var anOracle = new Oracle(output);
         var aCounter = new Counter(output, "surfaces");
         using var aBuilder = new N.BRep_Builder();
-        for (int i = 0; i < 1100; i++)
+        foreach (int i in Tape.Budget(1100))
         {
             int aKind = i % SurfaceKinds.Length;
             (N.Geom_Surface aNative, Geom_Surface aPort) = RandomSurface(anOracle, aKind);
@@ -168,7 +166,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         var anOracle = new Oracle(output);
         var aCounter = new Counter(output, "offset surfaces");
         using var aBuilder = new N.BRep_Builder();
-        for (int i = 0; i < 300; i++)
+        foreach (int i in Tape.Budget(300))
         {
             (N.Geom_Surface aNative, Geom_Surface aPort) = RandomOffsetSurface(anOracle);
             using (aNative)
@@ -195,7 +193,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aPlane = new N.Geom_Plane(aNOrigin, aNZ);
         using var aLocation = new N.TopLoc_Location();
-        for (int i = 0; i < 1000; i++)
+        foreach (int i in Tape.Budget(1000))
         {
             (N.Geom2d_Curve aNative, Geom2d_Curve aPort, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             if (anOracle.Int(0, 2) == 0)
@@ -258,7 +256,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
     {
         int aFiles = 0, anObjects = 0;
         long aBytes = 0;
-        foreach (string aFile in Directory.EnumerateFiles(CorpusDirectory, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(CorpusDirectory, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
         {
             string aF1 = NativeReadWrite(aFile);
             string aF2 = NativeReadWrite(Path.Combine(myDirectory, $"s{myFileNumber - 1}.brep"));
@@ -309,4 +307,3 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         return NativeWrite(aShape);
     }
 }
-#endif

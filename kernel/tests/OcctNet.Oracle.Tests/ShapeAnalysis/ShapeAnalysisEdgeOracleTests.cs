@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
 
@@ -62,7 +60,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
     {
         var anOracle = new Oracle(output, 42101);
         int aPairs = 0, anOverlaps = 0;
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             (N.TopoDS_Shape aNS, TopoDS_Shape aPS, string aWhat) = Scene(anOracle, i);
             var aNSae = new N.ShapeAnalysis_Edge();
@@ -255,4 +253,3 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         }
     }
 }
-#endif

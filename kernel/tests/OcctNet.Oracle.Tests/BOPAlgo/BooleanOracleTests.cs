@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -6,7 +5,6 @@ using System.IO.Compression;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -110,7 +108,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "bop");
         Op[] anAll = [Op.Fuse, Op.Cut, Op.Common, Op.Section, Op.Splitter, Op.GeneralFuse];
         int k = 0;
-        foreach ((int anId, string aName, string aShapes, double aFuzzy) in s_recorded.Value)
+        foreach ((int anId, string aName, string aShapes, double aFuzzy) in Tape.Budget(s_recorded.Value, isSpread: true, isRollingBack: true))
         {
             var anOps = new List<Op> { OpOfName(aName), Op.Section };
             if (k++ % 4 == 0)
@@ -131,7 +129,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261102);
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "bop");
-        foreach (Run aCase in RandomRuns(anOracle, aRun, 240))
+        foreach (Run aCase in Tape.Budget(RandomRuns(anOracle, aRun, 240)))
         {
             Compare(aRun, aTally, aCase);
         }
@@ -989,4 +987,3 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

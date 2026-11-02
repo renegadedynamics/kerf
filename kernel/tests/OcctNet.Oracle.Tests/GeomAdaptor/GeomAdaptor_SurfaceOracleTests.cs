@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -18,7 +16,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 40;
+    private static readonly int Cases = Tape.Cases(40, 4);
 
     private static readonly GeomAbs_Shape[] Shapes =
         [GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_G1, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_G2,
@@ -364,4 +362,3 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         return (theO.Real(theFirst, theFirst + 0.45 * aD), theO.Real(theFirst + 0.55 * aD, theLast));
     }
 }
-#endif

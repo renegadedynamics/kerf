@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.GeomAbs_JoinType;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -311,7 +309,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     public void Random_closed_profiles_both_joins_and_signs()
     {
         var anOracle = new Oracle(output, 5995);
-        for (int i = 0; i < 300; i++)
+        foreach (int i in Tape.Budget(300))
         {
             gp_Ax2 anAx = anOracle.Bool() ? new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)) : anOracle.Ax2();
             double aSize = anOracle.Real(1.0, 50.0);
@@ -357,7 +355,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     public void Random_open_wires_closed_around_or_open()
     {
         var anOracle = new Oracle(output, 5996);
-        for (int i = 0; i < 300; i++)
+        foreach (int i in Tape.Budget(300))
         {
             gp_Ax2 anAx = anOracle.Bool() ? new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)) : anOracle.Ax2();
             double aSize = anOracle.Real(1.0, 50.0);
@@ -395,7 +393,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 2);
         int aSame = 0, aDiff = 0;
-        for (int i = 0; i < 2000; i++)
+        foreach (int i in Tape.Budget(2000))
         {
             double cx = anOracle.Real(-10, 10), cy = anOracle.Real(-10, 10), r = anOracle.Real(1, 10);
             double dx = anOracle.Real(-1, 1), dy = anOracle.Real(-1, 1);
@@ -444,7 +442,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     public void Single_arcs_closed_around_and_open()
     {
         var anOracle = new Oracle(output, 1);
-        for (int i = 0; i < 200; i++)
+        foreach (int i in Tape.Budget(200))
         {
             gp_Ax2 anAx = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
             double r = anOracle.Real(5, 20), a0 = anOracle.Angle(), a1 = a0 + anOracle.Real(0.3, 3.0);
@@ -461,7 +459,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 5997);
         gp_Ax2 anXY = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        for (int i = 0; i < 120; i++)
+        foreach (int i in Tape.Budget(120))
         {
             double h = anOracle.Real(0.5, 20.0);
             double c = anOracle.Real(1.0, 60.0);
@@ -540,7 +538,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 5998);
         int aConverted = 0;
-        for (int i = 0; i < 60; i++)
+        foreach (int i in Tape.Budget(60))
         {
             // an ellipse, or a closed B-spline through points around the origin
             TopoDS_Wire aW;
@@ -589,4 +587,3 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         Assert.Empty(myDifferences);
     }
 }
-#endif

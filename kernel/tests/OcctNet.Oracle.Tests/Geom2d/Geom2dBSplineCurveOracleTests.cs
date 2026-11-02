@@ -1,16 +1,14 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
 using static Occt.GeomAbs_BSplKnotDistribution;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>Geom2d_BSplineCurve against native OCCT: evaluation, queries and every bound edit, on random curves.</summary>
 public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 300;
+    private static readonly int Cases = Tape.Cases(300, 70);
 
     /// <summary>Structure, then evaluation at a few parameters (and slightly outside the range).</summary>
     private static void CheckAll(Oracle theOracle, N.Geom2d_BSplineCurve theNative, Geom2d_BSplineCurve thePort, string theWhat)
@@ -505,4 +503,3 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom2d_BSplineCurve edits");
     }
 }
-#endif

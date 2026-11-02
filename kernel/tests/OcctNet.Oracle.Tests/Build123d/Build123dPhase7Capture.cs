@@ -1,14 +1,20 @@
-#if HAS_ORACLE || HAS_NATIVE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+#if HAS_ORACLE || HAS_NATIVE
 using Build123d;
 using Occt;
 using B = Build123d;
-using N = Build123d.Occt;
+using W = Build123d.Occt;
 using Ops = Build123d.Operations;
+#endif
+
+#if HAS_NATIVE
+using N = Build123d.Occt;
+#endif
 
 namespace OcctNet.Oracle.Tests;
 
@@ -41,7 +47,7 @@ internal sealed record P7Args(double Value = 0, double Tol = 0, int Join = 0, bo
 /// finishing step, and build123d.NET's own result of the operation (or its exception), which checks the transcription.
 /// </summary>
 internal sealed record P7Call(string Name, string Test, P7Op Op, N.TopoDS_Shape[] Operands, P7Args Args, P7Post Post,
-                              B.Shape? Result, string? Error, string? Message = null);
+                              N.TopoDS_Shape? Result, string? Error, string? Message = null);
 
 /// <summary>A native run: the exception, the status, the result, the history, and SplitShape's Left and Right.</summary>
 internal sealed record P7Native(string? Error, string Status, N.TopoDS_Shape? Result, string History,
@@ -65,14 +71,23 @@ internal sealed record P7Port(string? Error, string Status, TopoDS_Shape? Result
 /// </summary>
 internal static partial class Build123dPhase7Capture
 {
+#if HAS_ORACLE || HAS_NATIVE
     // ---------------------------------------------------------------------------------------------------------------
     // The cases
 
     /// <summary>Every call, in the tests' order; <paramref name="theFailure"/> hears of scenarios that failed to build.</summary>
-    internal static List<P7Call> Capture(Action<string>? theFailure = null)
+    // A call as the scenarios make it: build123d.NET's native shapes (made outside the facade), adopted into a P7Call
+    private sealed record W7Call(string Name, string Test, P7Op Op, W.TopoDS_Shape[] Operands, P7Args Args, P7Post Post,
+                                 B.Shape? Result, string? Error, string? Message = null)
     {
-        var aCalls = new List<P7Call>();
-        foreach ((string aTest, Action<List<P7Call>, string> aScenario) in Scenarios().Concat(BlendScenarios()))
+        public P7Call Adopted() => new(Name, Test, Op, [.. Operands.Select(RecordedNative.Adopt)], Args, Post,
+                                       Result is null ? null : RecordedNative.Adopt(Result.Wrapped), Error, Message);
+    }
+
+    private static List<W7Call> CaptureNative(Action<string>? theFailure = null)
+    {
+        var aCalls = new List<W7Call>();
+        foreach ((string aTest, Action<List<W7Call>, string> aScenario) in Scenarios().Concat(BlendScenarios()))
         {
             try
             {
@@ -105,38 +120,38 @@ internal static partial class Build123dPhase7Capture
 
     private static int[] FaceIndices(B.Shape theShape, IEnumerable<B.Face> theFaces)
     {
-        using var aMap = new N.TopTools_IndexedMapOfShape();
-        N.TopExp.MapShapes(theShape.Wrapped, N.TopAbs_ShapeEnum.TopAbs_FACE, aMap);
+        using var aMap = new W.TopTools_IndexedMapOfShape();
+        W.TopExp.MapShapes(theShape.Wrapped, W.TopAbs_ShapeEnum.TopAbs_FACE, aMap);
         return [.. theFaces.Select(f => aMap.FindIndex(f.Wrapped))];
     }
 
     private static int JoinOf(B.Kind theKind) => theKind == B.Kind.Arc ? 0 : 2; // GeomAbs_Arc, GeomAbs_Intersection
 
     /// <summary>Shape3D.Hollow: MakeThickSolidByJoin (Skin, intersection on, no self-intersection, the join), then Build.</summary>
-    private static void Hollow(List<P7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IReadOnlyList<B.Face> theFaces,
+    private static void Hollow(List<W7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IReadOnlyList<B.Face> theFaces,
                                double theThickness, double theTolerance = 0.0001, B.Kind theKind = B.Kind.Arc)
     {
         (B.Shape? aResult, string? anError) = Own(() => theShape.Hollow(theFaces, theThickness, theTolerance, theKind));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.ThickSolid, [theShape.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.ThickSolid, [theShape.Wrapped],
                                 new P7Args(theThickness, theTolerance, JoinOf(theKind), Inter: true, Faces: FaceIndices(theShape, theFaces)),
                                 theFaces.Count == 0 ? P7Post.HollowSolid : P7Post.None, aResult, anError));
     }
 
     /// <summary>Shape3D.Offset3D: as Hollow, removing the internal edges; the Offset operation fixes its result.</summary>
-    private static void Offset3D(List<P7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IReadOnlyList<B.Face> theOpenings,
+    private static void Offset3D(List<W7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IReadOnlyList<B.Face> theOpenings,
                                  double theThickness, B.Kind theKind = B.Kind.Arc, bool theOperation = false)
     {
         (B.Shape? aResult, string? anError) = Own(() => theOperation
                                                             ? theShape.Offset3D(theOpenings, theThickness, kind: theKind).Fix()
                                                             : theShape.Offset3D(theOpenings, theThickness, kind: theKind));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.ThickSolid, [theShape.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.ThickSolid, [theShape.Wrapped],
                                 new P7Args(theThickness, 0.0001, JoinOf(theKind), Inter: true, RemoveIntEdges: true,
                                            Faces: FaceIndices(theShape, theOpenings)),
                                 theOperation ? P7Post.OffsetOperation : P7Post.Offset3D, aResult, anError));
     }
 
     /// <summary>The Offset operation on a solid or Part: Offset3D of each solid with its own openings, then Fix.</summary>
-    private static void OffsetOperation(List<P7Call> theCalls, string theTest, string theName, B.Shape theObject, double theAmount,
+    private static void OffsetOperation(List<W7Call> theCalls, string theTest, string theName, B.Shape theObject, double theAmount,
                                         IEnumerable<B.Face>? theOpenings = null, B.Kind theKind = B.Kind.Arc)
     {
         List<B.Face> anOpenings = [.. theOpenings ?? []];
@@ -151,7 +166,7 @@ internal static partial class Build123dPhase7Capture
     }
 
     /// <summary>Solid.Thicken: BRepOffset_MakeOffset's nine-argument Initialize (Skin, intersection, thickening, removing the internal edges), MakeOffsetShape.</summary>
-    private static void Thicken(List<P7Call> theCalls, string theTest, string theName, B.Shape2D theSurface, double theDepth,
+    private static void Thicken(List<W7Call> theCalls, string theTest, string theName, B.Shape2D theSurface, double theDepth,
                                 B.Vector? theNormalOverride = null, bool theClean = false)
     {
         double anAdjusted = theDepth;
@@ -166,13 +181,13 @@ internal static partial class Build123dPhase7Capture
         (B.Shape? aResult, string? anError) = Own(() => theClean
                                                             ? B.Solid.Thicken(theSurface, theDepth, theNormalOverride).Clean()
                                                             : B.Solid.Thicken(theSurface, theDepth, theNormalOverride));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.MakeOffset, [theSurface.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.MakeOffset, [theSurface.Wrapped],
                                 new P7Args(anAdjusted, 1.0e-5, 2, Inter: true, Thickening: true, RemoveIntEdges: true),
                                 theClean ? P7Post.Clean : P7Post.None, aResult, anError));
     }
 
     /// <summary>The Thicken operation: Solid.Thicken of each face along its own normal (both ways if asked), then the clean.</summary>
-    private static void ThickenOperation(List<P7Call> theCalls, string theTest, string theName, IEnumerable<B.Face> theFaces, double theAmount,
+    private static void ThickenOperation(List<W7Call> theCalls, string theTest, string theName, IEnumerable<B.Face> theFaces, double theAmount,
                                          bool theBoth = false)
     {
         int k = 0;
@@ -189,28 +204,28 @@ internal static partial class Build123dPhase7Capture
     }
 
     /// <summary>Shape2D.Offset (OffsetCore): Initialize(tolerance 1e-6, Skin, intersection, Intersection join, no thickening, removing the internal edges).</summary>
-    private static void OffsetCore(List<P7Call> theCalls, string theTest, string theName, B.Shape2D theShape, double theAmount)
+    private static void OffsetCore(List<W7Call> theCalls, string theTest, string theName, B.Shape2D theShape, double theAmount)
     {
         (B.Shape? aResult, string? anError) = Own(() => theShape is B.Face f ? f.Offset(theAmount) : ((B.Shell)theShape).Offset(theAmount));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.MakeOffset, [theShape.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.MakeOffset, [theShape.Wrapped],
                                 new P7Args(theAmount, B.Constants.Tolerance, 2, Inter: true, Thickening: false, RemoveIntEdges: true),
                                 P7Post.None, aResult, anError));
     }
 
     /// <summary>OneD.OffsetTopodsFace: the three-argument Initialize (no test calls it; kept for its binding).</summary>
-    private static void OffsetTopodsFace(List<P7Call> theCalls, string theName, B.Face theFace, double theAmount)
+    private static void OffsetTopodsFace(List<W7Call> theCalls, string theName, B.Face theFace, double theAmount)
     {
-        (B.Shape? aResult, string? anError) = Own(() => B.Shape.Cast(B.OneD.OffsetTopodsFace(N.TopoDS.Face(theFace.Wrapped), theAmount)));
-        theCalls.Add(new P7Call(theName, "OneD.OffsetTopodsFace", P7Op.MakeOffset, [theFace.Wrapped],
+        (B.Shape? aResult, string? anError) = Own(() => B.Shape.Cast(B.OneD.OffsetTopodsFace(W.TopoDS.Face(theFace.Wrapped), theAmount)));
+        theCalls.Add(new W7Call(theName, "OneD.OffsetTopodsFace", P7Op.MakeOffset, [theFace.Wrapped],
                                 new P7Args(theAmount, B.Constants.Tolerance, ThreeArgs: true), P7Post.None, aResult, anError));
     }
 
     /// <summary>Solid.Draft: DraftAngle's Add of each face (the plane's normal, the angle, the plane, Flag on), stopping at a refusal, then Build.</summary>
-    private static void Draft(List<P7Call> theCalls, string theTest, string theName, B.Solid theSolid, IReadOnlyList<B.Face> theFaces,
+    private static void Draft(List<W7Call> theCalls, string theTest, string theName, B.Solid theSolid, IReadOnlyList<B.Face> theFaces,
                               B.Plane theNeutral, double theAngle, bool theOperation = false)
     {
         (B.Shape? aResult, string? anError) = Own(() => theOperation ? Ops.Draft(theFaces, theNeutral, theAngle) : theSolid.Draft(theFaces, theNeutral, theAngle));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.Draft, [theSolid.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.Draft, [theSolid.Wrapped],
                                 new P7Args(Faces: FaceIndices(theSolid, theFaces), Angles: [.. theFaces.Select(_ => theAngle * DegToRad)],
                                            Dir: [theNeutral.ZDir.X, theNeutral.ZDir.Y, theNeutral.ZDir.Z],
                                            PlnLoc: [theNeutral.Origin.X, theNeutral.Origin.Y, theNeutral.Origin.Z]),
@@ -223,19 +238,19 @@ internal static partial class Build123dPhase7Capture
     /// unless flipped; made only along the profile's normal with planar, cylindrical or conical sides. The loft
     /// fallback (MakeLoft, Offset2D, a cut) is phase 6's.
     /// </summary>
-    private static void ExtrudeTaper(List<P7Call> theCalls, string theTest, string theName, B.Face theProfile, B.Vector theDirection, double theTaper,
+    private static void ExtrudeTaper(List<W7Call> theCalls, string theTest, string theName, B.Face theProfile, B.Vector theDirection, double theTaper,
                                      bool theFlipInner = true)
     {
         (B.Shape? aResult, string? anError) = Own(() => B.Solid.ExtrudeTaper(theProfile, theDirection, theTaper, theFlipInner));
         var aPull = theDirection.Normalized();
-        using var aCopier = new N.BRepBuilderAPI_Copy(theProfile.Wrapped, false, false);
-        var aProfile = new B.Face(N.TopoDS.Face(aCopier.Shape()));
+        using var aCopier = new W.BRepBuilderAPI_Copy(theProfile.Wrapped, false, false);
+        var aProfile = new B.Face(W.TopoDS.Face(aCopier.Shape()));
         List<B.Wire> aWires = [aProfile.OuterWire(), .. aProfile.InnerWires()];
-        using var aVec = new N.gp_Vec(theDirection.X, theDirection.Y, theDirection.Z);
-        using var aPrismBuilder = new N.BRepPrimAPI_MakePrism(aProfile.Wrapped, aVec);
-        N.TopoDS_Shape aPrism = aPrismBuilder.Shape();
-        using var aFaceMap = new N.TopTools_IndexedMapOfShape();
-        N.TopExp.MapShapes(aPrism, N.TopAbs_ShapeEnum.TopAbs_FACE, aFaceMap);
+        using var aVec = new W.gp_Vec(theDirection.X, theDirection.Y, theDirection.Z);
+        using var aPrismBuilder = new W.BRepPrimAPI_MakePrism(aProfile.Wrapped, aVec);
+        W.TopoDS_Shape aPrism = aPrismBuilder.Shape();
+        using var aFaceMap = new W.TopTools_IndexedMapOfShape();
+        W.TopExp.MapShapes(aPrism, W.TopAbs_ShapeEnum.TopAbs_FACE, aFaceMap);
         var aFaces = new List<int>();
         var anAngles = new List<double>();
         var aTypes = new List<B.GeomType>();
@@ -244,12 +259,12 @@ internal static partial class Build123dPhase7Capture
             double anAngle = i > 0 && !theFlipInner ? -theTaper : theTaper;
             foreach (B.Edge anEdge in aWires[i].Edges())
             {
-                using N.TopTools_ListOfShape aGenerated = aPrismBuilder.Generated(anEdge.Wrapped);
-                foreach (N.TopoDS_Shape aSide in aGenerated)
+                using W.TopTools_ListOfShape aGenerated = aPrismBuilder.Generated(anEdge.Wrapped);
+                foreach (W.TopoDS_Shape aSide in aGenerated)
                 {
                     aFaces.Add(aFaceMap.FindIndex(aSide));
                     anAngles.Add(anAngle * DegToRad);
-                    aTypes.Add(new B.Face(N.TopoDS.Face(aSide)).GeomType);
+                    aTypes.Add(new B.Face(W.TopoDS.Face(aSide)).GeomType);
                 }
             }
         }
@@ -259,7 +274,7 @@ internal static partial class Build123dPhase7Capture
             return; // lofted: no phase 7 call
         }
         B.Vector aCenter = aProfile.Center();
-        theCalls.Add(new P7Call(theName, theTest, P7Op.Draft, [aPrism],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.Draft, [aPrism],
                                 new P7Args(Faces: [.. aFaces], Angles: [.. anAngles], Dir: [aPull.X, aPull.Y, aPull.Z],
                                            PlnLoc: [aCenter.X, aCenter.Y, aCenter.Z]),
                                 P7Post.Validity, aResult, anError));
@@ -269,17 +284,17 @@ internal static partial class Build123dPhase7Capture
     /// Shape3D.DPrism: for each profile face in turn, BRepFeat_MakeDPrism(shape, face, basis or a null face, taper, fuse or
     /// cut, no modify), then Perform up to the face, through all, or by the depth; the result feeds the next face.
     /// </summary>
-    private static void DPrism(List<P7Call> theCalls, string theTest, string theName, B.Shape3D theShape, B.Face? theBasis,
+    private static void DPrism(List<W7Call> theCalls, string theTest, string theName, B.Shape3D theShape, B.Face? theBasis,
                                IReadOnlyList<B.Face> theFaces, double? theDepth = null, double theTaper = 0, B.Face? theUpToFace = null,
                                bool theThruAll = true, bool theAdditive = true)
     {
         (B.Shape? aResult, string? anError) = Own(() => theShape.DPrism(theBasis, theFaces.Cast<B.Shape2D>().ToList(), theDepth, theTaper, theUpToFace,
                                                                         theThruAll, theAdditive));
         int aMode = theUpToFace is not null ? 2 : (theThruAll || theDepth is null) ? 0 : 1;
-        N.TopoDS_Shape[] anOps = [theShape.Wrapped, .. theFaces.Select(f => f.Wrapped),
-                                  .. theBasis is null ? Array.Empty<N.TopoDS_Shape>() : [theBasis.Wrapped],
-                                  .. theUpToFace is null ? Array.Empty<N.TopoDS_Shape>() : [theUpToFace.Wrapped]];
-        theCalls.Add(new P7Call(theName, theTest, P7Op.DPrism, anOps,
+        W.TopoDS_Shape[] anOps = [theShape.Wrapped, .. theFaces.Select(f => f.Wrapped),
+                                  .. theBasis is null ? Array.Empty<W.TopoDS_Shape>() : [theBasis.Wrapped],
+                                  .. theUpToFace is null ? Array.Empty<W.TopoDS_Shape>() : [theUpToFace.Wrapped]];
+        theCalls.Add(new W7Call(theName, theTest, P7Op.DPrism, anOps,
                                 new P7Args(theDepth ?? 0, Mode: aMode, Taper: theTaper * DegToRad, Fuse: theAdditive ? 1 : 0,
                                            HasBasis: theBasis is not null, NbProfiles: theFaces.Count),
                                 P7Post.None, aResult, anError));
@@ -293,7 +308,7 @@ internal static partial class Build123dPhase7Capture
     /// Shape2D.SplitByPerimeter: the perimeter's edges split where they cross the faces' seams (build123d.NET's own
     /// SplitEdgeAtVertices, called by reflection), then BRepFeat_SplitShape(shape), Add(edges), Build, Left and Right.
     /// </summary>
-    private static void SplitByPerimeter(List<P7Call> theCalls, string theTest, string theName, B.Shape2D theShape, B.Shape1D thePerimeter)
+    private static void SplitByPerimeter(List<W7Call> theCalls, string theTest, string theName, B.Shape2D theShape, B.Shape1D thePerimeter)
     {
         (B.Shape? aResult, string? anError) = Own(() =>
         {
@@ -301,7 +316,7 @@ internal static partial class Build123dPhase7Capture
             return new B.Compound([.. anInside, .. anOutside]);
         });
         var aSeams = theShape.Faces().SelectMany(f => f.Seams).ToList();
-        var anEdges = new List<N.TopoDS_Shape>();
+        var anEdges = new List<W.TopoDS_Shape>();
         foreach (B.Edge anEdge in thePerimeter.Edges())
         {
             if (anEdge.IsEmpty)
@@ -330,15 +345,15 @@ internal static partial class Build123dPhase7Capture
                 anEdges.Add(aPiece.Wrapped);
             }
         }
-        theCalls.Add(new P7Call(theName, theTest, P7Op.Split, [theShape.Wrapped, .. anEdges], new P7Args(), P7Post.SewSides, aResult, anError));
+        theCalls.Add(new W7Call(theName, theTest, P7Op.Split, [theShape.Wrapped, .. anEdges], new P7Args(), P7Post.SewSides, aResult, anError));
     }
 
     /// <summary>Shape.ToSplines: BSplineRestriction(tolerance, tolerance, degree, 1 segment, C0, C0, degree priority, rational unless NURBS, the default parameters).</summary>
-    private static void ToSplines(List<P7Call> theCalls, string theTest, string theName, B.Shape theShape, int theDegree = 3, double theTolerance = 1e-3,
+    private static void ToSplines(List<W7Call> theCalls, string theTest, string theName, B.Shape theShape, int theDegree = 3, double theTolerance = 1e-3,
                                   bool theNurbs = false)
     {
         (B.Shape? aResult, string? anError) = Own(() => theShape.ToSplines(theDegree, theTolerance, theNurbs));
-        theCalls.Add(new P7Call(theName, theTest, P7Op.ToSplines, [theShape.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.ToSplines, [theShape.Wrapped],
                                 new P7Args(Tol: theTolerance, Degree: theDegree, Nurbs: theNurbs), P7Post.None, aResult, anError));
     }
 
@@ -358,7 +373,7 @@ internal static partial class Build123dPhase7Capture
 
     private static B.Face ObjCircle(double r) => new(B.Wire.MakeCircle(r));
 
-    private static IEnumerable<(string, Action<List<P7Call>, string>)> Scenarios()
+    private static IEnumerable<(string, Action<List<W7Call>, string>)> Scenarios()
     {
         // Shape3DTests.Hollow
         yield return ("Shape3DTests.Hollow", (c, t) =>
@@ -571,6 +586,56 @@ internal static partial class Build123dPhase7Capture
             ToSplines(c, t, "ellipse face", new B.Face(new B.Wire(B.Edge.MakeEllipse(8, 4))));
         });
     }
+
+#endif
+
+#if !HAS_NATIVE
+    /// <summary>
+    /// Every call, as recorded (unit 10A): the scenarios run build123d.NET on native OCCT, so only when recording; the
+    /// calls' shapes are native's through the recorded facade, the scenarios' failures are kept with them.
+    /// </summary>
+    internal static List<P7Call> Recorded(List<string> theFailures)
+    {
+        (List<P7Call> aCalls, List<string> aFailures) = Tape.Value("build123d.NET's phase 7 operations", () =>
+        {
+#if HAS_ORACLE
+            var aFailed = new List<string>();
+            return ([.. CaptureNative(aFailed.Add).Select(c => c.Adopted())], aFailed);
+#else
+            return Tape.NeedsNative<(List<P7Call>, List<string>)>();
+#endif
+        }, static (w, v) =>
+        {
+            w.Value(v.Item2.ToArray<object?>());
+            w.Int(v.Item1.Count);
+            foreach (P7Call c in v.Item1)
+            {
+                w.String(c.Name);
+                w.String(c.Test);
+                w.Int((int)c.Op);
+                w.Value(c.Operands.ToArray<object?>());
+                w.String(JsonSerializer.Serialize(c.Args));
+                w.Int((int)c.Post);
+                w.Object(c.Result);
+                w.String(c.Error);
+                w.String(c.Message);
+            }
+        }, static r =>
+        {
+            List<string> aFailed = [.. ((object?[])r.Value()!).Cast<string>()];
+            var aCalls = new List<P7Call>();
+            for (int i = r.Int(); i > 0; i--)
+            {
+                aCalls.Add(new P7Call(r.String()!, r.String()!, (P7Op)r.Int(), Tape.Array<N.TopoDS_Shape>(r.Value()),
+                                      JsonSerializer.Deserialize<P7Args>(r.String()!)!, (P7Post)r.Int(), r.Object<N.TopoDS_Shape>(),
+                                      r.String(), r.String()));
+            }
+            return (aCalls, aFailed);
+        });
+        theFailures.AddRange(aFailures);
+        return aCalls;
+    }
+#endif
 
     /// <summary>build123d.NET's operation behind a call.</summary>
     internal static string Label(P7Call theCall) => theCall.Op switch
@@ -1024,4 +1089,3 @@ internal static partial class Build123dPhase7Capture
         }
     }
 }
-#endif

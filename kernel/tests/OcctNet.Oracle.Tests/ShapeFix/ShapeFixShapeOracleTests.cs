@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -6,7 +5,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.Oracle.Tests;
@@ -403,7 +401,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfsol-");
         int aShapes = 0;
-        foreach ((string aFile, _) in aRun.Inputs(1_000_000))
+        foreach ((string aFile, _) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true, isRollingBack: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -429,7 +427,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfs-");
         int aShapes = 0;
-        foreach ((string aFile, string aGrids) in aRun.Inputs(1_000_000))
+        foreach ((string aFile, string aGrids) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true, isRollingBack: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -468,7 +466,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfsf-");
         var anOracle = new Oracle(output, 63301);
-        for (int i = 0; i < 300; i++)
+        foreach (int i in Tape.Budget(300))
         {
             N.TopoDS_Shape aWire = ShapeFixWireOracleTests.RandomWire(anOracle, i, out string aWhat);
             try
@@ -496,4 +494,3 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         Assert.Empty(aRun.Differences);
     }
 }
-#endif
