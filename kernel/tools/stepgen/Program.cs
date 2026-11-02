@@ -243,6 +243,20 @@ public static class Generator
             aSb.Append("- (db) ").Append(l).Append('\n');
         }
 
+        aSb.Append("\n## Notes\n\n");
+        foreach (var r in aResults.Where(x => x.Notes.Count > 0 || x.UnusedLocals).OrderBy(x => x.Name, StringComparer.Ordinal))
+        {
+            foreach (string n in r.Notes)
+            {
+                aSb.Append("- ").Append(r.Name).Append(": ").Append(n).Append('\n');
+            }
+
+            if (r.UnusedLocals)
+            {
+                aSb.Append("- ").Append(r.Name).Append(": locals declared and not used (CS0219 silenced)\n");
+            }
+        }
+
         if (aReport != null)
         {
             File.WriteAllText(aReport, aSb.ToString(), new UTF8Encoding(false));

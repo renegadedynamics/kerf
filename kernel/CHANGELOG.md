@@ -1445,3 +1445,11 @@ Phase 8 (part): XSBase's foundation (unit 8A1).
   the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
   tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
 - IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
+Phase 8 (part): the STEP entity generator (unit 8C1).
+- tools/stepgen generates STEP's entity classes and their readers and writers from OCCT 8's own C++, translating each
+  class's header and source to C# under docs/translation-rules.md; deterministic, with a `--check` mode the tests run.
+- Generated: StepBasic, StepGeom, StepShape, StepRepr, RWStepBasic, RWStepGeom, RWStepShape and RWStepRepr (809
+  files, 58,631 lines); nothing written by hand.
+- Round trips of the dataset's 338 STEP files through the generated readers and writers, with a test protocol: of
+  1,451,636 records of these packages (93.9% of all), 1,450,960 are written back the same, and the 676 others differ
+  as OCCT's own reading and writing make them (each attributed).

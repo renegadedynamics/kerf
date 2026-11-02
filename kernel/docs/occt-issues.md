@@ -1836,3 +1836,11 @@ reproduces each, but for `EntityCluster::Remove(num)` (decision 1190).
 | IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
 | LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
 | Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |
+## Phase 8: unit 8C1, the STEP entity generator
+
+Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
+reproduces it (decision 12602).
+
+| Where | What | Effect |
+|---|---|---|
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
