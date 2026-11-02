@@ -12361,7 +12361,7 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
 
 The rest of XSBase but IFSelect and XSControl (unit 8A3): Transfer (the transfer processes, binders, actors and
 iterators), TransferBRep (shape binders and mappers, the shape services, the reader) and XSAlgo (shape processing for
-the translators), with TKDE's DE_ShapeFixParameters. Numbers from 12401 are placeholders, renumbered on merge.
+the translators), with TKDE's DE_ShapeFixParameters.
 
 1199. **Transfer's two instantiations, file for file.** OCCT 8 keeps its former generic (Transfer_TransferProcess.gxx)
        as two generated instantiations: Transfer_ProcessForTransient and Transfer_ProcessForFinder, with their actors
