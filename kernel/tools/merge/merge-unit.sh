@@ -14,7 +14,7 @@ git merge --no-ff --no-commit "$branch" >/dev/null 2>&1
 conflicts=$(git diff --name-only --diff-filter=U)
 for f in $conflicts; do
   case "$f" in
-    docs/decisions.md|docs/occt-issues.md|CHANGELOG.md|docs/port-status.md)
+    kernel/docs/decisions.md|kernel/docs/occt-issues.md|kernel/CHANGELOG.md|kernel/docs/port-status.md|modeling/CHANGELOG.md)
       sed -i '/^<<<<<<< /d; /^=======$/d; /^>>>>>>> /d' "$f"; git add "$f" ;;
     *.csproj)
       # Units append their native recordings to the test projects at the same place: keep both sides, but only when
@@ -24,7 +24,7 @@ for f in $conflicts; do
       else
         echo "CODE CONFLICT: $f"
       fi ;;
-    tests/OcctNet.DrawLite/DrawBuiltins.cs|tests/OcctNet.DrawLite/DrawSourceFiles.cs)
+    kernel/tests/OcctNet.DrawLite/DrawBuiltins.cs|kernel/tests/OcctNet.DrawLite/DrawSourceFiles.cs)
       # Units each add a line registering their Draw-lite commands at the same place: keep both sides, but only when
       # every conflicting line is a registration call or a comment
       if awk '/^<<<<<<< /{c=1;next} /^=======$/{next} /^>>>>>>> /{c=0;next} c && !/^[ \t]*([A-Za-z0-9_]+\.Register\(theInterpreter\);|\/\/.*)?[ \t\r]*$/ {bad=1} END{exit bad}' "$f"; then
@@ -36,17 +36,21 @@ for f in $conflicts; do
   esac
 done
 if git diff --name-only --diff-filter=U | grep -q .; then echo "Stopping: resolve the code conflicts by hand."; exit 2; fi
-perl "$S/renumber.pl" .
+perl "$S/renumber.pl" kernel
 note="Decisions renumbered into sequence."
 if [ $gate = 1 ]; then
-out=$(dotnet test OcctNet.slnx -c Release -nologo --logger "console;verbosity=normal" 2>&1)
+out=$(dotnet test Kerf.slnx -c Release -nologo --logger "console;verbosity=normal" 2>&1)
+# the oracle tests, outside Kerf.slnx while native OCCT is in use (phase 10, unit 10R): against the native build in
+# BUILD123D_NATIVE_ROOT (build123d.NET's native/out and .deps/install), compiled out without one
+out="$out
+$(dotnet test kernel/tests/OcctNet.Oracle.Tests -c Release -nologo --logger "console;verbosity=normal" ${BUILD123D_NATIVE_ROOT:+"-p:Build123dNativeRoot=$BUILD123D_NATIVE_ROOT"} 2>&1)"
 # the whole output, with each test's duration and the failures' messages (inside .git, so never committed)
 echo "$out" > .git/merge-unit-test.log
 echo "$out" | grep -E ": error [A-Z]+[0-9]+|Passed!|Failed!|Test Run (Successful|Failed|Aborted)|Total tests|\[FAIL\]" | sed 's/\[C:.*//' | sort | uniq -c
 # the detailed logger prints "Test Run Failed." (not "Failed!") for a project with failures
 if echo "$out" | grep -qE ": error [A-Z]+[0-9]+|Failed!|Test Run Failed|Test Run Aborted|\[FAIL\]"; then echo "Stopping: build or tests failed; merge left uncommitted."; exit 3; fi
 else
-dotnet build OcctNet.slnx -c Release -nologo -v q > .git/merge-unit-test.log 2>&1 || { echo "Stopping: the build failed; merge left uncommitted."; exit 3; }
+dotnet build Kerf.slnx -c Release -nologo -v q > .git/merge-unit-test.log 2>&1 || { echo "Stopping: the build failed; merge left uncommitted."; exit 3; }
 note="$note Built, not tested: the next merge's gate tests it."
 fi
 git add -A

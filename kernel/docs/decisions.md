@@ -13546,3 +13546,23 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          package); standard .NET read-only collections in both layers, Bento converting to Schematiq.Collections only
          when it modifies one and Schematiq.Collections implementing the .NET read-only interfaces; Draw-lite kept;
          phase 9 closed at `0.1.0-preview.3`.
+
+## Phase 10: unit 10R, one repository
+
+1318. **OCCT.NET and build123d.NET in one repository, Kerf** (github.com/renegadedynamics/kerf; decision 1317). Each
+       project's `main` history moved into its own folder with `git filter-repo --to-subdirectory-filter` (OCCT.NET to
+       `kernel/`, build123d.NET to `modeling/`) and merged with `--allow-unrelated-histories`, so `git log` and `blame`
+       reach back through both. Each folder keeps its licence, notices, docs, CHANGELOG and solution; the root README
+       explains the two layers and credits OCCT and build123d.
+       - **Wiring:** the modeling layer builds against `../kernel/`'s projects by default (`OcctNetRoot`), or the
+         nuget.org packages with `-p:UseOcctNetPackages=true`; the kernel finds build123d.NET in `../modeling/`
+         (`Build123dNetRoot`), its native build where `Build123dNativeRoot` says.
+       - **Kerf.slnx** holds everything but what runs native OCCT: the kernel's oracle tests and native benchmarks, the
+         modeling layer's native backend, its tests and generator. One restore can't serve the modeling projects on both
+         backends at once: graph restore loses the kernel's references from build123d.NET's tests, and the default
+         restore ignores the oracle's `AdditionalProperties`, so the native copies see both backends' types. The oracle
+         tests run on their own (`tools/merge/merge-unit.sh` runs them after Kerf.slnx, against
+         `BUILD123D_NATIVE_ROOT`). Units 10A and 10B retire native, and with it the split.
+       - **No behaviour changed:** the same tests pass as in the two repositories.
+       - The merge tooling's paths are the repository's (`kernel/docs/decisions.md`, `kernel/CHANGELOG.md`,
+         `modeling/CHANGELOG.md`); the old repositories stay as they are until archived.
