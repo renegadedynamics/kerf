@@ -778,7 +778,7 @@ unless the table says otherwise; "pinned" names the unit test that shows it. Nat
 | Where | What | Effect |
 |---|---|---|
 | `ShapeFix_ShapeTolerance::LimitTolerance`, TopAbs_WIRE | The edges' result isn't added to `fait` | A change to the edges' tolerances alone returns false. Pinned by `LimitTolerance_Wire_DoesntCountTheEdges` |
-| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port reverses a copy and never writes the edge (the reversed curve isn't read afterwards) |
+| `ShapeFix_EdgeProjAux::Init2d`, `UpdateParam2d` | `theCurve2d->Reverse()` on the handle `BRep_Tool::CurveOnSurface` returns | Computing two parameters reverses the edge's own pcurve, and every shape's sharing it. The port puts a reversed copy in place of the curve on this edge only, unless the edge is frozen (decision 1263; the caller's range is set on the reversed curve, so it is read afterwards) |
 | `ShapeFix_Edge::FixReversed2d` | Reverses the stored pcurve in place | Other edges sharing the pcurve are reversed too. The port puts a reversed copy in place of the curve on this edge only (decision 700) |
 | `ShapeFix_WireVertex::FixSame` | Compares `V1 == V2` (orientation included); `B.Add`s the shared vertex without removing the edges' old ones; doesn't make the edges Free first, as `Fix` does | A shared vertex is never detected; the edges end with three or four vertices; on the edges of a wire `Add` throws `TopoDS_FrozenShape`. Pinned |
 | `ShapeFix_IntersectionTool::FixIntersectingWires` | Calls `sewd->Wire()` three times per modified wire | The face gets one new wire, the context records a second as the replacement and the loop goes on with a third: `Context()->Value(oldWire)` isn't the face's wire |
@@ -1769,3 +1769,260 @@ for the hang in `chamf` (decision 1146).
 | ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 1160) |
 | TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 1162) |
 | BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |
+
+## Phase 8: unit 8H1, STL
+
+Found by porting RWStl and StlAPI and recording native OCCT on hand-made and derived inputs (tools/stlrec). The port
+reproduces each, but for the allocation in the last row but two (decision 1170).
+
+| Where | What | Effect |
+|---|---|---|
+| RWStl_Reader::Read | Returns `!stream.fail()`, and the line buffer's last short block sets the fail flag | False for nearly every ASCII file read whole (`RWStl::ReadFile` ignores it) |
+| RWStl_Reader::Read, multi-domain ASCII | The line buffer reads ahead in 1 KB blocks, but the loop tests the stream's flags and skips white space (`>> std::ws`) at the stream's position, inside data the buffer hasn't returned | Domains after the first are lost once the last block has been read (files under 1 KB: twosolids.stl reads one solid); the white space skipped can join lines or numbers at a block boundary |
+| RWStl_Reader::Read, multi-domain | A domain not closed by "endsolid" fails, so `AddSolid` isn't called for it | `RWStl::ReadFile(…, list)` drops it; the single-triangulation form keeps it |
+| RWStl_Reader::ReadVertex | Skips letters before the numbers | `vertex nan 0 0` and `vertex inf …` fail to read ("cannot read vertex coordinates") |
+| RWStl::ReadStream, StlAPI_Reader::Read(stream) | ASCII if the data start with "solid" (case-sensitive), binary otherwise | A binary file whose header starts "solid", or an ASCII one starting "SOLID", fails; `ReadFile` recognises both |
+| RWStl_Reader::ReadBinary | Reads the facets in blocks of 80, the first sized by the header's count | A header claiming more facets than the data hold reads nothing if the shortfall is in the first block |
+| RWStl_Reader::ReadBinary | Sizes Poly_MergeNodesTool's map by the header's facet count (`2 * count` buckets, an `int`) | Standard_OutOfMemory when text is read as binary (`ReadBinaryStream` on ASCII); not reproduced (decision 1170) |
+| Standard_ReadLineBuffer::ReadLine | The last line, without an end of line, is returned without its terminating `'\0'`; in multi-line mode, reads `myReadBuffer[pos + 2]` past the bytes read | Callers parsing it as a C string may read past it; the port's spans end at the line |
+| RWStl::WriteAscii(path), StlAPI_Writer::Write(path) | Open the file in text mode | CR LF line ends on Windows only (decision 1168) |
+## Phase 8: unit 8P, the STEP parser
+
+Found by rewriting StepFile's flex scanner and bison parser and comparing them with OCCT's on the corpus and on hostile
+inputs. The port reproduces each, but for the crash in FinalOfScope.
+
+| Where | What | Effect |
+|---|---|---|
+| step.lex (flex) | The variable trailing context of `#[0-9]+/[ \t]*=` makes flex keep a state per byte, so its buffer can't grow: a token (a string with what `yymore` collected, a name, a comment's run, the blanks after a label) can't reach its 16,384th byte | "input buffer overflow, can't enlarge buffer because scanner uses REJECT": StepFile_Read fails on a file holding a string of 16,383 bytes or more |
+| step.lex, the end of a string | `[']/[" "\n\r]*[\)\,]`: the class holds the double quote, and not the tab | `'a' "",` ends the string; `'a'` followed by a tab and a comma doesn't, and the string runs on to the next quote followed by `)` or `,` |
+| step.lex, numbers | The real rules need two characters before the exponent; ties go to the first rule | `1E3` is a name (TYPE: in a list, `1E3,` is a syntax error), `12E3` a real; `-` and `+` alone are integers, `...` a real, `T.` an enumeration |
+| step.tab.cxx `parser::error` | Adds 1 to the scanner's line counter, which starts at 1 | Errors are reported one line after their own |
+| StepFile_ReadData::FinalOfScope | Reads `mySubArg[0]` while `mySubArg` is null, until a first list is closed | Crash on an empty header followed by a scope as the first entity; the port takes it for a scope without an export list |
+| StepFile_ReadData::CreateNewRecord | Allocates records uninitialized | A record never given a type (reachable through syntax errors) has a garbage type; null in the port |
+| StepFile_ReadData::CreateNewText | The CARTESIAN_POINT shortcut comes before the error argument's concatenation, which it skips | An error argument's text drops what came before a `CARTESIAN_POINT` |
+| StepFile_ReadData texts | C strings | A NUL byte in a quoted string ends its text |
+| StepFile_ReadData::PrintRecord | The two-letter codes of the argument types (`(IF#TnEHBx`, `)nlIxdnxix`) don't follow Interface_ParamType's order | A text prints `nd`, a sub-list `Bi` (print modes only) |
+| step.yacc `stepf1`, `stepf2`, `stepf3` | The data section must be followed by `ENDSTEP;` and the end of the input, unless `END-ISO-10303-21;` (whose start condition skips the rest); `stepf3` accepts a data section ended by an error at the end of the input, but only after an empty header | Text on a line after `ENDSTEP;` fails the read; a truncated file is read if its header is empty, fails otherwise |
+| step.yacc `finvide` | Expects `' '` tokens, which the scanner never returns (it skips blanks) | None |
+| step.yacc `finscop` | Prints "Export List not yet processed" with printf | On the standard output; the port sends it to the messenger |
+## Phase 8: unit 8A1, XSBase's foundation
+
+Found by porting MoniTool, Interface, IFGraph and LibCtl, and by recording them natively (tools/xsbaserec). The port
+reproduces each, but for `EntityCluster::Remove(num)` (decision 1190).
+
+| Where | What | Effect |
+|---|---|---|
+| Interface_EntityCluster::Remove(num) | The shift loop runs `j--` while `j < n` | Out of bounds below the array for an inner rank; fixed in the port (decision 1190) |
+| Interface_EntityCluster::Value, SetValue | Walking the clusters, subtract the first cluster's count, not the current one's; SetValue tests the first cluster's `thenext` | Once `Interface_EntityList::Add` has put a cluster that isn't full in front, the entities past it throw Standard_OutOfRange (recorded natively) |
+| Interface_EntityCluster::Remove(ent) | Returns false even when the entity was removed further on (via an `int res`) | Interface_EntityList::Remove(ent) doesn't drop an emptied list |
+| Interface_EntityList::TypedEntity | Counts each cluster backwards | The n-th entity of a type isn't the n-th in order |
+| MoniTool_TypedValue::ClearValue | Nullifies the value's string, which IsSetValue, SetCStringValue and RealValue then dereference | A crash after ClearValue (a NullReferenceException in the port) |
+| MoniTool_Stat | Its copy constructor leaves the counters null; the constructor initialises `thetot` three times; Percent divides integers | A copied Stat fails at Open; the sub-level share is 0 until done |
+| Interface_Static | Redeclares `thesatisf`, `thesatisn`, which nothing sets | PrintStatic never prints the satisfies function |
+| Interface_Static::IsSet(name, false) | Takes the wild-card without checking it is attached | A crash for an unset static without a wild-card |
+| Interface_Static::IDef | `EnumDef`'s outputs are uninitialised for a static that isn't an enumeration; "eval" with no word reads an uninitialised buffer | Garbage "estart", "ecount"; the port gives 0, 0 and "start - 1" |
+| Interface_Graph::Name | `if (themodel->Number(ent)) return str;`: the test is inverted | No name for an entity of the model |
+| Interface_Category | The categories are numbered from 0 (an NCollection_DynamicArray) | "Shape" is 0, the number of an unknown name too; AddCategory("Shape") would append it again |
+| Interface_BitMap::AddFlag, SetFlagName | Append the name to a free (".") or existing name instead of replacing it | Names like ".f2" |
+| Interface_Check::Complies, Remove | The fails' branch loops over the warnings (copied code) | Fails are never matched nor removed |
+| Interface_CheckTool's check lists | Check without try/catch (`errh = 0`), and that path returns before the "Shared Items unknown" fail | The lists don't report entities sharing items out of the model (`Check(num)` does) |
+| Interface_CheckTool::WarningCheckList | Adds its working check, then clears it and sets the next entity on it | The recorded checks end empty, with the last entity |
+| Interface_CopyTool::Transferred | Increments the nesting level after the copy, so the entities a copy transfers count at level 0 | RootResult lists them as roots, some twice |
+| Interface_InterfaceModel::AddReportEntity | `semantic` true adds to the main reports, false to the semantic ones | The reverse of its documentation |
+| Interface_InterfaceModel::ChangeOrder | Assigns `rep1` twice and never `rep2` | Reports aren't swapped correctly |
+| Interface_ParamSet::Append | Past the reservation, each parameter replaces the next set | Only the last overflowing parameter is kept (the readers reserve enough) |
+| IFGraph_AllConnected::GetFromEntity | `if (!thegraph.IsPresent(...)) return;`: the test is inverted | Finds nothing; IFGraph_ConnectedComponants' parts are all empty |
+| IFGraph_Cumulate::GetFromEntity, IFGraph_Compare::GetFromEntity | Iterate an IFGraph_AllShared without evaluating it (a graph content evaluates at Begin, not Start) | Add nothing (GetFromIter with an evaluated content works) |
+| IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
+| LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
+| Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |
+
+## Phase 8: unit 8B, StepData and the STEP header
+
+Found by porting StepData, the header packages and Resource_Unicode's conversions, and by recording them natively
+(tools/stepdatarec). The port reproduces each, but for the first (decision 1198).
+
+| Where | What | Effect |
+|---|---|---|
+| StepData_Field::CopyFrom | For a SelectNamed, copies `*this` (still holding the member) into the copy's field | Endless recursion; fixed in the port |
+| StepData_Field::CopyFrom | Names the SelectNamed copy with its own (empty) name | The copy loses the member's name |
+| StepData_Field::CopyFrom, SetEntity(num) | Build the copied or converted list, then drop it | Lists are shared, not copied; SetEntity on a list of integers, reals or strings changes nothing |
+| StepData_Field::Set | For an HArray2 of reals sets the kind Integer, and reads `hi2` (null) for the row length of reals and transients | A crash (NullReferenceException) |
+| StepData_Field::ItemKind | `if (!ht.IsNull()) return kind;`: the test is inverted | "Any" for a list of transients; a null dereference for others |
+| StepData_Field::Real(n1, n2) | Returns a member's integer value for a list of lists | Reals truncated |
+| StepData_SelectMember::SetLogical | Stores 0 for every value | A logical member reads back False |
+| StepData_EnumTool::AddDefinition | After a blank, the next term starts with that blank; "$" gets a dot too ("$."); a term ending with a blank reads before the buffer | ". B." for "A B"; NullValue never finds "$" and returns -1 |
+| StepData_EnumTool::NullValue | Returns `false` (0) where it documents -1 when not optional | 0 |
+| StepData_StepReaderData::ReadAny | An integer parameter read into a given member is set as a real | |
+| StepData_StepReaderData::cleanText | Lead bytes near the end make the UTF-8 decoder read the terminating zero and the memory past it; an empty decoding (an overlong zero) makes `Trunc(-1)` throw | Garbage or Standard_OutOfRange from ReadString |
+| Resource_Unicode::ConvertGBKToUnicode, ConvertBig5ToUnicode | Insert the bytes read so far "at 0" (`Insert(0, ...)`) when a lead byte is followed by ASCII | Standard_OutOfRange |
+| Resource_Unicode::ConvertGBKToUnicode | After a 4-byte sequence, keeps its three bytes, so every following byte reads as a fourth; the 4-byte code point indexes the 2-byte table | Garbage after the first 4-byte character |
+| RWHeaderSection::Init | Registers the header protocol again at each call | From the second call, the header protocol is a FileProtocol |
+| APIHeaderSection_MakeHeader::SetDescription | Tests `fs`, then sets `fd` | A crash if there is a schema and no description |
+| StepData_StepWriter (undefined entities) | A sub-list's type is the parser's "/* (SUB) */", which OpenTypedSub writes | Written sub-lists start with a comment (valid STEP) |
+| StepData_StepDumper::Dump | Lists the proper idents under `nbi < 0`, never true; `nbu` and `nbq` are reset to 0 instead of counted | Never lists entities without ident or with ident = number |
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+Found by porting Transfer, TransferBRep and XSAlgo and testing them on the toy norm. The port reproduces each.
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
+
+## Phase 8: unit 8C1, the STEP entity generator
+
+Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
+reproduces it (decision 1209).
+
+| Where | What | Effect |
+|---|---|---|
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
+
+## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
+
+Found by generating StepVisual, StepAP214/203/242, StepDimTol, StepKinematics, StepFEA, StepElement, their RW
+packages and StepAP214's dispatch from OCCT's C++, and by the corpus's round trips (decision 1219). The port
+reproduces them all; the generated code carries no `// OCCT` marker (it is regenerated), the tests name them.
+
+| Where | What | Effect |
+|---|---|---|
+| RWStepVisual_RWSurfaceStyleRenderingWithProperties::ReadStep | Tests `if (strcmp(text, ".CONSTANT_SHADING."))`, true when the text differs, and so on down the list | Every rendering method but .CONSTANT_SHADING. is read as .CONSTANT_SHADING., and .CONSTANT_SHADING. as .COLOUR_SHADING. (545 records of the corpus) |
+| RWStepVisual_RWComplexTriangulatedFace::WriteStep, RWStepVisual_RWCubicBezierTriangulatedFace::WriteStep (normals, control triangles) | Loop the rows up to `RowLength()` and the columns up to `ColLength()`, which are the numbers of columns and rows | Out of range unless the array is square: OCCT's release build writes values from the wrong places, a checked build (build123d.NET's, the port's) throws Standard_OutOfRange. 552 faces of the corpus can't be written |
+| StepVisual_StyledItem::Item, RWStepVisual_RWStyledItem::WriteStep | Init keeps the target as a transient and as a representation item (null if it isn't one); the writer sends `Item()`, the representation item | A styled item whose target is a representation (or anything but a representation item) is written with `$` for its item (68 records) |
+| RWStepAP214_ReadWriteModule::IsComplex | Lists every case of ComplexType but 800 (ActuatedKinPairAndOrderKinPair) and 802 (RepositionedTessellatedGeometricSet) | The writer starts them as simple records, of type `?` (StepType's default), followed by the components: `?() GEOMETRIC_REPRESENTATION_ITEM() ...` (30 records) |
+| RWStepAP214_ReadWriteModule::ComplexType and CaseStep (cases 694-697, 705, 706, 800) | ComplexType gives the generic GEOMETRIC_TOLERANCE (or kinematic pair) components, CaseStep wants a specific kind | The components ComplexType gives aren't recognised back (no effect on reading or writing files) |
+| RWStepAP214_GeneralModule::NewVoid case 106 | Creates a StepVisual_AnnotationOccurrence for DRAUGHTING_ANNOTATION_OCCURRENCE | Such a record is read into an annotation occurrence and written back ANNOTATION_OCCURRENCE (none in the corpus as a simple record) |
+| RWStepAP214_ReadWriteModule, cases 825 and 826 (SurfaceStyleReflectanceAmbientDiffuse(Specular)) and 708 (TESSELLATED_ITEM) | 825 and 826 have no type name in StepType or the type map; 708 is named by StepType but missing from the type map | SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written (written `?`); TESSELLATED_ITEM can be written, not read |
+| StepElement_VolumeElementPurposeMember and StepElement_SurfaceElementPurposeMember, `CompareNames` | Returns case 1 for both the enumerated purpose and APPLICATION_DEFINED_ELEMENT_PURPOSE (the curve one gives 2) | An application-defined purpose is written back as the enumerated one (2 records) |
+| StepBasic_SizeMember | Always names itself POSITIVE_LENGTH_MEASURE | An untyped curve width is written typed (15 records); POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)) keeps its outer type only (16) |
+| RWStepVisual_RWCharacterizedObjAndRepresentationAndDraughtingModel::WriteStep | Writes CHARACTERIZED_OBJECT's name and description as derived | `CHARACTERIZED_OBJECT(*,*)` for the read values (3 records) |
+| StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
+| RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
+| StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
+
+## Phase 8: unit 8A3, IFSelect, XSControl and APIHeaderSection_EditHeader
+
+Found by porting IFSelect (as traced) and XSControl and testing them on the toy norm and the corpus's STEP files
+(decision 1228). The port reproduces each but the one noted.
+
+| Where | What | Effect |
+|---|---|---|
+| Interface_CheckTool::VerifyCheckList and CheckList (8A1's code, met here) | One Interface_Check object is cleared and refilled for each entity and recorded for every entity with messages; when the model has semantic checks or report entities, it becomes the model's own check, which the next entity clears | Every recorded check ends with the last entity's messages (none if the last has none): IFSelect_WorkSession::ComputeCheck's semantic checks lose all but the last entity's, and the model's stored checks are cleared by the next lists. Reproduced; the native comparison agrees on the corpus |
+| IFSelect_CheckCounter::Analyse | Keeps `thesign->Text(ent, model).ToCString()`, the C string of a temporary destroyed at once | With a signature, the type in each message is garbage or empty natively. The port gives the text (not comparable natively) |
+| IFSelect_WorkSession::GiveListCombined | Never creates the list it appends to | A null dereference for any two lists |
+| IFSelect_WorkSession::SendAll, SendSelected | Clear `errhand` (a file static, shared by every session) and restore it on an exception only | After one successful call, every session's later calls run without the exception guard. The port keeps the flag per session |
+| IFSelect_WorkSession::RemoveName | Re-adds the item to the indexed map of items to drop its name; adding an existing key changes nothing | The item keeps its name as its attribute (HasName, Name, ItemLabel's lists), though the name is unbound |
+| IFSelect_WorkSession::ReadFile with OCCT 8's StepSelect_WorkLibrary | The library reads into the model it is given; the session gives a null one | XSControl_Reader::ReadFile on STEP fails (a null dereference caught as a signal: RetFail); STEPControl_Reader::ReadFile makes its model itself |
+| IFSelect_SignatureList::PrintList | Tests `if (num == IFSelect_ShortByItem)`, an entity number against the enumeration's value 2 | Entity n0 2 is printed "??" in the lists |
+| IFSelect_Functions::GiveDispatch | Sets '\0' at the positions of '(' and ')' (TCollection_AsciiString::SetValue) before testing that there are any | A name that is neither a dispatch nor has parentheses raises Standard_OutOfRange |
+| XSControl_TransferWriter::CheckList, ResultCheckList | Skip a check `if (NbFails() == 0 \|\| NbWarnings() == 0)` | Only checks with both fails and warnings are listed |
+| XSControl_TransferReader::EntitiesFromShapeList (modes 2 to 4) | Reads `list->Value(i)` (the entity number) in the loop over `ir` | The results compared are the wrong ones (or out of range) |
+| APIHeaderSection_EditHeader, IsTimeStamp | `[[fallthrough]]` after each separator test into the next digit test | A separator must also be a digit: no time stamp is ever accepted, so the editor can't set one |
+| IFSelect_EditForm::NbTouched, IFSelect_ContextModif::Search, IFSelect_IntParam::StaticName | Declared, never defined | The first two left out; StaticName ported |
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+Nothing of OCCT's is ported in this unit (decision 1229). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
+copy, for unit 8G (decision 1231):
+
+| Where | What OCCT does | What the port does |
+|---|---|---|
+| XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
+| XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
+each, but for the first (decision 1240).
+
+| Where | What | Effect |
+|---|---|---|
+| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 1240) |
+| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
+| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
+| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
+| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
+| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
+| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
+| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
+
+## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
+
+## Phase 8: unit 8G1, the XDE Draw-lite commands
+
+Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands keep OCCT's behaviour where it shows.
+
+| Where | What | Effect |
+|---|---|---|
+| TDF_Tool::Label (entry) | Skips the entry's first tag without checking it is 0 | "5:1:1" names 0:1:1, so a shape named "1" or "7:1" passed to an XDE command is taken as a label, not the shape (the port's label lookup does the same) |
+| XCAFDoc_ShapeTool::RemoveShape, RemoveComponent | Forget the label's attributes but leave it in the tool's maps (myShapeLabels, mySubShapes) | SearchUsingMap can return a removed label; the port's document forgets the label in its maps too (decision 1258) |
+| XDEDRAW_Layers.cxx setVisibility; XDEDRAW.cxx XDumpAssemblyGraph | The usage line misses a space ("Use: XSetVisibilityDocName"); the graph dump's usage names `-verbose`, the command parses `-names` | Messages only; reproduced |
+
+## Phase 8: unit 8F, STEPControl
+
+| Where | What | Effect |
+|---|---|---|
+| STEPControl_ActorRead (file level) | `NM_DETECTED`, a global flag the actor sets and reads across calls | Not reentrant: readers in parallel share it. A field in the port (decision 1268) |
+| STEPControl_ActorRead::TransferEntity (product definition, NAUO) | Follows assembly links without a guard | A file whose assembly links form a cycle overflows the stack. The port checks the stack (decision 1268) |
+| STEPConstruct_Assembly::MakeRelationship | Numbers occurrences from a function-static counter | The identifiers written depend on what the process wrote before (decision 1266) |
+| STEPControl_Controller (write actor) | The controller recorded process-wide holds the write actor: tolerance, shape fix parameters, product index | A writer's settings leak into the next writer's output; not thread-safe (decision 1264) |
+| STEPControl_ActorWrite (non-manifold mode) | `aSubShell.Closed(true)` on the input's shells | The writer changes the shape it writes. A copy in the port (decision 1269) |
+| StepSelect_WorkLibrary::WriteFile | `filemod->Label()` after a downcast that may give null | A file modifier of another kind is dereferenced null |
+| STEPSelections_SelectDerived::Matches | `atype->SubType(checker)` with `atype` null for an unknown type name | A null dereference; false in the port |
+| STEPSelections_SelectGSCurves, SelectInstances | Thread-local state shared by all instances of the class | A selection's result depends on other instances; the selection's own in the port (decision 1270) |
+| STEPConstruct_AP203Context | Date, time zone, user name and host address read from the system | AP203 output is not repeatable; settable through the context (decision 1267) |
+| STEPControl_Writer (AP203 assemblies) | Native omits the AP203 management entities of the last occurrences of data/occ's assemblies | 12 of 720 writes differ: cause not found, attributed (decision 1272) |
+| IFSelect_WorkSession::ModelCheckList (bug25013_25013faces.stp) | Native throws Standard_OutOfRange (NCollection_Sequence::Value) walking the check list after the transfer | The port's check list is complete; attributed (decision 1272) |
+
+## Phase 8: unit 8G2, STEPCAFControl
+
+| Where | What | Effect |
+|---|---|---|
+| STEPCAFControl_Controller | Replaces the write actor STEPControl_Controller's constructor configures with a fresh STEPCAFControl_ActorWrite, without its shape fix parameters and processing flags | Once STEPCAFControl is initialised (it records itself under "STEP"), STEPControl_Writer in the same process writes shapes unprocessed unless its caller sets the parameters (decision 1277) |
+| STEPCAFControl_Writer::ExternFile (by name) | `if (!myFiles.IsEmpty() \|\| !myFiles.IsBound(theName)) return false;` | Fails whenever there are external files: the test is inverted. Kept (decision 1276) |
+| STEPCAFControl_Writer (map of styles' representations) | Adds the MDGPRs to the model in the order of a map keyed by shapes' addresses | The entity order of a written file with several styled parts is not repeatable (decision 1280) |
+| STEPCAFControl_Reader::ReadNames | A NAUO no PRODUCT_DEFINITION_SHAPE refers to takes the name found for the previous entity, or a null handle at the first | A null dereference for a file whose first NAUO has no shape definition; the port names it "" |
+| STEPCAFControl_Reader (bug31670_russian.stp) | A product name of the file is read past its end (bytes of other memory in the name) | The document's name and the text written back differ from run to run; attributed in the comparisons |
+| STEPCAFControl_Reader::collectRepresentationItems | Follows representation relationships without a guard | A cycle of relationships recurses without end; the port stops after 1,000 levels (decision 1280) |
+| XCAFDoc_ShapeTool::GetExternRefs | Returns the names of the label's children, not the external references SetExternRefs keeps in a child label of its own | Its callers (none in STEPCAFControl) get the components' names of an assembly; the port's GetExternRefs returns the references |
+| (port) XSControl_TransferReader::ShapeResult | The port encoded the regularity of a result holding frozen shapes into a copy (decision 1224) | An assembly whose parts were published before was copied whole, so its parts were no longer its product definitions' results and STEPCAFControl_Reader read it as one part (trj4_s1-ai-214.stp written and read back). Fixed: an unfrozen shape holding frozen ones is encoded in place around them; the STEPControl comparisons are unchanged |
+
+## Phase 8: unit 8Z, STEP external references
+
+| Where | What | Effect |
+|---|---|---|
+| STEPCAFControl_Reader::ReadExternFile | Records a file as read (`myFiles.Bind`) only after its transfer, which reads the file's own references; the "same main file" check compares with the referencing file only | Files referring to each other (A to B to A) recurse without end, a stack overflow. Fixed: the files being read are kept and a reference back to one stays unresolved with a warning (decision 1284-1287) |
+| STEPCAFControl_Reader::Transfer, ReadExternFile; STEPConstruct_ExternRefs::FileName | External files read from the disk relative to the loaded file's name or the current directory, or at any absolute or UNC path the file names, without the caller's limits or cancellation, with no way to turn it off or redirect it | A file opens arbitrary paths. The port's resolver, limits and budget (decisions 1284-1287) |
+| STEPCAFControl_Writer::Write (multifile) | The external files' names are the labels' names, unchecked | A document's names can place files outside the main file's folder. Kept for Write(path); the stream form hands the names to the caller (decision 1288) |
+## Phase 8: unit 8W, the data-exchange corpus
+
+| Where | What | Effect |
+|---|---|---|
+| DEBREP_Provider::Write (`write.binary : 0`) | Writes the text form with BRepTools::Write, without Draw's `DBRep_DrawableShape` line, while DEBREP_Provider::Read takes a file for text only when it starts with that line | A text BRep file `writefile` wrote is read back as binary by `readfile`, which fails. Kept in Draw-lite's stand-in (decision 1289) |
+| DE_ConfigurationContext (WhatKindOfLine) | `!aLine.EndsWith(' ') \|\| !aLine.EndsWith('\t') \|\| !aLine.EndsWith('\n')` is always true | A space is always appended to the line before it is split; harmless (the value is trimmed) |

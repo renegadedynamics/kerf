@@ -87,6 +87,32 @@ public static class Standard_Stream
                        .Replace('E', 'e');
     }
 
+    /// <summary>
+    /// A real as <c>printf("%.*e", thePrecision, theValue)</c> writes it with Microsoft's C runtime (C++'s
+    /// <c>std::scientific</c> with <c>std::setprecision</c>): one digit, the point, <paramref name="thePrecision"/>
+    /// digits, and an exponent of at least two digits (<c>1.500000000000e+02</c>); <c>inf</c>, <c>-inf</c>, <c>nan</c>,
+    /// <c>-nan(ind)</c> as <see cref="FormatReal"/>.
+    /// </summary>
+    /// <remarks>The digits are exact, ties rounded to even, as the C runtime's (see <see cref="FormatReal"/>).</remarks>
+    public static string FormatScientific(double theValue, int thePrecision)
+    {
+        if (double.IsNaN(theValue) || double.IsInfinity(theValue))
+        {
+            return FormatReal(theValue, thePrecision);
+        }
+
+        int aPrecision = thePrecision < 0 ? 6 : thePrecision;
+        // .NET writes "1.500000000000E+002": at least three exponent digits, where C writes at least two
+        string aText = theValue.ToString("E" + aPrecision.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        int anE = aText.IndexOf('E');
+        int aDigits = anE + 2;
+        while (aDigits < aText.Length - 2 && aText[aDigits] == '0')
+        {
+            aDigits++;
+        }
+        return string.Concat(aText.AsSpan(0, anE), "e", aText.AsSpan(anE + 1, 1), aText.AsSpan(aDigits));
+    }
+
     /// <summary>The text right-aligned in a field of the width, as C++'s <c>std::setw</c> followed by an output.</summary>
     public static string Setw(int theWidth, string theText) => theText.PadLeft(theWidth);
 
@@ -521,7 +547,12 @@ public static class Standard_Stream
     /// <summary>
     /// <see cref="Strtod(string)"/>, with the number of characters converted (strtod's end pointer), 0 if none.
     /// </summary>
-    public static double Strtod(string theText, out int theEnd)
+    public static double Strtod(string theText, out int theEnd) => Strtod(theText.AsSpan(), out theEnd);
+
+    /// <summary>
+    /// <see cref="Strtod(string)"/> on a span of characters, with the number of characters converted, 0 if none.
+    /// </summary>
+    public static double Strtod(ReadOnlySpan<char> theText, out int theEnd)
     {
         theEnd = 0;
         int i = 0;
@@ -611,10 +642,10 @@ public static class Standard_Stream
 
         theEnd = i;
         // .NET's parsing rounds exactly, as the C runtime's strtod does, and overflows to infinity
-        return double.Parse(theText.AsSpan(aStart, i - aStart), NumberStyles.Float, CultureInfo.InvariantCulture);
+        return double.Parse(theText.Slice(aStart, i - aStart), NumberStyles.Float, CultureInfo.InvariantCulture);
     }
 
-    private static bool MatchesIgnoreCase(string theText, int theStart, string theWord)
+    private static bool MatchesIgnoreCase(ReadOnlySpan<char> theText, int theStart, string theWord)
         => theStart + theWord.Length <= theText.Length
-           && string.Compare(theText, theStart, theWord, 0, theWord.Length, StringComparison.OrdinalIgnoreCase) == 0;
+           && theText.Slice(theStart, theWord.Length).Equals(theWord, StringComparison.OrdinalIgnoreCase);
 }

@@ -18,8 +18,8 @@ for f in $conflicts; do
       sed -i '/^<<<<<<< /d; /^=======$/d; /^>>>>>>> /d' "$f"; git add "$f" ;;
     *.csproj)
       # Units append their native recordings to the test projects at the same place: keep both sides, but only when
-      # every conflicting line is an EmbeddedResource item or a comment
-      if awk '/^<<<<<<< /{c=1;next} /^=======$/{next} /^>>>>>>> /{c=0;next} c && !/^[ \t]*(<!--.*-->|<EmbeddedResource [^>]*\/>)[ \t\r]*$/ {bad=1} END{exit bad}' "$f"; then
+      # every conflicting line is an EmbeddedResource or None item, or a comment (on one line or several)
+      if awk '/^<<<<<<< /{c=1;next} /^=======$/{next} /^>>>>>>> /{c=0;next} !c{next} incom{ if (/-->/) incom=0; next } /^[ \t]*<!--/ && !/-->/ {incom=1; next} !/^[ \t]*(<!--.*-->|<(EmbeddedResource|None) [^>]*\/>)[ \t\r]*$/ {bad=1} END{exit bad}' "$f"; then
         sed -i '/^<<<<<<< /d; /^=======$/d; /^>>>>>>> /d' "$f"; git add "$f"; echo "kept both resource lists in $f"
       else
         echo "CODE CONFLICT: $f"

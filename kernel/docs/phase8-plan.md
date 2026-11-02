@@ -1,7 +1,8 @@
 # Phase 8 plan: data exchange
 
-*Draft for the owner's review, 1 November 2026. Questions 31 to 39 are at the end and in
-[open-questions.md](open-questions.md).*
+> **Done, 2 November 2026.** The owner accepted every recommendation of questions 31 to 39 (decision 1166). Every unit
+> is merged, with 8A, 8B, 8C, 8G and 8X split as the running order says and three more (8T, the tree and the fresh
+> mesh formats; 8Y and 8Z, fixes); the milestones and the follow-ups are decision 1296.
 
 ## The goal
 
@@ -253,11 +254,11 @@ the size of phases 5 and 6 together. Because of the generator, the token cost is
 
 | Step | Units | Notes |
 |---:|---|---|
-| 1 | 8A | IFSelect's member trace first |
-| 2 | 8B ‖ the generator's design (8C1's first half) | The generator needs StepData's types, so it starts once 8B's interfaces are fixed |
+| 1 | 8A1 ‖ 8P ‖ 8H1 | 8A split in two: 8A1 is MoniTool, Interface, IFGraph, LibCtl, XSMessage, the parameter object and IFSelect's member trace; 8A2 is Transfer, TransferBRep, XSAlgo, IFSelect as traced, XSControl. 8P is 8B's parser (StepFile_ReadData and the C# parser), split out because it needs nothing from XSBase; 8H1 is 8H's STL part, for the same reason |
+| 2 | 8A2 ‖ 8B ‖ the generator's design (8C1's first half) | 8B is now StepData, StepFile_Read, the header packages, encodings and UnitsMethods. The generator needs StepData's types, so it starts once 8B's interfaces are fixed |
 | 3 | 8C1 | Generator and the core entities; the pilot for the generated code's review |
 | 4 | 8C2 ‖ 8D | |
-| 5 | 8E ‖ 8H (STL) | |
+| 5 | 8E | (8H's STL part ran in step 1) |
 | 6 | 8F | First milestone: shapes and assemblies in and out, compared with native |
 | 7 | 8G ‖ 8H (fresh writers) | |
 | 8 | 8X ‖ 8W | Milestones 2 and 3 |

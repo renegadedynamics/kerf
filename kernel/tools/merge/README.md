@@ -11,7 +11,7 @@ Merges `<branch>` into the branch checked out in the repository that holds this 
    have twice left stray files in the main checkout; this stops them being committed.
 2. **Resolves conflicts that are always "keep both sides":**
    - appended sections of `docs/decisions.md`, `docs/occt-issues.md`, `CHANGELOG.md` and `docs/port-status.md`;
-   - `*.csproj` conflicts where every conflicting line is an `<EmbeddedResource>` item or a comment (units append
+   - `*.csproj` conflicts where every conflicting line is an `<EmbeddedResource>` or `<None>` item or a comment (units append
      their native recordings at the same place);
    - `tests/OcctNet.DrawLite/DrawBuiltins.cs` conflicts where every conflicting line is an `X.Register(theInterpreter);`
      call or a comment.

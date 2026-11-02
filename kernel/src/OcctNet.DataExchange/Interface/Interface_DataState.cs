@@ -1,0 +1,18 @@
+// Port of: src/DataExchange/TKXSBase/Interface/Interface_DataState.hxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+namespace Occt;
+
+/// <summary>The state of an entity of a model: loaded with or without warnings or fails, checked, unloaded, unknown.</summary>
+/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.Interface_DataState;</c>.</remarks>
+public enum Interface_DataState
+{
+    Interface_StateOK,
+    Interface_LoadWarning,
+    Interface_LoadFail,
+    Interface_DataWarning,
+    Interface_DataFail,
+    Interface_StateUnloaded,
+    Interface_StateUnknown,
+}

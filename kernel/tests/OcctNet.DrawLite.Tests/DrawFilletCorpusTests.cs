@@ -159,10 +159,11 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         // The frozen ConstrainedFilling surface in ChFi3d_Builder_2's PerformSetOfKGen (a port bug, fixed in src by the
         // unit): OK 723, FAILED 34. Unit 7R3's seam band (decision 1155): OK 728, FAILED 29 (buildevol F7, F8, simple K2,
         // K3, bug28828_4 pass). Its points at edge ends, overflowing sections and hole-like fillet loops (11203-11206):
-        // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures).
+        // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures). Unit 8F's STEP commands:
+        // 884 runnable, OK 737.
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
-        Assert.Equal(883, aNew.Count);
+        Assert.Equal(884, aNew.Count);
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 736, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id),

@@ -1416,3 +1416,178 @@ Phase 7 complete (1 November 2026): finishing.
   TKOffset, TKFeat, TKShHealing over 99%, TKHLR and TKHelix whole).
 - A faster merge gate (Release, about 15 minutes) and the native oracle's use-after-free found and fixed (decision
   1109).
+
+Phase 8 (part): STL (unit 8H1).
+- Ported: RWStl and RWStl_Reader (ASCII and binary, reading and writing, multi-domain files, node merging by angle),
+  StlAPI, StlAPI_Reader and StlAPI_Writer, BRepBuilderAPI_MakeShapeOnMesh, Standard_ReadLineBuffer; a new
+  Standard_IStream (C++ stream rules over a .NET stream). Streams first, file paths on top; limits for hostile input
+  (RWStl_ReadLimits: bytes, facets); cancellation through Message_ProgressRange; frozen results. DESTL waits for TKDE.
+- Oracle (tools/stlrec): data/occ's shapes meshed and written as ASCII and binary STL byte for byte as native (the
+  binary header included); every STL file of data/stl, the dataset and the tests' inputs, and 21 derived inputs
+  (concatenated, truncated, lying headers), read every way: triangulations bit for bit, StlAPI_Reader's shapes as BRep
+  text; 2 lines attributed (native runs out of memory reading text as binary).
+- Draw-lite: `readstl`, `writestl`; 67 corpus cases newly runnable (OK 7, SKIPPED 59 for data not public, FAILED 1
+  attributed: the progress output).
+Phase 8 (part): the STEP parser (unit 8P).
+- `OcctNet.DataExchange`: StepFile_ReadData, and a hand-written, reentrant scanner and parser (`StepFile_Scanner`,
+  `StepFile_Parser`) in place of OCCT's flex and bison code, filling it as OCCT's do, error recovery and messages
+  included. They read a stream, with limits for hostile input (`StepFile_ReadLimits`: file size, records, nesting) and
+  cancellation through `Message_ProgressRange`.
+- Tests: tools/steprec compiles OCCT's own scanner and parser. All 340 STEP files of OCCT's dataset and data/step, and
+  1,329 hostile and mutated inputs, parse as natively, but for two inputs native crashes on. The port parses in 0.74×
+  native's time.
+Phase 8 (part): XSBase's foundation (unit 8A1).
+- Ported: MoniTool (but its timers and case data), Interface (but STAT and the message dictionary), IFGraph, LibCtl's
+  library as C# generics, XSMessage's texts, and TCollection_HAsciiString.
+- The statics become a parameter object, `Interface_StaticSet`, passed to each read and write; the protocols'
+  module lists are initialised once; no other process-wide state changes.
+- Compared with native OCCT: 19,400 recorded lines identical (the formatting of reals STEP writes, the line buffer,
+  the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
+  tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
+- IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
+Phase 8 (part): StepData and the STEP header (unit 8B).
+- Ported: StepData (the reader data with its text decoding, the reader tool, the model, the writer, the dumper,
+  protocols, modules and libraries, select types and members, fields, descriptors, undefined and free-form entities,
+  factors), StepFile_Read on unit 8P's parser, HeaderSection, RWHeaderSection, APIHeaderSection_MakeHeader,
+  UnitsMethods, DESTEP_Parameters, and Resource_Unicode's decoding over .NET's encodings corrected by OCCT's tables.
+- Texts are .NET strings, written back as UTF-8; no process-wide state changes (protocols registered once; the
+  CasCade length unit read from the parameter set); StepFile_Read reads streams, without a global mutex, with limits
+  and cancellation.
+- Compared with native OCCT (tools/stepdatarec): the 340 STEP files of the corpus read into a model and written back
+  identically (1.5 million texts decoded, 2.7 million lines written); 248 crafted texts decoded under every code page
+  (105 decodings attributed: the system locale, reads past a text's end); the code tables equal OCCT's on all 71,374
+  entries its conversions reach. One OCCT bug fixed (an endless recursion copying a named select member).
+Phase 8 (part): Transfer, TransferBRep and XSAlgo (unit 8A2).
+- Ported: Transfer (the transient and finder processes, binders, actors, iterators, dispatch, input and output tools,
+  results), TransferBRep (shape binders and mappers, the shape services, the reader), XSAlgo (the shape processor, the
+  algorithm container) and TKDE's DE_ShapeFixParameters.
+- XSAlgo reads its parameters from the caller's `Interface_StaticSet`; no process-wide state changes. The shape
+  processor never changes its input and returns frozen shapes; the reader publishes frozen shapes.
+- Compared with native OCCT (tools/xsalgorec) on data/occ's shapes with STEP's default sequences: 210 records, 207
+  identical, 3 attributed. Transfer tested on a toy norm. 12 OCCT bugs found, one fixed (an endless recursion in
+  Transfer_ActorDispatch).
+Phase 8 (part): the STEP entity generator (unit 8C1).
+- tools/stepgen generates STEP's entity classes and their readers and writers from OCCT 8's own C++, translating each
+  class's header and source to C# under docs/translation-rules.md; deterministic, with a `--check` mode the tests run.
+- Generated: StepBasic, StepGeom, StepShape, StepRepr, RWStepBasic, RWStepGeom, RWStepShape and RWStepRepr (809
+  files, 58,631 lines); nothing written by hand.
+- Round trips of the dataset's 338 STEP files through the generated readers and writers, with a test protocol: of
+  1,451,636 records of these packages (93.9% of all), 1,450,960 are written back the same, and the 676 others differ
+  as OCCT's own reading and writing make them (each attributed).
+Phase 8 (part): STEP geometry (unit 8D).
+- Ported: StepToGeom (STEP's points, directions, vectors, placements, transformation operators, curves and surfaces
+  into Geom and Geom2d) and GeomToStep (Geom, Geom2d and gp into STEP entities), with the file's units through
+  StepData_Factors; StepToGeom's yaw-pitch-roll conversion waits for StepKinematics.
+- Compared with native OCCT (tools/geomsteprec), with the default units and with inches and degrees: 4.2 million
+  conversions of the corpus's 338 STEP files' geometric entities, and the conversion of 85 constructed cases and of
+  data/occ's geometry into STEP entities, written and read back: identical. 8 OCCT bugs found, one fixed (unbounded
+  recursion on cyclic references).
+Phase 8 (part): the other STEP entity packages and StepAP214's protocol (unit 8C2).
+- Generated by tools/stepgen: StepVisual, StepAP214, StepAP203, StepAP242, StepDimTol, StepKinematics, StepFEA,
+  StepElement and their RW packages (804 files, 92,276 lines), with StepAP214's protocol, its general module and its
+  read-write module (the dispatch over 826 case numbers), all from OCCT 8's C++. Written by hand: 106 lines (the protocol's
+  singleton, the libraries' initialisation, the dispatch's static maps). StepAP209_Construct is left to unit 8F.
+- `RWStepAP214.Init()` registers the modules once; `StepAP214.Protocol()` is the protocol. Their static tables are
+  filled once by C#'s static initialisation; nothing changes afterwards.
+- The H-collections are Standard_Transients, as in OCCT (`NCollection_Array1`, `Array2` and `Sequence` derive from
+  `Standard_Transient`); `NCollection_Array1` has OCCT's Iterator.
+- Round trips of the dataset's 338 STEP files with the real protocol: 98.9% of the 1,546,314 records are recognised
+  (the rest are types OCCT doesn't know either); of those, 1,526,805 are written back the same and the 2,107 others
+  differ as OCCT's own reading and writing make them (each attributed, 13 OCCT bugs logged).
+Phase 8 (part): IFSelect, XSControl and the STEP header's editor (unit 8A3).
+- IFSelect as its member trace reaches (40 of its 76 classes: the work session, work library, model copier,
+  share-out, modifiers, selections, signatures and counters, dispatches, editors); XSControl but its command files
+  (the controller, work session, reader, writer, transfer reader and writer, selections and signatures on transfers,
+  Vars, Utils); APIHeaderSection_EditHeader.
+- A work session owns its parameters (an `Interface_StaticSet`) or is given one; a controller declares its norm's
+  statics in it (`InitStatics`). Controllers are recorded once, process-wide, as the libraries' modules. Reading takes
+  .NET streams and a progress range; writing can go to a stream through the share-out's modifiers
+  (`XSControl_Writer.WriteStream`). Readers publish frozen shapes.
+- Compared with native OCCT (tools/xscontrolrec) on the corpus's 331 STEP files up to 3 MB: the work session's roots,
+  selections, signatures, check lists and label lookups, in its two modes, identical (27,589 lines). Tested on the toy
+  norm and on STEP models. 11 OCCT bugs logged.
+Phase 8 (part): the assembly tree and the fresh mesh formats (unit 8T).
+- XdeDoc, new: an immutable assembly tree in place of XCAF (`XdeDoc_Tree`, `XdeDoc_Product`, `XdeDoc_Instance`):
+  shared products, placed instances, names, colours with alpha, visibility, layers, validation properties and
+  sub-shape attributes; frozen shapes; `Flatten` for meshing and viewing, `Meshed` to mesh every part.
+  `XdeDoc_Document` gives it XCAF's label interface (the shape, colour and layer tools' calls) for STEPCAFControl.
+- glTF 2.0 (`.gltf` + `.bin`, `.glb`), OBJ (+ MTL) and 3MF written fresh over the tree, with instancing and colours;
+  glTF read fresh into the tree, with limits for hostile input. Streams first, cancellation through
+  `Message_ProgressRange`, deterministic output.
+- Checked against OCCT's de_mesh cases on the dataset's Lantern (native's counts and structure), round trips, and the
+  formats' rules in the tests.
+
+Phase 8 (part): STEP topology (unit 8E).
+- StepToTopoDS: the translation of STEP's shape representation items (manifold solid breps, breps with voids, faceted
+  breps, shell based surface models, wireframe and face based models, geometric sets, tessellated solids, shells,
+  faces and surface sets) into BReps, with its translators of vertices, edges, loops, faces and shells, its tools and
+  MakeTransformed. `Value()` gives frozen shapes; a reader works on `InternalValue()` and freezes at the end.
+- TopoDSToStep: the conversion of BReps into STEP entities (MakeManifoldSolidBrep, MakeBrepWithVoids,
+  MakeFacetedBrep, MakeFacetedBrepAndBrepWithVoids, MakeShellBasedSurfaceModel, MakeGeometricCurveSet, the builders
+  and the tessellated items). The shapes converted never change.
+- Compared with native OCCT (tools/toporec): all 2,194 of the corpus's shape items translated byte for byte, and
+  1,726 conversions of data/occ's shapes written identically.
+- 8D's tests now read with StepAP214's protocol; the transient process takes checks on null entities as OCCT's does.
+Phase 8 (part): the XDE Draw-lite commands over the document (unit 8G1).
+- Draw-lite documents: an `XdeDoc_Document` under a Draw variable (`XNewDoc`, `NewDocument`, `Close`), with XDEDRAW's
+  shape, colour, layer, validation property and dump commands (`XAddShape`, `XGetOneShape`, `XStat`, `Xdump`,
+  `XSetColor`, `XGetAllColors`, `XAddLayer`, `XGetAllLayers`, `XSetProps`, `XDumpAssemblyTree`... about 70) with
+  OCCT's output, and the glTF and OBJ commands (`ReadGltf`, `WriteGltf`, `WriteObj` and their shape forms) over
+  unit 8T's reader and writers.
+- XdeDoc: XCAF's auto-naming (per document), colour labels, removal of shapes, components, colours and layers; a fix
+  of `AddShape` for compounds; glTF's per-face primitives (`RWGltf_WriteOptions.MergeFaces`).
+- Corpus: 109 cases using the commands become runnable (none before): 63 OK (xcaf's BRep grids, bugs/xde, de_mesh's
+  glTF), 37 skipped for data that isn't public, 9 failures attributed. Most of de and xcaf wait for STEP (unit 8G2).
+- ShapeFix_EdgeProjAux: when it reverses the parameters of an edge's ends, the edge now holds the reversed pcurve
+  they refer to (as OCCT, which reverses it in place), where before it kept the unreversed one (four edges of
+  tr9_r1001-ec.stp lost their pcurves on reading).
+Phase 8 (part): STEPControl, the first milestone (unit 8F).
+- Ported: STEPControl (the controller with STEP's statics, STEPControl_Reader and STEPControl_Writer, the reading and
+  writing actors), STEPConstruct's unit contexts, parts, assemblies, AP203 context and context tool, StepSelect's work
+  library and step type, STEPEdit, the STEPSelections selections, StepToGeom's yaw-pitch-roll rotation. STEP shapes
+  and assemblies are read and written without native code, from and to .NET streams, with limits for hostile input
+  and cancellation; readers publish frozen shapes; writers never change their input; a session's write actor is its
+  own, so output doesn't depend on what the process wrote before.
+- Compared with native OCCT: the corpus's 338 STEP files read with identical shapes (331 byte for byte, 7 but for the
+  Free flag), roots and counts, and identical check messages for 337; data/occ's shapes and assemblies written
+  identically in every model type (AP214IS, in process) and in 708 of 720 schema and model type cases (AP203,
+  AP214IS, AP242DIS, tools/stepctlrec); round trips identical or canonically identical.
+- Draw-lite: XSDRAW's session per interpreter with `param`, `data`, `entity`, `xload`, `writeall`, `writeent`,
+  `listtypes`, `newmodel`, `tpstat`, `tpdraw`, `tpcompound`, and `stepread`, `stepwrite`, `testreadstep`,
+  `testwritestep`, `stepfileunits`, `steptrans`: 274 corpus cases made runnable (44 OK, 224 skipped for missing data,
+  4 BAD as in OCCT, 2 failures attributed).
+- Phase 8, unit 8G2: STEPCAFControl's reader and writer over the assembly document (`XdeDoc_Document`): assemblies,
+  external references, names, colours (surface, curve, per sub-shape, instance, visibility), layers, validation
+  properties, the length unit and sub-shape names to and from STEP, from and to streams; the rest of STEPConstruct
+  (Styles, RenderingProperties, ValidationProps, ExternRefs, Tool). GD&T, materials, views, metadata and SHUOs are
+  not transferred.
+- Compared with native XCAF documents (tools/stepcafrec): the corpus's 338 STEP files read into identical documents
+  (332; 6 attributed to GD&T and a native misread name); 458 documents written, 377 identical, 70 identical but for
+  the order of the style representations, 11 attributed.
+- Draw-lite: `ReadStep` and `WriteStep` over its documents; the de group's STEP grids run (999 corpus cases made
+  runnable: 255 OK, 76 BAD as in OCCT, 660 skipped for missing data, 8 failures attributed).
+- Phase 8, unit 8Z: STEP external references read safely. `STEPCAFControl_Reader` reads the files a STEP file refers
+  to through a resolver (`SetExternFileResolver`; `FileSystemResolver`, OCCT's way and the file API's default;
+  `FolderResolver(root)`, confined to a folder; or the caller's, from an archive or memory), can be told to read none
+  (`SetExternFilesMode(false)`), applies the caller's read limits and cancellation to every external file within a
+  budget across them (`STEPCAFControl_ExternFileLimits`: files, bytes, depth), and stops at cycles (a stack overflow in
+  OCCT). `ReadStream` reads no external file unless given a resolver. `STEPCAFControl_Writer.WriteStream(stream,
+  externStreams)` writes the multifile mode into the caller's streams.
+- Phase 8, unit 8W: the data-exchange corpus (the third milestone). Draw-lite gets `ReadFile`, `readfile`,
+  `WriteFile` and `writefile` (STEP, STL, glTF and BRep, with `-conf` configurations), `xnorm`, Tcl's encodings
+  (`encoding`, `fconfigure -encoding`), `exec` (removing files only) and `binary format`; the mesh commands take the
+  session's length unit. Of 3,366 data-exchange corpus cases, 2,174 run: 631 OK, 97 BAD as in OCCT, 1,436 skipped
+  for data that isn't public, 10 failures attributed; the 1,192 others need OCAF storage, IGES, VRML, GD&T, notes,
+  views, materials, an OBJ reader or the viewer.
+
+Phase 8 complete (2 November 2026): data exchange.
+- XSBase (IFSelect as traced), StepData with a hand-written reentrant STEP parser, STEP's entity classes and their
+  readers and writers generated from OCCT 8's own C++ (tools/stepgen: 25 packages, about 151,000 lines), StepToGeom,
+  GeomToStep, StepToTopoDS, TopoDSToStep, STEPControl and STEPCAFControl over an immutable assembly tree (XdeDoc) in
+  place of OCAF and XCAF; STL ported; glTF, OBJ and 3MF written fresh, with a glTF reader. Each compared with native
+  OCCT: STEP read and written as native does on the dataset, every difference attributed.
+- Streams first, limits for hostile input and cancellation throughout; no disk access from streams unless asked.
+- The Draw corpus: 17,872 of 21,068 cases runnable (10,462 OK); 2,174 data-exchange cases run, 10 failures attributed.
+  port-status: 62.0% of OCCT's lines.
+- build123d.NET and Bento import and export STEP (with names, colours and assemblies), STL, glTF and 3MF on OCCT.NET;
+  the first packages built for nuget.org as 0.1.0-preview.1.

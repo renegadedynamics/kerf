@@ -1,0 +1,16 @@
+SOLID Up
+  FACET NORMAL 0 0 1
+    OUTER LOOP
+      VERTEX 0 0 0
+      VERTEX 1 0 0
+      VERTEX 0 1 0
+    ENDLOOP
+  ENDFACET
+  Facet normal 0 0 1
+    Outer loop
+      Vertex 1 0 0
+      Vertex 1 1 0
+      Vertex 0 1 0
+    Endloop
+  Endfacet
+ENDSOLID Up

@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\src\OcctNet.Foundation\OcctNet.Foundation.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.ModelingData\OcctNet.ModelingData.csproj" />
     <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
     <ProjectReference Include="..\OcctNet.DrawLite\OcctNet.DrawLite.csproj" />
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />

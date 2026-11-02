@@ -384,4 +384,61 @@ public static class Standard
     public const double M_PI_4 = Math.PI / 4.0;
 
     public const double M_SQRT2 = 1.4142135623730951;
+
+    // C's formatting and conversions, which data exchange's ported code calls as C does
+
+    /// <summary>
+    /// C's <c>sprintf(buffer, theFormat, ...)</c> as Microsoft's C runtime writes it, invariant culture: the text with
+    /// each conversion (<c>%[flags][width][.precision]type</c>) replaced by the next argument; <c>%%</c> is a percent sign.
+    /// </summary>
+    internal static string Sprintf(string theFormat, params object[] theArgs)
+    {
+        var aResult = new System.Text.StringBuilder();
+        int anArg = 0;
+        for (int i = 0; i < theFormat.Length; i++)
+        {
+            char aChar = theFormat[i];
+            if (aChar != '%')
+            {
+                aResult.Append(aChar);
+                continue;
+            }
+            if (i + 1 < theFormat.Length && theFormat[i + 1] == '%')
+            {
+                aResult.Append('%');
+                i++;
+                continue;
+            }
+            int j = i + 1;
+            while (j < theFormat.Length && "-+ #0123456789.hlLzjt".IndexOf(theFormat[j]) >= 0)
+            {
+                j++;
+            }
+            string aConversion = theFormat.Substring(i, Math.Min(j + 1, theFormat.Length) - i);
+            object aValue = anArg < theArgs.Length ? theArgs[anArg] : "";
+            if (aConversion.EndsWith('c'))
+            {
+                // %c: the character, as a one-character string
+                aConversion = aConversion[..^1] + "s";
+                aValue = aValue is char aCharArg ? aCharArg.ToString() : ((char)Convert.ToInt32(aValue, System.Globalization.CultureInfo.InvariantCulture)).ToString();
+            }
+            aResult.Append(Message_Msg.Sprintf(aConversion, aValue));
+            anArg++;
+            i = j;
+        }
+        return aResult.ToString();
+    }
+
+    /// <summary>
+    /// The character at an index of a C string: the string's character, or the terminating null character at or past
+    /// its end, so that ported code reading <c>s[i]</c> on a <c>const char*</c> keeps C's behaviour.
+    /// </summary>
+    internal static char CStringChar(string theString, int theIndex) =>
+        theIndex >= 0 && theIndex < theString.Length ? theString[theIndex] : '\0';
+
+    /// <summary>C's <c>atoi</c>: the integer the text starts with (after white space), 0 if none.</summary>
+    internal static int atoi(string theText) => TCollection_AsciiString.Strtol(theText, out _);
+
+    /// <summary>OCCT's <c>Atof</c> (C's <c>strtod</c> in the C locale): the real the text starts with, 0 if none.</summary>
+    internal static double Atof(string theText) => Standard_Stream.Strtod(theText, out _);
 }

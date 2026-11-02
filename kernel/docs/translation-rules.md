@@ -174,6 +174,14 @@ oracle tests can show what changes.
     written as a copy: `new(b)` or `a.Assign(b)`. A plain C# assignment shares the container. Check every
     by-value use of a container when porting.
   - Elements are default-constructed as in C++ (`gp_Dir` elements are (1, 0, 0)).
+  - `NCollection_Array1`, `NCollection_Array2` and `NCollection_Sequence` derive from `Standard_Transient`, so the
+    H-collections are transients as in OCCT (a handle to an `NCollection_HArray1` stored or sent as a
+    `occ::handle<Standard_Transient>`, `STANDARD_TYPE(NCollection_HArray1<...>)`: decision 1214). Nothing else of
+    `Standard_Transient` applies to them (they aren't frozen).
+  - `NCollection_Array1<T>::Iterator` → `NCollection_Array1<T>.Iterator` (More/Next/Value).
+  - An array of a value class (a STEP SELECT) holds references: storing one copies it as C++ does
+    (`a.SetValue(i, new StepShape_Shell(aSelect))`), and a new array's slots are null where C++ has empty values
+    (decisions 1244, 1254).
   - `a(i)`, `a[i]`, `a.ChangeValue(i)` → `a[i]` (a `ref` indexer, for reading and writing); `a.Value(i)` stays.
   - The "buffer" constructors (`NCollection_Array1<T> a(b(i), lower, upper)`, an array over another's memory) →
     `new(b, i, lower, upper)`, which shares `b`'s storage.

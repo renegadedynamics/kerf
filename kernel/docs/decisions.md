@@ -46,7 +46,7 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 16. **NCollection containers are classes**, so C++ copies must be written as copies (`new(b)`, `Assign`). Rejected
     alternative: structs, which would still alias their storage and hide the problem. The rule is in
     translation-rules.md section 9; a review step checks by-value uses.
-17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient,
+17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient (the plain containers derive from Standard_Transient since decision 1214),
     since C# has single inheritance and arrays are references already.
 18. **The unordered maps don't keep OCCT's iteration order.** Ported code whose output depends on that order is
     noted where found.
@@ -6635,7 +6635,8 @@ are cited by their merged numbers.
       - `ShapeFix_Edge.FixReversed2d`: OCCT reverses the stored pcurve in place; the port puts a reversed copy in place
         of that curve object in the edge's representations (both pcurves of a seam). Other edges sharing the curve
         keep it (occt-issues.md).
-      - `ShapeFix_EdgeProjAux.Init2d` and `UpdateParam2d`: the reverse is done on a copy, which nothing reads after.
+      - `ShapeFix_EdgeProjAux.Init2d` and `UpdateParam2d`: the reverse is done on a copy, which nothing reads after
+        (wrong: replaced by decision 1263).
       - `ShapeFix_Wire`'s `TryBendingPCurve`: a frozen B-spline is copied before its poles move and it is segmented
         (OCCT's B-spline branch already copies; the guard never triggers on OCCT's paths).
       - `ShapeFix_Wire_1`: FixGap3d/2d edit poles only on curves they made (copies of basis curves, conversions); the
@@ -12071,3 +12072,1238 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
            - bugs/fclasses/bug1281: `pload ALL`.
 
          These are a follow-up.
+
+## Phase 8: preparation (2 November 2026)
+
+1166. **Phase 8 follows its plan's recommendations** (owner, 2 November; open questions 31 to 39, phase8-plan.md):
+       - no OCAF or XCAF: STEPControl first, then STEPCAFControl ported over an immutable assembly tree;
+       - STEP's entity classes and their readers and writers generated from OCCT 8's own C++, the odd classes and the
+         dispatch modules by hand; design.md's phase 8 row now says so;
+       - every STEP entity parsed; shapes, assemblies, names, colours, layers and validation properties transferred;
+         materials, GD&T, views, kinematics and FEA later;
+       - STL ported; glTF, OBJ and 3MF written fresh, with readers for STL and glTF;
+       - a reentrant C# STEP parser with limits for hostile input, in place of the flex/bison one;
+       - .NET's encodings in place of `Resource_Unicode`'s tables, checked against them;
+       - IFSelect ported as far as a member trace reaches;
+       - the XDE Draw commands implemented over the tree (unit 8G);
+       - NuGet publishing as 8X's last step, once the owner chooses package names and a feed.
+
+## Phase 8: unit 8H1, STL (RWStl, StlAPI)
+
+1167. **STL reads and writes .NET streams.** RWStl and StlAPI take a `Stream` for both formats (ASCII STL is bytes
+       too); the file paths open a `FileStream` and call the stream forms. The readers' C++ stream logic (the flags
+       `RWStl_Reader::Read` tests between domains, `tellg`, `seekg`, `unget`, `>> std::ws`) runs on `Standard_IStream`,
+       a new Foundation class giving a seekable `Stream` C++11's `std::istream` rules, with positions counted from the
+       stream's position when it is made (so a stream in the middle of a file reads as a file). A stream that can't
+       seek is copied into memory first, within the size limit (1170). `Standard_ReadLineBuffer` is ported into
+       Foundation; its `const char*` line becomes a span (false at the end). `RWStl::ReadFile` gains stream forms (the
+       format recognised from the content, multi-domain data), since OCCT's `ReadStream` only tests for a leading
+       "solid" (occt-issues.md, 8H1). `Standard_Stream.Strtod` takes spans, and `FormatScientific` writes C++'s
+       `std::scientific` (`%.12e` for ASCII STL).
+1168. **ASCII STL is written with LF line ends everywhere.** OCCT's file forms open the file in text mode, so native
+       writes CR LF on Windows and LF elsewhere; its stream forms write LF. The port's file forms write the stream
+       forms' bytes. The oracle compares the stream forms (byte for byte); Draw-lite's `writestl` writes LF.
+1169. **STL results are published; writers only read.** `RWStl` returns frozen triangulations (copy one to change it)
+       and `StlAPI_Reader` a frozen shape. `RWStl::ReadFile` returns what was read before an error, as OCCT does, but
+       nothing after a user break or past a limit, where OCCT returns the part read. A write error of the stream (an
+       `IOException`) returns false, as a C++ stream's fail state does. `StlAPI_Writer::ASCIIMode()` returned a
+       `bool&`: the port has `ASCIIMode()` and `SetASCIIMode`; `StlAPI_Reader::Read` and `StlAPI::Read` take the shape
+       by `ref`.
+1170. **Limits for hostile STL.** `RWStl_ReadLimits` (an addition: `MaxBytes`, `MaxTriangles`; none by default) is an
+       optional last argument of every reader; past a limit the reading stops with an error message and returns
+       nothing (`RWStl_Reader.LimitExceeded`). A binary header's facet count that the data can't hold no longer sizes
+       the node map (OCCT allocates for it, and throws Standard_OutOfMemory on text read as binary, or overflows for
+       counts over 2^30): the port sizes it by the data, which changes nothing else (Poly_MergeNodesTool's buckets
+       don't change which node is found but for angle merging after a rehash, and only for such lying headers). The
+       oracle attributes the 2 lines where native runs out of memory.
+1171. **DESTL is left for later.** `DESTL_Provider` and `DESTL_ConfigurationNode` need TKDE's DE framework (DE_Provider,
+       DE_Wrapper, DE_ConfigurationNode), which isn't ported; DESTL_Provider_Test.cxx's cases are ported through the
+       calls the provider makes (StlAPI_Writer, RWStl::ReadStream, StlAPI_Reader); its XCAF document cases
+       (`StreamDocumentWriteRead`, `MultipleShapesInDocument`) and the DE_Wrapper and configuration ones wait for DESTL
+       and the tree.
+1172. **Draw-lite's `readstl` and `writestl`** (XSDRAWSTL.cxx) work on Draw-lite's in-memory files; the library's
+       messages go to the empty process-wide messenger, but for the missing file, which the command writes (decision
+       405). XSDRAWSTL's MeshVS commands (`meshfromstl` and the others) need the viewer. The progress output
+       (`XProgress +t`) isn't made (decision 954): de_mesh/shape_write_stl/B1 fails on it. Note: Draw-lite's
+       `file size` counts its in-memory files as UTF-8, so binary files written by commands (STL, `binsave`) are
+       misreported; no corpus case reaches it yet.
+## Phase 8: unit 8P, the STEP parser
+
+1173. **OCCT's flex scanner and bison parser are rewritten by hand** (decision 1166), as `StepFile_Scanner` (OCCT's
+        `step::scanner`: step.lex, lex.step.cxx) and `StepFile_Parser` (`step::parser`: step.yacc, step.tab.cxx). They
+        drive the ported `StepFile_ReadData` with the same calls, at the same tokens, so it holds what OCCT's holds:
+        - **the scanner** picks flex's rule at each point, the longest match then the first in step.lex (trailing
+          context counting in the length), rule by rule, numbered as lex.step.cxx's actions; it ignores case as
+          `%option case-insensitive` does, and counts lines in the same actions;
+        - **the parser** is a recursive descent whose methods read a lookahead token exactly where bison's LALR(1)
+          states need one. Bison reduces before reading in a state with a single reduction, and the scanner's actions
+          set the current text and argument type, so the order matters: `finscop`'s FinalOfScope, for one, runs after
+          the next token is scanned, as in bison's state 57;
+        - **its error recovery is bison's:** an error is reported unless fewer than three tokens were shifted since
+          the last one (`finlist` resets that), the lookahead is discarded when none was, and the parse resumes in the
+          nearest state that shifts `error`: the innermost parameter list (an error argument: `CreateErrorArg`, which
+          concatenates the discarded tokens' texts), a scope's model (even after its `ENDSCOPE`), or the header's or
+          the data's model. The end of the input there aborts, but for `stepf3` (after an empty header), which accepts;
+        - **its messages are bison's verbose ones** ("unexpected X, expecting A or B", no list past four tokens), the
+          tokens each state expects written out per state from step.tab.cxx's tables.
+
+        A list's sub-lists are read by a loop, not a recursion: errors never leave a list, so one depth counter does.
+1174. **Bytes become text one char per byte (Latin-1), and nothing is decoded.** OCCT keeps the file's chars; its
+        StepData_StepReaderData decodes `\X2\`, `\S\` and the code pages later (unit 8B, which gets the bytes back with
+        `Encoding.Latin1`). A text ends at its first NUL byte, as OCCT's C strings do.
+1175. **Limits for hostile input** (`StepFile_ReadLimits`, given to the scanner): file size 4 GiB, 100 million
+        records, lists and scopes nested 10,000 deep. Reaching one ends the parse as an unrecoverable syntax error does
+        (`parse()` returns 1), with the error "Undefined Parsing: Line n: Limit reached: ..." and
+        `StepFile_Parser.ExceededLimit`. A token's length has OCCT's own limit, reproduced: flex can't grow its buffer,
+        so it throws when it has to look at a token's 16,384th byte (a string with its quotes and the ')' after it:
+        16,383 bytes at most). The scanner throws the same `Standard_Failure` at the same byte, checked on strings,
+        names, numbers, comments, blank and NUL runs, at several offsets of flex's 8,192-byte reads.
+1176. **Cancellation** through the `Message_ProgressRange` given to the parser: the bytes read are its progress
+        (when the stream knows its length), and a cancelled range ends the parse (checked every 4,096 tokens):
+        `parse()` returns 1, with `IsUserBreak` and the error "Reading cancelled".
+1177. **Reentrant:** no process-wide state; each read has its own scanner, parser and data, and reads its stream in
+        blocks of 256 kB. `StepFile_Read`'s global mutex, there because flex's and bison's code wasn't reentrant, has no
+        reason left.
+1178. **Output:** the parser's "Export List not yet processed" (printf in OCCT) goes to the messenger's warnings; the
+        trace of each error (`StepFile_Interrupt`, from StepFile_Read.cxx) is in the parser until unit 8B ports
+        StepFile_Read; the print modes (`SetModePrint`) write to `StepFile_ReadData.PrintOutput`, the console by default
+        as OCCT's Printf. The allocators (NCollection_IncAllocator) are dropped; a record OCCT allocates uninitialized
+        has nulls.
+1179. **Left to unit 8B:** `StepFile_Read` (the glue into StepData_StepReaderData and the model) and
+        `StepFile_ReadData::ErrorHandle` (it needs Interface_Check), which reads `InternalErrors()`. The calls:
+        `new StepFile_Parser(new StepFile_Scanner(data, stream, limits), range).parse()`, catching `Standard_Failure`
+        (the scanner's overflow) as StepFile_Read does; then `GetFileNbR`, and per record `GetRecordDescription`,
+        `GetArgDescription` until false, and `NextRecord`.
+1180. **The oracle:** tools/steprec compiles OCCT's own lex.step.cxx, step.tab.cxx and StepFile_ReadData.cxx (TKDESTEP
+        doesn't export them) against build123d.NET's native OCCT, and dumps the parse's result, the counts, every record
+        and argument as StepFile_Read walks them, and the errors. Compared: all 340 STEP files of the dataset and of
+        data/step (125 MB; each dump hashed, its first 60 lines and its errors kept), and 1,329 hostile and mutated
+        inputs (tools/steprec/gen-cases.py: the scanner's rules, structures and errors, long tokens, deep nesting,
+        binary junk, truncations, token mutations). All identical but two inputs native crashes on (FinalOfScope's
+        null `mySubArg`, an OCCT issue), which the port reads as scopes without an export list. Throughput: 0.74×
+        native's time (163 MB/s against 121 MB/s, from memory; the benchmarks' `stepfile` suite).
+## Phase 8: unit 8A1, XSBase's foundation (MoniTool, Interface, IFGraph, LibCtl, XSMessage)
+
+1181. **The parameter object: `Interface_StaticSet`** (plan 2.7). OCCT's statics live in one process-wide dictionary
+       (`MoniTool_TypedValue::Stats()`) that `Interface_Static`'s static methods read and write. The port has no such
+       dictionary:
+       - `Interface_Static` keeps the part about one parameter (a typed value with a family, a wild-card and an update
+         status); `Interface_StaticSet` holds the statics by name and has OCCT's static methods as instance methods with
+         the same names and behaviour (`Init` with a type or a type character and the `'&'` edition texts, `Static`,
+         `IsPresent`, `CDef`, `IDef`, `IsSet`, `CVal`, `IVal`, `RVal`, `SetCVal`, `SetIVal`, `SetRVal`, `Update`,
+         `IsUpdated`, `Items`, `FillMap`, `Standards`). A call site `Interface_Static::IVal("read.precision.mode")`
+         becomes `theStatics.IVal("read.precision.mode")`.
+       - Each layer that declares parameters fills a set in its initialisation, once per set: `Standards()` here;
+         `XSAlgo::Init`, `STEPControl_Controller`, `STEPCAFControl_Controller` and DESTEP's in later units, guarded by
+         `StartInit("<layer>")` (OCCT's static "already done" flags, per set).
+       - Copies are deep (`new Interface_StaticSet(other)`: definitions, values, families, statuses, wild-cards mapped to
+         the copy's own), so a reader can take a copy nobody else changes, and Draw-lite keeps one set per interpreter
+         (`param` edits it). A set is a working object, not thread-safe while it changes.
+       - Lists (`Items`, `FillMap`, an enumeration's alphabetic values in `Definition()`) follow declaration order, where
+         OCCT's follow its maps' hash order: the oracle sorts those lists (decision 1188).
+       - MoniTool_TypedValue's library of types (Integer, Real, Text, Transient, Boolean, Logical) is built once and
+         read-only: `Lib`, `FromLib`, `LibList` ported; `AddLib`, `StaticValue` and `Stats` left out.
+       - XSMessage's texts (XSTEP.us) are compiled in and loaded into `Message_MsgFile` once per process
+         (`Interface_StaticSet.LoadMessages`, called by `Standards`), as ShapeExtend.Init does for Shape Healing (decision
+         975): idempotent, behind a lock; `LoadFromEnv("CSF_XSMessage")` and XSTEP.fr (unused by OCCT) left out.
+1182. **LibCtl's templates as C# generics.** `LibCtl_Library<TModule, TProtocol>` (the `.gxx`), `LibCtl_GlobalNode<,>`
+       and `LibCtl_Node<,>` (OCCT's `Interface_GlobalNodeOfGeneralLib`, `NodeOfReaderLib`...); `Interface_GeneralLib` and
+       `Interface_ReaderLib` derive from the instantiations, and 8B's `StepData_WriterLib` will too. Each closed generic
+       type has its own global list, as each OCCT `_0.cxx` has its own static. The global lists are process-wide state
+       initialised once: a protocol registers its modules (`SetGlobal`) in its one-time initialisation (a static
+       readonly field or `Lazy` in later units), writers take a lock, readers traverse without one (OCCT's
+       register-before-parallel-use contract). Registering is idempotent for the same protocol object. A library is a
+       working object (one per thread); its copy constructor shares the list, as C++'s copy does.
+1183. **The other process-wide state of Interface, left out or made local** (plan 2.7):
+       - `Interface_Protocol::Active`/`SetActive`/`ClearActive` (set by IFSelect_WorkSession, read by
+         `Interface_CopyTool(model)` and `Transfer_TransferOutput::TransferRoots()`): left out. `Interface_CopyTool(model)`
+         takes the model's protocol; 8A2 does the same for TransferOutput.
+       - `Interface_InterfaceModel`'s templates (`HasTemplate`, `Template`, `SetTemplate`, `ListTemplates`, used by IGES
+         only): left out.
+       - `Interface_Category`'s list: the nine standard categories as a constant (OCCT fills it once, at the first
+         Interface_Category); `AddCategory` left out. OCCT numbers them from 0, so "Shape" is 0, like an unknown name:
+         reproduced.
+       - `Interface_MSG`: its static utilities (`Blanks`, `Print`, `Intervalled`, `TDate`, `NDate`, `CDate`), which
+         Transfer, XSControl, IFSelect and STEP use, are ported; the translated message object and its process-wide
+         dictionary (`Read`, `Write`, `Record`, `Translated`, `SetTrace`, `SetMode`, `PrintTrace`), which they don't,
+         are left out. `Interface_STAT` (process-wide progress statistics, used by IGES only) is left out.
+       - The shared empty checks (`Interface_CheckIterator`'s `nulcheck`, `Interface_InterfaceModel`'s `nulch`) are a new
+         empty check per call, so a caller completing one can't change process-wide state.
+       - `Interface_CheckTool`'s static `errh` (check with or without try/catch) is a field of the tool.
+       - `Interface_FileReaderData`'s static cache of the last record read (valid for the last file created only) is the
+         object's own: the same results, and readers are reentrant (plan 2.3).
+       - Exceptions: where OCCT catches `Standard_Failure` with `OCC_CATCH_SIGNALS` and tells system signals
+         (`OSD_Exception`, `OSD_Signal`) apart, the port catches `Standard_Failure` as such and takes the other .NET
+         exceptions (NullReferenceException, IndexOutOfRangeException...) for signals (`Interface_FileReaderTool::LoadModel`'s
+         `ierr = 2`); `OutOfMemoryException` and `OperationCanceledException` pass through.
+1184. **`TCollection_HAsciiString` in Foundation.** A class (it has identity: OCCT shares a typed value's string and
+       changes it in place), with OCCT's API for the members data exchange uses; mutators internal (decision 21's rule).
+       Characters are .NET's UTF-16 code units where OCCT counts bytes (equal on ASCII text). With it, `Standard` gains
+       C's `Sprintf` (several conversions, through Message_Msg's, plus `%c`), `atoi`, `Atof` and `CStringChar` (a C
+       string's character, `'\0'` past the end), so ported code reads as C does.
+1185. **C++ value classes of Interface are C# classes.** `Interface_EntityIterator`, `Interface_Graph`,
+       `Interface_BitMap`, `Interface_IntList`, `Interface_EntityList`, the tools (ShareTool, ShareFlags, CheckTool,
+       CopyTool, CheckIterator, Category, LineBuffer, FloatWriter) and IFGraph's iterators are used by value in C++; the
+       port copies where C++ copies explicitly (`Interface_Graph(Interface_Graph)`, `Assign` for `operator=`, the
+       libraries, `IFGraph_StrongComponants(other)`), and C++'s implicit conversions are written out (`new
+       Interface_Graph(model)` where C++ converts a model to a graph, `new Interface_EntityIterator(sequence)`).
+       `Interface_FileParameter` is a class; `Interface_ParamList.SetValue` stores a copy (C++ copies the value), and
+       `ChangeValue`/`ChangeParam` give the stored one. A model's entities are numbered by reference in insertion order;
+       its reports are in OCCT's integer map (`NCollection_IntDataMap`, decision 784), so `Reports()` and `Redefineds()`
+       iterate in OCCT's order. `Interface_GTool`'s cache is keyed by .NET type.
+1186. **Nullability.** The ported XSBase files carry `#nullable disable warnings`: handles are annotated nullable in
+       signatures (OCCT's null handles), and the bodies follow OCCT's own null checks.
+1187. **MoniTool's cut.** `MoniTool_CaseData` (process-wide default checks and messages), `MoniTool_Timer` and
+       `MoniTool_TimerSentry` (a process-wide dictionary of timers, used by BRepMesh_Triangulator's debugging only) are
+       left out: no data-exchange caller. `MoniTool_Stat` is ported without its static `Current()`. `MoniTool_Macros`
+       (`GetCasted`, `DeclareAndCast`) become `as` casts.
+1188. **8A1's oracle: tools/xsbaserec.** A native recorder (MSVC, build123d.NET's native TKXSBase) runs cases from a
+       64-bit LCG and writes 19,400 lines; the port's replay (XSBaseNativeTests) writes the same lines:
+       Interface_FloatWriter on 3,020 reals with four formats (STEP's `%14.12E`/`%14.12f` included: 12,084 lines),
+       `TCollection_HAsciiString(double)`, 60 random sessions of Interface_LineBuffer (STEP's line cutting), the
+       standard statics and their edition (CDef, IDef, values set as text, integer and real, valid or not, `Print`),
+       new statics of every type, the library of types, Interface_MSG's blanks, rounding and dates, the categories,
+       random Interface_BitMap sessions and Interface_EntityList's clusters. Identical, but for two canonicalisations:
+       an enumeration's alphabetic values are sorted on both sides (decision 1181), and IDef's enumeration parts are
+       not asked of statics that aren't enumerations (OCCT reads uninitialised values there). The graph, share, check,
+       copy and IFGraph tools need a protocol, so they are tested on a toy norm (tests/.../Interface/ToyNorm.cs) until
+       StepData exists: 8B can compare them with native through the STEP protocol.
+1189. **IFSelect's member trace** (plan 2.8, for 8A2; scratchpad `p8a1-ifselect-trace.md`). The corpus's `de`, `xcaf`
+       and `bugs/step` groups use, from IFSelect and XSControl's command tables, only `param`, `data`, `entity`,
+       `writeall`, `writeent`, `listtypes`, `newmodel`, `tpstat`, `tpcompound` and `tpdraw`. From those and from
+       XSControl, Transfer, STEPControl, STEPCAFControl and DESTEP, 41 of IFSelect's 76 classes are reached, and 45 of
+       IFSelect_WorkSession's 152 members (the reader path ReadFile/ReadStream → WorkLibrary → SetModel, GiveList on the
+       controllers' named selections, and the writer path SendAll → ModelCopier → WorkLibrary with ShareOut's
+       modifiers); the selections, signatures, dispatches and editors the controllers create are reached through
+       virtual dispatch. 35 classes are not reached (the select combinators, SessionFile/Dumper, PacketList,
+       ShareOutResult, ModifReorder, ListEditor, Transformer...). Recommendation: port the reached classes and members,
+       the command bodies directly as Draw-lite commands (without IFSelect_Act and SessionPilot's command loop), and
+       record the cut.
+1190. **One OCCT bug fixed: `Interface_EntityCluster::Remove(num)`** shifts with `j--` from `num` while `j < n`, which
+       runs below the array (a write out of bounds in C++, an endless loop in effect) whenever an inner rank is removed;
+       the port shifts with `j++`, as the code means (occt-issues.md, 8A1). Removing the last rank, which OCCT handles,
+       is unchanged.
+
+## Phase 8: unit 8B, StepData and the STEP header
+
+1191. **Text encodings: Resource_Unicode's logic, .NET's tables, OCCT's corrections** (decision 1166). The decoding
+       StepData_StepReaderData's `cleanText` asks of Resource_Unicode (`ConvertFormatToUnicode`) is ported as OCCT writes
+       it: how bytes group into characters per code page, the fallbacks, the quirks (a zero character is not appended;
+       OCCT's GBK and Big5 converters "insert at 0" an ASCII byte following a lead byte, which throws
+       Standard_OutOfRange; the 4-byte GBK path keeps its state, so every later byte reads as a fourth byte). Its 25,700
+       lines of tables are not: each lookup asks .NET's encodings (`CodePagesEncodingProvider`: 1250-1258, 28591-28599,
+       850, 932, 936, 950), then applies the entries where .NET differs from OCCT's table, embedded as
+       `Resource_UnicodeTables.diff.gz` (38 kB). tools/stepdatarec dumps OCCT's tables where its conversions reach them;
+       .NET differs on 113 of the 2,432 code-page entries, 81 of 8,836 Shift-JIS, 8,560 of 16,384 GB2312 (mostly GBK
+       characters where GB2312 has none), 83 of 23,940 GBK and 6,261 of 19,782 Big5 (HKSCS); corrected, every entry
+       equals OCCT's (StepDataNativeTests). UTF-8 is decoded by OCCT's own lenient decoder (NCollection_UtfIterator:
+       continuation bytes taken unchecked, the whole text read one char per byte when a code point exceeds U+10FFFF,
+       surrogate code points dropped). Where a lead byte runs past the text's end, OCCT reads the terminating zero and
+       then whatever memory follows; the port reads zeros. `Resource_FormatType_SystemLocale` (OCCT: the process's C
+       locale) is read as UTF-8. Resource_FormatType and the decoding half of Resource_Unicode are in
+       OcctNet.DataExchange (the encoding half, which the STEP writer doesn't use, is left out).
+1192. **Texts are .NET strings; the writer writes their UTF-8 bytes.** OCCT holds the texts `cleanText` returns (and
+       so every name of the model) in UTF-8; the port holds the .NET string of the same text, so the UTF-8 of each is
+       what OCCT holds (OCCT's UTF-8 conversion drops unpaired surrogates and stops at a zero: so does the port's).
+       Parameters keep the file's bytes, one char per byte (decision 1174), as the literals of undefined entities do.
+       StepData_StepWriter builds its lines as bytes, one char per byte, so that the 72-character limit and the cutting
+       of long texts count bytes as OCCT's do: `Send(string)` and `SendComment` write their text's UTF-8 bytes; types,
+       enums, `SendString` (the undefined entities' raw parameters) are taken as they are. `Print(Stream)` writes those
+       bytes (each line ended by LF); `Print(TextWriter)` decodes them (for dumps); `Line(n)` returns them.
+1193. **StepData's API for the entities and their readers and writers (units 8C1, 8C2, 8F).**
+       - Strings for `const char*` and `TCollection_AsciiString`; `System.Type` for `Standard_Type`.
+       - A check passed by non-const reference that OCCT never reassigns (`occ::handle<Interface_Check>& ach`) is passed
+         by value: `ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient ent)`
+         and every `Read*`. Interface's own signatures keep decision 1185's `ref Interface_Check?`.
+       - The outputs of the `Read*` methods, which OCCT leaves unchanged on an error, are `ref` (`ReadReal(.., ref aX)`,
+         `ReadString(.., ref TCollection_HAsciiString?)`, `ReadEnumParam(.., ref string)`, `ReadSubList(.., ref int)`,
+         `NamedForComplex(.., ref int)`); OCCT's template forms are `ReadEntity<T>` and `ReadMember<T>`.
+       - C++ value classes are C# classes (decision 1185): StepData_Field (C++'s assignment is `CopyFrom`),
+         StepData_SelectType (abstract; C++'s assignment is `SetFrom`), StepData_EnumTool (its 40 defaulted arguments a
+         `params` array), the field lists, StepData_StepWriter, StepData_StepDumper, APIHeaderSection_MakeHeader.
+         StepData_Factors and DESTEP_Parameters, copied by value all over STEPControl and STEPCAFControl, are structs.
+       - StepData's classes keep OCCT's mutators public: entities are working objects (decision 21).
+       - StepData_Field keeps its value as `object`, and `ReadSub` returns one: the port's HArray1/HArray2 (a field's
+         lists) are not Standard_Transient (decision 17). In a list of mixed items, OCCT stores a sub-list's array in its
+         array of transients; the port can store only a select member or a string there (late binding only: no
+         generated entity reads through ReadSub).
+1194. **Determinism.** StepData_Protocol::ECDescr iterates its map of descriptions, keyed by address in OCCT, in
+       insertion order. StepData_FreeFormEntity::Reorder rebuilds a complex entity's chain from a map keyed by type
+       name, in hash order in OCCT: in alphabetic order in the port, as its comment intends (no OCCT code calls it).
+1195. **Process-wide state** (plan 2.7). `StepData.Protocol()` and `HeaderSection.Protocol()` are created once.
+       `RWHeaderSection.Init()` runs once per process: it registers HeaderSection's protocol as StepData's header
+       protocol (under a lock) and creates the two modules, which register themselves (decision 1182); OCCT
+       re-registers the header protocol at each call, which turns it into a FileProtocol from the second one on.
+       StepData_DefaultGeneral is ported but, as in OCCT, nothing creates it. UnitsMethods' "CasCade length unit" (a
+       process-wide value OCCT's XSAlgo_ShapeProcessor and Draw set from the static `xstep.cascade.unit`) is left out:
+       `UnitsMethods.GetCasCadeLengthUnit(Interface_StaticSet?, base)` reads `xstep.cascade.unit` from the read's or
+       write's parameter set (millimetres without one), and the setters are gone. StepData declares no statics;
+       `DESTEP_Parameters.InitFromStatic` takes the parameter set. `StepFile_Read.Read` has no global mutex (decision
+       1177), and takes the parse's progress range and limits (decisions 1175, 1176).
+1196. **Placement and what waits.** UnitsMethods (TKernel), Resource_FormatType and Resource_Unicode (TKernel),
+       DESTEP_Parameters and STEPControl_StepModelType (TKDESTEP's DESTEP and STEPControl) are in OcctNet.DataExchange:
+       StepData_StepModel holds a DESTEP_Parameters. Left for later: APIHeaderSection_EditHeader (an IFSelect_Editor:
+       with IFSelect, unit 8A2 or 8F), `DESTEP_Parameters::GetDefaultShapeFixParameters` (TKDE: unit 8F). Left out:
+       StepData_UndefinedEntity::Super (declared, never defined), StepDumper's "(proper ident)" listing (under `nbi <
+       0`, never true), the OCCT_DEBUG blocks and StepFile_Read's chronometer.
+1197. **8B's oracle: tools/stepdatarec.** A native recorder (OCCT's own scanner, parser and StepFile_ReadData compiled
+       from source, with TKDESTEP) reads each of the corpus's 340 STEP files as StepFile_Read does, with a protocol that
+       knows only the header (a FileProtocol of HeaderSection_Protocol: data entities are undefined entities), and dumps
+       the header entities, every entity (label, type, parameters), the checks and every text parameter decoded by
+       ReadString; then writes the model back with StepData_StepWriter. The port's dumps are identical on all 340 files
+       (1,535,249 texts decoded, 2,692,327 lines written, FILE_NAME included: the header is the file's). Its "text" mode
+       decodes 248 crafted texts (directives, invalid UTF-8, multi-byte sequences; tools/stepdatarec/gen-text-cases.py)
+       under each of the 27 code pages: 6,591 of 6,696 identical, 105 attributed (the system locale, and a lead byte
+       running past the text's end, decision 1191). Its "tables" mode dumps Resource_Unicode's tables (decision 1191).
+1198. **One OCCT bug fixed: StepData_Field::CopyFrom of a select member with a name** copies `*this` into the new
+       member's field, which copies the member again, without end: a stack overflow, which ends a .NET process. The port
+       copies the old member's own field (occt-issues.md, 8B).
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+The rest of XSBase but IFSelect and XSControl (unit 8A3): Transfer (the transfer processes, binders, actors and
+iterators), TransferBRep (shape binders and mappers, the shape services, the reader) and XSAlgo (shape processing for
+the translators), with TKDE's DE_ShapeFixParameters.
+
+1199. **Transfer's two instantiations, file for file.** OCCT 8 keeps its former generic (Transfer_TransferProcess.gxx)
+       as two generated instantiations: Transfer_ProcessForTransient and Transfer_ProcessForFinder, with their actors
+       and iterators. They are ported as OCCT's files (translation rules 9: "once per instantiation"), the Finder files
+       kept line for line with the Transient ones (they differ only in the start type, and the Finder process has OCCT's
+       two `FindTypedTransient<T>`/`GetTypedTransient<T>` templates). Starting objects are keyed by reference (C++'s
+       handle hashing), finders by `Transfer_FindHasher` (a finder's code, then `Equates`). Both maps are indexed: every
+       iteration (results, roots, check lists, statistics) follows the order of binding, which doesn't depend on
+       hashing. The map's initial size is ignored and `Resize` does nothing (the map grows).
+1200. **A finder's hash code is .NET's `GetHashCode`.** OCCT's `Transfer_Finder::GetHashCode()` (a `size_t` set by
+       the subclass) overrides `object.GetHashCode` (an `int`), and equality stays by reference; maps of finders use
+       Transfer_FindHasher, as OCCT's. Transfer_TransientMapper hashes its object's identity
+       (`RuntimeHelpers.GetHashCode`, OCCT: the address), TransferBRep_ShapeMapper its shape with
+       TopTools_ShapeMapHasher (the same TShape and location, whatever the orientation).
+1201. **API.** OCCT's value classes (TransferIterator and the process iterators, TransferInput, TransferOutput,
+       TransferDispatch, TransferBRep_Reader) are classes (decision 1185); TransferIterator has a copy constructor.
+       `Standard_Type` is `System.Type`, and a null type is never matched (`Standard_Type::SubType`). Outputs that OCCT
+       leaves untouched on failure are `ref` (`GetTypedResult`, `FindTypedTransient`, `GetTypedTransient`,
+       `GetContext`), the others `out` (a finder's typed attributes, `TransferResultInfo`'s sequence); OCCT's modifiable
+       references are `ref` returns (`ModeTrans`, `ModeNewTransfer`, `CResult`, the TransferResultInfo counters).
+       `PrintTrace` writes to a `TextWriter` (StartTrace's stream buffer). Under `ErrorHandle`, Transferring catches what
+       `OCC_CATCH_SIGNALS` does: Standard_Failure and the .NET counterparts of system signals, never
+       Standard_ImmutableObject or TopoDS_LockedShape (decisions 423, 1183), with OCCT's `what()` text. XSAlgo's
+       `ParameterMap` is `NCollection_DataMap<string, string>`, its `ProcessingData` and `ProcessingFlags` are tuples;
+       the actors' `GetShapeFixParameters` return a copy (OCCT's callers copy the const reference before changing it);
+       the rvalue overloads are dropped. TKDE's `DE_ShapeFixParameters` is ported (a record struct with OCCT's fields
+       and defaults, as decision 489's IMeshTools_Parameters); the rest of TKDE waits (decision 1171).
+1202. **No process-wide state that changes** (plan 2.7). TransferOutput's `TransferRoots()` and the
+       TransferDispatch/ActorDispatch constructors without a protocol use the model's protocol, where OCCT uses the
+       active one (decision 1183). Transfer_ResultFromTransient's shared empty check is a new one per call. XSAlgo:
+       `Init(statics)` declares XSAlgo's statics once per `Interface_StaticSet` (after `Standards`) and registers the
+       shape processing operators once per process; the default AlgoContainer is created once and
+       `AlgoContainer()` returns it, even before `Init` (OCCT: null); `SetAlgoContainer` is left out.
+1203. **XSAlgo reads its statics from the caller's set** (decision 1181): `CheckPCurve` (read.stdsameparameter.mode),
+       `ReadProcessingData` (the statics naming the resource file and the scope) and the AlgoContainer's `ProcessShape`
+       and `CheckPCurve` take an `Interface_StaticSet`, after OCCT's parameters without defaults.
+       `XSAlgo_ShapeProcessor::PrepareForTransfer` and `XSAlgo_AlgoContainer::PrepareForTransfer`, which set
+       UnitsMethods' process-wide length unit from `xstep.cascade.unit`, are left out: the readers and writers (8F, 8G)
+       take the unit from their statics (`IVal("xstep.cascade.unit")`) and convert it with UnitsMethods (8B) where OCCT
+       calls `PrepareForTransfer()` then `UnitsMethods::GetCasCadeLengthUnit()`.
+1204. **Determinism: XSAlgo's merges into a finder process.** `XSAlgo_ShapeProcessor::MergeShapeTransferInfo(FP, ...)`
+       and `XSAlgo_AlgoContainer::MergeTransferInfo(FP, ...)` iterate the shape processing's history map and bind
+       mappers into the finder process: OCCT in its hash order (TShape addresses), so the order of the new mappers
+       varies natively; the port in the order ShapeProcess recorded the entries. The merges into a transient process
+       walk the process's own (indexed) map. A finder's attributes and a transient process's contexts are string-keyed
+       maps whose order isn't observable.
+1205. **Frozen shapes.** Binders hold the transfer's shapes as they are; the readers publish what they return:
+       TransferBRep_Reader freezes the shapes a transfer gave (`EndTransfer`) and `OneShape`'s compound.
+       `XSAlgo_ShapeProcessor::ProcessShape` and the AlgoContainer's `ProcessShape` never change their input
+       (ShapeProcess's working copy, decision 1022; the AlgoContainer's default ShapeFix copies at entry) and return a
+       frozen result. `CheckPCurve` writes into the edge and vertices it is given, as OCCT's: they are a reader's, under
+       construction (a frozen edge throws TopoDS_LockedShape). On a frozen input, a sub-shape that OCCT's operators
+       change in place (a history entry F → F) is a changed copy in the port (F → F'): merged into a finder process
+       whose input faces are already bound, such a face gets a new binder where natively it keeps its own. In the
+       writer's order (the processed shape transferred, then the history merged) the input's sub-shapes reach their
+       entities either way.
+1206. **The oracle: tools/xsalgorec** (MSVC, build123d.NET's native TKXSBase). On data/occ's 30 shapes up to 600 kB:
+       ReadProcessingData's parameters and operations for FromSTEP and ToSTEP (resources/XSTEPResource/STEP, compiled
+       into the port, decision 1023) and the default DE_ShapeFixParameters' map; per shape, the shape processor with
+       FromSTEP's parameters and operations (the tolerances set as STEPControl_ActorRead does), with DESTEP's write
+       operations (SplitCommonVertex, DirectFaces) and with ToSTEP's; the AlgoContainer's ProcessShape with STEP's
+       sequence, with an undefined read sequence (the default ShapeFix) and an undefined write one (DirectFaces); each
+       result's BRep hash, counts, history and messages, and the merge of the history into a transient process (every
+       sub-shape bound to a ShapeBinder) or a finder process (every face pre-bound); and CheckPCurve on every edge of
+       every face (its result, the tolerance after, the shape's BRep hash). **210 records: 207 identical, 3
+       attributed** (CrankArm.brep's three finder merges, decision 1205; identical on an unfrozen input, a test
+       checks). Each input unchanged. Not compared natively before STEPControl exists: transfer processes driven by
+       real STEP actors on StepData models (their traces, check lists and roots), TransferBRep_Reader (abstract
+       natively: OCCT has no concrete reader in the toolkits bound) and ResultFromModel; they are tested on the toy
+       norm, and unit 8F compares them through STEPControl.
+1207. **One OCCT bug fixed: Transfer_ActorDispatch's endless recursion.** The dispatch actor transfers an entity by
+       `TransferEntity`, whose copy (`Transfer_TransferDispatch::Copy`) asks the transient process again, which calls
+       the same actor again: no binding happens before, so it recurses until the stack overflows (natively too; nothing
+       in OCCT uses the class). A stack overflow ends a .NET process, so the port breaks the cycle minimally: while the
+       actor transfers an entity, TransferDispatch's copy of that entity is the copy tool's own (`Interface_CopyTool::Copy`),
+       which binds the result through the dispatch control, and the actor returns that binder as OCCT means to.
+
+## Phase 8: unit 8C1, the STEP entity generator (StepBasic, StepGeom, StepShape, StepRepr)
+
+1208. **STEP's entity classes and their readers and writers are generated by tools/stepgen** (decision 1166), a C#
+       console project that translates OCCT 8's own C++ to C#. It reads every header (`.hxx`, `.pxx`) of TKDESTEP,
+       TKXSBase's Interface, `TCollection_HAsciiString` and `Standard_Transient` into a model of the classes (fields,
+       methods, documentation, enums, the RW enum tools' namespaces), then translates each class of the packages asked
+       for, merging its header and source into one C# file: declarations from the header, bodies from the source,
+       statement by statement through an expression parser that knows the C++ types (locals, parameters, fields, the
+       return types of the methods called), so hand-edited classes come out as OCCT 8 has them. Each file carries the
+       `// Port of:` lines and a line saying it is generated (regenerate rather than edit). Output is deterministic
+       (files in name order, no dates); `--check` compares without writing, and the test
+       `StepGenTests.CommittedSourcesAreTheGeneratorsOutput` runs it in-process. 8C1's packages: 809 files, 58,631 lines
+       (from about 108,000 lines of C++). Run: `dotnet run --project tools/stepgen -- --occt <occt-src> --packages
+       StepVisual,RWStepVisual,...`.
+1209. **The generator's translation rules** (docs/translation-rules.md, applied mechanically):
+       - handles are references (`IsNull()` → `is null`, `Nullify()` → `= null`, `down_cast`/`GetCasted` → `as`,
+         `STANDARD_TYPE(T)` → `typeof(T)`); `const char*` and `TCollection_AsciiString` are `string`;
+         `Standard_Type` is `Type`;
+       - a non-const reference to a value, enum, handle or string is `ref` (`ReadInteger(..., ref aDegree)`), but
+         `occ::handle<Interface_Check>&`, which callees complete and never replace, is passed by value, as StepData's
+         port does; a reference to a class held by value (`Interface_EntityIterator&`, a SELECT) is the reference;
+       - C++'s implicit conversions are written out: handles and integers tested as conditions (`!= 0`,
+         `is not null`), `strcmp`, a C string's characters (`CStringChar`), a bool passed where C++ promotes it to
+         `int` (`(b ? 1 : 0)`, kept: occt-issues.md, 8C1);
+       - locals C++ leaves uninitialised get a default (0, null, `new T()` for classes held by value); locals that
+         shadow an enclosing one, which C# refuses, are renamed (`mvc` → `mvc1`, listed in the generator's report);
+         files whose OCCT code declares locals it never uses silence CS0219;
+       - template helper functions are generic methods constrained to `Standard_Transient`; anonymous-namespace and
+         file-static functions are private static methods; `std::cout` output is written to the console as OCCT
+         does; `OCCT_DEBUG` blocks are left out with a comment;
+       - entity classes and enums are public, with OCCT's public mutators (the entities are a model's working
+         objects, as XSBase's are; decision 1185); the RW classes and RW enum tools (`Standard_HIDDEN`, private
+         headers) are internal; enums stay unscoped (`using static` added where a file uses them); the RW enum
+         tools' `constexpr char[]` constants are `const string`.
+1210. **SELECT types and the other C++ value classes of the entity packages are C# classes copied where C++ copies
+       them.** The generator gives each a copy constructor (a SELECT's through `StepData_SelectType.SetFrom`), and
+       copies on assignment and initialisation from anything but a new object, and when one is stored into an array
+       (`SetValue`, `Append`). Accessors return the stored object (C++ returns a copy); callers don't change it.
+       `std::array<double, 3>` (StepGeom_CartesianPoint, StepGeom_Direction) is a `double[]` field, read-only
+       (`ReadOnlySpan<double>`) through the accessors and copied when set.
+1211. **Calls to a base class's version of a method** (`ent->StepShape_Edge::EdgeStart()`, 123 such sites in TKDESTEP):
+       for a non-virtual method, a plain call (or a cast to the base where a class in between hides it); for a virtual
+       one, the generator gives the base class a non-virtual twin named `<Class>_<Method>` (`StepShape_Edge_EdgeStart`),
+       found by scanning TKDESTEP's sources for such calls, and the call site calls it.
+1212. **Nothing in 8C1's packages is written by hand**: tools/stepgen/overrides (whole classes, or single methods) is
+       empty, and the generator reports no problem but the bool-to-int promotion it reproduces (1209). Over 8C2's
+       packages (805 files, about 93,800 lines) it reports: RWStepAP214_ReadWriteModule (a static mutex around the type
+       maps' one-time initialisation), RWStepAP214_GeneralModule and StepAP214_Protocol (the static type map;
+       `DESTEP_Parameters` in SchemaName), StepAP214 (`StaticHandle`), StepAP209_Construct (`OSD_Process`,
+       `Quantity_Date` for today's date), and StepFEA_SymmetricTensor43d's `SetFeaIsotropicSymmetricTensor43d`,
+       declared but not defined in OCCT (left out). The dispatch modules are 8C2's to write by hand (or as overrides).
+       Without those six files, 8C2's packages compile with 26 errors, all where OCCT treats an `NCollection_HArray1`
+       as a `Standard_Transient` (arrays in SELECT members, `SW.Send` of an array, `STANDARD_TYPE` of an array type),
+       which the port's arrays aren't: a question for 8C2 (decision 1166's packages need it).
+1213. **Round trips** (StepRoundTripTests): every STEP file of OCCT's dataset and of data/step (338 files, 1,546,314
+       records) is read with a test protocol that recognises the four packages (its type names, cases, classes and
+       RW tools read from OCCT's RWStepAP214_ReadWriteModule.cxx and StepAP214_Protocol.cxx, standing in for 8C2's
+       dispatch), written back with the files' labels, and each of the four packages' records (1,451,636, 93.9% of the
+       records; 193 types) compared with the input, token by token (reals to the writer's 12 or 13 significant
+       digits, complex records' components in any order). 1,450,960 are the same; the other 676 are differences
+       OCCT's own reading and writing make, each attributed: an untyped trimming parameter written
+       `PARAMETER_VALUE(...)` (557); text with escapes or non-ASCII characters, StepData's encodings (44, unit 8B);
+       references to records lost to a syntax error (25, bug32314_corrupted.stp); CATIA's complex uncertainty
+       measure written simple (23, the READ ONLY case 357); an integer in a real SELECT member written as a real
+       (14); an SI unit's dimensions written derived, `*` (13). Native OCCT's writing is compared in unit 8F.
+
+## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
+
+1214. **The H-collections are Standard_Transients, as in OCCT: `NCollection_Array1`, `NCollection_Array2` and
+       `NCollection_Sequence` derive from `Standard_Transient`** (amending decision 17). OCCT's entity packages treat
+       an `occ::handle<NCollection_HArray1<...>>` as an `occ::handle<Standard_Transient>`: arrays as SELECT members
+       (StepDimTol_DatumOrCommonDatum, StepKinematics_SpatialRotation, StepFEA_SymmetricTensor43d), arrays of arrays
+       (StepVisual_ComplexTriangulatedFace's strips and fans), `SW.Send` of an array, `STANDARD_TYPE` of an array type
+       (26 compile errors in 8C1's trial). Since the H-collections derive from the plain ones (single inheritance),
+       the plain ones carry the base. Rejected: a generator rule wrapping arrays in a transient box (it changes the
+       entities' API and every reader and writer of those fields); making HArray1 a wrapper instead of a subclass (it
+       touches every port of phases 0-7). The cost is one field (the freeze flag, never set on a collection) per
+       container; the whole solution builds unchanged and Foundation's 2,206 tests pass. `NCollection_Array1` also
+       gains OCCT's `Iterator` (More/Next/Value), and `NCollection_DataMap` OCCT's `ReSize`.
+1215. **Process-wide state set up once is C#'s static initialisation.** OCCT's dispatch classes fill file statics
+       the first time they are constructed: StepAP214_Protocol's class map behind an `int` flag, RWStepAP214_
+       ReadWriteModule's type-name maps under a `std::mutex`, RWStepAP214_GeneralModule's category numbers at each
+       construction, RWStepAP214::Init's registration behind a flag. In the port: the generator turns a constructor
+       that starts `if (FLAG) return; FLAG = 1;` on a file static into an empty constructor plus a static
+       constructor with the rest of the body (StepAP214_Protocol's 713 `types.Bind`); the other statics are
+       `static readonly` fields filled by their initialisers (overrides, 1216); RWStepAP214.Init is a `Lazy<bool>`,
+       as RWHeaderSection.Init (unit 8B). Nothing changes after first use (decisions 1182, 1183); the modules are
+       registered in the global libraries once.
+1216. **What is written by hand: 106 lines in tools/stepgen/overrides, eight files**, which the generator copies:
+       whole classes StepAP214 (the protocol, once per process: OCCT's `StaticHandle`) and RWStepAP214 (Init);
+       `<Class>.statics.cs` (a new kind of override: the source file's non-constant statics) for the read-write
+       module's two type maps (`NCollection_DataMap<string, int>`, OCCT's hasher and allocator dropped), the general
+       module's five category numbers and the protocol's class map (keyed by `System.Type`); the two modules'
+       constructors (empty); StepAP214_Protocol::SchemaName (`DESTEP_Parameters`' nested enum, which the generator
+       doesn't parse). Everything else of the dispatch over 826 case numbers, RWStepAP214_ReadWriteModule (CaseStep,
+       IsComplex, StepType, ComplexType, ReadStep, WriteStep) and RWStepAP214_GeneralModule (FillSharedCase,
+       CheckCase, NewVoid, CategoryNumber), is generated from OCCT's C++.
+1217. **The generator's new rules** (docs/translation-rules.md; 8C1's packages regenerate unchanged):
+       - MoniTool's `DeclareAndCast(T, x, y)` → `T x = y as T;`;
+       - a sequence called like a function (`types(i)`, C++'s operator()) → its `ref` indexer, `types[i]`;
+         `TCollection_AsciiString::IsEqual` on a string → `==`; its `<`/`>` → `string.CompareOrdinal`;
+         `TCollection_AsciiString(view)` of a string → the string;
+       - `NCollection_DataMap::Find(key, item)` → `Find(key, out item)`; an allocator argument (`Clear(alloc)`) is
+         dropped; a map's hasher type argument is dropped; a source's `using Alias = Type;` is resolved where used;
+         a file-level `struct` (a hasher) is left out (reported);
+       - `NCollection_Array1<T>::Iterator` → `NCollection_Array1<T>.Iterator` (the template's arguments on the outer
+         type);
+       - a switch whose last section runs off its end gets a `break`;
+       - the modules' overrides of `NewVoid` and `CheckCase` take the parameter modifiers StepData's and Interface's
+         ports chose (`out Standard_Transient`, `ref Interface_Check`; unit 8B); an `out` parameter is assigned
+         null first.
+       Without `--packages` the generator now writes every entity package and its RW package (`AllPackages`, 25
+       packages, 1,613 files, 150,907 lines); `StepGenTests.CommittedSourcesAreTheGeneratorsOutput` checks them all.
+1218. **StepAP209_Construct is left to unit 8F**: not an entity class but a STEPConstruct_Tool working on an
+       XSControl_WorkSession, neither ported yet (it also reads today's date through OSD_Process). The generator skips
+       it (`Generator.Deferred`, listed in its report); 8F generates it (removing it from `Deferred`) or ports it.
+1219. **Round trips with StepAP214's protocol** (StepRoundTripTests, replacing 8C1's test protocol): the 338 STEP
+       files of the dataset and data/step (1,546,314 records) are read with StepAP214.Protocol() after
+       RWStepAP214.Init(), and written back with their labels. 1,528,912 records (98.9%, 320 types) are recognised;
+       the other 17,402 (88 types: AP209 analysis records such as NODAL_FREEDOM_VALUES, draughting callouts,
+       NAME_ATTRIBUTE, misspelt types of corrupted files, complex combinations OCCT doesn't list) are in none of
+       OCCT's type tables or complex type lists, so OCCT reads them as unknown entities too; the test pins the count.
+       Of the recognised records 1,526,805 are written back the same; the 2,107 others are differences OCCT's own
+       reading and writing make, each attributed: 8C1's six causes (PARAMETER_VALUE 557, lost references 223, texts
+       45, the complex uncertainty 23, integers as reals 14, derived dimensions 13), and 8C2's OCCT bugs
+       (occt-issues.md, 8C2): rendering methods read through inverted `strcmp` (545), complex triangulated faces whose
+       writer reads the normals with rows and columns exchanged (552, not written: the port's range check throws, as
+       build123d.NET's checked native build does, decision 9), styled items whose target isn't a representation item
+       written `$` (68), IsComplex missing cases 800 and 802 (30), sizes typed POSITIVE_LENGTH_MEASURE (15, 16 doubly
+       typed), CHARACTERIZED_OBJECT written derived (3), application-defined element purposes (2), a boolean written as
+       an integer (1). The test tries the two writers that can throw on a writer of their own first, as a throwing
+       WriteStep leaves the writer inside the record. Native OCCT's writing is compared in unit 8F.
+
+## Phase 8: unit 8A3, IFSelect (as traced), XSControl and APIHeaderSection_EditHeader
+
+The last part of unit 8A: IFSelect's classes and members the trace reaches (decision 1189), XSControl but its two
+command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, left by unit 8B).
+
+1220. **IFSelect's cut** (decision 1189, the owner's 1166). Ported: the work session, its work library, model copier,
+       share-out and the contexts of modifiers (ContextModif, ContextWrite, AppliedModifiers, GeneralModifier,
+       Modifier); the selections Selection, SelectBase, SelectDeduct, SelectExtract, SelectExplore, SelectPointed,
+       SelectModelRoots, SelectModelEntities, SelectShared, SelectSharing, SelectSignature and SelectionIterator; the
+       signatures Signature, SignType, SignAncestor, SignCategory, SignValidity, the lists and counters
+       SignatureList, SignCounter, GraphCounter, CheckCounter; the dispatches Dispatch, DispPerOne, DispPerCount,
+       DispPerFiles, DispPerSignature; the editors Editor, EditForm, ParamEditor, IntParam; IFSelect_Functions' four
+       helpers; the five enumerations. 40 classes, all whole but:
+       - **left out with the classes they need:** IFSelect_WorkSession's Transformer, RunTransformer, RunModifier,
+         RunModifierSelected, NewTransformStandard, SetModelContent (IFSelect_Transformer), EvaluateFile, SendSplit,
+         EvalSplit, SentList, MaxSendingCount, SetRemaining, EvaluateDispatch, EvaluateComplete (ShareOutResult,
+         PacketList, SelectSent), SetControl, CombineAdd, CombineRemove (SelectControl, SelectCombine; NbSources and
+         Source lose those cases, SetAppliedModifier its TransformStandard case, ItemLabel its Transformer case), and
+         the Draw dumps DumpShare, ListItems, ListFinalModifiers, DumpSelection, EvaluateSelection (no caller);
+         IFSelect_ModelCopier's Copy, Copying, Send, Sending (ShareOutResult) and its deprecated CopiedRemaining;
+         IFSelect_EditForm's ListEditor, ModifyList, ModifyListValue and IFSelect_Editor's ListEditor
+         (IFSelect_ListEditor); IFSelect_SelectPointed's Update(Transformer);
+       - **declared by OCCT, never defined:** IFSelect_EditForm::NbTouched and IFSelect_ContextModif::Search, left
+         out; IFSelect_IntParam::StaticName, ported (it returns the name);
+       - **not ported (35 classes):** Act, Activator, SessionPilot, BasicDumper, SessionDumper, SessionFile (and the
+         package's SaveSession/RestoreSession), DispGlobal, ListEditor, ModifEditForm, ModifReorder, PacketList,
+         ShareOutResult, Transformer, TransformStandard, SignMultiple, and the selections AnyList, AnyType, Combine,
+         Control, Diff, EntityNumber, ErrorEntities, Flag, InList, IncorrectEntities, Intersection, Range, RootComps,
+         Roots, Sent, SignedShared, SignedSharing, Suite, Type, Union, UnknownEntities.
+       IFSelect_Activator (a process-wide list of command activators, the base of StepSelect_Activator) goes with the
+       command machinery: unit 8F leaves StepSelect_Activator out too.
+1221. **Commands: no IFSelect_SessionPilot, IFSelect_Act or command table.** Draw-lite ports the commands the corpus
+       uses directly on a session (as 8A1 suggested): IFSelect_Functions keeps GiveEntity, GiveEntityNumber, GiveList
+       and GiveDispatch (GiveEntityNumber returns 0 for an empty name, where OCCT reads the keyboard). For unit 8F:
+       `param` (the interpreter's Interface_StaticSet: Items, CVal, SetCVal, Static(...).Print), `data` (DumpModel,
+       PrintCheckList), `entity` (DumpEntity, PrintEntityStatus), `writeall`, `writeent` (SendAll, SendSelected),
+       `listtypes` (an IFSelect_SignCounter of the session's SignType, PrintList), and XSControl's `newmodel`
+       (NewModel), `tpstat` (XSControl_TransferReader.PrintStatsProcess/PrintStatsOnList), `tpcompound` and `tpdraw`
+       (TransferBRep's shapes of the transient process). XSControl_Functions, XSControl_FuncShape and the package
+       class XSControl (`Session(pilot)`, `Vars(pilot)`) are left out. XSControl_Utils keeps its members but the
+       extended strings ones (the port has no TCollection_ExtendedString; .NET strings are UTF-16).
+1222. **Parameters and process-wide state** (plan 2.7, decision 1181).
+       - IFSelect_WorkSession owns an Interface_StaticSet (`Statics()`, with the standard statics), or is given one
+         (`SetStatics`, `new XSControl_WorkSession(statics)`: an interpreter's set, or a reader's copy). Everything that
+         read OCCT's process-wide statics reads it: NewParamFromStatic, IFSelect_IntParam (`SetStaticName(name,
+         statics)`), IFSelect_ParamEditor.StaticEditor(statics, ...), the controller's Customise, and
+         XSControl_TransferReader (`Statics()`, set by its session; `read.encoderegularity.angle`).
+       - XSControl_Controller declares a norm's statics in a session's set: the new virtual `InitStatics(statics)`
+         (the base calls `Standards()`; a norm's controller adds its own once per set, `StartInit`), called by
+         XSControl_WorkSession.SetController and SetStatics. OCCT declares them in the controller's constructor;
+         `TraceStatic` keeps the name, looked up in the session's set by Customise.
+       - XSControl_Controller's dictionary of recorded controllers (`Record`, `Recorded`) stays process-wide, as
+         LibCtl's global lists (decision 1182): a norm records its controller once, in its initialisation, before
+         sessions select it, under a lock; recording the same controller again changes nothing. XSControl_WorkSession's
+         global mutex around SelectNorm, NewModel and TransferWriteShape is kept: the controllers and their actors
+         (whose ModeTrans a transfer sets) are shared by all sessions.
+       - IFSelect_WorkSession's file static `errhand` (one flag for all sessions in OCCT) is the session's own, its
+         static text buffer and XSControl_SignTransferStatus's are local strings. SetProtocol doesn't make the protocol
+         the active one (decision 1183).
+1223. **Determinism.** XSControl_Controller::Customise adds the items recorded by AddSessionItem iterating its
+       `NCollection_DataMap` (hash order of the names in OCCT): the port's map keeps the recording order, so the items'
+       identifiers follow it. The session's names (`thenames`, ItemNames) iterate likewise. Signature lists and
+       counters are indexed maps: the order of first occurrence, as OCCT's.
+1224. **Frozen shapes.** XSControl_TransferReader.ShapeResult encodes the regularity into a copy (BRepLib's
+       functional twin `RegularityEncoded`), where OCCT's ShapeFix::EncodeRegularity writes into the recorded shape
+       itself. XSControl_Reader freezes the shapes it publishes (Shape, OneShape's compound). XSControl_Utils' tools
+       return what they build as built, as OCCT's.
+1225. **Streams and cancellation.** IFSelect_WorkLibrary's ReadFile and ReadStream take a .NET `Stream` and a
+       `Message_ProgressRange` (not in OCCT), as do the session's and XSControl_Reader's ReadFile and ReadStream.
+       Writing to a stream: IFSelect_ContextWrite takes an optional stream (`OStream()`), which a library writes in
+       place of the file; ModelCopier.SendAll/SendSelected, the session's SendAll/SendSelected and the new
+       XSControl_Writer.WriteStream pass it through, so a stream write applies the share-out's modifiers as a file
+       write does (OCCT's STEPControl_Writer::WriteStream bypasses the session). The STEP parser's limits
+       (StepFile_ReadLimits) are STEP's: unit 8F's StepSelect_WorkLibrary or STEPControl_Reader passes them.
+1226. **API.** C++ value classes (IFSelect_ContextModif, ContextWrite, SelectionIterator, XSControl_Utils) are
+       classes; OCCT's modifiable references are `ref` returns (EditKeepStatus, ModeSignOnly, SelectDeduct.Alternate),
+       outputs left untouched on failure `ref` (AppliedModifiers.Item, Vars.GetPoint), `Standard_OStream` a
+       `TextWriter` (a messenger's stream buffer is written through a StringWriter, one message as OCCT's), `std::cout`
+       `Console.Out`. The lists OCCT passes as transients are transients (decision 1214): GiveList(obj) returns a list
+       given, GiveListFromList and XSControl_TransferReader's CheckList/CheckedList take a list as the transient.
+       XSControl_Controller.Customise takes its session by value (OCCT's non-const reference is never reassigned).
+       XSControl_WorkSession's destructor (ClearBinders, which breaks binder chains to free memory) is left to the
+       garbage collector. IFSelect_EditForm keeps its values as transients (texts, or lists of texts).
+1227. **IFSelect_WorkSession::ReadFile and STEP.** OCCT 8's StepSelect_WorkLibrary reads into the model it is given,
+       and the session gives none: XSControl_Reader::ReadFile on STEP dereferences a null model, caught as a signal
+       (RetFail), natively and in the port (occt-issues.md, 8A3). STEPControl_Reader makes the model itself (the
+       statics' parameters, the header, the code page) and calls the library: unit 8F does the same (the tests'
+       TestStepController.ReadFile shows how).
+1228. **8A3's oracle: tools/xscontrolrec.** A native recorder reads each of the corpus's 331 STEP files up to 3 MB
+       with STEPControl_Reader, in "lite" and "full" modes (SetModeStat), and dumps what IFSelect computes: the roots,
+       the shareds of the roots and the sharings of entity 1 (selections through GiveList, a chained "sel1 sel2" and a
+       list argument), the type, validity and category counters, the model's check list (each check), a label looked
+       up (NumberFromLabel), a selection by signature with a parameter ("rec-type(CartesianPoint)"). The port reads
+       the files as STEPControl_Reader does through a test controller and library: **all 331 files identical (27,589
+       lines)**. IFSelect_CheckCounter with a signature isn't compared: natively it prints a destroyed string
+       (occt-issues.md, 8A3). The rest is tested on 8A1's toy norm (selections, signatures, dispatches, share-out file
+       names, the model copier with model and file modifiers, editors and parameters, the controller's
+       customisation, the transfer reader and writer, the reader and writer) and on STEP models (sending to a stream
+       gives StepData_StepWriter's bytes, the header editor, sessions in parallel). For unit 8F to compare natively:
+       xst-transferrable-roots and the transfers (STEPControl's actors), SendAll's files through StepSelect_WorkLibrary
+       with its file modifiers.
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+1229. **The immutable assembly tree is a new package, XdeDoc** (decision 1166, phase8-plan.md 2.2 option B): new C#
+       named in OCCT's style, not a port. `XdeDoc_Tree` (roots, layers, length unit), `XdeDoc_Product` (a shared
+       definition: a part with its shape and its sub-shapes' attributes, or an assembly of components),
+       `XdeDoc_Instance` (a product at a `TopLoc_Location`, with attributes of its own), `XdeDoc_SubShape`,
+       `XdeDoc_Attributes` (name; generic, surface and curve colours as `Quantity_ColorRGBA`; visibility; layer names;
+       validation properties; external references), `XdeDoc_Layer`, `XdeDoc_LengthUnit`, `XdeDoc_ValidationProps`.
+       The roots are instances (XCAF's free shapes: a placed free shape is a reference). Products are shared by
+       reference between instances and between trees; the `With...` methods make new objects. `Flatten` gives the
+       placed parts (`XdeDoc_FlatItem`: part, instance path, world location, resolved `XdeDoc_Style`) with
+       XCAFPrs_DocumentExplorer's style rules (the parent's style, then the product's attributes, then the instance's;
+       a generic colour sets both colours; hidden by attributes or by a hidden layer). Layers are named uniquely in a
+       tree. Materials, GD&T, views, SHUOs and user metadata have room in the attributes but are left for later.
+1230. **The tree's shapes are frozen when put in it**: `XdeDoc_Product.Part` and `XdeDoc_SubShape` freeze the shape
+       given (`FreezeGraph`), as published results are; an assembly's shape is the compound of its placed components,
+       made once on first use (thread-safe) and frozen. `XdeDoc_Tree.Meshed` meshes every part through
+       `BRepMesh_IncrementalMesh.Meshed` (the input never written), sharing parts and faces meshing leaves unchanged,
+       the sub-shape attributes following their faces through the meshing's history.
+1231. **XdeDoc_Document gives the tree XCAF's label interface, for STEPCAFControl (unit 8G)**: a mutable document with
+       `XdeDoc_Label` handles in place of `TDF_Label`, OCAF's entries (shapes under 0:1:1, layers under 0:1:3), and the
+       methods (names, arguments, behaviour) of the tool calls STEPCAFControl's reader and writer make:
+       XCAFDoc_ShapeTool's (`AddShape`, `NewShape`, `SetShape`, `AddComponent`, `AddSubShape`, `FindSubShape`,
+       `Search`, `SearchUsingMap`, `FindShape`, `FindMainShape(UsingMap)`, `GetShape`, `GetFreeShapes`, `GetShapes`,
+       `GetComponents`, `GetReferredShape`, `GetLocation`, `GetUsers`, `GetSubShapes`, `GetOneShape`,
+       `UpdateAssemblies`, `SetExternRefs`, the `Is...` tests), XCAFDoc_ColorTool's (`SetColor`/`GetColor` by label or
+       shape, `IsSet`, `UnSetColor`, `SetVisibility`, `IsVisible`), XCAFDoc_LayerTool's (`AddLayer`, `FindLayer`,
+       `SetLayer`, `GetLayers`, `GetLayerLabels`, `GetShapesOfLayer`, `UnSetLayers`), `TDataStd_Name` (`SetName`,
+       `GetName`), the validation properties (`SetVolume`, `SetArea`, `SetCentroid`) and the length unit.
+       `ToTree` freezes it (free labels the roots, top-level labels the shared products), `FromTree` opens a tree
+       (products as top-level labels in depth-first order, a placed root as a top-level reference made before its
+       product's label, as XCAF's AddShape does). Differences from XCAF: colours are values (no colour labels); shapes
+       are indexed with IsSame in insertion order; `makePrepare` (which rewrites the compound's locations) is ignored;
+       an assembly's compound is remade when its components change (XCAF waits for UpdateAssemblies), and
+       `AddShape(compound, true)` keeps the compound given; external references are only recorded (XCAF's GetShape
+       returns an empty compound for such a label); `AddComponent` refuses a cycle (null label); SHUOs, instance
+       colours (`SetInstanceColor`), materials, GD&T, views, clipping planes, notes and named data are not there yet:
+       8G adds what it ports. A tree's layers merge same-named XCAF layers (XCAF allows two with different
+       visibilities).
+1232. **The mesh writers share one extraction** (`RWMesh_ProductMesh`, internal, following RWMesh_FaceIterator's
+       rules): a part's faces in TopExp_Explorer's order, each triangulation placed by its face's location, the
+       winding swapped for a reversed face or a mirroring location, normals the triangulation's or computed from the
+       surface on a copy (`BRepLib_ToolTriangulatedShape.NormalsComputed`) and reversed for a reversed face; faces
+       grouped by sub-shape colour, the sub-shapes applied from compounds down to faces so that a face's own colour
+       wins; faces of hidden sub-shapes and faces without triangulation left out (`MeshParameters` meshes the tree
+       first). Hidden parts are left out unless `IncludeHidden`. The coordinate change (`RWMesh_CoordinateConverter`)
+       is OCCT's RWMesh_CoordinateSystemConverter's: a length scale and Z-up to Y-up, points by C, locations by
+       C·M·C⁻¹.
+1233. **glTF 2.0 is written fresh** (`RWGltf_TreeWriter`, System.Text.Json; `.glb`, or `.gltf` with a `.bin`): a node
+       per instance (named by the instance, else its product; its location as a matrix), a mesh per part and
+       instance colour sharing the part's accessors (instancing), a primitive per colour group, one buffer, 4-byte
+       aligned views, POSITION with min and max, unsigned short indices below 65,535 vertices. OCCT's defaults: Z-up
+       turned Y-up, the model's unit (the tree's, else millimetres) turned into metres; a material per colour, PBR
+       with metallic 0 and roughness 1, the surface colour else the curve colour as base colour (linear RGB),
+       `alphaMode` BLEND when translucent, no material for parts without colour. The output is deterministic.
+1234. **OBJ is written fresh** (`RWObj_TreeWriter`): OBJ has no instances, so each placed part is written in world
+       coordinates as an object named by its name path; a `usemtl` per colour group; the MTL gives `Kd` in sRGB (as
+       OCCT's RWObj does), `d`, and `Tr` when translucent; faces without colour after coloured ones take a white
+       `default` material. No unit or axis change by default (options). Invariant culture, LF.
+1235. **3MF is written fresh** (`RW3mf_TreeWriter`, 3MF Core 1.3, System.IO.Compression): the content types, the root
+       relationship and `3D/3dmodel.model`; a mesh object per part and inherited colours, a components object per
+       assembly, written before their users, a build item per root, transforms in 3MF's row-vector form. Colours are
+       the core `basematerials` (sRGB `#RRGGBB(AA)`) rather than the materials extension's `colorgroup`, which the
+       brief suggested: basematerials are core, need no extension namespace and every consumer reads them. An
+       object's default material is its instance's colour (white if only some of its faces have one), triangles of
+       other colours name theirs. The unit is the tree's when 3MF names it (micron to metre), else coordinates are
+       converted to millimetres. Degenerate triangles, which 3MF forbids, are left out. Fixed zip entry times make
+       the package deterministic. A mirroring placement is written as it is.
+1236. **glTF is read fresh into the tree** (`RWGltf_TreeReader`): a mesh is a part shared by its nodes, each triangle
+       primitive (modes 4, 5, 6) a face holding only its triangulation (`BRep_Builder.MakeFace` with the
+       triangulation, as RWMesh does) with its normals; the material's base colour (or the diffuse colour of
+       KHR_materials_pbrSpecularGlossiness) the part's colour for one primitive, else the faces' sub-shape colours;
+       a node with a mesh and no children an instance named by the node when its name differs from the mesh's; a node with
+       children an assembly of its own named by the node (so assemblies aren't shared on a round trip). A node's
+       transformation that isn't rigid (scale, shear, mirror) is applied to the meshes below it, copied for that node,
+       the winding swapped for a mirror, since shape locations stay rigid. Y-up turned Z-up and metres into the
+       model's unit (millimetres by default). Hostile input (`RWGltf_ReadLimits`): file size, buffer sizes and total,
+       node count, hierarchy depth (and a hard 4,096 for the recursion), triangle count, JSON depth; every index and
+       accessor range checked; one parent per node, scene nodes roots; an error stops the reading with a message and
+       no tree. Required extensions are refused but those of materials and textures (`KHR_materials_*`,
+       `KHR_texture_*`), ignored with a warning; sparse, quantized and compressed data are refused; textures, UVs,
+       points and lines skipped. External buffers come from the caller's resolver; `ReadFile` opens only files in the
+       glTF's folder or below.
+1237. **The oracle for the mesh formats is OCCT's own de_mesh cases and the formats' rules**, not a native recorder:
+       native glTF and OBJ go through XCAF documents and lay nodes, meshes and materials out differently by design, so
+       only triangle sets could be compared, which the Lantern cases already pin. On the dataset's
+       bug30691_Lantern.glb the reader gives native's counts and structure (gltf_read/lantern: 3 faces, 1 compound,
+       5,394 triangles, 4,145 nodes, the XDE dump's instance, assembly and part names), and so do a GLB written and
+       read back (gltf_write/lanternglb) and an OBJ written (obj_write/lantern, read back by the test's parser). The
+       dataset's four other GLB files are read, written and read back alike. glTF output is checked against glTF 2.0's
+       structural rules in the tests (the Khronos validator isn't available offline), 3MF against the core
+       specification's package, resource order, index and colour rules and its winding (a box's signed volume).
+       The XDE Draw commands (ReadGltf, WriteGltf, WriteObj over a Draw-lite document) belong to 8G's XDE commands;
+       the de_mesh grid is 8W's.
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+1238. **StepToGeom and GeomToStep, class for class.** StepToGeom is a static class with OCCT's `Make*` methods; each
+       GeomToStep class is a sealed class deriving from `GeomToStep_Root` that converts in its constructor and gives
+       the entity through `Value()`. Units go through `StepData_Factors` (unit 8B's struct), passed `in`; OCCT's
+       default argument `StepData_Factors()` becomes an overload without it (a struct's default isn't a constant).
+       The `_gen.pxx` bodies OCCT includes in several constructors are private `Make` methods; the template
+       `MakeBSplineCurveCommon` is its two instantiations sharing the knot and weight helpers. StepToGeom returns new,
+       unfrozen geometry (the caller freezes what it shares). GeomToStep reads Geom through the `Internal*` accessors
+       and changes nothing it is given: OCCT already copies before `SetNotPeriodic` and `Segment`, so frozen input
+       converts. `StepToGeom::MakeYprRotation` is left for later: it takes a StepKinematics_SpatialRotation (unit
+       8C2) and calls `STEPConstruct_UnitContext::ConvertSiPrefix` (unit 8F), which add it.
+1239. **`Value()` checks, as the native build does.** Each maker's `Value()` throws StdFail_NotDone when the
+       conversion wasn't done (`StdFail_NotDone_Raise_if`, kept by native's build: decision 9), so a maker that
+       delegates to one that fails throws: GeomToStep_MakeCurve of any Geom2d_TrimmedCurve, for instance (occt-issues,
+       8D). The recorder confirms native throws at the same calls. `GeomToStep_MakeCartesianTransformationOperator`'s
+       inline `Value()` doesn't check, as in OCCT.
+1240. **One OCCT bug fixed: unbounded recursion along a file's references.** StepToGeom recurses through curve and
+       surface replicas, 3D offset curves, surface curves, trimmed curves and offset surfaces, guarding only against
+       an entity referring to itself; a longer cycle in a file (A replicates B, B replicates A) overflows the stack. In
+       OCCT that is a signal (caught by MakeSurface's `OCC_CATCH_SIGNALS`, otherwise passed up); in .NET it ends the
+       process. `MakeCurve`, `MakeCurve2d` and `MakeSurface` call `RuntimeHelpers.EnsureSufficientExecutionStack()`,
+       which throws InsufficientExecutionStackException instead: MakeSurface catches it and returns null, as OCCT
+       does; MakeCurve passes it up, as OCCT passes its stack overflow (unit 8E's callers catch it as OCCT's do).
+1241. **MakeSurface's `OCC_CATCH_SIGNALS`** catches Standard_Failure and the .NET exceptions standing for OCCT's
+       signals (everything but OutOfMemoryException and OperationCanceledException, decision 1183). Its C0 offset
+       surfaces go through Shape Healing's process-wide `ShapeAlgo.AlgoContainer()`, null until `ShapeAlgo.Init()`
+       as in OCCT (where STEPControl_Controller's initialisation calls it): unit 8F's controller calls it; the tests
+       call it.
+1242. **8D's oracle: tools/geomsteprec.** A native recorder (MSVC, build123d.NET's native OCCT) with three modes:
+       `gen` writes 85 constructed cases (tools/geomsteprec/cases.txt: 3D and 2D curves and surfaces of every kind in
+       GeomTools' compact text: conics, Bezier and B-spline curves and surfaces rational or not, periodic, uniform,
+       quasi-uniform and piecewise Bezier, trimmed and offset curves, extrusions, revolutions, rectangular trimmed and
+       offset surfaces, a cone with a negative semi-angle, indirect 2D circles and ellipses; and gp points,
+       directions, vectors, axes, transformations and polylines); `g2s` converts them and the geometry of data/occ's
+       37 .brep files (each face's surface, each edge's 3D curve, its trimmed range and its pcurves, once) with every
+       GeomToStep maker that applies, writes each result as STEP entities (a model of its own, StepData_StepWriter)
+       and converts it back with StepToGeom; `s2g` converts every geometric entity of the corpus's 338 STEP files
+       (read with STEPControl_Reader) with StepToGeom: points, directions, vectors, placements, transformation
+       operators, curves in 3D and 2D, surfaces. Each with the default factors and with inches and degrees
+       (`InitializeFactors(25.4, π/180, 1)`); results as reals at precision 17 and geometry in GeomTools' text. The
+       port's replay (GeomStepNativeTests) is identical everywhere: 4,232,738 StepToGeom conversions (158,346 curves
+       and 46,230 surfaces among them, the nulls and exceptions included) and 410,156 GeomToStep lines (the cases line
+       by line, the shapes by hash). Native's results are written with StepAP214_Protocol, the port's with unit 8C1's
+       test protocol: the same generated writers.
+1243. **The oracle's protocol.** Until unit 8C2's StepAP214_Protocol, the port read with unit 8C1's test protocol,
+       which knew StepBasic, StepGeom, StepShape and StepRepr: the recorder converted only the entities of those
+       packages (12 geometric entities of others, StepFEA's FEA_AXIS2_PLACEMENT_3D, counted and left out), and the
+       tests patched the test table for a complex type written with a comment after its label (358, BOUNDED_CURVE and
+       SURFACE_CURVE: StepGeom_SurfaceCurveAndBoundedCurve). Since unit 8E, the tests read and write with
+       `RWStepAP214.Init()` and `StepAP214.Protocol()`, whose generated read-write module has case 358, and the
+       recorder converts every entity: the 12 FEA placements (24 conversions with both factor sets) are compared too,
+       and identical (4,232,762 StepToGeom conversions in all).
+
+## Phase 8: unit 8E, topology (StepToTopoDS, TopoDSToStep)
+
+1244. **StepToTopoDS and TopoDSToStep, class for class** (src/OcctNet.DataExchange/StepToTopoDS and TopoDSToStep, 59
+       files). OCCT's value classes (the translators, makers, builders, StepToTopoDS_Tool, StepToTopoDS_NMTool,
+       TopoDSToStep_Tool) are classes (decision 1185); their `T&` parameters are references, `bool&` is `ref bool`;
+       OCCT's default `StepData_Factors()` is an overload without it (decision 1238), progress ranges default.
+       StepToTopoDS_PointPair is a readonly struct, unordered and compared by reference (its hash symmetric, by
+       identity). The tools' maps are keyed by reference (TopoDSToStep_Tool's by TopTools_ShapeMapHasher, as OCCT's)
+       and never iterated but by TopoDSToStep::AddResult (1251); StepToTopoDS_Tool keeps OCCT's binding of a null item
+       (a file's missing reference) in a slot of its own, since .NET's dictionaries refuse null keys. Hand-written code
+       that stores a SELECT value into an array copies it, as C++'s assignment does (`new StepShape_Shell(aSelect)`):
+       NCollection's `SetValue` stores the reference, and a SELECT reused in a loop would otherwise end in every slot.
+       What OCCT's `catch (Standard_Failure)` under `OCC_CATCH_SIGNALS` catches is `StepToTopoDS_Root.CaughtBySignals`
+       (decisions 1183, 1201); a plain `catch (Standard_Failure)` stays one. `OCCT_DEBUG` blocks are left out.
+1245. **8D's tests on StepAP214's protocol**: see decision 1243, amended.
+1246. **The one static StepToTopoDS reads, through its model.** OCCT 8 moved the reader's parameters into
+       `StepData_StepModel::InternalParameters`, but XSAlgo_ShapeProcessor::CheckPCurve (which TranslateEdgeLoop calls)
+       still reads the static `read.stdsameparameter.mode`. The port passes the model's
+       `InternalParameters.ReadSameParamMode` (the same value: DESTEP_Parameters::InitFromStatic copies it) through a
+       new internal overload `CheckPCurve(..., bool theStdSameParameterMode)`, which the form with an
+       Interface_StaticSet (unit 8A2) calls. No other static is read: ReadSurfaceCurveMode, ReadMaxPrecisionMode,
+       WriteTessellated, WriteSchema, WriteSurfaceCurMode and WriteNonmanifold come from the models, as in OCCT.
+1247. **Frozen results.** Every translator's and the builder's `Value()` freezes what it returns; `InternalValue()`
+       (internal) gives the working shape. Inside a transfer the shapes are shared and changed after they are made:
+       the transient process's binders, the reading actor's non-manifold tool and the curves the transient process
+       caches (`BindTransient`) are reused by later items, tessellated faces add their triangulation to the face of
+       their geometric link in place, tolerances are limited at the end (ResetPreci). So StepToTopoDS works on unfrozen
+       shapes, and the reader (unit 8F's STEPControl_ActorRead, calling `InternalValue()`) freezes once at the end of
+       the transfer, as TransferBRep_Reader does (decision 1205). TranslateMappedItem moves a binder's shape (a
+       location change, allowed on a frozen shape).
+1248. **One OCCT bug fixed: shared curves changed in place.** TranslateEdge takes an edge's 3D curve from the transient
+       process when an earlier edge made it (`FindTransient`); StepToTopoDS_GeometricTool::UpdateParam3d may then
+       reverse it and DecodeMakeEdgeError's ShapeConstruct_Curve::AdjustCurve may move its poles, which natively changes
+       the earlier edge too. The port's curve is frozen once an edge holds it, so the reversal or adjustment applies to
+       a copy, which the new edge takes (an internal `UpdateParam3d(ref Geom_Curve, ..., theCopyFrozen)`; the public
+       form keeps OCCT's in-place reversal of a working curve). Not met in the corpus (its results are identical).
+1249. **The reading actor of a geometric set.** StepToTopoDS_Builder::Init(StepShape_GeometricSet, ..., RA) down-casts its
+       actor to STEPControl_ActorRead (unit 8F) for the geometric representation items it doesn't translate itself.
+       The port asks for an internal interface, `StepToTopoDS_IActorRead` (TransferShape with OCCT's parameters), which
+       8F's STEPControl_ActorRead implements: StepToTopoDS doesn't depend on STEPControl.
+1250. **TopoDSToStep_MakeStepWire's reorder.** OCCT runs ShapeFix_Wire::FixReorder on the face's wire and takes the
+       edges from its wire data. The port's ShapeFix_Wire works on copies of frozen edges (decision 583), which the tool
+       would key as other edges (one EDGE_CURVE per face instead of one per edge): MakeStepWire asks for the fix's
+       result (`Wire()`), which gives the wire data back the caller's own edges, then reads them.
+1251. **Determinism.** TopoDSToStep::AddResult(FP, Tool) iterates the tool's map, OCCT in its hash order (TShape
+       addresses), the port in the order the shapes were bound. It orders the finder process's mappers, not the
+       entities written (a model's entities follow AddWithRefs from the result, which doesn't depend on hashing).
+       StepToTopoDS iterates no hashed map.
+1252. **The writers never change their input** (plan 2.7). Two places where OCCT writes into the shape it converts work
+       on copies: TopoDSToStep_MakeStepFace's degenerate torus under an offset surface (OCCT sets the face's own offset
+       surface's basis, `SetBasisSurface`) and TopoDSToStep_MakeTessellatedItem's normals (OCCT computes them into the
+       face's triangulation, `Poly::ComputeNormals`). The STEP written is the same; a frozen input converts.
+1253. **Unit 8A2's transient process maps a null starting object, as OCCT's.** StepToTopoDS attaches checks to entities
+       a corrupted file leaves null (`TP->AddWarning(OrEdge1, ...)` with OrEdge1 null), which OCCT binds under a null
+       handle. Transfer_ProcessForTransient's map now keys a null start by a private sentinel (`Mapped` and `Root` give
+       null back); before, Bind threw ArgumentNullException (bug32314_corrupted.stp).
+1254. **Null SELECT values.** An array of SELECT values read from a corrupted file can hold null where C++ holds an
+       empty SELECT (a surface curve's associated geometry, a geometric set's elements, a model's shells, a surface's
+       boundaries); StepToTopoDS reads them with `?.` (an empty SELECT's value is null), so the result is OCCT's. A
+       note for unit 8C's generated readers.
+1255. **The oracle: tools/toporec** (MSVC, build123d.NET's native OCCT; recordings embedded in
+       tests/OcctNet.DataExchange.Tests/TopoStep). `s2t`: every shape representation item of the corpus's 338 STEP
+       files (read with STEPControl_Reader, the model's parameters reset to DESTEP_Parameters' defaults: manifold solid
+       breps, breps with voids, faceted breps, shell based surface models, edge based wireframe models, face based
+       surface models, geometric (curve) sets, tessellated solids, shells, faces and surface sets) translated by
+       StepToTopoDS_Builder on a transient process of its own, its BRep text hashed with the process's warning and fail
+       counts: **2,194 items, 2,193 byte-identical, 1 attributed** (tr9_r1001-ec.stp #12: ShapeFix_EdgeProjAux, phase
+       7, projects the vertex of four closed edges, full circles on cylinders, to the far side of their line pcurves, a
+       period earlier than native, so CheckPCurve drops those 4 of 2,468 pcurves; a follow-up for Shape Healing; all
+       2,194 identical since unit 8Y, decision 1263).
+       `t2s`: data/occ's 37 shapes, each solid through MakeManifoldSolidBrep, MakeBrepWithVoids (several shells),
+       MakeShellBasedSurfaceModel and MakeFacetedBrep (when TopoDSToStep_FacetedTool accepts it), each shell through
+       MakeManifoldSolidBrep, MakeShellBasedSurfaceModel and MakeFacetedBrep, the first 20 faces through
+       MakeShellBasedSurfaceModel and the whole shape through MakeGeometricCurveSet, with the default factors and with
+       inches and degrees, each result added with its references to a model and written by StepData_StepWriter:
+       **1,726 conversions, all identical** (entity order included), the inputs read frozen and unchanged. Not compared
+       natively here: the non-manifold and I-DEAS modes, mapped items and the actor's geometric representation items
+       (unit 8F compares them through STEPControl).
+
+## Phase 8: unit 8G1, the XDE Draw-lite commands over the document
+
+1256. **A Draw-lite document is an `XdeDoc_Document` under a Draw variable** (`DrawDocument`, in place of
+       DDocStd_DrawDocument; decision 1166, plan 2.6). `XNewDoc`, `NewDocument` (any format), `ReadGltf` make one;
+       `Close` (by name, `*`, `-silent`) unsets the variable; the documents of `Close *` are kept per interpreter. Labels
+       are taken from arguments by TDF_Tool::Label's rules (digits and ':' only, the first tag ignored), so a shape name
+       falls back to DBRep as in OCCT; the root label `0` isn't addressable (Draw-lite's documents start at 0:1).
+       DDocStd::GetDocument's complaint and the commands' `Message::SendFail` lines go to the interpreter's output
+       (decision 405). XDEDRAW's commands are ported one for one, with OCCT's output text, onto the document's
+       XCAF-named methods (decision 1231).
+1257. **XCAF's auto-naming is the document's (`XdeDoc_Document.AutoNaming`)**: a shape label named by its type
+       ("SOLID"), an assembly "ASSEMBLY", a reference "=>[entry]", as XCAFDoc_ShapeTool's process-wide switch does.
+       The library's default is off, so that trees made from documents carry only the names given; Draw-lite turns it
+       on for its documents (XCAF's default; the corpus counts the names `XStat` finds), and `XAutoNaming` sets it for
+       the interpreter's documents, existing and new. `FromTree` never auto-names (as OCCT's mesh readers, which turn
+       it off). Colour labels are named as XCAFDoc_ColorTool names them ("RED (#FF0000FF)").
+1258. **XdeDoc additions for the commands** (decision 1231 left them to unit 8G): colour labels under 0:1:2
+       (`AddColor`, `FindColor` by `Quantity_ColorRGBA::IsEqual`, `GetColors`, `IsColor`, `GetColor(colour label)`,
+       `RemoveColor`, `ColorsLabel`); `SetColor` links the label to the colour's label, added if missing, and the
+       label's colour is the colour label's; `SetAttributes` (so `FromTree`) sets colours through their labels. Removal
+       as OCAF's `ForgetAllAttributes`: `RemoveShape` (free top-level labels, the referred label too if asked),
+       `RemoveComponent`, `RemoveLayer`, `ForgetAllAttributes`: the label stays, empty; references to it lose their
+       referred label, the assemblies using it are remade, a removed colour leaves the shapes of that colour, a
+       removed layer its shapes; the maps of shapes added forget it (XCAF's keep stale entries). Also
+       `UnSetOneLayer`, `IsLayer`, `UnSetName`; `GetLayerLabels` and `ToTree` leave removed layers out.
+       **A fix of unit 8T's `AddShape`**: adding a compound as an assembly searched the components' shapes, which
+       remade the half-built assembly's compound from the components added so far; the compound given is now set
+       back, so `FindShape` finds the compound added (it didn't: `XSetColor D c ...` failed on xcaf's assemblies).
+       Instance colours, SHUOs, materials, colour-by-layer, GD&T, views and notes are still not there.
+1259. **Commands registered and left out.** Registered: XDEDRAW's document commands (`XNewDoc`, `Xdump`, `XStat`,
+       `XSetLengthUnit`, `XGetLengthUnit`, `XDumpAssemblyTree`, `XDumpAssemblyGraph`, `XDumpNomenclature`), shape
+       commands (`XAddShape`, `XNewShape`, `XSetShape`, `XGetShape`, `XRemoveShape`, `XFindShape`, `XFindSubShape`,
+       `XFindMainShape`, `XAddSubShape`, `XLabelInfo`, `XGetUsers`, `XNbComponents`, `XAddComponent`,
+       `XRemoveComponent`, `XGetReferredShape`, `XGetTopLevelShapes`, `XGetFreeShapes`, `XGetOneShape`,
+       `XDumpLocation`, `XUpdateAssemblies`, `XAutoNaming`), colour commands (`XSetColor`, `XGetColor`,
+       `XGetShapeColor`, `XGetAllColors`, `XAddColor`, `XRemoveColor`, `XFindColor`, `XUnsetColor`,
+       `XSetObjVisibility`, `XGetObjVisibility`), all of XDEDRAW_Layers but `XGetLayerRefs`, the validation property
+       commands (`XSetProps`, `XSetVolume`, `XGetVolume`, `XSetArea`, `XGetArea`, `XSetCentroid`, `XGetCentroid`);
+       DDocStd's `NewDocument`, `Close`, DDataStd's `SetName`, `GetName` and DDF's `ForgetAll` on these documents
+       (no label is created: `SetName` on a missing label fails; a GUID argument is ignored). Stubs, as Draw-lite has
+       no viewer and no undo: `XDisplay` (checks nothing, prints nothing), `UndoLimit` (keeps the limit, reports no
+       undo or redo: "100 0 0"), `NewCommand`, `OpenCommand`, `AbortCommand`, `CommitCommand` (check the document);
+       `vcaps` and `vlight` join the ignored viewer commands. `XStat` counts no colour-by-layer and no vis material.
+       Left out: OCAF storage and undo (`XSave`, `XOpen`, `SaveAs`, `Open`, `Undo`, `Redo`), presentation (`XShow`,
+       `XWdump`, `XSetPrs`, `XShowFaceBoundary`, `XSetTransparency`, `XSetViewNameMode`), GD&T, views, notes,
+       materials and vis materials, SHUOs and instance styles (`XSetInstanceColor`, `XGetInstanceColor`,
+       `XGetInstanceVisible`, `XFindComponent`...), XCAFDoc_Editor's `XExpand`, `XExtract`, `XRescaleGeometry`,
+       `XSetLocation`, `XGetProperties`, `XCheckProps`, `XShapeVolume`, `XShapeMassProps`, `XGetValProps`,
+       `XGetLayerRefs`, `XFromShape`, `XFileList`/`XFileCur`/`XFileSet`, `XShapeTreeFilter`, `XTestDoc`,
+       `XAttributeValue`; `ReadObj` and `readobj` (no OBJ reader exists).
+1260. **The mesh commands over unit 8T's reader and writers** (`ReadGltf`, `readgltf`, `WriteGltf`, `writegltf`,
+       `WriteObj`, `writeobj`): files go through Draw-lite's overlay, glTF's external buffers resolved beside the file.
+       `ReadGltf` reads into a new document (`FromTree`) in the session's unit (millimetres until unit 8F gives
+       Draw-lite its parameters) and names each unnamed instance after its product, as RWMesh_CafReader does (8T's
+       trees name an instance only by a name of its own, decision 1236); `-noCreateDoc`, `-listExternalFiles` and
+       `-assetInfo` aren't supported (the command fails), the late-loading, precision and parallel options are
+       accepted and ignored. `WriteGltf` writes a primitive per face, as RWGltf_CafWriter does, and a primitive per
+       colour with `-mergeFaces` (`RWGltf_WriteOptions.MergeFaces`, new, default true as 8T wrote); node names follow
+       the tree's rule (instance, else product), `-nodeNameFormat product` and `writegltf` of a shape (OCCT's choice
+       there) drop instance names; the other name formats, `-trsfFormat`, UVs, textures, Draco, `-comments` and
+       `-author` are accepted and have no effect. `WriteObj` turns OCCT's Z-up into the file's Y-up by default, as
+       OCCT does; `-unit` takes the units UnitsMethods knows (OCCT: UnitsAPI's); a Y-up system to a Z-up file is
+       written unchanged.
+1261. **The corpus scan learns the xcaf group's branches**: its end script saves and reopens the document through
+       OCAF storage, IGES or STEP by the case's `TypeOfFile`, and rescales it only in the mode `RESCALE_ASSEMBLY`
+       (`DrawCorpus.ValueBranches`; a quoted value is now taken whole). So xcaf's BRep grids (70 cases) are
+       runnable. `XDumpAssemblyGraph` writes a node's links in ascending order (OCCT iterates a
+       TColStd_PackedMapOfInteger, ascending for the corpus's sizes).
+1262. **What unit 8G2 builds on**: `ReadStep D file` makes the document with `DDocStdCommands.NewDocument(theDI,
+       name, doc)` (it gives the interpreter's auto-naming, keeps the document for `Close *`) after filling an
+       `XdeDoc_Document` (with `AutoNaming = DDocStdCommands.AutoNaming(theDI)`) through STEPCAFControl_Reader;
+       `WriteStep D file` takes `DDocStdCommands.GetDocument(theDI, name)` (null: not a document) and writes it.
+       Labels from arguments: `DDocStdCommands.Label(doc, entry)`. The de grid then still needs unit 8F's `param`,
+       `data`, `tpstat` and `newmodel`; its begin script's `NewDocument`, `UndoLimit` and `NewCommand` run.
+## Phase 8: unit 8Y, ShapeFix_EdgeProjAux's reversed pcurves
+
+1263. **ShapeFix_EdgeProjAux puts its reversed pcurve into the edge** (replaces decision 700's line on it). OCCT's
+       `Init2d` and `UpdateParam2d` reverse the edge's own pcurve in place when they reverse the parameters they
+       return (`ReversedParameter`), and the caller (StepToTopoDS_TranslateEdgeLoop, the only one) sets the edge's
+       range on that pcurve to those parameters: the curve the parameters refer to is the reversed one. Phase 7 reversed
+       a copy that nothing read, believing the curve unused afterwards, so the edge kept the unreversed line with the
+       reversed range, its ends a mirror image away from its vertices; that was unit 8E's one attributed item
+       (tr9_r1001-ec.stp #12: four full circles on cylinders, line pcurves from 3π/2 to -π/2, the only reversal in the
+       corpus, which CheckPCurve then dropped). Now a private `reverse` copies the curve, reverses the copy and, unless
+       the edge is frozen, puts it in place of the curve in the edge's representations (both pcurves of a seam), as
+       `ShapeFix_Edge.FixReversed2d` does (its helper made `internal`: `InternalReplacePCurveObject`); `UpdateParam2d`
+       takes the curve by `ref` so a second call in the same Init2d sees the reversed curve, as OCCT's handle does.
+       Other edges sharing the curve keep it (OCCT reverses theirs too: occt-issues.md); a frozen edge isn't written,
+       its parameters then refer to a curve it doesn't hold. Result: StepToTopoDS 2,194 of 2,194 items identical.
+
+## Phase 8: unit 8F, STEPControl (the first milestone)
+
+STEPControl (controller, reader, writer, their actors), STEPConstruct's writing and reading tools (UnitContext,
+Part, Assembly, AP203Context, ContextTool), StepSelect (work library, step type, file and model modifiers), STEPEdit,
+the STEPSelections selections the controller records, DESTEP_Parameters' default shape fix parameters, StepToGeom's
+yaw-pitch-roll rotation; Draw-lite's XSDRAW session with the IFSelect and XSControl commands and XSDRAWSTEP's commands
+without a document.
+
+1264. **A STEP session works with a controller of its own.** OCCT's STEPControl_Reader and STEPControl_Writer select
+       "STEP" in their session (`SelectNorm`), the controller recorded process-wide, whose write actor holds state the
+       writer changes (SetTolerance, the shape fix parameters, the group mode) and counters (the product names' index,
+       the assembly occurrences' identifiers): native output depends on what the process wrote before. The port's
+       `STEPControl_Controller.Init()` still records one controller under "STEP" and "step" (for `SelectNorm`), but the
+       reader and the writer select STEP through `STEPControl_Controller.SelectFor(session)`: a session already on a
+       STEP controller keeps it, another gets a new STEPControl_Controller, so that the write actor's settings and
+       counters are the session's (a fresh writer numbers its products and occurrences from 1, as a fresh DRAWEXE
+       does). The controller's constructor registers the STEP modules once per process; STEP's statics are declared
+       per parameter set by `InitStatics` (with XSAlgo's), as decision 1222 set out.
+1265. **Parameters and the length unit come from the session's parameter set.** `InitFromStatic()` reads the session's
+       statics (decision 1181); the readers and writers take a `DESTEP_Parameters` too, as OCCT's do. OCCT's actors take
+       the length unit of a model whose unit isn't initialised from the process-wide unit (`xstep.cascade.unit`,
+       through XSAlgo_ShapeProcessor::PrepareForTransfer); the port has none (decision 1195): STEPControl_Reader sets a
+       read model's unit from its session's `xstep.cascade.unit` after reading, STEPControl_Writer before the first
+       transfer, and an actor given a model nobody initialised takes millimetres.
+1266. **Assembly occurrences are numbered by the writer.** STEPConstruct_Assembly::MakeRelationship numbers the
+       NEXT_ASSEMBLY_USAGE_OCCURRENCEs from a function-static counter; the port's write actor passes its context's
+       counter (`STEPConstruct_ContextTool.NauoId`, `MakeRelationship(ref int)`); `MakeRelationship()` keeps a
+       process-wide counter for other callers. The comparisons with native mask the identifiers and the product
+       names' index.
+1267. **Repeatable output.** The header's FILE_NAME (time stamp, author) is made at the first transfer from the local
+       time; a caller wanting repeatable bytes sets it on the model before writing
+       (`new APIHeaderSection_MakeHeader(writer.Model()).SetTimeStamp(...)`, `SetAuthorValue`...), which Write and
+       WriteStream keep. AP203's default date and person (STEPConstruct_AP203Context: the local time and time zone,
+       the user's name, the host's address, as OCCT's OSD_Process and OSD_Host give them) are set through
+       `STEPControl_ActorWrite.ContextTool().AP203Context()` (`SetDefaultDateAndTime`,
+       `SetDefaultPersonAndOrganization`, OCCT's own setters; the accessor is the port's).
+1268. **The reading actor's state is its own.** STEPControl_ActorRead's file-level `NM_DETECTED` (a global telling
+       the callers the representation just read was non-manifold) is a field of the actor. A cycle of assembly links in
+       a file (NAUO to product definition and back) recurses without end in OCCT (a stack overflow); the port checks the
+       stack at each shape transfer (`RuntimeHelpers.EnsureSufficientExecutionStack`), which the transient process
+       records as a fail.
+1269. **The writer never changes its input** (plan 2.7). In non-manifold mode OCCT marks a solid's shells closed in
+       place (`Closed(true)`); the port marks a copy of a shell that isn't closed (the same faces). The STEP text is
+       the same.
+1270. **STEPSelections' thread-local state is the selection's.** STEPSelections_SelectGSCurves keeps its "first
+       geometric set" flag, and STEPSelections_SelectInstances its graph and instances of the last model, in
+       thread-local variables shared by all instances of the class; the port keeps them in the selection.
+       STEPEdit::SignType's signature, created once under a mutex, is a static readonly field (decision 1215).
+1271. **What is left out.** StepTidy (`STEPControl_Writer::CleanDuplicateEntities`, `write.step.cleanduplicates`) and
+       STEPEdit's activator; StepSelect_Activator (with IFSelect's command machinery, decision 1220) and
+       StepSelect_FloatFormat (only the activator creates it); STEPSelections' counter and assembly explorer (Draw's
+       `countexpected` and `dumpassembly`); StepAP209_Construct (decision 1218: an AP209 FEA tool no STEPControl path
+       reaches, left for when FEA is asked for); STEPConstruct's Styles, ValidationProps, ExternRefs,
+       RenderingProperties, Tool and the package class (STEPCAFControl's: unit 8G2 ports them with it, against the
+       assembly tree); DESTEP's provider and configuration node (TKDE's framework, decision 1171).
+1272. **The comparisons with native** (milestone 1). In process (tests/OcctNet.Oracle.Tests/STEPControl, the bound
+       STEPControl_Reader and STEPControl_Writer, OCCT's default statics): the corpus's 338 STEP files read by both,
+       331 byte-identical BRep texts and 7 identical but for TShapes' Free flag, statuses, roots and shape counts
+       equal; data/occ's 37 shapes and three assemblies of located instances written in each model type (AsIs,
+       ManifoldSolidBrep, BrepWithVoids, FacetedBrep, ShellBasedSurfaceModel, GeometricCurveSet; AP214IS), the 240
+       STEP texts identical with FILE_NAME, the occurrences' identifiers and the product index masked; the round trips
+       (the port's files read natively, native files read by the port), 148 each way, 118 identical and 30 canonically
+       identical (the canonical ones: closed edges on surfaces of revolution, whose line pcurves native recomputes on reading where
+       the port keeps the file's, a Shape Healing follow-up of decision 1255). Through tools/stepctlrec
+       (STEPControl/Recordings): the corpus read with the model's and the transfer's check lists and every distinct
+       transfer message counted, 337 of 338 files identical (bug25013_25013faces.stp: native throws while walking its
+       model check list); 720 writes in AP203, AP214IS and AP242DIS, 708 identical (the 12 others: AP203 assemblies,
+       where native omits the AP203 management entities of the last occurrences).
+1273. **Reading processes the working shapes in place.** OCCT's ShapeFix changes a reader's shapes in place, so the
+       representations sharing an item (a solid in several shape representations) keep sharing it. The port's
+       XSAlgo_ShapeProcessor.ProcessShape freezes its result (decision 1205), which made the next item's processing
+       copy: STEPControl_ActorRead uses `InternalProcessShape` and `InternalMergeTransferInfo` (unfrozen results, the
+       history unfrozen), and XSControl_TransferReader.ShapeResult encodes the regularity into an unfrozen shape in
+       place, as OCCT (into a copy only for a shape holding frozen shapes). The reader freezes what it publishes
+       (decision 1224). Before this, 4 corpus files read with copies of shared solids.
+1274. **Draw-lite's data exchange session.** XSDRAW's process-wide session is one per interpreter, made with the
+       standard, XSAlgo's, STEP's and STEPCAFControl's statics declared (as DRAWEXE declares them at loading); `param`
+       edits that set, and the readers and writers the commands make on the fly (testreadstep, testwritestep,
+       stepfileunits) get sessions on it. The commands read Draw-lite's files (the overlay, then the disk) through the
+       readers' stream forms and write the overlay through the writers' stream forms; testreadstep and testwritestep
+       run their files one after the other. The interactive modes of stepread read nothing (DRAWEXE without input).
+       tpdraw reports a non-shape result without binding it to a variable.
+1275. **A messenger per flow of execution.** DRAWEXE's IFSelect and XSControl commands run with the default messenger
+       printing to the Tcl result (XSTEPDRAWRUN with Draw_Printer), so the libraries' messages are part of the result
+       (`writeent`'s "Write ... Done"). Foundation's `Message.DefaultMessenger()` now returns, when one is installed, the
+       messenger of the current flow of execution (`Message.SetFlowMessenger`, internal, an AsyncLocal): Draw-lite
+       installs one printing to the command's result while such a command runs; parallel interpreters don't see each
+       other's. Outside those commands nothing changes (decision 493's empty default messenger).
+
+## Phase 8: unit 8G2, STEPCAFControl over the assembly document
+
+STEPCAFControl (Reader, Writer, Controller, ActorWrite, ExternFile) over `XdeDoc_Document`, the rest of STEPConstruct
+(the package class, Tool, Styles, RenderingProperties, ValidationProps, ExternRefs), XdeDoc additions, Draw-lite's
+`ReadStep` and `WriteStep`, compared with native XCAF documents through tools/stepcafrec.
+
+1276. **STEPCAFControl and STEPConstruct are ported class for class with XdeDoc_Document in place of OCAF and XCAF**
+       (decisions 1166, 1231): `TDF_Label` becomes `XdeDoc_Label`, the XCAFDoc tools' calls the document's methods of the
+       same names, `TDataStd_Name` `SetName`/`GetName`, `XCAFDoc_Volume`/`Area`/`Centroid` the validation properties,
+       `XCAFDoc_DocumentTool::SetLengthUnit` the document's unit (named by `UnitsMethods::DumpLengthUnit`). OCCT's order
+       of operations is kept, so the documents read and the texts written are native's. STEPConstruct_RenderingProperties
+       leaves out its constructors and `Init`s from XCAF's visual materials and `CreateXCAFMaterial` (no materials);
+       `STEPConstruct_Styles::DecodeColor` takes its colour by reference and leaves it unchanged when the colour isn't
+       recognised (OCCT's callers rely on Quantity_Color's default, yellow); `EncodeColor`'s cache of RGB colours is
+       keyed by their sRGB values (OCCT: a gp_Pnt of them). The value classes (Tool, Styles, ValidationProps,
+       ExternRefs, RenderingProperties) are C# classes (decision 1185). A name read from the file is taken as the parser
+       decoded it (OCCT's `convertName` makes an extended string, UTF-8 unless the code page is NoConversion).
+1277. **The STEPCAF controller and sessions** (as decision 1264 for STEPControl): `STEPCAFControl_Controller.Init()`
+       records one under "STEP" once per process (replacing STEPControl's there, as OCCT); the readers and writers give
+       their sessions a STEPCAFControl_Controller of their own (`STEPCAFControl_Controller.SelectFor`), and its
+       `InitStatics` declares `write.stepcaf.subshapes.name` and `read.stepcaf.subshapes.name` per parameter set (taken
+       over from Draw-lite's session). As in OCCT, the controller's write actor is a fresh STEPCAFControl_ActorWrite,
+       without the shape fix parameters and processing flags STEPControl_Controller gives its own: a STEPCAFControl_Writer
+       writes the shapes unprocessed unless the caller sets them (Draw-lite's WriteStep does, from the session's
+       resources, as DRAWEXE). External files are read from the disk, beside the session's loaded file
+       (`Path.GetFullPath` in place of `OSD_Path::AbsolutePath`, `File.Exists` in place of `OSD_File::Exists`), by a
+       session on the main session's parameter set; WriteStream refuses the multifile mode, as OCCT.
+1278. **XdeDoc_Document additions for STEPCAFControl.** `FindComponent` (XCAFDoc_ShapeTool's, with its checkForShape
+       and IsSame: TShape, orientation and location), `SetInstanceColor` (the component's colour for a component of a
+       top-level assembly; for a component of a sub-assembly placed in another, XCAF's SHUO, false: not kept),
+       `HasChild`, `NbChildren`, `FindChild`, `IsDescendant`, `Descendants` (TDF_ChildIterator's all-levels order).
+       **A fix of unit 8T's map of sub-shapes:** it held the shape itself, where XCAFDoc_ShapeMapTool holds only its
+       sub-shapes, so `AddSubShape(label, the label's own shape)` added a label XCAF doesn't (data/occ's face1.brep
+       written with a face sub-shape differed from native). XCAFDoc_ColorTool::ReverseChainsOfTreeNodes (the order of
+       the labels linked to a colour label) has no counterpart: the document doesn't list a colour's users.
+1279. **What is not transferred.** Reading: ReadSHUOs (off by default in OCCT), ReadGDTs, ReadMaterials, ReadViews,
+       ReadMetadata, ReadProductMetadata read nothing and return false (their modes kept); with them
+       setDatumToXCAF, readDatumsAP242, createGDTObjectInXCAF, collectBinders, findReprItems, fillAttributes,
+       getNamedData, collectPropertyDefinitions, collectShapeLabels, getShapeLabelFromProductDefinition,
+       getProductFromProductDefinition and the file's GD&T helpers (readPMIPresentation, readAnnotation,
+       readConnectionPoints, ReadDatums, setDimObjectToXCAF, setGeomTolObjectToXCAF, createMesh...). Writing:
+       writeSHUOs, writeDGTs, writeDGTsAP242, writeMaterials, writeMetadata (with writeMetadataForLabel,
+       writeMetadataRepresentationItem, writeShapeAspect, writePresentation, writeDatumAP242, writeToleranceZone,
+       writeGeomTolerance and the file's static helpers) write nothing: OCCT writes nothing for a document without
+       them, so the texts are native's; the visual material mode has no materials to write; CleanDuplicates (StepTidy,
+       decision 1271) is accepted and does nothing. STEPCAFControl_GDTProperty, STEPCAFControl_ConfigurationNode and
+       STEPCAFControl_Provider are not ported. The corpus files whose GD&T or materials native reads differ: 5 documents
+       read (GD&T's sub-shape labels), 7 texts written back.
+1280. **Map orders and guards.** The reader's map of shapes to product definitions (ExpandSubShapes iterates it) and
+       the writer's map of top-level shapes to their styles' representations (MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION
+       _REPRESENTATION, added to the model in the map's order) are keyed by shapes, by address in OCCT: the port
+       iterates them in insertion order. Native's order of the representations is not repeatable, so the comparison
+       with native takes a text whose records are the same but in another order as canonically identical (70 of 458
+       writes). The documents a writer transfers are kept in a list (OCCT: a map of root labels). collectRepresentation
+       Items stops after 1,000 levels of representation relationships (OCCT recurses without end on a cycle).
+1281. **Draw-lite's ReadStep and WriteStep** (XSDRAWSTEP.cxx) on the interpreter's session, which now gets
+       STEPCAFControl's controller and statics as DRAWEXE's (XSDRAWSTEP::Factory): ReadStep reads Draw-lite's file
+       through the reader's stream form under the file's name (external references beside it on the disk) into the
+       named document or a new one (DDocStdCommands.NewDocument, the interpreter's auto-naming); WriteStep writes the
+       main file and the external ones (multifile mode) to the overlay, a label's sub-assembly when given; the
+       options (modes, `-stream`, the multifile prefix) as OCCT's; the progress indicators and
+       XSDRAW::CollectActiveWorkSessions left out. `XStat` counts a label's external references as XCAF's labels (XCAF
+       keeps them in an unnamed child label whose children are named by the files). The corpus scan learns the de
+       group's end script, which reads and writes through `$ReadCommand` and `$WriteCommand` (ReadIges/WriteIges for an
+       IGES file, ReadStep/WriteStep otherwise: `DrawCorpus.DataFileCommands`) and calls the case's
+       `de_before_script` and `de_after_script` only if it sets `de_use_custom_scripts`; the de group's STEP cases are
+       DrawStepCafCorpusTests', left out of DrawStepCorpusTests' and DrawXdeCorpusTests'.
+1282. **The oracle is tools/stepcafrec** (native XCAF and STEPCAFControl, which build123d.NET doesn't bind): (1) the
+       corpus's 338 STEP files read into XCAF documents and dumped (each label's entry, kind, shape type and counts,
+       referred label and location, name, colours as floats, visibility, layers, validation properties, external
+       references; the layers; the length unit): 332 documents identical, 6 attributed (GD&T, and a name native reads
+       past its end); (2) documents written: data/occ's 37 shapes each with a name, colours (generic, surface,
+       translucent, curve on a sub-shape), layers (one hidden), a hidden part and validation properties, and three
+       assemblies with names, an instance colour and layers, in AP203, AP214IS and AP242DIS, then the corpus's files
+       read and written back in AP214IS: 458 texts, 377 identical, 70 canonically identical (decision 1280), 11
+       attributed (the AP203 assemblies as decision 1272, GD&T and materials, the name read past its end). The texts are
+       unwrapped before being masked as stepctlrec masks them (the masked occurrence identifiers move the line breaks).
+1283. **The API for unit 8X.** Import: `new STEPCAFControl_Reader()`, `ReadStream(name, stream, progress, limits)` (or
+       `ReadFile`), `Transfer(new XdeDoc_Document(), progress)`, then `doc.ToTree()` (an immutable `XdeDoc_Tree`: roots,
+       products shared, instances with locations, names, colours, layers, validation properties, length unit).
+       Export: `XdeDoc_Document.FromTree(tree)` (or a document built with AddShape/AddComponent/SetName/SetColor/
+       SetLayer), `new STEPCAFControl_Writer()`, the parameters on `Writer().WS().Statics()` (`write.step.schema`,
+       `write.step.unit`...) or a `DESTEP_Parameters`, `Transfer(doc)`, `WriteStream(stream)`; a repeatable header
+       through `new APIHeaderSection_MakeHeader(writer.Writer().Model())` before writing (decision 1267). Keep the
+       document's AutoNaming off for Bento (names only as given); turn it on to match DRAWEXE's names.
+
+## Phase 8: unit 8Z, STEP external references read and written safely
+
+STEPCAFControl_Reader's external references (OCCT's `ReadExternFile`, which reads them from the disk beside the main
+file, ignoring the caller's limits and cancellation and following any absolute path a file names) made safe for
+untrusted input, and STEPCAFControl_Writer's multifile mode given a stream form. Additions in the port's style:
+OCCT's names, `OCCT.NET (unit 8Z)` in the documentation, the defaults of the file API OCCT's.
+
+1284. **A resolver opens the external files.** `STEPCAFControl_ExternFileResolver(theFileName, theReferencingName)`
+       returns a readable stream (the reader disposes it) or null (the reference stays unresolved). The reader's
+       `SetExternFileResolver`/`GetExternFileResolver`; `STEPCAFControl_Reader.FileSystemResolver` is OCCT's way (an
+       absolute name as it is, a relative one beside the referencing file, `OSD_Path::AbsolutePath`), and
+       `STEPCAFControl_Reader.FolderResolver(root)` confines the reads to a folder: a reference is resolved beside the
+       referencing file inside the folder and refused if it is absolute, drive-relative, UNC or a device path, holds a
+       colon (alternate data streams) or a NUL, leaves the folder by `..`, or reaches a link (a reparse point) below the
+       folder. `ReadExternFile` (protected, not virtual in OCCT) keeps its signature and goes through the resolver.
+       Under OCCT's resolver the files keep OCCT's names (the full path); under another the names are lexical (the
+       referencing file's folder and the reference, `.` and `..` folded, `/` between), so neither the disk nor the
+       current directory is consulted, and a file's own references are resolved against that name. OCCT's
+       `STEPConstruct_ExternRefs::FileName` looks on the disk to choose between the names a reference gives (the
+       AEIA's or the document file's): it asks the resolver instead (`InternalFileExists`; the probe's stream is
+       disposed unread), or answers no when nothing is read.
+1285. **The defaults.** ReadFile (and Perform) read external files from the disk as OCCT (the corpus and the native
+       comparisons rely on it). ReadStream reads none unless a resolver is set: a stream's name is a label, not a
+       licence to open its siblings (the issue build123d.NET found: `ReadStream(path, stream)` then `Transfer` read the
+       files beside `path`, and any absolute path the file named). `SetExternFilesMode(false)` reads none in either
+       form. Draw-lite's ReadStep, which reads through the stream form, sets `FileSystemResolver` (DRAWEXE's behaviour,
+       decision 1281).
+1286. **An unread reference is a missing file.** With no resolver, reads disabled or the resolver's null, the reference
+       stays unresolved exactly as OCCT leaves a reference to a missing file: the ExternFile's load status
+       `IFSelect_RetError` (StepFile_Read's "not opened"), the shape's label recording the file's name
+       (`SetExternRefs`), and OCCT's fail "Can not read external file ..." in the transient process; the document is the
+       one OCCT reads when the files are missing (tested).
+1287. **Limits, budget, cycles, cancellation.** Each external file is read with the caller's `StepFile_ReadLimits`
+       (from the new `ReadFile(name, progress, limits)` or `ReadStream(name, stream, progress, limits)`), its
+       `MaxFileSize` lowered to what is left of the budget, `STEPCAFControl_ExternFileLimits` (`SetExternFileLimits`):
+       at most `MaxFiles` files opened (1,000), `MaxTotalSize` bytes read from them all (16 GiB; the main file is
+       limited by its own limits) and a chain `MaxDepth` files deep (100), counted from each ReadFile/ReadStream. A
+       counting stream stops one byte past the limit, so an endless stream is read no further. A reference to a file
+       being read (A refers to B refers to A) or past the budget stays unresolved with a warning on its document file
+       in the transient process ("External reference file is being read already (a cycle of references)", "...
+       not read: more than N files", "deeper than N files", "the external files' N bytes are read"). OCCT recurses
+       without end on a cycle (the file is recorded as read only after its transfer); the port's check applies under
+       every resolver, OCCT's included (logged in occt-issues). Transfer's progress range covers the external reads:
+       each file's read (the parser's cancellation) and its transfer, and a cancelled transfer opens no more files.
+1288. **The writer.** `Write(path)` keeps OCCT's multifile behaviour: the external files beside the main one, named by
+       the prefix and the labels' names, which come from the document and may hold separators, `..` or a drive (a
+       document read from an untrusted file can name where its parts are written). `WriteStream(stream)` refuses the
+       multifile mode as OCCT; the new `WriteStream(stream, STEPCAFControl_ExternFileWriter)` writes the main model and
+       hands each external file's name to the caller, who returns the stream to write it to (disposed after writing) or
+       null to refuse it (that file's write status and the result `IFSelect_RetError`). The stream forms open no file.
+## Phase 8: unit 8W, the data-exchange corpus (the third milestone)
+
+Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's `xnorm`, Tcl's encodings, `exec` and
+`binary format`; the data-exchange corpus classes' counts and attributions; the milestone test.
+
+1289. **ReadFile, readfile, WriteFile, writefile over Draw-lite's stand-in for DE_Wrapper**
+       (tests/OcctNet.DrawLite/XSDRAWDECommands.cs). TKDE's framework stays unported (decision 1271); the commands are
+       XSDRAWDE.cxx's, and `DE_Wrapper::GlobalWrapper()->Copy()` is a private object holding the global units
+       (`global.general.length.unit`, `system.unit`) and the parameters of the providers the port can serve, whose code
+       is ported over Draw-lite's documents and files: DESTEP_Provider (STEPCAFControl and STEPControl on the
+       interpreter's session, the document's unit set from the global one, DESTEP_ConfigurationNode::Load's keys),
+       DESTL_Provider, DEGLTF_Provider (unit 8T's reader and writer in the global units; a glTF file read into a new or
+       empty document only) and DEBREP_Provider (binary by default, `write.binary : 0` writing BRepTools' text without
+       Draw's header line, as OCCT). The configuration's text is read as DE_ConfigurationContext reads it (a file if
+       one exists by that name, else `scope.key : value` lines). The provider is found as DE_Wrapper finds it: by the
+       extension, and, reading, by the content (STEP, BRep, ASCII STL). IGES, VRML, PLY, XBF and OBJ files fail with
+       a message (no provider in the port; OBJ has no reader). The commands run as XSDRAW's (decision 1275): the
+       providers' and libraries' messages go to the result (bug33487's "Unresolved Reference" count).
+1290. **Tcl's encodings.** The file overlay keeps a file's bytes as a byte string (a character per byte), which Tcl's
+       channels encode and decode in their encoding (`fconfigure -encoding`, `-translation binary`), the system encoding
+       being utf-8, decoded as Tcl 8.6 does (a byte that doesn't begin a valid sequence stands for itself); `encoding
+       convertfrom`/`convertto`/`names`/`system` over .NET's code pages (CodePagesEncodingProvider) with Tcl's names;
+       `file size` counts bytes; `source` and Tcl's reads of disk files decode as before (UTF-8, a byte order mark
+       left out). Before, `encoding` returned its argument and channels wrote characters: the 5 bugs/step cases
+       writing files in other code pages now pass (they were attributed in three classes). `binary format` writes the
+       integer, float and string fields (a A c s S t i I n w W m f r R d q Q x); `binary scan` isn't supported.
+1291. **exec runs nothing**: `exec rm ?-f? file...` removes from the overlay (as `file delete`), `exec chmod` checks
+       the file; any other program fails as one not found. The corpus uses exec only in a catch, to remove or unprotect
+       a file it wrote. **xnorm** (XSControl_Functions) selects STEP's norm (the session's own controller, decision
+       1264); the others aren't ported.
+1292. **Library messages and units in the mesh commands.** `readstl` and `writestl` run as XSDRAW's commands too (their
+       libraries' messages in the result, as DRAWEXE prints them: de_mesh/stl_read/D1's "premature end of file").
+       ReadGltf, WriteGltf and WriteObj take the session's unit (`xstep.cascade.unit`) for a document without one, as
+       XSDRAW::GetLengthUnit does (unit 8G1 took millimetres until unit 8F gave the session its parameters).
+1293. **The corpus classes leave the cases measuring memory out of their parallel runs** (DrawXdeCorpusTests,
+       DrawStepCorpusTests, DrawStepCafCorpusTests), as the other classes do (DrawCheapGapsCorpusTests runs them alone and
+       attributes bug31075's trend): bugs/caf/bug31075, run among the others, passed or failed by the load (unit 8G2's
+       "140 OK against 141 under load").
+1294. **The third milestone** (DrawDataExchangeCorpusTests.Data_exchange_cases_run_at_DRAWEXEs_rate; the runs with
+       `OCCTNET_DE_MILESTONE=1` or `OCCTNET_CORPUS_FULL=1`, about two minutes). The data-exchange cases are the groups
+       de, de_mesh, de_wrapper, xcaf, gdt and metadata and every case naming a command of XSDRAW's plugins, XDEDRAW or
+       XSBase's functions (registered in OCCT's sources; OCAF's own commands not counted): **3,366 cases (1,884 in those
+       groups), 2,174 runnable: OK 631, BAD 97 (OCCT's TODOs reproduced), SKIPPED 1,436 (data not public), FAILED 10,
+       all attributed** (GD&T sub-shape labels 2, unit 8T's glTF reader and writer 3, frozen document shapes 1, the
+       sample script's material commands 1, the progress indicator 1, XBF 1, the viewer 1). In the six groups: OK 286,
+       BAD 76, SKIPPED 713, FAILED 9. **Out of scope, 1,192 cases not runnable**, by the first reason their missing
+       commands give: OCAF storage, undo and attributes 405, IGES 536, VRML 26, GD&T, notes, views, materials and
+       metadata 108, OBJ and PLY reading 23, the viewer and MeshVS 78, others 16 (DE_Wrapper's configuration commands,
+       XCAFDoc_Editor's). Of the cases DRAWEXE runs with public data, every runnable one passes or fails as DRAWEXE's
+       log check expects but the 10 attributed: DRAWEXE's rate, OCCT's TODOs apart.
+1295. **The whole corpus at unit 8W** (DrawCorpusTests with `OCCTNET_CORPUS_FULL=1`; phase 7's close, decision 1165:
+       16,381 runnable of 21,068, OK 10,066, FAILED 59): **17,872 runnable (84.8%), OK 10,462,
+       BAD 500, IMPROVEMENT 12, SKIPPED 6,825, FAILED 73** (32 minutes, Release).
+       - 51 attributed by the corpus classes' known failures, 20 of decision 1165's 21 (bugs/modalg_5/bug24639 now
+         passes).
+       - New since phase 7, data exchange (13), all attributed: the GD&T and glTF cases of decision 1294 with the five
+         demo and v3d sample scripts of DrawXdeCorpusTests (unsupported viewer and material commands they source),
+         de_wrapper/xcaf/A4 (XBF).
+       - New, not data exchange (2): bugs/fclasses/bug7287_1 and bug7287_6, memory trends (`meminfo`) run here beside
+         the other cases; DrawCheapGapsCorpusTests runs them alone and they pass (decision 1107). Not a port bug.
+
+## Phase 8: closing (2 November 2026)
+
+1296. **Phase 8 closes with its three milestones met** (phase8-plan.md section 5; owner's answers, decision 1166).
+       - **Milestone 1, STEP without native code** (unit 8F, decision 1272): the dataset's 338 STEP files read as
+         native reads them (331 identical, 7 differing only in the Free flag; StepToTopoDS 2,194 of 2,194 items after
+         unit 8Y, decision 1263); data/occ's shapes and assemblies written in every model type and schema as native
+         writes them (240 of 240 in process; 708 of 720 recorded, the AP203 assemblies attributed); round trips both
+         ways identical or canonically identical. With names, colours, layers and validation properties through
+         STEPCAFControl over the immutable assembly tree (unit 8G2, decision 1282): 332 of 338 documents read as
+         native's, 447 of 458 written texts equal (70 of them after sorting records native orders by address).
+       - **Milestone 2, build123d.NET's and Bento's import and export** (units 8X1, 8X2, in those repositories, merged
+         by the owner): build123d's importers and exporters (STEP with labels, colours and assemblies; STL, glTF, 3MF,
+         BREP) on the OCCT.NET backend, streams first, with limits and cancellation; STEP written byte for byte as
+         native's; Bento's `CAD_IO_` functions. The packages are built as `0.1.0-preview.1` for nuget.org (OcctNet.Foundation,
+         OcctNet.ModelingData, OcctNet.ModelingAlgorithms, OcctNet.DataExchange, Build123d.OcctNet, Build123d;
+         tools/pack-nuget.ps1), which the owner publishes.
+       - **Milestone 3, the corpus** (unit 8W, decisions 1294 and 1295): of 3,366 data-exchange cases, 2,174 run (631
+         OK, 97 BAD as in OCCT, 1,436 skipped for data that isn't public, 10 failures attributed); 1,192 are out of
+         scope (OCAF storage 405, IGES 536, VRML 26, GD&T, notes, views and materials 108, OBJ and PLY reading 23, the
+         viewer 78, others 16). The whole corpus: 17,872 of 21,068 runnable (16,381 at phase 7's close), OK 10,462.
+       - **Hostile input:** the parser's, STL's, glTF's and the external references' limits, cancellation, and no disk
+         access from streams unless a resolver is given (unit 8Z, decisions 1284 to 1288).
+       - **Port status:** 62.0% of OCCT's lines (48.1% at phase 7's close): TKDESTEP 97.2%, TKXSBase 81.6% (IFSelect as
+         traced, decision 1220), TKDESTL 61.6% (DESTL left with TKDE).
+       - **Follow-ups, not done:** an OBJ reader (19 corpus cases with data); TKDE's DE_Wrapper and the providers
+         (Draw-lite's ReadFile/WriteFile use a stand-in, decision 1289); GD&T, views, materials, notes and SHUOs in the
+         tree (decision 1279); PLY; StepAP209_Construct and StepTidy (decisions 1218, 1271); native XCAF in
+         build123d.NET's native backend (its STEP stays shape-only there); Bento on the nuget.org packages in place of
+         its folder feed; and phase 7's follow-ups (decisions 1164, 1165).

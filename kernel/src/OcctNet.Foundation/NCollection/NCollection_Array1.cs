@@ -22,7 +22,7 @@ namespace Occt;
 /// </list>
 /// An array made over another array's storage (OCCT's "buffer" constructors) shares it, as in OCCT.
 /// </remarks>
-public class NCollection_Array1<T> : IEnumerable<T>, INCollection_ArrayRead<T>
+public class NCollection_Array1<T> : Standard_Transient, IEnumerable<T>, INCollection_ArrayRead<T>
 {
     private T[] myData;
     private int myOffset;
@@ -267,6 +267,31 @@ public class NCollection_Array1<T> : IEnumerable<T>, INCollection_ArrayRead<T>
 
     private int CheckAt(int theIndex)
         => (uint)theIndex < (uint)mySize ? theIndex : throw new Standard_OutOfRange("NCollection_Array1::At");
+
+    /// <summary>OCCT's <c>NCollection_Array1::Iterator</c> (More/Next/Value), from the lower bound up.</summary>
+    public sealed class Iterator
+    {
+        private NCollection_Array1<T>? myArray;
+        private int myIndex;
+
+        public Iterator() { }
+
+        public Iterator(NCollection_Array1<T> theArray) => Init(theArray);
+
+        public void Init(NCollection_Array1<T> theArray)
+        {
+            myArray = theArray;
+            myIndex = 0;
+        }
+
+        public bool More() => myArray is not null && myIndex < myArray.mySize;
+
+        public void Next() => myIndex++;
+
+        public T Value() => myArray!.myData[myArray.myOffset + myIndex];
+
+        public ref T ChangeValue() => ref myArray!.myData[myArray.myOffset + myIndex];
+    }
 }
 
 /// <summary>

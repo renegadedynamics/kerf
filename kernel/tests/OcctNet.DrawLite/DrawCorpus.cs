@@ -62,6 +62,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
     public static IReadOnlyList<(string Group, string[] Commands, string Variable)> VariableBranches { get; } =
     [
         ("fillet2d", ["CheckTriArea"], "rel_tol"),
+        // unit 8G2: the de group's end script calls the case's own procedures around the reading only if the case
+        // sets de_use_custom_scripts
+        ("de", ["de_before_script", "de_after_script"], "de_use_custom_scripts"),
     ];
 
     /// <summary>
@@ -76,7 +79,27 @@ public sealed class DrawCorpus(string theTestsDirectory)
     [
         ("offset", "command", ["mkoffset"], ["mkoffset", "renamevar", "tolerance", "checksection", "mkplane", "whatis"]),
         ("offset", "command", ["withintersect", null], ["offsetparameter", "offsetload", "offsetperform", "vprops", "sprops", "bsection"]),
+        // unit 8G1: the xcaf group's end script writes and reads the document back by the case's TypeOfFile (OCAF
+        // storage for "", IGES, STEP; BRep files otherwise), and rescales it only in the mode RESCALE_ASSEMBLY
+        ("xcaf", "TypeOfFile", [""], ["SaveAs", "Open"]),
+        ("xcaf", "TypeOfFile", ["igs"], ["WriteIges", "ReadIges"]),
+        ("xcaf", "TypeOfFile", ["stp"], ["WriteStep", "ReadStep"]),
+        ("xcaf", "CompareDocumentsMode", ["RESCALE_ASSEMBLY"], ["XRescaleGeometry"]),
     ];
+
+    /// <summary>
+    /// Commands a group's end script calls through a variable it sets from the case's data file (unit 8G2): the de
+    /// group's reads and writes the case's <c>filename</c> with <c>$ReadCommand</c> and <c>$WriteCommand</c>, ReadIges
+    /// and WriteIges for an IGES file, ReadStep and WriteStep for another. The scan doesn't see calls through a
+    /// variable: the case needs the commands its file takes.
+    /// </summary>
+    public static IReadOnlyList<(string Group, Regex File, string[] Commands)> DataFileCommands { get; } =
+    [
+        ("de", new Regex(@"\.(igs|iges)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase), ["ReadIges", "WriteIges"]),
+        ("de", new Regex(@"^(?!.*\.(igs|iges)$)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase), ["ReadStep", "WriteStep"]),
+    ];
+
+    private static readonly Regex s_theDeFileName = new(@"^\s*set\s+filename\s+(\S+)", RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     /// <summary>Whether the scan knows the branches of <see cref="ValueBranches"/> (unit 5O2).</summary>
     public bool KnowsValueBranches { get; init; } = true;
@@ -227,6 +250,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
         anInterpreter.SetVariable("env(CASROOT)", aRoot);
         anInterpreter.SetVariable("env(CSF_OCCTResourcePath)", aRoot + "/resources");
         anInterpreter.SetVariable("env(CSF_OCCTDataPath)", aRoot + "/data");
+        // STEP's resource directory (adm/templates/env.bat: CSF_STEPDefaults), which the de grid's scripts read and change
+        anInterpreter.SetVariable("env(CSF_STEPDefaults)", aRoot + "/resources/XSTEPResource");
 
         // an empty, writable image directory, as the harness makes for each case: in the overlay, as every write
         string anImages = TclFileSystem.Slashes(Path.Combine(Path.GetTempPath(), "drawlite-images", theCase.Group, theCase.Grid, theCase.Name));
@@ -338,6 +363,20 @@ public sealed class DrawCorpus(string theTestsDirectory)
             }
         }
 
+        // unit 8G2: commands a group's end script calls through a variable chosen by the case's data file
+        foreach ((string aGroup, Regex aFilePattern, string[] aFileCommands) in DataFileCommands)
+        {
+            if (aGroup != theCase.Group)
+            {
+                continue;
+            }
+            Match? aFile = s_theDeFileName.Matches(File.ReadAllText(theCase.Path)).LastOrDefault();
+            if (aFile is not null && aFilePattern.IsMatch(aFile.Groups[1].Value))
+            {
+                aCommands.UnionWith(aFileCommands);
+            }
+        }
+
         var aMissing = aCommands.Where(c => !theInterpreter.HasCommand(c) && !aDefined.Contains(c)).ToHashSet(StringComparer.Ordinal);
         if (KnowsDataFileBranches)
         {
@@ -374,9 +413,11 @@ public sealed class DrawCorpus(string theTestsDirectory)
                 // the value the grid's begin script or the case sets (the last set wins)
                 string aGridBegin = ReadIfExists(Path.Combine(TestsDirectory, theCase.Group, theCase.Grid, "begin"));
                 string aCaseText = File.ReadAllText(theCase.Path);
-                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+""?([^""\s]*)""?", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+                // a quoted value whole (unit 8G1: the xcaf group's "SHAPES VOLUME"), else the word
+                var aSetRegex = new Regex(@"^\s*set\s+" + Regex.Escape(aBranches.Key.Variable) + @"\s+(?:""([^""]*)""|(\S+))", RegexOptions.Multiline | RegexOptions.CultureInvariant);
                 string aText = aGridBegin + "\n" + aCaseText;
-                string? aValue = aSetRegex.Matches(aText).LastOrDefault()?.Groups[1].Value;
+                Match? aSet = aSetRegex.Matches(aText).LastOrDefault();
+                string? aValue = aSet is null ? null : aSet.Groups[1].Success ? aSet.Groups[1].Value : aSet.Groups[2].Value;
                 bool isKnown = aBranches.Any(b => b.Values.Contains(aValue));
                 IReadOnlySet<string> anOwn = CommandsCalledBy(aText);
                 foreach ((string _, string _, string?[] aValues, string[] aBranchCommands) in aBranches)
