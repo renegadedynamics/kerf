@@ -1465,3 +1465,11 @@ Phase 8 (part): StepData and the STEP header (unit 8B).
   identically (1.5 million texts decoded, 2.7 million lines written); 248 crafted texts decoded under every code page
   (105 decodings attributed: the system locale, reads past a text's end); the code tables equal OCCT's on all 71,374
   entries its conversions reach. One OCCT bug fixed (an endless recursion copying a named select member).
+Phase 8 (part): STEP geometry (unit 8D).
+- Ported: StepToGeom (STEP's points, directions, vectors, placements, transformation operators, curves and surfaces
+  into Geom and Geom2d) and GeomToStep (Geom, Geom2d and gp into STEP entities), with the file's units through
+  StepData_Factors; StepToGeom's yaw-pitch-roll conversion waits for StepKinematics.
+- Compared with native OCCT (tools/geomsteprec), with the default units and with inches and degrees: 4.2 million
+  conversions of the corpus's 338 STEP files' geometric entities, and the conversion of 85 constructed cases and of
+  data/occ's geometry into STEP entities, written and read back: identical. 8 OCCT bugs found, one fixed (unbounded
+  recursion on cyclic references).

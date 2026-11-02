@@ -12422,3 +12422,57 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
 12508. **One OCCT bug fixed: StepData_Field::CopyFrom of a select member with a name** copies `*this` into the new
        member's field, which copies the member again, without end: a stack overflow, which ends a .NET process. The port
        copies the old member's own field (occt-issues.md, 8B).
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+12901. **StepToGeom and GeomToStep, class for class.** StepToGeom is a static class with OCCT's `Make*` methods; each
+       GeomToStep class is a sealed class deriving from `GeomToStep_Root` that converts in its constructor and gives
+       the entity through `Value()`. Units go through `StepData_Factors` (unit 8B's struct), passed `in`; OCCT's
+       default argument `StepData_Factors()` becomes an overload without it (a struct's default isn't a constant).
+       The `_gen.pxx` bodies OCCT includes in several constructors are private `Make` methods; the template
+       `MakeBSplineCurveCommon` is its two instantiations sharing the knot and weight helpers. StepToGeom returns new,
+       unfrozen geometry (the caller freezes what it shares). GeomToStep reads Geom through the `Internal*` accessors
+       and changes nothing it is given: OCCT already copies before `SetNotPeriodic` and `Segment`, so frozen input
+       converts. `StepToGeom::MakeYprRotation` is left for later: it takes a StepKinematics_SpatialRotation (unit
+       8C2) and calls `STEPConstruct_UnitContext::ConvertSiPrefix` (unit 8F), which add it.
+12902. **`Value()` checks, as the native build does.** Each maker's `Value()` throws StdFail_NotDone when the
+       conversion wasn't done (`StdFail_NotDone_Raise_if`, kept by native's build: decision 9), so a maker that
+       delegates to one that fails throws: GeomToStep_MakeCurve of any Geom2d_TrimmedCurve, for instance (occt-issues,
+       8D). The recorder confirms native throws at the same calls. `GeomToStep_MakeCartesianTransformationOperator`'s
+       inline `Value()` doesn't check, as in OCCT.
+12903. **One OCCT bug fixed: unbounded recursion along a file's references.** StepToGeom recurses through curve and
+       surface replicas, 3D offset curves, surface curves, trimmed curves and offset surfaces, guarding only against
+       an entity referring to itself; a longer cycle in a file (A replicates B, B replicates A) overflows the stack. In
+       OCCT that is a signal (caught by MakeSurface's `OCC_CATCH_SIGNALS`, otherwise passed up); in .NET it ends the
+       process. `MakeCurve`, `MakeCurve2d` and `MakeSurface` call `RuntimeHelpers.EnsureSufficientExecutionStack()`,
+       which throws InsufficientExecutionStackException instead: MakeSurface catches it and returns null, as OCCT
+       does; MakeCurve passes it up, as OCCT passes its stack overflow (unit 8E's callers catch it as OCCT's do).
+12904. **MakeSurface's `OCC_CATCH_SIGNALS`** catches Standard_Failure and the .NET exceptions standing for OCCT's
+       signals (everything but OutOfMemoryException and OperationCanceledException, decision 1183). Its C0 offset
+       surfaces go through Shape Healing's process-wide `ShapeAlgo.AlgoContainer()`, null until `ShapeAlgo.Init()`
+       as in OCCT (where STEPControl_Controller's initialisation calls it): unit 8F's controller calls it; the tests
+       call it.
+12905. **8D's oracle: tools/geomsteprec.** A native recorder (MSVC, build123d.NET's native OCCT) with three modes:
+       `gen` writes 85 constructed cases (tools/geomsteprec/cases.txt: 3D and 2D curves and surfaces of every kind in
+       GeomTools' compact text: conics, Bezier and B-spline curves and surfaces rational or not, periodic, uniform,
+       quasi-uniform and piecewise Bezier, trimmed and offset curves, extrusions, revolutions, rectangular trimmed and
+       offset surfaces, a cone with a negative semi-angle, indirect 2D circles and ellipses; and gp points,
+       directions, vectors, axes, transformations and polylines); `g2s` converts them and the geometry of data/occ's
+       37 .brep files (each face's surface, each edge's 3D curve, its trimmed range and its pcurves, once) with every
+       GeomToStep maker that applies, writes each result as STEP entities (a model of its own, StepData_StepWriter)
+       and converts it back with StepToGeom; `s2g` converts every geometric entity of the corpus's 338 STEP files
+       (read with STEPControl_Reader) with StepToGeom: points, directions, vectors, placements, transformation
+       operators, curves in 3D and 2D, surfaces. Each with the default factors and with inches and degrees
+       (`InitializeFactors(25.4, π/180, 1)`); results as reals at precision 17 and geometry in GeomTools' text. The
+       port's replay (GeomStepNativeTests) is identical everywhere: 4,232,738 StepToGeom conversions (158,346 curves
+       and 46,230 surfaces among them, the nulls and exceptions included) and 410,156 GeomToStep lines (the cases line
+       by line, the shapes by hash). Native's results are written with StepAP214_Protocol, the port's with unit 8C1's
+       test protocol: the same generated writers.
+12906. **The oracle's protocol.** Until unit 8C2's StepAP214_Protocol, the port reads with unit 8C1's test protocol,
+       which knows StepBasic, StepGeom, StepShape and StepRepr: the recorder converts only the entities of those
+       packages (12 geometric entities of others, StepFEA's FEA_AXIS2_PLACEMENT_3D, are counted and left out). The
+       test protocol's pattern for RWStepAP214_ReadWriteModule's complex types misses a case written with a comment
+       after its label (358, BOUNDED_CURVE and SURFACE_CURVE: StepGeom_SurfaceCurveAndBoundedCurve), so 8C1's round
+       trips don't read those records; 8D's tests use the same table with that case added, under a protocol class of
+       their own (the libraries find a protocol's modules by its class, decision 1182: a second StepTestProtocol
+       would get the first one's modules).
