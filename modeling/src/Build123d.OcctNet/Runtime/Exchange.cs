@@ -355,12 +355,20 @@ public static partial class Extras
     }
 
     // The writers' tree: a product per part or assembly, those of the same shape, name and colour shared (as XCAF's
-    // AddShape shares a compound's equal shapes), so a part placed many times is written once
-    private static O.XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Dictionary<ProductKey, O.XdeDoc_Product>()));
+    // AddShape shares a compound's equal shapes), so a part placed many times is written once. Parts of one shape with
+    // other names or colours get copies of it: STEP's writer maps shapes to products, so two products of one shape
+    // would be written as one, with the last name.
+    private static O.XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Products()));
 
     private readonly record struct ProductKey(object TShape, O.TopAbs_Orientation Orientation, string? Name, (double, double, double, double)? Color);
 
-    private static O.XdeDoc_Instance ToInstance(ExchangeNode node, Dictionary<ProductKey, O.XdeDoc_Product> products)
+    private sealed class Products
+    {
+        public readonly Dictionary<ProductKey, O.XdeDoc_Product> ByKey = [];
+        public readonly HashSet<object> Shapes = new(ReferenceEqualityComparer.Instance);
+    }
+
+    private static O.XdeDoc_Instance ToInstance(ExchangeNode node, Products products)
     {
         if (node.Shape is not { } shape)
         {
@@ -373,8 +381,10 @@ public static partial class Extras
         // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
         var origin = shape.V.Located(new O.TopLoc_Location());
         var key = new ProductKey(origin.TShape()!, origin.Orientation(), node.Name, node.Color);
-        if (!products.TryGetValue(key, out var product))
+        if (!products.ByKey.TryGetValue(key, out var product))
         {
+            if (!products.Shapes.Add(key.TShape))
+                origin = new O.BRepBuilderAPI_Copy(origin).Shape();
             product = O.XdeDoc_Product.Part(origin, node.Name);
             if (node.Color is { } c)
             {
@@ -382,7 +392,7 @@ public static partial class Extras
                 bool faces = new O.TopExp_Explorer(origin, O.TopAbs_ShapeEnum.TopAbs_FACE).More();
                 product = product.WithColor(faces ? O.XdeDoc_ColorType.XdeDoc_ColorSurf : O.XdeDoc_ColorType.XdeDoc_ColorCurv, Rgba(c));
             }
-            products[key] = product;
+            products.ByKey[key] = product;
         }
         return new O.XdeDoc_Instance(product, shape.V.Location());
     }

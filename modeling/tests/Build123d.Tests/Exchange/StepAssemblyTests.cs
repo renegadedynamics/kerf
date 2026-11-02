@@ -176,6 +176,19 @@ public class StepAssemblyTests
     }
 
     [Fact]
+    public void OneShapeUnderTwoNamesIsTwoProducts()
+    {
+        // STEP's writer maps shapes to products, so the second name needs a shape of its own
+        var ball = new Sphere(2);
+        var pair = Compound.Assembly([ball.WithLabel("left"), ball.Moved(new Location((5.0, 0.0, 0.0))).WithLabel("right").WithColor(new Color("blue"))]);
+        var read = Assert.IsType<Compound>(Importers.ImportStep(new MemoryStream(Export(pair))));
+        Assert.Equal(["left", "right"], read.AssemblyChildren.Select(c => c.Label));
+        Assert.Null(read.AssemblyChildren[0].Color);
+        Assert.Equal(new Color("blue"), read.AssemblyChildren[1].Color);
+        Check.AlmostEqual(5, read.AssemblyChildren[1].Center().X, 6);
+    }
+
+    [Fact]
     public void ACurveIsColouredAsACurve()
     {
         var line = new Polyline((0.0, 0.0), (10.0, 0.0), (10.0, 5.0)).WithLabel("path").WithColor(new Color("green"));

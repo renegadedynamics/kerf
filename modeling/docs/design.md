@@ -306,7 +306,7 @@ Native OCCT stays the default backend.
   and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
   build output as `B3D_OCCTNET_LIB`.
 - **Measured** (OCCT.NET at be3b97db, with its phase 8 through STEPCAFControl; Windows x64):
-  - 1,874 of 1,880 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
+  - 1,875 of 1,881 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
     gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
     phase 7). Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
     (STEPControl), 1,856 of 1,862 passed; at 991bbe6, with
@@ -353,7 +353,9 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   - `ExportStep` writes a compound with `AssemblyChildren` as an assembly, each child a component at its location, a
     product per part and assembly named by its label and coloured by its colour (a surface colour, or a curve colour
     for a shape without faces). Children of one shape, label and colour share a product, placed once per child, as
-    XCAF's `AddShape` shares a compound's equal shapes. Any other shape is one part, even a compound: build123d's
+    XCAF's `AddShape` shares a compound's equal shapes; a child of the same shape under another label or colour gets
+    a copy of the shape, since STEP's writer maps shapes to products and would write the two as one, with the last
+    name. Any other shape is one part, even a compound: build123d's
     `Part` is a compound of a solid, which XCAF's `AddShape(shape, makeAssembly: true)` would make an assembly of
     one solid (a decision). The shapes are written unprocessed, as OCCT's STEPCAFControl writes them (OCCT.NET's
     decision 1277).
