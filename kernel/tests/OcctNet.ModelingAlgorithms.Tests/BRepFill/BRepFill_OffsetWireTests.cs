@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -80,7 +80,7 @@ public class BRepFill_OffsetWireTests
         // every edge of the square generates one parallel edge of the result
         for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            IBentoList<TopoDS_Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
+            ISchematiqList<TopoDS_Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
             Assert.Single(aGenerated);
             Assert.Equal(TopAbs_ShapeEnum.TopAbs_EDGE, aGenerated[0].ShapeType());
             Assert.True(aGenerated[0].TShape()!.IsFrozen());
@@ -200,7 +200,7 @@ public class BRepFill_OffsetWireTests
         TopExp.MapShapes(aResult, TopAbs_ShapeEnum.TopAbs_EDGE, aResultEdges);
         for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            IBentoList<TopoDS_Shape> aGenerated = anOffset.Generated(anExp.Current());
+            ISchematiqList<TopoDS_Shape> aGenerated = anOffset.Generated(anExp.Current());
             Assert.Single(aGenerated);
             Assert.True(aResultEdges.Contains(aGenerated[0]));
         }

@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.GeomAbs_CurveType;
 using static Occt.GeomAbs_Shape;
 using static Occt.TopAbs_Orientation;
@@ -484,7 +484,7 @@ public sealed class BRepAlgo_NormalProjection
 
     /// <summary>The shapes of the result generated from the edge <paramref name="S"/>, frozen.</summary>
     /// <exception cref="Standard_NoSuchObject">S wasn't projected.</exception>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
     {
         NCollection_List<TopoDS_Shape> aList = InternalGenerated(S);
         var aShapes = new TopoDS_Shape[aList.Extent()];

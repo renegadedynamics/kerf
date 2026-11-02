@@ -5,7 +5,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
 using static Occt.TopAbs_Orientation;
@@ -256,7 +256,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     public bool HasFaulty() => !myResult.IsEmpty();
 
     /// <summary>The faults found (their shapes frozen as they are read).</summary>
-    public IBentoList<BOPAlgo_CheckResult> GetCheckResult() => PackedList.Own([.. myResult]);
+    public ISchematiqList<BOPAlgo_CheckResult> GetCheckResult() => PackedList.Own([.. myResult]);
 
     /// <summary>OCCT's <c>GetCheckResult</c>: the analyzer's own list, for ported code.</summary>
     internal NCollection_List<BOPAlgo_CheckResult> InternalGetCheckResult() => myResult;

@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
 using static Occt.TopAbs_Orientation;
@@ -964,7 +964,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>The edges of the top of the boss (frozen).</summary>
-    public IBentoList<TopoDS_Shape> TopEdges()
+    public ISchematiqList<TopoDS_Shape> TopEdges()
     {
         BeforePublishingTopology();
         return PublishedList(myTopEdges);
@@ -974,7 +974,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     internal NCollection_List<TopoDS_Shape> InternalTopEdges() => myTopEdges;
 
     /// <summary>The lateral edges of the boss (frozen).</summary>
-    public IBentoList<TopoDS_Shape> LatEdges()
+    public ISchematiqList<TopoDS_Shape> LatEdges()
     {
         BeforePublishingTopology();
         return PublishedList(myLatEdges);

@@ -6,8 +6,7 @@
   Build123d.OcctNet (its OCCT API over OCCT.NET) and Build123d built on it (Build123dBackend=OcctNet: no native code),
   in Release with symbol packages, each depending on the one below at the same version. Each checkout's committed HEAD
   is copied (git archive) into a work folder and built there, so nothing is written into the checkouts.
-  Bento.Collections, which OcctNet.Foundation and Build123d depend on, isn't on nuget.org yet: its package from
-  .deps/nuget is copied beside the others, to be pushed first (decision 1296).
+  Schematiq.Collections, which OcctNet.Foundation and Build123d depend on, comes from nuget.org.
 .PARAMETER Suffix
   The prerelease label after the projects' VersionPrefix (0.1.0): preview.1 gives 0.1.0-preview.1.
 .PARAMETER Build123d
@@ -32,8 +31,6 @@ function Export-Checkout([string] $checkout, [string] $to) {
   if ($LASTEXITCODE) { throw "git archive of $checkout failed" }
   tar -xf $archive -C $to
   if ($LASTEXITCODE) { throw "extracting $archive failed" }
-  # Bento.Collections, from the checkout's local feed (nuget.config)
-  Copy-Item -Recurse (Join-Path $checkout '.deps/nuget') (Join-Path $to '.deps/nuget')
   (git -C $checkout rev-parse --short HEAD).Trim()
 }
 
@@ -53,5 +50,4 @@ foreach ($p in 'Build123d.OcctNet', 'Build123d') {
   dotnet pack (Join-Path $b3d "src/$p/$p.csproj") @common -p:Build123dBackend=OcctNet "-p:OcctNetRoot=$occt/"
   if ($LASTEXITCODE) { throw "packing $p failed" }
 }
-Copy-Item (Join-Path $occt '.deps/nuget/Bento.Collections.0.4.0.nupkg') $Out
 "The packages are in $((Resolve-Path $Out).Path)"

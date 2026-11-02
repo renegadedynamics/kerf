@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
 
@@ -137,7 +137,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     public bool IsValid() => myFaultyShapes.IsEmpty();
 
     /// <summary>The faults found (their shapes frozen as they are read).</summary>
-    public IBentoList<BOPAlgo_CheckResult> Result() => PackedList.Own([.. myFaultyShapes]);
+    public ISchematiqList<BOPAlgo_CheckResult> Result() => PackedList.Own([.. myFaultyShapes]);
 
     /// <summary>OCCT's <c>Result()</c>: the algorithm's own list, for ported code.</summary>
     internal NCollection_List<BOPAlgo_CheckResult> InternalResult() => myFaultyShapes;

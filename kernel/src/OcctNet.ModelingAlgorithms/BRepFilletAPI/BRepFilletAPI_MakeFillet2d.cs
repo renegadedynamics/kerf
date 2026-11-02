@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 
 namespace Occt;
@@ -128,7 +128,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The fillets on the face (frozen).</summary>
-    public IBentoList<TopoDS_Shape> FilletEdges()
+    public ISchematiqList<TopoDS_Shape> FilletEdges()
     {
         return myMakeChFi2d.FilletEdges();
     }
@@ -140,7 +140,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The chamfers on the face (frozen).</summary>
-    public IBentoList<TopoDS_Shape> ChamferEdges()
+    public ISchematiqList<TopoDS_Shape> ChamferEdges()
     {
         return myMakeChFi2d.ChamferEdges();
     }
@@ -173,7 +173,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The edges created for the curve <paramref name="I"/>: the fillets first, then the chamfers (frozen).</summary>
-    public IBentoList<TopoDS_Shape> NewEdges(int I)
+    public ISchematiqList<TopoDS_Shape> NewEdges(int I)
     {
         myGenerated.Clear();
         if (I <= NbFillet())

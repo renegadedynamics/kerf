@@ -15,7 +15,7 @@ plumbing, shared-geometry races and finalisers, and lets models run where Bento'
 | Shape of the port | **Mechanical and class for class.** OCCT's type, method, field and parameter names and its file layout are kept, so code can be compared with OCCT and upstream fixes carried across. See [translation-rules.md](translation-rules.md). |
 | Public API | **Functional.** Every value a caller sees is immutable. Mutators exist but are `internal`, for ported algorithms. Mutable builders are allowed. |
 | Value types | gp and other by-value classes are structs, passed `in`. An analyzer (OCCTNET0001) stops internal mutators from being called where C# would silently mutate a copy. |
-| Collections | Returned collections are Bento.Collections interfaces (`IBentoList<T>` and friends), against the version Bento ships (0.4.0). Numeric arrays are `PackedList<T>`: contiguous, readable as a span, still an `IBentoList<T>`. |
+| Collections | Returned collections are Schematiq.Collections interfaces (`ISchematiqList<T>` and friends), against the version Bento ships (1.0.0-beta.1, from nuget.org). Numeric arrays are `PackedList<T>`: contiguous, readable as a span, still an `ISchematiqList<T>`. |
 | Floating point | Parity with OCCT is not required everywhere, but the C++ order of operations is kept. In the first package (gp), 66–100% of results are bit-identical to native OCCT, depending on the operation, and the rest agree to within 5e-14. |
 | Errors | OCCT's exception hierarchy (`Standard_Failure` and subclasses). OCCT's release builds compile most argument checks out; the port always makes them. |
 | Serialisation | OCCT's formats, ported faithfully (BRep text and binary in phase 3, STEP in phase 8), so files round-trip with OCCT and its viewers. |
@@ -67,7 +67,7 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | **6. Booleans** (done) | TKBO (IntTools, BOPDS, BOPTools, BOPAlgo, BRepAlgoAPI; not the legacy TopOpeBRep), about 135k lines with what build123d's Boolean and face-making paths need from TKShHealing and TKTopAlgo (provisional, open question 16): `ShapeUpgrade_UnifySameDomain`, ShapeFix, the rest of ShapeAnalysis, ShapeConstruct, ShapeBuild_ReShape, `BRepBuilderAPI_Sewing`; Message_Report and the alerts | build123d.NET's algebra-mode Boolean tests' operations reproduce native results through BRep bytes; parallel = serial; the corpus's 4,880 Boolean, sewing and healing cases |
 | **7. Finishing** (done; [phase7-plan.md](phase7-plan.md)) | The rest of ShapeHealing (ShapeUpgrade's divide and convert tools, ShapeCustom, ShapeProcess), fillets and chamfers (TKFillet but ChFi2d), offsets and drafts (TKOffset but phase 5's wrappers, BRepFill_Draft, AdvancedEvolved), features (TKFeat), helix, then HLR | build123d parity |
 | **8. Data exchange** (done; [phase8-plan.md](phase8-plan.md)) | STEP's entity classes generated from OCCT's own C++ (decision 1166), StepData/XSBase/STEPControl ported; immutable assembly tree; STL, glTF, 3MF, OBJ written fresh | Bytes in and out without native code |
-| 9. Switch-over | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
+| **9. Switch-over** ([phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
 
 ## Not ported
 

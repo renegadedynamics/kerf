@@ -10,8 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Packed locally by tools/pack-bento.ps1 until it is published -->
-    <PackageReference Include="Bento.Collections" Version="0.4.0" />
+    <PackageReference Include="Schematiq.Collections" Version="1.0.0-beta.1" />
   </ItemGroup>
 
 </Project>

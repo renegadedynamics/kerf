@@ -1,7 +1,7 @@
 #if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
@@ -180,7 +180,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 }
 
                 N.TopoDS_Shape[] aNModified = aNCopy.Modified(aS.N).ToArray();
-                IBentoList<TopoDS_Shape> aModified = aHistory.Modified(aS.P);
+                ISchematiqList<TopoDS_Shape> aModified = aHistory.Modified(aS.P);
                 anOracle.Same(aNModified.Length, aModified.Count, "history Modified count");
                 anOracle.Same(false, aHistory.IsRemoved(aS.P), "history IsRemoved");
                 CompareImage(anOracle, aResult, aNModified[0], aModified[0], "history Modified");
@@ -268,7 +268,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
     // The lists as multisets of (index of the twin, orientation): the merge's order follows hash maps on both sides.
     private static void CompareSet(Oracle theOracle, List<Twin<N.TopoDS_Shape, TopoDS_Shape>> theShapes, N.TopoDS_Shape[] theN,
-                                   IBentoList<TopoDS_Shape> theP, string theWhat)
+                                   ISchematiqList<TopoDS_Shape> theP, string theWhat)
     {
         theOracle.Same(theN.Length, theP.Count, theWhat + " count");
         var aNKeys = theN.Select(n => (theShapes.FindIndex(s => s.N.IsSame(n)), (int)n.Orientation())).OrderBy(k => k).ToList();

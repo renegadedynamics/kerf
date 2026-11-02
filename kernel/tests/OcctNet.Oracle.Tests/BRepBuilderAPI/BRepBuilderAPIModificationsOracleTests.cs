@@ -1,7 +1,7 @@
 #if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using Xunit.Abstractions;
 using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
@@ -51,13 +51,13 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
     // Modified(S) of every input sub-shape: the number of images and each one's place in the result.
     private static void CompareModified(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theInput, N.TopoDS_Shape theNResult,
                                         in TopoDS_Shape theResult, Func<N.TopoDS_Shape, N.TopoDS_Shape[]> theNModified,
-                                        Func<TopoDS_Shape, IBentoList<TopoDS_Shape>> theModified)
+                                        Func<TopoDS_Shape, ISchematiqList<TopoDS_Shape>> theModified)
     {
         Twin<N.TopoDS_Shape, TopoDS_Shape> aTwin = new(theNResult, theResult);
         foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aS in BRepToolsModifierOracleTests.AllSubShapes(theInput))
         {
             N.TopoDS_Shape[] aN = theNModified(aS.N);
-            IBentoList<TopoDS_Shape> aP = theModified(aS.P);
+            ISchematiqList<TopoDS_Shape> aP = theModified(aS.P);
             theOracle.Same(aN.Length, aP.Count, "Modified count");
             for (int i = 0; i < Math.Min(aN.Length, aP.Count); i++)
             {

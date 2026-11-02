@@ -4,7 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Runtime.CompilerServices;
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BOPAlgo_GlueEnum;
 
 namespace Occt;
@@ -283,7 +283,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// The sub-shapes identical to <paramref name="theS"/> on the opposite sides (of the repeated shape once it is
     /// repeated). The result graphs are frozen first.
     /// </summary>
-    public IBentoList<TopoDS_Shape> GetTwins(in TopoDS_Shape theS)
+    public ISchematiqList<TopoDS_Shape> GetTwins(in TopoDS_Shape theS)
     {
         FreezeResults();
         return new PackedList<TopoDS_Shape>([.. InternalGetTwins(theS)]);
@@ -634,7 +634,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         for (int i = 1; i <= aNbSH; ++i)
         {
             TopoDS_Shape pS = aTranslationHistMap.FindKey(i);
-            IBentoList<TopoDS_Shape> aSIm = aSplitShapeHist.Modified(pS);
+            ISchematiqList<TopoDS_Shape> aSIm = aSplitShapeHist.Modified(pS);
             if (aSIm.Count == 1)
             {
                 pS = aSIm[0];
@@ -651,7 +651,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             {
                 TopoDS_Shape aT = itLT.Value();
                 // Get shapes modifications during the split
-                IBentoList<TopoDS_Shape> aTSplits = aSplitToolsHist.Modified(aT);
+                ISchematiqList<TopoDS_Shape> aTSplits = aSplitToolsHist.Modified(aT);
 
                 // Associate the shapes to each other
                 foreach (TopoDS_Shape aSp in aTSplits)
@@ -876,7 +876,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     {
         TopoDS_Shape Copied(in TopoDS_Shape theS)
         {
-            IBentoList<TopoDS_Shape> aM = theCopyHistory.Modified(theS);
+            ISchematiqList<TopoDS_Shape> aM = theCopyHistory.Modified(theS);
             return aM.Count == 1 ? aM[0].Oriented(theS.Orientation()) : theS;
         }
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCopy = new(TopTools_ShapeMapHasher.Instance);
@@ -942,7 +942,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
                 TopoDS_Shape aTwin = bShape ? aS : itLT.Value();
                 foreach (TopoDS_Shape aG in theTranslationHistory.Generated(aTwin))
                 {
-                    IBentoList<TopoDS_Shape> aLM = theGluingHistory.Modified(aG);
+                    ISchematiqList<TopoDS_Shape> aLM = theGluingHistory.Modified(aG);
                     if (aLM.Count == 0)
                     {
                         aNewGroup.Add(aG);

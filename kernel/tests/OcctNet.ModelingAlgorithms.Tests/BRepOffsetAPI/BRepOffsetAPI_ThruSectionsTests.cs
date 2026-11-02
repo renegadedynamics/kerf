@@ -2,7 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKTopAlgo/GTests/BRepOffsetAPI_ThruSections_Test.cxx (OCCT V8_0_1), with OCCT.NET's
 // checks of frozen inputs, the history, BRepFill_Generator and BRepProj_Projection added.
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepFill_ThruSectionErrorStatus;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -409,7 +409,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         int aNbFaces = 0;
         for (TopExp_Explorer anExp = new(aWires[0], TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            IBentoList<TopoDS_Shape> aFaces = aLoft.Generated(anExp.Current());
+            ISchematiqList<TopoDS_Shape> aFaces = aLoft.Generated(anExp.Current());
             Assert.NotEmpty(aFaces); // one face per piece of the edge (per section and piece when ruled)
             Assert.All(aFaces, f => Assert.True(aResultMap.Contains(f)));
             TopoDS_Shape aFace = aLoft.GeneratedFace(anExp.Current()); // null for an edge CompatibleWires cut, as natively
@@ -419,7 +419,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.Equal(3, aNbFaces);
         for (TopExp_Explorer anExp = new(aWires[0], TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
-            IBentoList<TopoDS_Shape> anEdges = aLoft.Generated(anExp.Current());
+            ISchematiqList<TopoDS_Shape> anEdges = aLoft.Generated(anExp.Current());
             Assert.Equal(theRuled ? 2 : 1, anEdges.Count);
             Assert.All(anEdges, e => Assert.True(aResultMap.Contains(e) && e.ShapeType() == TopAbs_EDGE));
         }

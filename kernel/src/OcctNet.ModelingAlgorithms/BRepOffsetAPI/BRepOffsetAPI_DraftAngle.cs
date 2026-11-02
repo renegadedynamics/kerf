@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -150,7 +150,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <exception cref="Standard_NullObject">No shape was given.</exception>
     /// <exception cref="Standard_NoSuchObject">The face wasn't added.</exception>
     /// <exception cref="StdFail_NotDone">The draft isn't built.</exception>
-    public IBentoList<TopoDS_Shape> ConnectedFaces(in TopoDS_Face F)
+    public ISchematiqList<TopoDS_Shape> ConnectedFaces(in TopoDS_Face F)
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(),
                                      "BRepOffsetAPI_DraftAngle::ConnectedFaces() - initial shape is not set");
@@ -162,7 +162,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <summary>The faces of the shape on which a draft was given.</summary>
     /// <exception cref="Standard_NullObject">No shape was given.</exception>
     /// <exception cref="StdFail_NotDone">An Add failed.</exception>
-    public IBentoList<TopoDS_Shape> ModifiedFaces()
+    public ISchematiqList<TopoDS_Shape> ModifiedFaces()
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(),
                                      "BRepOffsetAPI_DraftAngle::ModifiedFaces() - initial shape is not set");

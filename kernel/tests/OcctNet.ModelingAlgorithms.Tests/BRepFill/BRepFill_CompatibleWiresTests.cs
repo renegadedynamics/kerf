@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.BRepFill_ThruSectionErrorStatus;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -94,7 +94,7 @@ public class BRepFill_CompatibleWiresTests
         Assert.True(aCW.IsDone());
         Assert.False(aCW.IsDegeneratedFirstSection());
         Assert.False(aCW.IsDegeneratedLastSection());
-        IBentoList<TopoDS_Shape> aRes = aCW.Shape();
+        ISchematiqList<TopoDS_Shape> aRes = aCW.Shape();
         Assert.Equal(3, aRes.Count);
         int aNb = NbEdges(aRes[0]);
         Assert.True(aNb >= 6);
@@ -110,7 +110,7 @@ public class BRepFill_CompatibleWiresTests
             int aTotal = 0;
             for (TopExp_Explorer anExp = new(anIn, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
             {
-                IBentoList<TopoDS_Shape> aGen = aCW.GeneratedShapes(TopoDS.Edge(anExp.Current()));
+                ISchematiqList<TopoDS_Shape> aGen = aCW.GeneratedShapes(TopoDS.Edge(anExp.Current()));
                 Assert.NotEmpty(aGen);
                 Assert.All(aGen, e => Assert.True(aResEdges.Contains(e)));
                 aTotal += aGen.Count;
@@ -130,7 +130,7 @@ public class BRepFill_CompatibleWiresTests
         BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.Perform();
         Assert.True(aCW.IsDone());
-        IBentoList<TopoDS_Shape> aRes = aCW.Shape();
+        ISchematiqList<TopoDS_Shape> aRes = aCW.Shape();
         Assert.Equal(5, NbEdges(aRes[1]));
         // the result's edges are the caller's edges
         NCollection_IndexedMap<TopoDS_Shape> anIn = new(TopTools_ShapeMapHasher.Instance);
@@ -160,7 +160,7 @@ public class BRepFill_CompatibleWiresTests
         aCW.SetPercent(0.05);
         aCW.Perform();
         Assert.True(aCW.IsDone());
-        IBentoList<TopoDS_Shape> aRes = aCW.Shape();
+        ISchematiqList<TopoDS_Shape> aRes = aCW.Shape();
         Assert.Equal(NbEdges(aRes[0]), NbEdges(aRes[1]));
         Assert.True(NbEdges(aRes[0]) >= 3);
         TopExp.Vertices(TopoDS.Wire(aRes[0]), out TopoDS_Vertex a0, out _);

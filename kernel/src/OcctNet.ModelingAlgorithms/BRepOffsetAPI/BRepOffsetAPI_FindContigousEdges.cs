@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -75,7 +75,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
 
     /// <summary>The edges of the shapes added that make the contiguous edge of index <paramref name="index"/>.</summary>
     /// <exception cref="Standard_OutOfRange">The index is out of range.</exception>
-    public IBentoList<TopoDS_Shape> ContigousEdgeCouple(int index)
+    public ISchematiqList<TopoDS_Shape> ContigousEdgeCouple(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbContigousEdges(),
                                      "BRepOffsetAPI_FindContigousEdges::ContigousEdgeCouple");

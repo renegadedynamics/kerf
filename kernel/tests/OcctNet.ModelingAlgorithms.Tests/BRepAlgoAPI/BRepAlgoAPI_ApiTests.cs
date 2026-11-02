@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -91,7 +91,7 @@ public class BRepAlgoAPI_ApiTests
         for (TopExp_Explorer anExp = new(a, TopAbs_FACE); anExp.More(); anExp.Next())
         {
             TopoDS_Shape aF = anExp.Current();
-            IBentoList<TopoDS_Shape> aLM = aFuse.Modified(aF);
+            ISchematiqList<TopoDS_Shape> aLM = aFuse.Modified(aF);
             if (aLM.Count > 0)
             {
                 ++aModified;
@@ -118,7 +118,7 @@ public class BRepAlgoAPI_ApiTests
         int aBefore = aCut.InternalSectionEdges().Extent();
         Assert.True(aBefore > 0);
         aCut.SimplifyResult();
-        IBentoList<TopoDS_Shape> aSE = aCut.SectionEdges();
+        ISchematiqList<TopoDS_Shape> aSE = aCut.SectionEdges();
         Assert.Equal(aBefore, aSE.Count);
         NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(aCut.Shape(), TopAbs_EDGE, anEdges);

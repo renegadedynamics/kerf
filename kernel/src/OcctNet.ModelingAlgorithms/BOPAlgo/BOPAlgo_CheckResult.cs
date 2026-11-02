@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -59,10 +59,10 @@ public sealed class BOPAlgo_CheckResult
     public TopoDS_Shape GetShape2() => Published(myShape2);
 
     /// <summary>The faulty shapes of the object (frozen).</summary>
-    public IBentoList<TopoDS_Shape> GetFaultyShapes1() => Published(myFaulty1);
+    public ISchematiqList<TopoDS_Shape> GetFaultyShapes1() => Published(myFaulty1);
 
     /// <summary>The faulty shapes of the tool (frozen).</summary>
-    public IBentoList<TopoDS_Shape> GetFaultyShapes2() => Published(myFaulty2);
+    public ISchematiqList<TopoDS_Shape> GetFaultyShapes2() => Published(myFaulty2);
 
     /// <summary>OCCT's <c>GetShape1</c>, without freezing.</summary>
     internal TopoDS_Shape InternalGetShape1() => myShape1;
@@ -112,7 +112,7 @@ public sealed class BOPAlgo_CheckResult
         return theShape;
     }
 
-    private static IBentoList<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theShapes)
+    private static ISchematiqList<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theShapes)
     {
         TopoDS_Shape[] aShapes = new TopoDS_Shape[theShapes.Extent()];
         int i = 0;

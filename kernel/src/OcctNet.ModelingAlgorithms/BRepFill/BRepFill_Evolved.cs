@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.GeomAbs_CurveType;
 using static Occt.GeomAbs_JoinType;
 using static Occt.MAT_Side;
@@ -1590,7 +1590,7 @@ public sealed class BRepFill_Evolved
     /// The shapes generated from a sub-shape <paramref name="SpineShape"/> of the spine and a sub-shape
     /// <paramref name="ProfShape"/> of the profile (frozen, with the result).
     /// </summary>
-    public IBentoList<TopoDS_Shape> GeneratedShapes(in TopoDS_Shape SpineShape, in TopoDS_Shape ProfShape)
+    public ISchematiqList<TopoDS_Shape> GeneratedShapes(in TopoDS_Shape SpineShape, in TopoDS_Shape ProfShape)
     {
         FreezeResult();
         NCollection_List<TopoDS_Shape> aList = InternalGeneratedShapes(SpineShape, ProfShape);

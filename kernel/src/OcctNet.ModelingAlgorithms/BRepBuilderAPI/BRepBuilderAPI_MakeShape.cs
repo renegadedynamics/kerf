@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 
 namespace Occt;
 
@@ -56,7 +56,7 @@ public abstract class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command, BRepToo
     public static explicit operator TopoDS_Shape(BRepBuilderAPI_MakeShape theMaker) => theMaker.Shape();
 
     /// <summary>The shapes generated from the shape <paramref name="S"/> (frozen).</summary>
-    public IBentoList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
     {
         BeforePublishingLists();
         return PublishedList(InternalGenerated(S));
@@ -70,7 +70,7 @@ public abstract class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command, BRepToo
     }
 
     /// <summary>The shapes modified from the shape <paramref name="S"/> (frozen).</summary>
-    public IBentoList<TopoDS_Shape> Modified(in TopoDS_Shape S)
+    public ISchematiqList<TopoDS_Shape> Modified(in TopoDS_Shape S)
     {
         BeforePublishingLists();
         return PublishedList(InternalModified(S));
@@ -105,7 +105,7 @@ public abstract class BRepBuilderAPI_MakeShape : BRepBuilderAPI_Command, BRepToo
     IEnumerable<TopoDS_Shape> BRepTools_History.IAlgorithm.Generated(in TopoDS_Shape theS) => Generated(theS);
 
     // A frozen copy of a list of shapes, each shape's graph frozen.
-    private protected static IBentoList<TopoDS_Shape> PublishedList(NCollection_List<TopoDS_Shape> theList)
+    private protected static ISchematiqList<TopoDS_Shape> PublishedList(NCollection_List<TopoDS_Shape> theList)
     {
         if (theList.IsEmpty())
         {

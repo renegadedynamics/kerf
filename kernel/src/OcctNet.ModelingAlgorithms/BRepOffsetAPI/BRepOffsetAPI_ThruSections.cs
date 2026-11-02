@@ -3,7 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.Approx_ParametrizationType;
 using static Occt.BRepFill_ThruSectionErrorStatus;
 using static Occt.GeomAbs_Shape;
@@ -1800,7 +1800,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The sections as given (a point section as its wire of one degenerated edge), frozen.</summary>
-    public IBentoList<TopoDS_Shape> Wires() => PublishedList(myInputWires);
+    public ISchematiqList<TopoDS_Shape> Wires() => PublishedList(myInputWires);
 
     /// <summary>The status of the last <see cref="Build"/>.</summary>
     public BRepFill_ThruSectionErrorStatus GetStatus() => myStatus;

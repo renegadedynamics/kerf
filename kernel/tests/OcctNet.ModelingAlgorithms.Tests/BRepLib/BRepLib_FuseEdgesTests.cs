@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -45,7 +45,7 @@ public class BRepLib_FuseEdgesTests
         var aFuse = new BRepLib_FuseEdges(aF);
         Assert.Equal(2, aFuse.NbVertices());
 
-        IReadOnlyDictionary<int, IBentoList<TopoDS_Shape>> anEdges = aFuse.Edges();
+        IReadOnlyDictionary<int, ISchematiqList<TopoDS_Shape>> anEdges = aFuse.Edges();
         Assert.Equal(2, anEdges.Count);
         Assert.All(anEdges.Values, aList => Assert.Equal(2, aList.Count));
         Assert.All(anEdges.Values, aList => Assert.All(aList, anE => Assert.True(anE.TShape()!.IsFrozen())));

@@ -189,6 +189,20 @@ The numbers in brackets are the plan's (section 7).
 
 **Owner (2 November):** all nine as recommended (decision 1166). Phase 8 started.
 
+## Phase 9 (the switch-over), from the plan in [phase9-plan.md](phase9-plan.md)
+
+40. **The default backend** (2.1). *Recommended:* OCCT.NET becomes build123d.NET's default; native stays buildable for
+    the oracle but is no longer packed; retiring it waits for a phase 10.
+41. **Package metadata** (1.3). Project and repository URLs, if the repositories are to be public. *Recommended:* no
+    URL until then, rather than Python build123d's.
+42. **How Bento references build123d.NET** (2.2). *Recommended:* the published Build123d package and its dependencies,
+    in place of the bundled Build123d.Managed.
+43. **Versions** (2.5). *Recommended:* `0.1.0-preview.2` after unit 9A (preview.1 again if it was never pushed);
+    `0.1.0` when Bento releases on it.
+44. **Which follow-ups join phase 9** (1.5). *Recommended:* the five possible port bugs (9F) and an OBJ reader (9G);
+    the rest when Bento needs them.
+45. **Performance** (2.4). *Recommended:* profile, and take only the wins that keep native's results.
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and

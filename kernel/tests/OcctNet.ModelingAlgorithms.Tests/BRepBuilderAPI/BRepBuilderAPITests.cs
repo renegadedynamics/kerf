@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepBuilderAPI_EdgeError;
 using static Occt.BRepBuilderAPI_FaceError;
@@ -164,7 +164,7 @@ public class BRepBuilderAPITests
         TopoDS_Wire aW = aMW.Wire();
         s1.AssertUnchanged(e1);
         s2.AssertUnchanged(e2);
-        IBentoList<TopoDS_Shape> aModified = aMW.Modified(e1);
+        ISchematiqList<TopoDS_Shape> aModified = aMW.Modified(e1);
         TopoDS_Shape aCopy = Assert.Single(aModified);
         Assert.True(aCopy.TShape()!.IsFrozen());
         Assert.True(new TopExp_Explorer(aW, TopAbs_EDGE).Current().IsSame(aCopy));

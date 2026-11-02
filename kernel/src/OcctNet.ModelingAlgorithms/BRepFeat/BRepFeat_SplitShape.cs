@@ -4,7 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Bento.Collections;
+using Schematiq.Collections;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -97,7 +97,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Returns the faces which are the left of the projected wires (frozen).</summary>
-    public IBentoList<TopoDS_Shape> DirectLeft()
+    public ISchematiqList<TopoDS_Shape> DirectLeft()
     {
         BeforePublishingLists();
         return PublishedList(mySShape.InternalDirectLeft());
@@ -108,7 +108,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// to this set, and so on (frozen).
     /// </summary>
     /// <exception cref="StdFail_NotDone">The splitting isn't done.</exception>
-    public IBentoList<TopoDS_Shape> Left()
+    public ISchematiqList<TopoDS_Shape> Left()
     {
         BeforePublishingLists();
         return PublishedList(mySShape.InternalLeft());
@@ -118,7 +118,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     internal NCollection_List<TopoDS_Shape> InternalLeft() => mySShape.InternalLeft();
 
     /// <summary>Returns the faces of the "right" part on the shape (frozen).</summary>
-    public IBentoList<TopoDS_Shape> Right()
+    public ISchematiqList<TopoDS_Shape> Right()
     {
         BeforePublishingLists();
         return PublishedList(InternalRight());
