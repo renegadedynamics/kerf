@@ -36,10 +36,10 @@ geometry, mostly a good tessellation API (section 3).
 
 **Must**
 - **Target `net10.0`.** Bento now targets .NET 10 (since 28 October 2026).
-- **Stay binary-compatible with the Bento.Collections Bento ships.** That is currently 0.4.0, and you reference the
-  0.4.0 package. Inside Bento, the extension gets the host's copy, never its own, so `ShapeList<T>` must work against
-  whatever 0.4.x Bento carries. If you need something newer from Bento.Collections, flag it rather than upgrading
-  quietly, so both repositories move together.
+- **Stay binary-compatible with the Schematiq.Collections Bento ships.** That is currently 1.0.0-beta.1 from nuget.org
+  (formerly Bento.Collections 0.4.0). Inside Bento, the extension gets the host's copy, never its own, so `ShapeList<T>`
+  must work against whatever 1.0.x Bento carries. If you need something newer from Schematiq.Collections,
+  flag it rather than upgrading quietly, so both repositories move together.
 - **Native loading must work from a non-default load context and folder.**
   - Bento's extension load context resolves `[LibraryImport("b3docct")]` itself, by looking in three places: the managed
     assemblies' folder (`lib/net10.0`), that folder's `runtimes/win-x64/native`, and `runtimes/win-x64/native` at the
@@ -257,7 +257,8 @@ something:
 - **Size.** The native folder is about 52 MB, and it includes TKV3d, TKService and TKMeshVS. Some of
   these are dependencies of the XCAF assembly toolkits and of text, so we'll prune by actual
   dependencies, checked by the load-context test, rather than by name.
-- **Bento.Collections** stays at 0.4.0. We'll flag any need for something newer.
+- **Schematiq.Collections** (formerly Bento.Collections) stays at the version Bento ships, now 1.0.0-beta.1. We'll
+  flag any need for something newer.
 
 ### Tessellation is in (4.3)
 

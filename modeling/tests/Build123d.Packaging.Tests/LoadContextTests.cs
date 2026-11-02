@@ -11,7 +11,7 @@ namespace Build123d.Packaging.Tests;
 /// <summary>
 /// The packages as Bento's 3D-models extension uses them: unpacked into a folder of their own, loaded through a
 /// collectible <see cref="AssemblyLoadContext"/> that resolves managed and native libraries as Bento's does, with
-/// Bento.Collections shared from the host.
+/// Schematiq.Collections shared from the host.
 /// </summary>
 public class LoadContextTests
 {
@@ -26,7 +26,7 @@ public class LoadContextTests
 
         protected override Assembly? Load(AssemblyName name)
         {
-            if (name.Name == "Bento.Collections")
+            if (name.Name == "Schematiq.Collections")
                 return null;   // the host's copy
             var path = Path.Combine(_lib, name.Name + ".dll");
             return File.Exists(path) ? LoadFromAssemblyPath(path) : null;

@@ -270,7 +270,7 @@ public static partial class Extras
     /// instance's, else its product's) and colours (surface, else generic, else curve), within the limits and
     /// cancellable. <paramref name="root"/> is null when the data holds no shape. STEP data referring to other files
     /// (external references) is refused unless <paramref name="externalFiles"/>, when they are read from the folder of
-    /// <paramref name="name"/>.
+    /// <paramref name="name"/>, and only from inside it.
     /// </summary>
     public static IFSelect_ReturnStatus ReadStep(string name, Stream stream, ExchangeReadLimits limits, bool externalFiles,
                                                  out ExchangeNode? root, CancellationToken cancellationToken = default)
@@ -287,6 +287,10 @@ public static partial class Extras
             reader.SetColorMode(true);
             reader.SetNameMode(true);
             reader.SetLayerMode(true);
+            // OCCT.NET reads no external file from a stream unless given a resolver (its decision 1285): these are read
+            // from the file's folder and refused outside it
+            if (externalFiles)
+                reader.SetExternFileResolver(O.STEPCAFControl_Reader.FolderResolver(Path.GetDirectoryName(Path.GetFullPath(name))!));
             var status = reader.ReadStream(name, stream, new O.Message_ProgressIndicator(cancellationToken).Start(), stepLimits);
             cancellationToken.ThrowIfCancellationRequested();
             if (status != O.IFSelect_ReturnStatus.IFSelect_RetDone)

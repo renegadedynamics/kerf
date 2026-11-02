@@ -21,7 +21,7 @@ public sealed class OcctNetFactAttribute : FactAttribute
 
 /// <summary>
 /// The OCCT.NET backend as Bento's 3D-models extension would load it: Build123d, Build123d.OcctNet and OCCT.NET's
-/// assemblies alone in a folder, loaded through a collectible <see cref="AssemblyLoadContext"/> with Bento.Collections
+/// assemblies alone in a folder, loaded through a collectible <see cref="AssemblyLoadContext"/> with Schematiq.Collections
 /// shared from the host. No native library may load.
 /// </summary>
 public class OcctNetBackendTests
@@ -32,7 +32,7 @@ public class OcctNetBackendTests
 
         protected override Assembly? Load(AssemblyName name)
         {
-            if (name.Name == "Bento.Collections")
+            if (name.Name == "Schematiq.Collections")
                 return null;   // the host's copy
             var path = Path.Combine(lib, name.Name + ".dll");
             return File.Exists(path) ? LoadFromAssemblyPath(path) : null;

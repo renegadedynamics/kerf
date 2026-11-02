@@ -109,7 +109,7 @@ no aliasing surprises.
   carries a subclass's own fields (a Box's dimensions) as Python's `copy.copy` does.
 - **History** (`ShapeHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new
   record built on a copy of the OCCT `BRepTools_History`, so shapes sharing a record never see it change.
-- **Collections.** `ShapeList<T>` is an immutable list over Bento.Collections' `IBentoList<T>`. OCCT's
+- **Collections.** `ShapeList<T>` is an immutable list over Schematiq.Collections' `ISchematiqList<T>`. OCCT's
   template collections (`NCollection_List<TopoDS_Shape>` and friends) are bound under their legacy names
   (`TopTools_ListOfShape`, …) and enumerate as `IEnumerable`.
 
