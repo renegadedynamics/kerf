@@ -13315,3 +13315,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        lists nuget.org alone, and `tools/pack-nuget.ps1` no longer copies a collections package beside the others.
        build123d.NET moves with it (its `occtnet/schematiq` branch). The `0.1.0-preview.1` packages depend on
        Bento.Collections and are superseded (phase9-plan.md, question 43).
+1298. **Phase 9's questions** (owner, 2 November: "I would like the performance review but don't require the OBJ
+       reader. Go with phase 9"). Questions 40 to 45 as recommended: OCCT.NET becomes build123d.NET's default backend,
+       native kept for the oracle and no longer packed; no project URL until the repositories are public; Bento
+       references the published Build123d package; `0.1.0-preview.2` next; the performance review (9E) and the triage
+       (9F) join phase 9, the OBJ reader (9G) does not; only performance wins that keep native's results.

@@ -1,5 +1,8 @@
 # Phase 9 plan: the switch-over
 
+> **Agreed, 2 November 2026.** The owner accepted questions 40 to 45 as recommended, with the performance review
+> (9E) and without the OBJ reader (9G dropped): decision 1298.
+
 ## The goal
 
 design.md's phase 9: "build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT".
@@ -138,7 +141,7 @@ The oracle and the corpus stay green throughout. Anything that would change resu
 | **9D** Default backend and the differential run | build123d.NET, OCCT.NET | `Build123dBackend` defaults to `OcctNet`; native becomes opt-in and is no longer packed; README and design.md. The whole-suite recording and replay (2.3), as an oracle test in OCCT.NET; differences attributed. | 9A |
 | **9E** Profile | OCCT.NET | Profiles of build123d.NET's suite and Bento's example workbook (2.4). A short report in `docs/`, and the wins that keep results, each checked by the oracle. | 9D |
 | **9F** Triage | OCCT.NET | Decision 1165's five possible port bugs: fix or attribute each. | – |
-| **9G** OBJ reader | OCCT.NET, build123d.NET | Written fresh over the assembly tree, like 8T's writer, with limits and cancellation; `import_obj` in build123d.NET; the 19 corpus cases. Only if question 44 says so. | – |
+| ~~**9G** OBJ reader~~ (dropped, decision 1298) | OCCT.NET, build123d.NET | Written fresh over the assembly tree, like 8T's writer, with limits and cancellation; `import_obj` in build123d.NET; the 19 corpus cases. Only if question 44 says so. | – |
 
 Everything else in section 1.5 waits until Bento asks for it (question 44).
 
@@ -150,7 +153,7 @@ At most three units at once (the owner's limit).
 |---:|---|---|
 | 1 | 9A, then 9B | 9A is done and needs only its gate; 9B's repack follows straight on |
 | 2 | 9C ‖ 9D ‖ 9F | 9C once the owner has pushed; 9D and 9F don't wait |
-| 3 | 9E ‖ 9G | 9E profiles the default backend 9D leaves |
+| 3 | 9E | 9E profiles the default backend 9D leaves |
 
 ## 4. Milestones
 

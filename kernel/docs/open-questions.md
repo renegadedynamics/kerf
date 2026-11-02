@@ -191,17 +191,19 @@ The numbers in brackets are the plan's (section 7).
 
 ## Phase 9 (the switch-over), from the plan in [phase9-plan.md](phase9-plan.md)
 
-40. **The default backend** (2.1). *Recommended:* OCCT.NET becomes build123d.NET's default; native stays buildable for
-    the oracle but is no longer packed; retiring it waits for a phase 10.
-41. **Package metadata** (1.3). Project and repository URLs, if the repositories are to be public. *Recommended:* no
-    URL until then, rather than Python build123d's.
-42. **How Bento references build123d.NET** (2.2). *Recommended:* the published Build123d package and its dependencies,
-    in place of the bundled Build123d.Managed.
-43. **Versions** (2.5). *Recommended:* `0.1.0-preview.2` after unit 9A (preview.1 again if it was never pushed);
-    `0.1.0` when Bento releases on it.
-44. **Which follow-ups join phase 9** (1.5). *Recommended:* the five possible port bugs (9F) and an OBJ reader (9G);
+40. **The default backend** (2.1). *Agreed:* OCCT.NET becomes build123d.NET's default; native stays buildable for the
+    oracle but is no longer packed; retiring it waits for a phase 10.
+41. **Package metadata** (1.3). *Agreed:* no project URL until the repositories are public, rather than Python
+    build123d's.
+42. **How Bento references build123d.NET** (2.2). *Agreed:* the published Build123d package and its dependencies, in
+    place of the bundled Build123d.Managed.
+43. **Versions** (2.5). *Agreed:* `0.1.0-preview.2` after unit 9A; `0.1.0` when Bento releases on it.
+44. **Which follow-ups join phase 9** (1.5). *Agreed:* the five possible port bugs (9F); **no OBJ reader** (9G dropped);
     the rest when Bento needs them.
-45. **Performance** (2.4). *Recommended:* profile, and take only the wins that keep native's results.
+45. **Performance** (2.4). *Agreed:* the performance review (9E), taking only the wins that keep native's results.
+
+**Owner (2 November):** "I would like the performance review but don't require the OBJ reader. Go with phase 9"
+(decision 1298). Phase 9 started.
 
 ## Earlier judgement calls worth a look
 
