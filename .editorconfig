@@ -1,0 +1,125 @@
+# Kerf: .NET naming for the kernel and the modelling layer (kernel/docs/design-rules.md, section 1).
+#
+# The rules are warnings (IDE1006). They are inert in the build until unit 10E turns them on:
+# - today kernel/Directory.Build.props suppresses IDE1006 (and CS8981, lower-case type names) to keep OCCT's names, and
+#   no project sets EnforceCodeStyleInBuild, so only an editor shows them;
+# - 10E removes the suppression and sets EnforceCodeStyleInBuild once, then lists every folder not yet renamed in the
+#   section at the end, with IDE1006 off; each package leaves the list in the commit that renames it
+#   (design-rules.md, "Turning the rules on").
+
+root = true
+
+[*]
+indent_style = space
+charset = utf-8
+insert_final_newline = true
+
+[*.cs]
+indent_size = 4
+
+# Reported by the build where EnforceCodeStyleInBuild is on and IDE1006 isn't in NoWarn
+dotnet_diagnostic.IDE1006.severity = warning
+
+# Symbol groups
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, delegate
+dotnet_naming_symbols.types.applicable_accessibilities = *
+
+dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
+dotnet_naming_symbols.type_parameters.applicable_accessibilities = *
+
+dotnet_naming_symbols.members.applicable_kinds = method, property, event, local_function, namespace
+dotnet_naming_symbols.members.applicable_accessibilities = *
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.applicable_accessibilities = *
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+dotnet_naming_symbols.visible_fields.applicable_kinds = field
+dotnet_naming_symbols.visible_fields.applicable_accessibilities = public
+
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private, internal, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, internal, protected, protected_internal, private_protected
+
+dotnet_naming_symbols.variables.applicable_kinds = parameter, local
+dotnet_naming_symbols.variables.applicable_accessibilities = *
+
+# Styles
+
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+dotnet_naming_style.interface.capitalization = pascal_case
+dotnet_naming_style.interface.required_prefix = I
+
+dotnet_naming_style.type_parameter.capitalization = pascal_case
+dotnet_naming_style.type_parameter.required_prefix = T
+
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+
+dotnet_naming_style.s_camel.capitalization = camel_case
+dotnet_naming_style.s_camel.required_prefix = s_
+
+dotnet_naming_style.camel.capitalization = camel_case
+
+# Rules: the first that matches a symbol applies, in this order
+
+dotnet_naming_rule.interfaces.symbols = interfaces
+dotnet_naming_rule.interfaces.style = interface
+dotnet_naming_rule.interfaces.severity = warning
+
+dotnet_naming_rule.types.symbols = types
+dotnet_naming_rule.types.style = pascal
+dotnet_naming_rule.types.severity = warning
+
+dotnet_naming_rule.type_parameters.symbols = type_parameters
+dotnet_naming_rule.type_parameters.style = type_parameter
+dotnet_naming_rule.type_parameters.severity = warning
+
+dotnet_naming_rule.members.symbols = members
+dotnet_naming_rule.members.style = pascal
+dotnet_naming_rule.members.severity = warning
+
+# Constants, enum members included, and static read-only fields: PascalCase
+dotnet_naming_rule.constants.symbols = constants
+dotnet_naming_rule.constants.style = pascal
+dotnet_naming_rule.constants.severity = warning
+
+dotnet_naming_rule.static_readonly_fields.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields.style = pascal
+dotnet_naming_rule.static_readonly_fields.severity = warning
+
+# Public fields: PascalCase (and, by design-rules.md, read-only). Protected fields are the engine's inherited state
+# (OCCT's myX in base classes): _camelCase like private ones
+dotnet_naming_rule.visible_fields.symbols = visible_fields
+dotnet_naming_rule.visible_fields.style = pascal
+dotnet_naming_rule.visible_fields.severity = warning
+
+dotnet_naming_rule.private_static_fields.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields.style = s_camel
+dotnet_naming_rule.private_static_fields.severity = warning
+
+dotnet_naming_rule.private_fields.symbols = private_fields
+dotnet_naming_rule.private_fields.style = underscore_camel
+dotnet_naming_rule.private_fields.severity = warning
+
+dotnet_naming_rule.variables.symbols = variables
+dotnet_naming_rule.variables.style = camel
+dotnet_naming_rule.variables.severity = warning
+
+# Not yet renamed (unit 10E): IDE1006 off, folder by folder. Empty until 10E lifts the suppression in
+# kernel/Directory.Build.props; then it starts with every folder below and shrinks to nothing. For example:
+#
+# [{kernel/src/OcctNet.Foundation/{BSplCLib,BSplSLib,BVH}/**.cs,kernel/src/OcctNet.ModelingData/**.cs}]
+# dotnet_diagnostic.IDE1006.severity = none

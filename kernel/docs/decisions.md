@@ -13566,3 +13566,58 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **No behaviour changed:** the same tests pass as in the two repositories.
        - The merge tooling's paths are the repository's (`kernel/docs/decisions.md`, `kernel/CHANGELOG.md`,
          `modeling/CHANGELOG.md`); the old repositories stay as they are until archived.
+
+## Phase 10: unit 10C, conventions and tooling
+
+1319. **The renamer is a single-pass Roslyn tool, not Roslyn's `Renamer`** (tools/kerf-rename; phase10-plan.md 2.3).
+       It loads the solution once with MSBuildWorkspace, plans every rename from the map and the rules, scans every
+       document in parallel binding only tokens whose text is a planned old name, and rewrites the text. Measured on
+       Kerf.slnx: 45 s for all of OcctNet.Foundation (20,100 renames, 258,000 edits) and 47 s for
+       ModelingAlgorithms (84,000 renames, 456,000 edits), dry runs of drafted maps; about four minutes for the
+       whole kernel. `Renamer.RenameSymbolAsync` takes 0.1 to 3 s a symbol once warm, but each call forks the
+       solution, and it can't convert methods to properties, move namespaces or apply the collision rules. The scope is one assembly, optionally narrowed to OCCT packages; references are
+       updated in every project of the solution given, so the same tool and map update Bento's repository later.
+1320. **The name map is a sorted line-based text file** (`kind id new-name  # note`), keyed by Roslyn's documentation
+       comment ids, which are the same for source and metadata. Kinds: `rule`, `package`, `type`, `member`,
+       `property` (a method becoming a get-only property), `param`, `alias`, `keep`. `kerf-rename draft` writes the
+       systematic part for review; `apply --applied` writes the map as applied, with a `keep` line and its reason for
+       every rename the run dropped: that map, not the reviewed one, is what other repositories apply and what is
+       kept for finding OCCT's names (2.3).
+1321. **The systematic rules** (design-rules.md section 1): parameters `theX` and OCCT's older PascalCase ones to
+       camelCase; non-public instance fields (protected included) `myX`/`x` to `_x`; non-public static fields to
+       `s_x`, or PascalCase when constant or read-only; locals `aX`/`anX` and PascalCase ones to camelCase; camelCase
+       methods to PascalCase; `NbXxx()` to an `XxxCount` property and `IsXxx()`/`HasXxx()` to properties, drafted only
+       where the method is a cheap getter (an expression, or a return behind at most two guards). **Collisions are
+       dropped and reported, never guessed:** a name another symbol in the same body or type hierarchy already has,
+       a reserved word, a method used as a delegate or implementing an interface. Where a new name would mean
+       something else at a reference (a member `Scale` hiding `TransformForm.Scale`), the reference is qualified in
+       full rather than the rename dropped.
+1322. **The pilot's names are drafts for 10D**, kept in kernel/docs/phase10/pilot-gp-math.map on the unmerged pilot
+       branch: `Kerf.Geometry` with a `2D`/`3D` suffix where a type has a 2D twin (`Point3D`, `Point2D`, `Frame3D`,
+       `Transform3D`), none otherwise (`Plane`, `Sphere`); OCCT's `math` in `Kerf.Engine.Numerics`, never a namespace
+       `…Math`, which would capture every `Math.Sqrt` beneath it.
+1323. **The pilot (branch `phase10/u10c-pilot`, not merged)**: gp and math renamed across Kerf.slnx, 94 types, 67 methods made
+       properties, 5,500 renames in all, 102,513 edits in 2,421 files, in 33 s.
+       Kerf.slnx builds with no error and no change by hand; the Foundation (2,206), ModelingData (3,125),
+       ModelingAlgorithms (4,709 and 9 skipped) and modelling-layer (1,876 and 5 skipped) tests pass. DataExchange passes 265 of 266: `StepGenTests.CommittedSourcesAreTheGeneratorsOutput`
+       fails because stepgen still writes OCCT's names into the STEP classes it generates, so in 10E the generators
+       (stepgen, and the forwarding layer's until 10B removes it) must take the map too.
+       What it showed the tool must handle, and now does: indexer accessors' parameters, `global::` inside an
+       interpolation hole (read as a format), calls made as statements (`x.NbSolutions();` → `_ = x.SolutionCount;`),
+       committed generated files, alias declarations, a converted method implementing an interface in a derived test
+       class. What it can't, and reports: strings naming types (335 in gp and math, mostly `ToString()`'s
+       `"gp_Pnt(…)"` and exception messages), `UnsafeAccessorType` strings, generators still writing OCCT's names,
+       types sharing a file with types going elsewhere (2). Not reached by Kerf.slnx: the oracle tests and benchmarks
+       (kernel/OcctNet.slnx), which need a run of their own.
+1324. **Naming is stated in a root .editorconfig and turned on package by package in 10E** (design-rules.md section
+       14): 10E first removes IDE1006 from kernel/Directory.Build.props' `NoWarn`, sets `EnforceCodeStyleInBuild` and
+       lists every unrenamed folder with IDE1006 off; each rename commit removes its folders from the list. Nothing
+       changes in this unit's build. IDE1006 needs an explicit `dotnet_diagnostic.IDE1006.severity` to be reported by
+       the build. Measured on the pilot: 30 of gp and math's 1,576 naming warnings remain, each needing a map entry.
+1325. **The analyzers:** OCCTNET0001 (mutating calls on read-only struct values) is kept: `[InlineArray]` buffers and
+       span views stay mutable structs. OCCTNET0002 (maps of shapes without a comparer) is kept but must be rewritten
+       before TopoDS or NCollection is renamed: it finds its types by name (`Occt.NCollection_Map`1`, `TopoDS_Shape`,
+       the namespace `Occt`), so a rename silently disables it. Immutability analyzers KERF0101 to KERF0107 are
+       proposed for 10G and 10L (design-rules.md section 14), not written.
+1326. **design-rules.md replaces translation-rules.md for new and redesigned code**; translation-rules.md stays as the
+       rules the port followed until phase 10, marked so.
