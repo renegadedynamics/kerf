@@ -1769,3 +1769,23 @@ for the hang in `chamf` (decision 1146).
 | ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 1160) |
 | TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 1162) |
 | BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |
+
+## Phase 8: unit 8P, the STEP parser
+
+Found by rewriting StepFile's flex scanner and bison parser and comparing them with OCCT's on the corpus and on hostile
+inputs. The port reproduces each, but for the crash in FinalOfScope.
+
+| Where | What | Effect |
+|---|---|---|
+| step.lex (flex) | The variable trailing context of `#[0-9]+/[ \t]*=` makes flex keep a state per byte, so its buffer can't grow: a token (a string with what `yymore` collected, a name, a comment's run, the blanks after a label) can't reach its 16,384th byte | "input buffer overflow, can't enlarge buffer because scanner uses REJECT": StepFile_Read fails on a file holding a string of 16,383 bytes or more |
+| step.lex, the end of a string | `[']/[" "\n\r]*[\)\,]`: the class holds the double quote, and not the tab | `'a' "",` ends the string; `'a'` followed by a tab and a comma doesn't, and the string runs on to the next quote followed by `)` or `,` |
+| step.lex, numbers | The real rules need two characters before the exponent; ties go to the first rule | `1E3` is a name (TYPE: in a list, `1E3,` is a syntax error), `12E3` a real; `-` and `+` alone are integers, `...` a real, `T.` an enumeration |
+| step.tab.cxx `parser::error` | Adds 1 to the scanner's line counter, which starts at 1 | Errors are reported one line after their own |
+| StepFile_ReadData::FinalOfScope | Reads `mySubArg[0]` while `mySubArg` is null, until a first list is closed | Crash on an empty header followed by a scope as the first entity; the port takes it for a scope without an export list |
+| StepFile_ReadData::CreateNewRecord | Allocates records uninitialized | A record never given a type (reachable through syntax errors) has a garbage type; null in the port |
+| StepFile_ReadData::CreateNewText | The CARTESIAN_POINT shortcut comes before the error argument's concatenation, which it skips | An error argument's text drops what came before a `CARTESIAN_POINT` |
+| StepFile_ReadData texts | C strings | A NUL byte in a quoted string ends its text |
+| StepFile_ReadData::PrintRecord | The two-letter codes of the argument types (`(IF#TnEHBx`, `)nlIxdnxix`) don't follow Interface_ParamType's order | A text prints `nd`, a sub-list `Bi` (print modes only) |
+| step.yacc `stepf1`, `stepf2`, `stepf3` | The data section must be followed by `ENDSTEP;` and the end of the input, unless `END-ISO-10303-21;` (whose start condition skips the rest); `stepf3` accepts a data section ended by an error at the end of the input, but only after an empty header | Text on a line after `ENDSTEP;` fails the read; a truncated file is read if its header is empty, fails otherwise |
+| step.yacc `finvide` | Expects `' '` tokens, which the scanner never returns (it skips blanks) | None |
+| step.yacc `finscop` | Prints "Export List not yet processed" with printf | On the standard output; the port sends it to the messenger |

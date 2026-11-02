@@ -1416,3 +1416,12 @@ Phase 7 complete (1 November 2026): finishing.
   TKOffset, TKFeat, TKShHealing over 99%, TKHLR and TKHelix whole).
 - A faster merge gate (Release, about 15 minutes) and the native oracle's use-after-free found and fixed (decision
   1109).
+
+Phase 8 (part): the STEP parser (unit 8P).
+- `OcctNet.DataExchange`: StepFile_ReadData, and a hand-written, reentrant scanner and parser (`StepFile_Scanner`,
+  `StepFile_Parser`) in place of OCCT's flex and bison code, filling it as OCCT's do, error recovery and messages
+  included. They read a stream, with limits for hostile input (`StepFile_ReadLimits`: file size, records, nesting) and
+  cancellation through `Message_ProgressRange`.
+- Tests: tools/steprec compiles OCCT's own scanner and parser. All 340 STEP files of OCCT's dataset and data/step, and
+  1,329 hostile and mutated inputs, parse as natively, but for two inputs native crashes on. The port parses in 0.74×
+  native's time.

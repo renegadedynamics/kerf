@@ -12,6 +12,8 @@
 //     simple and complex grids (Booleans.cs); ... -- booleans-profile [filter]: the port's pave filler and builder apart;
 //   ... -- phase7 [filter]: build123d.NET's phase 7 calls (offsets, drafts, features, ToSplines, fillets, chamfers; unit 7X, plan 2.7), the port
 //     against native, serially (Phase7.cs);
+//   ... -- stepfile [steprec-bench.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the port's fastest of 5
+//     parses from memory, against native's from tools/steprec/build.ps1 -Bench when its file is given (StepFileBench.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
 // Pass the same -p:OcctSourceDir and -p:Build123dNetRoot as for the tests.
 
@@ -83,6 +85,11 @@ if (args.Length > 0 && args[0] == "phase7")
 if (args.Length > 0 && args[0] == "booleans-profile")
 {
     Booleans.Profile(aFilter);
+    return 0;
+}
+if (args.Length > 0 && args[0] == "stepfile")
+{
+    StepFileBench.Run(aFilter);
     return 0;
 }
 if (args.Length > 0 && args[0] == "alloc")

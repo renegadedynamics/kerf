@@ -18,6 +18,8 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     <ProjectReference Include="..\..\src\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+    <!-- The STEP parser's suite (unit 8P) -->
+    <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <!-- The WebAssembly demo's work, to compare its buffers with win-x64's -->
     <Compile Include="..\..\samples\OcctNet.WasmDemo\DemoCore.cs" Link="DemoCore.cs" />
     <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasNative)' == 'true'" />

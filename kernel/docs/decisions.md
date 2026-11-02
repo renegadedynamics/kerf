@@ -12086,3 +12086,59 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        - IFSelect ported as far as a member trace reaches;
        - the XDE Draw commands implemented over the tree (unit 8G);
        - NuGet publishing as 8X's last step, once the owner chooses package names and a feed.
+
+## Phase 8: unit 8P, the STEP parser
+
+12301. **OCCT's flex scanner and bison parser are rewritten by hand** (decision 1166), as `StepFile_Scanner` (OCCT's
+        `step::scanner`: step.lex, lex.step.cxx) and `StepFile_Parser` (`step::parser`: step.yacc, step.tab.cxx). They
+        drive the ported `StepFile_ReadData` with the same calls, at the same tokens, so it holds what OCCT's holds:
+        - **the scanner** picks flex's rule at each point, the longest match then the first in step.lex (trailing
+          context counting in the length), rule by rule, numbered as lex.step.cxx's actions; it ignores case as
+          `%option case-insensitive` does, and counts lines in the same actions;
+        - **the parser** is a recursive descent whose methods read a lookahead token exactly where bison's LALR(1)
+          states need one. Bison reduces before reading in a state with a single reduction, and the scanner's actions
+          set the current text and argument type, so the order matters: `finscop`'s FinalOfScope, for one, runs after
+          the next token is scanned, as in bison's state 57;
+        - **its error recovery is bison's:** an error is reported unless fewer than three tokens were shifted since
+          the last one (`finlist` resets that), the lookahead is discarded when none was, and the parse resumes in the
+          nearest state that shifts `error`: the innermost parameter list (an error argument: `CreateErrorArg`, which
+          concatenates the discarded tokens' texts), a scope's model (even after its `ENDSCOPE`), or the header's or
+          the data's model. The end of the input there aborts, but for `stepf3` (after an empty header), which accepts;
+        - **its messages are bison's verbose ones** ("unexpected X, expecting A or B", no list past four tokens), the
+          tokens each state expects written out per state from step.tab.cxx's tables.
+
+        A list's sub-lists are read by a loop, not a recursion: errors never leave a list, so one depth counter does.
+12302. **Bytes become text one char per byte (Latin-1), and nothing is decoded.** OCCT keeps the file's chars; its
+        StepData_StepReaderData decodes `\X2\`, `\S\` and the code pages later (unit 8B, which gets the bytes back with
+        `Encoding.Latin1`). A text ends at its first NUL byte, as OCCT's C strings do.
+12303. **Limits for hostile input** (`StepFile_ReadLimits`, given to the scanner): file size 4 GiB, 100 million
+        records, lists and scopes nested 10,000 deep. Reaching one ends the parse as an unrecoverable syntax error does
+        (`parse()` returns 1), with the error "Undefined Parsing: Line n: Limit reached: ..." and
+        `StepFile_Parser.ExceededLimit`. A token's length has OCCT's own limit, reproduced: flex can't grow its buffer,
+        so it throws when it has to look at a token's 16,384th byte (a string with its quotes and the ')' after it:
+        16,383 bytes at most). The scanner throws the same `Standard_Failure` at the same byte, checked on strings,
+        names, numbers, comments, blank and NUL runs, at several offsets of flex's 8,192-byte reads.
+12304. **Cancellation** through the `Message_ProgressRange` given to the parser: the bytes read are its progress
+        (when the stream knows its length), and a cancelled range ends the parse (checked every 4,096 tokens):
+        `parse()` returns 1, with `IsUserBreak` and the error "Reading cancelled".
+12305. **Reentrant:** no process-wide state; each read has its own scanner, parser and data, and reads its stream in
+        blocks of 256 kB. `StepFile_Read`'s global mutex, there because flex's and bison's code wasn't reentrant, has no
+        reason left.
+12306. **Output:** the parser's "Export List not yet processed" (printf in OCCT) goes to the messenger's warnings; the
+        trace of each error (`StepFile_Interrupt`, from StepFile_Read.cxx) is in the parser until unit 8B ports
+        StepFile_Read; the print modes (`SetModePrint`) write to `StepFile_ReadData.PrintOutput`, the console by default
+        as OCCT's Printf. The allocators (NCollection_IncAllocator) are dropped; a record OCCT allocates uninitialized
+        has nulls.
+12307. **Left to unit 8B:** `StepFile_Read` (the glue into StepData_StepReaderData and the model) and
+        `StepFile_ReadData::ErrorHandle` (it needs Interface_Check), which reads `InternalErrors()`. The calls:
+        `new StepFile_Parser(new StepFile_Scanner(data, stream, limits), range).parse()`, catching `Standard_Failure`
+        (the scanner's overflow) as StepFile_Read does; then `GetFileNbR`, and per record `GetRecordDescription`,
+        `GetArgDescription` until false, and `NextRecord`.
+12308. **The oracle:** tools/steprec compiles OCCT's own lex.step.cxx, step.tab.cxx and StepFile_ReadData.cxx (TKDESTEP
+        doesn't export them) against build123d.NET's native OCCT, and dumps the parse's result, the counts, every record
+        and argument as StepFile_Read walks them, and the errors. Compared: all 340 STEP files of the dataset and of
+        data/step (125 MB; each dump hashed, its first 60 lines and its errors kept), and 1,329 hostile and mutated
+        inputs (tools/steprec/gen-cases.py: the scanner's rules, structures and errors, long tokens, deep nesting,
+        binary junk, truncations, token mutations). All identical but two inputs native crashes on (FinalOfScope's
+        null `mySubArg`, an OCCT issue), which the port reads as scopes without an export list. Throughput: 0.74×
+        native's time (163 MB/s against 121 MB/s, from memory; the benchmarks' `stepfile` suite).
