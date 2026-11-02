@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The same benchmark on native OCCT (build123d.NET's default backend), for comparison: see ../Program.cs -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Program.cs" Link="Program.cs" />
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" AdditionalProperties="Build123dBackend=Native" />
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj" AdditionalProperties="Build123dBackend=Native" />
+  </ItemGroup>
+
+</Project>

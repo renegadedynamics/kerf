@@ -86,7 +86,7 @@ public class NCollection_CellFilter<TInspector, TTarget, TPoint>
         /// <summary>A lookup-only cell (no object list) with a copy of the given indexes.</summary>
         public Cell(int[] theIndex)
         {
-            index = (int[])theIndex.Clone();
+            index = theIndex.AsSpan().ToArray();
             Objects = null;
         }
     }

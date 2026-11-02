@@ -13320,3 +13320,193 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        native kept for the oracle and no longer packed; no project URL until the repositories are public; Bento
        references the published Build123d package; `0.1.0-preview.2` next; the performance review (9E) and the triage
        (9F) join phase 9, the OBJ reader (9G) does not; only performance wins that keep native's results.
+
+## Phase 9: unit 9D1, OCCT.NET as build123d.NET's default backend
+
+1299. **build123d.NET's default backend is OCCT.NET, from the packages** (unit 9D1; question 40, decision 1298).
+       `Build123dBackend` defaults to `OcctNet`. `Build123d.OcctNet` references the four `OcctNet.*` packages from
+       nuget.org at `OcctNetVersion` (0.1.0-preview.2, in build123d.NET's Directory.Build.props), so a fresh clone
+       builds and tests with a plain `dotnet test`, with no OCCT.NET checkout and no native build. With `OcctNetRoot`
+       given it references that checkout's projects, as before: for developing both together, and for
+       `tools/pack-nuget.ps1`, which passes it. `OcctNetRoot` no longer defaults to `../OCCT.NET`: an implicit sibling
+       would silently take the place of the packages.
+1300. **Native is opt-in, the oracle's reference, and unpublished.** `-p:Build123dBackend=Native` builds and tests it
+       as before. `Build123d.Occt`, and `Build123d` on the native backend, are packable only with `NativeStageDir`,
+       which only build123d.NET's `tools/pack.ps1` passes; that script stays, for the native load-context test, packs
+       into the local feed alone and versions the packages `0.1.0-native` so they can't be taken for the published
+       ones. `Build123dNativeRoot` (default: the checkout itself) says whose `.deps/install` and `native/out` the
+       native backend copies, so a worktree can use the main checkout's native build.
+1301. **Output folders: the default in `bin`/`obj`, native in `bin-native`/`obj-native`.** The default gets the
+       conventional folders; the two backends sit side by side. The old `bin-occtnet`/`obj-occtnet` stay excluded from
+       the projects' items and ignored, for checkouts that still have them.
+1302. **Tests on one backend.** `Build123d.Occt.Tests` is a test project on the native backend only (`IsTestProject`
+       false otherwise, so `dotnet test` skips it with a message and still builds it). The packaging tests skip without
+       their inputs (`B3D_PACKAGES`, set by `tools/pack.ps1`; `B3D_OCCTNET_LIB`). `Fillet2DTests.FilletRecord`, the one
+       test that fails on OCCT.NET (a 2D fillet's history gives a wire's first vertex two modified shapes where native
+       gives one, known since before phase 7), is a `KnownOcctNetDifferenceFact`: skipped on OCCT.NET with the reason,
+       run natively. It is left for triage, not fixed here.
+1303. **The oracle stays native: `AdditionalProperties` and graph restore.** The oracle tests and the benchmarks
+       reference build123d.NET's `Build123d` and `Build123d.Occt` with `AdditionalProperties` =
+       `$(Build123dNativeProperties)` (`Build123dBackend=Native;Build123dNativeRoot=...`, Directory.Build.props).
+       NuGet's default restore walk ignores `AdditionalProperties` (it restores each project once, by path, with the
+       entry's global properties), so it restored build123d.NET's projects on their default backend into `obj` and the
+       native build then found no `obj-native/project.assets.json`. Restoring by the project graph
+       (`RestoreUseStaticGraphEvaluation`, in Directory.Build.props for projects and in a new Directory.Solution.props
+       for the solution) honours them. The oracle's and benchmarks' native check looks for b3docct under
+       `Build123dNativeRoot` (default `Build123dNetRoot`). Against a build123d.NET checkout from before the switch the
+       properties are harmless: `Native` was its default and it ignores `Build123dNativeRoot`.
+## Phase 9: unit 9D2, the differential run
+
+1304. **The differential run logs build123d.NET's shapes on both backends and compares the logs** (phase9-plan.md
+       2.3). The plan's design was to record native's forwarded calls with their inputs and replay them on OCCT.NET. In
+       its place, the suite runs once per backend, each logging its own results, and the logs are compared:
+       - **Why:** a recording of every forwarded call would have to capture and rebuild every argument type the
+         forwarding layer passes (adaptors, builders, lists, histories), in a generated hook in both bindings. A log of
+         results needs one hook, in build123d.NET, and catches every operation the suite reaches, including
+         build123d.NET's own code between kernel calls. What it gives up: a divergence late in a test is compared on
+         the port's inputs, not native's; the report gives each test's *first* divergence, whose inputs are the same.
+       - **The hook** (build123d.NET's `ShapeLog.cs`): with `BUILD123D_SHAPE_LOG` set, the `Shape` constructor and
+         `Rewrapped` write each kernel shape whose TShape is new in the running test (not a sub-shape of one already
+         logged) as BRep text, with the build123d call that made it and a digest of its vertices' exact points (BRep
+         text has 15 digits). The running test is found on the stack. Off, it is one static field read; on, it only
+         reads shapes. The suite runs one test at a time (`xUnit.ParallelizeTestCollections=false`).
+       - **The comparison** (`Build123dDifferentialTests`, an oracle test reading the logs from `B3D_DIFF_LOGS`;
+         `tools/b3d-differential.ps1` runs everything): entry by entry, BRep text, then the Free flag masked, then the
+         Free and Checked flags, then canonically (decision 581). Then two looser matches, each explained below: a
+         located vertex's own coordinates, and results invalid on both sides. A test whose rest is canonically the same
+         shapes in another order counts as the same. Native's other runs say where native varies from run to run.
+1305. **Two kinds of entry are the same though their texts aren't** (unit 9D2).
+       - **A located vertex's own coordinates.** BRepLib_MakeWire merges an edge's vertex onto the wire's in place
+         (`BRep_Builder::UpdateVertex`), storing the point brought back through the vertex's location: `(p + t) - t`
+         can differ from `p` by an ulp. Native rewrites the caller's vertex so; OCCT.NET leaves a frozen one as it is
+         when the located point doesn't change (decisions 92 and 275). The located points are equal to the bit (the
+         log's digest); 15-digit text can show the stored ones differ (build123d.NET's 2D fillets, `WireFillet.Splice`:
+         9 entries). Mirroring the write (copying the frozen vertex whenever the round trip moves the stored point)
+         matched native in a direct oracle case but not in the fillets' first splice, so it isn't kept.
+       - **Invalid on both sides.** A fillet too large for its edges (`FilletFailuresTests.PlainMessage`, `MaxFillet`'s
+         search) gives a shape BRepCheck rejects on both backends, and build123d.NET discards it with the same error.
+         Phase 7's oracle compares failed fillets by their errors (decision 1164's tail); here 5 entries.
+1306. **The differential run's result** (2 November 2026; OCCT.NET at phase 9's integration point with 9A,
+       build123d.NET's `occtnet/p9d2`). Build123d.Tests: 1,858 tests natively (1,851 pass, 7 skipped), 1,881 on OCCT.NET
+       (1,875 pass, 5 skipped, `Fillet2DTests.FilletRecord` fails as before), logged under 999 test methods.
+       - **Logged:** 18,640 shapes natively, 18,661 on OCCT.NET. Compared up to each test's first divergence: 16,044.
+         13,165 byte-identical; 1,290 with the Free flag masked; 663 with the Free and Checked flags masked; 160
+         canonically identical (fillets and chamfers, offsets, sweeps of a frozen profile); 9 equal but for a located
+         vertex's own coordinates and 5 invalid on both sides (decision 1305); 736 canonically identical in another
+         order, in 18 tests (sub-shapes taken out of a canonically identical fillet, in its order); 16 first divergences
+         of shapes (and 2 of counts, where a test logs fewer shapes on one side).
+       - **Tests:** 938 the same throughout, 18 the same in another order, 25 logged by one backend only (tests under
+         `#if OCCTNET` or native-only: STL, glTF, 3MF, STEP assemblies, the faults and memory pressure), 11 diverging
+         where native varies from run to run (offsets in 2D and 3D, `Hollow`, wires joined or built from mixed edges,
+         a random vertex; seen across 5 whole and 6 partial native runs), 7 attributed, **0 open**.
+       - **Attributed** (in the test's table): STEP read through the assembly tree on OCCT.NET and shape-only natively
+         (decision 1296), so the importer wraps other shapes on its way (3 tests); a theory row that returns early on
+         OCCT.NET, misaligning its rows; `FilletRecord`, failing on OCCT.NET as recorded in build123d.NET's design.md;
+         the introductory examples' `Extrude(both)`, whose two prisms share the sketch's face natively and hold copies
+         of it on OCCT.NET (decisions 468, 1102), so their fuse differs; a test mutating the text of a fillet's result.
+       - **Port bugs:** none found. Everything the suite makes is native's, byte for byte or canonically, or differs
+         where native differs from itself or where OCCT.NET doesn't write a caller's shape.
+## Phase 9: unit 9F, the triage of decision 1165's five cases
+
+1307. **A sweep's copy for write is left as the sweep made it** (bugs/modalg_6/bug26406, a port bug; fixed). When the
+       generating shape holds frozen TShapes, MakePrism, MakeRevol and MakePipe sweep an exact copy of it, then give
+       back in the result the caller's sub-shapes the sweep left unchanged (`KeepUnchangedGenerating`). That step gave
+       a changed copy (the paraboloid face's wire) its kept children in place, so the copy no longer held the sweep's
+       own seam edge. BRepSweep reads its generating shape again for the history: `BRepSweep_Rotation::HasShape` finds
+       a seam by walking the generating shape's faces, so `Generated(seam)` no longer saw a seam, built a face from it
+       on demand and wrote a pcurve into the published result: `TopoDS_LockedShape` in Draw's `revol` (its history).
+       Without copy, `IsDeleted(seam)` said true where native says false: bugs/modalg_7/bug30346_2 (decision 981) had
+       the same cause and now passes. `BRepTools.KeepUnchangedIn` gains `theToLeaveCopies`: a changed copy holding kept
+       children is replaced in the result by a new TShape (the copy's data and flags, the kept children), and the copy
+       stays as it was; only MakeSweep asks for it (sewing and BRepFill go on reading the result's own TShapes).
+       Second part: OCCT's history builds on demand the edge a vertex generates when no face built it (here the vertex
+       on the paraboloid's seam and degenerated edge; native's `Generated` gives an edge that isn't in the result),
+       and sets its vertices' parameters with `UpdateVertex(V, Par, E, PConfusion)`. On a FORWARD or REVERSED vertex
+       that call changes only the edge's ranges and raises the vertex's tolerance to at least 1e-9, so natively it
+       leaves the result's vertex as it is; the port threw on the frozen vertex. `BRep_Builder.UpdateVertexOfFrozen`
+       (internal, `// OCCT.NET: frozen`) sets only the ranges then, as MakeWire's `transfert` does (decision 417's
+       rule: writes that change nothing are skipped); any other write still throws. BRepSweep_Rotation and
+       BRepSweep_Translation's `SetDirectingParameter` use it. Test: the oracle's
+       `Sweeps_of_faces_with_a_seam_have_native_OCCTs_histories` (a cylinder, a sphere band and a sphere cap, frozen,
+       revolved by π and 2π and extruded, with and without copy: 18 results equal to native's, 615 history values
+       equal; it fails on both parts without the fix). bug26406's `revol` + `checkshape` pass.
+1308. **The filling binds the boundary edges MakeWire copied** (bugs/filling/bug23380, a port bug; fixed).
+       `BRepFill_Filling::BuildWires` joins the boundary edges with BRepLib_MakeWire; an edge meeting the wire only
+       geometrically (b_3 at b_2's end) has its vertex merged onto the wire's, which MakeWire moves and enlarges in
+       place natively. The caller's edges are frozen in the port, so MakeWire goes on with a copy for write of the
+       wire built so far (decision 417); the filling then built its final edges from the caller's b_2 and f_1, whose
+       vertices were not the copies the new b_3 ends at: WireFromList found no next edge and the face had 3 edges for
+       4. `BuildWires` now binds, when MakeWire copied, each boundary edge to the edge standing for it in the finished
+       wire (through MakeWire's `InternalHistory()`), as OCCT binds the geometrically joined ones, and records the
+       copied vertices so that `Generated` of the caller's vertex answers as native's. bug23380's face is now byte for
+       byte native's BRep text. The oracle's `MakeFilling_on_the_corpus_case_bug23380_matches_native_OCCT` read the
+       case's words without the initial surface (filling's `a[5]`, here the face i) and so never met the merge; it now
+       loads it as Draw does, and fails without the fix.
+1309. **lowalgos/extss/bug29712_44 is OCCT's script**: it runs `extrema s1 s1` and `extrema s2 s2`, each plane against
+       itself (distance 0), and expects 10, the distance between s1 and s2. Native OCCT gives 0 too
+       (GeomAPI_ExtremaSurfaceSurface on the same planes: parallel, distance 0; 10 for s1 against s2). Attributed in
+       DrawCheapGapsCorpusTests' known failures; occt-issues.md.
+1310. **demo/samples/anc101 fails natively too.** The sample (resources/samples/tcl/ANC101.tcl) welds the platform
+       and the wedge with `blend _model _model 2 _model_27`, then `_model_28`, numbered by one `explode _model e`;
+       after the first blend the edge `_model_28` is no longer in the model, so the second blend has no suitable edge.
+       Replayed natively from the port's primitives (a scratch recorder of the case's bcut, bfuse, unifysamedom and
+       blend calls), native's own chain of Booleans gives the same model (the same counts at every step; the texts
+       equal call by call in non-destructive mode, up to a few last-digit differences) and fails the same way on
+       `_model_28`, destructive or not. The case then needs the viewer (`vbackground`, `vaspects`), outside the port
+       anyway. Attributed in DrawFilletCorpusTests' known failures; occt-issues.md.
+1311. **bugs/fclasses/bug1281 tests Draw's plugin loader**: `pload` reading a plugin resource file, loading the
+       libraries it names and their Tcl scripts, going on past a missing one and failing when none loads. Draw-lite's
+       commands are built in and its `pload` loads nothing (DrawBuiltins), so both checks fail. Out of scope;
+       attributed in DrawCheapGapsCorpusTests' known failures.
+
+## Phase 9: unit 9F2, build123d.NET's 2D fillet record
+
+1312. **The 2D fillet's record differs because build123d.NET keeps MakeWire's intermediate edges; not a port bug.**
+       build123d.NET's `Fillet2DTests.FilletRecord` (OCCT.NET backend) gave Modified(first vertex) = 2 where native
+       gives 1. `WireFillet.Splice` adds the trimmed edges, the arc and the untouched edges to one
+       BRepBuilderAPI_MakeWire and records, after each `Add`, the edge `Edge()` returns. Closing the wire, the last edge's
+       vertex at the first corner (the same point, tolerance 1.0000000011e-7 from the splitter) merges onto the wire's
+       first vertex (1e-7, the trimmed edge's), whose tolerance must grow. Native OCCT raises it in place, so the edge
+       recorded first stays the wire's. That vertex is the caller's (frozen): the port's MakeWire goes on with a copy for
+       write of the wire built so far (decision 417) and records the replacement in its history (`Modified`), so the
+       first recorded edge and vertex are no longer the wire's, and the first vertex is recorded as modified into both
+       copies. The port's MakeWire is right under the immutability rule; 9D2's abandoned change (`movesPoint`) concerned
+       moved located vertices and would not prevent this copy (here the point is unchanged; the tolerance grows).
+       Remedy, in build123d.NET (not made here): `Splice` adds all edges, builds, and records the finished wire's edges
+       (its children in the order added) in place of each intermediate `Edge()`; the same on native, where they are the
+       same shapes. Checked in a detached worktree of build123d.NET's main: Fillet tests 52/52 on OCCT.NET (FilletRecord
+       passes) and 51/51 on native (scratchpad p9f2-b3d-wirefillet.diff).
+## Phase 9: unit 9E, the performance review
+
+1313. **Performance wins that keep native's results** (owner's answer, decision 1298: "only performance wins that keep
+       native's results"; docs/performance.md). Profiles of build123d.NET's suite and of Bento's examples on OCCT.NET
+       (EventPipe: CPU samples, allocations, exceptions, the JIT and the collector) found five cheap hot spots, each
+       fixed without changing values, iteration order or tolerances:
+       - `Intf_TangentZone` keeps its points in a deque: `PolygonInsert`'s insertions at the front were quadratic on a
+         .NET list (OCCT's sequence is linked). `MaxFillet` went from 28 s to 2.8 s (native 0.8 s).
+       - `NCollection_DynamicArray` takes its first capacity (the increment, at most 256) on the first element, as
+         OCCT allocates its first block, not at construction; elements move at the same sizes as before, so a `ref`
+         from `Append` stays valid as long as it did.
+       - `BRepMesh_DataStructureOfDelaun`'s deleted links are a `Queue<int>` (OCCT's list is used only as a queue);
+         `NCollection_CellFilter.Cell` copies its indexes with `ToArray`; `math_NewtonMinimum` subtracts in place.
+       Serially, build123d.NET's suite went from 3.7× native's time to 1.9×; in parallel from 43–46 s to 18–21 s
+       (native 3.4–3.9 s), where the garbage collector (17.5 GB allocated) and the JIT take most of what is left.
+       Bento's examples recalculate in 1.5× native's time and open in 3.5× (the JIT).
+1314. **Proposals left for the owner** (docs/performance.md, ranked): server GC or a larger gen-0 budget in hosts that
+       compute in parallel (the suite 2× faster in parallel); ReadyToRun for the packages (opening 37% faster);
+       `NCollection_List` as a linked list (5–10%, changes its public enumerator type); reusing
+       `math_NewtonMinimum`'s work arrays; small math vectors on the stack; a deque for `NCollection_Sequence`; a cheaper
+       identity hash for `TopoDS_TShape`, only if map iteration order is kept. Exceptions are not a cost (about 2,400
+       in the whole suite). `benchmarks/OcctNet.Bento.Benchmarks` measures Bento's workload on either backend; it needs
+       the build123d.NET checkout, so it is not in the solution.
+
+## Phase 9: unit 9R, ReadyToRun packages
+
+1315. **The packages are compiled ahead of time** (owner, 2 November, on unit 9E's proposals 1 and 2). `tools/pack-nuget.ps1`
+       builds each of the six projects, publishes it with `PublishReadyToRun` for win-x64 (all six before any is
+       swapped in, as publishing a project builds the ones it references again), puts each ReadyToRun assembly in place of
+       its build output and packs without building again. The assemblies keep their IL: on another platform .NET ignores
+       the precompiled code. The script checks the assemblies it packs and the ones the smoke test restores hold
+       ReadyToRun code (the CLI header's ManagedNativeHeader). The packages grow about 2.5× (about 20 MB for the six);
+       unit 9E measured the first opening of Bento's example workbook a third faster. `-NoReadyToRun` packs IL only.
+       Proposal 1, the server garbage collector, is Bento's (its branch `perf/server-gc`).

@@ -193,5 +193,8 @@ public class DrawFilletCorpusTests(ITestOutputHelper output)
         ["draft/angle/C4"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
         ["draft/angle/C5"] = "reconstruction: depouille on the blended box fails (Impossible edge recomputation)",
         ["draft/angle/F1"] = "reconstruction: depouille on the blended fuse gives invalid faces; area 3926.6 for 4827.83",
+        // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
+        // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer
+        ["demo/samples/anc101"] = "OCCT's sample: blend of _model_28, an edge the first blend replaced (native fails too); viewer commands",
     };
 }

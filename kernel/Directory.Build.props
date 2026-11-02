@@ -14,6 +14,22 @@
     <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
     <!-- A sibling build123d.NET checkout, whose native OCCT build the oracle tests compare against -->
     <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../build123d.net/'))</Build123dNetRoot>
+    <!--
+      The checkout whose native build (.deps/install, native/out) build123d.NET's native backend uses: Build123dNetRoot
+      by default, another for a build123d.NET worktree without one
+    -->
+    <Build123dNativeRoot Condition="'$(Build123dNativeRoot)' == ''">$(Build123dNetRoot)</Build123dNativeRoot>
+    <!--
+      build123d.NET's projects as the oracle: always on its native backend, whatever its default (OCCT.NET since its
+      phase 9), with its native build from Build123dNativeRoot
+    -->
+    <Build123dNativeProperties>Build123dBackend=Native;Build123dNativeRoot=$(Build123dNativeRoot)</Build123dNativeProperties>
+    <!--
+      Restore by the project graph, which honours those properties, so build123d.NET's projects restore on the native
+      backend too (NuGet's default walk restores each project once, on its default backend). Directory.Solution.props
+      sets it for the solution.
+    -->
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->

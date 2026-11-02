@@ -7,7 +7,7 @@
   -->
   <PropertyGroup>
     <Build123dOcctProject>$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj</Build123dOcctProject>
-    <HasOracle Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNetRoot)native/out/win-x64/bin/b3docct.dll')">true</HasOracle>
+    <HasOracle Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNativeRoot)native/out/win-x64/bin/b3docct.dll')">true</HasOracle>
     <DefineConstants Condition="'$(HasOracle)' == 'true'">$(DefineConstants);HAS_ORACLE</DefineConstants>
   </PropertyGroup>
 
@@ -18,9 +18,9 @@
     <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
     <ProjectReference Include="..\OcctNet.DrawLite\OcctNet.DrawLite.csproj" />
-    <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" />
+    <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
     <!-- build123d.NET itself, whose public API rebuilds the operands of its tests' Booleans (unit 6M, decision 947) -->
-    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasOracle)' == 'true'" />
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasOracle)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
     <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OcctSourceDir</_Parameter1>

@@ -30,6 +30,8 @@ public class BRepFill_Filling
     private readonly NCollection_Sequence<BRepFill_FaceAndOrder> myFreeConstraints = new();
     private readonly NCollection_Sequence<GeomPlate_PointConstraint> myPoints = new();
     private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myOldNewMap = new(TopTools_ShapeMapHasher.Instance);
+    // OCCT.NET: frozen. The boundary's vertices BuildWires' MakeWire replaced by its copies for write (see BuildWires).
+    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myVertexCopies = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_List<TopoDS_Shape> myGenerated = new();
     private TopoDS_Face myFace = new();
     private TopoDS_Face myInitFace = new();
@@ -358,6 +360,7 @@ public class BRepFill_Filling
             BRepLib_MakeWire MW = new BRepLib_MakeWire();
             TopoDS_Edge FirstEdge = TopoDS.Edge(EdgeList.First());
             MW.Add(FirstEdge);
+            var anAdded = new List<(TopoDS_Edge, TopoDS_Edge)> { (FirstEdge, FirstEdge) }; // OCCT.NET: frozen
             EdgeList.RemoveFirst();
             TopoDS_Vertex[] V_wire = new TopoDS_Vertex[2], V_edge = new TopoDS_Vertex[2];
 
@@ -377,6 +380,7 @@ public class BRepFill_Filling
                             if (V_wire[i].IsSame(V_edge[j]))
                             {
                                 MW.Add(CurEdge);
+                                anAdded.Add((CurEdge, CurEdge));
                                 EdgeList.Remove(Itl);
                                 found = true;
                                 break;
@@ -411,6 +415,7 @@ public class BRepFill_Filling
                                     MW.Add(CurEdge);
                                     TopoDS_Edge NewEdge = MW.InternalEdge();
                                     myOldNewMap.Bind(CurEdge.Oriented(TopAbs_FORWARD), NewEdge.Oriented(TopAbs_FORWARD));
+                                    anAdded.Add((CurEdge, NewEdge));
                                     EdgeList.Remove(Itl);
                                     found = true;
                                     break;
@@ -430,10 +435,57 @@ public class BRepFill_Filling
                 if (!found) // end of current wire, begin next wire
                 {
                     WireList.Append(MW.InternalWire());
+                    BindCopiesForWrite(MW, anAdded);
                     break;
                 }
             } // end of for (;;)
         } // end of while (! EdgeList.IsEmpty())
+    }
+
+    // OCCT.NET: frozen. Merging an edge's vertex onto a wire vertex that must move or grow, OCCT's MakeWire changes that
+    // vertex in place, so the edges added before it (the boundary's own edges, or the copies bound in myOldNewMap) end at
+    // the moved vertex, and the final edges share it. The port's MakeWire goes on with a copy for write of the wire built
+    // so far when the vertex is frozen (BRepLib_MakeWire's remarks): each boundary edge is bound here to the edge
+    // standing for it in the finished wire, and each of its vertices that was copied is recorded for Generated.
+    private void BindCopiesForWrite(BRepLib_MakeWire theMW, List<(TopoDS_Edge, TopoDS_Edge)> theAdded)
+    {
+        BRepTools_History? aHistory = theMW.InternalHistory();
+        if (aHistory is null)
+        {
+            return;
+        }
+
+        static TopoDS_Shape Final(BRepTools_History theHistory, TopoDS_Shape theS)
+        {
+            for (int aGuard = 0; aGuard < 100; aGuard++)
+            {
+                ISchematiqList<TopoDS_Shape> aModified = theHistory.Modified(theS);
+                if (aModified.Count == 0 || aModified[0].IsSame(theS))
+                {
+                    break;
+                }
+                theS = aModified[0].Oriented(theS.Orientation());
+            }
+            return theS;
+        }
+
+        foreach ((TopoDS_Edge anOriginal, TopoDS_Edge anInWire) in theAdded)
+        {
+            TopoDS_Shape aFinal = Final(aHistory, anInWire.Oriented(TopAbs_FORWARD));
+            if (!aFinal.IsSame(anInWire))
+            {
+                myOldNewMap.Bind(anOriginal.Oriented(TopAbs_FORWARD), aFinal);
+            }
+            for (var anIt = new TopoDS_Iterator(anOriginal.Oriented(TopAbs_FORWARD)); anIt.More(); anIt.Next())
+            {
+                TopoDS_Shape aV = anIt.Value().Oriented(TopAbs_FORWARD);
+                TopoDS_Shape aFinalV = Final(aHistory, aV);
+                if (!aFinalV.IsSame(aV))
+                {
+                    myVertexCopies.Bind(aV, aFinalV);
+                }
+            }
+        }
     }
 
     private void FindExtremitiesOfHoles(NCollection_List<TopoDS_Shape> WireList, NCollection_Sequence<TopoDS_Shape> VerSeq)
@@ -746,6 +798,11 @@ public class BRepFill_Filling
         if (myOldNewMap.IsBound(S))
         {
             myGenerated.Append(myOldNewMap.Find(S));
+        }
+        // OCCT.NET: frozen. A boundary vertex BuildWires' MakeWire copied (OCCT moves it in place): its copy's
+        else if (myVertexCopies.Find(S, out TopoDS_Shape aCopy) && myOldNewMap.IsBound(aCopy))
+        {
+            myGenerated.Append(myOldNewMap.Find(aCopy));
         }
 
         return myGenerated;

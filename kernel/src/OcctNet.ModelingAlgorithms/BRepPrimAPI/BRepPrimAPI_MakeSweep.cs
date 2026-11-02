@@ -94,7 +94,9 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
         {
             return; // nothing copied, or already done (a second Build gets the same graph back)
         }
-        myGenFinal = BRepTools.KeepUnchangedIn(myGenOriginal, myGenCopy, myGenCopies, ref theResult, out _);
+        // the copy's graph is left as the sweep made it: the sweep reads it again for the history and the shapes it
+        // builds on demand (its seam test walks the generating shape's faces)
+        myGenFinal = BRepTools.KeepUnchangedIn(myGenOriginal, myGenCopy, myGenCopies, ref theResult, out _, true);
     }
 
     /// <summary>The swept shape's sub-shape standing for the caller's sub-shape <paramref name="theS"/> (itself without a copy).</summary>

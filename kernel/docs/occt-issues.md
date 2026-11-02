@@ -1409,7 +1409,7 @@ each (`// OCCT` at the line where it is code), unless the last column says other
 | `2dintersect` (GeomliteTest_API2dCommands.cxx) | `-tol` as the last word reads `a[++i]` past the end; the output spells "parameter on the fist" | Draw-lite reads an empty word (0); the text is reproduced |
 | `xbounds`, `removeinternals` (BRepTest_OtherCommands.cxx, DBRep.cxx) | Messages without a space: " shape<name> must be a face", "<name>is a null shape" | Text only. Reproduced |
 | `XProgress` | Sets Draw_ProgressIndicator's process-wide defaults; the corpus's progress cases read the indicator's output in the commands' results | Draw-lite keeps the modes per interpreter and its commands make no progress indicator (decision 954), so those cases fail (decisions 984, 988) |
-| BRepPrimAPI_MakePrism's history on a sphere band from 0 to 2π (bugs/modalg_7/bug30346_2, `prism` then `savehistory`) | The port's IsDeleted says one edge of the base is deleted; native (build123d.NET's MakePrism on the same face) says none | Not OCCT's: a port difference in what BRepSweep marks used, found by decision 981 and not yet fixed. The case fails |
+| BRepPrimAPI_MakePrism's history on a sphere band from 0 to 2π (bugs/modalg_7/bug30346_2, `prism` then `savehistory`) | The port's IsDeleted says one edge of the base is deleted; native (build123d.NET's MakePrism on the same face) says none | Not OCCT's: the port's copy for write of the generating shape, changed in place after the sweep (decision 981). **Fixed** by unit 9F (decision 1307); the case passes |
 
 ## Phase 7: unit 7W's follow-up, the Boolean corpus in full
 
@@ -2026,3 +2026,13 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 |---|---|---|
 | DEBREP_Provider::Write (`write.binary : 0`) | Writes the text form with BRepTools::Write, without Draw's `DBRep_DrawableShape` line, while DEBREP_Provider::Read takes a file for text only when it starts with that line | A text BRep file `writefile` wrote is read back as binary by `readfile`, which fails. Kept in Draw-lite's stand-in (decision 1289) |
 | DE_ConfigurationContext (WhatKindOfLine) | `!aLine.EndsWith(' ') \|\| !aLine.EndsWith('\t') \|\| !aLine.EndsWith('\n')` is always true | A space is always appended to the line before it is split; harmless (the value is trimmed) |
+
+## Phase 9: unit 9F, the triage of decision 1165's five cases
+
+| Where | What | Effect |
+|---|---|---|
+| BRepPrimAPI_MakeSweep's copy for write (OCCT.NET's, `KeepUnchangedGenerating`) | Not OCCT's: giving the caller's unchanged sub-shapes back changed the generating shape's copy in place, which the sweep reads again for its history (the seam test of BRepSweep_Rotation::HasShape) | `Generated` built a face from a seam on demand and wrote into the published result (TopoDS_LockedShape, bugs/modalg_6/bug26406); `IsDeleted` of a seam was true (bugs/modalg_7/bug30346_2). **Fixed** (decision 1307) |
+| BRepSweep_Rotation, BRepSweep_Translation SetDirectingParameter | A history query builds on demand the edge a vertex generates, and calls `UpdateVertex` on the result's vertices; natively that changes only the edge's ranges | The port threw on the frozen vertex. Port bug, **fixed** (decision 1307): a write that changes nothing is skipped |
+| BRepFill_Filling::BuildWires with frozen boundary edges | Not OCCT's: MakeWire moves a wire vertex in place natively, and goes on with a copy of the wire in the port; the filling built its final edges from the caller's edges, not the copies | The face lost an edge (3 for 4, bugs/filling/bug23380). **Fixed** (decision 1308) |
+| tests/lowalgos/extss/bug29712_44 | Runs `extrema s1 s1` and `extrema s2 s2` (each plane against itself) and expects 10, the distance between s1 and s2 | Fails natively too (distance 0). Attributed (decision 1309) |
+| resources/samples/tcl/ANC101.tcl (demo/samples/anc101) | Blends `_model_27`, then `_model_28` from the same `explode`, an edge the first blend replaced | "There are no suitable edges for chamfer or fillet", natively too on the same Booleans. Attributed (decision 1310) |

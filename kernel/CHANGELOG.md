@@ -1596,3 +1596,40 @@ Phase 9 (part): Schematiq.Collections (unit 9A).
 
 - Returned collections are Schematiq.Collections' (`ISchematiqList<T>`), from nuget.org, in place of Bento.Collections
   0.4.0: the same library, renamed and published by Bento's owner. `PackedList<T>` is an `ISchematiqList<T>`.
+
+Phase 9 (part): OCCT.NET as build123d.NET's default backend (unit 9D1).
+
+- build123d.NET now builds on OCCT.NET by default, from the packages on nuget.org; native OCCT is opt-in there and
+  kept as the oracle's reference. The oracle tests and benchmarks reference build123d.NET's projects on its native
+  backend explicitly, and restore by the project graph so that holds for restore too. `Build123dNativeRoot` lets a
+  build123d.NET worktree use another checkout's native build.
+Phase 9 (part): the differential run (unit 9D2).
+
+- build123d.NET's whole test suite compared op by op on native OCCT and OCCT.NET, through a shape log in build123d.NET
+  and `Build123dDifferentialTests` (`tools/b3d-differential.ps1`): of 16,044 shapes compared, 15,118 are identical as
+  BRep text (with the Free and Checked flags masked), 160 canonically and 750 in another order or representation; the
+  first divergence of each of the 18 other tests is attributed: native varying from run to run (11 tests), backend-
+  specific code in build123d.NET (5), OCCT.NET not writing a caller's face (1), a test mutating a canonically identical
+  result's text (1). No port bug.
+Phase 9 (part): the triage of five corpus failures (unit 9F).
+
+- Fixed: a frozen face with a seam swept with MakeRevol or MakePrism (and MakePipe's profiles) now answers its history
+  as native OCCT does; `Generated` threw TopoDS_LockedShape (bugs/modalg_6/bug26406), and `IsDeleted` called a seam
+  deleted (bugs/modalg_7/bug30346_2).
+- Fixed: BRepOffsetAPI_MakeFilling with frozen boundary edges that meet only within tolerance lost an edge of the
+  face (bugs/filling/bug23380); the face is now native's.
+- Attributed, not the port: lowalgos/extss/bug29712_44 (OCCT's script), demo/samples/anc101 (OCCT's sample fails
+  natively too), bugs/fclasses/bug1281 (Draw's plugin loader).
+Phase 9 (part): the performance review (unit 9E).
+
+- docs/performance.md: where build123d.NET's suite and Bento's examples spend their time on OCCT.NET, against native.
+  Five fixes that keep native's results: a quadratic in `Intf_TangentZone` (BRepCheck on filleted solids), the eager
+  allocation of every `NCollection_DynamicArray`, the Delaunay mesher's queue of deleted links, the cell filter's
+  index copies and a temporary in `math_NewtonMinimum`. The suite now takes 1.9× native's time run serially (3.7×
+  before); the rest is mostly the garbage collector and the JIT, with proposals for both.
+- `benchmarks/OcctNet.Bento.Benchmarks`: Bento's guide examples, built, meshed and measured, on OCCT.NET or native.
+
+Phase 9 (part): ReadyToRun packages (unit 9R).
+
+- The packages' assemblies are compiled ahead of time for win-x64 (ReadyToRun), keeping their IL for other platforms:
+  the first use of each operation no longer waits for the JIT.
