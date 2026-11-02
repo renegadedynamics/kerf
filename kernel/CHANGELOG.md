@@ -1486,3 +1486,13 @@ Phase 8 (part): the other STEP entity packages and StepAP214's protocol (unit 8C
 - Round trips of the dataset's 338 STEP files with the real protocol: 98.9% of the 1,546,314 records are recognised
   (the rest are types OCCT doesn't know either); of those, 1,526,805 are written back the same and the 2,107 others
   differ as OCCT's own reading and writing make them (each attributed, 13 OCCT bugs logged).
+Phase 8 (part): the assembly tree and the fresh mesh formats (unit 8T).
+- XdeDoc, new: an immutable assembly tree in place of XCAF (`XdeDoc_Tree`, `XdeDoc_Product`, `XdeDoc_Instance`):
+  shared products, placed instances, names, colours with alpha, visibility, layers, validation properties and
+  sub-shape attributes; frozen shapes; `Flatten` for meshing and viewing, `Meshed` to mesh every part.
+  `XdeDoc_Document` gives it XCAF's label interface (the shape, colour and layer tools' calls) for STEPCAFControl.
+- glTF 2.0 (`.gltf` + `.bin`, `.glb`), OBJ (+ MTL) and 3MF written fresh over the tree, with instancing and colours;
+  glTF read fresh into the tree, with limits for hostile input. Streams first, cancellation through
+  `Message_ProgressRange`, deterministic output.
+- Checked against OCCT's de_mesh cases on the dataset's Lantern (native's counts and structure), round trips, and the
+  formats' rules in the tests.

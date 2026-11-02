@@ -1910,3 +1910,13 @@ reproduces them all; the generated code carries no `// OCCT` marker (it is regen
 | StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
 | RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
 | StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
+
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+Nothing of OCCT's is ported in this unit (decision 13101). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
+copy, for unit 8G (decision 13103):
+
+| Where | What OCCT does | What the port does |
+|---|---|---|
+| XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
+| XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
