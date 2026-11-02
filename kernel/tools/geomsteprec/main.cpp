@@ -8,9 +8,7 @@
 //                                          read with STEPControl_Reader (the AP214 protocol) and every geometric
 //                                          entity of the model converted by StepToGeom (points, directions, vectors,
 //                                          placements, transformation operators, curves in 3D and 2D, surfaces),
-//                                          with the default factors ("mm") and with inches and degrees ("in"). Only
-//                                          the entities of StepBasic, StepGeom, StepShape and StepRepr, the packages
-//                                          the port reads so far; the others converted are counted ("SKIPPED n").
+//                                          with the default factors ("mm") and with inches and degrees ("in").
 //   geomsteprec g2s <cases> <list> <out> [full]
 //                                          the cases, then the geometry of the .brep files listed (surfaces of the
 //                                          faces; 3D curves, their trimmed ranges and pcurves of the edges, each
@@ -1025,30 +1023,11 @@ int main(int argc, char** argv)
         continue;
       }
       occ::handle<StepData_StepModel> aModel = aReader.StepModel();
-      // Only the entities of the packages the port reads so far (unit 8C1's StepBasic, StepGeom, StepShape and
-      // StepRepr): the others (StepFEA's FEA_AXIS2_PLACEMENT_3D...) are counted, not converted
-      std::vector<bool> isKept(aModel->NbEntities() + 1, false);
-      int               aNbSkipped = 0;
-      for (int i = 1; i <= aModel->NbEntities(); i++)
-      {
-        const std::string aType = aModel->Value(i)->DynamicType()->Name();
-        isKept[i] = aType.rfind("StepGeom_", 0) == 0 || aType.rfind("StepShape_", 0) == 0
-                    || aType.rfind("StepRepr_", 0) == 0 || aType.rfind("StepBasic_", 0) == 0;
-        if (!isKept[i])
-        {
-          std::vector<std::string> aProbe;
-          StepToGeomLines(aModel->Value(i), aFactors[0], "", aProbe);
-          aNbSkipped += aProbe.empty() ? 0 : 1;
-        }
-      }
-      if (aNbSkipped > 0)
-        fprintf(anOut, "SKIPPED %d\n", aNbSkipped);
       for (int f = 0; f < 2; f++)
       {
         std::vector<std::string> aLines;
         for (int i = 1; i <= aModel->NbEntities(); i++)
-          if (isKept[i])
-            StepToGeomLines(aModel->Value(i), aFactors[f], std::to_string(i) + " ", aLines);
+          StepToGeomLines(aModel->Value(i), aFactors[f], std::to_string(i) + " ", aLines);
         Block(anOut, aTags[f], aLines, isFull);
       }
       fflush(anOut);

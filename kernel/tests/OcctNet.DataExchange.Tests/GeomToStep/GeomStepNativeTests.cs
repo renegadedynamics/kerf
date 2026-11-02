@@ -15,11 +15,7 @@ namespace OcctNet.DataExchange.Tests.GeomToStep;
 public sealed class GeomStepNativeTests(ITestOutputHelper output)
 {
     /// <summary>A block of the recording: a file (or the cases) and, per factor set, its line count, hash and samples.</summary>
-    private sealed record Block(string Name, bool ReadFail, Dictionary<string, (int NbLines, string Hash, List<string> Lines)> Tags)
-    {
-        /// <summary>The geometric entities of the packages the port doesn't read yet, not converted (decision 12906).</summary>
-        public int Skipped { get; set; }
-    }
+    private sealed record Block(string Name, bool ReadFail, Dictionary<string, (int NbLines, string Hash, List<string> Lines)> Tags);
 
     private static List<Block> Recording(string theResource)
     {
@@ -36,10 +32,6 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
             else if (aLine == "READFAIL")
             {
                 aBlocks[^1] = aBlock = aBlock! with { ReadFail = true };
-            }
-            else if (aLine.StartsWith("SKIPPED ", StringComparison.Ordinal))
-            {
-                aBlock!.Skipped = int.Parse(aLine[8..], CultureInfo.InvariantCulture);
             }
             else if (aLine.StartsWith("TAG ", StringComparison.Ordinal))
             {
@@ -150,8 +142,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
             aRun++;
         }
 
-        output.WriteLine($"{aRun} of {aBlocks.Count} files compared ({aLines} conversions), {aDiffs.Count} different; "
-                         + $"{aBlocks.Sum(b => b.Skipped)} geometric entities of other packages not converted natively");
+        output.WriteLine($"{aRun} of {aBlocks.Count} files compared ({aLines} conversions), {aDiffs.Count} different");
         output.WriteLine(string.Join(", ", aKinds.OrderBy(k => k.Key, StringComparer.Ordinal).Select(k => $"{k.Key} {k.Value}")));
         foreach (string aDiff in aDiffs.Take(30))
         {

@@ -1,8 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
 using static Occt.TopAbs_ShapeEnum;
@@ -12,60 +10,15 @@ namespace OcctNet.DataExchange.Tests.GeomToStep;
 /// <summary>
 /// The port's twin of tools/geomsteprec (unit 8D): the same lines, for StepToGeom on a model's geometric entities
 /// ("s2g") and for GeomToStep on the constructed cases and on a shape's geometry ("g2s"), with the default factors
-/// and with inches and degrees. Results written as STEP entities go through the test protocol (unit 8C1) where native
-/// uses StepAP214_Protocol: the same generated readers and writers.
+/// and with inches and degrees. Results written as STEP entities go through StepAP214_Protocol, as native's.
 /// </summary>
 internal static class GeomStepRecorder
 {
     public static readonly StepData_Factors Millimetres = new();
     public static readonly StepData_Factors Inches = new StepData_Factors().InitializedFactors(25.4, M_PI / 180.0, 1.0);
 
-    /// <summary>
-    /// A test protocol of its own (unit 8C1's table and modules, decision 12606, under a class of its own: the
-    /// libraries find a protocol's modules by its class, decision 1182), which also recognises the complex types whose case in
-    /// RWStepAP214_ReadWriteModule::ComplexType carries a comment (case 358, BOUNDED_CURVE and SURFACE_CURVE: the
-    /// SurfaceCurveAndBoundedCurve of OCCT's S4132), which StepTestTable's pattern misses (decision 12906).
-    /// </summary>
-    internal static readonly Lazy<GeomStepTestProtocol?> TheProtocol = new(() =>
-    {
-        string anOcct = typeof(GeomStepRecorder).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
-                                                .Single(a => a.Key == "OcctSourceDir").Value!;
-        var aTable = StepTestTable.Load(anOcct, StepRoundTripTests.Packages);
-        if (aTable is null)
-        {
-            return null;
-        }
-
-        string aText = File.ReadAllText(Path.Combine(anOcct, "src", "DataExchange", "TKDESTEP", "RWStepAP214", "RWStepAP214_ReadWriteModule.cxx"));
-        int aComplex = aText.IndexOf("::ComplexType(", StringComparison.Ordinal);
-        int aComplexEnd = aText.IndexOf("return true;", aComplex, StringComparison.Ordinal);
-        foreach (Match m in Regex.Matches(
-                     aText[aComplex..aComplexEnd], @"case (\d+):[ \t]*//[^\n]*((?:\s*types\.Append\(TCollection_AsciiString\(StepType\(\d+\)\)\);)+)"))
-        {
-            int aCase = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
-            var aNums = Regex.Matches(m.Groups[2].Value, @"StepType\((\d+)\)")
-                                                                   .Select(x => int.Parse(x.Groups[1].Value, CultureInfo.InvariantCulture)).ToList();
-            if (aTable.ComplexOfCase.ContainsKey(aCase) || aNums.Any(n => !aTable.TypeOfCase.ContainsKey(n)))
-            {
-                continue;
-            }
-
-            var aParts = aNums.Select(n => aTable.TypeOfCase[n]).ToList();
-            aTable.ComplexOfCase[aCase] = aParts;
-            if (aTable.EntityOfCase.ContainsKey(aCase))
-            {
-                aTable.CaseOfComplex[string.Join(",", aParts.Order(StringComparer.Ordinal))] = aCase;
-            }
-        }
-
-        var aProtocol = new GeomStepTestProtocol(aTable);
-        var aRw = new StepTestReadWriteModule(aTable);
-        // the libraries' global lists (decision 1182): a protocol of its own, which no other test uses
-        Interface_GeneralLib.SetGlobal(new StepTestGeneralModule(aTable), aProtocol);
-        Interface_ReaderLib.SetGlobal(aRw, aProtocol);
-        StepData_WriterLib.SetGlobal(aRw, aProtocol);
-        return aProtocol;
-    });
+    /// <summary>StepAP214's protocol (unit 8C2), as native's recorder reads and writes with.</summary>
+    internal static readonly Lazy<StepData_Protocol?> TheProtocol = new(() => StepRoundTripTests.Protocol());
 
     // ---------------------------------------------------------------------------------------------------------
     // Text (as the recorder's ostream at precision 17)
@@ -723,14 +676,4 @@ internal static class GeomStepRecorder
 
         return aLines;
     }
-}
-
-/// <summary>Unit 8C1's StepTestProtocol under a class of its own, so that its modules are its table's (see above).</summary>
-internal sealed class GeomStepTestProtocol(StepTestTable theTable) : StepData_Protocol
-{
-    public StepTestTable Table => theTable;
-
-    public override int TypeNumber(Type? atype) => atype is not null && theTable.CaseOfEntity.TryGetValue(atype, out int n) ? n : 0;
-
-    public override string SchemaName(Interface_InterfaceModel? theModel) => "AUTOMOTIVE_DESIGN";
 }

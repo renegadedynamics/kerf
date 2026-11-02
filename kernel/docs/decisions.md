@@ -12550,14 +12550,14 @@ the translators), with TKDE's DE_ShapeFixParameters.
        and 46,230 surfaces among them, the nulls and exceptions included) and 410,156 GeomToStep lines (the cases line
        by line, the shapes by hash). Native's results are written with StepAP214_Protocol, the port's with unit 8C1's
        test protocol: the same generated writers.
-12906. **The oracle's protocol.** Until unit 8C2's StepAP214_Protocol, the port reads with unit 8C1's test protocol,
-       which knows StepBasic, StepGeom, StepShape and StepRepr: the recorder converts only the entities of those
-       packages (12 geometric entities of others, StepFEA's FEA_AXIS2_PLACEMENT_3D, are counted and left out). The
-       test protocol's pattern for RWStepAP214_ReadWriteModule's complex types misses a case written with a comment
-       after its label (358, BOUNDED_CURVE and SURFACE_CURVE: StepGeom_SurfaceCurveAndBoundedCurve), so 8C1's round
-       trips don't read those records; 8D's tests use the same table with that case added, under a protocol class of
-       their own (the libraries find a protocol's modules by its class, decision 1182: a second StepTestProtocol
-       would get the first one's modules).
+12906. **The oracle's protocol.** Until unit 8C2's StepAP214_Protocol, the port read with unit 8C1's test protocol,
+       which knew StepBasic, StepGeom, StepShape and StepRepr: the recorder converted only the entities of those
+       packages (12 geometric entities of others, StepFEA's FEA_AXIS2_PLACEMENT_3D, counted and left out), and the
+       tests patched the test table for a complex type written with a comment after its label (358, BOUNDED_CURVE and
+       SURFACE_CURVE: StepGeom_SurfaceCurveAndBoundedCurve). Since unit 8E, the tests read and write with
+       `RWStepAP214.Init()` and `StepAP214.Protocol()`, whose generated read-write module has case 358, and the
+       recorder converts every entity: the 12 FEA placements (24 conversions with both factor sets) are compared too,
+       and identical (4,232,762 StepToGeom conversions in all).
 
 ## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
 
