@@ -181,7 +181,7 @@ internal static class XSDRAWSTEPDocCommands
     }
 
     // STEPCAFControl_Writer::Write to the overlay: the main file, then the external files beside it
-    private static IFSelect_ReturnStatus Write(DrawInterpreter theDI, STEPCAFControl_Writer theWriter, string theFileName)
+    internal static IFSelect_ReturnStatus Write(DrawInterpreter theDI, STEPCAFControl_Writer theWriter, string theFileName)
     {
         IFSelect_ReturnStatus aStatus = Send(theDI, theWriter.Writer().WS()!, theFileName);
         if (aStatus != IFSelect_RetDone)

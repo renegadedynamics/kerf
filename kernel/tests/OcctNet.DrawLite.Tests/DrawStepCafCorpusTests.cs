@@ -71,6 +71,8 @@ public class DrawStepCafCorpusTests(ITestOutputHelper output)
         List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
                                            .Select(c => aCorpus.Scan(c, anInterpreter))
                                            .Where(s => Unit8G2Commands.Any(s.Commands.Contains))
+                                           // the cases that measure memory run alone (DrawCheapGapsCorpusTests)
+                                           .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8G2_FILTER");
@@ -135,20 +137,14 @@ public class DrawStepCafCorpusTests(ITestOutputHelper output)
     }
 
     // the corpus's counts after unit 8G2: OK 255, BAD 76 (OCCT's TODOs reproduced), SKIPPED 660 (data not public),
-    // FAILED 8, attributed
-    private const int GainedCount = 999;
-    private const int OkCount = 255;
+    // FAILED 8, attributed; with unit 8W's commands (exec, ReadFile, WriteFile, xnorm) and Tcl's encodings 1003
+    // gained: OK 264, BAD 76, SKIPPED 660, FAILED 3, attributed
+    private const int GainedCount = 1003;
+    private const int OkCount = 264;
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
     internal static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
     {
-        // they write their STEP files with Tcl's encodings (`encoding convertfrom`, `fconfigure -encoding`), which
-        // Draw-lite's Tcl has as stubs: the names they compare are not the ones written (unit 8G2)
-        "bugs/step/bug28454_1",
-        "bugs/step/bug30694",
-        "bugs/step/bug31670",
-        "bugs/step/bug31670_1",
-        "bugs/step/bug31923",
         // GD&T (not read: decision 1279): OCCT's GD&T reading adds sub-shape labels for the faces its tolerances
         // refer to, which the end script counts (LABELS)
         "de/step_1/ZQ2",

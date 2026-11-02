@@ -66,10 +66,14 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8G1_FILTER");
+        // the cases that measure memory run alone (DrawCheapGapsCorpusTests, which attributes bug31075's trend): run
+        // here beside the others, bug31075 passed or failed by the load (unit 8W)
+        HashSet<DrawTestCase> aMemoryCases = aScans.Where(DrawCheapGapsCorpusTests.MeasuresMemory).Select(s => s.Case).ToHashSet();
         List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
         output.WriteLine($"{aScans.Count} cases use the XDE commands; runnable before 8G1: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.Where(c => aFilter is null or "*" || c.Id.Contains(aFilter, StringComparison.Ordinal))
+        var aRuns = aRunnable.Where(c => !aMemoryCases.Contains(c))
+                             .Where(c => aFilter is null or "*" || c.Id.Contains(aFilter, StringComparison.Ordinal))
                              .AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
                              .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
                                                               TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
@@ -112,36 +116,33 @@ public class DrawXdeCorpusTests(ITestOutputHelper output)
         }
         Assert.Empty(aRunnableBefore);
         Assert.Equal(2028, aScans.Count); // 2858 less the de group's STEP cases (unit 8G2's class)
-        Assert.Equal(268, aRunnable.Count); // 109 with 8G1 alone; 120 with 8F's commands; 268 with 8G2's ReadStep
+        // 109 with 8G1 alone; 120 with 8F's commands; 268 with 8G2's ReadStep; 284 with 8W's commands (exec, ReadFile,
+        // WriteFile, xnorm), one of which measures memory and is left to DrawCheapGapsCorpusTests (bugs/caf/bug31075)
+        Assert.Equal(284, aRunnable.Count);
+        Assert.Equal(1, aMemoryCases.Count(aRunnable.Contains));
         // OK 63 (xcaf's BRep grids 44, bugs/xde 11, de_mesh's glTF 5, three others); SKIPPED 37 (data not public);
         // FAILED 9, attributed. Most of de, xcaf and bugs/xde wait for STEP (unit 8G2), IGES, OCAF storage, the
         // parameter commands (unit 8F), GD&T, notes and views.
-        // with unit 8G2's ReadStep and WriteStep: OK 141, SKIPPED 112
-        Assert.Equal(141, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(112, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        // with unit 8G2's ReadStep and WriteStep: OK 141, SKIPPED 112; with unit 8W's commands and Tcl's encodings:
+        // OK 153, SKIPPED 120, FAILED 10 (attributed)
+        Assert.Equal(153, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(120, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
     }
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
-    private static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
     {
         // unit 8T's glTF reader (decision 1236) turns glTF's Y-up into Z-up in the coordinates, where OCCT's places the
         // scene's nodes at a rotation, so OCCT's document has a reference (INSTANCE) per root node where the tree's has
         // a part; boxinterleaved's unnamed root node holding a rotation is also folded into its child
-        // they write their STEP files with Tcl's encodings (`encoding convertfrom`, `fconfigure -encoding`), which
-        // Draw-lite's Tcl has as stubs: the names they compare are not the ones written (unit 8G2)
-        "bugs/step/bug28454_1",
-        "bugs/step/bug30694",
-        "bugs/step/bug31670",
-        "bugs/step/bug31670_1",
-        "bugs/step/bug31923",
+        "de_mesh/gltf_read/boxinterleaved",
+        "de_mesh/gltf_read/cubeemb",
         // runnable with unit 8G2's ReadStep: `incmesh` meshes the shape XGetOneShape gives, which in OCCT meshes the
         // document's shapes in place; the document's shapes are frozen (design 4.1), so WriteGltf finds no triangles
         "de_mesh/gltf_write/as1",
-        "de_mesh/gltf_read/boxinterleaved",
-        "de_mesh/gltf_read/cubeemb",
         // OCCT's glTF writer leaves out nodes without triangles (a part not meshed, an empty compound) and its reader
         // names an unnamed root after the file and unnamed instances by their shape type; unit 8T's writer and reader don't
         "de_mesh/gltf_write/empty",

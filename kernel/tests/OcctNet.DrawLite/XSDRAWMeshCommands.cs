@@ -8,7 +8,8 @@ using Occt;
 namespace OcctNet.DrawLite;
 
 /// <summary>
-/// The glTF and OBJ commands (unit 8G1) over Draw-lite's documents, with unit 8T's fresh reader and writers in place
+/// The glTF and OBJ commands (unit 8G1) over Draw-lite's documents (the session's unit, xstep.cascade.unit, for a
+/// document without one, since unit 8W), with unit 8T's fresh reader and writers in place
 /// of RWGltf_CafReader, RWGltf_CafWriter and RWObj_CafWriter (decisions 1233, 1234, 1236). Files are Draw-lite's
 /// overlay (TclFileSystem): written files stay in memory, read files come from it or the disk.
 /// </summary>
@@ -39,9 +40,60 @@ internal static class XSDRAWMeshCommands
         return 1;
     }
 
-    // XSDRAW::GetLengthUnit: the document's unit in millimetres, else the session's (millimetres until unit 8F)
-    private static double lengthUnitMM(XdeDoc_Document? theDoc)
-        => theDoc is not null && theDoc.GetLengthUnit(out double aUnit) ? aUnit * 1000.0 : UnitsMethods.GetCasCadeLengthUnit(null);
+    // XSDRAW::GetLengthUnit: the document's unit in millimetres, else the session's (xstep.cascade.unit)
+    private static double lengthUnitMM(DrawInterpreter theDI, XdeDoc_Document? theDoc)
+        => theDoc is not null && theDoc.GetLengthUnit(out double aUnit) ? aUnit * 1000.0 : XSDRAWCommands.GetLengthUnit(theDI);
+
+    /// <summary>
+    /// A glTF file of Draw-lite's files read by unit 8T's reader into the system unit (metres per unit), its external
+    /// buffers resolved beside it; null, with the message, if it isn't found or can't be read.
+    /// </summary>
+    internal static XdeDoc_Tree? ReadGltfTree(DrawInterpreter theDI, string theFilePath, double theScaleFactorM)
+    {
+        var aReader = new RWGltf_TreeReader(new RWGltf_ReadOptions { OutputLengthUnit = theScaleFactorM });
+        if (!theDI.Files.TryReadBytes(theFilePath, out byte[] aBytes))
+        {
+            fail(theDI, "File '" + theFilePath + "' is not found");
+            return null;
+        }
+        string aFolder = theDI.Files.Full(theFilePath);
+        aFolder = aFolder[..(aFolder.LastIndexOf('/') + 1)];
+        Stream? resolve(string theUri)
+        {
+            if (Path.IsPathRooted(theUri) || theUri.Contains(':', StringComparison.Ordinal))
+            {
+                return null;
+            }
+            return theDI.Files.TryReadBytes(aFolder + theUri, out byte[] aBuffer) ? new MemoryStream(aBuffer) : null;
+        }
+        XdeDoc_Tree? aTree = aReader.Read(new MemoryStream(aBytes), resolve);
+        if (aTree is null)
+        {
+            fail(theDI, "Error: file '" + theFilePath + "' can not be read: " + aReader.Error);
+        }
+        return aTree;
+    }
+
+    /// <summary>A tree written by unit 8T's glTF writer to Draw-lite's files (a .glb, or a .gltf with its .bin beside it).</summary>
+    internal static void WriteGltfTree(DrawInterpreter theDI, string theFilePath, XdeDoc_Tree theTree, double theScaleFactorM, bool theIsZUp, bool theToMergeFaces)
+    {
+        var aWriter = new RWGltf_TreeWriter(new RWGltf_WriteOptions { InputLengthUnit = theScaleFactorM, ZUpToYUp = theIsZUp, MergeFaces = theToMergeFaces });
+        if (theFilePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+        {
+            var aGlb = new MemoryStream();
+            aWriter.WriteGlb(theTree, aGlb);
+            theDI.Files.WriteBytes(theFilePath, aGlb.ToArray());
+        }
+        else
+        {
+            string aBinPath = Path.ChangeExtension(theFilePath, ".bin");
+            var aJson = new MemoryStream();
+            var aBin = new MemoryStream();
+            aWriter.WriteGltf(theTree, aJson, aBin, Uri.EscapeDataString(Path.GetFileName(aBinPath)));
+            theDI.Files.WriteBytes(theFilePath, aJson.ToArray());
+            theDI.Files.WriteBytes(aBinPath, aBin.ToArray());
+        }
+    }
 
     private static int ReadGltf(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgVec)
     {
@@ -103,32 +155,8 @@ internal static class XSDRAWMeshCommands
         }
 
         // a new document has no unit: the session's
-        double aScaleFactorM = lengthUnitMM(null) / 1000.0;
-        var aReader = new RWGltf_TreeReader(new RWGltf_ReadOptions { OutputLengthUnit = aScaleFactorM });
-        XdeDoc_Tree? aTree = null;
-        if (theDI.Files.TryReadBytes(aFilePath, out byte[] aBytes))
-        {
-            string aFolder = theDI.Files.Full(aFilePath);
-            aFolder = aFolder[..(aFolder.LastIndexOf('/') + 1)];
-            Stream? resolve(string theUri)
-            {
-                if (Path.IsPathRooted(theUri) || theUri.Contains(':', StringComparison.Ordinal))
-                {
-                    return null;
-                }
-                return theDI.Files.TryReadBytes(aFolder + theUri, out byte[] aBuffer) ? new MemoryStream(aBuffer) : null;
-            }
-            aTree = aReader.Read(new MemoryStream(aBytes), resolve);
-            if (aTree is null)
-            {
-                fail(theDI, "Error: file '" + aFilePath + "' can not be read: " + aReader.Error);
-            }
-        }
-        else
-        {
-            fail(theDI, "File '" + aFilePath + "' is not found");
-        }
-        aTree ??= XdeDoc_Tree.Empty;
+        double aScaleFactorM = lengthUnitMM(theDI, null) / 1000.0;
+        XdeDoc_Tree aTree = ReadGltfTree(theDI, aFilePath, aScaleFactorM) ?? XdeDoc_Tree.Empty;
 
         if (isNoDoc)
         {
@@ -313,28 +341,13 @@ internal static class XSDRAWMeshCommands
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
 
-        double aScaleFactorM = lengthUnitMM(aDoc) / 1000.0;
+        double aScaleFactorM = lengthUnitMM(theDI, aDoc) / 1000.0;
         XdeDoc_Tree aTree = aDoc.ToTree();
         if (isProductNames)
         {
             aTree = productNames(aTree);
         }
-        var aWriter = new RWGltf_TreeWriter(new RWGltf_WriteOptions { InputLengthUnit = aScaleFactorM, ZUpToYUp = isZUp, MergeFaces = toMergeFaces });
-        if (aGltfFilePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
-        {
-            var aGlb = new MemoryStream();
-            aWriter.WriteGlb(aTree, aGlb);
-            theDI.Files.WriteBytes(aGltfFilePath, aGlb.ToArray());
-        }
-        else
-        {
-            string aBinPath = Path.ChangeExtension(aGltfFilePath, ".bin");
-            var aJson = new MemoryStream();
-            var aBin = new MemoryStream();
-            aWriter.WriteGltf(aTree, aJson, aBin, Uri.EscapeDataString(Path.GetFileName(aBinPath)));
-            theDI.Files.WriteBytes(aGltfFilePath, aJson.ToArray());
-            theDI.Files.WriteBytes(aBinPath, aBin.ToArray());
-        }
+        WriteGltfTree(theDI, aGltfFilePath, aTree, aScaleFactorM, isZUp, toMergeFaces);
         return 0;
     }
 
@@ -419,7 +432,7 @@ internal static class XSDRAWMeshCommands
 
         // the session's unit (XSDRAW::GetLengthUnit () without a document) to the file's; the axes Z-up to Y-up when
         // the system is Z-up and the file Y-up (RWMesh_CoordinateSystemConverter)
-        double aSystemUnitFactor = UnitsMethods.GetCasCadeLengthUnit(null) * 0.001;
+        double aSystemUnitFactor = XSDRAWCommands.GetLengthUnit(theDI) * 0.001;
         double aScale = aFileUnitFactor > 0.0 ? aSystemUnitFactor / aFileUnitFactor : 1.0;
         // (a Y-up system written to a Z-up file is written unchanged: decision 1260)
         var aWriter = new RWObj_TreeWriter(new RWObj_WriteOptions { Scale = aScale, ZUpToYUp = isSystemZUp && !isFileZUp });

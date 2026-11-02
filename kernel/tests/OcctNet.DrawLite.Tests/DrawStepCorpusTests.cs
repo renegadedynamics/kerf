@@ -102,6 +102,8 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
                                            .Where(s => Unit8FCommands.Any(s.Commands.Contains))
                                            // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
                                            .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
+                                           // the cases that measure memory run alone (DrawCheapGapsCorpusTests)
+                                           .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s))
                                            .ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8F_FILTER");
@@ -157,9 +159,10 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
     }
 
     // the corpus's counts after unit 8F (with unit 8G1's documents and unit 8G2's ReadStep and WriteStep; the de
-    // group's STEP cases, which read with ReadStep, are DrawStepCafCorpusTests')
-    private const int GainedCount = 305;
-    private const int OkCount = 54;
+    // group's STEP cases, which read with ReadStep, are DrawStepCafCorpusTests'): 305 gained, OK 54; with unit 8W's
+    // commands (exec, ReadFile, WriteFile, xnorm) and Tcl's encodings 318, OK 65, BAD 5, SKIPPED 248, no failure
+    private const int GainedCount = 318;
+    private const int OkCount = 65;
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
     internal static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
@@ -168,12 +171,5 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
         // parameters Draw-lite's session doesn't load (resource files: decision 1181)
         "bugs/modalg_7/bug30273",
         "bugs/xde/bug6283",
-        // they write their STEP files with Tcl's encodings (`encoding convertfrom`, `fconfigure -encoding`), which
-        // Draw-lite's Tcl has as stubs: the names they compare are not the ones written (unit 8G2)
-        "bugs/step/bug28454_1",
-        "bugs/step/bug30694",
-        "bugs/step/bug31670",
-        "bugs/step/bug31670_1",
-        "bugs/step/bug31923",
     };
 }

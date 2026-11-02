@@ -115,6 +115,7 @@ internal static class DrawBuiltins
         XDEDRAWCommands.Register(theInterpreter);
         XDEDRAWColorsLayersCommands.Register(theInterpreter);
         XSDRAWMeshCommands.Register(theInterpreter);
+        XSDRAWDECommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>

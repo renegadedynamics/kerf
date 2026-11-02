@@ -15,15 +15,17 @@ namespace OcctNet.DrawLite;
 /// Draw-lite's files are its in-memory overlay (TclFileSystem): <c>writestl</c> writes the bytes the stream writer
 /// makes there (LF line ends, where DRAWEXE on Windows writes ASCII STL in text mode, CR LF: decision 1168), and
 /// <c>readstl</c> reads through the library's stream forms of <c>RWStl::ReadFile</c>, which read as the file forms do.
-/// The messages the library sends go to the process-wide messenger, which Draw-lite leaves empty; the one about a
-/// missing file is written to the interpreter's output here (decision 405). The progress indicators are left out.
+/// The messages the library sends go to the command's result while it runs, as DRAWEXE prints them (unit 8W: before
+/// it, to the process-wide messenger, which Draw-lite leaves empty); the one about a missing file, which the stream
+/// forms don't send, is written to the interpreter's output here (decision 405). The progress indicators are left out.
 /// </remarks>
 internal static class XSDRAWSTLCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
     {
-        DrawCxx.Add(theInterpreter, "writestl", writestl);
-        DrawCxx.Add(theInterpreter, "readstl", readstl);
+        // the library's messages to the command's result, as DRAWEXE's Draw_Printer (decision 1275; unit 8W)
+        XSDRAWCommands.Pilot(theInterpreter, "writestl", writestl);
+        XSDRAWCommands.Pilot(theInterpreter, "readstl", readstl);
     }
 
     // writestl shape file [ascii/binary (0/1) : 1 by default]

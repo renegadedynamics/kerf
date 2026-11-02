@@ -448,7 +448,7 @@ internal static class XSDRAWSTEPCommands
     }
 
     // STEPControl_Writer::Write to Draw-lite's overlay: the header applied, then the session's SendAll to a stream
-    private static IFSelect_ReturnStatus Write(DrawInterpreter theDI, STEPControl_Writer theWriter, string theFileName)
+    internal static IFSelect_ReturnStatus Write(DrawInterpreter theDI, STEPControl_Writer theWriter, string theFileName)
     {
         StepData_StepModel? aModel = theWriter.Model();
         if (aModel is null)

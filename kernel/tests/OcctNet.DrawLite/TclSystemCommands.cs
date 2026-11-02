@@ -32,7 +32,7 @@ internal static class TclSystemCommands
         theInterpreter.Register("read", Read);
         theInterpreter.Register("eof", static (i, a) => a.Count == 2 ? (IsStd(a[1]) || i.Files.Channel(a[1]).AtEnd ? "1" : "0") : throw Usage("eof channelId"));
         theInterpreter.Register("flush", static (i, a) => a.Count == 2 ? Flush(i, a[1]) : throw Usage("flush channelId"));
-        theInterpreter.Register("fconfigure", static (_, _) => "");
+        theInterpreter.Register("fconfigure", Configure);
         theInterpreter.Register("chan", Chan);
         theInterpreter.Register("source", Source);
         theInterpreter.Register("file", File);
@@ -53,13 +53,9 @@ internal static class TclSystemCommands
         theInterpreter.Register("after", static (i, a) => a.Count > 2 && a[1] != "cancel" && a[1] != "info" ? i.EvalScript(TclControlCommands.Concat(a, 2)) : "");
         theInterpreter.Register("update", static (_, _) => "");
         theInterpreter.Register("pid", static (_, _) => Environment.ProcessId.ToString(Invariant));
-        theInterpreter.Register("encoding", static (_, a) => a.Count switch
-        {
-            2 when a[1] == "system" => "utf-8",
-            2 when a[1] == "names" => "utf-8 iso8859-1 ascii unicode",
-            >= 4 when a[1] is "convertto" or "convertfrom" => a[^1],
-            _ => "",
-        });
+        theInterpreter.Register("exec", Exec);
+        theInterpreter.Register("encoding", static (_, a) => TclEncoding.Command(a));
+        theInterpreter.Register("binary", static (_, a) => TclEncoding.BinaryCommand(a));
         theInterpreter.Register("package", static (_, a) => a.Count >= 3 && a[1] == "require"
                                                                ? (a[^1] is "Tcl" or "Tclx" ? "8.6" : throw new DrawException($"can't find package {a[^1]}"))
                                                                : "");
@@ -228,13 +224,9 @@ internal static class TclSystemCommands
             return "";
         }
 
-        StringBuilder aWriter = theInterpreter.Files.Channel(aChannel).Writer
-                                ?? throw new DrawException($"channel \"{aChannel}\" wasn't opened for writing");
-        aWriter.Append(aText);
-        if (!aNoNewline)
-        {
-            aWriter.Append('\n');
-        }
+        TclChannel aWriter = theInterpreter.Files.Channel(aChannel);
+        _ = aWriter.Writer ?? throw new DrawException($"channel \"{aChannel}\" wasn't opened for writing");
+        aWriter.Write(aNoNewline ? aText : aText + "\n");
 
         return "";
     }
@@ -319,6 +311,95 @@ internal static class TclSystemCommands
         return aNoNewline && aText.EndsWith('\n') ? aText[..^1] : aText;
     }
 
+    /// <summary>
+    /// exec, without running anything: the corpus's scripts call it (in a catch) only to remove a file they wrote
+    /// (<c>rm ?-f? file...</c>, from the overlay as file delete) or to make it writable (<c>chmod</c>, which changes
+    /// nothing in the overlay). Any other program fails as one not found.
+    /// </summary>
+    private static string Exec(DrawInterpreter theInterpreter, IReadOnlyList<string> a)
+    {
+        int i = 1;
+        while (i < a.Count && a[i] is "-ignorestderr" or "-keepnewline" or "--")
+        {
+            i++;
+        }
+
+        if (i >= a.Count)
+        {
+            throw Usage("exec ?-option ...? arg ?arg ...?");
+        }
+
+        string[] anArgs = a.Skip(i + 1).ToArray();
+        switch (a[i])
+        {
+            case "rm":
+            {
+                bool aForce = anArgs.Contains("-f") || anArgs.Contains("-rf");
+                foreach (string aPath in anArgs.Where(p => !p.StartsWith('-')))
+                {
+                    if (!theInterpreter.Files.Exists(aPath) && !aForce)
+                    {
+                        throw new DrawException($"rm: cannot remove '{aPath}': No such file or directory") { ErrorCode = "CHILDSTATUS 1" };
+                    }
+
+                    theInterpreter.Files.Delete(aPath);
+                }
+
+                return "";
+            }
+
+            case "chmod":
+                foreach (string aPath in anArgs.Skip(1))
+                {
+                    if (!theInterpreter.Files.Exists(aPath))
+                    {
+                        throw new DrawException($"chmod: cannot access '{aPath}': No such file or directory") { ErrorCode = "CHILDSTATUS 1" };
+                    }
+                }
+
+                return "";
+            default:
+                throw new DrawException($"couldn't execute \"{a[i]}\": no such file or directory") { ErrorCode = "POSIX ENOENT {no such file or directory}" };
+        }
+    }
+
+    /// <summary>
+    /// fconfigure (chan configure): -encoding, and -translation binary (which sets the encoding to binary, as Tcl);
+    /// the other options are accepted and change nothing. A query of one option gives its value.
+    /// </summary>
+    private static string Configure(DrawInterpreter theInterpreter, IReadOnlyList<string> a)
+    {
+        if (a.Count < 2)
+        {
+            throw Usage("fconfigure channelId ?-option value ...?");
+        }
+
+        TclChannel? aChannel = IsStd(a[1]) ? null : theInterpreter.Files.Channel(a[1]);
+        if (a.Count == 3)
+        {
+            return a[2] switch
+            {
+                "-encoding" => aChannel?.Encoding ?? TclEncoding.System,
+                "-translation" => "lf",
+                _ => "",
+            };
+        }
+
+        for (int i = 2; i + 1 < a.Count; i += 2)
+        {
+            if (a[i] == "-encoding")
+            {
+                aChannel?.SetEncoding(a[i + 1]);
+            }
+            else if (a[i] == "-translation" && a[i + 1] == "binary")
+            {
+                aChannel?.SetEncoding("binary");
+            }
+        }
+
+        return "";
+    }
+
     private static string Chan(DrawInterpreter theInterpreter, IReadOnlyList<string> a)
     {
         if (a.Count < 2)
@@ -336,7 +417,7 @@ internal static class TclSystemCommands
             "close" => theInterpreter.Invoke(["close", .. a.Skip(2)]),
             "flush" => theInterpreter.Invoke(["flush", .. a.Skip(2)]),
             "eof" => theInterpreter.Invoke(["eof", .. a.Skip(2)]),
-            "configure" => "",
+            "configure" => Configure(theInterpreter, aRest),
             _ => throw new DrawException($"chan {a[1]}: not supported by Draw-lite"),
         };
     }

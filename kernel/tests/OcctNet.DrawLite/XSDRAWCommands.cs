@@ -48,6 +48,7 @@ internal static class XSDRAWCommands
         Pilot(theInterpreter, "entity", entity);
         Pilot(theInterpreter, "param", param);
         Pilot(theInterpreter, "newmodel", newmodel);
+        Pilot(theInterpreter, "xnorm", xnorm);
         Pilot(theInterpreter, "tpstat", tpstat);
         Pilot(theInterpreter, "tpdraw", tpdraw);
         Pilot(theInterpreter, "tpcompound", tpcompound);
@@ -55,7 +56,7 @@ internal static class XSDRAWCommands
 
     // XSTEPDRAWRUN: while the command runs, the default messenger prints to the Tcl result (Draw_Printer: each message
     // and a new line, from Message_Info up), here through a messenger of the command's flow (decision 1275)
-    private static void Pilot(DrawInterpreter theInterpreter, string theName, DrawCxxCommand theCommand)
+    internal static void Pilot(DrawInterpreter theInterpreter, string theName, DrawCxxCommand theCommand)
         => DrawCxx.Add(theInterpreter, theName, (theDI, di, argv) =>
         {
             Message_Messenger? anOld = Message.SetFlowMessenger(new Message_Messenger(new ResultPrinter(di)));
@@ -588,6 +589,41 @@ internal static class XSDRAWCommands
     }
 
     // XSControl_newmodel
+    // XSControl_xnorm. The norms recorded are STEP's (OCCT.NET: the session gets a controller of its own, decision
+    // 1264, rather than the one recorded process-wide); the others aren't ported
+    private static int xnorm(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
+    {
+        XSControl_WorkSession WS = Session(theDI);
+        XSControl_Controller? control = WS.NormAdaptor();
+        var sout = new StringBuilder();
+        sout.Append(argv.Count == 1 ? "Current Norm. xnorm newnorm to change" : "Current Norm :").Append('\n');
+        if (control is null)
+        {
+            sout.Append("no norm currently defined").Append('\n');
+        }
+        else
+        {
+            sout.Append("  Long  Name (complete) : ").Append(control.Name(false)).Append('\n')
+                .Append("  Short name (resource) : ").Append(control.Name(true)).Append('\n');
+        }
+        if (argv.Count == 1)
+        {
+            Send(di, sout);
+            return 0; // IFSelect_RetVoid
+        }
+
+        if (XSControl_Controller.Recorded(argv[1]) is not STEPControl_Controller)
+        {
+            sout.Append(" No norm named : ").Append(argv[1]).Append('\n');
+            Send(di, sout);
+            return 1;
+        }
+        STEPControl_Controller.SelectFor(WS);
+        sout.Append("new norm : ").Append(WS.NormAdaptor()!.Name()).Append('\n');
+        Send(di, sout);
+        return 0;
+    }
+
     private static int newmodel(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         XSControl_WorkSession WS = Session(theDI);
