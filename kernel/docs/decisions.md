@@ -12353,7 +12353,7 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        (1,535,249 texts decoded, 2,692,327 lines written, FILE_NAME included: the header is the file's). Its "text" mode
        decodes 248 crafted texts (directives, invalid UTF-8, multi-byte sequences; tools/stepdatarec/gen-text-cases.py)
        under each of the 27 code pages: 6,591 of 6,696 identical, 105 attributed (the system locale, and a lead byte
-       running past the text's end, decision 1191). Its "tables" mode dumps Resource_Unicode's tables (12501).
+       running past the text's end, decision 1191). Its "tables" mode dumps Resource_Unicode's tables (decision 1191).
 1198. **One OCCT bug fixed: StepData_Field::CopyFrom of a select member with a name** copies `*this` into the new
        member's field, which copies the member again, without end: a stack overflow, which ends a .NET process. The port
        copies the old member's own field (occt-issues.md, 8B).
