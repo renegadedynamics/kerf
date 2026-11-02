@@ -13499,3 +13499,14 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        identity hash for `TopoDS_TShape`, only if map iteration order is kept. Exceptions are not a cost (about 2,400
        in the whole suite). `benchmarks/OcctNet.Bento.Benchmarks` measures Bento's workload on either backend; it needs
        the build123d.NET checkout, so it is not in the solution.
+
+## Phase 9: unit 9R, ReadyToRun packages
+
+1315. **The packages are compiled ahead of time** (owner, 2 November, on unit 9E's proposals 1 and 2). `tools/pack-nuget.ps1`
+       builds each of the six projects, publishes it with `PublishReadyToRun` for win-x64 (all six before any is
+       swapped in, as publishing a project builds the ones it references again), puts each ReadyToRun assembly in place of
+       its build output and packs without building again. The assemblies keep their IL: on another platform .NET ignores
+       the precompiled code. The script checks the assemblies it packs and the ones the smoke test restores hold
+       ReadyToRun code (the CLI header's ManagedNativeHeader). The packages grow about 2.5× (about 20 MB for the six);
+       unit 9E measured the first opening of Bento's example workbook a third faster. `-NoReadyToRun` packs IL only.
+       Proposal 1, the server garbage collector, is Bento's (its branch `perf/server-gc`).

@@ -1628,3 +1628,8 @@ Phase 9 (part): the performance review (unit 9E).
   index copies and a temporary in `math_NewtonMinimum`. The suite now takes 1.9× native's time run serially (3.7×
   before); the rest is mostly the garbage collector and the JIT, with proposals for both.
 - `benchmarks/OcctNet.Bento.Benchmarks`: Bento's guide examples, built, meshed and measured, on OCCT.NET or native.
+
+Phase 9 (part): ReadyToRun packages (unit 9R).
+
+- The packages' assemblies are compiled ahead of time for win-x64 (ReadyToRun), keeping their IL for other platforms:
+  the first use of each operation no longer waits for the JIT.
