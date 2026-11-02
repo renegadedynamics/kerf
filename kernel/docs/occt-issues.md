@@ -1870,8 +1870,6 @@ Found by porting StepData, the header packages and Resource_Unicode's conversion
 | StepData_StepWriter (undefined entities) | A sub-list's type is the parser's "/* (SUB) */", which OpenTypedSub writes | Written sub-lists start with a comment (valid STEP) |
 | StepData_StepDumper::Dump | Lists the proper idents under `nbi < 0`, never true; `nbu` and `nbq` are reset to 0 instead of counted | Never lists entities without ident or with ident = number |
 
-## Phase 8: unit 8C1, the STEP entity generator
-
 ## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
 
 Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
