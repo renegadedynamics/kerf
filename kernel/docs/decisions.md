@@ -12086,3 +12086,43 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        - IFSelect ported as far as a member trace reaches;
        - the XDE Draw commands implemented over the tree (unit 8G);
        - NuGet publishing as 8X's last step, once the owner chooses package names and a feed.
+
+## Phase 8: unit 8H1, STL (RWStl, StlAPI)
+
+12201. **STL reads and writes .NET streams.** RWStl and StlAPI take a `Stream` for both formats (ASCII STL is bytes
+       too); the file paths open a `FileStream` and call the stream forms. The readers' C++ stream logic (the flags
+       `RWStl_Reader::Read` tests between domains, `tellg`, `seekg`, `unget`, `>> std::ws`) runs on `Standard_IStream`,
+       a new Foundation class giving a seekable `Stream` C++11's `std::istream` rules, with positions counted from the
+       stream's position when it is made (so a stream in the middle of a file reads as a file). A stream that can't
+       seek is copied into memory first, within the size limit (12204). `Standard_ReadLineBuffer` is ported into
+       Foundation; its `const char*` line becomes a span (false at the end). `RWStl::ReadFile` gains stream forms (the
+       format recognised from the content, multi-domain data), since OCCT's `ReadStream` only tests for a leading
+       "solid" (occt-issues.md, 8H1). `Standard_Stream.Strtod` takes spans, and `FormatScientific` writes C++'s
+       `std::scientific` (`%.12e` for ASCII STL).
+12202. **ASCII STL is written with LF line ends everywhere.** OCCT's file forms open the file in text mode, so native
+       writes CR LF on Windows and LF elsewhere; its stream forms write LF. The port's file forms write the stream
+       forms' bytes. The oracle compares the stream forms (byte for byte); Draw-lite's `writestl` writes LF.
+12203. **STL results are published; writers only read.** `RWStl` returns frozen triangulations (copy one to change it)
+       and `StlAPI_Reader` a frozen shape. `RWStl::ReadFile` returns what was read before an error, as OCCT does, but
+       nothing after a user break or past a limit, where OCCT returns the part read. A write error of the stream (an
+       `IOException`) returns false, as a C++ stream's fail state does. `StlAPI_Writer::ASCIIMode()` returned a
+       `bool&`: the port has `ASCIIMode()` and `SetASCIIMode`; `StlAPI_Reader::Read` and `StlAPI::Read` take the shape
+       by `ref`.
+12204. **Limits for hostile STL.** `RWStl_ReadLimits` (an addition: `MaxBytes`, `MaxTriangles`; none by default) is an
+       optional last argument of every reader; past a limit the reading stops with an error message and returns
+       nothing (`RWStl_Reader.LimitExceeded`). A binary header's facet count that the data can't hold no longer sizes
+       the node map (OCCT allocates for it, and throws Standard_OutOfMemory on text read as binary, or overflows for
+       counts over 2^30): the port sizes it by the data, which changes nothing else (Poly_MergeNodesTool's buckets
+       don't change which node is found but for angle merging after a rehash, and only for such lying headers). The
+       oracle attributes the 2 lines where native runs out of memory.
+12205. **DESTL is left for later.** `DESTL_Provider` and `DESTL_ConfigurationNode` need TKDE's DE framework (DE_Provider,
+       DE_Wrapper, DE_ConfigurationNode), which isn't ported; DESTL_Provider_Test.cxx's cases are ported through the
+       calls the provider makes (StlAPI_Writer, RWStl::ReadStream, StlAPI_Reader); its XCAF document cases
+       (`StreamDocumentWriteRead`, `MultipleShapesInDocument`) and the DE_Wrapper and configuration ones wait for DESTL
+       and the tree.
+12206. **Draw-lite's `readstl` and `writestl`** (XSDRAWSTL.cxx) work on Draw-lite's in-memory files; the library's
+       messages go to the empty process-wide messenger, but for the missing file, which the command writes (decision
+       405). XSDRAWSTL's MeshVS commands (`meshfromstl` and the others) need the viewer. The progress output
+       (`XProgress +t`) isn't made (decision 954): de_mesh/shape_write_stl/B1 fails on it. Note: Draw-lite's
+       `file size` counts its in-memory files as UTF-8, so binary files written by commands (STL, `binsave`) are
+       misreported; no corpus case reaches it yet.

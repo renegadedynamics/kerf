@@ -1416,3 +1416,15 @@ Phase 7 complete (1 November 2026): finishing.
   TKOffset, TKFeat, TKShHealing over 99%, TKHLR and TKHelix whole).
 - A faster merge gate (Release, about 15 minutes) and the native oracle's use-after-free found and fixed (decision
   1109).
+
+Phase 8 (part): STL (unit 8H1).
+- Ported: RWStl and RWStl_Reader (ASCII and binary, reading and writing, multi-domain files, node merging by angle),
+  StlAPI, StlAPI_Reader and StlAPI_Writer, BRepBuilderAPI_MakeShapeOnMesh, Standard_ReadLineBuffer; a new
+  Standard_IStream (C++ stream rules over a .NET stream). Streams first, file paths on top; limits for hostile input
+  (RWStl_ReadLimits: bytes, facets); cancellation through Message_ProgressRange; frozen results. DESTL waits for TKDE.
+- Oracle (tools/stlrec): data/occ's shapes meshed and written as ASCII and binary STL byte for byte as native (the
+  binary header included); every STL file of data/stl, the dataset and the tests' inputs, and 21 derived inputs
+  (concatenated, truncated, lying headers), read every way: triangulations bit for bit, StlAPI_Reader's shapes as BRep
+  text; 2 lines attributed (native runs out of memory reading text as binary).
+- Draw-lite: `readstl`, `writestl`; 67 corpus cases newly runnable (OK 7, SKIPPED 59 for data not public, FAILED 1
+  attributed: the progress output).

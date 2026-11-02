@@ -51,6 +51,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         ["bugs/modalg_7/bug21264"] = "progress",
         ["bugs/modalg_7/bug30788"] = "progress",
         ["bugs/modalg_7/bug32330"] = "progress", // runnable since unit 7G's offset commands
+        ["de_mesh/shape_write_stl/B1"] = "progress", // runnable since unit 8H1's writestl
         ["lowalgos/progress/A1"] = "progress",
         ["lowalgos/progress/A2"] = "progress",
         ["lowalgos/progress/A3"] = "progress",
@@ -129,7 +130,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // FAILED 19, all attributed (KnownFailures); since unit 7G (MakeEvolved's volume mode) the 12 evolved/voluved
         // cases among them pass; with 7G's commands 596 are newly runnable (OK 354, BAD 18, SKIPPED 216, FAILED 8
         // attributed); with 7N3's fillet commands 603 (OK 359, SKIPPED 218, FAILED 8, the fillets' failures attributed in
-        // DrawFilletCorpusTests.KnownFailures)
+        // DrawFilletCorpusTests.KnownFailures); 627 now, with de_mesh/shape_write_stl/B1 (8H1's writestl; FAILED, progress)
         Assert.True(aNew.Count >= 512, $"{aNew.Count}");
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 337, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)

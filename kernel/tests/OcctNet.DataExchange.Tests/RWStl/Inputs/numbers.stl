@@ -1,0 +1,23 @@
+solid nums
+	facet normal 0 0 1
+		outer loop
+			vertex	1e2  +.5	-0
+  vertex 1.25E-3 -7. 16
+ vertex 3.0e+400 -1e-400 12abc
+	endloop
+	endfacet
+  facet normal 0 0 1
+ outer loop
+ vertex 1 2
+ vertex 1 2 3 4
+ vertex 4 5 6
+ endloop
+ endfacet
+ facet
+ outer
+ vertex 0 0 0
+ vertex 0 0 0
+ vertex 1 1 1
+ endloop
+ endfacet
+endsolid

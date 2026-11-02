@@ -102,6 +102,8 @@ internal static class DrawBuiltins
         SWDRAWShapeProcessCommands.Register(theInterpreter);
         // unit 7Q2: HLRTest's commands and build3d (vcomputehlr and the view projections are ViewerTestCommands)
         HLRTestCommands.Register(theInterpreter);
+        // unit 8H1: XSDRAWSTL's STL commands (readstl, writestl)
+        XSDRAWSTLCommands.Register(theInterpreter);
 
         // dputs ?-color? ?-intense? ?-nonewline? text: puts with colors, which Draw-lite drops
         theInterpreter.Register("dputs", static (i, a) =>
