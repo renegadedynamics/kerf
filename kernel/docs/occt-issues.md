@@ -2020,3 +2020,9 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | STEPCAFControl_Reader::ReadExternFile | Records a file as read (`myFiles.Bind`) only after its transfer, which reads the file's own references; the "same main file" check compares with the referencing file only | Files referring to each other (A to B to A) recurse without end, a stack overflow. Fixed: the files being read are kept and a reference back to one stays unresolved with a warning (decision 1284-1287) |
 | STEPCAFControl_Reader::Transfer, ReadExternFile; STEPConstruct_ExternRefs::FileName | External files read from the disk relative to the loaded file's name or the current directory, or at any absolute or UNC path the file names, without the caller's limits or cancellation, with no way to turn it off or redirect it | A file opens arbitrary paths. The port's resolver, limits and budget (decisions 1284-1287) |
 | STEPCAFControl_Writer::Write (multifile) | The external files' names are the labels' names, unchecked | A document's names can place files outside the main file's folder. Kept for Write(path); the stream form hands the names to the caller (decision 1288) |
+## Phase 8: unit 8W, the data-exchange corpus
+
+| Where | What | Effect |
+|---|---|---|
+| DEBREP_Provider::Write (`write.binary : 0`) | Writes the text form with BRepTools::Write, without Draw's `DBRep_DrawableShape` line, while DEBREP_Provider::Read takes a file for text only when it starts with that line | A text BRep file `writefile` wrote is read back as binary by `readfile`, which fails. Kept in Draw-lite's stand-in (decision 1289) |
+| DE_ConfigurationContext (WhatKindOfLine) | `!aLine.EndsWith(' ') \|\| !aLine.EndsWith('\t') \|\| !aLine.EndsWith('\n')` is always true | A space is always appended to the line before it is split; harmless (the value is trimmed) |

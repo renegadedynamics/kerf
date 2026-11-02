@@ -4,26 +4,47 @@ using System.Text;
 
 namespace OcctNet.DrawLite;
 
-/// <summary>An open channel: a file being read, or written to the in-memory overlay, or stdout/stderr.</summary>
-internal sealed class TclChannel(string thePath, string? theContent, StringBuilder? theWriter)
+/// <summary>
+/// An open channel: a file being read, or written to the in-memory overlay, or stdout/stderr. The file's bytes are a
+/// byte string (a character per byte, <see cref="TclEncoding"/>), read and written in the channel's encoding.
+/// </summary>
+internal sealed class TclChannel(string thePath, string? theRaw, StringBuilder? theWriter)
 {
     public string Path { get; } = thePath;
 
-    /// <summary>The text being read, or null for a channel open only for writing.</summary>
-    public string? Content { get; } = theContent;
+    /// <summary>The channel's encoding (fconfigure -encoding), the system encoding at first.</summary>
+    public string Encoding { get; private set; } = TclEncoding.System;
+
+    /// <summary>The text being read (the file's bytes decoded), or null for a channel open only for writing.</summary>
+    public string? Content { get; private set; } = theRaw is null ? null : TclEncoding.Decode(TclEncoding.System, theRaw);
 
     public int Position { get; set; }
 
-    /// <summary>Where writes go, or null for a read-only channel.</summary>
+    /// <summary>Where writes go (a byte string), or null for a read-only channel.</summary>
     public StringBuilder? Writer { get; } = theWriter;
 
     public bool AtEnd { get; set; }
+
+    /// <summary>Sets the encoding; the text is decoded again.</summary>
+    public void SetEncoding(string theName)
+    {
+        Encoding = TclEncoding.Check(theName);
+        if (theRaw is not null)
+        {
+            Content = TclEncoding.Decode(Encoding, theRaw);
+            Position = Math.Min(Position, Content.Length);
+        }
+    }
+
+    /// <summary>Writes text in the channel's encoding.</summary>
+    public void Write(string theText) => Writer?.Append(TclEncoding.Encode(Encoding, theText));
 }
 
 /// <summary>
 /// Draw-lite's view of files: reads come from disk, but anything a script writes (open for writing, file mkdir,
 /// file delete) goes to an in-memory overlay, so running a test never changes the disk. Paths use / and are
-/// resolved against a current directory that cd changes.
+/// resolved against a current directory that cd changes. The overlay keeps a file's bytes as a byte string (a
+/// character per byte); Tcl's channels encode and decode them (<see cref="TclEncoding"/>).
 /// </summary>
 internal sealed class TclFileSystem
 {
@@ -72,7 +93,15 @@ internal sealed class TclFileSystem
         return myFiles.ContainsKey(aFull) || myDirectories.Contains(aFull);
     }
 
+    /// <summary>A file's text, its bytes decoded in the system encoding (a UTF-8 byte order mark left out).</summary>
     public string ReadAll(string thePath)
+    {
+        string aRaw = ReadRaw(thePath);
+        return TclEncoding.Decode(TclEncoding.System, aRaw.StartsWith("\u00EF\u00BB\u00BF", StringComparison.Ordinal) ? aRaw[3..] : aRaw);
+    }
+
+    /// <summary>A file's bytes as a byte string, from the overlay or from disk.</summary>
+    public string ReadRaw(string thePath)
     {
         string aFull = Full(thePath);
         if (myFiles.TryGetValue(aFull, out StringBuilder? aText))
@@ -85,7 +114,7 @@ internal sealed class TclFileSystem
             throw new DrawException($"couldn't read file \"{thePath}\": no such file or directory");
         }
 
-        return File.ReadAllText(aFull);
+        return TclEncoding.ByteString(File.ReadAllBytes(aFull));
     }
 
     /// <summary>
@@ -129,7 +158,7 @@ internal sealed class TclFileSystem
     public long Size(string thePath)
     {
         string aFull = Full(thePath);
-        return myFiles.TryGetValue(aFull, out StringBuilder? aText) ? Encoding.UTF8.GetByteCount(aText.ToString())
+        return myFiles.TryGetValue(aFull, out StringBuilder? aText) ? aText.Length
              : IsFile(aFull) ? new FileInfo(aFull).Length
              : throw new DrawException($"could not read \"{thePath}\": no such file or directory");
     }
@@ -162,7 +191,7 @@ internal sealed class TclFileSystem
     public void Copy(string theSource, string theTarget)
     {
         string aTarget = IsDirectory(theTarget) ? Full(theTarget) + "/" + Path.GetFileName(Full(theSource)) : Full(theTarget);
-        myFiles[aTarget] = new StringBuilder(ReadAll(theSource));
+        myFiles[aTarget] = new StringBuilder(ReadRaw(theSource));
         myDeleted.Remove(aTarget);
     }
 
@@ -209,13 +238,13 @@ internal sealed class TclFileSystem
                 throw new DrawException($"couldn't open \"{thePath}\": no such file or directory") { ErrorCode = "POSIX ENOENT {no such file or directory}" };
             }
 
-            aChannel = new TclChannel(aFull, ReadAll(aFull), null);
+            aChannel = new TclChannel(aFull, ReadRaw(aFull), null);
         }
         else
         {
             bool anAppend = theMode.Contains('a') || theMode.Contains("APPEND", StringComparison.Ordinal);
             bool aTruncate = theMode.Contains('w') || theMode.Contains("TRUNC", StringComparison.Ordinal);
-            string anExisting = !aTruncate && IsFile(aFull) ? ReadAll(aFull) : "";
+            string anExisting = !aTruncate && IsFile(aFull) ? ReadRaw(aFull) : "";
             var aWriter = new StringBuilder(anExisting);
             myFiles[aFull] = aWriter;
             myDeleted.Remove(aFull);

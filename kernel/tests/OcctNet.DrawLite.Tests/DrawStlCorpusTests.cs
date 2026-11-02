@@ -127,18 +127,20 @@ public class DrawStlCorpusTests(ITestOutputHelper output)
         }
         Assert.Empty(aRunnableBefore);
         Assert.Equal(88, aScans.Count);
-        Assert.Equal(71, aRunnable.Count); // 67 before unit 8G2's ReadStep and WriteStep
-        // OK 8, SKIPPED 62 (data not public: de_mesh's models), FAILED 1 (attributed); the 17 others wait for IGES,
-        // VRML, the viewer's and the MeshVS commands, ReadFile/WriteFile and exec
-        Assert.Equal(8, aRuns.Count(r => r.Status == "OK"));
-        Assert.Equal(62, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
+        // 67 before unit 8G2's ReadStep and WriteStep, 71 after; 80 with unit 8W's commands (ReadFile, WriteFile, exec,
+        // binary)
+        Assert.Equal(80, aRunnable.Count);
+        // OK 8, SKIPPED 62 (data not public: de_mesh's models), FAILED 1 (attributed) after 8G2; with unit 8W's
+        // commands OK 14, SKIPPED 65, FAILED 1; the 8 others wait for IGES, VRML, the viewer's and the MeshVS commands
+        Assert.Equal(14, aRuns.Count(r => r.Status == "OK"));
+        Assert.Equal(65, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, r => Assert.True(r.Status == "OK" || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
                                            || r.Status.StartsWith("BAD", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id),
                                            $"{r.Case.Id}: {r.Status}"));
     }
 
     /// <summary>Cases that fail in Draw-lite, each attributed.</summary>
-    private static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> KnownFailures = new(StringComparer.Ordinal)
     {
         // checks the progress indicator's output (XProgress +t), which Draw-lite's commands don't make (decision 954)
         "de_mesh/shape_write_stl/B1",

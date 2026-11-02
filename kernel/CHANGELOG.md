@@ -1573,3 +1573,9 @@ Phase 8 (part): STEPControl, the first milestone (unit 8F).
   budget across them (`STEPCAFControl_ExternFileLimits`: files, bytes, depth), and stops at cycles (a stack overflow in
   OCCT). `ReadStream` reads no external file unless given a resolver. `STEPCAFControl_Writer.WriteStream(stream,
   externStreams)` writes the multifile mode into the caller's streams.
+- Phase 8, unit 8W: the data-exchange corpus (the third milestone). Draw-lite gets `ReadFile`, `readfile`,
+  `WriteFile` and `writefile` (STEP, STL, glTF and BRep, with `-conf` configurations), `xnorm`, Tcl's encodings
+  (`encoding`, `fconfigure -encoding`), `exec` (removing files only) and `binary format`; the mesh commands take the
+  session's length unit. Of 3,366 data-exchange corpus cases, 2,174 run: 631 OK, 97 BAD as in OCCT, 1,436 skipped
+  for data that isn't public, 10 failures attributed; the 1,192 others need OCAF storage, IGES, VRML, GD&T, notes,
+  views, materials, an OBJ reader or the viewer.

@@ -13217,3 +13217,63 @@ OCCT's names, `OCCT.NET (unit 8Z)` in the documentation, the defaults of the fil
        multifile mode as OCCT; the new `WriteStream(stream, STEPCAFControl_ExternFileWriter)` writes the main model and
        hands each external file's name to the caller, who returns the stream to write it to (disposed after writing) or
        null to refuse it (that file's write status and the result `IFSelect_RetError`). The stream forms open no file.
+## Phase 8: unit 8W, the data-exchange corpus (the third milestone)
+
+Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's `xnorm`, Tcl's encodings, `exec` and
+`binary format`; the data-exchange corpus classes' counts and attributions; the milestone test.
+
+1289. **ReadFile, readfile, WriteFile, writefile over Draw-lite's stand-in for DE_Wrapper**
+       (tests/OcctNet.DrawLite/XSDRAWDECommands.cs). TKDE's framework stays unported (decision 1271); the commands are
+       XSDRAWDE.cxx's, and `DE_Wrapper::GlobalWrapper()->Copy()` is a private object holding the global units
+       (`global.general.length.unit`, `system.unit`) and the parameters of the providers the port can serve, whose code
+       is ported over Draw-lite's documents and files: DESTEP_Provider (STEPCAFControl and STEPControl on the
+       interpreter's session, the document's unit set from the global one, DESTEP_ConfigurationNode::Load's keys),
+       DESTL_Provider, DEGLTF_Provider (unit 8T's reader and writer in the global units; a glTF file read into a new or
+       empty document only) and DEBREP_Provider (binary by default, `write.binary : 0` writing BRepTools' text without
+       Draw's header line, as OCCT). The configuration's text is read as DE_ConfigurationContext reads it (a file if
+       one exists by that name, else `scope.key : value` lines). The provider is found as DE_Wrapper finds it: by the
+       extension, and, reading, by the content (STEP, BRep, ASCII STL). IGES, VRML, PLY, XBF and OBJ files fail with
+       a message (no provider in the port; OBJ has no reader). The commands run as XSDRAW's (decision 1275): the
+       providers' and libraries' messages go to the result (bug33487's "Unresolved Reference" count).
+1290. **Tcl's encodings.** The file overlay keeps a file's bytes as a byte string (a character per byte), which Tcl's
+       channels encode and decode in their encoding (`fconfigure -encoding`, `-translation binary`), the system encoding
+       being utf-8, decoded as Tcl 8.6 does (a byte that doesn't begin a valid sequence stands for itself); `encoding
+       convertfrom`/`convertto`/`names`/`system` over .NET's code pages (CodePagesEncodingProvider) with Tcl's names;
+       `file size` counts bytes; `source` and Tcl's reads of disk files decode as before (UTF-8, a byte order mark
+       left out). Before, `encoding` returned its argument and channels wrote characters: the 5 bugs/step cases
+       writing files in other code pages now pass (they were attributed in three classes). `binary format` writes the
+       integer, float and string fields (a A c s S t i I n w W m f r R d q Q x); `binary scan` isn't supported.
+1291. **exec runs nothing**: `exec rm ?-f? file...` removes from the overlay (as `file delete`), `exec chmod` checks
+       the file; any other program fails as one not found. The corpus uses exec only in a catch, to remove or unprotect
+       a file it wrote. **xnorm** (XSControl_Functions) selects STEP's norm (the session's own controller, decision
+       1264); the others aren't ported.
+1292. **Library messages and units in the mesh commands.** `readstl` and `writestl` run as XSDRAW's commands too (their
+       libraries' messages in the result, as DRAWEXE prints them: de_mesh/stl_read/D1's "premature end of file").
+       ReadGltf, WriteGltf and WriteObj take the session's unit (`xstep.cascade.unit`) for a document without one, as
+       XSDRAW::GetLengthUnit does (unit 8G1 took millimetres until unit 8F gave the session its parameters).
+1293. **The corpus classes leave the cases measuring memory out of their parallel runs** (DrawXdeCorpusTests,
+       DrawStepCorpusTests, DrawStepCafCorpusTests), as the other classes do (DrawCheapGapsCorpusTests runs them alone and
+       attributes bug31075's trend): bugs/caf/bug31075, run among the others, passed or failed by the load (unit 8G2's
+       "140 OK against 141 under load").
+1294. **The third milestone** (DrawDataExchangeCorpusTests.Data_exchange_cases_run_at_DRAWEXEs_rate; the runs with
+       `OCCTNET_DE_MILESTONE=1` or `OCCTNET_CORPUS_FULL=1`, about two minutes). The data-exchange cases are the groups
+       de, de_mesh, de_wrapper, xcaf, gdt and metadata and every case naming a command of XSDRAW's plugins, XDEDRAW or
+       XSBase's functions (registered in OCCT's sources; OCAF's own commands not counted): **3,366 cases (1,884 in those
+       groups), 2,174 runnable: OK 631, BAD 97 (OCCT's TODOs reproduced), SKIPPED 1,436 (data not public), FAILED 10,
+       all attributed** (GD&T sub-shape labels 2, unit 8T's glTF reader and writer 3, frozen document shapes 1, the
+       sample script's material commands 1, the progress indicator 1, XBF 1, the viewer 1). In the six groups: OK 286,
+       BAD 76, SKIPPED 713, FAILED 9. **Out of scope, 1,192 cases not runnable**, by the first reason their missing
+       commands give: OCAF storage, undo and attributes 405, IGES 536, VRML 26, GD&T, notes, views, materials and
+       metadata 108, OBJ and PLY reading 23, the viewer and MeshVS 78, others 16 (DE_Wrapper's configuration commands,
+       XCAFDoc_Editor's). Of the cases DRAWEXE runs with public data, every runnable one passes or fails as DRAWEXE's
+       log check expects but the 10 attributed: DRAWEXE's rate, OCCT's TODOs apart.
+1295. **The whole corpus at unit 8W** (DrawCorpusTests with `OCCTNET_CORPUS_FULL=1`; phase 7's close, decision 1165:
+       16,381 runnable of 21,068, OK 10,066, FAILED 59): **17,872 runnable (84.8%), OK 10,462,
+       BAD 500, IMPROVEMENT 12, SKIPPED 6,825, FAILED 73** (32 minutes, Release).
+       - 51 attributed by the corpus classes' known failures, 20 of decision 1165's 21 (bugs/modalg_5/bug24639 now
+         passes).
+       - New since phase 7, data exchange (13), all attributed: the GD&T and glTF cases of decision 1294 with the five
+         demo and v3d sample scripts of DrawXdeCorpusTests (unsupported viewer and material commands they source),
+         de_wrapper/xcaf/A4 (XBF).
+       - New, not data exchange (2): bugs/fclasses/bug7287_1 and bug7287_6, memory trends (`meminfo`) run here beside
+         the other cases; DrawCheapGapsCorpusTests runs them alone and they pass (decision 1107). Not a port bug.
