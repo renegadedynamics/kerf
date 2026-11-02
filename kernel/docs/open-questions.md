@@ -222,7 +222,7 @@ The numbers in brackets are the plan's (section 7).
 52. **Phase 9's close.** *Agreed:* at `0.1.0-preview.3`; phase 10 starts with 10R, 10A and 10C.
 
 **Owner (2 November):** "Let's go with `Kerf`", the recommendations for 46, 49, 51 and 52, and the answers above for
-47, 48 and 50 (decision 1316). The merged repository (unit 10R) was the owner's decision before the questions.
+47, 48 and 50 (decision 1317). The merged repository (unit 10R) was the owner's decision before the questions.
 
 ## Earlier judgement calls worth a look
 

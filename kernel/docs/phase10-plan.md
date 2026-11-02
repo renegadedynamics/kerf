@@ -1,6 +1,6 @@
 # Phase 10 plan: a .NET library
 
-> **Agreed, 2 November 2026** (decision 1316). The project becomes **Kerf**, in Renegade Dynamics' organisation:
+> **Agreed, 2 November 2026** (decision 1317). The project becomes **Kerf**, in Renegade Dynamics' organisation:
 > `Kerf.Kernel` from OCCT and `Kerf.Modeling` from build123d, in one repository. Questions 46 to 52 are settled
 > (section 6): Bento's spreadsheet names follow Kerf's, and collections cross into Bento as standard .NET read-only types.
 > Phase 9 closed at `0.1.0-preview.3`. Not started.
@@ -448,7 +448,7 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
 
 ## 6. The owner's answers
 
-All settled on 2 November (decision 1316).
+All settled on 2 November (decision 1317).
 
 46. **Namespaces and names** (2.2). *Agreed:*
     - the kernel's public namespaces by area: `Kerf.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,

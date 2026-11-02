@@ -13511,9 +13511,27 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        unit 9E measured the first opening of Bento's example workbook a third faster. `-NoReadyToRun` packs IL only.
        Proposal 1, the server garbage collector, is Bento's (its branch `perf/server-gc`).
 
+1316. **Phase 9 closes with its three milestones met** (phase9-plan.md section 4; owner's answers, decision 1298).
+       - **Published and consumed:** OcctNet.Foundation, ModelingData, ModelingAlgorithms, DataExchange,
+         Build123d.OcctNet and Build123d on nuget.org as `0.1.0-preview.2` and `0.1.0-preview.3` (the owner pushed both),
+         over Schematiq.Collections 1.0.0-beta.1 (unit 9A, decision 1297); `tools/pack-nuget.ps1` builds them in
+         Release, ReadyToRun for win-x64 (unit 9R, decision 1315), and checks them from a clean feed. Bento's 3D models
+         extension references them from nuget.org, the folder feed gone (unit 9C), and Bento uses the server garbage
+         collector.
+       - **The switch:** OCCT.NET is build123d.NET's default backend, from the packages (unit 9D1, decisions 1299 to
+         1303); native OCCT is opt-in, the oracle's reference, unpublished. build123d.NET's whole suite compared on both
+         backends shape by shape (unit 9D2, decisions 1304 to 1306): 16,044 shapes, 13,165 byte-identical, the rest
+         equal under the oracle's masks, canonical or in another order, 0 open divergences. The five possible port bugs
+         of decision 1165: two fixed (MakeSweep's history, the filling's edges; bug30346_2 passes too), three
+         attributed (unit 9F, decisions 1307 to 1311); build123d.NET's FilletRecord fixed in build123d.NET (1312).
+       - **Measured:** docs/performance.md (unit 9E, decisions 1313, 1314). build123d.NET's suite on OCCT.NET from 3.7×
+         native's time to 1.9× serially; Bento's examples recalculate at 1.5×; the server collector and ReadyToRun
+         taken from the proposals, the rest left for phase 10.
+       - **Port status** unchanged at 62.0%: phase 9 ported nothing new.
+
 ## Phase 10: preparation
 
-1316. **Phase 10: Kerf** (owner, 2 November; phase10-plan.md). The owner's brief: .NET conventions over OCCT's and
+1317. **Phase 10: Kerf** (owner, 2 November; phase10-plan.md). The owner's brief: .NET conventions over OCCT's and
        build123d's; full immutability with no copy at entry, sharing unchanged faces; OCCT's bugs may be fixed; the
        oracle may go once testing shows every feature works; results rather than expected exceptions; .NET 10 and C#'s
        latest features; value types, spans and fitting collections; build123d.NET on OCCT.NET's types directly, without

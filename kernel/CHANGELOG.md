@@ -1633,3 +1633,11 @@ Phase 9 (part): ReadyToRun packages (unit 9R).
 
 - The packages' assemblies are compiled ahead of time for win-x64 (ReadyToRun), keeping their IL for other platforms:
   the first use of each operation no longer waits for the JIT.
+
+Phase 9 complete (2 November 2026): the switch-over.
+- On nuget.org as 0.1.0-preview.2 and preview.3, over Schematiq.Collections; built in Release and ReadyToRun, checked
+  from a clean feed; Bento's 3D models extension uses them.
+- OCCT.NET is build123d.NET's default backend; build123d.NET's whole suite gives native's shapes, every difference
+  attributed.
+- Two port bugs fixed (sweeps' histories, the filling's edges); a performance review halving build123d.NET's time on
+  OCCT.NET (docs/performance.md).
