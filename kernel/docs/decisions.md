@@ -13373,3 +13373,21 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        libraries it names and their Tcl scripts, going on past a missing one and failing when none loads. Draw-lite's
        commands are built in and its `pload` loads nothing (DrawBuiltins), so both checks fail. Out of scope;
        attributed in DrawCheapGapsCorpusTests' known failures.
+
+## Phase 9: unit 9F2, build123d.NET's 2D fillet record
+
+14211. **The 2D fillet's record differs because build123d.NET keeps MakeWire's intermediate edges; not a port bug.**
+       build123d.NET's `Fillet2DTests.FilletRecord` (OCCT.NET backend) gave Modified(first vertex) = 2 where native
+       gives 1. `WireFillet.Splice` adds the trimmed edges, the arc and the untouched edges to one
+       BRepBuilderAPI_MakeWire and records, after each `Add`, the edge `Edge()` returns. Closing the wire, the last edge's
+       vertex at the first corner (the same point, tolerance 1.0000000011e-7 from the splitter) merges onto the wire's
+       first vertex (1e-7, the trimmed edge's), whose tolerance must grow. Native OCCT raises it in place, so the edge
+       recorded first stays the wire's. That vertex is the caller's (frozen): the port's MakeWire goes on with a copy for
+       write of the wire built so far (decision 417) and records the replacement in its history (`Modified`), so the
+       first recorded edge and vertex are no longer the wire's, and the first vertex is recorded as modified into both
+       copies. The port's MakeWire is right under the immutability rule; 9D2's abandoned change (`movesPoint`) concerned
+       moved located vertices and would not prevent this copy (here the point is unchanged; the tolerance grows).
+       Remedy, in build123d.NET (not made here): `Splice` adds all edges, builds, and records the finished wire's edges
+       (its children in the order added) in place of each intermediate `Edge()`; the same on native, where they are the
+       same shapes. Checked in a detached worktree of build123d.NET's main: Fillet tests 52/52 on OCCT.NET (FilletRecord
+       passes) and 51/51 on native (scratchpad p9f2-b3d-wirefillet.diff).
