@@ -1983,3 +1983,19 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | TDF_Tool::Label (entry) | Skips the entry's first tag without checking it is 0 | "5:1:1" names 0:1:1, so a shape named "1" or "7:1" passed to an XDE command is taken as a label, not the shape (the port's label lookup does the same) |
 | XCAFDoc_ShapeTool::RemoveShape, RemoveComponent | Forget the label's attributes but leave it in the tool's maps (myShapeLabels, mySubShapes) | SearchUsingMap can return a removed label; the port's document forgets the label in its maps too (decision 1258) |
 | XDEDRAW_Layers.cxx setVisibility; XDEDRAW.cxx XDumpAssemblyGraph | The usage line misses a space ("Use: XSetVisibilityDocName"); the graph dump's usage names `-verbose`, the command parses `-names` | Messages only; reproduced |
+
+## Phase 8: unit 8F, STEPControl
+
+| Where | What | Effect |
+|---|---|---|
+| STEPControl_ActorRead (file level) | `NM_DETECTED`, a global flag the actor sets and reads across calls | Not reentrant: readers in parallel share it. A field in the port (decision 1268) |
+| STEPControl_ActorRead::TransferEntity (product definition, NAUO) | Follows assembly links without a guard | A file whose assembly links form a cycle overflows the stack. The port checks the stack (decision 1268) |
+| STEPConstruct_Assembly::MakeRelationship | Numbers occurrences from a function-static counter | The identifiers written depend on what the process wrote before (decision 1266) |
+| STEPControl_Controller (write actor) | The controller recorded process-wide holds the write actor: tolerance, shape fix parameters, product index | A writer's settings leak into the next writer's output; not thread-safe (decision 1264) |
+| STEPControl_ActorWrite (non-manifold mode) | `aSubShell.Closed(true)` on the input's shells | The writer changes the shape it writes. A copy in the port (decision 1269) |
+| StepSelect_WorkLibrary::WriteFile | `filemod->Label()` after a downcast that may give null | A file modifier of another kind is dereferenced null |
+| STEPSelections_SelectDerived::Matches | `atype->SubType(checker)` with `atype` null for an unknown type name | A null dereference; false in the port |
+| STEPSelections_SelectGSCurves, SelectInstances | Thread-local state shared by all instances of the class | A selection's result depends on other instances; the selection's own in the port (decision 1270) |
+| STEPConstruct_AP203Context | Date, time zone, user name and host address read from the system | AP203 output is not repeatable; settable through the context (decision 1267) |
+| STEPControl_Writer (AP203 assemblies) | Native omits the AP203 management entities of the last occurrences of data/occ's assemblies | 12 of 720 writes differ: cause not found, attributed (decision 1272) |
+| IFSelect_WorkSession::ModelCheckList (bug25013_25013faces.stp) | Native throws Standard_OutOfRange (NCollection_Sequence::Value) walking the check list after the transfer | The port's check list is complete; attributed (decision 1272) |

@@ -1541,3 +1541,18 @@ Phase 8 (part): the XDE Draw-lite commands over the document (unit 8G1).
 - ShapeFix_EdgeProjAux: when it reverses the parameters of an edge's ends, the edge now holds the reversed pcurve
   they refer to (as OCCT, which reverses it in place), where before it kept the unreversed one (four edges of
   tr9_r1001-ec.stp lost their pcurves on reading).
+Phase 8 (part): STEPControl, the first milestone (unit 8F).
+- Ported: STEPControl (the controller with STEP's statics, STEPControl_Reader and STEPControl_Writer, the reading and
+  writing actors), STEPConstruct's unit contexts, parts, assemblies, AP203 context and context tool, StepSelect's work
+  library and step type, STEPEdit, the STEPSelections selections, StepToGeom's yaw-pitch-roll rotation. STEP shapes
+  and assemblies are read and written without native code, from and to .NET streams, with limits for hostile input
+  and cancellation; readers publish frozen shapes; writers never change their input; a session's write actor is its
+  own, so output doesn't depend on what the process wrote before.
+- Compared with native OCCT: the corpus's 338 STEP files read with identical shapes (331 byte for byte, 7 but for the
+  Free flag), roots and counts, and identical check messages for 337; data/occ's shapes and assemblies written
+  identically in every model type (AP214IS, in process) and in 708 of 720 schema and model type cases (AP203,
+  AP214IS, AP242DIS, tools/stepctlrec); round trips identical or canonically identical.
+- Draw-lite: XSDRAW's session per interpreter with `param`, `data`, `entity`, `xload`, `writeall`, `writeent`,
+  `listtypes`, `newmodel`, `tpstat`, `tpdraw`, `tpcompound`, and `stepread`, `stepwrite`, `testreadstep`,
+  `testwritestep`, `stepfileunits`, `steptrans`: 274 corpus cases made runnable (44 OK, 224 skipped for missing data,
+  4 BAD as in OCCT, 2 failures attributed).

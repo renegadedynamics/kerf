@@ -74,6 +74,31 @@ public class XSAlgo_ShapeProcessor
         return ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.Result() : theShape;
     }
 
+    /// <summary>
+    /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 1273):
+    /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
+    /// </summary>
+    internal TopoDS_Shape InternalProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
+                                               Message_ProgressRange theProgress = default)
+    {
+        if (theShape.IsNull())
+        {
+            return theShape;
+        }
+        initializeContext(theShape);
+        return ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.InternalResult() : theShape;
+    }
+
+    /// <summary>As <see cref="MergeTransferInfo(Transfer_TransientProcess, int)"/>, without freezing the history's shapes (OCCT.NET, decision 1273).</summary>
+    internal void InternalMergeTransferInfo(Transfer_TransientProcess theTransientProcess, int theFirstTPItemIndex)
+    {
+        if (myContext is null)
+        {
+            return;
+        }
+        MergeShapeTransferInfo(theTransientProcess, myContext.InternalMap(), theFirstTPItemIndex, myContext.Messages());
+    }
+
     /// <summary>Get the context of the last processing. Only valid after the ProcessShape() method was called.</summary>
     public ShapeProcess_ShapeContext? GetContext()
     {

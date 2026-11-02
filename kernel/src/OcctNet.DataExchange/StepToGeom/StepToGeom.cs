@@ -22,7 +22,7 @@ namespace Occt;
 /// The units of the file are applied through <see cref="StepData_Factors"/> (lengths multiplied by
 /// <see cref="StepData_Factors.LengthFactor"/>, angles by <see cref="StepData_Factors.PlaneAngleFactor"/>); the
 /// overloads without factors use the defaults (millimetres and radians). The results are new, unfrozen geometry.
-/// <c>MakeYprRotation</c> (StepKinematics) waits for unit 8C2's packages (decision 1238).
+/// <c>MakeYprRotation</c> was added by unit 8F (decision 1238).
 /// </remarks>
 public static class StepToGeom
 {
@@ -2552,6 +2552,255 @@ public static class StepToGeom
         return null;
     }
 
-    // MakeYprRotation (a StepKinematics_SpatialRotation into yaw, pitch and roll) waits for StepKinematics (unit
-    // 8C2) and STEPConstruct_UnitContext::ConvertSiPrefix (unit 8F): decision 1238.
+    /// <summary>
+    /// Converts a spatial rotation (a ypr_rotation, or a rotation_about_direction in the plane angle unit of the
+    /// context) into yaw, pitch and roll angles; null when it can't.
+    /// </summary>
+    /// <remarks>OCCT.NET: ported by unit 8F, with STEPConstruct_UnitContext (decision 1238).</remarks>
+    public static NCollection_HArray1<double>? MakeYprRotation(StepKinematics_SpatialRotation SR, StepRepr_GlobalUnitAssignedContext? theCntxt)
+    {
+        // If rotation is already a ypr_rotation, return it immediately
+        NCollection_HArray1<double>? anYPRRotation = null;
+        if (SR.YprRotation() is not null && SR.YprRotation().Length() == 3)
+        {
+            return SR.YprRotation();
+        }
+
+        if (SR.RotationAboutDirection() is null
+            || SR.RotationAboutDirection().DirectionOfAxis().NbDirectionRatios() != 3
+            || theCntxt is null)
+        {
+            return null;
+        }
+        // rotation is a rotation_about_direction
+        Geom_Direction anAxis = new Geom_Direction(SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(1),
+                                                   SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(2),
+                                                   SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(3));
+        double anAngle = SR.RotationAboutDirection().RotationAngle();
+        if (Math.Abs(anAngle) < Precision.Angular())
+        {
+            // a zero rotation is converted trivially
+            anYPRRotation = new NCollection_HArray1<double>(1, 3);
+            anYPRRotation.SetValue(1, 0.0);
+            anYPRRotation.SetValue(2, 0.0);
+            anYPRRotation.SetValue(3, 0.0);
+            return anYPRRotation;
+        }
+        double dx = anAxis.X();
+        double dy = anAxis.Y();
+        double dz = anAxis.Z();
+        NCollection_Sequence<StepBasic_NamedUnit> aPaUnits = new NCollection_Sequence<StepBasic_NamedUnit>();
+        for (int anInd = 1; anInd <= theCntxt.Units().Length(); ++anInd)
+        {
+            if (theCntxt.UnitsValue(anInd).IsKind(typeof(StepBasic_ConversionBasedUnitAndPlaneAngleUnit))
+                || theCntxt.UnitsValue(anInd).IsKind(typeof(StepBasic_SiUnitAndPlaneAngleUnit)))
+            {
+                aPaUnits.Append(theCntxt.UnitsValue(anInd));
+            }
+        }
+        if (aPaUnits.Length() != 1)
+        {
+            return anYPRRotation;
+        }
+        StepBasic_NamedUnit? aPau = aPaUnits.Value(1);
+        while (aPau is not null && aPau.IsKind(typeof(StepBasic_ConversionBasedUnitAndPlaneAngleUnit)))
+        {
+            StepBasic_ConversionBasedUnitAndPlaneAngleUnit aConverUnit = (StepBasic_ConversionBasedUnitAndPlaneAngleUnit)aPau;
+            StepBasic_MeasureWithUnit? aConversionFactor = null;
+            Standard_Transient aTransientFactor = aConverUnit.ConversionFactor();
+            if (aTransientFactor.IsKind(typeof(StepBasic_MeasureWithUnit)))
+            {
+                aConversionFactor = aTransientFactor as StepBasic_MeasureWithUnit;
+            }
+            else if (aTransientFactor.IsKind(typeof(StepRepr_ReprItemAndMeasureWithUnit)))
+            {
+                StepRepr_ReprItemAndMeasureWithUnit aReprMeasureItem = (StepRepr_ReprItemAndMeasureWithUnit)aTransientFactor;
+                aConversionFactor = aReprMeasureItem.GetMeasureWithUnit();
+            }
+            anAngle = anAngle * aConversionFactor!.ValueComponent();
+            aPau = aConversionFactor.UnitComponent().NamedUnit();
+        }
+        if (aPau is null)
+        {
+            return anYPRRotation;
+        }
+        StepBasic_SiUnitAndPlaneAngleUnit? aSiUnit = aPau as StepBasic_SiUnitAndPlaneAngleUnit;
+        if (aSiUnit is null || aSiUnit.Name() != StepBasic_SiUnitName.StepBasic_sunRadian)
+        {
+            return anYPRRotation;
+        }
+        anAngle = (!aSiUnit.HasPrefix() ? 1.0 : STEPConstruct_UnitContext.ConvertSiPrefix(aSiUnit.Prefix())) * anAngle;
+        double anUcf = SR.RotationAboutDirection().RotationAngle() / anAngle;
+        double aSA = Math.Sin(anAngle);
+        double aCA = Math.Cos(anAngle);
+        double aYaw = 0, aPitch = 0, aRoll = 0;
+
+        // axis parallel either to x-axis or to z-axis?
+        if (Math.Abs(dy) < Precision.Confusion() && Math.Abs(dx * dz) < Precision.SquareConfusion())
+        {
+            while (anAngle <= -Math.PI)
+            {
+                anAngle = anAngle + 2 * Math.PI;
+            }
+            while (anAngle > Math.PI)
+            {
+                anAngle = anAngle - 2 * Math.PI;
+            }
+
+            aYaw = anUcf * anAngle;
+            if (Math.Abs(anAngle - Math.PI) >= Precision.Angular())
+            {
+                aRoll = -aYaw;
+            }
+            else
+            {
+                aRoll = aYaw;
+            }
+            anYPRRotation = new NCollection_HArray1<double>(1, 3);
+            anYPRRotation.SetValue(1, 0.0);
+            anYPRRotation.SetValue(2, 0.0);
+            anYPRRotation.SetValue(3, 0.0);
+            if (Math.Abs(dx) >= Precision.Confusion())
+            {
+                if (dx > 0.0)
+                {
+                    anYPRRotation.SetValue(3, aYaw);
+                }
+                else
+                {
+                    anYPRRotation.SetValue(3, aRoll);
+                }
+            }
+            else
+            {
+                if (dz > 0.0)
+                {
+                    anYPRRotation.SetValue(1, aYaw);
+                }
+                else
+                {
+                    anYPRRotation.SetValue(1, aRoll);
+                }
+            }
+            return anYPRRotation;
+        }
+
+        // axis parallel to y-axis - use y-axis as pitch axis
+        if (Math.Abs(dy) >= Precision.Confusion() && Math.Abs(dx) < Precision.Confusion() && Math.Abs(dz) < Precision.Confusion())
+        {
+            if (aCA >= 0.0)
+            {
+                aYaw = 0.0;
+                aRoll = 0.0;
+            }
+            else
+            {
+                aYaw = anUcf * Math.PI;
+                aRoll = aYaw;
+            }
+            aPitch = anUcf * Math.Atan2(aSA, Math.Abs(aCA));
+            if (dy < 0.0)
+            {
+                aPitch = -aPitch;
+            }
+            anYPRRotation = new NCollection_HArray1<double>(1, 3);
+            anYPRRotation.SetValue(1, aYaw);
+            anYPRRotation.SetValue(2, aPitch);
+            anYPRRotation.SetValue(3, aRoll);
+            return anYPRRotation;
+        }
+        // axis not parallel to any axis of coordinate system
+        // compute rotation matrix
+        double aCm1 = 1 - aCA;
+
+        double[,] aRotMat = {
+            { dx * dx * aCm1 + aCA, dx * dy * aCm1 - dz * aSA, dx * dz * aCm1 + dy * aSA },
+            { dx * dy * aCm1 + dz * aSA, dy * dy * aCm1 + aCA, dy * dz * aCm1 - dx * aSA },
+            { dx * dz * aCm1 - dy * aSA, dy * dz * aCm1 + dx * aSA, dz * dz * aCm1 + aCA } };
+
+        // aRotMat[1][3] equals SIN(pitch_angle)
+        if (Math.Abs(Math.Abs(aRotMat[0, 2] - 1.0)) < Precision.Confusion())
+        {
+            // |aPitch| = PI/2
+            if (Math.Abs(aRotMat[0, 2] - 1.0) < Precision.Confusion())
+            {
+                aPitch = Math.PI / 2;
+            }
+            else
+            {
+                aPitch = -Math.PI / 2;
+            }
+            // In this case, only the sum or difference of roll and yaw angles
+            // is relevant and can be evaluated from the matrix.
+            // According to IP "rectangular pitch angle" for ypr_rotation,
+            // the roll angle is set to zero.
+            aRoll = 0.0;
+            aYaw = Math.Atan2(aRotMat[1, 0], aRotMat[1, 1]);
+            // result of ATAN is in the range[-PI / 2, PI / 2].
+            // Here all four quadrants are needed.
+
+            if (aRotMat[1, 1] < 0.0)
+            {
+                if (aYaw <= 0.0)
+                {
+                    aYaw = aYaw + Math.PI;
+                }
+                else
+                {
+                    aYaw = aYaw - Math.PI;
+                }
+            }
+        }
+        else
+        {
+            // COS (pitch_angle) not equal to zero
+            aYaw = Math.Atan2(-aRotMat[0, 1], aRotMat[0, 0]);
+
+            if (aRotMat[0, 0] < 0.0)
+            {
+                if (aYaw < 0.0 || Math.Abs(aYaw) < Precision.Angular())
+                {
+                    aYaw = aYaw + Math.PI;
+                }
+                else
+                {
+                    aYaw = aYaw - Math.PI;
+                }
+            }
+            double aSY = Math.Sin(aYaw);
+            double aCY = Math.Cos(aYaw);
+            double aSR = Math.Sin(aRoll);
+            double aCR = Math.Cos(aRoll);
+
+            if (Math.Abs(aSY) > Math.Abs(aCY) && Math.Abs(aSY) > Math.Abs(aSR) && Math.Abs(aSY) > Math.Abs(aCR))
+            {
+                aCm1 = -aRotMat[0, 1] / aSY;
+            }
+            else
+            {
+                if (Math.Abs(aCY) > Math.Abs(aSR) && Math.Abs(aCY) > Math.Abs(aCR))
+                {
+                    aCm1 = aRotMat[0, 0] / aCY;
+                }
+                else if (Math.Abs(aSR) > Math.Abs(aCR))
+                {
+                    aCm1 = -aRotMat[1, 2] / aSR;
+                }
+                else
+                {
+                    aCm1 = aRotMat[2, 2] / aCR;
+                }
+            }
+            aPitch = Math.Atan2(aRotMat[0, 2], aCm1);
+        }
+        aYaw = aYaw * anUcf;
+        aPitch = aPitch * anUcf;
+        aRoll = aRoll * anUcf;
+        anYPRRotation = new NCollection_HArray1<double>(1, 3);
+        anYPRRotation.SetValue(1, aYaw);
+        anYPRRotation.SetValue(2, aPitch);
+        anYPRRotation.SetValue(3, aRoll);
+
+        return anYPRRotation;
+    }
 }

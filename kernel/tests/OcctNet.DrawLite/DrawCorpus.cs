@@ -233,6 +233,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
         anInterpreter.SetVariable("env(CASROOT)", aRoot);
         anInterpreter.SetVariable("env(CSF_OCCTResourcePath)", aRoot + "/resources");
         anInterpreter.SetVariable("env(CSF_OCCTDataPath)", aRoot + "/data");
+        // STEP's resource directory (adm/templates/env.bat: CSF_STEPDefaults), which the de grid's scripts read and change
+        anInterpreter.SetVariable("env(CSF_STEPDefaults)", aRoot + "/resources/XSTEPResource");
 
         // an empty, writable image directory, as the harness makes for each case: in the overlay, as every write
         string anImages = TclFileSystem.Slashes(Path.Combine(Path.GetTempPath(), "drawlite-images", theCase.Group, theCase.Grid, theCase.Name));

@@ -106,6 +106,9 @@ internal static class DrawBuiltins
         HLRTestCommands.Register(theInterpreter);
         // unit 8H1: XSDRAWSTL's STL commands (readstl, writestl)
         XSDRAWSTLCommands.Register(theInterpreter);
+        // unit 8F: XSDRAW's session with the IFSelect and XSControl commands, XSDRAWSTEP's commands without a document
+        XSDRAWCommands.Register(theInterpreter);
+        XSDRAWSTEPCommands.Register(theInterpreter);
         // unit 8G1: the XDE commands over Draw-lite's documents (XdeDoc), DDocStd's document commands, glTF and OBJ
         DDocStdCommands.Register(theInterpreter);
         XDEDRAWCommands.Register(theInterpreter);

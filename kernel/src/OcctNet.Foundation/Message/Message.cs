@@ -29,8 +29,27 @@ public static class Message
 {
     private static volatile Message_Messenger theDefaultMessenger = Message_Messenger.Empty();
 
-    /// <summary>The process-wide messenger. By default it has no printer: messages sent to it go nowhere.</summary>
-    public static Message_Messenger DefaultMessenger() => theDefaultMessenger;
+    // OCCT.NET (decision 1275): a messenger standing for the default one in the current flow of execution, as
+    // DRAWEXE's data exchange commands (XSTEPDRAWRUN) give the default messenger a printer to the Tcl result while
+    // they run; Draw-lite installs one per command, and parallel interpreters don't see each other's
+    private static readonly AsyncLocal<Message_Messenger?> theFlowMessenger = new();
+
+    /// <summary>
+    /// The process-wide messenger. By default it has no printer: messages sent to it go nowhere. In a flow of execution
+    /// that installed a messenger of its own (<see cref="SetFlowMessenger"/>), that one.
+    /// </summary>
+    public static Message_Messenger DefaultMessenger() => theFlowMessenger.Value ?? theDefaultMessenger;
+
+    /// <summary>
+    /// Installs a messenger standing for the default one in the current flow of execution (the thread and the tasks it
+    /// starts), until replaced; null removes it. Returns the one it replaces (OCCT.NET, for Draw-lite's commands).
+    /// </summary>
+    internal static Message_Messenger? SetFlowMessenger(Message_Messenger? theMessenger)
+    {
+        Message_Messenger? anOld = theFlowMessenger.Value;
+        theFlowMessenger.Value = theMessenger;
+        return anOld;
+    }
 
     /// <summary>Replaces the process-wide messenger (Draw-lite); null restores an empty one.</summary>
     internal static void SetDefaultMessenger(Message_Messenger? theMessenger) =>
