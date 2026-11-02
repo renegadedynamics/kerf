@@ -1870,3 +1870,25 @@ reproduces it (decision 12602).
 | Where | What | Effect |
 |---|---|---|
 | RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
+
+## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
+
+Found by generating StepVisual, StepAP214/203/242, StepDimTol, StepKinematics, StepFEA, StepElement, their RW
+packages and StepAP214's dispatch from OCCT's C++, and by the corpus's round trips (decision 12806). The port
+reproduces them all; the generated code carries no `// OCCT` marker (it is regenerated), the tests name them.
+
+| Where | What | Effect |
+|---|---|---|
+| RWStepVisual_RWSurfaceStyleRenderingWithProperties::ReadStep | Tests `if (strcmp(text, ".CONSTANT_SHADING."))`, true when the text differs, and so on down the list | Every rendering method but .CONSTANT_SHADING. is read as .CONSTANT_SHADING., and .CONSTANT_SHADING. as .COLOUR_SHADING. (545 records of the corpus) |
+| RWStepVisual_RWComplexTriangulatedFace::WriteStep, RWStepVisual_RWCubicBezierTriangulatedFace::WriteStep (normals, control triangles) | Loop the rows up to `RowLength()` and the columns up to `ColLength()`, which are the numbers of columns and rows | Out of range unless the array is square: OCCT's release build writes values from the wrong places, a checked build (build123d.NET's, the port's) throws Standard_OutOfRange. 552 faces of the corpus can't be written |
+| StepVisual_StyledItem::Item, RWStepVisual_RWStyledItem::WriteStep | Init keeps the target as a transient and as a representation item (null if it isn't one); the writer sends `Item()`, the representation item | A styled item whose target is a representation (or anything but a representation item) is written with `$` for its item (68 records) |
+| RWStepAP214_ReadWriteModule::IsComplex | Lists every case of ComplexType but 800 (ActuatedKinPairAndOrderKinPair) and 802 (RepositionedTessellatedGeometricSet) | The writer starts them as simple records, of type `?` (StepType's default), followed by the components: `?() GEOMETRIC_REPRESENTATION_ITEM() ...` (30 records) |
+| RWStepAP214_ReadWriteModule::ComplexType and CaseStep (cases 694-697, 705, 706, 800) | ComplexType gives the generic GEOMETRIC_TOLERANCE (or kinematic pair) components, CaseStep wants a specific kind | The components ComplexType gives aren't recognised back (no effect on reading or writing files) |
+| RWStepAP214_GeneralModule::NewVoid case 106 | Creates a StepVisual_AnnotationOccurrence for DRAUGHTING_ANNOTATION_OCCURRENCE | Such a record is read into an annotation occurrence and written back ANNOTATION_OCCURRENCE (none in the corpus as a simple record) |
+| RWStepAP214_ReadWriteModule, cases 825 and 826 (SurfaceStyleReflectanceAmbientDiffuse(Specular)) and 708 (TESSELLATED_ITEM) | 825 and 826 have no type name in StepType or the type map; 708 is named by StepType but missing from the type map | SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written (written `?`); TESSELLATED_ITEM can be written, not read |
+| StepElement_VolumeElementPurposeMember and StepElement_SurfaceElementPurposeMember, `CompareNames` | Returns case 1 for both the enumerated purpose and APPLICATION_DEFINED_ELEMENT_PURPOSE (the curve one gives 2) | An application-defined purpose is written back as the enumerated one (2 records) |
+| StepBasic_SizeMember | Always names itself POSITIVE_LENGTH_MEASURE | An untyped curve width is written typed (15 records); POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)) keeps its outer type only (16) |
+| RWStepVisual_RWCharacterizedObjAndRepresentationAndDraughtingModel::WriteStep | Writes CHARACTERIZED_OBJECT's name and description as derived | `CHARACTERIZED_OBJECT(*,*)` for the read values (3 records) |
+| StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
+| RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
+| StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |

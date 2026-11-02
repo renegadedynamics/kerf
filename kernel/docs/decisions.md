@@ -46,7 +46,7 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 16. **NCollection containers are classes**, so C++ copies must be written as copies (`new(b)`, `Assign`). Rejected
     alternative: structs, which would still alias their storage and hide the problem. The rule is in
     translation-rules.md section 9; a review step checks by-value uses.
-17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient,
+17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient (the plain containers derive from Standard_Transient since decision 12801),
     since C# has single inheritance and arrays are references already.
 18. **The unordered maps don't keep OCCT's iteration order.** Ported code whose output depends on that order is
     noted where found.
@@ -12423,3 +12423,70 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        references to records lost to a syntax error (25, bug32314_corrupted.stp); CATIA's complex uncertainty
        measure written simple (23, the READ ONLY case 357); an integer in a real SELECT member written as a real
        (14); an SI unit's dimensions written derived, `*` (13). Native OCCT's writing is compared in unit 8F.
+
+## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
+
+12801. **The H-collections are Standard_Transients, as in OCCT: `NCollection_Array1`, `NCollection_Array2` and
+       `NCollection_Sequence` derive from `Standard_Transient`** (amending decision 17). OCCT's entity packages treat
+       an `occ::handle<NCollection_HArray1<...>>` as an `occ::handle<Standard_Transient>`: arrays as SELECT members
+       (StepDimTol_DatumOrCommonDatum, StepKinematics_SpatialRotation, StepFEA_SymmetricTensor43d), arrays of arrays
+       (StepVisual_ComplexTriangulatedFace's strips and fans), `SW.Send` of an array, `STANDARD_TYPE` of an array type
+       (26 compile errors in 8C1's trial). Since the H-collections derive from the plain ones (single inheritance),
+       the plain ones carry the base. Rejected: a generator rule wrapping arrays in a transient box (it changes the
+       entities' API and every reader and writer of those fields); making HArray1 a wrapper instead of a subclass (it
+       touches every port of phases 0-7). The cost is one field (the freeze flag, never set on a collection) per
+       container; the whole solution builds unchanged and Foundation's 2,206 tests pass. `NCollection_Array1` also
+       gains OCCT's `Iterator` (More/Next/Value), and `NCollection_DataMap` OCCT's `ReSize`.
+12802. **Process-wide state set up once is C#'s static initialisation.** OCCT's dispatch classes fill file statics
+       the first time they are constructed: StepAP214_Protocol's class map behind an `int` flag, RWStepAP214_
+       ReadWriteModule's type-name maps under a `std::mutex`, RWStepAP214_GeneralModule's category numbers at each
+       construction, RWStepAP214::Init's registration behind a flag. In the port: the generator turns a constructor
+       that starts `if (FLAG) return; FLAG = 1;` on a file static into an empty constructor plus a static
+       constructor with the rest of the body (StepAP214_Protocol's 713 `types.Bind`); the other statics are
+       `static readonly` fields filled by their initialisers (overrides, 12803); RWStepAP214.Init is a `Lazy<bool>`,
+       as RWHeaderSection.Init (unit 8B). Nothing changes after first use (decisions 1182, 1183); the modules are
+       registered in the global libraries once.
+12803. **What is written by hand: 106 lines in tools/stepgen/overrides, eight files**, which the generator copies:
+       whole classes StepAP214 (the protocol, once per process: OCCT's `StaticHandle`) and RWStepAP214 (Init);
+       `<Class>.statics.cs` (a new kind of override: the source file's non-constant statics) for the read-write
+       module's two type maps (`NCollection_DataMap<string, int>`, OCCT's hasher and allocator dropped), the general
+       module's five category numbers and the protocol's class map (keyed by `System.Type`); the two modules'
+       constructors (empty); StepAP214_Protocol::SchemaName (`DESTEP_Parameters`' nested enum, which the generator
+       doesn't parse). Everything else of the dispatch over 826 case numbers, RWStepAP214_ReadWriteModule (CaseStep,
+       IsComplex, StepType, ComplexType, ReadStep, WriteStep) and RWStepAP214_GeneralModule (FillSharedCase,
+       CheckCase, NewVoid, CategoryNumber), is generated from OCCT's C++.
+12804. **The generator's new rules** (docs/translation-rules.md; 8C1's packages regenerate unchanged):
+       - MoniTool's `DeclareAndCast(T, x, y)` → `T x = y as T;`;
+       - a sequence called like a function (`types(i)`, C++'s operator()) → its `ref` indexer, `types[i]`;
+         `TCollection_AsciiString::IsEqual` on a string → `==`; its `<`/`>` → `string.CompareOrdinal`;
+         `TCollection_AsciiString(view)` of a string → the string;
+       - `NCollection_DataMap::Find(key, item)` → `Find(key, out item)`; an allocator argument (`Clear(alloc)`) is
+         dropped; a map's hasher type argument is dropped; a source's `using Alias = Type;` is resolved where used;
+         a file-level `struct` (a hasher) is left out (reported);
+       - `NCollection_Array1<T>::Iterator` → `NCollection_Array1<T>.Iterator` (the template's arguments on the outer
+         type);
+       - a switch whose last section runs off its end gets a `break`;
+       - the modules' overrides of `NewVoid` and `CheckCase` take the parameter modifiers StepData's and Interface's
+         ports chose (`out Standard_Transient`, `ref Interface_Check`; unit 8B); an `out` parameter is assigned
+         null first.
+       Without `--packages` the generator now writes every entity package and its RW package (`AllPackages`, 25
+       packages, 1,613 files, 150,907 lines); `StepGenTests.CommittedSourcesAreTheGeneratorsOutput` checks them all.
+12805. **StepAP209_Construct is left to unit 8F**: not an entity class but a STEPConstruct_Tool working on an
+       XSControl_WorkSession, neither ported yet (it also reads today's date through OSD_Process). The generator skips
+       it (`Generator.Deferred`, listed in its report); 8F generates it (removing it from `Deferred`) or ports it.
+12806. **Round trips with StepAP214's protocol** (StepRoundTripTests, replacing 8C1's test protocol): the 338 STEP
+       files of the dataset and data/step (1,546,314 records) are read with StepAP214.Protocol() after
+       RWStepAP214.Init(), and written back with their labels. 1,528,912 records (98.9%, 320 types) are recognised;
+       the other 17,402 (88 types: AP209 analysis records such as NODAL_FREEDOM_VALUES, draughting callouts,
+       NAME_ATTRIBUTE, misspelt types of corrupted files, complex combinations OCCT doesn't list) are in none of
+       OCCT's type tables or complex type lists, so OCCT reads them as unknown entities too; the test pins the count.
+       Of the recognised records 1,526,805 are written back the same; the 2,107 others are differences OCCT's own
+       reading and writing make, each attributed: 8C1's six causes (PARAMETER_VALUE 557, lost references 223, texts
+       45, the complex uncertainty 23, integers as reals 14, derived dimensions 13), and 8C2's OCCT bugs
+       (occt-issues.md, 8C2): rendering methods read through inverted `strcmp` (545), complex triangulated faces whose
+       writer reads the normals with rows and columns exchanged (552, not written: the port's range check throws, as
+       build123d.NET's checked native build does, decision 9), styled items whose target isn't a representation item
+       written `$` (68), IsComplex missing cases 800 and 802 (30), sizes typed POSITIVE_LENGTH_MEASURE (15, 16 doubly
+       typed), CHARACTERIZED_OBJECT written derived (3), application-defined element purposes (2), a boolean written as
+       an integer (1). The test tries the two writers that can throw on a writer of their own first, as a throwing
+       WriteStep leaves the writer inside the record. Native OCCT's writing is compared in unit 8F.
