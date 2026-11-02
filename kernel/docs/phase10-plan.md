@@ -1,6 +1,9 @@
 # Phase 10 plan: a .NET library
 
-*Draft, 2 November 2026. Nothing here is started; section 6 has the questions to settle first.*
+> **Agreed, 2 November 2026** (decision 1316). The project becomes **Kerf**, in Renegade Dynamics' organisation:
+> `Kerf.Kernel` from OCCT and `Kerf.Modeling` from build123d, in one repository. Questions 46 to 52 are settled
+> (section 6): Bento's spreadsheet names follow Kerf's, and collections cross into Bento as standard .NET read-only types.
+> Phase 9 closed at `0.1.0-preview.3`. Not started.
 
 ## The goal
 
@@ -239,7 +242,10 @@ runs one assembly at a time, with every test green after each step.
   - Shape maps keep an explicit comparer: OCCT's `IsSame`/`IsEqual`, as OCCTNET0002 enforces today.
   - Iteration order is free to change once 3.2's tests no longer need byte equality. Changes are made where measured.
 - **Returned collections:** `ReadOnlySpan<T>` for numeric arrays, `IReadOnlyList<T>`/`ImmutableArray<T>` for the rest.
-  `ISchematiqList<T>` stays only where Bento needs its persistent-list behaviour (question 50).
+  Neither Kerf layer depends on Schematiq.Collections (question 50). Bento accepts the standard read-only types and
+  converts to Schematiq.Collections only where a function returns a modified collection; Schematiq.Collections already
+  implements `IReadOnlyList<T>` and `IReadOnlyDictionary<TKey,TValue>`, so values pass the other way without conversion.
+  Its hash set gains `IReadOnlySet<T>` (in its own repository, unit 10N).
 - **9E's proposals** 3 to 7 come for free with these changes. Each change is measured with 9E's benchmarks (Bento's
   examples and build123d.NET's suite) before and after.
 
@@ -282,7 +288,9 @@ are fixed.
   - **Renaming:** build123d's vocabulary (Box, Extrude, Fillet) stays where it names the concept well, and is renamed
     where it was Python-shaped.
 - **Bento's couplings** become explicit: its own enum and property tables in place of reflection over build123d.NET's
-  names. Its spreadsheet-facing names stay Bento's choice (question 48).
+  names.
+- **Bento's spreadsheet-facing names follow Kerf's** (question 48): no workbooks depend on them yet, so `CAD_` functions,
+  their parameters and option keys (such as `z_dir`) are renamed to match Kerf.Modeling's names.
 
 ### 2.10 One repository, two layers
 
@@ -326,7 +334,8 @@ Diverging from OCCT and build123d makes their names misleading, and possibly unw
   trademark, and a diverging derivative shouldn't look endorsed by them.
 - **"build123d.NET"** suggests the Python library's API, which phase 10 removes.
 
-Question 47 proposes a new name. Whatever the name, the credit stays, and the licences require it:
+The name is **Kerf** (question 47): `Kerf.Kernel` and `Kerf.Modeling`, hosted in Renegade Dynamics' organisation. The
+credit stays, and the licences require it:
 
 | | The kernel (from OCCT) | The modelling layer (from build123d) |
 |---|---|---|
@@ -396,7 +405,7 @@ Sizes are rough, in OCCT.NET lines touched.
 | **10K** OCCT's bugs | 2.8's triage, then the "fix" list | 10A |
 | **10L** Public API implementation | The reviewed public API (10D) over the engine, area by area | 10D, 10F, 10G |
 | **10M** build123d.NET's .NET API | 2.9: Python conventions removed; typed results; options; selectors; results for errors | 10B, 10L |
-| **10N** Bento | Bento's extension on the new APIs; explicit tables for its couplings | 10M |
+| **10N** Bento | Bento's extension on Kerf.Modeling; explicit tables for its couplings; `CAD_` functions, parameters and option keys renamed to Kerf's names; standard .NET read-only types accepted, converted to Schematiq.Collections only when modified; `IReadOnlySet<T>` on Schematiq.Collections' hash set | 10M |
 
 ### Running order
 
@@ -434,46 +443,32 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
 - **Load-bearing in-place edits.** OC5805's offset surface is the known one. The overlay can carry them, but each needs
   understanding: 10H's units are bounded per module, and anything unclear stays on its copy until understood.
 - **Upstream OCCT fixes stop carrying across.** The name map keeps them findable, but each becomes a manual port.
-- **Bento's workbooks.** Spreadsheet-facing names stay stable unless question 48 says otherwise.
+- **Bento's workbooks.** None depend on the 3D models functions yet, so renaming them now (question 48) costs nothing;
+  after a Bento release it would.
 
-## 6. Questions for the owner
+## 6. The owner's answers
 
-46. **Namespaces and names** (2.2), under the name question 47 chooses (`<Name>` below). *Recommended:*
-    - the kernel's public namespaces by area: `<Name>.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,
+All settled on 2 November (decision 1316).
+
+46. **Namespaces and names** (2.2). *Agreed:*
+    - the kernel's public namespaces by area: `Kerf.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,
       `.Exchange`;
-    - engine types in `<Name>.Engine.<Area>`, with .NET names derived from OCCT's (`BOPAlgo_PaveFiller` →
-      `Engine.Booleans.PaveFiller`);
-    - the modelling layer in `<Name>.Modeling`.
-47. **The name** (2.11). One name for the project, with two layers under it: `<Name>.Kernel` (from OCCT, LGPL) and
-    `<Name>.Modeling` (from build123d, Apache 2.0). Each package's description credits its origin.
-    - **Candidates:** workshop and drawing-office words, short and pronounceable, with no CAD product of the same name
-      that I know of. All are free as NuGet IDs on 2 November.
-
-      | Name | Meaning |
-      |---|---|
-      | **Kerf** | The slot a saw or cutter leaves. Short and unusual, and about cutting solids, which is what Booleans do |
-      | **Vernier** | The scale on a calliper that reads precisely. About precision |
-      | **Mandrel** | The form material is shaped around |
-      | **Burin** | The engraver's cutting tool. Distinctive but obscure |
-      | **Keel** | A boat's backbone, as a kernel is a modeller's. Also used by a Kubernetes tool |
-      | **Datum** | The reference everything is measured from. Apt, but generic: many libraries use it |
-
-    - *Recommended:* **Kerf** (`Kerf.Kernel`, `Kerf.Modeling`), or **Vernier** if you'd rather the name speak of
-      precision.
-    - Before deciding: check GitHub, a domain and trademarks for the chosen name.
-    - After deciding: reserve the ID prefix on nuget.org (`Kerf.*`), so only your account can publish under it.
-48. **Bento's spreadsheet-facing names** (`CAD_PT_BOX`, option keys such as `z_dir`). *Recommended:* keep them, since
-    workbooks use them, and decouple them from build123d.NET's C# names (10N).
-49. **The coverage floor** for retiring the oracle (3.2). *Recommended:*
-    - every public member tested;
-    - at least 80% line coverage in each engine package;
-    - lower where the corpus already exercises a package and a gap is listed.
-50. **Returned collections** (2.6). *Recommended:*
-    - `ReadOnlySpan<T>`/`ImmutableArray<T>` for numeric data, `IReadOnlyList<T>` for shapes;
-    - drop Schematiq.Collections from OCCT.NET's public API;
-    - build123d.NET keeps it only if Bento's sheet benefits (its `ShapeList` over `ISchematiqList`).
-51. **Draw-lite** (3.3). *Recommended:* keep it permanently as the corpus test harness, though it's no longer a product
-    goal.
-52. **Phase 9's close.** *Recommended:*
-    - close phase 9 at `0.1.0-preview.3`;
-    - start phase 10 with 10R, then 10A and 10C, none of which changes behaviour.
+    - engine types in `Kerf.Engine.<Area>`, with .NET names derived from OCCT's (`BOPAlgo_PaveFiller` →
+      `Kerf.Engine.Booleans.PaveFiller`);
+    - the modelling layer in `Kerf.Modeling`.
+47. **The name** (2.11). *Agreed:* **Kerf**, hosted in Renegade Dynamics' organisation: `Kerf.Kernel` (from OCCT,
+    LGPL) and `Kerf.Modeling` (from build123d, Apache 2.0), each crediting its origin. Before the first `Kerf.*`
+    publish, reserve the `Kerf.*` ID prefix on nuget.org.
+48. **Bento's spreadsheet-facing names.** *Agreed:* no workbooks depend on them yet, so `CAD_` functions, parameters and
+    option keys are renamed to follow Kerf's names (10N).
+49. **The coverage floor** (3.2). *Agreed:* every public member tested; at least 80% line coverage in each engine
+    package, lower where the corpus already exercises a package and the gap is listed.
+50. **Collections** (2.6). *Agreed:*
+    - Kerf returns standard .NET types (`ReadOnlySpan<T>`, `ImmutableArray<T>`, `IReadOnlyList<T>`), and the
+      modelling layer drops Schematiq.Collections too;
+    - Bento accepts the standard read-only types and converts to Schematiq.Collections only where a modified version
+      is needed;
+    - Schematiq.Collections implements the .NET read-only interfaces wherever it can, so no conversion is needed calling
+      Bento.Cad's functions. It already does for lists and dictionaries; its hash set gains `IReadOnlySet<T>`.
+51. **Draw-lite** (3.3). *Agreed:* kept permanently as the corpus test harness.
+52. **Phase 9's close.** *Agreed:* phase 9 closes at `0.1.0-preview.3`; phase 10 starts with 10R, then 10A and 10C.
