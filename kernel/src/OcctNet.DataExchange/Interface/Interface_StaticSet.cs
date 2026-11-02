@@ -695,6 +695,12 @@ public sealed class Interface_StaticSet
         {
             anEnd++;
         }
+        if (anEnd == 0)
+        {
+            // OCCT: sscanf reads nothing and leaves the buffer uninitialised; its garbage matches no value, so stand
+            // for it by a text that matches none (EnumCase gives the start minus 1)
+            return "\u0001";
+        }
         return aRest.Substring(0, anEnd);
     }
 

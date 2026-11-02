@@ -415,7 +415,14 @@ public static class Standard
                 j++;
             }
             string aConversion = theFormat.Substring(i, Math.Min(j + 1, theFormat.Length) - i);
-            aResult.Append(Message_Msg.Sprintf(aConversion, anArg < theArgs.Length ? theArgs[anArg] : ""));
+            object aValue = anArg < theArgs.Length ? theArgs[anArg] : "";
+            if (aConversion.EndsWith('c'))
+            {
+                // %c: the character, as a one-character string
+                aConversion = aConversion[..^1] + "s";
+                aValue = aValue is char aCharArg ? aCharArg.ToString() : ((char)Convert.ToInt32(aValue, System.Globalization.CultureInfo.InvariantCulture)).ToString();
+            }
+            aResult.Append(Message_Msg.Sprintf(aConversion, aValue));
             anArg++;
             i = j;
         }

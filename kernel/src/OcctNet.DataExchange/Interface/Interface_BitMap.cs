@@ -332,7 +332,7 @@ public class Interface_BitMap
     public void SetFalse(int item, int flag = 0)
     {
         int numw = (thenbwords * flag) + (item >> 5);
-        int val = theflags.ChangeValue(numw);
+        ref int val = ref theflags.ChangeValue(numw);
         if (val == 0)
         {
             return;
@@ -348,7 +348,7 @@ public class Interface_BitMap
     {
         int numw = (thenbwords * flag) + (item >> 5);
         int numb = item & 31;
-        int val = theflags.ChangeValue(numw);
+        ref int val = ref theflags.ChangeValue(numw);
         int res, mot = (1 << numb);
 
         if (val == 0)
@@ -371,7 +371,7 @@ public class Interface_BitMap
     {
         int numw = (thenbwords * flag) + (item >> 5);
         int numb = item & 31;
-        int val = theflags.ChangeValue(numw);
+        ref int val = ref theflags.ChangeValue(numw);
         int res, mot = ~(1 << numb);
 
         if (val == ~(0))
