@@ -31,6 +31,12 @@ namespace Occt;
 /// XCAF SHUO) is not kept (decision 1278). The session gets a STEPCAFControl_Controller of its own (decision 1264).
 /// The document's shapes are those the reader publishes, frozen.
 /// </para>
+/// <para>
+/// OCCT.NET (unit 8Z): external files are opened by a resolver (<see cref="SetExternFileResolver"/>): from the disk as
+/// OCCT for a file loaded by ReadFile, none for one loaded by ReadStream unless a resolver is given, none at all with
+/// <see cref="SetExternFilesMode"/> false; each is read with the caller's limits and cancellation, within a budget
+/// across them (<see cref="SetExternFileLimits"/>), and a cycle of references stops.
+/// </para>
 /// </remarks>
 public class STEPCAFControl_Reader
 {
@@ -85,6 +91,7 @@ public class STEPCAFControl_Reader
         myReader.SetWS(WS, scratch);
         myFiles.Clear();
         myMap.Clear();
+        resetExternBudget(false, null);
     }
 
     /// <summary>
@@ -99,26 +106,331 @@ public class STEPCAFControl_Reader
     /// <summary>Loads a file and returns the read status Provided for use like single-file reader.</summary>
     public IFSelect_ReturnStatus ReadFile(string theFileName)
     {
+        resetExternBudget(false, null);
         return myReader.ReadFile(theFileName);
     }
 
     /// <summary>Loads a file with the given parameters and returns the read status</summary>
     public IFSelect_ReturnStatus ReadFile(string theFileName, in DESTEP_Parameters theParams)
     {
+        resetExternBudget(false, null);
         return myReader.ReadFile(theFileName, theParams);
     }
 
+    /// <summary>
+    /// Loads a file with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external files too
+    /// (unit 8Z).
+    /// </summary>
+    public IFSelect_ReturnStatus ReadFile(string theFileName, Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+    {
+        resetExternBudget(false, theLimits);
+        return myReader.ReadFile(theFileName, theProgress, theLimits);
+    }
+
     /// <summary>Loads a file from stream and returns the read status.</summary>
+    /// <remarks>
+    /// OCCT.NET (unit 8Z): external references are read only through a resolver given by
+    /// <see cref="SetExternFileResolver"/>; without one, none is read (OCCT reads them from the disk).
+    /// </remarks>
     public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream)
     {
+        resetExternBudget(true, null);
         return myReader.ReadStream(theName, theIStream);
     }
 
-    /// <summary>Loads a file from stream with limits for hostile input (OCCT.NET, plan 2.7).</summary>
+    /// <summary>
+    /// Loads a file from stream with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external
+    /// files too, which are read only through a resolver (unit 8Z).
+    /// </summary>
     public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress,
                                             StepFile_ReadLimits theLimits)
     {
+        resetExternBudget(true, theLimits);
         return myReader.ReadStream(theName, theIStream, theProgress, theLimits);
+    }
+
+    // ---- OCCT.NET (unit 8Z): how external files are read ------------------------------------------------------
+
+    /// <summary>
+    /// OCCT.NET (unit 8Z): whether external references are read at all (default true). When false, none is opened and
+    /// every reference stays unresolved as OCCT leaves a reference to a missing file: the transient process records
+    /// "Can not read external file", the shape's label records the file's name (<c>SetExternRefs</c>), and the
+    /// <see cref="ExternFiles"/> entry has the load status <c>IFSelect_RetError</c>.
+    /// </summary>
+    public void SetExternFilesMode(bool theMode) => myExternFilesMode = theMode;
+
+    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFilesMode"/>.</summary>
+    public bool GetExternFilesMode() => myExternFilesMode;
+
+    /// <summary>
+    /// OCCT.NET (unit 8Z): opens the external files. When null (the default), a file loaded by ReadFile reads them from
+    /// the disk as OCCT does (<see cref="FileSystemResolver"/>), and a file loaded by ReadStream reads none. A resolver
+    /// other than <see cref="FileSystemResolver"/> names the files it is given lexically: an external file's name is
+    /// its reference combined with the referencing file's folder, <c>.</c> and <c>..</c> folded, without the disk or
+    /// the current directory (OCCT: <c>OSD_Path::AbsolutePath</c>); that name is what its own references are resolved
+    /// against. The resolver is also asked whether a file exists (the stream it returns is then disposed unread), where
+    /// OCCT looks on the disk to choose between the names a reference gives.
+    /// </summary>
+    public void SetExternFileResolver(STEPCAFControl_ExternFileResolver? theResolver) => myExternResolver = theResolver;
+
+    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFileResolver"/>.</summary>
+    public STEPCAFControl_ExternFileResolver? GetExternFileResolver() => myExternResolver;
+
+    /// <summary>
+    /// OCCT.NET (unit 8Z): the budget of the external reads for one main file (files, bytes, depth). A reference past
+    /// the budget, or to a file being read already (a cycle), stays unresolved with a warning in the transient process.
+    /// </summary>
+    public void SetExternFileLimits(STEPCAFControl_ExternFileLimits theLimits)
+    {
+        ArgumentNullException.ThrowIfNull(theLimits);
+        myExternLimits = theLimits;
+    }
+
+    /// <summary>OCCT.NET (unit 8Z): see <see cref="SetExternFileLimits"/>.</summary>
+    public STEPCAFControl_ExternFileLimits GetExternFileLimits() => myExternLimits;
+
+    /// <summary>
+    /// OCCT.NET (unit 8Z): OCCT's way, the file a reference names read from the disk: an absolute name as it is, a
+    /// relative one beside the referencing file (<c>OSD_Path::AbsolutePath</c>; as it is if the referencing name has
+    /// no folder, that is from the current directory). The default of the file API.
+    /// </summary>
+    public static STEPCAFControl_ExternFileResolver FileSystemResolver { get; } = (theFileName, theReferencingName) =>
+    {
+        string aFullName = STEPConstruct_ExternRefs.AbsolutePath(directoryOf(theReferencingName), theFileName);
+        if (aFullName.Length <= 0)
+        {
+            aFullName = theFileName;
+        }
+        return openFile(aFullName);
+    };
+
+    /// <summary>
+    /// OCCT.NET (unit 8Z): a resolver confined to a folder: a reference is resolved beside the referencing file (its
+    /// folder taken inside <paramref name="theRoot"/>; a referencing name outside the folder, or absolute, stands for the
+    /// folder itself) and read only if it lies inside the folder. Absolute names, drive-relative names, UNC and device
+    /// paths, names with a colon (alternate data streams) and names leaving the folder by <c>..</c> are refused, as are
+    /// files reached through a link (a reparse point) below the folder.
+    /// </summary>
+    public static STEPCAFControl_ExternFileResolver FolderResolver(string theRoot)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(theRoot);
+        string aRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(theRoot)) + Path.DirectorySeparatorChar;
+        StringComparison aCmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return (theFileName, theReferencingName) =>
+        {
+            if (string.IsNullOrEmpty(theFileName) || theFileName.Contains('\0') || theFileName.Contains(':')
+                || Path.IsPathRooted(theFileName) || theFileName.StartsWith('/') || theFileName.StartsWith('\\'))
+            {
+                return null;
+            }
+            string aDir = aRoot;
+            string aRefDir = directoryOf(theReferencingName ?? "");
+            if (aRefDir.Length > 0 && !aRefDir.Contains('\0') && !aRefDir.Contains(':') && !Path.IsPathRooted(aRefDir)
+                && !aRefDir.StartsWith('/') && !aRefDir.StartsWith('\\'))
+            {
+                string aCandidate = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(aRoot, aRefDir)))
+                                    + Path.DirectorySeparatorChar;
+                if (aCandidate.StartsWith(aRoot, aCmp))
+                {
+                    aDir = aCandidate;
+                }
+            }
+            string aPath;
+            try
+            {
+                aPath = Path.GetFullPath(Path.Combine(aDir, theFileName));
+            }
+            catch (Exception anExc) when (anExc is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return null;
+            }
+            if (!aPath.StartsWith(aRoot, aCmp) || aPath.Length <= aRoot.Length)
+            {
+                return null;
+            }
+            // no link below the folder (a file or folder reparse point could lead out of it)
+            for (string? aStep = aPath; aStep is not null && aStep.Length > aRoot.Length; aStep = Path.GetDirectoryName(aStep))
+            {
+                try
+                {
+                    if ((File.GetAttributes(aStep) & FileAttributes.ReparsePoint) != 0)
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception anExc) when (anExc is IOException or UnauthorizedAccessException)
+                {
+                    return null;
+                }
+            }
+            return openFile(aPath);
+        };
+    }
+
+    private static string directoryOf(string theFile)
+    {
+        if (string.IsNullOrEmpty(theFile))
+        {
+            return "";
+        }
+        try
+        {
+            return Path.GetDirectoryName(theFile) ?? "";
+        }
+        catch (ArgumentException)
+        {
+            return "";
+        }
+    }
+
+    private static Stream openFile(string thePath)
+    {
+        try
+        {
+            return new FileStream(thePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        catch (Exception anExc) when (anExc is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    // A name combined lexically (a resolver's naming): the referencing file's folder and the reference, with '.' and
+    // '..' folded and '/' as the separator; an absolute reference as it is
+    internal static string CombineName(string theReferencingName, string theFileName)
+    {
+        if (string.IsNullOrEmpty(theFileName))
+        {
+            return "";
+        }
+        bool isRooted;
+        try
+        {
+            isRooted = Path.IsPathRooted(theFileName);
+        }
+        catch (ArgumentException)
+        {
+            isRooted = true;
+        }
+        if (isRooted || theFileName.StartsWith('/') || theFileName.StartsWith('\\'))
+        {
+            return theFileName;
+        }
+        string aDir = directoryOf(theReferencingName);
+        return NormalizeName(aDir.Length > 0 ? aDir + "/" + theFileName : theFileName);
+    }
+
+    internal static string NormalizeName(string theName)
+    {
+        if (string.IsNullOrEmpty(theName))
+        {
+            return "";
+        }
+        string aRoot;
+        try
+        {
+            aRoot = Path.GetPathRoot(theName) ?? "";
+        }
+        catch (ArgumentException)
+        {
+            aRoot = "";
+        }
+        var aParts = new List<string>();
+        foreach (string aPart in theName.Substring(aRoot.Length).Split('/', '\\'))
+        {
+            if (aPart.Length == 0 || aPart == ".")
+            {
+                continue;
+            }
+            if (aPart == ".." && aParts.Count > 0 && aParts[^1] != "..")
+            {
+                aParts.RemoveAt(aParts.Count - 1);
+                continue;
+            }
+            if (aPart == ".." && aRoot.Length > 0)
+            {
+                continue; // above a root: the root
+            }
+            aParts.Add(aPart);
+        }
+        return aRoot.Replace('\\', '/') + string.Join("/", aParts);
+    }
+
+    private STEPCAFControl_ExternFileResolver effectiveResolver()
+    {
+        if (!myExternFilesMode)
+        {
+            return null;
+        }
+        if (myExternResolver is not null)
+        {
+            return myExternResolver;
+        }
+        return myIsStreamLoaded ? null : FileSystemResolver;
+    }
+
+    private void resetExternBudget(bool isStream, StepFile_ReadLimits theLimits)
+    {
+        myIsStreamLoaded = isStream;
+        myReadLimits = theLimits;
+        myExternCount = 0;
+        myExternBytes = 0;
+        myExternStack.Clear();
+    }
+
+    private static bool probeResolver(STEPCAFControl_ExternFileResolver theResolver, string theFileName, string theReferencingName)
+    {
+        Stream aStream = callResolver(theResolver, theFileName, theReferencingName);
+        if (aStream is null)
+        {
+            return false;
+        }
+        aStream.Dispose();
+        return true;
+    }
+
+    private static Stream callResolver(STEPCAFControl_ExternFileResolver theResolver, string theFileName, string theReferencingName)
+    {
+        try
+        {
+            Stream aStream = theResolver(theFileName, theReferencingName);
+            if (aStream is not null && !aStream.CanRead)
+            {
+                aStream.Dispose();
+                return null;
+            }
+            return aStream;
+        }
+        catch (Exception anExc) when (anExc is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    // Why a reference isn't read (a cycle, past the budget), or null
+    private string externRefusal(string theFullName)
+    {
+        foreach (string aName in myExternStack)
+        {
+            if (string.Equals(aName, theFullName, StringComparison.OrdinalIgnoreCase))
+            {
+                return "External reference file is being read already (a cycle of references): " + theFullName;
+            }
+        }
+        if (myExternStack.Count > myExternLimits.MaxDepth)
+        {
+            return "External reference file not read: deeper than " + myExternLimits.MaxDepth + " files: " + theFullName;
+        }
+        if (myExternCount >= myExternLimits.MaxFiles)
+        {
+            return "External reference file not read: more than " + myExternLimits.MaxFiles + " files: " + theFullName;
+        }
+        if (myExternBytes >= myExternLimits.MaxTotalSize)
+        {
+            return "External reference file not read: the external files' " + myExternLimits.MaxTotalSize
+                   + " bytes are read: " + theFullName;
+        }
+        return null;
     }
 
     /// <summary>Returns number of roots recognized for transfer Shortcut for Reader().NbRootsForTransfer()</summary>
@@ -356,63 +668,109 @@ public class STEPCAFControl_Reader
         string aMainName = Path.GetFileName(aLoadedFile);
         string dpath = Path.GetDirectoryName(aLoadedFile) ?? "";
 
+        // OCCT.NET (unit 8Z): the resolver opens the external files; OCCT's naming unless it is another than the disk's
+        STEPCAFControl_ExternFileResolver aResolver = effectiveResolver();
+        bool isOcctNaming = aResolver is null || ReferenceEquals(aResolver, FileSystemResolver);
+
         // Load external references (only for relevant SDRs)
         // and fill map SDR -> extern file
         STEPConstruct_ExternRefs ExtRefs = new STEPConstruct_ExternRefs(reader.WS());
+        if (aResolver is null)
+        {
+            ExtRefs.InternalFileExists = (_, _) => false;
+        }
+        else if (!isOcctNaming)
+        {
+            ExtRefs.InternalFileExists = (theName, theReferencing) => probeResolver(aResolver, theName, theReferencing);
+        }
         ExtRefs.LoadExternRefs();
         using Message_ProgressScope aPSE = new Message_ProgressScope(aPSRoot.Next(), null, ExtRefs.NbExternRefs());
-        for (i = 1; i <= ExtRefs.NbExternRefs() && aPSE.More(); i++)
+        // OCCT.NET: the files being read, the main one first, against cycles (OCCT recurses without end)
+        bool isTopFile = myExternStack.Count == 0;
+        if (isTopFile)
         {
-            Message_ProgressRange aRange = aPSE.Next();
-            // check extern ref format
-            TCollection_HAsciiString format = ExtRefs.Format(i);
-            if (format is not null)
+            string aTopName = isOcctNaming ? STEPConstruct_ExternRefs.AbsolutePath(dpath, aMainName) : NormalizeName(aLoadedFile);
+            myExternStack.Add(aTopName.Length > 0 ? aTopName : aLoadedFile);
+        }
+        try
+        {
+            for (i = 1; i <= ExtRefs.NbExternRefs() && aPSE.More(); i++)
             {
-                TCollection_HAsciiString ap203 = new TCollection_HAsciiString("STEP AP203");
-                TCollection_HAsciiString ap214 = new TCollection_HAsciiString("STEP AP214");
-                if (!format.IsSameString(ap203, false) && !format.IsSameString(ap214, false))
+                Message_ProgressRange aRange = aPSE.Next();
+                // check extern ref format
+                TCollection_HAsciiString format = ExtRefs.Format(i);
+                if (format is not null)
                 {
-                    continue;
+                    TCollection_HAsciiString ap203 = new TCollection_HAsciiString("STEP AP203");
+                    TCollection_HAsciiString ap214 = new TCollection_HAsciiString("STEP AP214");
+                    if (!format.IsSameString(ap203, false) && !format.IsSameString(ap214, false))
+                    {
+                        continue;
+                    }
                 }
+
+                // get and check filename of the current extern ref
+                string filename = ExtRefs.FileName(i);
+
+                if (string.IsNullOrEmpty(filename))
+                {
+                    continue; // not a valid extern ref
+                }
+
+                // compute true path to the extern file
+                // OCCT.NET: a resolver's name is lexical (unit 8Z)
+                string fullname = isOcctNaming ? STEPConstruct_ExternRefs.AbsolutePath(dpath, filename) : CombineName(aLoadedFile, filename);
+                if (fullname.Length <= 0)
+                {
+                    fullname = filename;
+                }
+
+                // check for not the same file
+                string aMainFullName = isOcctNaming ? STEPConstruct_ExternRefs.AbsolutePath(dpath, aMainName) : NormalizeName(aLoadedFile);
+                if (string.Equals(aMainFullName, fullname, StringComparison.OrdinalIgnoreCase))
+                {
+                    TP.AddWarning(ExtRefs.DocFile(i), "External reference file is the same main file");
+                    continue; // not a valid extern ref
+                }
+
+                // get and check PD associated with the current extern ref
+                StepBasic_ProductDefinition PD = ExtRefs.ProdDef(i);
+                if (PD is null)
+                {
+                    continue; // not a valid extern ref
+                }
+                if (!PDFileMap.IsBound(PD))
+                {
+                    continue; // this PD is not concerned by current transfer
+                }
+
+                // OCCT.NET (unit 8Z): a cycle or a reference past the budget stays unresolved, with a warning
+                if (aResolver is not null && !myFiles.IsBound(filename))
+                {
+                    string aRefusal = externRefusal(fullname);
+                    if (aRefusal is not null)
+                    {
+                        TP.AddWarning(ExtRefs.DocFile(i) ?? (Standard_Transient)PD, aRefusal);
+                        STEPCAFControl_ExternFile anUnread = new STEPCAFControl_ExternFile();
+                        anUnread.SetName(new TCollection_HAsciiString(filename));
+                        anUnread.SetLoadStatus(IFSelect_RetError);
+                        PDFileMap.Bind(PD, anUnread);
+                        aRange.Close();
+                        continue;
+                    }
+                }
+
+                // read extern file (or use existing data) and record its data
+                STEPCAFControl_ExternFile EF = ReadExternFile(filename, fullname, aLoadedFile, doc, aRange);
+                PDFileMap.Bind(PD, EF);
             }
-
-            // get and check filename of the current extern ref
-            string filename = ExtRefs.FileName(i);
-
-            if (string.IsNullOrEmpty(filename))
+        }
+        finally
+        {
+            if (isTopFile)
             {
-                continue; // not a valid extern ref
+                myExternStack.Clear();
             }
-
-            // compute true path to the extern file
-            string fullname = STEPConstruct_ExternRefs.AbsolutePath(dpath, filename);
-            if (fullname.Length <= 0)
-            {
-                fullname = filename;
-            }
-
-            // check for not the same file
-            string aMainFullName = STEPConstruct_ExternRefs.AbsolutePath(dpath, aMainName);
-            if (string.Equals(aMainFullName, fullname, StringComparison.OrdinalIgnoreCase))
-            {
-                TP.AddWarning(ExtRefs.DocFile(i), "External reference file is the same main file");
-                continue; // not a valid extern ref
-            }
-
-            // get and check PD associated with the current extern ref
-            StepBasic_ProductDefinition PD = ExtRefs.ProdDef(i);
-            if (PD is null)
-            {
-                continue; // not a valid extern ref
-            }
-            if (!PDFileMap.IsBound(PD))
-            {
-                continue; // this PD is not concerned by current transfer
-            }
-
-            // read extern file (or use existing data) and record its data
-            STEPCAFControl_ExternFile EF = ReadExternFile(filename, fullname, doc, aRange);
-            PDFileMap.Bind(PD, EF);
         }
 
         // and insert them to the document
@@ -609,11 +967,19 @@ public class STEPCAFControl_Reader
 
     /// <summary>Reads (or if returns already read) extern file with given name</summary>
     /// <remarks>
-    /// OCCT.NET: the external file is read from the disk (<paramref name="fullname"/>) by a session on the main
-    /// session's parameter set (OCCT's statics are process-wide).
+    /// OCCT.NET: the external file is read by a session on the main session's parameter set (OCCT's statics are
+    /// process-wide), through the reader's resolver (unit 8Z: OCCT reads <paramref name="fullname"/> from the disk),
+    /// with the caller's limits and within the external files' budget; it is read under the name
+    /// <paramref name="fullname"/>, against which its own references are resolved.
     /// </remarks>
     protected STEPCAFControl_ExternFile ReadExternFile(string file, string fullname, XdeDoc_Document doc,
                                                        Message_ProgressRange theProgress = default)
+    {
+        return ReadExternFile(file, fullname, myReader.WS().LoadedFile() ?? "", doc, theProgress);
+    }
+
+    private STEPCAFControl_ExternFile ReadExternFile(string file, string fullname, string theReferencingName,
+                                                     XdeDoc_Document doc, Message_ProgressRange theProgress)
     {
         // if the file is already read, associate it with SDR
         if (myFiles.IsBound(file))
@@ -632,13 +998,23 @@ public class STEPCAFControl_Reader
         EF.SetName(new TCollection_HAsciiString(file));
 
         // read file
-        EF.SetLoadStatus(sr.ReadFile(fullname));
+        // OCCT.NET: through the resolver, with the limits and progress (unit 8Z)
+        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, 2);
+        EF.SetLoadStatus(readExternStream(sr, file, fullname, theReferencingName, aPS.Next()));
 
         // transfer in single-result mode
         if (EF.GetLoadStatus() == IFSelect_RetDone)
         {
             NCollection_Sequence<XdeDoc_Label> labels = new NCollection_Sequence<XdeDoc_Label>();
-            EF.SetTransferStatus(Transfer(sr, 0, doc, labels, false, theProgress));
+            myExternStack.Add(fullname);
+            try
+            {
+                EF.SetTransferStatus(Transfer(sr, 0, doc, labels, false, aPS.Next()));
+            }
+            finally
+            {
+                myExternStack.RemoveAt(myExternStack.Count - 1);
+            }
             if (labels.Length() > 0)
             {
                 EF.SetLabel(labels.Value(1));
@@ -649,6 +1025,38 @@ public class STEPCAFControl_Reader
         myFiles.Bind(file, EF);
 
         return EF;
+    }
+
+    // OCCT: sr.ReadFile(fullname); a file not opened is IFSelect_RetError as StepFile_Read's -1
+    private IFSelect_ReturnStatus readExternStream(STEPControl_Reader sr, string file, string fullname,
+                                                   string theReferencingName, Message_ProgressRange theProgress)
+    {
+        STEPCAFControl_ExternFileResolver aResolver = effectiveResolver();
+        if (aResolver is null || theProgress.UserBreak())
+        {
+            return IFSelect_RetError;
+        }
+        Stream aStream = callResolver(aResolver, file, theReferencingName);
+        if (aStream is null)
+        {
+            return IFSelect_RetError;
+        }
+        myExternCount++;
+        using (aStream)
+        {
+            StepFile_ReadLimits aLimits = myReadLimits ?? StepFile_ReadLimits.Default;
+            long aLeft = Math.Max(0, myExternLimits.MaxTotalSize - myExternBytes);
+            aLimits = aLimits with { MaxFileSize = Math.Min(aLimits.MaxFileSize, aLeft) };
+            STEPCAFControl_CountingStream aCounted = new STEPCAFControl_CountingStream(aStream, aLimits.MaxFileSize);
+            try
+            {
+                return sr.ReadStream(fullname, aCounted, theProgress, aLimits);
+            }
+            finally
+            {
+                myExternBytes += aCounted.BytesRead;
+            }
+        }
     }
 
     private static void findStyledSR(StepVisual_StyledItem style, ref StepShape_ShapeRepresentation aSR)
@@ -2095,4 +2503,13 @@ public class STEPCAFControl_Reader
     private bool myGDTMode;
     private bool myMatMode;
     private bool myViewMode;
+    // OCCT.NET (unit 8Z): the external reads
+    private bool myExternFilesMode = true;
+    private STEPCAFControl_ExternFileResolver? myExternResolver;
+    private STEPCAFControl_ExternFileLimits myExternLimits = STEPCAFControl_ExternFileLimits.Default;
+    private bool myIsStreamLoaded;
+    private StepFile_ReadLimits myReadLimits;
+    private int myExternCount;
+    private long myExternBytes;
+    private readonly List<string> myExternStack = new List<string>();
 }

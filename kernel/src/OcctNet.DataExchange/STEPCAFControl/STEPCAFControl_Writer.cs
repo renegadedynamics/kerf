@@ -160,6 +160,53 @@ public class STEPCAFControl_Writer
         return myWriter.WriteStream(theStream);
     }
 
+    /// <summary>
+    /// OCCT.NET (unit 8Z): writes the main model into <paramref name="theStream"/> and, in the multifile mode, each
+    /// external file into the stream <paramref name="theExternStreams"/> opens for its name (which it may refuse with
+    /// null: that file's write status is then <c>IFSelect_RetError</c>, and so is the result). The writer opens no
+    /// file itself: the names come from the document's labels and may hold separators or <c>..</c>, so the caller
+    /// decides where each goes (a folder, an archive, memory). The streams are disposed after writing. As
+    /// <see cref="Write"/>, the files already written are not written again.
+    /// </summary>
+    public IFSelect_ReturnStatus WriteStream(Stream theStream, STEPCAFControl_ExternFileWriter theExternStreams)
+    {
+        ArgumentNullException.ThrowIfNull(theExternStreams);
+        IFSelect_ReturnStatus aStatus = myWriter.WriteStream(theStream);
+        if (aStatus != IFSelect_RetDone)
+        {
+            return aStatus;
+        }
+        foreach (KeyValuePair<string, STEPCAFControl_ExternFile> anExtFileIter in myFiles)
+        {
+            STEPCAFControl_ExternFile anExtFile = anExtFileIter.Value;
+            if (anExtFile.GetWriteStatus() != IFSelect_RetVoid)
+            {
+                continue;
+            }
+            string aFileName = anExtFile.GetName().ToCString();
+            Stream anExtStream = theExternStreams(aFileName);
+            IFSelect_ReturnStatus anExtStatus;
+            if (anExtStream is null || !anExtStream.CanWrite)
+            {
+                anExtStream?.Dispose();
+                anExtStatus = IFSelect_RetError;
+            }
+            else
+            {
+                using (anExtStream)
+                {
+                    anExtStatus = anExtFile.GetWS().SendAll(aFileName, false, anExtStream);
+                }
+            }
+            anExtFile.SetWriteStatus(anExtStatus);
+            if (anExtStatus != IFSelect_RetDone)
+            {
+                aStatus = anExtStatus;
+            }
+        }
+        return aStatus;
+    }
+
     private void prepareUnit(XdeDoc_Document theDoc, StepData_StepModel theModel, ref StepData_Factors theLocalFactors)
     {
         if (theDoc is not null && theDoc.GetLengthUnit(out double aUnitValue))

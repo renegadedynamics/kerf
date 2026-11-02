@@ -76,6 +76,8 @@ internal static class XSDRAWSTEPDocCommands
         }
 
         var aReader = new STEPCAFControl_Reader(aSession, isFileMode);
+        // the external files from the disk beside the file, as DRAWEXE (the stream form reads none by default: unit 8Z)
+        aReader.SetExternFileResolver(STEPCAFControl_Reader.FileSystemResolver);
         if (aModeStr.Length > 0)
         {
             bool aMode = true;

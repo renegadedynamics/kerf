@@ -1566,3 +1566,10 @@ Phase 8 (part): STEPControl, the first milestone (unit 8F).
   the order of the style representations, 11 attributed.
 - Draw-lite: `ReadStep` and `WriteStep` over its documents; the de group's STEP grids run (999 corpus cases made
   runnable: 255 OK, 76 BAD as in OCCT, 660 skipped for missing data, 8 failures attributed).
+- Phase 8, unit 8Z: STEP external references read safely. `STEPCAFControl_Reader` reads the files a STEP file refers
+  to through a resolver (`SetExternFileResolver`; `FileSystemResolver`, OCCT's way and the file API's default;
+  `FolderResolver(root)`, confined to a folder; or the caller's, from an archive or memory), can be told to read none
+  (`SetExternFilesMode(false)`), applies the caller's read limits and cancellation to every external file within a
+  budget across them (`STEPCAFControl_ExternFileLimits`: files, bytes, depth), and stops at cycles (a stack overflow in
+  OCCT). `ReadStream` reads no external file unless given a resolver. `STEPCAFControl_Writer.WriteStream(stream,
+  externStreams)` writes the multifile mode into the caller's streams.

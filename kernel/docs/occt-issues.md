@@ -2012,3 +2012,11 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | STEPCAFControl_Reader::collectRepresentationItems | Follows representation relationships without a guard | A cycle of relationships recurses without end; the port stops after 1,000 levels (decision 1280) |
 | XCAFDoc_ShapeTool::GetExternRefs | Returns the names of the label's children, not the external references SetExternRefs keeps in a child label of its own | Its callers (none in STEPCAFControl) get the components' names of an assembly; the port's GetExternRefs returns the references |
 | (port) XSControl_TransferReader::ShapeResult | The port encoded the regularity of a result holding frozen shapes into a copy (decision 1224) | An assembly whose parts were published before was copied whole, so its parts were no longer its product definitions' results and STEPCAFControl_Reader read it as one part (trj4_s1-ai-214.stp written and read back). Fixed: an unfrozen shape holding frozen ones is encoded in place around them; the STEPControl comparisons are unchanged |
+
+## Phase 8: unit 8Z, STEP external references
+
+| Where | What | Effect |
+|---|---|---|
+| STEPCAFControl_Reader::ReadExternFile | Records a file as read (`myFiles.Bind`) only after its transfer, which reads the file's own references; the "same main file" check compares with the referencing file only | Files referring to each other (A to B to A) recurse without end, a stack overflow. Fixed: the files being read are kept and a reference back to one stays unresolved with a warning (decision 13701-13704) |
+| STEPCAFControl_Reader::Transfer, ReadExternFile; STEPConstruct_ExternRefs::FileName | External files read from the disk relative to the loaded file's name or the current directory, or at any absolute or UNC path the file names, without the caller's limits or cancellation, with no way to turn it off or redirect it | A file opens arbitrary paths. The port's resolver, limits and budget (decisions 13701-13704) |
+| STEPCAFControl_Writer::Write (multifile) | The external files' names are the labels' names, unchecked | A document's names can place files outside the main file's folder. Kept for Write(path); the stream form hands the names to the caller (decision 13705) |
