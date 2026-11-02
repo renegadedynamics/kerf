@@ -67,6 +67,8 @@ public class IFSelect_CheckCounter : IFSelect_SignatureList
             {
                 if (thesign is not null)
                 {
+                    // OCCT keeps the C string of the temporary text Text() returns, destroyed at once: natively the type
+                    // printed is garbage or empty (occt-issues.md, 8A3); the port gives the text
                     tystr = thesign.Text(ent, model);
                 }
                 else if (model is not null)

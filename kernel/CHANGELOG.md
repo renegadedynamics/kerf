@@ -1486,3 +1486,15 @@ Phase 8 (part): the other STEP entity packages and StepAP214's protocol (unit 8C
 - Round trips of the dataset's 338 STEP files with the real protocol: 98.9% of the 1,546,314 records are recognised
   (the rest are types OCCT doesn't know either); of those, 1,526,805 are written back the same and the 2,107 others
   differ as OCCT's own reading and writing make them (each attributed, 13 OCCT bugs logged).
+Phase 8 (part): IFSelect, XSControl and the STEP header's editor (unit 8A3).
+- IFSelect as its member trace reaches (40 of its 76 classes: the work session, work library, model copier,
+  share-out, modifiers, selections, signatures and counters, dispatches, editors); XSControl but its command files
+  (the controller, work session, reader, writer, transfer reader and writer, selections and signatures on transfers,
+  Vars, Utils); APIHeaderSection_EditHeader.
+- A work session owns its parameters (an `Interface_StaticSet`) or is given one; a controller declares its norm's
+  statics in it (`InitStatics`). Controllers are recorded once, process-wide, as the libraries' modules. Reading takes
+  .NET streams and a progress range; writing can go to a stream through the share-out's modifiers
+  (`XSControl_Writer.WriteStream`). Readers publish frozen shapes.
+- Compared with native OCCT (tools/xscontrolrec) on the corpus's 331 STEP files up to 3 MB: the work session's roots,
+  selections, signatures, check lists and label lookups, in its two modes, identical (27,589 lines). Tested on the toy
+  norm and on STEP models. 11 OCCT bugs logged.

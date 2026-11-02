@@ -12571,3 +12571,105 @@ the translators), with TKDE's DE_ShapeFixParameters.
        typed), CHARACTERIZED_OBJECT written derived (3), application-defined element purposes (2), a boolean written as
        an integer (1). The test tries the two writers that can throw on a writer of their own first, as a throwing
        WriteStep leaves the writer inside the record. Native OCCT's writing is compared in unit 8F.
+
+## Phase 8: unit 8A3, IFSelect (as traced), XSControl and APIHeaderSection_EditHeader
+
+The last part of unit 8A: IFSelect's classes and members the trace reaches (decision 1189), XSControl but its two
+command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, left by unit 8B).
+
+12701. **IFSelect's cut** (decision 1189, the owner's 1166). Ported: the work session, its work library, model copier,
+       share-out and the contexts of modifiers (ContextModif, ContextWrite, AppliedModifiers, GeneralModifier,
+       Modifier); the selections Selection, SelectBase, SelectDeduct, SelectExtract, SelectExplore, SelectPointed,
+       SelectModelRoots, SelectModelEntities, SelectShared, SelectSharing, SelectSignature and SelectionIterator; the
+       signatures Signature, SignType, SignAncestor, SignCategory, SignValidity, the lists and counters
+       SignatureList, SignCounter, GraphCounter, CheckCounter; the dispatches Dispatch, DispPerOne, DispPerCount,
+       DispPerFiles, DispPerSignature; the editors Editor, EditForm, ParamEditor, IntParam; IFSelect_Functions' four
+       helpers; the five enumerations. 40 classes, all whole but:
+       - **left out with the classes they need:** IFSelect_WorkSession's Transformer, RunTransformer, RunModifier,
+         RunModifierSelected, NewTransformStandard, SetModelContent (IFSelect_Transformer), EvaluateFile, SendSplit,
+         EvalSplit, SentList, MaxSendingCount, SetRemaining, EvaluateDispatch, EvaluateComplete (ShareOutResult,
+         PacketList, SelectSent), SetControl, CombineAdd, CombineRemove (SelectControl, SelectCombine; NbSources and
+         Source lose those cases, SetAppliedModifier its TransformStandard case, ItemLabel its Transformer case), and
+         the Draw dumps DumpShare, ListItems, ListFinalModifiers, DumpSelection, EvaluateSelection (no caller);
+         IFSelect_ModelCopier's Copy, Copying, Send, Sending (ShareOutResult) and its deprecated CopiedRemaining;
+         IFSelect_EditForm's ListEditor, ModifyList, ModifyListValue and IFSelect_Editor's ListEditor
+         (IFSelect_ListEditor); IFSelect_SelectPointed's Update(Transformer);
+       - **declared by OCCT, never defined:** IFSelect_EditForm::NbTouched and IFSelect_ContextModif::Search, left
+         out; IFSelect_IntParam::StaticName, ported (it returns the name);
+       - **not ported (35 classes):** Act, Activator, SessionPilot, BasicDumper, SessionDumper, SessionFile (and the
+         package's SaveSession/RestoreSession), DispGlobal, ListEditor, ModifEditForm, ModifReorder, PacketList,
+         ShareOutResult, Transformer, TransformStandard, SignMultiple, and the selections AnyList, AnyType, Combine,
+         Control, Diff, EntityNumber, ErrorEntities, Flag, InList, IncorrectEntities, Intersection, Range, RootComps,
+         Roots, Sent, SignedShared, SignedSharing, Suite, Type, Union, UnknownEntities.
+       IFSelect_Activator (a process-wide list of command activators, the base of StepSelect_Activator) goes with the
+       command machinery: unit 8F leaves StepSelect_Activator out too.
+12702. **Commands: no IFSelect_SessionPilot, IFSelect_Act or command table.** Draw-lite ports the commands the corpus
+       uses directly on a session (as 8A1 suggested): IFSelect_Functions keeps GiveEntity, GiveEntityNumber, GiveList
+       and GiveDispatch (GiveEntityNumber returns 0 for an empty name, where OCCT reads the keyboard). For unit 8F:
+       `param` (the interpreter's Interface_StaticSet: Items, CVal, SetCVal, Static(...).Print), `data` (DumpModel,
+       PrintCheckList), `entity` (DumpEntity, PrintEntityStatus), `writeall`, `writeent` (SendAll, SendSelected),
+       `listtypes` (an IFSelect_SignCounter of the session's SignType, PrintList), and XSControl's `newmodel`
+       (NewModel), `tpstat` (XSControl_TransferReader.PrintStatsProcess/PrintStatsOnList), `tpcompound` and `tpdraw`
+       (TransferBRep's shapes of the transient process). XSControl_Functions, XSControl_FuncShape and the package
+       class XSControl (`Session(pilot)`, `Vars(pilot)`) are left out. XSControl_Utils keeps its members but the
+       extended strings ones (the port has no TCollection_ExtendedString; .NET strings are UTF-16).
+12703. **Parameters and process-wide state** (plan 2.7, decision 1181).
+       - IFSelect_WorkSession owns an Interface_StaticSet (`Statics()`, with the standard statics), or is given one
+         (`SetStatics`, `new XSControl_WorkSession(statics)`: an interpreter's set, or a reader's copy). Everything that
+         read OCCT's process-wide statics reads it: NewParamFromStatic, IFSelect_IntParam (`SetStaticName(name,
+         statics)`), IFSelect_ParamEditor.StaticEditor(statics, ...), the controller's Customise, and
+         XSControl_TransferReader (`Statics()`, set by its session; `read.encoderegularity.angle`).
+       - XSControl_Controller declares a norm's statics in a session's set: the new virtual `InitStatics(statics)`
+         (the base calls `Standards()`; a norm's controller adds its own once per set, `StartInit`), called by
+         XSControl_WorkSession.SetController and SetStatics. OCCT declares them in the controller's constructor;
+         `TraceStatic` keeps the name, looked up in the session's set by Customise.
+       - XSControl_Controller's dictionary of recorded controllers (`Record`, `Recorded`) stays process-wide, as
+         LibCtl's global lists (decision 1182): a norm records its controller once, in its initialisation, before
+         sessions select it, under a lock; recording the same controller again changes nothing. XSControl_WorkSession's
+         global mutex around SelectNorm, NewModel and TransferWriteShape is kept: the controllers and their actors
+         (whose ModeTrans a transfer sets) are shared by all sessions.
+       - IFSelect_WorkSession's file static `errhand` (one flag for all sessions in OCCT) is the session's own, its
+         static text buffer and XSControl_SignTransferStatus's are local strings. SetProtocol doesn't make the protocol
+         the active one (decision 1183).
+12704. **Determinism.** XSControl_Controller::Customise adds the items recorded by AddSessionItem iterating its
+       `NCollection_DataMap` (hash order of the names in OCCT): the port's map keeps the recording order, so the items'
+       identifiers follow it. The session's names (`thenames`, ItemNames) iterate likewise. Signature lists and
+       counters are indexed maps: the order of first occurrence, as OCCT's.
+12705. **Frozen shapes.** XSControl_TransferReader.ShapeResult encodes the regularity into a copy (BRepLib's
+       functional twin `RegularityEncoded`), where OCCT's ShapeFix::EncodeRegularity writes into the recorded shape
+       itself. XSControl_Reader freezes the shapes it publishes (Shape, OneShape's compound). XSControl_Utils' tools
+       return what they build as built, as OCCT's.
+12706. **Streams and cancellation.** IFSelect_WorkLibrary's ReadFile and ReadStream take a .NET `Stream` and a
+       `Message_ProgressRange` (not in OCCT), as do the session's and XSControl_Reader's ReadFile and ReadStream.
+       Writing to a stream: IFSelect_ContextWrite takes an optional stream (`OStream()`), which a library writes in
+       place of the file; ModelCopier.SendAll/SendSelected, the session's SendAll/SendSelected and the new
+       XSControl_Writer.WriteStream pass it through, so a stream write applies the share-out's modifiers as a file
+       write does (OCCT's STEPControl_Writer::WriteStream bypasses the session). The STEP parser's limits
+       (StepFile_ReadLimits) are STEP's: unit 8F's StepSelect_WorkLibrary or STEPControl_Reader passes them.
+12707. **API.** C++ value classes (IFSelect_ContextModif, ContextWrite, SelectionIterator, XSControl_Utils) are
+       classes; OCCT's modifiable references are `ref` returns (EditKeepStatus, ModeSignOnly, SelectDeduct.Alternate),
+       outputs left untouched on failure `ref` (AppliedModifiers.Item, Vars.GetPoint), `Standard_OStream` a
+       `TextWriter` (a messenger's stream buffer is written through a StringWriter, one message as OCCT's), `std::cout`
+       `Console.Out`. The lists OCCT passes as transients are transients (decision 1214): GiveList(obj) returns a list
+       given, GiveListFromList and XSControl_TransferReader's CheckList/CheckedList take a list as the transient.
+       XSControl_Controller.Customise takes its session by value (OCCT's non-const reference is never reassigned).
+       XSControl_WorkSession's destructor (ClearBinders, which breaks binder chains to free memory) is left to the
+       garbage collector. IFSelect_EditForm keeps its values as transients (texts, or lists of texts).
+12708. **IFSelect_WorkSession::ReadFile and STEP.** OCCT 8's StepSelect_WorkLibrary reads into the model it is given,
+       and the session gives none: XSControl_Reader::ReadFile on STEP dereferences a null model, caught as a signal
+       (RetFail), natively and in the port (occt-issues.md, 8A3). STEPControl_Reader makes the model itself (the
+       statics' parameters, the header, the code page) and calls the library: unit 8F does the same (the tests'
+       TestStepController.ReadFile shows how).
+12709. **8A3's oracle: tools/xscontrolrec.** A native recorder reads each of the corpus's 331 STEP files up to 3 MB
+       with STEPControl_Reader, in "lite" and "full" modes (SetModeStat), and dumps what IFSelect computes: the roots,
+       the shareds of the roots and the sharings of entity 1 (selections through GiveList, a chained "sel1 sel2" and a
+       list argument), the type, validity and category counters, the model's check list (each check), a label looked
+       up (NumberFromLabel), a selection by signature with a parameter ("rec-type(CartesianPoint)"). The port reads
+       the files as STEPControl_Reader does through a test controller and library: **all 331 files identical (27,589
+       lines)**. IFSelect_CheckCounter with a signature isn't compared: natively it prints a destroyed string
+       (occt-issues.md, 8A3). The rest is tested on 8A1's toy norm (selections, signatures, dispatches, share-out file
+       names, the model copier with model and file modifiers, editors and parameters, the controller's
+       customisation, the transfer reader and writer, the reader and writer) and on STEP models (sending to a stream
+       gives StepData_StepWriter's bytes, the header editor, sessions in parallel). For unit 8F to compare natively:
+       xst-transferrable-roots and the transfers (STEPControl's actors), SendAll's files through StepSelect_WorkLibrary
+       with its file modifiers.

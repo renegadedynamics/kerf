@@ -2374,7 +2374,7 @@ public class IFSelect_WorkSession : Standard_Transient
 
         if (myErrHand)
         {
-            myErrHand = false;
+            myErrHand = false; // OCCT: restored on an exception only, so later calls run unprotected
             try
             {
                 ComputeGraph(computegraph);
@@ -2442,7 +2442,7 @@ public class IFSelect_WorkSession : Standard_Transient
 
         if (myErrHand)
         {
-            myErrHand = false;
+            myErrHand = false; // OCCT: restored on an exception only, so later calls run unprotected
             try
             {
                 ComputeGraph(computegraph);
