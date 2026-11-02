@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Occt</RootNamespace>
+    <Description>OCCT.NET data exchange: a managed port of OCCT's TKXSBase, TKDESTEP and TKDESTL (the exchange framework, STEP, STL), with an immutable assembly tree in place of XCAF.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Ported members carry OCCT's documentation where it has some, not a comment on every overload -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OcctNet.ModelingAlgorithms\OcctNet.ModelingAlgorithms.csproj" />
+  </ItemGroup>
+
+</Project>
