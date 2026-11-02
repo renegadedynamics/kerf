@@ -20,6 +20,8 @@ The owner's brief (2 November):
 - **Value types and spans in place of needless heap allocation; collections chosen for their use.**
 - **build123d.NET:** it uses OCCT.NET's types directly, without wrappers, keeps no Python conventions, and its native
   backend is retired.
+- **One repository** for the two projects (owner, 2 November), and possibly a new name for them now they diverge, still
+  crediting OCCT and build123d (2.10, 2.11, question 47).
 
 This replaces beyond-compatibility.md's "decision points". Point A, retiring native build123d.NET, is yes. Point B,
 diverging from OCCT, is yes everywhere, under the testing rules of section 3.
@@ -282,6 +284,57 @@ are fixed.
 - **Bento's couplings** become explicit: its own enum and property tables in place of reflection over build123d.NET's
   names. Its spreadsheet-facing names stay Bento's choice (question 48).
 
+### 2.10 One repository, two layers
+
+The two projects move into one repository, keeping two families of assemblies and packages.
+
+- **Why separate repositories no longer pay:** build123d.NET and OCCT.NET were separate so that build123d.NET could
+  choose between native OCCT and the port. Phase 10 retires native, so that reason goes. Phase 9 showed the cost of
+  keeping them apart:
+  - two branches and two worktrees for every change that touched both;
+  - version pins and two build modes (`OcctNetRoot` or the packages);
+  - NuGet indexing waits before build123d.NET would restore;
+  - 15 `UnsafeAccessor`s reaching across the boundary.
+- **Phase 10 would multiply that cost.** The rename and the public API design must move both together, and two public
+  APIs designed apart would overlap: two Boxes, two Fillets, two error models.
+- **What stays separate: the layers, as assemblies and packages.**
+  - **The kernel:** OCCT.NET's assemblies, under LGPL 2.1 with OCCT's exception, as a derived work of OCCT.
+  - **The modelling layer:** build123d.NET's successor, under Apache 2.0, as a derived work of build123d.
+  - The licences differ, and the FSF considers Apache 2.0 code incompatible with LGPL 2.1 code in one work. So no source
+    file moves between the layers: the modelling layer references the kernel's assemblies, as it does today.
+  - Each layer keeps its licence files and notices in its own folder; the root README explains the split.
+- **The line between the layers:**
+  - **The kernel's public API (2.1):** geometry, topology and the operations, with options and results.
+  - **The modelling layer:** the ergonomic API Bento uses. Parts, sketches and curves as typed values; locations and
+    placement; selectors; the algebra of combining parts.
+
+  The modelling layer adds no geometry of its own: what it needs from the kernel becomes kernel API.
+- **How (unit 10R):**
+  - A new repository. Each project's history is moved into its own folder (`git filter-repo --to-subdirectory-filter`),
+    and the two are merged with `--allow-unrelated-histories`, so `git log` and `blame` still work.
+  - One solution and one `Directory.Build.props`.
+  - Docs: OCCT.NET's docs carry on as the repository's (decisions, issues, plans), with build123d.NET's design and
+    integration notes beside them.
+  - The old repositories are archived as bundles.
+  - On nuget.org, the old package IDs are deprecated in favour of the new ones at 0.2.0. Bento moves to the new IDs then.
+- **No behaviour changes in 10R.** It is a move, tested by both suites passing unchanged.
+
+### 2.11 A name, and credit to the originals
+
+Diverging from OCCT and build123d makes their names misleading, and possibly unwelcome:
+- **"OCCT.NET"** suggests a faithful binding or port of Open CASCADE Technology. "Open CASCADE" is Open Cascade SAS's
+  trademark, and a diverging derivative shouldn't look endorsed by them.
+- **"build123d.NET"** suggests the Python library's API, which phase 10 removes.
+
+Question 47 proposes a new name. Whatever the name, the credit stays, and the licences require it:
+
+| | The kernel (from OCCT) | The modelling layer (from build123d) |
+|---|---|---|
+| Licence | LGPL 2.1 with the Open CASCADE exception, unchanged | Apache 2.0, unchanged |
+| Required | The licence and exception texts; OCCT's copyright notices; a statement that it is a modified version of OCCT 8.0.1, and what changed; the source available | The licence; a NOTICE with build123d's attribution; copyright notices kept; modified files marked as changed |
+| Shown | README, NOTICE and package descriptions: "derived from Open CASCADE Technology 8.0.1 (Open Cascade SAS), ported to C# and redesigned"; the `// Port of:` headers kept in derived files | README, NOTICE and package descriptions: "derived from build123d (the build123d contributors)" |
+| Avoided | OCCT's names and logos in the product's name or branding | Presenting it as build123d |
+
 ## 3. Testing without the oracle
 
 The oracle goes only after its knowledge is kept as data. Every feature's behaviour must be pinned by a test that
@@ -329,6 +382,7 @@ Sizes are rough, in OCCT.NET lines touched.
 
 | Unit | Content | Needs |
 |---|---|---|
+| **10R** One repository | 2.10: both histories in one repository, one solution, licences per layer, docs merged; no behaviour change; the new name (question 47) in the repository, solution and folder names, the package IDs following at 0.2.0 (10E) | – |
 | **10A** Test independence | 3.1: freeze the live oracle tests and 9D2's logs as recordings; build123d.NET's native references and Python data as data; coverage measured and reported (3.2) | – |
 | **10B** build123d.NET on OCCT.NET alone | Retire native (about 136k lines); drop the forwarding layer (about 71k); build123d.NET calls OCCT.NET's types (structs, no disposal, OCCT.NET's exceptions until 10F); OCCT.NET gains the public API the 15 `UnsafeAccessor`s reach for, a colour type, mesh extraction | 10A |
 | **10C** Conventions and tooling | The renamer and its name map; .editorconfig and analyzers for .NET naming and immutability; translation-rules.md replaced by a design-rules document; a pilot on gp and math | – |
@@ -350,17 +404,18 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
 
 | Step | Units | Notes |
 |---:|---|---|
-| 1 | 10A ‖ 10C | Nothing diverges before 10A is in |
-| 2 | 10B ‖ 10D ‖ 10K's triage | 10B simplifies build123d.NET first, so later renames reach one code base |
-| 3 | 10E | The rename: mechanical, but it touches every file, so it runs alone |
-| 4 | 10F ‖ 10G ‖ 10H1 | |
-| 5 | 10H2 ‖ 10H3 ‖ 10I | |
-| 6 | 10H4 ‖ 10H5 ‖ 10J | |
-| 7 | 10H6 ‖ 10L ‖ 10K's fixes | |
-| 8 | 10M, then 10N | |
+| 1 | 10R | The move; everything after it happens in one repository |
+| 2 | 10A ‖ 10C | Nothing diverges before 10A is in |
+| 3 | 10B ‖ 10D ‖ 10K's triage | 10B simplifies the modelling layer first, so later renames reach one code base |
+| 4 | 10E | The rename: mechanical, but it touches every file, so it runs alone |
+| 5 | 10F ‖ 10G ‖ 10H1 | |
+| 6 | 10H2 ‖ 10H3 ‖ 10I | |
+| 7 | 10H4 ‖ 10H5 ‖ 10J | |
+| 8 | 10H6 ‖ 10L ‖ 10K's fixes | |
+| 9 | 10M, then 10N | |
 
 **Releases:**
-- **0.2.0-preview.N:** OCCT.NET's and build123d.NET's packages after step 3, when the names change.
+- **0.2.0-preview.N:** the packages, under their new IDs, after step 4, when the names change.
 - **0.2.0:** at the end.
 - **The 0.1.0 previews** are deprecated on nuget.org.
 
@@ -383,14 +438,30 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
 
 ## 6. Questions for the owner
 
-46. **Namespaces and names** (2.2). *Recommended:*
-    - public namespaces by area: `OcctNet.Geometry`, `.Topology`, `.Modeling`, `.Booleans`, `.Meshing`, `.Exchange`;
-    - engine types in `OcctNet.Engine.<Area>`, with .NET names derived from OCCT's (`BOPAlgo_PaveFiller` →
-      `Engine.Booleans.PaveFiller`).
-47. **The product name.** The library will no longer be "OCCT for .NET" in shape, though it remains a derived work under
-    OCCT's LGPL with the exception. *Recommended:*
-    - keep the OcctNet name for now; decide at 0.2.0;
-    - the licence and notices stay as they are.
+46. **Namespaces and names** (2.2), under the name question 47 chooses (`<Name>` below). *Recommended:*
+    - the kernel's public namespaces by area: `<Name>.Geometry`, `.Topology`, `.Booleans`, `.Construction`, `.Meshing`,
+      `.Exchange`;
+    - engine types in `<Name>.Engine.<Area>`, with .NET names derived from OCCT's (`BOPAlgo_PaveFiller` →
+      `Engine.Booleans.PaveFiller`);
+    - the modelling layer in `<Name>.Modeling`.
+47. **The name** (2.11). One name for the project, with two layers under it: `<Name>.Kernel` (from OCCT, LGPL) and
+    `<Name>.Modeling` (from build123d, Apache 2.0). Each package's description credits its origin.
+    - **Candidates:** workshop and drawing-office words, short and pronounceable, with no CAD product of the same name
+      that I know of. All are free as NuGet IDs on 2 November.
+
+      | Name | Meaning |
+      |---|---|
+      | **Kerf** | The slot a saw or cutter leaves. Short and unusual, and about cutting solids, which is what Booleans do |
+      | **Vernier** | The scale on a calliper that reads precisely. About precision |
+      | **Mandrel** | The form material is shaped around |
+      | **Burin** | The engraver's cutting tool. Distinctive but obscure |
+      | **Keel** | A boat's backbone, as a kernel is a modeller's. Also used by a Kubernetes tool |
+      | **Datum** | The reference everything is measured from. Apt, but generic: many libraries use it |
+
+    - *Recommended:* **Kerf** (`Kerf.Kernel`, `Kerf.Modeling`), or **Vernier** if you'd rather the name speak of
+      precision.
+    - Before deciding: check GitHub, a domain and trademarks for the chosen name.
+    - After deciding: reserve the ID prefix on nuget.org (`Kerf.*`), so only your account can publish under it.
 48. **Bento's spreadsheet-facing names** (`CAD_PT_BOX`, option keys such as `z_dir`). *Recommended:* keep them, since
     workbooks use them, and decouple them from build123d.NET's C# names (10N).
 49. **The coverage floor** for retiring the oracle (3.2). *Recommended:*
@@ -405,4 +476,4 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
     goal.
 52. **Phase 9's close.** *Recommended:*
     - close phase 9 at `0.1.0-preview.3`;
-    - start phase 10 with 10A and 10C, which change no behaviour.
+    - start phase 10 with 10R, then 10A and 10C, none of which changes behaviour.
