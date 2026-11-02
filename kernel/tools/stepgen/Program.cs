@@ -6,8 +6,8 @@
 //
 //   dotnet run --project tools/stepgen -- [--packages StepBasic,RWStepBasic,...] [--check] [--report file]
 //
-// Without --packages it generates unit 8C1's packages (StepBasic, StepGeom, StepShape, StepRepr and their RW
-// packages). --check writes nothing and fails if a file differs from what would be written.
+// Without --packages it generates every entity package and its RW package (units 8C1 and 8C2: AllPackages).
+// --check writes nothing and fails if a file differs from what would be written.
 
 using System.Text;
 
@@ -16,13 +16,30 @@ namespace StepGen;
 /// <summary>The generator's entry point (also called in-process by the tests, with --check).</summary>
 public static class Generator
 {
+    /// <summary>
+    /// Classes of the packages left to a later unit, with the reason (decision 12805): not entity classes, and built on
+    /// packages not ported yet.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> Deferred = new SortedDictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["StepAP209_Construct"] = "unit 8F: a STEPConstruct_Tool on an XSControl_WorkSession",
+    };
+
+    /// <summary>The entity packages and their RW packages (units 8C1 and 8C2), in TKDESTEP's PACKAGES.cmake.</summary>
+    public static readonly string[] AllPackages =
+    [
+        "StepBasic", "StepGeom", "StepShape", "StepRepr", "RWStepBasic", "RWStepGeom", "RWStepShape", "RWStepRepr",
+        "StepVisual", "StepAP214", "StepAP203", "StepAP209", "StepAP242", "StepDimTol", "StepKinematics", "StepFEA", "StepElement",
+        "RWStepVisual", "RWStepAP214", "RWStepAP203", "RWStepAP242", "RWStepDimTol", "RWStepKinematics", "RWStepFEA", "RWStepElement",
+    ];
+
     public static int Main(string[] args) => Run(args, Console.Out, Console.Error);
 
     public static int Run(string[] args, TextWriter theOut, TextWriter theErr)
     {
         string? aRoot = FindRoot(Directory.GetCurrentDirectory()) ?? FindRoot(AppContext.BaseDirectory);
         string? anOcct = null, anOut = null, aReport = null, aStubs = null;
-        var aPackages = new List<string> { "StepBasic", "StepGeom", "StepShape", "StepRepr", "RWStepBasic", "RWStepGeom", "RWStepShape", "RWStepRepr" };
+        var aPackages = AllPackages.ToList();
         bool isCheck = false;
         for (int i = 0; i < args.Length; i++)
         {
@@ -127,6 +144,11 @@ public static class Generator
 
                 foreach (var cls in aClasses)
                 {
+                    if (Deferred.ContainsKey(cls.Name))
+                    {
+                        continue;
+                    }
+
                     aDb.Generated.Add(cls.Name);
                     string aSource = Path.Combine(aDir, cls.Name + ".cxx");
                     var aDefs = new List<Parser.SourceFunction>();
@@ -134,7 +156,7 @@ public static class Generator
                     if (File.Exists(aSource))
                     {
                         cls.Sources.Add(Rel(anOcct, aSource));
-                        var (aFns, aCs, aProblems) = Parser.ParseSource(Lexer.Lex(File.ReadAllText(aSource)));
+                        var (aFns, aCs, aProblems) = Parser.ParseSource(Lexer.Lex(File.ReadAllText(aSource)), aDb.Aliases);
                         aDefs = aFns;
                         aConsts = aCs;
                         cls.Problems.AddRange(aProblems);
@@ -227,6 +249,12 @@ public static class Generator
         foreach (string o in anOverrides.Used.OrderBy(x => x, StringComparer.Ordinal))
         {
             aSb.Append("- ").Append(o).Append('\n');
+        }
+
+        aSb.Append("\n## Left to later units\n\n");
+        foreach (var (aName, aWhy) in Deferred)
+        {
+            aSb.Append("- ").Append(aName).Append(": ").Append(aWhy).Append('\n');
         }
 
         aSb.Append("\n## Problems\n\n");

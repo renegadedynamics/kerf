@@ -139,6 +139,12 @@ internal sealed class Translator
 
     private CppType? LookupVar(string theName)
     {
+        var t = LookupVar0(theName);
+        return t == null ? null : myDb.Resolve(t);
+    }
+
+    private CppType? LookupVar0(string theName)
+    {
         if (c.Locals.TryGetValue(theName, out var t))
         {
             return t;
@@ -379,8 +385,27 @@ internal sealed class Translator
         return t.IsHandle ? t.Args[0] : t;
     }
 
+    /// <summary>A collection held by value and called like a function (<c>types(i)</c>, C++'s operator()).</summary>
+    private CppType? CalledCollection(CallExpr call)
+    {
+        if (call.Fn is NameExpr { TemplateArgs: null } cn && !cn.Name.Contains("::", StringComparison.Ordinal) && call.Args.Count == 1
+            && LookupVar(cn.Name) is { IsHandle: false, Pointers: 0 } t && t.Name.StartsWith("NCollection_", StringComparison.Ordinal))
+        {
+            return t;
+        }
+
+        return null;
+    }
+
+    private bool IsStringValue(CppType? t) => t is { IsHandle: false } && (t.IsCString || myDb.Map(t) == "string");
+
     private CppType? InferCall(CallExpr call)
     {
+        if (CalledCollection(call) is { } aColl)
+        {
+            return aColl.Args.Count > 0 ? aColl.Args[0] : null;
+        }
+
         if (call.Fn is NameExpr n)
         {
             switch (n.Name)
@@ -654,7 +679,7 @@ internal sealed class Translator
 
             var a = InferType(tc.Args[0]);
             string s = Emit(tc.Args[0], true);
-            return a != null && (a.IsCString || a.Name == "TCollection_AsciiString") ? s : "Standard_AsciiString(" + s + ")";
+            return a != null && IsStringValue(a) ? s : "Standard_AsciiString(" + s + ")";
         }
 
         if (Db.BuiltinMap.ContainsKey(t.Name) || myDb.IsEnum(t.Name))
@@ -776,6 +801,10 @@ internal sealed class Translator
             case ",":
                 s = Emit(b.L, true) + ", " + Emit(b.R, true);
                 break;
+            case "<" or ">" or "<=" or ">=" when IsStringValue(InferType(b.L)) && IsStringValue(InferType(b.R)):
+                // TCollection_AsciiString's comparison operators: ordinal
+                s = "string.CompareOrdinal(" + Emit(b.L, true) + ", " + Emit(b.R, true) + ") " + b.Op + " 0";
+                break;
             default:
                 s = Emit(b.L) + " " + b.Op + " " + Emit(b.R);
                 break;
@@ -826,6 +855,38 @@ internal sealed class Translator
 
     private string EmitCall(CallExpr call, bool theTop)
     {
+        // a collection called like a function: its indexer (an lvalue, as C++'s operator() returns a reference)
+        if (CalledCollection(call) is not null)
+        {
+            return Emit(call.Fn) + "[" + Emit(call.Args[0], true) + "]";
+        }
+
+        if (call.Fn is MemberExpr sm)
+        {
+            var aRecvType = InferType(sm.Obj);
+            // TCollection_AsciiString::IsEqual on a string: ==
+            if (sm.Name == "IsEqual" && call.Args.Count == 1 && IsStringValue(aRecvType))
+            {
+                string s = EmitObj(sm.Obj) + " == " + Emit(call.Args[0]);
+                return theTop ? s : "(" + s + ")";
+            }
+
+            if (aRecvType is { } && aRecvType.Element.Name.StartsWith("NCollection_", StringComparison.Ordinal) && aRecvType.Element.Name.Contains("Map", StringComparison.Ordinal))
+            {
+                // NCollection_DataMap::Find(key, item): the item is an out parameter
+                if (sm.Name == "Find" && call.Args.Count == 2)
+                {
+                    return EmitObj(sm.Obj) + ".Find(" + Emit(call.Args[0], true) + ", out " + Emit(call.Args[1], true) + ")";
+                }
+            }
+
+            // allocators are dropped (the port's collections have none)
+            if (sm.Name == "Clear" && call.Args.Count == 1 && aRecvType is { } && aRecvType.Element.Name.StartsWith("NCollection_", StringComparison.Ordinal))
+            {
+                return EmitObj(sm.Obj) + ".Clear()";
+            }
+        }
+
         // special functions
         if (call.Fn is NameExpr n)
         {
@@ -1297,6 +1358,18 @@ internal sealed class Translator
                     myIndent--;
                 }
 
+                // C++ lets the last section run off the switch's end; C# wants a break
+                // (a block's last statement counts: "case 1: { ...; break; }")
+                string aLast = myLines.LastOrDefault(l => l.Trim().Length > 0 && l.Trim() != "}" && !l.TrimStart().StartsWith("//", StringComparison.Ordinal))?.Trim() ?? "";
+                if (!(aLast.StartsWith("break;", StringComparison.Ordinal) || aLast.StartsWith("return", StringComparison.Ordinal)
+                      || aLast.StartsWith("throw", StringComparison.Ordinal) || aLast.StartsWith("continue;", StringComparison.Ordinal)
+                      || aLast.StartsWith("switch (", StringComparison.Ordinal) || aLast == "{"))
+                {
+                    myIndent++;
+                    Line("break;");
+                    myIndent--;
+                }
+
                 PopScope();
                 myIndent--;
                 Line("}");
@@ -1380,6 +1453,21 @@ internal sealed class Translator
                 }
 
                 return j;
+            }
+
+            if (k.IsIdent && k.Text == "DeclareAndCast" && t[i + 1].Is("("))
+            {
+                // MoniTool's DeclareAndCast(Type, name, value): occ::handle<Type> name = occ::down_cast<Type>(value)
+                int aClose = Parser.Match(t, i + 1);
+                int p = i + 2;
+                var aType = Parser.ParseType(t, ref p, IsTypeName) ?? throw new FormatException("DeclareAndCast's type");
+                string aName = t[p + 1].Text;
+                var e = ParseExpr(t, p + 3, aClose);
+                string aMapped = myDb.Map(aType);
+                string aValue = Emit(e);
+                c.Locals[aName] = new CppType { Name = "occ::handle", Args = [aType] };
+                Line(aMapped + " " + Db.Id(DeclareLocal(aName)) + " = " + aValue + " as " + aMapped + ";");
+                return End(t, i, theTo) + 1;
             }
 
             if (k.IsIdent && k.Text is "OCC_CATCH_SIGNALS")

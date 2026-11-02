@@ -15,7 +15,7 @@ namespace Occt;
 /// OCCT's sequence: a list indexed from 1. Not OCCT's linked implementation but a .NET list with OCCT's API;
 /// allocator arguments are dropped. A class: copy with <c>new(other)</c> or <c>Assign</c>.
 /// </summary>
-public class NCollection_Sequence<T> : IEnumerable<T>
+public class NCollection_Sequence<T> : Standard_Transient, IEnumerable<T>
 {
     private readonly List<T> myItems;
 

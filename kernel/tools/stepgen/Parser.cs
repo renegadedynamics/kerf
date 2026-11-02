@@ -1107,16 +1107,21 @@ internal static class Parser
 
     /// <summary>Reads a source's function definitions and file-level constants.</summary>
     public static (List<SourceFunction> Functions, List<CppField> Constants, List<string> Problems) ParseSource(List<Token> t)
+        => ParseSource(t, null);
+
+    /// <summary>A source's functions and file-level constants; its type aliases (<c>using A = B;</c>) go to <paramref name="theAliases"/>.</summary>
+    public static (List<SourceFunction> Functions, List<CppField> Constants, List<string> Problems) ParseSource(List<Token> t, Dictionary<string, CppType>? theAliases)
     {
         var aFunctions = new List<SourceFunction>();
         var aConstants = new List<CppField>();
         var aProblems = new List<string>();
-        ParseSourceRange(t, 0, t.Count, false, aFunctions, aConstants, aProblems);
+        ParseSourceRange(t, 0, t.Count, false, aFunctions, aConstants, aProblems, theAliases);
         return (aFunctions, aConstants, aProblems);
     }
 
     private static void ParseSourceRange(List<Token> t, int theFrom, int theTo, bool theAnonymous,
-                                         List<SourceFunction> theFunctions, List<CppField> theConstants, List<string> theProblems)
+                                         List<SourceFunction> theFunctions, List<CppField> theConstants, List<string> theProblems,
+                                         Dictionary<string, CppType>? theAliases = null)
     {
         var aPending = new List<Token>();
         int i = theFrom;
@@ -1140,7 +1145,7 @@ internal static class Parser
                 }
 
                 int anEnd = Match(t, j);
-                ParseSourceRange(t, j + 1, anEnd, theAnonymous || isAnonymous, theFunctions, theConstants, theProblems);
+                ParseSourceRange(t, j + 1, anEnd, theAnonymous || isAnonymous, theFunctions, theConstants, theProblems, theAliases);
                 i = anEnd + 1;
                 aPending.Clear();
                 continue;
@@ -1167,6 +1172,35 @@ internal static class Parser
             {
                 i++;
                 continue;
+            }
+
+            // a file-level struct (a hasher for a map): left out, the port's collections hash with .NET's comparers
+            if ((k.Is("struct") || k.Is("class")) && i + 2 < theTo && t[i + 1].IsIdent && t[i + 2].Is("{"))
+            {
+                int anEnd = Match(t, i + 2);
+                theProblems.Add("file-level struct " + t[i + 1].Text + " left out");
+                i = anEnd + 1;
+                if (i < theTo && t[i].Is(";"))
+                {
+                    i++;
+                }
+
+                aPending.Clear();
+                continue;
+            }
+
+            // "using A = B;": a type alias, resolved where the type is used
+            if (k.Is("using") && theAliases != null && t[i + 1].IsIdent && t[i + 2].Is("="))
+            {
+                int p = i + 3;
+                var anAliased = ParseType(t, ref p);
+                if (anAliased != null && t[p].Is(";"))
+                {
+                    theAliases[t[i + 1].Text] = anAliased;
+                    i = p + 1;
+                    aPending.Clear();
+                    continue;
+                }
             }
 
             if (k.Is("using") || k.Is("typedef"))

@@ -125,14 +125,14 @@ internal sealed class Emitter
     public ClassResult EmitClass(CppClass cls, List<Parser.SourceFunction> theDefs, List<CppField> theFileConstants)
     {
         var r = new ClassResult { Name = cls.Name, Package = cls.Package };
-        r.Problems.AddRange(cls.Problems);
-
         if (myOverrides.WholeClass(cls.Name) is { } aWhole)
         {
             r.Text = aWhole;
             r.Notes.Add("written by hand (tools/stepgen/overrides)");
             return r;
         }
+
+        r.Problems.AddRange(cls.Problems);
 
         bool isRwTool = cls.Package.StartsWith("RW", StringComparison.Ordinal) && !cls.IsNamespace;
         bool isValue = myDb.ValueClasses.Contains(cls.Name);
@@ -182,13 +182,26 @@ internal sealed class Emitter
         var body = new StringBuilder();
         string I1 = "    ";
 
-        // constants of the source file
+        // constants of the source file; its other statics (process-wide state) written by hand when an override has them
+        string? aStatics = myOverrides.Statics(cls.Name);
         foreach (var f in theFileConstants)
         {
-            body.Append(I1).Append(FieldText(cls, f, true, aHelpers, theFileConstants, r)).Append('\n');
+            string aField = FieldText(cls, f, true, aHelpers, theFileConstants, r);
+            if (aStatics != null && !aField.StartsWith("private const ", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            body.Append(I1).Append(aField).Append('\n');
         }
 
-        if (theFileConstants.Count > 0)
+        if (aStatics != null)
+        {
+            r.Notes.Add("the source file's statics written by hand");
+            body.Append(aStatics.TrimEnd('\n')).Append('\n');
+        }
+
+        if (theFileConstants.Count > 0 || aStatics != null)
         {
             body.Append('\n');
         }
@@ -250,6 +263,19 @@ internal sealed class Emitter
                 }
             }
 
+            if (d.IsCtor && d.Params.Count == 0 && m.Def?.Body is { } aCtorBody && OnceInit(aCtorBody, theFileConstants) is int aRest)
+            {
+                // "if (THE_init) return; THE_init = 1; ...": process-wide state set up once, by C#'s static constructor
+                // (once and thread-safe, decision 12802); the instance constructor is empty
+                var aStaticDef = new CppMethod { Name = d.Name, IsCtor = true, Params = [], Body = aCtorBody.GetRange(aRest, aCtorBody.Count - aRest) };
+                body.Append(MethodText(cls, m.Decl, new CppMethod { Name = d.Name, IsCtor = true, Params = [], Body = [] }, aHelpers, theFileConstants, r, isRwTool));
+                body.Append('\n');
+                body.Append(MethodText(cls, m.Decl, aStaticDef, aHelpers, theFileConstants, r, isRwTool, theIsStaticCtor: true));
+                body.Append('\n');
+                r.Notes.Add("the constructor's one-time initialisation is a static constructor");
+                continue;
+            }
+
             body.Append(MethodText(cls, m.Decl, m.Def, aHelpers, theFileConstants, r, isRwTool));
             body.Append('\n');
             if ((d.IsVirtual || d.IsOverride) && myDb.QualifiedCalls.Contains(cls.Name + "::" + d.Name))
@@ -293,6 +319,13 @@ internal sealed class Emitter
         // file-level helpers
         foreach (var h in aHelpers)
         {
+            if (myOverrides.Method(cls.Name, h.Name, h.Params.Count) is { } aHandHelper)
+            {
+                body.Append(aHandHelper.TrimEnd('\n')).Append("\n\n");
+                r.Notes.Add($"{h.Name}: written by hand");
+                continue;
+            }
+
             body.Append(MethodText(cls, h, h, aHelpers, theFileConstants, r, isRwTool, theIsHelper: true));
             body.Append('\n');
         }
@@ -364,6 +397,47 @@ internal sealed class Emitter
         }
 
         return r;
+    }
+
+    /// <summary>
+    /// The C++ idiom of a constructor that sets up process-wide state once: "if (FLAG) return; FLAG = 1;" on a
+    /// file-level static. Returns the index of the body's first token after it, or null.
+    /// </summary>
+    private static int? OnceInit(List<Token> theBody, List<CppField> theFileConstants)
+    {
+        var aIdx = Enumerable.Range(0, theBody.Count).Where(k => !theBody[k].IsComment).ToList();
+        string Tok(int n) => n < aIdx.Count ? theBody[aIdx[n]].Text : "";
+        if (Tok(0) != "if" || Tok(1) != "(" || Tok(3) != ")")
+        {
+            return null;
+        }
+
+        string aFlag = Tok(2);
+        if (!theFileConstants.Any(f => f.Name == aFlag && f.IsStatic && f.Type.Name is "int" or "bool" or "Standard_Integer" or "Standard_Boolean"))
+        {
+            return null;
+        }
+
+        int n = 4;
+        if (Tok(n) == "{" && Tok(n + 1) == "return" && Tok(n + 2) == ";" && Tok(n + 3) == "}")
+        {
+            n += 4;
+        }
+        else if (Tok(n) == "return" && Tok(n + 1) == ";")
+        {
+            n += 2;
+        }
+        else
+        {
+            return null;
+        }
+
+        if (Tok(n) != aFlag || Tok(n + 1) != "=" || Tok(n + 3) != ";")
+        {
+            return null;
+        }
+
+        return aIdx[n + 3] + 1;
     }
 
     private bool SameParams(CppMethod a, CppMethod b)
@@ -489,7 +563,7 @@ internal sealed class Emitter
     }
 
     private string MethodText(CppClass cls, CppMethod d, CppMethod? def, List<CppMethod> theHelpers, List<CppField> theConsts, ClassResult r,
-                              bool theIsRwTool, bool theIsHelper = false, string? theTwinName = null)
+                              bool theIsRwTool, bool theIsHelper = false, string? theTwinName = null, bool theIsStaticCtor = false)
     {
         var sb = new StringBuilder();
         string I1 = "    ";
@@ -521,7 +595,11 @@ internal sealed class Emitter
         // modifiers
         string anAccess = theIsHelper ? "private" : cls.IsNamespace ? "public" : theTwinName != null ? "internal" : d.Access;
         var aMods = new List<string> { anAccess };
-        if (theTwinName != null)
+        if (theIsStaticCtor)
+        {
+            aMods = ["static"];
+        }
+        else if (theTwinName != null)
         {
         }
         else if (d.IsStatic || theIsHelper || cls.IsNamespace)
@@ -552,6 +630,13 @@ internal sealed class Emitter
 
         // signature
         var aParams = new List<string>();
+        (int Index, string Modifier)? aBaseMod = null;
+        if (!d.IsCtor && !d.IsStatic && !theIsHelper && Db.BaseModifiers.TryGetValue((d.Name, d.Params.Count), out var aBm)
+            && myDb.Ancestors(cls.Name, false).Any(a => !myDb.Generated.Contains(a.Name)))
+        {
+            aBaseMod = aBm;
+        }
+
         for (int k = 0; k < d.Params.Count; k++)
         {
             var p = d.Params[k];
@@ -561,7 +646,7 @@ internal sealed class Emitter
                 aType += "[]";
             }
 
-            string s = myDb.ParamModifier(p.Type) + aType + " " + Db.Id(aNames[k]);
+            string s = (aBaseMod?.Index == k ? aBaseMod.Value.Modifier : myDb.ParamModifier(p.Type)) + aType + " " + Db.Id(aNames[k]);
             if (p.Default != null)
             {
                 var e = new ExprParser(p.Default, 0, p.Default.Count, aTr.IsTypeName).ParseFull();
@@ -582,7 +667,7 @@ internal sealed class Emitter
         {
             Doc(sb, ["The non-virtual " + d.Name + " of " + cls.Name + " (C++ calls it as " + cls.Name + "::" + d.Name + "; decision 12604)."], I1);
         }
-        else
+        else if (!theIsStaticCtor)
         {
             Doc(sb, d.Doc, I1);
         }
@@ -665,6 +750,12 @@ internal sealed class Emitter
         foreach (string s in aInitStatements)
         {
             sb.Append(I1).Append(I1).Append(s).Append('\n');
+        }
+
+        if (aBaseMod is { Modifier: "out " } anOut && def?.Body != null)
+        {
+            // C# requires an out parameter assigned on every path; C++ leaves the handle as it was (null)
+            sb.Append(I1).Append(I1).Append(Db.Id(aNames[anOut.Index])).Append(" = null;\n");
         }
 
         if (def?.Body is { } aBody)
