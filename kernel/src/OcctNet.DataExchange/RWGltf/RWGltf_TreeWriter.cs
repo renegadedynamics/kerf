@@ -418,7 +418,7 @@ public sealed class RWGltf_TreeWriter
                 return null;
             }
             aPartsPS.Next();
-            RWMesh_ProductMesh aMesh = RWMesh_ProductMesh.Make(thePart, Options.WriteNormals);
+            RWMesh_ProductMesh aMesh = RWMesh_ProductMesh.Make(thePart, Options.WriteNormals, Options.MergeFaces);
             var aGroups = new List<(int, int, int)>();
             foreach (RWMesh_ProductMesh.Group aGroup in aMesh.Groups)
             {

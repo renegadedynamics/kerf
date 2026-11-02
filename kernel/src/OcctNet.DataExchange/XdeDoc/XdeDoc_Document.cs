@@ -64,6 +64,9 @@ public sealed class XdeDoc_Document
 
         public NCollection_IndexedMap<TopoDS_Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
         public Dictionary<TopoDS_Shape, int>? SubShapeLabels;      // sub-shape children by shape
+
+        public Quantity_ColorRGBA? Color;    // a colour label's colour (XCAFDoc_Color)
+        public int[]? ColorRefs;             // a shape label's colour labels, by XdeDoc_ColorType (-1: none)
     }
 
     private readonly List<Node> myNodes = [];
@@ -79,6 +82,14 @@ public sealed class XdeDoc_Document
         newChild(MainIndex);                  // 0:1:2, the colours (colours are values here: no child)
         newChild(MainIndex);                  // 0:1:3, the layers
     }
+
+    /// <summary>
+    /// Whether adding shapes names their labels as XCAF's auto-naming does (unit 8G1): a shape label by its shape's
+    /// type ("SOLID"), an assembly "ASSEMBLY", a reference "=&gt;[entry of the referred label]". XCAF's switch
+    /// (<c>XCAFDoc_ShapeTool::SetAutoNaming</c>) is process-wide and on by default; here it is the document's, off by
+    /// default so that trees made from documents carry only the names given. Draw-lite's documents turn it on.
+    /// </summary>
+    public bool AutoNaming { get; set; }
 
     /// <summary>The length unit, or null if not set (<c>XCAFDoc_DocumentTool::SetLengthUnit</c>).</summary>
     public XdeDoc_LengthUnit? LengthUnit { get; private set; }
@@ -590,9 +601,18 @@ public sealed class XdeDoc_Document
         }
 
         setOwnShape(aShapeIndex, theShape);
+        if (AutoNaming)
+        {
+            // SetLabelNameByShape: the shape type, as TopAbs::Print writes it
+            setAutoName(aShapeIndex, TopAbs.ShapeTypeToString(theShape.ShapeType()));
+        }
         if (makeAssembly && theShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_COMPOUND)
         {
             myNodes[aShapeIndex].IsAssembly = true;
+            if (AutoNaming)
+            {
+                setName(aShapeIndex, "ASSEMBLY");
+            }
             for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
             {
                 TopoDS_Shape aComp = anIt.Value();
@@ -600,7 +620,13 @@ public sealed class XdeDoc_Document
                 int aRef = newChild(aShapeIndex);
                 makeReference(aRef, aCompIndex, aComp.Location());
             }
-            myNodes[aShapeIndex].IsDirty = false; // the compound given is its components' compound already
+            // the compound given is its components' compound already; searching the components' labels above may
+            // have remade it from the components added so far (unit 8G1): it is set back
+            myNodes[aShapeIndex].IsDirty = false;
+            if (!ReferenceEquals(myNodes[aShapeIndex].Shape.TShape(), theShape.TShape()))
+            {
+                setOwnShape(aShapeIndex, theShape);
+            }
         }
         if (!myNodes[aShapeIndex].IsAssembly)
         {
@@ -618,12 +644,17 @@ public sealed class XdeDoc_Document
         return aShapeIndex;
     }
 
-    private void makeReference(int theIndex, int theReferred, in TopLoc_Location theLocation)
+    private void makeReference(int theIndex, int theReferred, in TopLoc_Location theLocation, bool theToName = true)
     {
         Node aNode = myNodes[theIndex];
         aNode.Referred = theReferred;
         aNode.RefLocation = theLocation;
         myNodes[theReferred].Users.Add(theIndex);
+        if (theToName && AutoNaming)
+        {
+            // SetLabelNameByLink
+            setName(theIndex, "=>[" + EntryOf(label(theReferred)) + "]");
+        }
         if (aNode.Father == ShapesIndex)
         {
             TopoDS_Shape aShape = getShape(theIndex);
@@ -952,14 +983,159 @@ public sealed class XdeDoc_Document
         }
     }
 
+    // ---------------------------------------------------------------------------------------------- removal
+
+    private static readonly XdeDoc_ColorType[] s_colorTypes =
+        [XdeDoc_ColorType.XdeDoc_ColorGen, XdeDoc_ColorType.XdeDoc_ColorSurf, XdeDoc_ColorType.XdeDoc_ColorCurv];
+
+    /// <summary>
+    /// Removes a free top-level label's attributes (<c>XCAFDoc_ShapeTool::RemoveShape</c>): the label and its children
+    /// stay, empty. With <paramref name="removeCompletely"/>, a reference's referred label is removed too, if it is
+    /// free then. False if the label isn't a free top-level label.
+    /// </summary>
+    public bool RemoveShape(in XdeDoc_Label theLabel, bool removeCompletely = true)
+    {
+        if (!IsTopLevel(theLabel) || !IsFree(theLabel))
+        {
+            return false;
+        }
+        int anIndex = index(theLabel);
+        int aReferred = removeCompletely ? myNodes[anIndex].Referred : -1;
+        forget(anIndex, true);
+        return aReferred < 0 || RemoveShape(label(aReferred));
+    }
+
+    /// <summary>Removes a component's attributes (<c>XCAFDoc_ShapeTool::RemoveComponent</c>); nothing for another label.</summary>
+    public void RemoveComponent(in XdeDoc_Label theLabel)
+    {
+        if (IsComponent(theLabel))
+        {
+            forget(index(theLabel), true);
+        }
+    }
+
+    /// <summary>
+    /// Removes the label's attributes, and its children's (<c>TDF_Label::ForgetAllAttributes</c>): its shape, its
+    /// reference (the referred label loses a user, the assemblies using it are remade), its name, colours, layers,
+    /// properties; a colour label's colour (the shapes of that colour lose it); a layer's shapes leave it.
+    /// </summary>
+    public void ForgetAllAttributes(in XdeDoc_Label theLabel, bool clearChildren = true) => forget(index(theLabel), clearChildren);
+
+    private void forget(int theIndex, bool clearChildren)
+    {
+        Node aNode = myNodes[theIndex];
+        if (clearChildren)
+        {
+            foreach (int aChild in aNode.Children)
+            {
+                forget(aChild, true);
+            }
+        }
+        // a reference: the referred label loses a user; the father assembly is remade
+        if (aNode.Referred >= 0)
+        {
+            myNodes[aNode.Referred].Users.Remove(theIndex);
+            aNode.Referred = -1;
+            aNode.RefLocation = new TopLoc_Location();
+            if (aNode.Father >= 0 && myNodes[aNode.Father].IsAssembly)
+            {
+                myNodes[aNode.Father].IsDirty = true;
+                markUsersDirty(aNode.Father);
+            }
+        }
+        // the references to this label lose their father (TDataStd_TreeNode::BeforeForget)
+        foreach (int aUser in aNode.Users)
+        {
+            myNodes[aUser].Referred = -1;
+        }
+        aNode.Users.Clear();
+        // a colour label: the shapes linked to it lose the colour
+        if (aNode.Color is not null)
+        {
+            for (int i = 0; i < myNodes.Count; i++)
+            {
+                if (myNodes[i].ColorRefs is int[] aRefs)
+                {
+                    for (int aType = 0; aType < 3; aType++)
+                    {
+                        if (aRefs[aType] == theIndex)
+                        {
+                            unSetColor(i, (XdeDoc_ColorType)aType);
+                        }
+                    }
+                }
+            }
+            aNode.Color = null;
+        }
+        UnSetLayers(label(theIndex));
+        if (aNode.LayerShapes is List<int> aShapes)
+        {
+            foreach (int aShape in aShapes)
+            {
+                myNodes[aShape].Layers?.Remove(theIndex);
+            }
+            aNode.LayerShapes = null;
+        }
+        if (!aNode.Shape.IsNull())
+        {
+            removeFromMaps(theIndex);
+        }
+        aNode.Shape = new TopoDS_Shape();
+        aNode.IsAssembly = false;
+        aNode.IsDirty = false;
+        aNode.Attributes = XdeDoc_Attributes.Empty;
+        aNode.HasName = false;
+        aNode.ColorRefs = null;
+        aNode.SubShapeMap = null;
+        aNode.SubShapeLabels = null;
+        if (aNode.Father >= 0 && myNodes[aNode.Father].SubShapeLabels is { } aSubLabels)
+        {
+            foreach (KeyValuePair<TopoDS_Shape, int> anEntry in aSubLabels.Where(e => e.Value == theIndex).ToList())
+            {
+                aSubLabels.Remove(anEntry.Key);
+            }
+        }
+    }
+
+    // The maps of shapes added no longer give the label (XCAF's keep stale entries; nothing here relies on them)
+    private void removeFromMaps(int theIndex)
+    {
+        foreach (Dictionary<TopoDS_Shape, int> aMap in new[] { myTopLevelShapes, myShapeLabels, mySubShapes })
+        {
+            foreach (KeyValuePair<TopoDS_Shape, int> anEntry in aMap.Where(e => e.Value == theIndex).ToList())
+            {
+                aMap.Remove(anEntry.Key);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------- names
 
     /// <summary>Sets the label's name (<c>TDataStd_Name::Set</c>).</summary>
-    public void SetName(in XdeDoc_Label theLabel, string theName)
+    public void SetName(in XdeDoc_Label theLabel, string theName) => setName(index(theLabel), theName);
+
+    private void setName(int theIndex, string theName)
     {
-        Node aNode = node(theLabel);
+        Node aNode = myNodes[theIndex];
         aNode.Attributes = aNode.Attributes.WithName(theName);
         aNode.HasName = true;
+    }
+
+    // XCAF's SetLabelNameByShape names only a label without a name
+    private void setAutoName(int theIndex, string theName)
+    {
+        if (!myNodes[theIndex].HasName)
+        {
+            setName(theIndex, theName);
+        }
+    }
+
+    /// <summary>Removes the label's name (<c>TDF_Label::ForgetAttribute</c> of <c>TDataStd_Name</c>).</summary>
+    public void UnSetName(in XdeDoc_Label theLabel)
+    {
+        Node aNode = node(theLabel);
+        aNode.Attributes = aNode.Attributes.WithName(null);
+        aNode.HasName = false;
     }
 
     /// <summary>The label's name; false if it has none.</summary>
@@ -977,11 +1153,111 @@ public sealed class XdeDoc_Document
 
     // ---------------------------------------------------------------------------------------------- colour tool
 
-    /// <summary>Sets the label's colour of the type (<c>XCAFDoc_ColorTool::SetColor</c>).</summary>
-    public void SetColor(in XdeDoc_Label theLabel, in Quantity_ColorRGBA theColor, XdeDoc_ColorType theType)
+    /// <summary>The label of the colours (0:1:2), XCAF's <c>XCAFDoc_ColorTool::Label()</c>.</summary>
+    public XdeDoc_Label ColorsLabel() => new(this, ColorsIndex);
+
+    /// <summary>True if the label is a colour label (<c>XCAFDoc_ColorTool::IsColor</c>).</summary>
+    public bool IsColor(in XdeDoc_Label theLabel) => isMine(theLabel) && node(theLabel).Color is not null;
+
+    /// <summary>The colour of a colour label; false if the label isn't one (<c>XCAFDoc_ColorTool::GetColor(lab, col)</c>).</summary>
+    public bool GetColor(in XdeDoc_Label theColorLabel, out Quantity_ColorRGBA theColor)
     {
-        Node aNode = node(theLabel);
-        aNode.Attributes = aNode.Attributes.WithColor(theType, theColor);
+        theColor = default;
+        if (!isMine(theColorLabel) || node(theColorLabel).Color is not Quantity_ColorRGBA aColor)
+        {
+            return false;
+        }
+        theColor = aColor;
+        return true;
+    }
+
+    /// <summary>
+    /// The first colour label of a colour equal to the colour (<c>Quantity_ColorRGBA::IsEqual</c>), or the null label
+    /// (<c>XCAFDoc_ColorTool::FindColor</c>).
+    /// </summary>
+    public XdeDoc_Label FindColor(in Quantity_ColorRGBA theColor)
+    {
+        foreach (int aChild in myNodes[ColorsIndex].Children)
+        {
+            if (myNodes[aChild].Color is Quantity_ColorRGBA aColor && aColor.IsEqual(theColor))
+            {
+                return label(aChild);
+            }
+        }
+        return default;
+    }
+
+    /// <summary>
+    /// The colour label of the colour, added under 0:1:2 if there is none (<c>XCAFDoc_ColorTool::AddColor</c>), named
+    /// as XCAF's colour auto-naming does: "RED (#FF0000)".
+    /// </summary>
+    public XdeDoc_Label AddColor(in Quantity_ColorRGBA theColor)
+    {
+        XdeDoc_Label aFound = FindColor(theColor);
+        if (!aFound.IsNull())
+        {
+            return aFound;
+        }
+        int anIndex = newChild(ColorsIndex);
+        myNodes[anIndex].Color = theColor;
+        setName(anIndex, Quantity_Color.StringName(theColor.GetRGB().Name()) + " (" + Quantity_ColorRGBA.ColorToHex(theColor) + ")");
+        return label(anIndex);
+    }
+
+    /// <summary>
+    /// Removes a colour label's attributes (<c>XCAFDoc_ColorTool::RemoveColor</c>): the label stays, empty; the shapes
+    /// of that colour lose it.
+    /// </summary>
+    public void RemoveColor(in XdeDoc_Label theColorLabel) => forget(index(theColorLabel), true);
+
+    /// <summary>Sets the colour labels in <paramref name="theLabels"/> (<c>XCAFDoc_ColorTool::GetColors</c>).</summary>
+    public void GetColors(NCollection_Sequence<XdeDoc_Label> theLabels)
+    {
+        theLabels.Clear();
+        foreach (int aChild in myNodes[ColorsIndex].Children)
+        {
+            if (myNodes[aChild].Color is not null)
+            {
+                theLabels.Append(label(aChild));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets the label's colour of the type (<c>XCAFDoc_ColorTool::SetColor</c>): a link to the colour's label, added if
+    /// there is none; the label's colour is then the colour label's.
+    /// </summary>
+    public void SetColor(in XdeDoc_Label theLabel, in Quantity_ColorRGBA theColor, XdeDoc_ColorType theType)
+        => setColorRef(index(theLabel), AddColor(theColor).Index, theType);
+
+    /// <summary>Sets the label's colour of the type to the colour label's (<c>XCAFDoc_ColorTool::SetColor(L, colorL, type)</c>).</summary>
+    public void SetColor(in XdeDoc_Label theLabel, in XdeDoc_Label theColorLabel, XdeDoc_ColorType theType)
+    {
+        int aColor = index(theColorLabel);
+        if (myNodes[aColor].Color is null)
+        {
+            throw new ArgumentException("Not a colour label", nameof(theColorLabel));
+        }
+        setColorRef(index(theLabel), aColor, theType);
+    }
+
+    private void setColorRef(int theIndex, int theColorIndex, XdeDoc_ColorType theType)
+    {
+        Node aNode = myNodes[theIndex];
+        (aNode.ColorRefs ??= [-1, -1, -1])[(int)theType] = theColorIndex;
+        aNode.Attributes = aNode.Attributes.WithColor(theType, myNodes[theColorIndex].Color);
+    }
+
+    /// <summary>The colour label the label's colour of the type links to; false if none.</summary>
+    public bool GetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType, out XdeDoc_Label theColorLabel)
+    {
+        theColorLabel = default;
+        if (!isMine(theLabel) || node(theLabel).ColorRefs is not int[] aRefs || aRefs[(int)theType] < 0)
+        {
+            return false;
+        }
+        theColorLabel = label(aRefs[(int)theType]);
+        return true;
     }
 
     /// <summary>Sets the label's colour of the type, opaque.</summary>
@@ -1031,9 +1307,15 @@ public sealed class XdeDoc_Document
         => isMine(theLabel) && node(theLabel).Attributes.Color(theType) is not null;
 
     /// <summary>Removes the label's colour of the type.</summary>
-    public void UnSetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType)
+    public void UnSetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType) => unSetColor(index(theLabel), theType);
+
+    private void unSetColor(int theIndex, XdeDoc_ColorType theType)
     {
-        Node aNode = node(theLabel);
+        Node aNode = myNodes[theIndex];
+        if (aNode.ColorRefs is int[] aRefs)
+        {
+            aRefs[(int)theType] = -1;
+        }
         aNode.Attributes = aNode.Attributes.WithColor(theType, null);
     }
 
@@ -1095,14 +1377,46 @@ public sealed class XdeDoc_Document
         return label(anIndex);
     }
 
-    /// <summary>The layers' labels, in order.</summary>
+    /// <summary>The layers' labels, in order (removed layers left out).</summary>
     public void GetLayerLabels(NCollection_Sequence<XdeDoc_Label> theLabels)
     {
         theLabels.Clear();
         foreach (int aChild in myNodes[LayersIndex].Children)
         {
-            theLabels.Append(label(aChild));
+            if (myNodes[aChild].HasName)
+            {
+                theLabels.Append(label(aChild));
+            }
         }
+    }
+
+    /// <summary>True if the label is a named layer (<c>XCAFDoc_LayerTool::IsLayer</c>).</summary>
+    public bool IsLayer(in XdeDoc_Label theLabel) => GetLayer(theLabel, out _);
+
+    /// <summary>
+    /// Removes a layer's attributes (<c>XCAFDoc_LayerTool::RemoveLayer</c>): its shapes leave it; the label stays,
+    /// empty, and is no longer a layer.
+    /// </summary>
+    public void RemoveLayer(in XdeDoc_Label theLayer) => forget(index(theLayer), true);
+
+    /// <summary>Takes the shape label out of the first layer of the name; false if there is none or it isn't in it.</summary>
+    public bool UnSetOneLayer(in XdeDoc_Label theLabel, string theLayer)
+    {
+        XdeDoc_Label aLayer = FindLayer(theLayer);
+        return !aLayer.IsNull() && UnSetOneLayer(theLabel, aLayer);
+    }
+
+    /// <summary>Takes the shape label out of the layer (<c>XCAFDoc_LayerTool::UnSetOneLayer</c>).</summary>
+    public bool UnSetOneLayer(in XdeDoc_Label theLabel, in XdeDoc_Label theLayer)
+    {
+        int aShape = index(theLabel);
+        int aLayer = index(theLayer);
+        if (myNodes[aShape].Layers is not List<int> aLayers || !aLayers.Remove(aLayer))
+        {
+            return myNodes[aShape].Layers is not null && myNodes[aLayer].LayerShapes is not null;
+        }
+        myNodes[aLayer].LayerShapes?.Remove(aShape);
+        return true;
     }
 
     /// <summary>The layer's name; false if the label isn't a named layer.</summary>
@@ -1239,12 +1553,20 @@ public sealed class XdeDoc_Document
         return anAttributes;
     }
 
-    /// <summary>Sets the label's attributes (the layers by name, added if missing).</summary>
+    /// <summary>Sets the label's attributes (the colours and the layers through their labels, added if missing).</summary>
     public void SetAttributes(in XdeDoc_Label theLabel, XdeDoc_Attributes theAttributes)
     {
         Node aNode = node(theLabel);
-        aNode.Attributes = theAttributes with { Layers = [] };
+        aNode.Attributes = theAttributes with { Layers = [], GenericColor = null, SurfaceColor = null, CurveColor = null };
         aNode.HasName = theAttributes.Name is not null;
+        aNode.ColorRefs = null;
+        foreach (XdeDoc_ColorType aType in s_colorTypes)
+        {
+            if (theAttributes.Color(aType) is Quantity_ColorRGBA aColor)
+            {
+                SetColor(theLabel, aColor, aType);
+            }
+        }
         UnSetLayers(theLabel);
         foreach (string aLayer in theAttributes.Layers)
         {
@@ -1344,6 +1666,10 @@ public sealed class XdeDoc_Document
         var aNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (int aChild in myNodes[LayersIndex].Children)
         {
+            if (!myNodes[aChild].HasName)
+            {
+                continue;
+            }
             string aName = myNodes[aChild].Attributes.Name ?? "";
             if (aNames.Add(aName))
             {
@@ -1388,7 +1714,7 @@ public sealed class XdeDoc_Document
                 {
                     int aReferred = labelOf(aComponent.Product);
                     int aRef = aDoc.newChild(anIndex);
-                    aDoc.makeReference(aRef, aReferred, aComponent.Location);
+                    aDoc.makeReference(aRef, aReferred, aComponent.Location, false);
                     aDoc.SetAttributes(aDoc.label(aRef), aComponent.Attributes);
                     TopoDS_Shape aCompShape = aDoc.getShape(aRef);
                     if (!aCompShape.IsNull())
@@ -1428,7 +1754,7 @@ public sealed class XdeDoc_Document
             }
             int aRef = aDoc.newChild(ShapesIndex);
             int aReferred = labelOf(aRoot.Product);
-            aDoc.makeReference(aRef, aReferred, aRoot.Location);
+            aDoc.makeReference(aRef, aReferred, aRoot.Location, false);
             aDoc.SetAttributes(aDoc.label(aRef), aRoot.Attributes);
         }
         return aDoc;

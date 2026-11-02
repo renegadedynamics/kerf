@@ -21,6 +21,12 @@ public sealed record RWGltf_WriteOptions
     /// <summary>Write normals: the triangulations', or computed from the faces' surfaces where they have none.</summary>
     public bool WriteNormals { get; init; } = true;
 
+    /// <summary>
+    /// Write a part's faces of a colour as one primitive (the default); false writes a primitive per face, as OCCT's
+    /// RWGltf_CafWriter does without its merge option, so that a reader gives the faces back (unit 8G1).
+    /// </summary>
+    public bool MergeFaces { get; init; } = true;
+
     /// <summary>Write hidden parts too (by default they are left out).</summary>
     public bool IncludeHidden { get; init; }
 

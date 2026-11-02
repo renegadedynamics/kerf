@@ -1973,3 +1973,13 @@ each, but for the first (decision 1240).
 | XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
 | Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
 | Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
+
+## Phase 8: unit 8G1, the XDE Draw-lite commands
+
+Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands keep OCCT's behaviour where it shows.
+
+| Where | What | Effect |
+|---|---|---|
+| TDF_Tool::Label (entry) | Skips the entry's first tag without checking it is 0 | "5:1:1" names 0:1:1, so a shape named "1" or "7:1" passed to an XDE command is taken as a label, not the shape (the port's label lookup does the same) |
+| XCAFDoc_ShapeTool::RemoveShape, RemoveComponent | Forget the label's attributes but leave it in the tool's maps (myShapeLabels, mySubShapes) | SearchUsingMap can return a removed label; the port's document forgets the label in its maps too (decision 1258) |
+| XDEDRAW_Layers.cxx setVisibility; XDEDRAW.cxx XDumpAssemblyGraph | The usage line misses a space ("Use: XSetVisibilityDocName"); the graph dump's usage names `-verbose`, the command parses `-names` | Messages only; reproduced |

@@ -12830,7 +12830,7 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        OCCT's default `StepData_Factors()` is an overload without it (decision 1238), progress ranges default.
        StepToTopoDS_PointPair is a readonly struct, unordered and compared by reference (its hash symmetric, by
        identity). The tools' maps are keyed by reference (TopoDSToStep_Tool's by TopTools_ShapeMapHasher, as OCCT's)
-       and never iterated but by TopoDSToStep::AddResult (13008); StepToTopoDS_Tool keeps OCCT's binding of a null item
+       and never iterated but by TopoDSToStep::AddResult (1251); StepToTopoDS_Tool keeps OCCT's binding of a null item
        (a file's missing reference) in a slot of its own, since .NET's dictionaries refuse null keys. Hand-written code
        that stores a SELECT value into an array copies it, as C++'s assignment does (`new StepShape_Shell(aSelect)`):
        NCollection's `SetValue` stores the reference, and a SELECT reused in a loop would otherwise end in every slot.
@@ -12899,3 +12899,78 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        **1,726 conversions, all identical** (entity order included), the inputs read frozen and unchanged. Not compared
        natively here: the non-manifold and I-DEAS modes, mapped items and the actor's geometric representation items
        (unit 8F compares them through STEPControl).
+
+## Phase 8: unit 8G1, the XDE Draw-lite commands over the document
+
+1256. **A Draw-lite document is an `XdeDoc_Document` under a Draw variable** (`DrawDocument`, in place of
+       DDocStd_DrawDocument; decision 1166, plan 2.6). `XNewDoc`, `NewDocument` (any format), `ReadGltf` make one;
+       `Close` (by name, `*`, `-silent`) unsets the variable; the documents of `Close *` are kept per interpreter. Labels
+       are taken from arguments by TDF_Tool::Label's rules (digits and ':' only, the first tag ignored), so a shape name
+       falls back to DBRep as in OCCT; the root label `0` isn't addressable (Draw-lite's documents start at 0:1).
+       DDocStd::GetDocument's complaint and the commands' `Message::SendFail` lines go to the interpreter's output
+       (decision 405). XDEDRAW's commands are ported one for one, with OCCT's output text, onto the document's
+       XCAF-named methods (decision 1231).
+1257. **XCAF's auto-naming is the document's (`XdeDoc_Document.AutoNaming`)**: a shape label named by its type
+       ("SOLID"), an assembly "ASSEMBLY", a reference "=>[entry]", as XCAFDoc_ShapeTool's process-wide switch does.
+       The library's default is off, so that trees made from documents carry only the names given; Draw-lite turns it
+       on for its documents (XCAF's default; the corpus counts the names `XStat` finds), and `XAutoNaming` sets it for
+       the interpreter's documents, existing and new. `FromTree` never auto-names (as OCCT's mesh readers, which turn
+       it off). Colour labels are named as XCAFDoc_ColorTool names them ("RED (#FF0000FF)").
+1258. **XdeDoc additions for the commands** (decision 1231 left them to unit 8G): colour labels under 0:1:2
+       (`AddColor`, `FindColor` by `Quantity_ColorRGBA::IsEqual`, `GetColors`, `IsColor`, `GetColor(colour label)`,
+       `RemoveColor`, `ColorsLabel`); `SetColor` links the label to the colour's label, added if missing, and the
+       label's colour is the colour label's; `SetAttributes` (so `FromTree`) sets colours through their labels. Removal
+       as OCAF's `ForgetAllAttributes`: `RemoveShape` (free top-level labels, the referred label too if asked),
+       `RemoveComponent`, `RemoveLayer`, `ForgetAllAttributes`: the label stays, empty; references to it lose their
+       referred label, the assemblies using it are remade, a removed colour leaves the shapes of that colour, a
+       removed layer its shapes; the maps of shapes added forget it (XCAF's keep stale entries). Also
+       `UnSetOneLayer`, `IsLayer`, `UnSetName`; `GetLayerLabels` and `ToTree` leave removed layers out.
+       **A fix of unit 8T's `AddShape`**: adding a compound as an assembly searched the components' shapes, which
+       remade the half-built assembly's compound from the components added so far; the compound given is now set
+       back, so `FindShape` finds the compound added (it didn't: `XSetColor D c ...` failed on xcaf's assemblies).
+       Instance colours, SHUOs, materials, colour-by-layer, GD&T, views and notes are still not there.
+1259. **Commands registered and left out.** Registered: XDEDRAW's document commands (`XNewDoc`, `Xdump`, `XStat`,
+       `XSetLengthUnit`, `XGetLengthUnit`, `XDumpAssemblyTree`, `XDumpAssemblyGraph`, `XDumpNomenclature`), shape
+       commands (`XAddShape`, `XNewShape`, `XSetShape`, `XGetShape`, `XRemoveShape`, `XFindShape`, `XFindSubShape`,
+       `XFindMainShape`, `XAddSubShape`, `XLabelInfo`, `XGetUsers`, `XNbComponents`, `XAddComponent`,
+       `XRemoveComponent`, `XGetReferredShape`, `XGetTopLevelShapes`, `XGetFreeShapes`, `XGetOneShape`,
+       `XDumpLocation`, `XUpdateAssemblies`, `XAutoNaming`), colour commands (`XSetColor`, `XGetColor`,
+       `XGetShapeColor`, `XGetAllColors`, `XAddColor`, `XRemoveColor`, `XFindColor`, `XUnsetColor`,
+       `XSetObjVisibility`, `XGetObjVisibility`), all of XDEDRAW_Layers but `XGetLayerRefs`, the validation property
+       commands (`XSetProps`, `XSetVolume`, `XGetVolume`, `XSetArea`, `XGetArea`, `XSetCentroid`, `XGetCentroid`);
+       DDocStd's `NewDocument`, `Close`, DDataStd's `SetName`, `GetName` and DDF's `ForgetAll` on these documents
+       (no label is created: `SetName` on a missing label fails; a GUID argument is ignored). Stubs, as Draw-lite has
+       no viewer and no undo: `XDisplay` (checks nothing, prints nothing), `UndoLimit` (keeps the limit, reports no
+       undo or redo: "100 0 0"), `NewCommand`, `OpenCommand`, `AbortCommand`, `CommitCommand` (check the document);
+       `vcaps` and `vlight` join the ignored viewer commands. `XStat` counts no colour-by-layer and no vis material.
+       Left out: OCAF storage and undo (`XSave`, `XOpen`, `SaveAs`, `Open`, `Undo`, `Redo`), presentation (`XShow`,
+       `XWdump`, `XSetPrs`, `XShowFaceBoundary`, `XSetTransparency`, `XSetViewNameMode`), GD&T, views, notes,
+       materials and vis materials, SHUOs and instance styles (`XSetInstanceColor`, `XGetInstanceColor`,
+       `XGetInstanceVisible`, `XFindComponent`...), XCAFDoc_Editor's `XExpand`, `XExtract`, `XRescaleGeometry`,
+       `XSetLocation`, `XGetProperties`, `XCheckProps`, `XShapeVolume`, `XShapeMassProps`, `XGetValProps`,
+       `XGetLayerRefs`, `XFromShape`, `XFileList`/`XFileCur`/`XFileSet`, `XShapeTreeFilter`, `XTestDoc`,
+       `XAttributeValue`; `ReadObj` and `readobj` (no OBJ reader exists).
+1260. **The mesh commands over unit 8T's reader and writers** (`ReadGltf`, `readgltf`, `WriteGltf`, `writegltf`,
+       `WriteObj`, `writeobj`): files go through Draw-lite's overlay, glTF's external buffers resolved beside the file.
+       `ReadGltf` reads into a new document (`FromTree`) in the session's unit (millimetres until unit 8F gives
+       Draw-lite its parameters) and names each unnamed instance after its product, as RWMesh_CafReader does (8T's
+       trees name an instance only by a name of its own, decision 1236); `-noCreateDoc`, `-listExternalFiles` and
+       `-assetInfo` aren't supported (the command fails), the late-loading, precision and parallel options are
+       accepted and ignored. `WriteGltf` writes a primitive per face, as RWGltf_CafWriter does, and a primitive per
+       colour with `-mergeFaces` (`RWGltf_WriteOptions.MergeFaces`, new, default true as 8T wrote); node names follow
+       the tree's rule (instance, else product), `-nodeNameFormat product` and `writegltf` of a shape (OCCT's choice
+       there) drop instance names; the other name formats, `-trsfFormat`, UVs, textures, Draco, `-comments` and
+       `-author` are accepted and have no effect. `WriteObj` turns OCCT's Z-up into the file's Y-up by default, as
+       OCCT does; `-unit` takes the units UnitsMethods knows (OCCT: UnitsAPI's); a Y-up system to a Z-up file is
+       written unchanged.
+1261. **The corpus scan learns the xcaf group's branches**: its end script saves and reopens the document through
+       OCAF storage, IGES or STEP by the case's `TypeOfFile`, and rescales it only in the mode `RESCALE_ASSEMBLY`
+       (`DrawCorpus.ValueBranches`; a quoted value is now taken whole). So xcaf's BRep grids (70 cases) are
+       runnable. `XDumpAssemblyGraph` writes a node's links in ascending order (OCCT iterates a
+       TColStd_PackedMapOfInteger, ascending for the corpus's sizes).
+1262. **What unit 8G2 builds on**: `ReadStep D file` makes the document with `DDocStdCommands.NewDocument(theDI,
+       name, doc)` (it gives the interpreter's auto-naming, keeps the document for `Close *`) after filling an
+       `XdeDoc_Document` (with `AutoNaming = DDocStdCommands.AutoNaming(theDI)`) through STEPCAFControl_Reader;
+       `WriteStep D file` takes `DDocStdCommands.GetDocument(theDI, name)` (null: not a document) and writes it.
+       Labels from arguments: `DDocStdCommands.Label(doc, entry)`. The de grid then still needs unit 8F's `param`,
+       `data`, `tpstat` and `newmodel`; its begin script's `NewDocument`, `UndoLimit` and `NewCommand` run.
