@@ -10,8 +10,10 @@ namespace Build123d;
 /// </summary>
 /// <remarks>
 /// <para>
-/// STEP is written with OCCT's <c>STEPControl_Writer</c> for now, so without build123d's product names, colours and
-/// assembly structure (an assembly is written as its compound); the FILE_NAME header carries the shape's label, the
+/// STEP is written as build123d writes it, on the OCCT.NET backend: through an assembly document (OCCT.NET's
+/// STEPCAFControl over its XdeDoc tree), a product per part and assembly, named by its label and coloured by its
+/// colour. Natively, OCCT's XCAF isn't bound, so STEP is written with <c>STEPControl_Writer</c>, without names, colours
+/// or assembly structure (an assembly is written as its compound). The FILE_NAME header carries the shape's label, the
 /// time stamp given and "build123d" as the originating system, as build123d's.
 /// </para>
 /// <para>
@@ -35,9 +37,13 @@ public static class Exporters3D
     public static bool ExportBrep(Shape toExport, string filePath) => ToFile(filePath, s => ExportBrep(toExport, s));
 
     /// <summary>
-    /// Writes a shape as STEP (AP214, as OCCT writes by default), in <paramref name="unit"/>, with or without pcurves,
-    /// at a precision mode; <paramref name="timestamp"/> (ISO 8601) replaces the time of writing in the header, for
-    /// repeatable output. Units other than millimetres, no pcurves and other precision modes need the OCCT.NET backend.
+    /// Writes a shape or assembly as STEP (AP214, as OCCT writes by default), in <paramref name="unit"/>, with or
+    /// without pcurves, at a precision mode; <paramref name="timestamp"/> (ISO 8601) replaces the time of writing in the
+    /// header, for repeatable output. On the OCCT.NET backend, as build123d's <c>export_step</c>: an assembly (a
+    /// compound with <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at its
+    /// location, children of one shape, label and colour written once; labels name the products and colours colour
+    /// them. Natively, the shape alone; units other than millimetres, no pcurves and other precision modes need the
+    /// OCCT.NET backend.
     /// </summary>
     /// <exception cref="InvalidOperationException">The shape is empty, or OCCT couldn't translate it.</exception>
     public static bool ExportStep(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, bool writePcurves = true,
@@ -48,15 +54,26 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
         var settings = new StepWriteSettings(ExchangeUnits.Millimetres(unit, "unit"), writePcurves, (int)precisionMode);
+        using var text = new MemoryStream();
+        if (Extras.StepKeepsAssemblies)
+        {
+            if (!Extras.WriteStep(StepTree(toExport), text, settings, cancellationToken))
+                throw new InvalidOperationException("Failed to write STEP file");
+        }
+        else
+            WriteStepShape(toExport, text, settings, cancellationToken);
+        stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, timestamp, "build123d"));
+        return true;
+    }
+
+    private static void WriteStepShape(Shape toExport, Stream text, StepWriteSettings settings, CancellationToken cancellationToken)
+    {
         using var writer = new STEPControl_Writer();
         if (writer.Transfer(toExport.TopoShape, STEPControl_StepModelType.STEPControl_AsIs, settings, cancellationToken)
             != IFSelect_ReturnStatus.IFSelect_RetDone)
             throw new InvalidOperationException("Failed to write STEP file");
-        using var text = new MemoryStream();
         if (writer.WriteStream(text) != IFSelect_ReturnStatus.IFSelect_RetDone)
             throw new InvalidOperationException("Failed to write STEP file");
-        stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, timestamp, "build123d"));
-        return true;
     }
 
     /// <summary>Writes a shape to a STEP file.</summary>
@@ -181,6 +198,20 @@ public static class Exporters3D
             return ExchangeNode.Assembly(children, assembly.TopoShape.Location(), name, color);
         }
         return ExchangeNode.Part(shape.MeshedCopy(linearDeflection, angularDeflection), name, color);
+    }
+
+    // The tree STEP is written from, as build123d's _create_xde: an assembly per compound with children, the other
+    // shapes as parts, labels and colours as they are
+    private static ExchangeNode StepTree(Shape shape)
+    {
+        string? name = shape.Label.Length > 0 ? shape.Label : null;
+        var color = Linear(shape.Color);
+        if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
+        {
+            var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty).Select(StepTree).ToList();
+            return ExchangeNode.Assembly(children, assembly.TopoShape.Location(), name, color);
+        }
+        return ExchangeNode.Part(shape.TopoShape, name, color);
     }
 
     private static (double R, double G, double B, double A)? Linear(Color? color)

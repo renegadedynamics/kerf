@@ -10,7 +10,8 @@ namespace Build123d.Tests.Exchange;
 /// text (<c>name.brep</c>), the STEP native OCCT writes of it (<c>name.step</c>, with a fixed time stamp) and the BRep
 /// text native OCCT reads back from that (<c>name.read.brep</c>). Both backends start from the same BRep, so what's
 /// compared is the exchange alone. The native backend writes the files when <c>B3D_WRITE_EXCHANGE_REFERENCE</c> names
-/// the folder (tests/Build123d.Tests/Reference/Exchange).
+/// the folder (tests/Build123d.Tests/Reference/Exchange). Natively, STEP is written by STEPControl_Writer; on OCCT.NET by
+/// STEPCAFControl_Writer, which writes these shapes' text as STEPControl does but for the compound's.
 /// </summary>
 public partial class StepNativeTests
 {
@@ -60,6 +61,13 @@ public partial class StepNativeTests
     [MemberData(nameof(Names))]
     public void WritesAsNative(string name)
     {
+#if OCCTNET
+        // The OCCT.NET backend writes STEP through STEPCAFControl, as build123d does, and native's reference is
+        // STEPControl's: they write the same text but for a compound, whose representations STEPCAFControl orders
+        // differently (StepAssemblyTests compares it with OCCT.NET's STEPCAFControl_Writer)
+        if (name == "compound")
+            return;
+#endif
         var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep"));
         Assert.Equal(Masked(File.ReadAllBytes(Path.Combine(Folder, name + ".step"))), Masked(Write(shape)));
     }

@@ -10,8 +10,9 @@ namespace Build123d;
 /// <see cref="InvalidDataException"/>.
 /// </summary>
 /// <remarks>
-/// STEP is read without names, colours or assemblies for now: a model's shapes come back as one shape, or a compound
-/// of them (OCCT's <c>STEPControl_Reader</c>). STL and glTF need the OCCT.NET backend.
+/// STEP keeps its names, colours and assemblies on the OCCT.NET backend (OCCT.NET's STEPCAFControl); natively, OCCT's
+/// XCAF isn't bound, so a model's shapes come back as one shape, or a compound of them (OCCT's
+/// <c>STEPControl_Reader</c>). STL and glTF need the OCCT.NET backend.
 /// </remarks>
 public static class Importers
 {
@@ -31,29 +32,47 @@ public static class Importers
     }
 
     /// <summary>
-    /// The shapes of STEP data: the one shape, or a compound of them. <paramref name="name"/> names the data in OCCT's
-    /// messages.
+    /// The model of STEP data, as build123d's <c>import_step</c>: on the OCCT.NET backend, the file's assembly tree as
+    /// compounds whose <see cref="Compound.AssemblyChildren"/> are its components, each placed by its location, with
+    /// the product names as labels and the colours (a shape's own, else its product's); one free shape is returned as
+    /// it is, several in a compound of them. Natively, the shapes alone (OCCT's <c>STEPControl_Reader</c>): the one
+    /// shape, or a compound of them. <paramref name="name"/> names the data in OCCT's messages. Data that refers to
+    /// other STEP files is refused, as there is no folder to read them from.
     /// </summary>
     public static Shape ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
                                    string name = "STEP data")
+        => ImportStep(stream, limits, cancellationToken, name, externalFiles: false);
+
+    /// <summary>
+    /// The model of a STEP file (see the stream form). Other STEP files it refers to are read from its folder, as OCCT
+    /// reads them.
+    /// </summary>
+    public static Shape ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        using var file = OpenRead(fileName);
+        return ImportStep(file, limits, cancellationToken, Path.GetFullPath(fileName), externalFiles: true);
+    }
+
+    private static Shape ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
     {
         ArgumentNullException.ThrowIfNull(stream);
+        var exchangeLimits = (limits ?? ImportLimits.Default).ToExchange();
+        if (Extras.StepKeepsAssemblies)
+        {
+            var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
+            if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
+                throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
+            return root is null ? new Compound() : Shape.Result(FromNode(root));
+        }
         using var reader = new STEPControl_Reader();
-        var status = reader.ReadStream(name, stream, (limits ?? ImportLimits.Default).ToExchange(), cancellationToken);
-        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
-            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
+        var read = reader.ReadStream(name, stream, exchangeLimits, cancellationToken);
+        if (read != IFSelect_ReturnStatus.IFSelect_RetDone)
+            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({read})");
         reader.TransferRoots(cancellationToken);
         var shape = reader.OneShape();
         if (shape.IsNull())
             return new Compound();
         return Shape.Result(Shape.Cast(shape));
-    }
-
-    /// <summary>The shapes of a STEP file: the one shape, or a compound of them.</summary>
-    public static Shape ImportStep(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
-    {
-        using var file = OpenRead(fileName);
-        return ImportStep(file, limits, cancellationToken, fileName);
     }
 
     /// <summary>

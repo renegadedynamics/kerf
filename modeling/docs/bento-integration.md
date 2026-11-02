@@ -188,8 +188,9 @@ Most of these exist in build123d. Please make sure they're public and return pla
   crashing (see section 4), and put limits on anything that could allocate without bound.
 
 **Done** (design.md, "Import and export"): `Importers` and `Exporters3D` read and write streams, with `ImportLimits` and
-cancellation: BREP and STEP on both backends, STL, glTF and 3MF on OCCT.NET, which Bento uses. STEP's names, colours
-and assemblies follow OCCT.NET's STEPCAFControl.
+cancellation: BREP and STEP on both backends, STL, glTF and 3MF on OCCT.NET, which Bento uses. On OCCT.NET, STEP keeps
+its names, colours and assemblies (OCCT.NET's STEPCAFControl), and data from a stream that refers to other files is
+refused.
 
 ## 8. Not needed from this library
 

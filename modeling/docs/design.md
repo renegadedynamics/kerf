@@ -305,7 +305,7 @@ Native OCCT stays the default backend.
 - **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's four assemblies load
   and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
   build output as `B3D_OCCTNET_LIB`.
-- **Measured** (OCCT.NET at 140ceb00, with its phase 8 through STEPControl; Windows x64):
+- **Measured** (OCCT.NET at be3b97db, with its phase 8 through STEPCAFControl; Windows x64):
   - 1,856 of 1,862 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
     gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
     phase 7). Natively 1,850 of 1,856 pass and 6 are skipped (the mesh formats' tests among them). At 991bbe6, with
@@ -345,12 +345,32 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
     tree, `XdeDoc_Tree`).
   - Writing them in `Build123d` itself would have duplicated OCCT.NET's writers.
   - Bento runs on OCCT.NET, so it has every format.
-- **STEP without names, colours or assemblies yet.** build123d writes and reads STEP through XCAF
-  (`STEPCAFControl`), with product names, colours and the assembly tree. OCCT.NET ports that next (its unit 8G2), so
-  for now STEP goes through `STEPControl`: an assembly is written as its compound, and a file's shapes come back as
-  one shape or a compound of them, without labels. The FILE_NAME header is build123d's: the shape's label, the time
-  stamp given (for repeatable output) and "build123d" as the originating system. Native OCCT's header maker
-  (`APIHeaderSection_MakeHeader`) isn't bound, so the record is rewritten in the text, the same way on both backends.
+- **STEP's names, colours and assemblies on the OCCT.NET backend.** build123d writes and reads STEP through XCAF
+  (`STEPCAFControl`); the OCCT.NET backend does the same through OCCT.NET's STEPCAFControl over its assembly
+  document (`XdeDoc_Document`, frozen into an `XdeDoc_Tree`), reached through `Extras.ReadStep` and `WriteStep` on
+  `ExchangeNode`s (`Extras.StepKeepsAssemblies` says which backend has them).
+  - `ExportStep` writes a compound with `AssemblyChildren` as an assembly, each child a component at its location, a
+    product per part and assembly named by its label and coloured by its colour (a surface colour, or a curve colour
+    for a shape without faces). Children of one shape, label and colour share a product, placed once per child, as
+    XCAF's `AddShape` shares a compound's equal shapes. Any other shape is one part, even a compound: build123d's
+    `Part` is a compound of a solid, which XCAF's `AddShape(shape, makeAssembly: true)` would make an assembly of
+    one solid (a decision). The shapes are written unprocessed, as OCCT's STEPCAFControl writes them (OCCT.NET's
+    decision 1277).
+  - `ImportStep` gives build123d's `import_step` tree: the free shapes (one returned as it is, several in a
+    compound), each assembly a compound whose `AssemblyChildren` are its components placed by their locations, each
+    part its shape at its place; labels are the products' names (STEP's instance names are the occurrences'
+    identifiers), colours the shape's own or its product's (surface, else generic, else curve). An unnamed product
+    keeps the name OCCT wrote for it ("Open CASCADE STEP translator 8.0 1"), as in build123d.
+  - **External references.** OCCT reads the other files a STEP file refers to from the disk while transferring.
+    The file form reads them from the file's folder, as OCCT does; the stream form refuses such data
+    (`InvalidDataException`), since a stream has no folder and a hostile file could name any path.
+  - **Natively** OCCT's XCAF documents and STEPCAFControl aren't bound (a decision: binding them means new toolkits,
+    TKXCAF, TKLCAF and TKCAF, and OCAF's document framework in the shim, for what Bento, the user that needs them,
+    gets on OCCT.NET). Native STEP stays shapes alone, through `STEPControl`: an assembly is written as its compound,
+    and a file's shapes come back as one shape or a compound of them, without labels.
+  - The FILE_NAME header is build123d's on both backends: the shape's label, the time stamp given (for repeatable
+    output) and "build123d" as the originating system. Native OCCT's header maker (`APIHeaderSection_MakeHeader`)
+    isn't bound, so the record is rewritten in the text, the same way on both.
 - **glTF and 3MF keep the tree.** An assembly is a node (3MF: a components object) per child, named by its label,
   with a material per colour. A part is meshed on a private copy with build123d's deflections (relative to each
   edge), as `Shape.mesh` does. glTF turns Z-up into Y-up and the unit into metres, as build123d's does (by the
@@ -358,11 +378,18 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   as a `data:` URI. `ImportGltf` gives a part per mesh, a compound of faces holding only triangles, with its name and
   colour, and an assembly per node hierarchy.
 - **Compared with native** (`StepNativeTests`, Reference/Exchange): ten shapes built natively and kept as BRep (solids
-  of each surface type, a fillet, a loft, a face, a wire, a compound). On both backends their STEP is byte for byte
-  native OCCT's (with the time stamp fixed and the product name's index masked, which native counts process-wide),
-  and the STEP read back gives native's BRep text exactly.
-- **Faces holding only triangles** (from STL and glTF) have no surface, so `BoundingBox()`, which ignores
-  triangulations, gives an empty box for them; `Tessellate` and `Triangulate` give their triangles.
+  of each surface type, a fillet, a loft, a face, a wire, a compound). Their STEP is byte for byte native OCCT's
+  STEPControl's (with the time stamp fixed and the product name's index masked, which native counts
+  process-wide) on both backends, but for the compound on OCCT.NET, whose STEPCAFControl orders the compound's
+  representations differently; the STEP read back gives native's BRep text exactly on both.
+- **Compared with OCCT.NET's STEPCAFControl** (`StepAssemblyTests`, OCCT.NET backend): the ten shapes and an assembly
+  (nested, placed, rotated, a part placed twice, names, colours, a translucent one) are written as OCCT.NET's
+  STEPCAFControl_Writer writes a document built with XCAF's calls (`AddShape`, `NewShape`, `AddComponent`,
+  `SetName`, `SetColor`), which OCCT.NET's unit 8G2 compared with native XCAF; the assembly reads back with its
+  labels, colours, nesting, places and shared part; an assembly written as three files reads from its file and is
+  refused from a stream.
+- **Faces holding only triangles** (from STL and glTF) have no surface: `BoundingBox()`, which otherwise ignores
+  triangulations, bounds their triangles; `Tessellate` and `Triangulate` give them.
 
 ### 3. Behavioural parity is tested, not assumed
 

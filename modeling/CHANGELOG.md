@@ -16,6 +16,10 @@ All notable changes to the build123d.NET packages. Versions follow [SemVer](http
   on the OCCT.NET backend only, over OCCT.NET's writers and readers.
 - The OCCT.NET backend forwards `STEPControl_Reader` and `Writer` (OCCT.NET's phase 8): no class throws "not yet
   ported" any more. It references `OcctNet.DataExchange`.
+- STEP's names, colours and assemblies on the OCCT.NET backend, as build123d's `import_step` and `export_step`, through
+  OCCT.NET's STEPCAFControl and its assembly tree (`Extras.ReadStep`, `WriteStep`, `StepKeepsAssemblies`). A STEP
+  stream that refers to other files is refused. Natively STEP stays shapes alone (XCAF isn't bound).
+- `BoundingBox()` bounds faces holding only triangles (STL, glTF) by their triangles, rather than giving an empty box.
 - `IntroductoryExamplesTests`: the 37 introductory examples that need no text, in algebra mode, checked against
   native OCCT's volumes and face counts.
 - The native `TopoDS_Iterator` keeps the shape it iterates alive. OCCT 8's iterator holds no reference to it, so a

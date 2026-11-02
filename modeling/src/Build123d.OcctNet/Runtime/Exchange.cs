@@ -252,7 +252,7 @@ public static partial class Extras
             cancellationToken.ThrowIfCancellationRequested();
             if (tree is null)
                 throw new InvalidDataException($"The glTF data couldn't be read: {reader.Error}");
-            var roots = tree.Roots.Select(r => FromInstance(r)).ToList();
+            var roots = tree.Roots.Select(r => FromInstance(r, productNames: false)).ToList();
             return roots.Count == 1 ? roots[0] : ExchangeNode.Assembly(roots);
         }
         catch (O.Standard_Failure e)
@@ -261,33 +261,144 @@ public static partial class Extras
         }
     }
 
-    private static O.XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root));
+    /// <summary>Whether STEP keeps names, colours and assemblies: on OCCT.NET, through its STEPCAFControl.</summary>
+    public static bool StepKeepsAssemblies => true;
 
-    private static O.XdeDoc_Instance ToInstance(ExchangeNode node)
+    /// <summary>
+    /// Reads STEP data into a tree (OCCT.NET's <c>STEPCAFControl_Reader</c> into an <c>XdeDoc_Document</c>, frozen
+    /// into an <c>XdeDoc_Tree</c>): the free shapes as roots, assemblies with their components placed, names (an
+    /// instance's, else its product's) and colours (surface, else generic, else curve), within the limits and
+    /// cancellable. <paramref name="root"/> is null when the data holds no shape. STEP data referring to other files
+    /// (external references) is refused unless <paramref name="externalFiles"/>, when they are read from the folder of
+    /// <paramref name="name"/>.
+    /// </summary>
+    public static IFSelect_ReturnStatus ReadStep(string name, Stream stream, ExchangeReadLimits limits, bool externalFiles,
+                                                 out ExchangeNode? root, CancellationToken cancellationToken = default)
     {
-        O.XdeDoc_Product product;
-        O.TopLoc_Location location;
-        if (node.Shape is { } shape)
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(limits);
+        root = null;
+        var stepLimits = new O.StepFile_ReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth };
+        try
         {
-            // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
-            location = shape.V.Location();
-            product = O.XdeDoc_Product.Part(shape.V.Located(new O.TopLoc_Location()), node.Name);
+            var reader = new O.STEPCAFControl_Reader();
+            // build123d's modes: colours, names and layers
+            reader.SetColorMode(true);
+            reader.SetNameMode(true);
+            reader.SetLayerMode(true);
+            var status = reader.ReadStream(name, stream, new O.Message_ProgressIndicator(cancellationToken).Start(), stepLimits);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (status != O.IFSelect_ReturnStatus.IFSelect_RetDone)
+                return (IFSelect_ReturnStatus)status;
+            if (!externalFiles)
+            {
+                // OCCT reads a file's external references from the disk while transferring: never for data from a stream
+                var references = new O.STEPConstruct_ExternRefs(reader.Reader().WS()!);
+                if (references.LoadExternRefs() && references.NbExternRefs() > 0)
+                    throw new InvalidDataException($"{name} refers to {references.NbExternRefs()} other STEP file(s), which aren't read from a stream");
+            }
+            var document = new O.XdeDoc_Document();
+            reader.Transfer(document, new O.Message_ProgressIndicator(cancellationToken).Start());
+            cancellationToken.ThrowIfCancellationRequested();
+            var roots = document.ToTree().Roots.Select(r => FromInstance(r, productNames: true)).ToList();
+            root = roots.Count switch
+            {
+                0 => null,
+                1 => roots[0],
+                _ => ExchangeNode.Assembly(roots),
+            };
+            return IFSelect_ReturnStatus.IFSelect_RetDone;
         }
-        else
+        catch (O.Standard_Failure e)
         {
-            location = node.Location?.V ?? new O.TopLoc_Location();
-            product = O.XdeDoc_Product.Assembly(node.Name, node.Children.Select(ToInstance));
+            throw OcctException.From(e);
         }
-        if (node.Color is { } c)
-            product = product.WithColor(O.XdeDoc_ColorType.XdeDoc_ColorSurf, new O.Quantity_ColorRGBA((float)c.R, (float)c.G, (float)c.B, (float)c.A));
-        return new O.XdeDoc_Instance(product, location);
     }
 
-    private static ExchangeNode FromInstance(O.XdeDoc_Instance instance)
+    /// <summary>
+    /// Writes a tree as STEP (OCCT.NET's <c>STEPCAFControl_Writer</c> over the tree's document, AP214 by default): a
+    /// product per part and assembly, the parts of one shape, name and colour written once and placed by each of their
+    /// instances, with names and colours. The shapes are written as they are, without OCCT's shape processing, as
+    /// OCCT's STEPCAFControl writes them. Cancellable.
+    /// </summary>
+    public static bool WriteStep(ExchangeNode root, Stream stream, StepWriteSettings settings, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(settings);
+        try
+        {
+            // The shapes' unit is the file's (XCAF's length unit, in metres)
+            var unit = O.UnitsMethods.GetLengthUnitByFactorValue(settings.UnitInMillimetres);
+            var tree = ToTree(root).WithLengthUnit(new O.XdeDoc_LengthUnit(O.UnitsMethods.DumpLengthUnit(unit), settings.UnitInMillimetres / 1000.0));
+            var document = O.XdeDoc_Document.FromTree(tree);
+            var writer = new O.STEPCAFControl_Writer();
+            writer.SetColorMode(true);
+            writer.SetNameMode(true);
+            writer.SetLayerMode(true);
+            var model = writer.Writer().Model();
+            var parameters = model.InternalParameters;
+            parameters.InitFromStatic(writer.Writer().WS().Statics());
+            parameters.WriteUnit = unit;
+            parameters.WriteSurfaceCurMode = settings.WritePcurves;
+            parameters.WritePrecisionMode = (O.DESTEP_Parameters.WriteMode_PrecisionMode)settings.PrecisionMode;
+            var done = writer.Transfer(document, in parameters, O.STEPControl_StepModelType.STEPControl_AsIs, null,
+                                       new O.Message_ProgressIndicator(cancellationToken).Start());
+            cancellationToken.ThrowIfCancellationRequested();
+            return done && writer.WriteStream(stream) == O.IFSelect_ReturnStatus.IFSelect_RetDone;
+        }
+        catch (O.Standard_Failure e)
+        {
+            throw OcctException.From(e);
+        }
+    }
+
+    // The writers' tree: a product per part or assembly, those of the same shape, name and colour shared (as XCAF's
+    // AddShape shares a compound's equal shapes), so a part placed many times is written once
+    private static O.XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Dictionary<ProductKey, O.XdeDoc_Product>()));
+
+    private readonly record struct ProductKey(object TShape, O.TopAbs_Orientation Orientation, string? Name, (double, double, double, double)? Color);
+
+    private static O.XdeDoc_Instance ToInstance(ExchangeNode node, Dictionary<ProductKey, O.XdeDoc_Product> products)
+    {
+        if (node.Shape is not { } shape)
+        {
+            var location = node.Location?.V ?? new O.TopLoc_Location();
+            var assembly = O.XdeDoc_Product.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products)));
+            if (node.Color is { } c)
+                assembly = assembly.WithColor(O.XdeDoc_ColorType.XdeDoc_ColorSurf, Rgba(c));
+            return new O.XdeDoc_Instance(assembly, location);
+        }
+        // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
+        var origin = shape.V.Located(new O.TopLoc_Location());
+        var key = new ProductKey(origin.TShape()!, origin.Orientation(), node.Name, node.Color);
+        if (!products.TryGetValue(key, out var product))
+        {
+            product = O.XdeDoc_Product.Part(origin, node.Name);
+            if (node.Color is { } c)
+            {
+                // A colour of faces, or of curves for a shape without faces
+                bool faces = new O.TopExp_Explorer(origin, O.TopAbs_ShapeEnum.TopAbs_FACE).More();
+                product = product.WithColor(faces ? O.XdeDoc_ColorType.XdeDoc_ColorSurf : O.XdeDoc_ColorType.XdeDoc_ColorCurv, Rgba(c));
+            }
+            products[key] = product;
+        }
+        return new O.XdeDoc_Instance(product, shape.V.Location());
+    }
+
+    private static O.Quantity_ColorRGBA Rgba((double R, double G, double B, double A) c)
+        => new((float)c.R, (float)c.G, (float)c.B, (float)c.A);
+
+    // A node of the tree read: named by its instance, else its product (glTF's nodes name instances), or by its
+    // product, else its instance, as build123d names STEP's components (STEP's instance names are the occurrences'
+    // identifiers)
+    private static ExchangeNode FromInstance(O.XdeDoc_Instance instance, bool productNames)
+    {
+        var name = productNames ? instance.Product.Name ?? instance.Name : instance.DisplayName;
         var product = instance.Product;
-        var colour = instance.Attributes.SurfaceColor ?? instance.Attributes.GenericColor
-                     ?? product.Attributes.SurfaceColor ?? product.Attributes.GenericColor;
+        var colour = instance.Attributes.SurfaceColor ?? instance.Attributes.GenericColor ?? instance.Attributes.CurveColor
+                     ?? product.Attributes.SurfaceColor ?? product.Attributes.GenericColor ?? product.Attributes.CurveColor;
         (double, double, double, double)? color = null;
         if (colour is { } rgba)
         {
@@ -297,10 +408,10 @@ public static partial class Extras
         if (!product.IsAssembly)
         {
             var placed = product.Shape.Moved(instance.Location);
-            return ExchangeNode.Part(new TopoDS_Shape(placed), instance.DisplayName, color);
+            return ExchangeNode.Part(new TopoDS_Shape(placed), name, color);
         }
-        var children = product.Components.Select(c => FromInstance(c)).ToList();
-        return ExchangeNode.Assembly(children, new TopLoc_Location(instance.Location), instance.DisplayName, color);
+        var children = product.Components.Select(c => FromInstance(c, productNames)).ToList();
+        return ExchangeNode.Assembly(children, new TopLoc_Location(instance.Location), name, color);
     }
 }
 

@@ -113,4 +113,23 @@ public static partial class Extras
     /// </summary>
     public static ExchangeNode ReadGltf(Stream stream, double unitInMetres, ExchangeReadLimits limits, CancellationToken cancellationToken = default)
         => throw MeshFormats();
+
+    /// <summary>
+    /// Whether STEP keeps names, colours and assemblies: not natively, as the native binding doesn't bind OCCT's XCAF
+    /// documents or STEPCAFControl, so STEP is read and written as shapes alone (<see cref="STEPControl_Reader"/>,
+    /// <see cref="STEPControl_Writer"/>).
+    /// </summary>
+    public static bool StepKeepsAssemblies => false;
+
+    private static NotSupportedException StepAssemblies() =>
+        new("STEP's names, colours and assemblies need the OCCT.NET backend: the native binding doesn't bind OCCT's XCAF documents");
+
+    /// <summary>Reads STEP data into a tree with names, colours and assemblies. Not on the native backend.</summary>
+    public static IFSelect_ReturnStatus ReadStep(string name, Stream stream, ExchangeReadLimits limits, bool externalFiles,
+                                                 out ExchangeNode? root, CancellationToken cancellationToken = default)
+        => throw StepAssemblies();
+
+    /// <summary>Writes a tree as STEP with names, colours and assemblies. Not on the native backend.</summary>
+    public static bool WriteStep(ExchangeNode root, Stream stream, StepWriteSettings settings, CancellationToken cancellationToken = default)
+        => throw StepAssemblies();
 }

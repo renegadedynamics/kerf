@@ -22,7 +22,7 @@ public partial class ExchangeTests
 {
     private static Part Block() => (Part)(new Box(10, 10, 10) - new Cylinder(3, 14));
 
-    // The extent of a mesh read from STL or glTF: its faces hold only triangles, which bounding boxes leave out
+    // The extent of a mesh read from STL or glTF, from its triangles
     private static (Vector Min, Vector Max) Extent(Shape mesh)
     {
         var vertices = mesh.Tessellate(1).Vertices;
@@ -209,6 +209,30 @@ public partial class ExchangeTests
     }
 #endif
 
+    [Fact]
+    public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
+    {
+        var pair = Compound.Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
+                                      new Sphere(1).Moved(new Location((3.0, 0.0, 0.0))).WithLabel("b")], "pair");
+        var stream = new MemoryStream();
+        Exporters3D.ExportStep(pair, stream);
+        stream.Position = 0;
+        var read = Importers.ImportStep(stream);
+        Check.AlmostEqual(pair.Volume, read.Volume, 6);
+#if OCCTNET
+        Assert.True(Extras.StepKeepsAssemblies);
+        Assert.Equal("pair", read.Label);
+        Assert.Equal(["a", "b"], ((Compound)read).AssemblyChildren.Select(c => c.Label));
+        Assert.Equal(new Color("red"), ((Compound)read).AssemblyChildren[0].Color);
+#else
+        // Natively, OCCT's XCAF isn't bound: the shapes alone
+        Assert.False(Extras.StepKeepsAssemblies);
+        Assert.Empty(((Compound)read).AssemblyChildren);
+        Assert.Null(read.Color);
+        Assert.Throws<NotSupportedException>(() => Extras.WriteStep(ExchangeNode.Part(read.Wrapped), new MemoryStream(), StepWriteSettings.Default));
+#endif
+    }
+
     [MeshFormatFact]
     public void StlRoundTripsBinaryAndAscii()
     {
@@ -230,6 +254,19 @@ public partial class ExchangeTests
             Check.AlmostEqual(10, max.X - min.X, 6);
             Check.AlmostEqual(30, max.Z - min.Z, 6);
         }
+    }
+
+    [MeshFormatFact]
+    public void AMeshHasABoundingBox()
+    {
+        // Faces holding only triangles have no surface to bound: the box is the triangles'
+        var stream = new MemoryStream();
+        Exporters3D.ExportStl(new Box(10, 20, 30), stream);
+        stream.Position = 0;
+        var box = Importers.ImportStl(stream).BoundingBox();
+        Assert.False(box.IsEmpty);
+        Check.AlmostEqual(20, box.Size.Y, 6);
+        Check.AlmostEqual(-15, box.Min.Z, 6);
     }
 
     [MeshFormatFact]
