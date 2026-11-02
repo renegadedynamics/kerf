@@ -1596,3 +1596,10 @@ Phase 9 (part): Schematiq.Collections (unit 9A).
 
 - Returned collections are Schematiq.Collections' (`ISchematiqList<T>`), from nuget.org, in place of Bento.Collections
   0.4.0: the same library, renamed and published by Bento's owner. `PackedList<T>` is an `ISchematiqList<T>`.
+
+Phase 9 (part): OCCT.NET as build123d.NET's default backend (unit 9D1).
+
+- build123d.NET now builds on OCCT.NET by default, from the packages on nuget.org; native OCCT is opt-in there and
+  kept as the oracle's reference. The oracle tests and benchmarks reference build123d.NET's projects on its native
+  backend explicitly, and restore by the project graph so that holds for restore too. `Build123dNativeRoot` lets a
+  build123d.NET worktree use another checkout's native build.

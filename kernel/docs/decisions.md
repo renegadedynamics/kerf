@@ -13320,3 +13320,38 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        native kept for the oracle and no longer packed; no project URL until the repositories are public; Bento
        references the published Build123d package; `0.1.0-preview.2` next; the performance review (9E) and the triage
        (9F) join phase 9, the OBJ reader (9G) does not; only performance wins that keep native's results.
+
+## Phase 9: unit 9D1, OCCT.NET as build123d.NET's default backend
+
+14301. **build123d.NET's default backend is OCCT.NET, from the packages** (unit 9D1; question 40, decision 1298).
+       `Build123dBackend` defaults to `OcctNet`. `Build123d.OcctNet` references the four `OcctNet.*` packages from
+       nuget.org at `OcctNetVersion` (0.1.0-preview.2, in build123d.NET's Directory.Build.props), so a fresh clone
+       builds and tests with a plain `dotnet test`, with no OCCT.NET checkout and no native build. With `OcctNetRoot`
+       given it references that checkout's projects, as before: for developing both together, and for
+       `tools/pack-nuget.ps1`, which passes it. `OcctNetRoot` no longer defaults to `../OCCT.NET`: an implicit sibling
+       would silently take the place of the packages.
+14302. **Native is opt-in, the oracle's reference, and unpublished.** `-p:Build123dBackend=Native` builds and tests it
+       as before. `Build123d.Occt`, and `Build123d` on the native backend, are packable only with `NativeStageDir`,
+       which only build123d.NET's `tools/pack.ps1` passes; that script stays, for the native load-context test, packs
+       into the local feed alone and versions the packages `0.1.0-native` so they can't be taken for the published
+       ones. `Build123dNativeRoot` (default: the checkout itself) says whose `.deps/install` and `native/out` the
+       native backend copies, so a worktree can use the main checkout's native build.
+14303. **Output folders: the default in `bin`/`obj`, native in `bin-native`/`obj-native`.** The default gets the
+       conventional folders; the two backends sit side by side. The old `bin-occtnet`/`obj-occtnet` stay excluded from
+       the projects' items and ignored, for checkouts that still have them.
+14304. **Tests on one backend.** `Build123d.Occt.Tests` is a test project on the native backend only (`IsTestProject`
+       false otherwise, so `dotnet test` skips it with a message and still builds it). The packaging tests skip without
+       their inputs (`B3D_PACKAGES`, set by `tools/pack.ps1`; `B3D_OCCTNET_LIB`). `Fillet2DTests.FilletRecord`, the one
+       test that fails on OCCT.NET (a 2D fillet's history gives a wire's first vertex two modified shapes where native
+       gives one, known since before phase 7), is a `KnownOcctNetDifferenceFact`: skipped on OCCT.NET with the reason,
+       run natively. It is left for triage, not fixed here.
+14305. **The oracle stays native: `AdditionalProperties` and graph restore.** The oracle tests and the benchmarks
+       reference build123d.NET's `Build123d` and `Build123d.Occt` with `AdditionalProperties` =
+       `$(Build123dNativeProperties)` (`Build123dBackend=Native;Build123dNativeRoot=...`, Directory.Build.props).
+       NuGet's default restore walk ignores `AdditionalProperties` (it restores each project once, by path, with the
+       entry's global properties), so it restored build123d.NET's projects on their default backend into `obj` and the
+       native build then found no `obj-native/project.assets.json`. Restoring by the project graph
+       (`RestoreUseStaticGraphEvaluation`, in Directory.Build.props for projects and in a new Directory.Solution.props
+       for the solution) honours them. The oracle's and benchmarks' native check looks for b3docct under
+       `Build123dNativeRoot` (default `Build123dNetRoot`). Against a build123d.NET checkout from before the switch the
+       properties are harmless: `Native` was its default and it ignores `Build123dNativeRoot`.
