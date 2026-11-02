@@ -1457,3 +1457,12 @@ Phase 8 (part): StepData and the STEP header (unit 8B).
   identically (1.5 million texts decoded, 2.7 million lines written); 248 crafted texts decoded under every code page
   (105 decodings attributed: the system locale, reads past a text's end); the code tables equal OCCT's on all 71,374
   entries its conversions reach. One OCCT bug fixed (an endless recursion copying a named select member).
+Phase 8 (part): Transfer, TransferBRep and XSAlgo (unit 8A2).
+- Ported: Transfer (the transient and finder processes, binders, actors, iterators, dispatch, input and output tools,
+  results), TransferBRep (shape binders and mappers, the shape services, the reader), XSAlgo (the shape processor, the
+  algorithm container) and TKDE's DE_ShapeFixParameters.
+- XSAlgo reads its parameters from the caller's `Interface_StaticSet`; no process-wide state changes. The shape
+  processor never changes its input and returns frozen shapes; the reader publishes frozen shapes.
+- Compared with native OCCT (tools/xsalgorec) on data/occ's shapes with STEP's default sequences: 210 records, 207
+  identical, 3 attributed. Transfer tested on a toy norm. 12 OCCT bugs found, one fixed (an endless recursion in
+  Transfer_ActorDispatch).

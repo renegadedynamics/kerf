@@ -37,6 +37,8 @@
     <EmbeddedResource Include="StepData\Recordings\stepdatarec-text.txt.gz" LogicalName="StepData.stepdatarec-text.txt.gz" />
     <EmbeddedResource Include="StepData\Recordings\stepdatarec-tables.gz" LogicalName="StepData.stepdatarec-tables.gz" />
     <EmbeddedResource Include="..\..\tools\stepdatarec\text-cases.txt" LogicalName="StepData.text-cases.txt" />
+    <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
+    <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
