@@ -35,12 +35,10 @@ public class OcctNetBackendTests
     [Fact]
     public void WhatIsntPortedSaysSo()
     {
-        // STEP isn't ported to OCCT.NET: its classes throw, with no native fallback
-        var e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.STEPControl_Writer());
-        Assert.Equal("not yet ported to OCCT.NET: STEPControl_Writer", e.Message);
-        // nor are members OCCT.NET doesn't make public, such as the phase 7 algorithms' copy constructors
+        // Members OCCT.NET doesn't make public throw, with no native fallback, such as the phase 7 algorithms' copy
+        // constructors (OCCT.NET's phase 8 ported STEP, the last class missing)
         using var fillet = new Build123d.Occt.BRepFilletAPI_MakeFillet(new Box(10, 10, 10).TopoShape);
-        e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.BRepFilletAPI_MakeFillet(fillet));
+        var e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.BRepFilletAPI_MakeFillet(fillet));
         Assert.Equal("not available through OCCT.NET's public API: BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet)",
                      e.Message);
     }

@@ -3,29 +3,117 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class STEPControl_Writer : OcctObject
 {
+    internal STEPControl_Writer(global::Occt.STEPControl_Writer impl) : base(impl, true) { }
     private protected STEPControl_Writer(object raw, bool _) : base(raw, _) { }
+    internal global::Occt.STEPControl_Writer Impl => (global::Occt.STEPControl_Writer)RawImpl;
     private protected STEPControl_Writer(Unported u) : base(u) { }
 
-    public STEPControl_Writer(STEPControl_Writer other) : this(Unported.Throw(Unported.Class("STEPControl_Writer"))) { }
+    public STEPControl_Writer(STEPControl_Writer other) : this(Unported.Throw(Unported.Member("STEPControl_Writer::.ctor(STEPControl_Writer)"))) { }
 
-    public STEPControl_Writer() : this(Unported.Throw(Unported.Class("STEPControl_Writer"))) { }
+    public STEPControl_Writer() : this(__New1()) { }
 
-    public void SetTolerance(double Tol) => throw Unported.Class("STEPControl_Writer");
+    private static global::Occt.STEPControl_Writer __New1()
+    {
+        try
+        {
+            return new global::Occt.STEPControl_Writer();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void UnsetTolerance() => throw Unported.Class("STEPControl_Writer");
+    public void SetTolerance(double Tol)
+    {
+        try
+        {
+            this.Impl.SetTolerance(Tol);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode) => throw Unported.Class("STEPControl_Writer");
+    public void UnsetTolerance()
+    {
+        try
+        {
+            this.Impl.UnsetTolerance();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode, bool compgraph) => throw Unported.Class("STEPControl_Writer");
+    public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode)
+    {
+        ArgumentNullException.ThrowIfNull(sh);
+        try
+        {
+            var __r = this.Impl.Transfer(sh.V, (global::Occt.STEPControl_StepModelType)mode);
+            return (IFSelect_ReturnStatus)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public IFSelect_ReturnStatus Write(string theFileName) => throw Unported.Class("STEPControl_Writer");
+    public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode, bool compgraph)
+    {
+        ArgumentNullException.ThrowIfNull(sh);
+        try
+        {
+            var __r = this.Impl.Transfer(sh.V, (global::Occt.STEPControl_StepModelType)mode, compgraph);
+            return (IFSelect_ReturnStatus)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintStatsTransfer(int what) => throw Unported.Class("STEPControl_Writer");
+    public IFSelect_ReturnStatus Write(string theFileName)
+    {
+        try
+        {
+            var __r = this.Impl.Write(theFileName);
+            return (IFSelect_ReturnStatus)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintStatsTransfer(int what, int mode) => throw Unported.Class("STEPControl_Writer");
+    public void PrintStatsTransfer(int what)
+    {
+        try
+        {
+            this.Impl.PrintStatsTransfer(what);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void CleanDuplicateEntities() => throw Unported.Class("STEPControl_Writer");
+    public void PrintStatsTransfer(int what, int mode)
+    {
+        try
+        {
+            this.Impl.PrintStatsTransfer(what, mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public void CleanDuplicateEntities() => throw Unported.Member("STEPControl_Writer::CleanDuplicateEntities()");
 }

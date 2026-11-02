@@ -1,2 +1,3 @@
 * text=auto
 *.sh text eol=lf
+tests/Build123d.Tests/Reference/Exchange/** -text

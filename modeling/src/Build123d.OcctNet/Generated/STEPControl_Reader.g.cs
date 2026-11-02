@@ -3,53 +3,280 @@
 
 namespace Build123d.Occt;
 
-/// <summary>Not yet ported to OCCT.NET: every member throws <see cref="NotSupportedException"/>.</summary>
 public partial class STEPControl_Reader : OcctObject
 {
+    internal STEPControl_Reader(global::Occt.STEPControl_Reader impl) : base(impl, true) { }
     private protected STEPControl_Reader(object raw, bool _) : base(raw, _) { }
+    internal global::Occt.STEPControl_Reader Impl => (global::Occt.STEPControl_Reader)RawImpl;
     private protected STEPControl_Reader(Unported u) : base(u) { }
 
-    public STEPControl_Reader(STEPControl_Reader other) : this(Unported.Throw(Unported.Class("STEPControl_Reader"))) { }
+    public STEPControl_Reader(STEPControl_Reader other) : this(Unported.Throw(Unported.Member("STEPControl_Reader::.ctor(STEPControl_Reader)"))) { }
 
-    public STEPControl_Reader() : this(Unported.Throw(Unported.Class("STEPControl_Reader"))) { }
+    public STEPControl_Reader() : this(__New1()) { }
 
-    public IFSelect_ReturnStatus ReadFile(string filename) => throw Unported.Class("STEPControl_Reader");
+    private static global::Occt.STEPControl_Reader __New1()
+    {
+        try
+        {
+            return new global::Occt.STEPControl_Reader();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool TransferRoot() => throw Unported.Class("STEPControl_Reader");
+    public IFSelect_ReturnStatus ReadFile(string filename)
+    {
+        try
+        {
+            var __r = this.Impl.ReadFile(filename);
+            return (IFSelect_ReturnStatus)__r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool TransferRoot(int num) => throw Unported.Class("STEPControl_Reader");
+    public bool TransferRoot()
+    {
+        try
+        {
+            var __r = this.Impl.TransferRoot();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbRootsForTransfer() => throw Unported.Class("STEPControl_Reader");
+    public bool TransferRoot(int num)
+    {
+        try
+        {
+            var __r = this.Impl.TransferRoot(num);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void SetSystemLengthUnit(double theLengthUnit) => throw Unported.Class("STEPControl_Reader");
+    public int NbRootsForTransfer()
+    {
+        try
+        {
+            var __r = this.Impl.NbRootsForTransfer();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public double SystemLengthUnit() => throw Unported.Class("STEPControl_Reader");
+    public void SetSystemLengthUnit(double theLengthUnit)
+    {
+        try
+        {
+            this.Impl.SetSystemLengthUnit(theLengthUnit);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool SetNorm(string norm) => throw Unported.Class("STEPControl_Reader");
+    public double SystemLengthUnit()
+    {
+        try
+        {
+            var __r = this.Impl.SystemLengthUnit();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool TransferOneRoot() => throw Unported.Class("STEPControl_Reader");
+    public bool SetNorm(string norm)
+    {
+        try
+        {
+            var __r = this.Impl.SetNorm(norm);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool TransferOneRoot(int num) => throw Unported.Class("STEPControl_Reader");
+    public bool TransferOneRoot()
+    {
+        try
+        {
+            var __r = this.Impl.TransferOneRoot();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public bool TransferOne(int num) => throw Unported.Class("STEPControl_Reader");
+    public bool TransferOneRoot(int num)
+    {
+        try
+        {
+            var __r = this.Impl.TransferOneRoot(num);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int TransferRoots() => throw Unported.Class("STEPControl_Reader");
+    public bool TransferOne(int num)
+    {
+        try
+        {
+            var __r = this.Impl.TransferOne(num);
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void ClearShapes() => throw Unported.Class("STEPControl_Reader");
+    public int TransferRoots()
+    {
+        try
+        {
+            var __r = this.Impl.TransferRoots();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public int NbShapes() => throw Unported.Class("STEPControl_Reader");
+    public void ClearShapes()
+    {
+        try
+        {
+            this.Impl.ClearShapes();
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape Shape() => throw Unported.Class("STEPControl_Reader");
+    public int NbShapes()
+    {
+        try
+        {
+            var __r = this.Impl.NbShapes();
+            return __r;
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape Shape(int num) => throw Unported.Class("STEPControl_Reader");
+    public TopoDS_Shape Shape()
+    {
+        try
+        {
+            var __r = this.Impl.Shape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public TopoDS_Shape OneShape() => throw Unported.Class("STEPControl_Reader");
+    public TopoDS_Shape Shape(int num)
+    {
+        try
+        {
+            var __r = this.Impl.Shape(num);
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintCheckLoad(bool failsonly, IFSelect_PrintCount mode) => throw Unported.Class("STEPControl_Reader");
+    public TopoDS_Shape OneShape()
+    {
+        try
+        {
+            var __r = this.Impl.OneShape();
+            return new TopoDS_Shape(__r);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintCheckTransfer(bool failsonly, IFSelect_PrintCount mode) => throw Unported.Class("STEPControl_Reader");
+    public void PrintCheckLoad(bool failsonly, IFSelect_PrintCount mode)
+    {
+        try
+        {
+            this.Impl.PrintCheckLoad(failsonly, (global::Occt.IFSelect_PrintCount)mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintStatsTransfer(int what) => throw Unported.Class("STEPControl_Reader");
+    public void PrintCheckTransfer(bool failsonly, IFSelect_PrintCount mode)
+    {
+        try
+        {
+            this.Impl.PrintCheckTransfer(failsonly, (global::Occt.IFSelect_PrintCount)mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 
-    public void PrintStatsTransfer(int what, int mode) => throw Unported.Class("STEPControl_Reader");
+    public void PrintStatsTransfer(int what)
+    {
+        try
+        {
+            this.Impl.PrintStatsTransfer(what);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
+
+    public void PrintStatsTransfer(int what, int mode)
+    {
+        try
+        {
+            this.Impl.PrintStatsTransfer(what, mode);
+        }
+        catch (global::Occt.Standard_Failure __e)
+        {
+            throw OcctException.From(__e);
+        }
+    }
 }

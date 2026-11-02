@@ -13,18 +13,19 @@
     <NoWarn>$(NoWarn);CS1591;CS8981;IDE1006</NoWarn>
   </PropertyGroup>
 
-  <!-- Shared with the native binding: the enums and the operation context have no native code -->
+  <!-- Shared with the native binding: the enums, the operation context and the exchange types have no native code -->
   <ItemGroup>
     <Compile Include="..\Build123d.Occt\Generated\Enums.g.cs" Link="Shared\Enums.g.cs" />
     <Compile Include="..\Build123d.Occt\Runtime\OcctContext.cs" Link="Shared\OcctContext.cs" />
+    <Compile Include="..\Build123d.Occt\Runtime\Exchange.cs" Link="Shared\Exchange.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(OcctNetRoot)src/OcctNet.ModelingAlgorithms/OcctNet.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj" />
   </ItemGroup>
 
   <Target Name="RequireOcctNet" BeforeTargets="ResolveProjectReferences"
-          Condition="!Exists('$(OcctNetRoot)src/OcctNet.ModelingAlgorithms/OcctNet.ModelingAlgorithms.csproj')">
+          Condition="!Exists('$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj')">
     <Error Text="OCCT.NET not found at '$(OcctNetRoot)': pass -p:OcctNetRoot=&lt;OCCT.NET checkout&gt;/" />
   </Target>
 

@@ -187,6 +187,10 @@ Most of these exist in build123d. Please make sure they're public and return pla
 - **Untrusted input.** STEP and BREP imports must assume the file could be hostile or broken. Return errors rather than
   crashing (see section 4), and put limits on anything that could allocate without bound.
 
+**Done** (design.md, "Import and export"): `Importers` and `Exporters3D` read and write streams, with `ImportLimits` and
+cancellation: BREP and STEP on both backends, STL, glTF and 3MF on OCCT.NET, which Bento uses. STEP's names, colours
+and assemblies follow OCCT.NET's STEPCAFControl.
+
 ## 8. Not needed from this library
 
 - Viewing, rendering, JSON for three-cad-viewer, colours for the viewer's tree, or anything Bento-specific: Bento.Cad

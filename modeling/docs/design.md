@@ -268,11 +268,11 @@ Native OCCT stays the default backend.
   `OcctType` (`StdFail_NotDone`…) and `OcctContext` operation, with OCCT.NET's exception as the inner one. Other
   exceptions, such as an OCCT.NET bug's `NullReferenceException`, pass through unchanged, so they're seen.
 - **What isn't ported** throws `NotSupportedException`, with no native fallback:
-  - a class OCCT.NET doesn't have yet (STEP: `STEPControl_Reader` and `Writer`) says "not yet ported to OCCT.NET:
-    STEPControl_Writer";
+  - a class OCCT.NET doesn't have yet says "not yet ported to OCCT.NET: …". Since OCCT.NET's phase 8 (STEP, forwarded
+    from `OcctNet.DataExchange`) there is none;
   - a member with no public counterpart says "not available through OCCT.NET's public API: …", such as the copy
-    constructors of the phase 7 algorithms (`BRepFilletAPI_MakeFillet`, `BRepOffset_MakeOffset`…), which OCCT.NET
-    doesn't offer.
+    constructors of the phase 7 algorithms (`BRepFilletAPI_MakeFillet`, `BRepOffset_MakeOffset`…) and of
+    `STEPControl_Reader` and `Writer`, which OCCT.NET doesn't offer.
 - **Written by hand** (`Runtime`):
   - the runtime classes;
   - `Extras`, over OCCT.NET's `MeshExtraction`, BRep text I/O and alerts;
@@ -282,12 +282,16 @@ Native OCCT stays the default backend.
   - `BRepMesh_IncrementalMesh`: OCCT.NET meshes a copy and returns it, so the wrapper it's given takes the meshed
     shape, as the native one would carry the mesh (`Build123d` meshes only private copies);
   - `BRepLib.BuildCurves3d`, over its functional twin, the same way;
-  - the shape's in-place forms (`Location(loc)`, `Reverse()`…), on the wrapper's own copy.
-- **OCCT.NET internals.** Three things have no public way in OCCT.NET yet, so they're reached with `UnsafeAccessor`
+  - the shape's in-place forms (`Location(loc)`, `Reverse()`…), on the wrapper's own copy;
+  - data exchange (`Runtime/Exchange.cs`): the STEP reader's and writer's stream forms, with OCCT.NET's limits and
+    cancellation, and the mesh formats (see "Import and export").
+- **OCCT.NET internals.** Four things have no public way in OCCT.NET yet, so they're reached with `UnsafeAccessor`
   (no reflection). They're listed for OCCT.NET to make public:
   - building shells and solids from parts: `TopoDS_Builder`'s internal constructor and its `Make*` and `Add`;
   - freezing the result: `FreezeGraph`;
-  - copying a `BRepTools_History` as it is.
+  - copying a `BRepTools_History` as it is;
+  - a face holding only a triangulation (STL import): the internal `BRep_Builder`'s `MakeFace(face, triangulation)`,
+    named with `UnsafeAccessorType`, as the class itself is internal.
 - **Semantics kept.**
   - Immutability: `InputsUnchangedTests` passes, the concurrent cases included.
   - Exception types and messages, and thread safety.
@@ -298,16 +302,67 @@ Native OCCT stays the default backend.
     holds a copy instead, so the prism of a circular face doesn't share the face. `Solid.ExtrudeUntil` then finds the
     piece that holds the profile by place.
   - The tests that depend on the native shim (faults, memory pressure) are `NativeFact`s, skipped under OCCT.NET.
-- **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's three assemblies load
+- **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's four assemblies load
   and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
   build output as `B3D_OCCTNET_LIB`.
-- **Measured** (OCCT.NET at 991bbe6, with its phase 7; Windows x64):
-  - 1,813 of 1,819 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
+- **Measured** (OCCT.NET at 140ceb00, with its phase 8 through STEPControl; Windows x64):
+  - 1,856 of 1,862 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
     gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
-    phase 7). At bad099b, before phase 7, 1,676 passed and 130 failed, 128 of them on phase 7;
+    phase 7). Natively 1,850 of 1,856 pass and 6 are skipped (the mesh formats' tests among them). At 991bbe6, with
+    phase 7, 1,813 of 1,819 passed; at bad099b, before it, 1,676 passed and 130 failed, 128 of them on phase 7;
   - the 37 introductory examples (all but 34, text) match native's volume to a part in 10⁹ and its face count
     (`IntroductoryExamplesTests`), the seven with fillets, chamfers, offsets and extrusion until among them;
   - the suite takes 27 s against native's 5 s, 7.6 times summed over the tests both pass.
+
+#### Import and export
+
+build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D`: `ImportBrep`, `ImportStep`,
+`ImportStl` and `ExportBrep`, `ExportStep`, `ExportStl`, `ExportGltf`, with `Export3mf` for build123d's `Mesher` and
+`ImportGltf`, which build123d doesn't have.
+
+- **Streams first.** Each function reads or writes a `Stream`; the file forms open the file and call it. Bento does its
+  own file access and hands over bytes (bento-integration.md, section 7). An export is made in memory and written
+  only when whole, so a failure leaves no partial file.
+- **Hostile input.** `ImportLimits` (bytes, STEP records, nesting depth, triangles, glTF nodes; generous defaults)
+  is passed to the readers, which stop with an error rather than allocate past it. Data past a limit throws
+  `InvalidDataException`; data that isn't the format throws `ArgumentException` (build123d's ValueError), or for
+  BREP `OcctException` (`Storage_StreamFormatError`, as before).
+- **Cancellation.** Every function takes a `CancellationToken`. On OCCT.NET it becomes a `Message_ProgressIndicator`,
+  which OCCT's readers and writers poll as they run; natively it is checked between OCCT's calls.
+- **Through the backend's API.** `Build123d` reaches the readers and writers through members both backends have:
+  - STEP through `STEPControl_Reader` and `Writer`, with hand-written stream forms (`ReadStream`, `WriteStream`,
+    `TransferRoots(token)`, `Transfer(shape, mode, StepWriteSettings, token)`). On OCCT.NET they forward to its stream
+    forms with `StepFile_ReadLimits` and a progress range. Natively OCCT's stream forms (`std::istream`) aren't bound,
+    so they go through a temporary file: only the byte limit applies, and only OCCT's default writing parameters
+    (millimetres, pcurves, average precision). Other units, `writePcurves: false` and other precision modes need
+    `Interface_Static`, which isn't bound, and throw `NotSupportedException`;
+  - the mesh formats through `Extras` (`WriteStl`, `ReadStl`, `WriteGltf`, `Write3mf`, `ReadGltf`) and
+    `ExchangeNode`, a backend-neutral assembly tree (name, colour, shape or children and location).
+- **The mesh formats need the OCCT.NET backend** (a decision): natively they throw `NotSupportedException`.
+  - Native OCCT's STL (TKDESTL) and mesh writers (TKRWMesh) would need new bindings and shim code, and its glTF
+    writer RapidJSON in the superbuild (phase 6), for formats OCCT.NET already has: `RWStl` and `StlAPI_Writer`
+    (ported), and `RWGltf_TreeWriter`, `RW3mf_TreeWriter` and `RWGltf_TreeReader` (written fresh over its assembly
+    tree, `XdeDoc_Tree`).
+  - Writing them in `Build123d` itself would have duplicated OCCT.NET's writers.
+  - Bento runs on OCCT.NET, so it has every format.
+- **STEP without names, colours or assemblies yet.** build123d writes and reads STEP through XCAF
+  (`STEPCAFControl`), with product names, colours and the assembly tree. OCCT.NET ports that next (its unit 8G2), so
+  for now STEP goes through `STEPControl`: an assembly is written as its compound, and a file's shapes come back as
+  one shape or a compound of them, without labels. The FILE_NAME header is build123d's: the shape's label, the time
+  stamp given (for repeatable output) and "build123d" as the originating system. Native OCCT's header maker
+  (`APIHeaderSection_MakeHeader`) isn't bound, so the record is rewritten in the text, the same way on both backends.
+- **glTF and 3MF keep the tree.** An assembly is a node (3MF: a components object) per child, named by its label,
+  with a material per colour. A part is meshed on a private copy with build123d's deflections (relative to each
+  edge), as `Shape.mesh` does. glTF turns Z-up into Y-up and the unit into metres, as build123d's does (by the
+  writer's coordinate change rather than by moving the shape), and a `.gltf` written to one stream embeds its buffer
+  as a `data:` URI. `ImportGltf` gives a part per mesh, a compound of faces holding only triangles, with its name and
+  colour, and an assembly per node hierarchy.
+- **Compared with native** (`StepNativeTests`, Reference/Exchange): ten shapes built natively and kept as BRep (solids
+  of each surface type, a fillet, a loft, a face, a wire, a compound). On both backends their STEP is byte for byte
+  native OCCT's (with the time stamp fixed and the product name's index masked, which native counts process-wide),
+  and the STEP read back gives native's BRep text exactly.
+- **Faces holding only triangles** (from STL and glTF) have no surface, so `BoundingBox()`, which ignores
+  triangulations, gives an empty box for them; `Tessellate` and `Triangulate` give their triangles.
 
 ### 3. Behavioural parity is tested, not assumed
 
@@ -344,6 +399,7 @@ Native OCCT stays the default backend.
    6. **Bytes in and out** for BREP, STEP and STL, through streams, with limits for untrusted input.
    7. **Cancellation and progress** (`CancellationToken`, `IProgress<double>`) and the missing measurements.
 5. Builders (`build_common`, BuildLine, BuildSketch, BuildPart), including `Fork()`.
-6. Import and export: SVG, DXF, 3MF and glTF (STEP, STL and BREP come in phase 4). glTF needs OCCT's
+6. Import and export: SVG, DXF, 3MF and glTF (STEP, STL and BREP come in phase 4; STL, glTF and 3MF are on the
+   OCCT.NET backend already, see "Import and export"). Natively, glTF needs OCCT's
    `TKDEGLTF`, which builds only with RapidJSON, so add RapidJSON to the native superbuild first.
 7. Advanced: joints, drafting, text, sheet metal, `brep_from_stl`, `uv_write`.
