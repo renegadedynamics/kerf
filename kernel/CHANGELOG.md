@@ -1596,3 +1596,13 @@ Phase 9 (part): Schematiq.Collections (unit 9A).
 
 - Returned collections are Schematiq.Collections' (`ISchematiqList<T>`), from nuget.org, in place of Bento.Collections
   0.4.0: the same library, renamed and published by Bento's owner. `PackedList<T>` is an `ISchematiqList<T>`.
+
+Phase 9 (part): the triage of five corpus failures (unit 9F).
+
+- Fixed: a frozen face with a seam swept with MakeRevol or MakePrism (and MakePipe's profiles) now answers its history
+  as native OCCT does; `Generated` threw TopoDS_LockedShape (bugs/modalg_6/bug26406), and `IsDeleted` called a seam
+  deleted (bugs/modalg_7/bug30346_2).
+- Fixed: BRepOffsetAPI_MakeFilling with frozen boundary edges that meet only within tolerance lost an edge of the
+  face (bugs/filling/bug23380); the face is now native's.
+- Attributed, not the port: lowalgos/extss/bug29712_44 (OCCT's script), demo/samples/anc101 (OCCT's sample fails
+  natively too), bugs/fclasses/bug1281 (Draw's plugin loader).

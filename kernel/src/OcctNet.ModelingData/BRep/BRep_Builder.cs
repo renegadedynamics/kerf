@@ -1336,6 +1336,70 @@ internal sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>
+    /// OCCT.NET: frozen. <see cref="UpdateVertex(in TopoDS_Vertex, double, in TopoDS_Edge, double)"/> for a vertex that
+    /// may be frozen: when the vertex is FORWARD or REVERSED in the edge and already at least as tolerant as
+    /// <paramref name="Tol"/>, the call would leave the vertex as it is (it sets only the edge's curve ranges), so on a
+    /// frozen vertex only the ranges are set. Any other write into a frozen vertex throws, as UpdateVertex does.
+    /// </summary>
+    /// <remarks>
+    /// For algorithms that, as OCCT does, build on demand after their result is published, sharing its vertices:
+    /// a sweep's history builds the edge a vertex generates, and sets its vertices' parameters on it.
+    /// </remarks>
+    internal void UpdateVertexOfFrozen(in TopoDS_Vertex V, double Par, in TopoDS_Edge E, double Tol)
+    {
+        BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
+        BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+        if (!TV.IsFrozen() || TE.Locked() || Tol > TV.Tolerance()
+            || Precision.IsPositiveInfinite(Par) || Precision.IsNegativeInfinite(Par))
+        {
+            UpdateVertex(V, Par, E, Tol);
+            return;
+        }
+
+        // the vertex's orientation in the edge, as UpdateVertex finds it
+        TopAbs_Orientation ori = TopAbs_INTERNAL;
+        var itv = new TopoDS_Iterator(E.Oriented(TopAbs_FORWARD));
+        if (!itv.More() && TE.Degenerated())
+        {
+            ori = V.Orientation();
+        }
+        while (itv.More())
+        {
+            TopoDS_Shape Vcur = itv.Value();
+            if (V.IsSame(Vcur))
+            {
+                ori = Vcur.Orientation();
+                if (ori == V.Orientation())
+                {
+                    break;
+                }
+            }
+            itv.Next();
+        }
+        if (ori != TopAbs_FORWARD && ori != TopAbs_REVERSED)
+        {
+            UpdateVertex(V, Par, E, Tol); // would add a point representation: throws TopoDS_LockedShape
+            return;
+        }
+
+        for (var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.ChangeCurves()); itcr.More(); itcr.Next())
+        {
+            if (itcr.Value() is BRep_GCurve GC)
+            {
+                if (ori == TopAbs_FORWARD)
+                {
+                    GC.First(Par);
+                }
+                else
+                {
+                    GC.Last(Par);
+                }
+            }
+        }
+        TE.Modified(true);
+    }
+
+    /// <summary>
     /// Sets the parameter of the vertex on the edge's curve on the face, and raises the vertex's tolerance to
     /// <paramref name="Tol"/>.
     /// </summary>

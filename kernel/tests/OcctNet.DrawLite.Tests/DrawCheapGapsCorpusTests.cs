@@ -62,6 +62,11 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // lines each cycle prints, which Draw-lite keeps in its log and DRAWEXE writes to the console; the documents
         // themselves are let go (DDocStdCommands.NewDocument drops those no longer bound)
         ["bugs/caf/bug31075"] = "memory trend of the interpreter's log",
+        // OCCT's script (decision 14203): `extrema s1 s1` and `extrema s2 s2` measure each plane against itself
+        // (distance 0, native OCCT too) where the test expects 10, the distance between s1 and s2
+        ["lowalgos/extss/bug29712_44"] = "OCCT's script: a plane's extrema with itself",
+        // Draw's plugin loader (decision 14205): Draw-lite's commands are built in and its pload loads nothing
+        ["bugs/fclasses/bug1281"] = "pload's plugins",
     };
 
     /// <summary>
