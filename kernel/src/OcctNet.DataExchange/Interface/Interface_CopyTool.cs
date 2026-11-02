@@ -205,7 +205,7 @@ public class Interface_CopyTool
                 return res;
             }
 
-            thelev++;
+            thelev++; // OCCT: after the copy: the entities the copy transfers count at level 0 (roots)
             if (nument != 0)
             {
                 thelst.SetTrue(nument);

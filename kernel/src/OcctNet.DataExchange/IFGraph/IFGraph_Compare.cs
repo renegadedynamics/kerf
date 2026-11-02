@@ -30,7 +30,7 @@ public class IFGraph_Compare : Interface_GraphContent
     /// </summary>
     public void GetFromEntity(Standard_Transient? ent, bool first)
     {
-        IFGraph_AllShared iter = new IFGraph_AllShared(new Interface_Graph(thegraph.Model()), ent);
+        IFGraph_AllShared iter = new IFGraph_AllShared(new Interface_Graph(thegraph.Model()), ent); // OCCT: not evaluated (Begin), so GetFromIter adds nothing
         GetFromIter(iter, first);
     }
 

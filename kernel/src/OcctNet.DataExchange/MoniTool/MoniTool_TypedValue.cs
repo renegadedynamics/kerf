@@ -1106,7 +1106,7 @@ public class MoniTool_TypedValue : Standard_Transient
     /// </summary>
     public void ClearValue()
     {
-        thehval = null;
+        thehval = null; // OCCT: IsSetValue, SetCStringValue and RealValue dereference it afterwards
         theoval = null;
         theival = 0;
     }

@@ -40,7 +40,7 @@ public class IFGraph_AllConnected : Interface_GraphContent
     /// </summary>
     public void GetFromEntity(Standard_Transient? ent)
     {
-        if (!thegraph.IsPresent(thegraph.EntityNumber(ent)))
+        if (!thegraph.IsPresent(thegraph.EntityNumber(ent))) // OCCT: inverted: returns at once for an entity not yet present, so nothing is found
         {
             return;
         }

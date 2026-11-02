@@ -86,7 +86,7 @@ public class Interface_CheckTool
             //    Without try/catch (done by caller, avoids try/catch in loop)
             if (errh == 0)
             {
-                module.CheckCase(CN, ent, sh, ref ach);
+                module.CheckCase(CN, ent, sh, ref ach); // OCCT: returns before the "Shared Items unknown" check
                 return;
             }
             //    With try/catch
@@ -513,7 +513,7 @@ public class Interface_CheckTool
                 for (i = n0; i <= nb; i++)
                 {
                     ach.Clear();
-                    ach.SetEntity(ent);
+                    ach.SetEntity(ent); // OCCT: the working check, already added to the list for a former entity, is cleared and reused
                     if (model.IsReportEntity(i))
                     {
                         Interface_ReportEntity rep = model.ReportEntity(i);

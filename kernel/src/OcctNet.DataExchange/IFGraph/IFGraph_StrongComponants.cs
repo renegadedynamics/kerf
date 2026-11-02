@@ -42,7 +42,7 @@ public class IFGraph_StrongComponants : IFGraph_SubPartsIterator
             {
                 continue;
             }
-            AddPart();
+            AddPart(); // OCCT: each entity in a part of its own: no strong components
             GetFromEntity(G.Entity(i), false);
         }
     }
