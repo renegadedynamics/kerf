@@ -21,7 +21,7 @@ internal sealed class StepRoundTrip
     public readonly SortedDictionary<string, (long Count, string Example)> Unexplained = new(StringComparer.Ordinal);
     public readonly HashSet<string> Types = new(StringComparer.Ordinal);
 
-    // the causes of the differences OCCT makes (decision 12606)
+    // the causes of the differences OCCT makes (decision 1213)
     public const string ParameterValue = "an untyped trimming parameter is written PARAMETER_VALUE(...) (the member is named)";
     public const string IntegerAsReal = "an integer in a real SELECT member is written as a real";
     public const string Text = "a text with escapes or non-ASCII characters (decoded and encoded by StepData, unit 8B)";

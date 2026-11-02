@@ -176,7 +176,7 @@ oracle tests can show what changes.
   - Elements are default-constructed as in C++ (`gp_Dir` elements are (1, 0, 0)).
   - `NCollection_Array1`, `NCollection_Array2` and `NCollection_Sequence` derive from `Standard_Transient`, so the
     H-collections are transients as in OCCT (a handle to an `NCollection_HArray1` stored or sent as a
-    `occ::handle<Standard_Transient>`, `STANDARD_TYPE(NCollection_HArray1<...>)`: decision 12801). Nothing else of
+    `occ::handle<Standard_Transient>`, `STANDARD_TYPE(NCollection_HArray1<...>)`: decision 1214). Nothing else of
     `Standard_Transient` applies to them (they aren't frozen).
   - `NCollection_Array1<T>::Iterator` → `NCollection_Array1<T>.Iterator` (More/Next/Value).
   - An array of a value class (a STEP SELECT) holds references: storing one copies it as C++ does

@@ -53,7 +53,7 @@ internal sealed class Db
     };
     /// <summary>
     /// "Class::Method" called as obj->Class::Method() somewhere in TKDESTEP's sources: a virtual one gets a
-    /// non-virtual twin Class_Method (decision 12604).
+    /// non-virtual twin Class_Method (decision 1211).
     /// </summary>
     public readonly HashSet<string> QualifiedCalls = new(StringComparer.Ordinal);
 
@@ -245,7 +245,7 @@ internal sealed class Db
     public string ParamModifier(CppType t)
     {
         // occ::handle<Interface_Check>&: the callee completes the check, never replaces it, so the reference
-        // is passed by value, as StepData's port does (decision 12602)
+        // is passed by value, as StepData's port does (decision 1209)
         if (t.IsHandle && ByValueHandles.Contains(t.Args[0].Name))
         {
             return "";

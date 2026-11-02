@@ -2,7 +2,7 @@
 //
 // tools/stepgen: generates OCCT.NET's STEP entity classes and their readers and writers from OCCT 8's own C++
 // (phase8-plan.md 2.1, decision 1166), by translating each class's header and source to C# by
-// docs/translation-rules.md (decisions 12601 to 12610).
+// docs/translation-rules.md (decisions 1208 to 12610).
 //
 //   dotnet run --project tools/stepgen -- [--packages StepBasic,RWStepBasic,...] [--check] [--report file]
 //
@@ -17,7 +17,7 @@ namespace StepGen;
 public static class Generator
 {
     /// <summary>
-    /// Classes of the packages left to a later unit, with the reason (decision 12805): not entity classes, and built on
+    /// Classes of the packages left to a later unit, with the reason (decision 1218): not entity classes, and built on
     /// packages not ported yet.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string> Deferred = new SortedDictionary<string, string>(StringComparer.Ordinal)

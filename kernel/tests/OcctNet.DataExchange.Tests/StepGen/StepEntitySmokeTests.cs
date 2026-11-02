@@ -253,7 +253,7 @@ public sealed class StepEntitySmokeTests
         Assert.Same(aPlacement, aSelect.Axis2Placement3d());
         Assert.Null(aSelect.Axis2Placement2d());
 
-        // C++ copies a SELECT by value (decision 12603)
+        // C++ copies a SELECT by value (decision 1210)
         var aCopy = new StepGeom_Axis2Placement(aSelect);
         aSelect.SetValue(new StepGeom_Axis2Placement2d());
         Assert.Same(aPlacement, aCopy.Value());

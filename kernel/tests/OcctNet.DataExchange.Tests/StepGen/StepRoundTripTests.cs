@@ -74,7 +74,7 @@ public sealed class StepRoundTripTests(ITestOutputHelper theOutput)
     }
 
     /// <summary>
-    /// The corpus's records StepAP214's protocol doesn't recognise, in OCCT either (decision 12806): 88 types, none in
+    /// The corpus's records StepAP214's protocol doesn't recognise, in OCCT either (decision 1219): 88 types, none in
     /// OCCT's type tables (simple ones) or complex type lists, read as unknown entities and written back as read.
     /// </summary>
     private const long KnownUnknown = 17_402;

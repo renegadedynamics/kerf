@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
-// Per-class and per-method C# written by hand, for what the generator can't translate (decision 12602):
+// Per-class and per-method C# written by hand, for what the generator can't translate (decision 1209):
 //   overrides/<Class>.cs               the whole file
 //   overrides/<Class>.<Method>.<n>.cs  one method (or file-level helper) with n parameters (indented as a class member)
 //   overrides/<Class>.statics.cs       the source file's statics that aren't constants (process-wide state), as members

@@ -1883,33 +1883,16 @@ Found by porting Transfer, TransferBRep and XSAlgo and testing them on the toy n
 ## Phase 8: unit 8C1, the STEP entity generator
 
 Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
-reproduces it (decision 12602).
+reproduces it (decision 1209).
 
 | Where | What | Effect |
 |---|---|---|
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
-
-## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
-
-Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
-each, but for the first (decision 12903).
-
-| Where | What | Effect |
-|---|---|---|
-| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 12903) |
-| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
-| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
-| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
-| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
-| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
-| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
-| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
 | RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
 
 ## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
 
 Found by generating StepVisual, StepAP214/203/242, StepDimTol, StepKinematics, StepFEA, StepElement, their RW
-packages and StepAP214's dispatch from OCCT's C++, and by the corpus's round trips (decision 12806). The port
+packages and StepAP214's dispatch from OCCT's C++, and by the corpus's round trips (decision 1219). The port
 reproduces them all; the generated code carries no `// OCCT` marker (it is regenerated), the tests name them.
 
 | Where | What | Effect |
@@ -1927,6 +1910,43 @@ reproduces them all; the generated code carries no `// OCCT` marker (it is regen
 | StepAP214_RepItemGroup, StepAP214_ExternallyDefinedClass, StepAP214_ExternallyDefinedGeneralProperty, StepDimTol_CommonDatum: Init with all fields | Call Init on their second supertype's field, which the default constructor leaves null | A null dereference: their readers call it, so such a record is read as an erroneous entity (the reader's per-entity recovery, as OCCT's signal handler); none in the corpus |
 | RWStepVisual_RWSurfaceStyleParameterLine::WriteStep, RWStepVisual_RWTextStyleWithBoxCharacteristics::WriteStep | `SW.Send(ent->DirectionCounts())`, `SW.Send(ent->Characteristics())` (arrays of SELECTs) through `Send(occ::handle<Standard_Transient>)` | The array, not an entity of the model, is written `$ /* UNKNOWN REF */` with a fail (none in the corpus) |
 | StepFEA_SymmetricTensor43d | Declares SetFeaIsotropicSymmetricTensor43d, never defined | Left out |
+
+## Phase 8: unit 8A3, IFSelect, XSControl and APIHeaderSection_EditHeader
+
+Found by porting IFSelect (as traced) and XSControl and testing them on the toy norm and the corpus's STEP files
+(decision 1228). The port reproduces each but the one noted.
+
+| Where | What | Effect |
+|---|---|---|
+| Interface_CheckTool::VerifyCheckList and CheckList (8A1's code, met here) | One Interface_Check object is cleared and refilled for each entity and recorded for every entity with messages; when the model has semantic checks or report entities, it becomes the model's own check, which the next entity clears | Every recorded check ends with the last entity's messages (none if the last has none): IFSelect_WorkSession::ComputeCheck's semantic checks lose all but the last entity's, and the model's stored checks are cleared by the next lists. Reproduced; the native comparison agrees on the corpus |
+| IFSelect_CheckCounter::Analyse | Keeps `thesign->Text(ent, model).ToCString()`, the C string of a temporary destroyed at once | With a signature, the type in each message is garbage or empty natively. The port gives the text (not comparable natively) |
+| IFSelect_WorkSession::GiveListCombined | Never creates the list it appends to | A null dereference for any two lists |
+| IFSelect_WorkSession::SendAll, SendSelected | Clear `errhand` (a file static, shared by every session) and restore it on an exception only | After one successful call, every session's later calls run without the exception guard. The port keeps the flag per session |
+| IFSelect_WorkSession::RemoveName | Re-adds the item to the indexed map of items to drop its name; adding an existing key changes nothing | The item keeps its name as its attribute (HasName, Name, ItemLabel's lists), though the name is unbound |
+| IFSelect_WorkSession::ReadFile with OCCT 8's StepSelect_WorkLibrary | The library reads into the model it is given; the session gives a null one | XSControl_Reader::ReadFile on STEP fails (a null dereference caught as a signal: RetFail); STEPControl_Reader::ReadFile makes its model itself |
+| IFSelect_SignatureList::PrintList | Tests `if (num == IFSelect_ShortByItem)`, an entity number against the enumeration's value 2 | Entity n0 2 is printed "??" in the lists |
+| IFSelect_Functions::GiveDispatch | Sets '\0' at the positions of '(' and ')' (TCollection_AsciiString::SetValue) before testing that there are any | A name that is neither a dispatch nor has parentheses raises Standard_OutOfRange |
+| XSControl_TransferWriter::CheckList, ResultCheckList | Skip a check `if (NbFails() == 0 \|\| NbWarnings() == 0)` | Only checks with both fails and warnings are listed |
+| XSControl_TransferReader::EntitiesFromShapeList (modes 2 to 4) | Reads `list->Value(i)` (the entity number) in the loop over `ir` | The results compared are the wrong ones (or out of range) |
+| APIHeaderSection_EditHeader, IsTimeStamp | `[[fallthrough]]` after each separator test into the next digit test | A separator must also be a digit: no time stamp is ever accepted, so the editor can't set one |
+| IFSelect_EditForm::NbTouched, IFSelect_ContextModif::Search, IFSelect_IntParam::StaticName | Declared, never defined | The first two left out; StaticName ported |
+
+## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
+
+Found by porting StepToGeom and GeomToStep and by recording them natively (tools/geomsteprec). The port reproduces
+each, but for the first (decision 12903).
+
+| Where | What | Effect |
+|---|---|---|
+| StepToGeom::MakeCurve, MakeCurve2d, MakeSurface | Recurse along replicas, offsets, surface and trimmed curves, guarding only against an entity referring to itself | A cycle of two entities overflows the stack; the port throws InsufficientExecutionStackException (fixed, decision 12903) |
+| StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction |
+| StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point |
+| StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) |
+| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone |
+| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights |
+| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates |
+| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
 
 ## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
 

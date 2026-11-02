@@ -51,6 +51,8 @@
          translated into BReps, and data/occ's shapes converted into STEP entities -->
     <EmbeddedResource Include="TopoStep\Recordings\toporec-s2t.txt.gz" LogicalName="TopoStep.toporec-s2t.txt.gz" />
     <EmbeddedResource Include="TopoStep\Recordings\toporec-t2s.txt.gz" LogicalName="TopoStep.toporec-t2s.txt.gz" />
+    <!-- Native OCCT's work session on the corpus's STEP files (tools/xscontrolrec, unit 8A3) -->
+    <EmbeddedResource Include="XSControl\Recordings\xscontrolrec.txt.gz" LogicalName="XSControl.xscontrolrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>
