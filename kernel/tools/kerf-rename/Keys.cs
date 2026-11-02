@@ -18,6 +18,10 @@ internal static class Keys
                 return reduced.OriginalDefinition;
             case IParameterSymbol { ContainingSymbol: IMethodSymbol { ReducedFrom: { } reducedOwner } } parameter:
                 return reducedOwner.OriginalDefinition.Parameters[parameter.Ordinal + 1];
+            case IParameterSymbol { ContainingSymbol: IMethodSymbol { AssociatedSymbol: IPropertySymbol indexer } } parameter
+                when parameter.Ordinal < indexer.Parameters.Length:
+                // An indexer's accessors have parameters of their own: they are the indexer's
+                return indexer.OriginalDefinition.Parameters[parameter.Ordinal];
             case ITypeSymbol type:
                 return type.OriginalDefinition;
             default:
