@@ -187,11 +187,11 @@ public class StepData_StepDumper
             nbe++; // Count entities with identifiers
             if (nlab < 0)
             {
-                nbu = 0; // Entities without proper identifier
+                nbu = 0; // OCCT: reset, not counted (so never listed) - Entities without proper identifier
             }
             else if (nlab == i)
             {
-                nbq = 0; // Entities where identifier matches entity number
+                nbq = 0; // OCCT: reset, not counted - Entities where identifier matches entity number
             }
             else if (nlab > 0)
             {
