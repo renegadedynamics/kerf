@@ -12086,3 +12086,105 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        - IFSelect ported as far as a member trace reaches;
        - the XDE Draw commands implemented over the tree (unit 8G);
        - NuGet publishing as 8X's last step, once the owner chooses package names and a feed.
+
+## Phase 8: unit 8A1, XSBase's foundation (MoniTool, Interface, IFGraph, LibCtl, XSMessage)
+
+12101. **The parameter object: `Interface_StaticSet`** (plan 2.7). OCCT's statics live in one process-wide dictionary
+       (`MoniTool_TypedValue::Stats()`) that `Interface_Static`'s static methods read and write. The port has no such
+       dictionary:
+       - `Interface_Static` keeps the part about one parameter (a typed value with a family, a wild-card and an update
+         status); `Interface_StaticSet` holds the statics by name and has OCCT's static methods as instance methods with
+         the same names and behaviour (`Init` with a type or a type character and the `'&'` edition texts, `Static`,
+         `IsPresent`, `CDef`, `IDef`, `IsSet`, `CVal`, `IVal`, `RVal`, `SetCVal`, `SetIVal`, `SetRVal`, `Update`,
+         `IsUpdated`, `Items`, `FillMap`, `Standards`). A call site `Interface_Static::IVal("read.precision.mode")`
+         becomes `theStatics.IVal("read.precision.mode")`.
+       - Each layer that declares parameters fills a set in its initialisation, once per set: `Standards()` here;
+         `XSAlgo::Init`, `STEPControl_Controller`, `STEPCAFControl_Controller` and DESTEP's in later units, guarded by
+         `StartInit("<layer>")` (OCCT's static "already done" flags, per set).
+       - Copies are deep (`new Interface_StaticSet(other)`: definitions, values, families, statuses, wild-cards mapped to
+         the copy's own), so a reader can take a copy nobody else changes, and Draw-lite keeps one set per interpreter
+         (`param` edits it). A set is a working object, not thread-safe while it changes.
+       - Lists (`Items`, `FillMap`, an enumeration's alphabetic values in `Definition()`) follow declaration order, where
+         OCCT's follow its maps' hash order: the oracle sorts those lists (decision 12108).
+       - MoniTool_TypedValue's library of types (Integer, Real, Text, Transient, Boolean, Logical) is built once and
+         read-only: `Lib`, `FromLib`, `LibList` ported; `AddLib`, `StaticValue` and `Stats` left out.
+       - XSMessage's texts (XSTEP.us) are compiled in and loaded into `Message_MsgFile` once per process
+         (`Interface_StaticSet.LoadMessages`, called by `Standards`), as ShapeExtend.Init does for Shape Healing (decision
+         975): idempotent, behind a lock; `LoadFromEnv("CSF_XSMessage")` and XSTEP.fr (unused by OCCT) left out.
+12102. **LibCtl's templates as C# generics.** `LibCtl_Library<TModule, TProtocol>` (the `.gxx`), `LibCtl_GlobalNode<,>`
+       and `LibCtl_Node<,>` (OCCT's `Interface_GlobalNodeOfGeneralLib`, `NodeOfReaderLib`...); `Interface_GeneralLib` and
+       `Interface_ReaderLib` derive from the instantiations, and 8B's `StepData_WriterLib` will too. Each closed generic
+       type has its own global list, as each OCCT `_0.cxx` has its own static. The global lists are process-wide state
+       initialised once: a protocol registers its modules (`SetGlobal`) in its one-time initialisation (a static
+       readonly field or `Lazy` in later units), writers take a lock, readers traverse without one (OCCT's
+       register-before-parallel-use contract). Registering is idempotent for the same protocol object. A library is a
+       working object (one per thread); its copy constructor shares the list, as C++'s copy does.
+12103. **The other process-wide state of Interface, left out or made local** (plan 2.7):
+       - `Interface_Protocol::Active`/`SetActive`/`ClearActive` (set by IFSelect_WorkSession, read by
+         `Interface_CopyTool(model)` and `Transfer_TransferOutput::TransferRoots()`): left out. `Interface_CopyTool(model)`
+         takes the model's protocol; 8A2 does the same for TransferOutput.
+       - `Interface_InterfaceModel`'s templates (`HasTemplate`, `Template`, `SetTemplate`, `ListTemplates`, used by IGES
+         only): left out.
+       - `Interface_Category`'s list: the nine standard categories as a constant (OCCT fills it once, at the first
+         Interface_Category); `AddCategory` left out. OCCT numbers them from 0, so "Shape" is 0, like an unknown name:
+         reproduced.
+       - `Interface_MSG`: its static utilities (`Blanks`, `Print`, `Intervalled`, `TDate`, `NDate`, `CDate`), which
+         Transfer, XSControl, IFSelect and STEP use, are ported; the translated message object and its process-wide
+         dictionary (`Read`, `Write`, `Record`, `Translated`, `SetTrace`, `SetMode`, `PrintTrace`), which they don't,
+         are left out. `Interface_STAT` (process-wide progress statistics, used by IGES only) is left out.
+       - The shared empty checks (`Interface_CheckIterator`'s `nulcheck`, `Interface_InterfaceModel`'s `nulch`) are a new
+         empty check per call, so a caller completing one can't change process-wide state.
+       - `Interface_CheckTool`'s static `errh` (check with or without try/catch) is a field of the tool.
+       - `Interface_FileReaderData`'s static cache of the last record read (valid for the last file created only) is the
+         object's own: the same results, and readers are reentrant (plan 2.3).
+       - Exceptions: where OCCT catches `Standard_Failure` with `OCC_CATCH_SIGNALS` and tells system signals
+         (`OSD_Exception`, `OSD_Signal`) apart, the port catches `Standard_Failure` as such and takes the other .NET
+         exceptions (NullReferenceException, IndexOutOfRangeException...) for signals (`Interface_FileReaderTool::LoadModel`'s
+         `ierr = 2`); `OutOfMemoryException` and `OperationCanceledException` pass through.
+12104. **`TCollection_HAsciiString` in Foundation.** A class (it has identity: OCCT shares a typed value's string and
+       changes it in place), with OCCT's API for the members data exchange uses; mutators internal (decision 21's rule).
+       Characters are .NET's UTF-16 code units where OCCT counts bytes (equal on ASCII text). With it, `Standard` gains
+       C's `Sprintf` (several conversions, through Message_Msg's, plus `%c`), `atoi`, `Atof` and `CStringChar` (a C
+       string's character, `'\0'` past the end), so ported code reads as C does.
+12105. **C++ value classes of Interface are C# classes.** `Interface_EntityIterator`, `Interface_Graph`,
+       `Interface_BitMap`, `Interface_IntList`, `Interface_EntityList`, the tools (ShareTool, ShareFlags, CheckTool,
+       CopyTool, CheckIterator, Category, LineBuffer, FloatWriter) and IFGraph's iterators are used by value in C++; the
+       port copies where C++ copies explicitly (`Interface_Graph(Interface_Graph)`, `Assign` for `operator=`, the
+       libraries, `IFGraph_StrongComponants(other)`), and C++'s implicit conversions are written out (`new
+       Interface_Graph(model)` where C++ converts a model to a graph, `new Interface_EntityIterator(sequence)`).
+       `Interface_FileParameter` is a class; `Interface_ParamList.SetValue` stores a copy (C++ copies the value), and
+       `ChangeValue`/`ChangeParam` give the stored one. A model's entities are numbered by reference in insertion order;
+       its reports are in OCCT's integer map (`NCollection_IntDataMap`, decision 784), so `Reports()` and `Redefineds()`
+       iterate in OCCT's order. `Interface_GTool`'s cache is keyed by .NET type.
+12106. **Nullability.** The ported XSBase files carry `#nullable disable warnings`: handles are annotated nullable in
+       signatures (OCCT's null handles), and the bodies follow OCCT's own null checks.
+12107. **MoniTool's cut.** `MoniTool_CaseData` (process-wide default checks and messages), `MoniTool_Timer` and
+       `MoniTool_TimerSentry` (a process-wide dictionary of timers, used by BRepMesh_Triangulator's debugging only) are
+       left out: no data-exchange caller. `MoniTool_Stat` is ported without its static `Current()`. `MoniTool_Macros`
+       (`GetCasted`, `DeclareAndCast`) become `as` casts.
+12108. **8A1's oracle: tools/xsbaserec.** A native recorder (MSVC, build123d.NET's native TKXSBase) runs cases from a
+       64-bit LCG and writes 19,400 lines; the port's replay (XSBaseNativeTests) writes the same lines:
+       Interface_FloatWriter on 3,020 reals with four formats (STEP's `%14.12E`/`%14.12f` included: 12,084 lines),
+       `TCollection_HAsciiString(double)`, 60 random sessions of Interface_LineBuffer (STEP's line cutting), the
+       standard statics and their edition (CDef, IDef, values set as text, integer and real, valid or not, `Print`),
+       new statics of every type, the library of types, Interface_MSG's blanks, rounding and dates, the categories,
+       random Interface_BitMap sessions and Interface_EntityList's clusters. Identical, but for two canonicalisations:
+       an enumeration's alphabetic values are sorted on both sides (decision 12101), and IDef's enumeration parts are
+       not asked of statics that aren't enumerations (OCCT reads uninitialised values there). The graph, share, check,
+       copy and IFGraph tools need a protocol, so they are tested on a toy norm (tests/.../Interface/ToyNorm.cs) until
+       StepData exists: 8B can compare them with native through the STEP protocol.
+12109. **IFSelect's member trace** (plan 2.8, for 8A2; scratchpad `p8a1-ifselect-trace.md`). The corpus's `de`, `xcaf`
+       and `bugs/step` groups use, from IFSelect and XSControl's command tables, only `param`, `data`, `entity`,
+       `writeall`, `writeent`, `listtypes`, `newmodel`, `tpstat`, `tpcompound` and `tpdraw`. From those and from
+       XSControl, Transfer, STEPControl, STEPCAFControl and DESTEP, 41 of IFSelect's 76 classes are reached, and 45 of
+       IFSelect_WorkSession's 152 members (the reader path ReadFile/ReadStream → WorkLibrary → SetModel, GiveList on the
+       controllers' named selections, and the writer path SendAll → ModelCopier → WorkLibrary with ShareOut's
+       modifiers); the selections, signatures, dispatches and editors the controllers create are reached through
+       virtual dispatch. 35 classes are not reached (the select combinators, SessionFile/Dumper, PacketList,
+       ShareOutResult, ModifReorder, ListEditor, Transformer...). Recommendation: port the reached classes and members,
+       the command bodies directly as Draw-lite commands (without IFSelect_Act and SessionPilot's command loop), and
+       record the cut.
+12110. **One OCCT bug fixed: `Interface_EntityCluster::Remove(num)`** shifts with `j--` from `num` while `j < n`, which
+       runs below the array (a write out of bounds in C++, an endless loop in effect) whenever an inner rank is removed;
+       the port shifts with `j++`, as the code means (occt-issues.md, 8A1). Removing the last rank, which OCCT handles,
+       is unchanged.

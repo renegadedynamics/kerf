@@ -1769,3 +1769,35 @@ for the hang in `chamf` (decision 1146).
 | ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 1160) |
 | TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 1162) |
 | BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |
+
+## Phase 8: unit 8A1, XSBase's foundation
+
+Found by porting MoniTool, Interface, IFGraph and LibCtl, and by recording them natively (tools/xsbaserec). The port
+reproduces each, but for `EntityCluster::Remove(num)` (decision 12110).
+
+| Where | What | Effect |
+|---|---|---|
+| Interface_EntityCluster::Remove(num) | The shift loop runs `j--` while `j < n` | Out of bounds below the array for an inner rank; fixed in the port (decision 12110) |
+| Interface_EntityCluster::Value, SetValue | Walking the clusters, subtract the first cluster's count, not the current one's; SetValue tests the first cluster's `thenext` | Once `Interface_EntityList::Add` has put a cluster that isn't full in front, the entities past it throw Standard_OutOfRange (recorded natively) |
+| Interface_EntityCluster::Remove(ent) | Returns false even when the entity was removed further on (via an `int res`) | Interface_EntityList::Remove(ent) doesn't drop an emptied list |
+| Interface_EntityList::TypedEntity | Counts each cluster backwards | The n-th entity of a type isn't the n-th in order |
+| MoniTool_TypedValue::ClearValue | Nullifies the value's string, which IsSetValue, SetCStringValue and RealValue then dereference | A crash after ClearValue (a NullReferenceException in the port) |
+| MoniTool_Stat | Its copy constructor leaves the counters null; the constructor initialises `thetot` three times; Percent divides integers | A copied Stat fails at Open; the sub-level share is 0 until done |
+| Interface_Static | Redeclares `thesatisf`, `thesatisn`, which nothing sets | PrintStatic never prints the satisfies function |
+| Interface_Static::IsSet(name, false) | Takes the wild-card without checking it is attached | A crash for an unset static without a wild-card |
+| Interface_Static::IDef | `EnumDef`'s outputs are uninitialised for a static that isn't an enumeration; "eval" with no word reads an uninitialised buffer | Garbage "estart", "ecount"; the port gives 0, 0 and "start - 1" |
+| Interface_Graph::Name | `if (themodel->Number(ent)) return str;`: the test is inverted | No name for an entity of the model |
+| Interface_Category | The categories are numbered from 0 (an NCollection_DynamicArray) | "Shape" is 0, the number of an unknown name too; AddCategory("Shape") would append it again |
+| Interface_BitMap::AddFlag, SetFlagName | Append the name to a free (".") or existing name instead of replacing it | Names like ".f2" |
+| Interface_Check::Complies, Remove | The fails' branch loops over the warnings (copied code) | Fails are never matched nor removed |
+| Interface_CheckTool's check lists | Check without try/catch (`errh = 0`), and that path returns before the "Shared Items unknown" fail | The lists don't report entities sharing items out of the model (`Check(num)` does) |
+| Interface_CheckTool::WarningCheckList | Adds its working check, then clears it and sets the next entity on it | The recorded checks end empty, with the last entity |
+| Interface_CopyTool::Transferred | Increments the nesting level after the copy, so the entities a copy transfers count at level 0 | RootResult lists them as roots, some twice |
+| Interface_InterfaceModel::AddReportEntity | `semantic` true adds to the main reports, false to the semantic ones | The reverse of its documentation |
+| Interface_InterfaceModel::ChangeOrder | Assigns `rep1` twice and never `rep2` | Reports aren't swapped correctly |
+| Interface_ParamSet::Append | Past the reservation, each parameter replaces the next set | Only the last overflowing parameter is kept (the readers reserve enough) |
+| IFGraph_AllConnected::GetFromEntity | `if (!thegraph.IsPresent(...)) return;`: the test is inverted | Finds nothing; IFGraph_ConnectedComponants' parts are all empty |
+| IFGraph_Cumulate::GetFromEntity, IFGraph_Compare::GetFromEntity | Iterate an IFGraph_AllShared without evaluating it (a graph content evaluates at Begin, not Start) | Add nothing (GetFromIter with an evaluated content works) |
+| IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
+| LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
+| Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |

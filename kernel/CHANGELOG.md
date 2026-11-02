@@ -1416,3 +1416,13 @@ Phase 7 complete (1 November 2026): finishing.
   TKOffset, TKFeat, TKShHealing over 99%, TKHLR and TKHelix whole).
 - A faster merge gate (Release, about 15 minutes) and the native oracle's use-after-free found and fixed (decision
   1109).
+
+Phase 8 (part): XSBase's foundation (unit 8A1).
+- Ported: MoniTool (but its timers and case data), Interface (but STAT and the message dictionary), IFGraph, LibCtl's
+  library as C# generics, XSMessage's texts, and TCollection_HAsciiString.
+- The statics become a parameter object, `Interface_StaticSet`, passed to each read and write; the protocols'
+  module lists are initialised once; no other process-wide state changes.
+- Compared with native OCCT: 19,400 recorded lines identical (the formatting of reals STEP writes, the line buffer,
+  the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
+  tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
+- IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
