@@ -1769,3 +1769,20 @@ for the hang in `chamf` (decision 1146).
 | ChFi3d (tolblend_simple C4, C7, C8, bug354_1) | A fillet's end section overflows the edge: the point's parameter lies past the edge's range | The part kept is extended to it, as TopOpeBRepBuild does (decision 1160) |
 | TopOpeBRepBuild (blend/simple V7, tolblend_simple C5, complex A2) | A Bezier face the fillet runs past is rebuilt on a B-spline | Not reproduced: the reconstruction's piece keeps the Bezier surface (decision 1162) |
 | BRepFilletAPI_MakeFillet `IsDeleted` | A solid the fillets do not touch is "deleted" (`myMap` holds the result's faces only) | Reproduced |
+
+## Phase 8: unit 8H1, STL
+
+Found by porting RWStl and StlAPI and recording native OCCT on hand-made and derived inputs (tools/stlrec). The port
+reproduces each, but for the allocation in the last row but two (decision 1170).
+
+| Where | What | Effect |
+|---|---|---|
+| RWStl_Reader::Read | Returns `!stream.fail()`, and the line buffer's last short block sets the fail flag | False for nearly every ASCII file read whole (`RWStl::ReadFile` ignores it) |
+| RWStl_Reader::Read, multi-domain ASCII | The line buffer reads ahead in 1 KB blocks, but the loop tests the stream's flags and skips white space (`>> std::ws`) at the stream's position, inside data the buffer hasn't returned | Domains after the first are lost once the last block has been read (files under 1 KB: twosolids.stl reads one solid); the white space skipped can join lines or numbers at a block boundary |
+| RWStl_Reader::Read, multi-domain | A domain not closed by "endsolid" fails, so `AddSolid` isn't called for it | `RWStl::ReadFile(…, list)` drops it; the single-triangulation form keeps it |
+| RWStl_Reader::ReadVertex | Skips letters before the numbers | `vertex nan 0 0` and `vertex inf …` fail to read ("cannot read vertex coordinates") |
+| RWStl::ReadStream, StlAPI_Reader::Read(stream) | ASCII if the data start with "solid" (case-sensitive), binary otherwise | A binary file whose header starts "solid", or an ASCII one starting "SOLID", fails; `ReadFile` recognises both |
+| RWStl_Reader::ReadBinary | Reads the facets in blocks of 80, the first sized by the header's count | A header claiming more facets than the data hold reads nothing if the shortfall is in the first block |
+| RWStl_Reader::ReadBinary | Sizes Poly_MergeNodesTool's map by the header's facet count (`2 * count` buckets, an `int`) | Standard_OutOfMemory when text is read as binary (`ReadBinaryStream` on ASCII); not reproduced (decision 1170) |
+| Standard_ReadLineBuffer::ReadLine | The last line, without an end of line, is returned without its terminating `'\0'`; in multi-line mode, reads `myReadBuffer[pos + 2]` past the bytes read | Callers parsing it as a C string may read past it; the port's spans end at the line |
+| RWStl::WriteAscii(path), StlAPI_Writer::Write(path) | Open the file in text mode | CR LF line ends on Windows only (decision 1168) |

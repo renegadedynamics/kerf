@@ -1,0 +1,9 @@
+solid nan
+ facet normal 0 0 1
+  outer loop
+   vertex nan 0 0
+   vertex inf 0 0
+   vertex 0 -inf 0
+  endloop
+ endfacet
+endsolid

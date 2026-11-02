@@ -20,6 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Native OCCT's STL reading and writing, recorded by tools/stlrec (unit 8H1) -->
+    <EmbeddedResource Include="RWStl\Recordings\stlrec.txt.gz" LogicalName="RWStl.stlrec.txt.gz" />
+    <!-- Hand-written STL inputs (read by the tests and by tools/stlrec) -->
+    <None Include="RWStl\Inputs\*.stl" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Occt.Standard" Static="true" />
   </ItemGroup>
 
