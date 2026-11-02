@@ -13320,3 +13320,55 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        native kept for the oracle and no longer packed; no project URL until the repositories are public; Bento
        references the published Build123d package; `0.1.0-preview.2` next; the performance review (9E) and the triage
        (9F) join phase 9, the OBJ reader (9G) does not; only performance wins that keep native's results.
+
+## Phase 9: unit 9D2, the differential run
+
+14001. **The differential run logs build123d.NET's shapes on both backends and compares the logs** (phase9-plan.md
+       2.3). The plan's design was to record native's forwarded calls with their inputs and replay them on OCCT.NET. In
+       its place, the suite runs once per backend, each logging its own results, and the logs are compared:
+       - **Why:** a recording of every forwarded call would have to capture and rebuild every argument type the
+         forwarding layer passes (adaptors, builders, lists, histories), in a generated hook in both bindings. A log of
+         results needs one hook, in build123d.NET, and catches every operation the suite reaches, including
+         build123d.NET's own code between kernel calls. What it gives up: a divergence late in a test is compared on
+         the port's inputs, not native's; the report gives each test's *first* divergence, whose inputs are the same.
+       - **The hook** (build123d.NET's `ShapeLog.cs`): with `BUILD123D_SHAPE_LOG` set, the `Shape` constructor and
+         `Rewrapped` write each kernel shape whose TShape is new in the running test (not a sub-shape of one already
+         logged) as BRep text, with the build123d call that made it and a digest of its vertices' exact points (BRep
+         text has 15 digits). The running test is found on the stack. Off, it is one static field read; on, it only
+         reads shapes. The suite runs one test at a time (`xUnit.ParallelizeTestCollections=false`).
+       - **The comparison** (`Build123dDifferentialTests`, an oracle test reading the logs from `B3D_DIFF_LOGS`;
+         `tools/b3d-differential.ps1` runs everything): entry by entry, BRep text, then the Free flag masked, then the
+         Free and Checked flags, then canonically (decision 581). Then two looser matches, each explained below: a
+         located vertex's own coordinates, and results invalid on both sides. A test whose rest is canonically the same
+         shapes in another order counts as the same. Native's other runs say where native varies from run to run.
+14002. **Two kinds of entry are the same though their texts aren't** (unit 9D2).
+       - **A located vertex's own coordinates.** BRepLib_MakeWire merges an edge's vertex onto the wire's in place
+         (`BRep_Builder::UpdateVertex`), storing the point brought back through the vertex's location: `(p + t) - t`
+         can differ from `p` by an ulp. Native rewrites the caller's vertex so; OCCT.NET leaves a frozen one as it is
+         when the located point doesn't change (decisions 92 and 275). The located points are equal to the bit (the
+         log's digest); 15-digit text can show the stored ones differ (build123d.NET's 2D fillets, `WireFillet.Splice`:
+         9 entries). Mirroring the write (copying the frozen vertex whenever the round trip moves the stored point)
+         matched native in a direct oracle case but not in the fillets' first splice, so it isn't kept.
+       - **Invalid on both sides.** A fillet too large for its edges (`FilletFailuresTests.PlainMessage`, `MaxFillet`'s
+         search) gives a shape BRepCheck rejects on both backends, and build123d.NET discards it with the same error.
+         Phase 7's oracle compares failed fillets by their errors (decision 1164's tail); here 5 entries.
+14003. **The differential run's result** (2 November 2026; OCCT.NET at phase 9's integration point with 9A,
+       build123d.NET's `occtnet/p9d2`). Build123d.Tests: 1,858 tests natively (1,851 pass, 7 skipped), 1,881 on OCCT.NET
+       (1,875 pass, 5 skipped, `Fillet2DTests.FilletRecord` fails as before), logged under 999 test methods.
+       - **Logged:** 18,640 shapes natively, 18,661 on OCCT.NET. Compared up to each test's first divergence: 16,044.
+         13,165 byte-identical; 1,290 with the Free flag masked; 663 with the Free and Checked flags masked; 160
+         canonically identical (fillets and chamfers, offsets, sweeps of a frozen profile); 9 equal but for a located
+         vertex's own coordinates and 5 invalid on both sides (decision 14002); 736 canonically identical in another
+         order, in 18 tests (sub-shapes taken out of a canonically identical fillet, in its order); 16 first divergences
+         of shapes (and 2 of counts, where a test logs fewer shapes on one side).
+       - **Tests:** 938 the same throughout, 18 the same in another order, 25 logged by one backend only (tests under
+         `#if OCCTNET` or native-only: STL, glTF, 3MF, STEP assemblies, the faults and memory pressure), 11 diverging
+         where native varies from run to run (offsets in 2D and 3D, `Hollow`, wires joined or built from mixed edges,
+         a random vertex; seen across 5 whole and 6 partial native runs), 7 attributed, **0 open**.
+       - **Attributed** (in the test's table): STEP read through the assembly tree on OCCT.NET and shape-only natively
+         (decision 1296), so the importer wraps other shapes on its way (3 tests); a theory row that returns early on
+         OCCT.NET, misaligning its rows; `FilletRecord`, failing on OCCT.NET as recorded in build123d.NET's design.md;
+         the introductory examples' `Extrude(both)`, whose two prisms share the sketch's face natively and hold copies
+         of it on OCCT.NET (decisions 468, 1102), so their fuse differs; a test mutating the text of a fillet's result.
+       - **Port bugs:** none found. Everything the suite makes is native's, byte for byte or canonically, or differs
+         where native differs from itself or where OCCT.NET doesn't write a caller's shape.
