@@ -13277,3 +13277,33 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          de_wrapper/xcaf/A4 (XBF).
        - New, not data exchange (2): bugs/fclasses/bug7287_1 and bug7287_6, memory trends (`meminfo`) run here beside
          the other cases; DrawCheapGapsCorpusTests runs them alone and they pass (decision 1107). Not a port bug.
+
+## Phase 8: closing (2 November 2026)
+
+1296. **Phase 8 closes with its three milestones met** (phase8-plan.md section 5; owner's answers, decision 1166).
+       - **Milestone 1, STEP without native code** (unit 8F, decision 1272): the dataset's 338 STEP files read as
+         native reads them (331 identical, 7 differing only in the Free flag; StepToTopoDS 2,194 of 2,194 items after
+         unit 8Y, decision 1263); data/occ's shapes and assemblies written in every model type and schema as native
+         writes them (240 of 240 in process; 708 of 720 recorded, the AP203 assemblies attributed); round trips both
+         ways identical or canonically identical. With names, colours, layers and validation properties through
+         STEPCAFControl over the immutable assembly tree (unit 8G2, decision 1282): 332 of 338 documents read as
+         native's, 447 of 458 written texts equal (70 of them after sorting records native orders by address).
+       - **Milestone 2, build123d.NET's and Bento's import and export** (units 8X1, 8X2, in those repositories, merged
+         by the owner): build123d's importers and exporters (STEP with labels, colours and assemblies; STL, glTF, 3MF,
+         BREP) on the OCCT.NET backend, streams first, with limits and cancellation; STEP written byte for byte as
+         native's; Bento's `CAD_IO_` functions. The packages are built as `0.1.0-preview.1` for nuget.org (OcctNet.Foundation,
+         OcctNet.ModelingData, OcctNet.ModelingAlgorithms, OcctNet.DataExchange, Build123d.OcctNet, Build123d;
+         tools/pack-nuget.ps1), which the owner publishes.
+       - **Milestone 3, the corpus** (unit 8W, decisions 1294 and 1295): of 3,366 data-exchange cases, 2,174 run (631
+         OK, 97 BAD as in OCCT, 1,436 skipped for data that isn't public, 10 failures attributed); 1,192 are out of
+         scope (OCAF storage 405, IGES 536, VRML 26, GD&T, notes, views and materials 108, OBJ and PLY reading 23, the
+         viewer 78, others 16). The whole corpus: 17,872 of 21,068 runnable (16,381 at phase 7's close), OK 10,462.
+       - **Hostile input:** the parser's, STL's, glTF's and the external references' limits, cancellation, and no disk
+         access from streams unless a resolver is given (unit 8Z, decisions 1284 to 1288).
+       - **Port status:** 62.0% of OCCT's lines (48.1% at phase 7's close): TKDESTEP 97.2%, TKXSBase 81.6% (IFSelect as
+         traced, decision 1220), TKDESTL 61.6% (DESTL left with TKDE).
+       - **Follow-ups, not done:** an OBJ reader (19 corpus cases with data); TKDE's DE_Wrapper and the providers
+         (Draw-lite's ReadFile/WriteFile use a stand-in, decision 1289); GD&T, views, materials, notes and SHUOs in the
+         tree (decision 1279); PLY; StepAP209_Construct and StepTidy (decisions 1218, 1271); native XCAF in
+         build123d.NET's native backend (its STEP stays shape-only there); Bento on the nuget.org packages in place of
+         its folder feed; and phase 7's follow-ups (decisions 1164, 1165).

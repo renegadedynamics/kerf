@@ -1579,3 +1579,15 @@ Phase 8 (part): STEPControl, the first milestone (unit 8F).
   session's length unit. Of 3,366 data-exchange corpus cases, 2,174 run: 631 OK, 97 BAD as in OCCT, 1,436 skipped
   for data that isn't public, 10 failures attributed; the 1,192 others need OCAF storage, IGES, VRML, GD&T, notes,
   views, materials, an OBJ reader or the viewer.
+
+Phase 8 complete (2 November 2026): data exchange.
+- XSBase (IFSelect as traced), StepData with a hand-written reentrant STEP parser, STEP's entity classes and their
+  readers and writers generated from OCCT 8's own C++ (tools/stepgen: 25 packages, about 151,000 lines), StepToGeom,
+  GeomToStep, StepToTopoDS, TopoDSToStep, STEPControl and STEPCAFControl over an immutable assembly tree (XdeDoc) in
+  place of OCAF and XCAF; STL ported; glTF, OBJ and 3MF written fresh, with a glTF reader. Each compared with native
+  OCCT: STEP read and written as native does on the dataset, every difference attributed.
+- Streams first, limits for hostile input and cancellation throughout; no disk access from streams unless asked.
+- The Draw corpus: 17,872 of 21,068 cases runnable (10,462 OK); 2,174 data-exchange cases run, 10 failures attributed.
+  port-status: 62.0% of OCCT's lines.
+- build123d.NET and Bento import and export STEP (with names, colours and assemblies), STL, glTF and 3MF on OCCT.NET;
+  the first packages built for nuget.org as 0.1.0-preview.1.

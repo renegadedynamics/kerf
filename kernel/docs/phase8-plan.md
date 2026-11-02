@@ -1,7 +1,8 @@
 # Phase 8 plan: data exchange
 
-> **Approved, 2 November 2026.** The owner accepted every recommendation of questions 31 to 39 (decision 1166);
-> phase 8 started with step 1 (8A). Units merge into the integration branch `phase8/exchange`.
+> **Done, 2 November 2026.** The owner accepted every recommendation of questions 31 to 39 (decision 1166). Every unit
+> is merged, with 8A, 8B, 8C, 8G and 8X split as the running order says and three more (8T, the tree and the fresh
+> mesh formats; 8Y and 8Z, fixes); the milestones and the follow-ups are decision 1296.
 
 ## The goal
 

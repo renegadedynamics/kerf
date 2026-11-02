@@ -20,18 +20,18 @@ broken down by package.
 | ApplicationFramework | TKXmlL | 0 / 95 | 0 / 10,549 | 0.0 |
 | ApplicationFramework | TKXmlTObj | 0 / 16 | 0 / 1,117 | 0.0 |
 | DataExchange | TKBinXCAF | 0 / 36 | 0 / 2,708 | 0.0 |
-| DataExchange | TKDE | 0 / 14 | 0 / 4,191 | 0.0 |
+| DataExchange | TKDE | 1 / 14 | 87 / 4,191 | 2.1 |
 | DataExchange | TKDECascade | 0 / 8 | 0 / 1,441 | 0.0 |
 | DataExchange | TKDEGLTF | 0 / 33 | 0 / 10,892 | 0.0 |
 | DataExchange | TKDEIGES | 0 / 927 | 0 / 141,411 | 0.0 |
 | DataExchange | TKDEOBJ | 0 / 24 | 0 / 4,206 | 0.0 |
 | DataExchange | TKDEPLY | 0 / 8 | 0 / 1,546 | 0.0 |
-| DataExchange | TKDESTEP | 0 / 3566 | 0 / 342,125 | 0.0 |
-| DataExchange | TKDESTL | 0 / 14 | 0 / 2,687 | 0.0 |
+| DataExchange | TKDESTEP | 3517 / 3566 | 332,480 / 342,125 | 97.2 |
+| DataExchange | TKDESTL | 10 / 14 | 1,655 / 2,687 | 61.6 |
 | DataExchange | TKDEVRML | 0 / 170 | 0 / 22,851 | 0.0 |
 | DataExchange | TKRWMesh | 0 / 23 | 0 / 3,424 | 0.0 |
 | DataExchange | TKXCAF | 0 / 119 | 0 / 25,783 | 0.0 |
-| DataExchange | TKXSBase | 0 / 432 | 0 / 78,926 | 0.0 |
+| DataExchange | TKXSBase | 338 / 432 | 64,369 / 78,926 | 81.6 |
 | DataExchange | TKXmlXCAF | 0 / 37 | 0 / 3,086 | 0.0 |
 | Deprecated | NCollectionAliases | 0 | 0 / 0 |  |
 | Draw | DRAWEXE | 0 | 0 / 0 |  |
@@ -56,7 +56,7 @@ broken down by package.
 | Draw | TKXSDRAWSTL | 0 / 8 | 0 / 2,231 | 0.0 |
 | Draw | TKXSDRAWVRML | 0 / 2 | 0 / 509 | 0.0 |
 | FoundationClasses | TKMath | 434 / 435 | 137,416 / 137,575 | 99.9 |
-| FoundationClasses | TKernel | 90 / 470 | 28,971 / 132,410 | 21.9 |
+| FoundationClasses | TKernel | 101 / 470 | 32,228 / 132,410 | 24.3 |
 | ModelingAlgorithms | TKBO | 196 / 201 | 71,137 / 71,242 | 99.9 |
 | ModelingAlgorithms | TKBool | 200 / 464 | 64,190 / 152,788 | 42.0 |
 | ModelingAlgorithms | TKExpress | 0 / 137 | 0 / 15,888 | 0.0 |
@@ -69,7 +69,7 @@ broken down by package.
 | ModelingAlgorithms | TKOffset | 73 / 74 | 46,220 / 46,245 | 99.9 |
 | ModelingAlgorithms | TKPrim | 75 / 75 | 12,932 / 12,932 | 100.0 |
 | ModelingAlgorithms | TKShHealing | 257 / 258 | 88,011 / 88,297 | 99.7 |
-| ModelingAlgorithms | TKTopAlgo | 336 / 340 | 83,733 / 84,336 | 99.3 |
+| ModelingAlgorithms | TKTopAlgo | 338 / 340 | 84,044 / 84,336 | 99.7 |
 | ModelingAlgorithms | TKXMesh | 2 / 2 | 100 / 100 | 100.0 |
 | ModelingData | TKBRep | 173 / 277 | 34,131 / 90,279 | 37.8 |
 | ModelingData | TKG2d | 102 / 102 | 23,488 / 23,488 | 100.0 |
@@ -82,7 +82,83 @@ broken down by package.
 | Visualization | TKOpenGles | 0 | 0 / 0 |  |
 | Visualization | TKService | 1 / 380 | 28 / 69,480 | 0.0 |
 | Visualization | TKV3d | 5 / 493 | 2,282 / 112,071 | 2.0 |
-| **All** |  | 4526 | 1,393,927 / 2,897,781 | 48.1 |
+| **All** |  | 8407 | 1,796,086 / 2,897,781 | 62.0 |
+
+## TKDE
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| DE | 1 / 14 | 87 / 4,191 | 2.1 |
+
+## TKDESTEP
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| APIHeaderSection | 4 / 4 | 1,153 / 1,153 | 100.0 |
+| DESTEP | 2 / 6 | 306 / 2,043 | 15.0 |
+| GeomToStep | 74 / 74 | 5,257 / 5,257 | 100.0 |
+| HeaderSection | 10 / 10 | 641 / 641 | 100.0 |
+| RWHeaderSection | 12 / 12 | 1,127 / 1,127 | 100.0 |
+| RWStepAP203 | 22 / 22 | 1,944 / 1,944 | 100.0 |
+| RWStepAP214 | 58 / 58 | 29,344 / 29,344 | 100.0 |
+| RWStepAP242 | 8 / 8 | 733 / 733 | 100.0 |
+| RWStepBasic | 242 / 242 | 18,977 / 18,977 | 100.0 |
+| RWStepDimTol | 98 / 98 | 10,640 / 10,640 | 100.0 |
+| RWStepElement | 30 / 30 | 2,704 / 2,704 | 100.0 |
+| RWStepFEA | 104 / 104 | 8,833 / 8,833 | 100.0 |
+| RWStepGeom | 172 / 172 | 16,522 / 16,522 | 100.0 |
+| RWStepKinematics | 148 / 148 | 21,112 / 21,112 | 100.0 |
+| RWStepRepr | 140 / 140 | 10,727 / 10,727 | 100.0 |
+| RWStepShape | 183 / 183 | 14,359 / 14,359 | 100.0 |
+| RWStepVisual | 201 / 201 | 15,909 / 15,909 | 100.0 |
+| STEPCAFControl | 11 / 13 | 14,211 / 15,898 | 89.4 |
+| STEPConstruct | 23 / 23 | 8,175 / 8,175 | 100.0 |
+| STEPControl | 11 / 11 | 7,502 / 7,502 | 100.0 |
+| STEPEdit | 6 / 6 | 628 / 628 | 100.0 |
+| STEPSelections | 12 / 24 | 977 / 2,089 | 46.8 |
+| StepAP203 | 42 / 42 | 2,649 / 2,649 | 100.0 |
+| StepAP209 | 0 / 2 | 0 / 1,998 | 0.0 |
+| StepAP214 | 92 / 92 | 8,606 / 8,606 | 100.0 |
+| StepAP242 | 12 / 12 | 972 / 972 | 100.0 |
+| StepBasic | 292 / 292 | 16,947 / 16,947 | 100.0 |
+| StepData | 75 / 75 | 13,859 / 13,859 | 100.0 |
+| StepDimTol | 118 / 118 | 6,020 / 6,020 | 100.0 |
+| StepElement | 64 / 64 | 5,176 / 5,176 | 100.0 |
+| StepFEA | 129 / 129 | 7,563 / 7,563 | 100.0 |
+| StepFile | 7 / 7 | 5,184 / 5,184 | 100.0 |
+| StepGeom | 188 / 188 | 11,574 / 11,574 | 100.0 |
+| StepKinematics | 171 / 171 | 11,985 / 11,985 | 100.0 |
+| StepRepr | 170 / 170 | 8,319 / 8,319 | 100.0 |
+| StepSelect | 8 / 12 | 701 / 1,157 | 60.6 |
+| StepShape | 208 / 208 | 10,436 / 10,436 | 100.0 |
+| StepTidy | 0 / 25 | 0 / 2,655 | 0.0 |
+| StepToGeom | 2 / 2 | 3,124 / 3,124 | 100.0 |
+| StepToTopoDS | 48 / 48 | 7,909 / 7,909 | 100.0 |
+| StepVisual | 280 / 280 | 14,152 / 14,152 | 100.0 |
+| TopoDSToStep | 40 / 40 | 5,523 / 5,523 | 100.0 |
+
+## TKDESTL
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| DESTL | 0 / 4 | 0 / 1,032 | 0.0 |
+| RWStl | 4 / 4 | 1,254 / 1,254 | 100.0 |
+| StlAPI | 6 / 6 | 401 / 401 | 100.0 |
+
+## TKXSBase
+
+| Package | Files ported | Lines ported | % of lines |
+|---|---:|---:|---:|
+| IFGraph | 22 / 22 | 1,820 / 1,820 | 100.0 |
+| IFSelect | 85 / 160 | 20,219 / 29,181 | 69.3 |
+| Interface | 99 / 103 | 17,477 / 18,190 | 96.1 |
+| LibCtl | 1 / 1 | 167 / 167 | 100.0 |
+| MoniTool | 23 / 31 | 2,956 / 4,516 | 65.5 |
+| Transfer | 62 / 62 | 9,761 / 9,761 | 100.0 |
+| TransferBRep | 17 / 17 | 2,317 / 2,317 | 100.0 |
+| XSAlgo | 6 / 6 | 1,529 / 1,529 | 100.0 |
+| XSControl | 22 / 28 | 7,081 / 9,358 | 75.7 |
+| XSMessage | 1 / 2 | 1,042 / 2,087 | 49.9 |
 
 ## TKMath
 
@@ -117,20 +193,20 @@ broken down by package.
 | FSD | 0 / 11 | 0 / 4,720 | 0.0 |
 | FlexLexer | 0 / 1 | 0 / 219 | 0.0 |
 | Message | 45 / 50 | 6,821 / 7,261 | 93.9 |
-| NCollection | 30 / 81 | 13,941 / 26,993 | 51.6 |
+| NCollection | 31 / 81 | 14,213 / 26,993 | 52.7 |
 | OSD | 2 / 94 | 646 / 19,678 | 3.3 |
 | Plugin | 0 / 4 | 0 / 230 | 0.0 |
 | Precision | 1 / 1 | 374 / 374 | 100.0 |
 | Quantity | 3 / 14 | 4,073 / 6,917 | 58.9 |
-| Resource | 3 / 15 | 815 / 28,170 | 2.9 |
-| Standard | 4 / 93 | 749 / 17,960 | 4.2 |
+| Resource | 7 / 15 | 2,102 / 28,170 | 7.5 |
+| Standard | 5 / 93 | 1,074 / 17,960 | 6.0 |
 | StdFail | 0 / 5 | 0 / 170 | 0.0 |
 | Storage | 1 / 38 | 34 / 3,922 | 0.9 |
 | TColStd | 0 / 2 | 0 / 84 | 0.0 |
-| TCollection | 1 / 11 | 1,518 / 8,299 | 18.3 |
+| TCollection | 3 / 11 | 2,555 / 8,299 | 30.8 |
 | Units | 0 / 43 | 0 / 5,750 | 0.0 |
 | UnitsAPI | 0 / 4 | 0 / 1,327 | 0.0 |
-| UnitsMethods | 0 / 3 | 0 / 336 | 0.0 |
+| UnitsMethods | 3 / 3 | 336 / 336 | 100.0 |
 
 ## TKBO
 
@@ -283,7 +359,7 @@ broken down by package.
 |---|---:|---:|---:|
 | BRepApprox | 50 / 52 | 4,977 / 5,269 | 94.5 |
 | BRepBndLib | 3 / 3 | 1,430 / 1,430 | 100.0 |
-| BRepBuilderAPI | 50 / 52 | 14,034 / 14,345 | 97.8 |
+| BRepBuilderAPI | 52 / 52 | 14,345 / 14,345 | 100.0 |
 | BRepCheck | 19 / 19 | 7,467 / 7,467 | 100.0 |
 | BRepClass | 14 / 14 | 1,909 / 1,909 | 100.0 |
 | BRepClass3d | 15 / 15 | 3,428 / 3,428 | 100.0 |
