@@ -14,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// The descriptions (late binding) are kept in maps; <see cref="ECDescr"/> iterates the map of descriptions, keyed by
-/// reference in OCCT, in insertion order here (decision 12504).
+/// reference in OCCT, in insertion order here (decision 1194).
 /// </remarks>
 public class StepData_Protocol : Interface_Protocol
 {
@@ -204,7 +204,7 @@ public class StepData_Protocol : Interface_Protocol
     {
         int i, nb = names.Length();
         StepData_ECDescr cd;
-        foreach (KeyValuePair<Standard_Transient, int> iter in thedscnum) // OCCT.NET: insertion order (decision 12504)
+        foreach (KeyValuePair<Standard_Transient, int> iter in thedscnum) // OCCT.NET: insertion order (decision 1194)
         {
             cd = iter.Key as StepData_ECDescr;
             if (cd is null)

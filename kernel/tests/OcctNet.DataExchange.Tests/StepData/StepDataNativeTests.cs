@@ -104,7 +104,7 @@ public class StepDataNativeTests(ITestOutputHelper output)
     {
         if (thePage == Resource_FormatType.Resource_FormatType_SystemLocale)
         {
-            return true; // native converts from the process's C locale, the port reads UTF-8 (decision 12501)
+            return true; // native converts from the process's C locale, the port reads UTF-8 (decision 1191)
         }
 
         if (thePage != Resource_FormatType.Resource_FormatType_UTF8)

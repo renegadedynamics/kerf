@@ -1836,19 +1836,11 @@ reproduces each, but for `EntityCluster::Remove(num)` (decision 1190).
 | IFGraph_StrongComponants::Evaluate | Puts each entity in a part of its own | No strong components: IFGraph_Cycles finds no cycle |
 | LibCtl_Library::Clear | Leaves an empty node, which Select, Module and Protocol dereference | A crash if the library isn't refilled |
 | Interface_MSG::Blanks | Return a pointer before their buffer of 76 blanks for wider fields | Garbage natively; the port returns the blanks |
-## Phase 8: unit 8C1, the STEP entity generator
-
-Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
-reproduces it (decision 12602).
-
-| Where | What | Effect |
-|---|---|---|
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
 
 ## Phase 8: unit 8B, StepData and the STEP header
 
 Found by porting StepData, the header packages and Resource_Unicode's conversions, and by recording them natively
-(tools/stepdatarec). The port reproduces each, but for the first (decision 12508).
+(tools/stepdatarec). The port reproduces each, but for the first (decision 1198).
 
 | Where | What | Effect |
 |---|---|---|
@@ -1869,6 +1861,33 @@ Found by porting StepData, the header packages and Resource_Unicode's conversion
 | APIHeaderSection_MakeHeader::SetDescription | Tests `fs`, then sets `fd` | A crash if there is a schema and no description |
 | StepData_StepWriter (undefined entities) | A sub-list's type is the parser's "/* (SUB) */", which OpenTypedSub writes | Written sub-lists start with a comment (valid STEP) |
 | StepData_StepDumper::Dump | Lists the proper idents under `nbi < 0`, never true; `nbu` and `nbq` are reset to 0 instead of counted | Never lists entities without ident or with ident = number |
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+Found by porting Transfer, TransferBRep and XSAlgo and testing them on the toy norm. The port reproduces each.
+
+| Where | What | Effect |
+|---|---|---|
+| Transfer_ProcessForTransient/ForFinder::Unbind | Puts `thelastbnd` back in the map, which FindAndMask has just set to the former binder | Nothing is unbound (the roots are updated and true returned); Clean finds no unbound item |
+| Transfer_ProcessForTransient/ForFinder::ResultOne, CheckListOne, IsCheckListEmpty, RemoveResult | Their array of indices is never filled since the scopes were removed | An empty iterator and check list, true, and nothing removed, for any mapped object |
+| Transfer_ProcessForTransient/ForFinder::Transferring | Root management records `therootl` at the end of the first transfer done, nested ones included | With root management, nested transfers become roots too (innermost first) |
+| Transfer_TransferIterator::SelectResult | Compares each item with `ResultType()`, the current item's type, not the item's | Selects on the current item's result type (a crash natively when the current item is multiple) |
+| Transfer_Finder::SameAttributes | Documented as sharing the other finder's attributes, but assigns the map (a copy in C++) | The attributes are copied, not shared |
+| Transfer_ResultFromModel::Results(1) | Appends the main result before and after the sub-results | The main result is listed twice at level 1 |
+| TransferBRep::Shapes(TP, list) | `if (TP.IsNull() && list.IsNull())` where `\|\|` is meant | A crash when only one of them is null |
+| TransferBRep_Reader::Transfer, TransferList | Don't clear the former shapes (TransferRoots does), though TransferList's documentation says so | The shapes of successive transfers accumulate |
+| TransferBRep::PrintResultInfo | Its message keys (Result.Print.MSG30 to MSG48) are in no message file of OCCT 8 | Prints "Unknown message invoked with the keyword ..." lines |
+| XSAlgo_AlgoContainer::ProcessShape | `if (!aSeq) aSeq = thePseq;` never applies: Interface_Static::CVal returns "" for an undeclared static | An undeclared sequence static gives the sequence "": the default ShapeFix on read, `.exec.op` = DirectFaces on write |
+| Transfer_ActorOfProcessForTransient/ForFinder | The default constructor leaves `thelast` uninitialised | False under OCCT's default (zeroing) allocator, as in the port |
+| Transfer_ActorDispatch::Transfer, Transfer_TransferDispatch::Copy | The actor's TransferEntity copies through the process, which calls the actor again, with nothing bound in between | An endless recursion (a stack overflow) for any entity the dispatch actor transfers; fixed in the port (decision 1207) |
+
+## Phase 8: unit 8C1, the STEP entity generator
+
+Found by generating StepBasic, StepGeom, StepShape and StepRepr and their RW packages from OCCT's C++. The port
+reproduces it (decision 12602).
+
+| Where | What | Effect |
+|---|---|---|
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails |
 
 ## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
 

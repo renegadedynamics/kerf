@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <!-- Where .NET's encodings differ from OCCT's code tables (Resource_Unicode), OCCT's values: made by
-         StepDataNativeTests from tools/stepdatarec's table dump (unit 8B, decision 12501) -->
+         StepDataNativeTests from tools/stepdatarec's table dump (unit 8B, decision 1191) -->
     <EmbeddedResource Include="Resource\Resource_UnicodeTables.diff.gz" LogicalName="Occt.Resource.Resource_UnicodeTables.diff.gz" />
   </ItemGroup>
 

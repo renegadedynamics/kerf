@@ -23,11 +23,11 @@ namespace Occt;
 /// (<see cref="ReadString"/> and the texts of <see cref="ReadAny"/>, <see cref="ReadSub"/>, <see cref="ReadField"/>)
 /// are decoded as OCCT's <c>cleanText</c> does (code page, <c>\X\</c>, <c>\X2\</c>, <c>\X4\</c>, <c>\S\</c>,
 /// <c>\P?\</c>, <c>\N\</c>, <c>\T\</c>, doubled quotes and backslashes): OCCT holds the result in UTF-8, the port as
-/// the .NET string of the same text (decision 12502).
+/// the .NET string of the same text (decision 1192).
 /// </para>
 /// <para>
 /// The handles OCCT passes by non-const reference without reassigning them (the checks) are passed by value; the
-/// outputs a read may leave unchanged (on an error) are <c>ref</c>, as OCCT's references (decision 12503).
+/// outputs a read may leave unchanged (on an error) are <c>ref</c>, as OCCT's references (decision 1193).
 /// </para>
 /// </remarks>
 public class StepData_StepReaderData : Interface_FileReaderData

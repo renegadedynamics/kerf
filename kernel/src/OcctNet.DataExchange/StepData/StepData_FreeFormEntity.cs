@@ -108,7 +108,7 @@ public class StepData_FreeFormEntity : Standard_Transient
     /// </summary>
     /// <remarks>
     /// OCCT rebuilds the chain by iterating a map of the members keyed by type name, in hash order; the port iterates
-    /// it in alphabetic order, as OCCT's comment intends (decision 12504). No OCCT code calls it.
+    /// it in alphabetic order, as OCCT's comment intends (decision 1194). No OCCT code calls it.
     /// </remarks>
     public static bool Reorder(ref StepData_FreeFormEntity? ent)
     {

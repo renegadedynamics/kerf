@@ -1445,14 +1445,6 @@ Phase 8 (part): XSBase's foundation (unit 8A1).
   the statics, the message utilities, bit maps, entity lists); the graph, share, check, copy and file-reading tools
   tested on a toy norm. 24 OCCT bugs found, one fixed (an out-of-bounds shift in EntityCluster::Remove).
 - IFSelect's member trace for unit 8A2: 41 of 76 classes reached.
-Phase 8 (part): the STEP entity generator (unit 8C1).
-- tools/stepgen generates STEP's entity classes and their readers and writers from OCCT 8's own C++, translating each
-  class's header and source to C# under docs/translation-rules.md; deterministic, with a `--check` mode the tests run.
-- Generated: StepBasic, StepGeom, StepShape, StepRepr, RWStepBasic, RWStepGeom, RWStepShape and RWStepRepr (809
-  files, 58,631 lines); nothing written by hand.
-- Round trips of the dataset's 338 STEP files through the generated readers and writers, with a test protocol: of
-  1,451,636 records of these packages (93.9% of all), 1,450,960 are written back the same, and the 676 others differ
-  as OCCT's own reading and writing make them (each attributed).
 Phase 8 (part): StepData and the STEP header (unit 8B).
 - Ported: StepData (the reader data with its text decoding, the reader tool, the model, the writer, the dumper,
   protocols, modules and libraries, select types and members, fields, descriptors, undefined and free-form entities,
@@ -1465,6 +1457,23 @@ Phase 8 (part): StepData and the STEP header (unit 8B).
   identically (1.5 million texts decoded, 2.7 million lines written); 248 crafted texts decoded under every code page
   (105 decodings attributed: the system locale, reads past a text's end); the code tables equal OCCT's on all 71,374
   entries its conversions reach. One OCCT bug fixed (an endless recursion copying a named select member).
+Phase 8 (part): Transfer, TransferBRep and XSAlgo (unit 8A2).
+- Ported: Transfer (the transient and finder processes, binders, actors, iterators, dispatch, input and output tools,
+  results), TransferBRep (shape binders and mappers, the shape services, the reader), XSAlgo (the shape processor, the
+  algorithm container) and TKDE's DE_ShapeFixParameters.
+- XSAlgo reads its parameters from the caller's `Interface_StaticSet`; no process-wide state changes. The shape
+  processor never changes its input and returns frozen shapes; the reader publishes frozen shapes.
+- Compared with native OCCT (tools/xsalgorec) on data/occ's shapes with STEP's default sequences: 210 records, 207
+  identical, 3 attributed. Transfer tested on a toy norm. 12 OCCT bugs found, one fixed (an endless recursion in
+  Transfer_ActorDispatch).
+Phase 8 (part): the STEP entity generator (unit 8C1).
+- tools/stepgen generates STEP's entity classes and their readers and writers from OCCT 8's own C++, translating each
+  class's header and source to C# under docs/translation-rules.md; deterministic, with a `--check` mode the tests run.
+- Generated: StepBasic, StepGeom, StepShape, StepRepr, RWStepBasic, RWStepGeom, RWStepShape and RWStepRepr (809
+  files, 58,631 lines); nothing written by hand.
+- Round trips of the dataset's 338 STEP files through the generated readers and writers, with a test protocol: of
+  1,451,636 records of these packages (93.9% of all), 1,450,960 are written back the same, and the 676 others differ
+  as OCCT's own reading and writing make them (each attributed).
 Phase 8 (part): STEP geometry (unit 8D).
 - Ported: StepToGeom (STEP's points, directions, vectors, placements, transformation operators, curves and surfaces
   into Geom and Geom2d) and GeomToStep (Geom, Geom2d and gp into STEP entities), with the file's units through

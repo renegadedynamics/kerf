@@ -17,7 +17,7 @@ namespace Occt;
 /// OCCT's logic is ported as is (how bytes are grouped into characters, its fallbacks and quirks), but OCCT's code
 /// tables (Resource_CodePages, Resource_Shiftjis, Resource_GB2312, Resource_GBK, Resource_Big5: 25,700 lines) are not:
 /// each table lookup asks .NET's encodings (<see cref="CodePagesEncodingProvider"/>) instead, corrected where they
-/// differ from OCCT's table by <see cref="Resource_UnicodeTables"/> (decision 1166, 12501).
+/// differ from OCCT's table by <see cref="Resource_UnicodeTables"/> (decision 1166, 1191).
 /// </para>
 /// <para>
 /// Texts are C strings of bytes, given as .NET strings of one char per byte (decision 1174); the result is UTF-16, as
@@ -99,7 +99,7 @@ public static class Resource_Unicode
                 break;
             case Resource_FormatType.Resource_FormatType_SystemLocale:
                 // OCCT.NET: OCCT converts from the process's C locale (NCollection_UtfString::FromLocale); the port has
-                // no such locale and reads the text as UTF-8 (decision 12501)
+                // no such locale and reads the text as UTF-8 (decision 1191)
                 theToStr.Clear();
                 ExtendedStringFromMultiByte(aFrom, theToStr);
                 break;

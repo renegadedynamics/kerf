@@ -9,7 +9,7 @@ namespace Occt;
 /// OCCT.NET's stand-in for Resource_Unicode's code tables (Resource_CodePages.pxx, Resource_Shiftjis.pxx,
 /// Resource_GB2312.pxx, Resource_GBK.pxx, Resource_Big5.pxx): each lookup asks .NET's encodings
 /// (<see cref="CodePagesEncodingProvider"/>), then applies the corrections recorded where .NET differs from OCCT's
-/// table (the embedded <c>Resource_UnicodeTables.diff.gz</c>, made by tools/stepdatarec's table dump; decision 12501).
+/// table (the embedded <c>Resource_UnicodeTables.diff.gz</c>, made by tools/stepdatarec's table dump; decision 1191).
 /// </summary>
 /// <remarks>Built once per process, on first use, and read-only after (thread-safe).</remarks>
 internal static class Resource_UnicodeTables

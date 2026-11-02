@@ -19,7 +19,7 @@ namespace Occt;
 /// <para>
 /// The lines are built as the file's bytes, one char per byte (decision 1174), so that their 72-character limit
 /// counts bytes as OCCT's does: the texts of the model (<see cref="Send(string)"/>, comments), which OCCT holds in
-/// UTF-8 and the port as .NET strings (decision 12502), are written as their UTF-8 bytes; the others (types, enums,
+/// UTF-8 and the port as .NET strings (decision 1192), are written as their UTF-8 bytes; the others (types, enums,
 /// <see cref="SendString(string)"/>, the raw parameters of undefined entities) are taken as they are.
 /// <see cref="Print(Stream)"/> writes those bytes; <see cref="Line"/> returns them one char per byte.
 /// </para>
@@ -914,7 +914,7 @@ public class StepData_StepWriter
     {
         AddParam();
         // Use helper function to clean text while preserving control directives
-        // OCCT.NET: OCCT's text is UTF-8, so the line is filled with its bytes (decision 12502)
+        // OCCT.NET: OCCT's text is UTF-8, so the line is filled with its bytes (decision 1192)
         string aVal = ToFileText(CleanTextForSend(val));
         int aNn = aVal.Length;
         // Add surrounding quotes
@@ -1448,7 +1448,7 @@ public class StepData_StepWriter
         return anEnd < 0 ? theText.Length : anEnd;
     }
 
-    /// <summary>A text of the model (OCCT's UTF-8) as the file's bytes, one char per byte (decision 12502).</summary>
+    /// <summary>A text of the model (OCCT's UTF-8) as the file's bytes, one char per byte (decision 1192).</summary>
     internal static string ToFileText(string theText)
     {
         foreach (char aChar in theText)

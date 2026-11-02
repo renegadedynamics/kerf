@@ -46,7 +46,7 @@ would change it. Bugs in OCCT itself are in [occt-issues.md](occt-issues.md) ins
 16. **NCollection containers are classes**, so C++ copies must be written as copies (`new(b)`, `Assign`). Rejected
     alternative: structs, which would still alias their storage and hide the problem. The rule is in
     translation-rules.md section 9; a review step checks by-value uses.
-17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient (the plain containers derive from Standard_Transient since decision 12801),
+17. **NCollection_HArray1/HArray2/HSequence derive from the plain containers** rather than from Standard_Transient,
     since C# has single inheritance and arrays are references already.
 18. **The unordered maps don't keep OCCT's iteration order.** Ported code whose output depends on that order is
     noted where found.
@@ -12282,6 +12282,163 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        runs below the array (a write out of bounds in C++, an endless loop in effect) whenever an inner rank is removed;
        the port shifts with `j++`, as the code means (occt-issues.md, 8A1). Removing the last rank, which OCCT handles,
        is unchanged.
+
+## Phase 8: unit 8B, StepData and the STEP header
+
+1191. **Text encodings: Resource_Unicode's logic, .NET's tables, OCCT's corrections** (decision 1166). The decoding
+       StepData_StepReaderData's `cleanText` asks of Resource_Unicode (`ConvertFormatToUnicode`) is ported as OCCT writes
+       it: how bytes group into characters per code page, the fallbacks, the quirks (a zero character is not appended;
+       OCCT's GBK and Big5 converters "insert at 0" an ASCII byte following a lead byte, which throws
+       Standard_OutOfRange; the 4-byte GBK path keeps its state, so every later byte reads as a fourth byte). Its 25,700
+       lines of tables are not: each lookup asks .NET's encodings (`CodePagesEncodingProvider`: 1250-1258, 28591-28599,
+       850, 932, 936, 950), then applies the entries where .NET differs from OCCT's table, embedded as
+       `Resource_UnicodeTables.diff.gz` (38 kB). tools/stepdatarec dumps OCCT's tables where its conversions reach them;
+       .NET differs on 113 of the 2,432 code-page entries, 81 of 8,836 Shift-JIS, 8,560 of 16,384 GB2312 (mostly GBK
+       characters where GB2312 has none), 83 of 23,940 GBK and 6,261 of 19,782 Big5 (HKSCS); corrected, every entry
+       equals OCCT's (StepDataNativeTests). UTF-8 is decoded by OCCT's own lenient decoder (NCollection_UtfIterator:
+       continuation bytes taken unchecked, the whole text read one char per byte when a code point exceeds U+10FFFF,
+       surrogate code points dropped). Where a lead byte runs past the text's end, OCCT reads the terminating zero and
+       then whatever memory follows; the port reads zeros. `Resource_FormatType_SystemLocale` (OCCT: the process's C
+       locale) is read as UTF-8. Resource_FormatType and the decoding half of Resource_Unicode are in
+       OcctNet.DataExchange (the encoding half, which the STEP writer doesn't use, is left out).
+1192. **Texts are .NET strings; the writer writes their UTF-8 bytes.** OCCT holds the texts `cleanText` returns (and
+       so every name of the model) in UTF-8; the port holds the .NET string of the same text, so the UTF-8 of each is
+       what OCCT holds (OCCT's UTF-8 conversion drops unpaired surrogates and stops at a zero: so does the port's).
+       Parameters keep the file's bytes, one char per byte (decision 1174), as the literals of undefined entities do.
+       StepData_StepWriter builds its lines as bytes, one char per byte, so that the 72-character limit and the cutting
+       of long texts count bytes as OCCT's do: `Send(string)` and `SendComment` write their text's UTF-8 bytes; types,
+       enums, `SendString` (the undefined entities' raw parameters) are taken as they are. `Print(Stream)` writes those
+       bytes (each line ended by LF); `Print(TextWriter)` decodes them (for dumps); `Line(n)` returns them.
+1193. **StepData's API for the entities and their readers and writers (units 8C1, 8C2, 8F).**
+       - Strings for `const char*` and `TCollection_AsciiString`; `System.Type` for `Standard_Type`.
+       - A check passed by non-const reference that OCCT never reassigns (`occ::handle<Interface_Check>& ach`) is passed
+         by value: `ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient ent)`
+         and every `Read*`. Interface's own signatures keep decision 1185's `ref Interface_Check?`.
+       - The outputs of the `Read*` methods, which OCCT leaves unchanged on an error, are `ref` (`ReadReal(.., ref aX)`,
+         `ReadString(.., ref TCollection_HAsciiString?)`, `ReadEnumParam(.., ref string)`, `ReadSubList(.., ref int)`,
+         `NamedForComplex(.., ref int)`); OCCT's template forms are `ReadEntity<T>` and `ReadMember<T>`.
+       - C++ value classes are C# classes (decision 1185): StepData_Field (C++'s assignment is `CopyFrom`),
+         StepData_SelectType (abstract; C++'s assignment is `SetFrom`), StepData_EnumTool (its 40 defaulted arguments a
+         `params` array), the field lists, StepData_StepWriter, StepData_StepDumper, APIHeaderSection_MakeHeader.
+         StepData_Factors and DESTEP_Parameters, copied by value all over STEPControl and STEPCAFControl, are structs.
+       - StepData's classes keep OCCT's mutators public: entities are working objects (decision 21).
+       - StepData_Field keeps its value as `object`, and `ReadSub` returns one: the port's HArray1/HArray2 (a field's
+         lists) are not Standard_Transient (decision 17). In a list of mixed items, OCCT stores a sub-list's array in its
+         array of transients; the port can store only a select member or a string there (late binding only: no
+         generated entity reads through ReadSub).
+1194. **Determinism.** StepData_Protocol::ECDescr iterates its map of descriptions, keyed by address in OCCT, in
+       insertion order. StepData_FreeFormEntity::Reorder rebuilds a complex entity's chain from a map keyed by type
+       name, in hash order in OCCT: in alphabetic order in the port, as its comment intends (no OCCT code calls it).
+1195. **Process-wide state** (plan 2.7). `StepData.Protocol()` and `HeaderSection.Protocol()` are created once.
+       `RWHeaderSection.Init()` runs once per process: it registers HeaderSection's protocol as StepData's header
+       protocol (under a lock) and creates the two modules, which register themselves (decision 1182); OCCT
+       re-registers the header protocol at each call, which turns it into a FileProtocol from the second one on.
+       StepData_DefaultGeneral is ported but, as in OCCT, nothing creates it. UnitsMethods' "CasCade length unit" (a
+       process-wide value OCCT's XSAlgo_ShapeProcessor and Draw set from the static `xstep.cascade.unit`) is left out:
+       `UnitsMethods.GetCasCadeLengthUnit(Interface_StaticSet?, base)` reads `xstep.cascade.unit` from the read's or
+       write's parameter set (millimetres without one), and the setters are gone. StepData declares no statics;
+       `DESTEP_Parameters.InitFromStatic` takes the parameter set. `StepFile_Read.Read` has no global mutex (decision
+       1177), and takes the parse's progress range and limits (decisions 1175, 1176).
+1196. **Placement and what waits.** UnitsMethods (TKernel), Resource_FormatType and Resource_Unicode (TKernel),
+       DESTEP_Parameters and STEPControl_StepModelType (TKDESTEP's DESTEP and STEPControl) are in OcctNet.DataExchange:
+       StepData_StepModel holds a DESTEP_Parameters. Left for later: APIHeaderSection_EditHeader (an IFSelect_Editor:
+       with IFSelect, unit 8A2 or 8F), `DESTEP_Parameters::GetDefaultShapeFixParameters` (TKDE: unit 8F). Left out:
+       StepData_UndefinedEntity::Super (declared, never defined), StepDumper's "(proper ident)" listing (under `nbi <
+       0`, never true), the OCCT_DEBUG blocks and StepFile_Read's chronometer.
+1197. **8B's oracle: tools/stepdatarec.** A native recorder (OCCT's own scanner, parser and StepFile_ReadData compiled
+       from source, with TKDESTEP) reads each of the corpus's 340 STEP files as StepFile_Read does, with a protocol that
+       knows only the header (a FileProtocol of HeaderSection_Protocol: data entities are undefined entities), and dumps
+       the header entities, every entity (label, type, parameters), the checks and every text parameter decoded by
+       ReadString; then writes the model back with StepData_StepWriter. The port's dumps are identical on all 340 files
+       (1,535,249 texts decoded, 2,692,327 lines written, FILE_NAME included: the header is the file's). Its "text" mode
+       decodes 248 crafted texts (directives, invalid UTF-8, multi-byte sequences; tools/stepdatarec/gen-text-cases.py)
+       under each of the 27 code pages: 6,591 of 6,696 identical, 105 attributed (the system locale, and a lead byte
+       running past the text's end, decision 1191). Its "tables" mode dumps Resource_Unicode's tables (12501).
+1198. **One OCCT bug fixed: StepData_Field::CopyFrom of a select member with a name** copies `*this` into the new
+       member's field, which copies the member again, without end: a stack overflow, which ends a .NET process. The port
+       copies the old member's own field (occt-issues.md, 8B).
+## Phase 8: unit 8A2, Transfer, TransferBRep and XSAlgo
+
+The rest of XSBase but IFSelect and XSControl (unit 8A3): Transfer (the transfer processes, binders, actors and
+iterators), TransferBRep (shape binders and mappers, the shape services, the reader) and XSAlgo (shape processing for
+the translators), with TKDE's DE_ShapeFixParameters.
+
+1199. **Transfer's two instantiations, file for file.** OCCT 8 keeps its former generic (Transfer_TransferProcess.gxx)
+       as two generated instantiations: Transfer_ProcessForTransient and Transfer_ProcessForFinder, with their actors
+       and iterators. They are ported as OCCT's files (translation rules 9: "once per instantiation"), the Finder files
+       kept line for line with the Transient ones (they differ only in the start type, and the Finder process has OCCT's
+       two `FindTypedTransient<T>`/`GetTypedTransient<T>` templates). Starting objects are keyed by reference (C++'s
+       handle hashing), finders by `Transfer_FindHasher` (a finder's code, then `Equates`). Both maps are indexed: every
+       iteration (results, roots, check lists, statistics) follows the order of binding, which doesn't depend on
+       hashing. The map's initial size is ignored and `Resize` does nothing (the map grows).
+1200. **A finder's hash code is .NET's `GetHashCode`.** OCCT's `Transfer_Finder::GetHashCode()` (a `size_t` set by
+       the subclass) overrides `object.GetHashCode` (an `int`), and equality stays by reference; maps of finders use
+       Transfer_FindHasher, as OCCT's. Transfer_TransientMapper hashes its object's identity
+       (`RuntimeHelpers.GetHashCode`, OCCT: the address), TransferBRep_ShapeMapper its shape with
+       TopTools_ShapeMapHasher (the same TShape and location, whatever the orientation).
+1201. **API.** OCCT's value classes (TransferIterator and the process iterators, TransferInput, TransferOutput,
+       TransferDispatch, TransferBRep_Reader) are classes (decision 1185); TransferIterator has a copy constructor.
+       `Standard_Type` is `System.Type`, and a null type is never matched (`Standard_Type::SubType`). Outputs that OCCT
+       leaves untouched on failure are `ref` (`GetTypedResult`, `FindTypedTransient`, `GetTypedTransient`,
+       `GetContext`), the others `out` (a finder's typed attributes, `TransferResultInfo`'s sequence); OCCT's modifiable
+       references are `ref` returns (`ModeTrans`, `ModeNewTransfer`, `CResult`, the TransferResultInfo counters).
+       `PrintTrace` writes to a `TextWriter` (StartTrace's stream buffer). Under `ErrorHandle`, Transferring catches what
+       `OCC_CATCH_SIGNALS` does: Standard_Failure and the .NET counterparts of system signals, never
+       Standard_ImmutableObject or TopoDS_LockedShape (decisions 423, 1183), with OCCT's `what()` text. XSAlgo's
+       `ParameterMap` is `NCollection_DataMap<string, string>`, its `ProcessingData` and `ProcessingFlags` are tuples;
+       the actors' `GetShapeFixParameters` return a copy (OCCT's callers copy the const reference before changing it);
+       the rvalue overloads are dropped. TKDE's `DE_ShapeFixParameters` is ported (a record struct with OCCT's fields
+       and defaults, as decision 489's IMeshTools_Parameters); the rest of TKDE waits (decision 1171).
+1202. **No process-wide state that changes** (plan 2.7). TransferOutput's `TransferRoots()` and the
+       TransferDispatch/ActorDispatch constructors without a protocol use the model's protocol, where OCCT uses the
+       active one (decision 1183). Transfer_ResultFromTransient's shared empty check is a new one per call. XSAlgo:
+       `Init(statics)` declares XSAlgo's statics once per `Interface_StaticSet` (after `Standards`) and registers the
+       shape processing operators once per process; the default AlgoContainer is created once and
+       `AlgoContainer()` returns it, even before `Init` (OCCT: null); `SetAlgoContainer` is left out.
+1203. **XSAlgo reads its statics from the caller's set** (decision 1181): `CheckPCurve` (read.stdsameparameter.mode),
+       `ReadProcessingData` (the statics naming the resource file and the scope) and the AlgoContainer's `ProcessShape`
+       and `CheckPCurve` take an `Interface_StaticSet`, after OCCT's parameters without defaults.
+       `XSAlgo_ShapeProcessor::PrepareForTransfer` and `XSAlgo_AlgoContainer::PrepareForTransfer`, which set
+       UnitsMethods' process-wide length unit from `xstep.cascade.unit`, are left out: the readers and writers (8F, 8G)
+       take the unit from their statics (`IVal("xstep.cascade.unit")`) and convert it with UnitsMethods (8B) where OCCT
+       calls `PrepareForTransfer()` then `UnitsMethods::GetCasCadeLengthUnit()`.
+1204. **Determinism: XSAlgo's merges into a finder process.** `XSAlgo_ShapeProcessor::MergeShapeTransferInfo(FP, ...)`
+       and `XSAlgo_AlgoContainer::MergeTransferInfo(FP, ...)` iterate the shape processing's history map and bind
+       mappers into the finder process: OCCT in its hash order (TShape addresses), so the order of the new mappers
+       varies natively; the port in the order ShapeProcess recorded the entries. The merges into a transient process
+       walk the process's own (indexed) map. A finder's attributes and a transient process's contexts are string-keyed
+       maps whose order isn't observable.
+1205. **Frozen shapes.** Binders hold the transfer's shapes as they are; the readers publish what they return:
+       TransferBRep_Reader freezes the shapes a transfer gave (`EndTransfer`) and `OneShape`'s compound.
+       `XSAlgo_ShapeProcessor::ProcessShape` and the AlgoContainer's `ProcessShape` never change their input
+       (ShapeProcess's working copy, decision 1022; the AlgoContainer's default ShapeFix copies at entry) and return a
+       frozen result. `CheckPCurve` writes into the edge and vertices it is given, as OCCT's: they are a reader's, under
+       construction (a frozen edge throws TopoDS_LockedShape). On a frozen input, a sub-shape that OCCT's operators
+       change in place (a history entry F → F) is a changed copy in the port (F → F'): merged into a finder process
+       whose input faces are already bound, such a face gets a new binder where natively it keeps its own. In the
+       writer's order (the processed shape transferred, then the history merged) the input's sub-shapes reach their
+       entities either way.
+1206. **The oracle: tools/xsalgorec** (MSVC, build123d.NET's native TKXSBase). On data/occ's 30 shapes up to 600 kB:
+       ReadProcessingData's parameters and operations for FromSTEP and ToSTEP (resources/XSTEPResource/STEP, compiled
+       into the port, decision 1023) and the default DE_ShapeFixParameters' map; per shape, the shape processor with
+       FromSTEP's parameters and operations (the tolerances set as STEPControl_ActorRead does), with DESTEP's write
+       operations (SplitCommonVertex, DirectFaces) and with ToSTEP's; the AlgoContainer's ProcessShape with STEP's
+       sequence, with an undefined read sequence (the default ShapeFix) and an undefined write one (DirectFaces); each
+       result's BRep hash, counts, history and messages, and the merge of the history into a transient process (every
+       sub-shape bound to a ShapeBinder) or a finder process (every face pre-bound); and CheckPCurve on every edge of
+       every face (its result, the tolerance after, the shape's BRep hash). **210 records: 207 identical, 3
+       attributed** (CrankArm.brep's three finder merges, decision 1205; identical on an unfrozen input, a test
+       checks). Each input unchanged. Not compared natively before STEPControl exists: transfer processes driven by
+       real STEP actors on StepData models (their traces, check lists and roots), TransferBRep_Reader (abstract
+       natively: OCCT has no concrete reader in the toolkits bound) and ResultFromModel; they are tested on the toy
+       norm, and unit 8F compares them through STEPControl.
+1207. **One OCCT bug fixed: Transfer_ActorDispatch's endless recursion.** The dispatch actor transfers an entity by
+       `TransferEntity`, whose copy (`Transfer_TransferDispatch::Copy`) asks the transient process again, which calls
+       the same actor again: no binding happens before, so it recurses until the stack overflows (natively too; nothing
+       in OCCT uses the class). A stack overflow ends a .NET process, so the port breaks the cycle minimally: while the
+       actor transfers an entity, TransferDispatch's copy of that entity is the copy tool's own (`Interface_CopyTool::Copy`),
+       which binds the result through the dispatch control, and the actor returns that binder as OCCT means to.
+
 ## Phase 8: unit 8C1, the STEP entity generator (StepBasic, StepGeom, StepShape, StepRepr)
 
 12601. **STEP's entity classes and their readers and writers are generated by tools/stepgen** (decision 1166), a C#
@@ -12347,81 +12504,6 @@ attributed, and the case kept in `ReconstructionNativeTests`. Numbers from 11201
        references to records lost to a syntax error (25, bug32314_corrupted.stp); CATIA's complex uncertainty
        measure written simple (23, the READ ONLY case 357); an integer in a real SELECT member written as a real
        (14); an SI unit's dimensions written derived, `*` (13). Native OCCT's writing is compared in unit 8F.
-
-## Phase 8: unit 8B, StepData and the STEP header
-
-12501. **Text encodings: Resource_Unicode's logic, .NET's tables, OCCT's corrections** (decision 1166). The decoding
-       StepData_StepReaderData's `cleanText` asks of Resource_Unicode (`ConvertFormatToUnicode`) is ported as OCCT writes
-       it: how bytes group into characters per code page, the fallbacks, the quirks (a zero character is not appended;
-       OCCT's GBK and Big5 converters "insert at 0" an ASCII byte following a lead byte, which throws
-       Standard_OutOfRange; the 4-byte GBK path keeps its state, so every later byte reads as a fourth byte). Its 25,700
-       lines of tables are not: each lookup asks .NET's encodings (`CodePagesEncodingProvider`: 1250-1258, 28591-28599,
-       850, 932, 936, 950), then applies the entries where .NET differs from OCCT's table, embedded as
-       `Resource_UnicodeTables.diff.gz` (38 kB). tools/stepdatarec dumps OCCT's tables where its conversions reach them;
-       .NET differs on 113 of the 2,432 code-page entries, 81 of 8,836 Shift-JIS, 8,560 of 16,384 GB2312 (mostly GBK
-       characters where GB2312 has none), 83 of 23,940 GBK and 6,261 of 19,782 Big5 (HKSCS); corrected, every entry
-       equals OCCT's (StepDataNativeTests). UTF-8 is decoded by OCCT's own lenient decoder (NCollection_UtfIterator:
-       continuation bytes taken unchecked, the whole text read one char per byte when a code point exceeds U+10FFFF,
-       surrogate code points dropped). Where a lead byte runs past the text's end, OCCT reads the terminating zero and
-       then whatever memory follows; the port reads zeros. `Resource_FormatType_SystemLocale` (OCCT: the process's C
-       locale) is read as UTF-8. Resource_FormatType and the decoding half of Resource_Unicode are in
-       OcctNet.DataExchange (the encoding half, which the STEP writer doesn't use, is left out).
-12502. **Texts are .NET strings; the writer writes their UTF-8 bytes.** OCCT holds the texts `cleanText` returns (and
-       so every name of the model) in UTF-8; the port holds the .NET string of the same text, so the UTF-8 of each is
-       what OCCT holds (OCCT's UTF-8 conversion drops unpaired surrogates and stops at a zero: so does the port's).
-       Parameters keep the file's bytes, one char per byte (decision 1174), as the literals of undefined entities do.
-       StepData_StepWriter builds its lines as bytes, one char per byte, so that the 72-character limit and the cutting
-       of long texts count bytes as OCCT's do: `Send(string)` and `SendComment` write their text's UTF-8 bytes; types,
-       enums, `SendString` (the undefined entities' raw parameters) are taken as they are. `Print(Stream)` writes those
-       bytes (each line ended by LF); `Print(TextWriter)` decodes them (for dumps); `Line(n)` returns them.
-12503. **StepData's API for the entities and their readers and writers (units 8C1, 8C2, 8F).**
-       - Strings for `const char*` and `TCollection_AsciiString`; `System.Type` for `Standard_Type`.
-       - A check passed by non-const reference that OCCT never reassigns (`occ::handle<Interface_Check>& ach`) is passed
-         by value: `ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient ent)`
-         and every `Read*`. Interface's own signatures keep decision 1185's `ref Interface_Check?`.
-       - The outputs of the `Read*` methods, which OCCT leaves unchanged on an error, are `ref` (`ReadReal(.., ref aX)`,
-         `ReadString(.., ref TCollection_HAsciiString?)`, `ReadEnumParam(.., ref string)`, `ReadSubList(.., ref int)`,
-         `NamedForComplex(.., ref int)`); OCCT's template forms are `ReadEntity<T>` and `ReadMember<T>`.
-       - C++ value classes are C# classes (decision 1185): StepData_Field (C++'s assignment is `CopyFrom`),
-         StepData_SelectType (abstract; C++'s assignment is `SetFrom`), StepData_EnumTool (its 40 defaulted arguments a
-         `params` array), the field lists, StepData_StepWriter, StepData_StepDumper, APIHeaderSection_MakeHeader.
-         StepData_Factors and DESTEP_Parameters, copied by value all over STEPControl and STEPCAFControl, are structs.
-       - StepData's classes keep OCCT's mutators public: entities are working objects (decision 21).
-       - StepData_Field keeps its value as `object`, and `ReadSub` returns one: the port's HArray1/HArray2 (a field's
-         lists) are not Standard_Transient (decision 17). In a list of mixed items, OCCT stores a sub-list's array in its
-         array of transients; the port can store only a select member or a string there (late binding only: no
-         generated entity reads through ReadSub).
-12504. **Determinism.** StepData_Protocol::ECDescr iterates its map of descriptions, keyed by address in OCCT, in
-       insertion order. StepData_FreeFormEntity::Reorder rebuilds a complex entity's chain from a map keyed by type
-       name, in hash order in OCCT: in alphabetic order in the port, as its comment intends (no OCCT code calls it).
-12505. **Process-wide state** (plan 2.7). `StepData.Protocol()` and `HeaderSection.Protocol()` are created once.
-       `RWHeaderSection.Init()` runs once per process: it registers HeaderSection's protocol as StepData's header
-       protocol (under a lock) and creates the two modules, which register themselves (decision 1182); OCCT
-       re-registers the header protocol at each call, which turns it into a FileProtocol from the second one on.
-       StepData_DefaultGeneral is ported but, as in OCCT, nothing creates it. UnitsMethods' "CasCade length unit" (a
-       process-wide value OCCT's XSAlgo_ShapeProcessor and Draw set from the static `xstep.cascade.unit`) is left out:
-       `UnitsMethods.GetCasCadeLengthUnit(Interface_StaticSet?, base)` reads `xstep.cascade.unit` from the read's or
-       write's parameter set (millimetres without one), and the setters are gone. StepData declares no statics;
-       `DESTEP_Parameters.InitFromStatic` takes the parameter set. `StepFile_Read.Read` has no global mutex (decision
-       1177), and takes the parse's progress range and limits (decisions 1175, 1176).
-12506. **Placement and what waits.** UnitsMethods (TKernel), Resource_FormatType and Resource_Unicode (TKernel),
-       DESTEP_Parameters and STEPControl_StepModelType (TKDESTEP's DESTEP and STEPControl) are in OcctNet.DataExchange:
-       StepData_StepModel holds a DESTEP_Parameters. Left for later: APIHeaderSection_EditHeader (an IFSelect_Editor:
-       with IFSelect, unit 8A2 or 8F), `DESTEP_Parameters::GetDefaultShapeFixParameters` (TKDE: unit 8F). Left out:
-       StepData_UndefinedEntity::Super (declared, never defined), StepDumper's "(proper ident)" listing (under `nbi <
-       0`, never true), the OCCT_DEBUG blocks and StepFile_Read's chronometer.
-12507. **8B's oracle: tools/stepdatarec.** A native recorder (OCCT's own scanner, parser and StepFile_ReadData compiled
-       from source, with TKDESTEP) reads each of the corpus's 340 STEP files as StepFile_Read does, with a protocol that
-       knows only the header (a FileProtocol of HeaderSection_Protocol: data entities are undefined entities), and dumps
-       the header entities, every entity (label, type, parameters), the checks and every text parameter decoded by
-       ReadString; then writes the model back with StepData_StepWriter. The port's dumps are identical on all 340 files
-       (1,535,249 texts decoded, 2,692,327 lines written, FILE_NAME included: the header is the file's). Its "text" mode
-       decodes 248 crafted texts (directives, invalid UTF-8, multi-byte sequences; tools/stepdatarec/gen-text-cases.py)
-       under each of the 27 code pages: 6,591 of 6,696 identical, 105 attributed (the system locale, and a lead byte
-       running past the text's end, decision 12501). Its "tables" mode dumps Resource_Unicode's tables (12501).
-12508. **One OCCT bug fixed: StepData_Field::CopyFrom of a select member with a name** copies `*this` into the new
-       member's field, which copies the member again, without end: a stack overflow, which ends a .NET process. The port
-       copies the old member's own field (occt-issues.md, 8B).
 
 ## Phase 8: unit 8D, geometry (StepToGeom, GeomToStep)
 

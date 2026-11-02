@@ -28,7 +28,7 @@ public enum UnitsMethods_LengthUnit
 /// <remarks>
 /// OCCT's "CasCade length unit" is a process-wide value (<c>UnitsMethods_CascadeLengthUnit</c>), which
 /// XSAlgo_ShapeProcessor and Draw set from the parameter <c>xstep.cascade.unit</c> and the STEP translators read. The
-/// port has no such value (plan 2.7, decision 12505): <see cref="GetCasCadeLengthUnit(Interface_StaticSet, UnitsMethods_LengthUnit)"/>
+/// port has no such value (plan 2.7, decision 1195): <see cref="GetCasCadeLengthUnit(Interface_StaticSet, UnitsMethods_LengthUnit)"/>
 /// reads <c>xstep.cascade.unit</c> from the parameter set of the read or write, and OCCT's setters are left out.
 /// </remarks>
 public static class UnitsMethods
