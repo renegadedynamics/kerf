@@ -12673,3 +12673,97 @@ command files, and TKDESTEP's APIHeaderSection_EditHeader (an IFSelect_Editor, l
        gives StepData_StepWriter's bytes, the header editor, sessions in parallel). For unit 8F to compare natively:
        xst-transferrable-roots and the transfers (STEPControl's actors), SendAll's files through StepSelect_WorkLibrary
        with its file modifiers.
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+1229. **The immutable assembly tree is a new package, XdeDoc** (decision 1166, phase8-plan.md 2.2 option B): new C#
+       named in OCCT's style, not a port. `XdeDoc_Tree` (roots, layers, length unit), `XdeDoc_Product` (a shared
+       definition: a part with its shape and its sub-shapes' attributes, or an assembly of components),
+       `XdeDoc_Instance` (a product at a `TopLoc_Location`, with attributes of its own), `XdeDoc_SubShape`,
+       `XdeDoc_Attributes` (name; generic, surface and curve colours as `Quantity_ColorRGBA`; visibility; layer names;
+       validation properties; external references), `XdeDoc_Layer`, `XdeDoc_LengthUnit`, `XdeDoc_ValidationProps`.
+       The roots are instances (XCAF's free shapes: a placed free shape is a reference). Products are shared by
+       reference between instances and between trees; the `With...` methods make new objects. `Flatten` gives the
+       placed parts (`XdeDoc_FlatItem`: part, instance path, world location, resolved `XdeDoc_Style`) with
+       XCAFPrs_DocumentExplorer's style rules (the parent's style, then the product's attributes, then the instance's;
+       a generic colour sets both colours; hidden by attributes or by a hidden layer). Layers are named uniquely in a
+       tree. Materials, GD&T, views, SHUOs and user metadata have room in the attributes but are left for later.
+1230. **The tree's shapes are frozen when put in it**: `XdeDoc_Product.Part` and `XdeDoc_SubShape` freeze the shape
+       given (`FreezeGraph`), as published results are; an assembly's shape is the compound of its placed components,
+       made once on first use (thread-safe) and frozen. `XdeDoc_Tree.Meshed` meshes every part through
+       `BRepMesh_IncrementalMesh.Meshed` (the input never written), sharing parts and faces meshing leaves unchanged,
+       the sub-shape attributes following their faces through the meshing's history.
+1231. **XdeDoc_Document gives the tree XCAF's label interface, for STEPCAFControl (unit 8G)**: a mutable document with
+       `XdeDoc_Label` handles in place of `TDF_Label`, OCAF's entries (shapes under 0:1:1, layers under 0:1:3), and the
+       methods (names, arguments, behaviour) of the tool calls STEPCAFControl's reader and writer make:
+       XCAFDoc_ShapeTool's (`AddShape`, `NewShape`, `SetShape`, `AddComponent`, `AddSubShape`, `FindSubShape`,
+       `Search`, `SearchUsingMap`, `FindShape`, `FindMainShape(UsingMap)`, `GetShape`, `GetFreeShapes`, `GetShapes`,
+       `GetComponents`, `GetReferredShape`, `GetLocation`, `GetUsers`, `GetSubShapes`, `GetOneShape`,
+       `UpdateAssemblies`, `SetExternRefs`, the `Is...` tests), XCAFDoc_ColorTool's (`SetColor`/`GetColor` by label or
+       shape, `IsSet`, `UnSetColor`, `SetVisibility`, `IsVisible`), XCAFDoc_LayerTool's (`AddLayer`, `FindLayer`,
+       `SetLayer`, `GetLayers`, `GetLayerLabels`, `GetShapesOfLayer`, `UnSetLayers`), `TDataStd_Name` (`SetName`,
+       `GetName`), the validation properties (`SetVolume`, `SetArea`, `SetCentroid`) and the length unit.
+       `ToTree` freezes it (free labels the roots, top-level labels the shared products), `FromTree` opens a tree
+       (products as top-level labels in depth-first order, a placed root as a top-level reference made before its
+       product's label, as XCAF's AddShape does). Differences from XCAF: colours are values (no colour labels); shapes
+       are indexed with IsSame in insertion order; `makePrepare` (which rewrites the compound's locations) is ignored;
+       an assembly's compound is remade when its components change (XCAF waits for UpdateAssemblies), and
+       `AddShape(compound, true)` keeps the compound given; external references are only recorded (XCAF's GetShape
+       returns an empty compound for such a label); `AddComponent` refuses a cycle (null label); SHUOs, instance
+       colours (`SetInstanceColor`), materials, GD&T, views, clipping planes, notes and named data are not there yet:
+       8G adds what it ports. A tree's layers merge same-named XCAF layers (XCAF allows two with different
+       visibilities).
+1232. **The mesh writers share one extraction** (`RWMesh_ProductMesh`, internal, following RWMesh_FaceIterator's
+       rules): a part's faces in TopExp_Explorer's order, each triangulation placed by its face's location, the
+       winding swapped for a reversed face or a mirroring location, normals the triangulation's or computed from the
+       surface on a copy (`BRepLib_ToolTriangulatedShape.NormalsComputed`) and reversed for a reversed face; faces
+       grouped by sub-shape colour, the sub-shapes applied from compounds down to faces so that a face's own colour
+       wins; faces of hidden sub-shapes and faces without triangulation left out (`MeshParameters` meshes the tree
+       first). Hidden parts are left out unless `IncludeHidden`. The coordinate change (`RWMesh_CoordinateConverter`)
+       is OCCT's RWMesh_CoordinateSystemConverter's: a length scale and Z-up to Y-up, points by C, locations by
+       C·M·C⁻¹.
+1233. **glTF 2.0 is written fresh** (`RWGltf_TreeWriter`, System.Text.Json; `.glb`, or `.gltf` with a `.bin`): a node
+       per instance (named by the instance, else its product; its location as a matrix), a mesh per part and
+       instance colour sharing the part's accessors (instancing), a primitive per colour group, one buffer, 4-byte
+       aligned views, POSITION with min and max, unsigned short indices below 65,535 vertices. OCCT's defaults: Z-up
+       turned Y-up, the model's unit (the tree's, else millimetres) turned into metres; a material per colour, PBR
+       with metallic 0 and roughness 1, the surface colour else the curve colour as base colour (linear RGB),
+       `alphaMode` BLEND when translucent, no material for parts without colour. The output is deterministic.
+1234. **OBJ is written fresh** (`RWObj_TreeWriter`): OBJ has no instances, so each placed part is written in world
+       coordinates as an object named by its name path; a `usemtl` per colour group; the MTL gives `Kd` in sRGB (as
+       OCCT's RWObj does), `d`, and `Tr` when translucent; faces without colour after coloured ones take a white
+       `default` material. No unit or axis change by default (options). Invariant culture, LF.
+1235. **3MF is written fresh** (`RW3mf_TreeWriter`, 3MF Core 1.3, System.IO.Compression): the content types, the root
+       relationship and `3D/3dmodel.model`; a mesh object per part and inherited colours, a components object per
+       assembly, written before their users, a build item per root, transforms in 3MF's row-vector form. Colours are
+       the core `basematerials` (sRGB `#RRGGBB(AA)`) rather than the materials extension's `colorgroup`, which the
+       brief suggested: basematerials are core, need no extension namespace and every consumer reads them. An
+       object's default material is its instance's colour (white if only some of its faces have one), triangles of
+       other colours name theirs. The unit is the tree's when 3MF names it (micron to metre), else coordinates are
+       converted to millimetres. Degenerate triangles, which 3MF forbids, are left out. Fixed zip entry times make
+       the package deterministic. A mirroring placement is written as it is.
+1236. **glTF is read fresh into the tree** (`RWGltf_TreeReader`): a mesh is a part shared by its nodes, each triangle
+       primitive (modes 4, 5, 6) a face holding only its triangulation (`BRep_Builder.MakeFace` with the
+       triangulation, as RWMesh does) with its normals; the material's base colour (or the diffuse colour of
+       KHR_materials_pbrSpecularGlossiness) the part's colour for one primitive, else the faces' sub-shape colours;
+       a node with a mesh and no children an instance named by the node when its name differs from the mesh's; a node with
+       children an assembly of its own named by the node (so assemblies aren't shared on a round trip). A node's
+       transformation that isn't rigid (scale, shear, mirror) is applied to the meshes below it, copied for that node,
+       the winding swapped for a mirror, since shape locations stay rigid. Y-up turned Z-up and metres into the
+       model's unit (millimetres by default). Hostile input (`RWGltf_ReadLimits`): file size, buffer sizes and total,
+       node count, hierarchy depth (and a hard 4,096 for the recursion), triangle count, JSON depth; every index and
+       accessor range checked; one parent per node, scene nodes roots; an error stops the reading with a message and
+       no tree. Required extensions are refused but those of materials and textures (`KHR_materials_*`,
+       `KHR_texture_*`), ignored with a warning; sparse, quantized and compressed data are refused; textures, UVs,
+       points and lines skipped. External buffers come from the caller's resolver; `ReadFile` opens only files in the
+       glTF's folder or below.
+1237. **The oracle for the mesh formats is OCCT's own de_mesh cases and the formats' rules**, not a native recorder:
+       native glTF and OBJ go through XCAF documents and lay nodes, meshes and materials out differently by design, so
+       only triangle sets could be compared, which the Lantern cases already pin. On the dataset's
+       bug30691_Lantern.glb the reader gives native's counts and structure (gltf_read/lantern: 3 faces, 1 compound,
+       5,394 triangles, 4,145 nodes, the XDE dump's instance, assembly and part names), and so do a GLB written and
+       read back (gltf_write/lanternglb) and an OBJ written (obj_write/lantern, read back by the test's parser). The
+       dataset's four other GLB files are read, written and read back alike. glTF output is checked against glTF 2.0's
+       structural rules in the tests (the Khronos validator isn't available offline), 3MF against the core
+       specification's package, resource order, index and colour rules and its winding (a box's signed volume).
+       The XDE Draw commands (ReadGltf, WriteGltf, WriteObj over a Draw-lite document) belong to 8G's XDE commands;
+       the de_mesh grid is 8W's.

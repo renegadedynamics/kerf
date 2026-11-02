@@ -1498,3 +1498,13 @@ Phase 8 (part): IFSelect, XSControl and the STEP header's editor (unit 8A3).
 - Compared with native OCCT (tools/xscontrolrec) on the corpus's 331 STEP files up to 3 MB: the work session's roots,
   selections, signatures, check lists and label lookups, in its two modes, identical (27,589 lines). Tested on the toy
   norm and on STEP models. 11 OCCT bugs logged.
+Phase 8 (part): the assembly tree and the fresh mesh formats (unit 8T).
+- XdeDoc, new: an immutable assembly tree in place of XCAF (`XdeDoc_Tree`, `XdeDoc_Product`, `XdeDoc_Instance`):
+  shared products, placed instances, names, colours with alpha, visibility, layers, validation properties and
+  sub-shape attributes; frozen shapes; `Flatten` for meshing and viewing, `Meshed` to mesh every part.
+  `XdeDoc_Document` gives it XCAF's label interface (the shape, colour and layer tools' calls) for STEPCAFControl.
+- glTF 2.0 (`.gltf` + `.bin`, `.glb`), OBJ (+ MTL) and 3MF written fresh over the tree, with instancing and colours;
+  glTF read fresh into the tree, with limits for hostile input. Streams first, cancellation through
+  `Message_ProgressRange`, deterministic output.
+- Checked against OCCT's de_mesh cases on the dataset's Lantern (native's counts and structure), round trips, and the
+  formats' rules in the tests.

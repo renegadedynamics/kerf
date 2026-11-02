@@ -1930,3 +1930,12 @@ Found by porting IFSelect (as traced) and XSControl and testing them on the toy 
 | XSControl_TransferReader::EntitiesFromShapeList (modes 2 to 4) | Reads `list->Value(i)` (the entity number) in the loop over `ir` | The results compared are the wrong ones (or out of range) |
 | APIHeaderSection_EditHeader, IsTimeStamp | `[[fallthrough]]` after each separator test into the next digit test | A separator must also be a digit: no time stamp is ever accepted, so the editor can't set one |
 | IFSelect_EditForm::NbTouched, IFSelect_ContextModif::Search, IFSelect_IntParam::StaticName | Declared, never defined | The first two left out; StaticName ported |
+## Phase 8: unit 8T, the assembly tree and the fresh mesh formats
+
+Nothing of OCCT's is ported in this unit (decision 1229). Two behaviours of XCAF's that `XdeDoc_Document` doesn't
+copy, for unit 8G (decision 1231):
+
+| Where | What OCCT does | What the port does |
+|---|---|---|
+| XCAFDoc_ShapeTool::GetShape | Returns an empty compound for a label marked as an external reference, even one holding a shape (STEPCAFControl_Reader::AddShape marks the extern file's label so) | Records the references; the shape stays |
+| XCAFDoc_ShapeTool::AddComponent | Doesn't check that the component doesn't contain the assembly: a cycle makes the shape tool recurse without end | Returns the null label |
