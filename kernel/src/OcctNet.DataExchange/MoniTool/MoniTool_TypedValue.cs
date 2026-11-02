@@ -1352,7 +1352,7 @@ public class MoniTool_TypedValue : Standard_Transient
     /// Returns the list of names of items of the Library of Types Library of TypedValue as Valued Parameters,
     /// accessed by parameter name for use by management of Static Parameters
     /// </summary>
-    public static NCollection_HSequence<string>? LibList()
+    public static NCollection_HSequence<string> LibList()
     {
         NCollection_HSequence<string> list =
             new NCollection_HSequence<string>();
