@@ -1,0 +1,18 @@
+# Third-party sources, build trees and local tools
+/.deps/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Native
+/native/out/
+/artifacts/
+
+# The native backend's outputs (OCCT.NET, the default, builds into bin and obj), and OCCT.NET's from before it was
+bin-native/
+obj-native/
+bin-occtnet/
+obj-occtnet/

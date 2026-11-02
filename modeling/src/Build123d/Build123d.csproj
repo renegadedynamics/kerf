@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Build123d</RootNamespace>
+    <Description>A .NET port of build123d, a code-first CAD library built on OpenCascade.</Description>
+    <!-- The public API is documented -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Published on the OCCT.NET backend only; tools/pack.ps1 packs the native one for its load-context test -->
+    <IsPackable Condition="'$(Build123dBackend)' == 'Native' And '$(NativeStageDir)' == ''">false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Build123d.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The OCCT backend (Directory.Build.props): the same API, native or managed -->
+    <ProjectReference Include="..\Build123d.Occt\Build123d.Occt.csproj" Condition="'$(Build123dBackend)' != 'OcctNet'" />
+    <ProjectReference Include="..\Build123d.OcctNet\Build123d.OcctNet.csproj" Condition="'$(Build123dBackend)' == 'OcctNet'" />
+    <PackageReference Include="Schematiq.Collections" Version="1.0.0-beta.1" />
+  </ItemGroup>
+
+</Project>

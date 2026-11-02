@@ -1,0 +1,96 @@
+# Build123d.Occt members the OCCT.NET backend writes by hand (src/Build123d.OcctNet/Runtime), which tools/OcctNetGen
+# leaves out. A line is a whole type, or Type::Member for every overload, or Type::Member(T1, ref T2) for one.
+
+# Whole types: OCCT's Visualization colours, which OCCT.NET doesn't port
+Quantity_Color
+Quantity_ColorRGBA
+
+# Builders: internal to OCCT.NET, which freezes shapes once handed out
+TopoDS_Builder::.ctor
+TopoDS_Builder::MakeWire
+TopoDS_Builder::MakeShell
+TopoDS_Builder::MakeSolid
+TopoDS_Builder::MakeCompSolid
+TopoDS_Builder::MakeCompound
+TopoDS_Builder::Add
+TopoDS_Builder::Remove
+BRep_Builder::.ctor
+
+# A shape's in-place forms: internal to OCCT.NET, so they change the wrapper's own copy
+TopoDS_Shape::Nullify
+TopoDS_Shape::Location(TopLoc_Location)
+TopoDS_Shape::Location(TopLoc_Location, bool)
+TopoDS_Shape::Orientation(TopAbs_Orientation)
+TopoDS_Shape::Move
+TopoDS_Shape::Reverse
+TopoDS_Shape::Complement
+TopoDS_Shape::Compose
+
+# Collections: constructors (maps of shapes compare with IsSame) and enumeration
+TopTools_ListOfShape::.ctor
+TopTools_ListOfShape::ToArray
+TopTools_ListOfShape::GetEnumerator
+TopTools_SequenceOfShape::.ctor
+TopTools_SequenceOfShape::ToArray
+TopTools_SequenceOfShape::GetEnumerator
+TopTools_HSequenceOfShape::.ctor
+TopTools_HSequenceOfShape::ToArray
+TopTools_HSequenceOfShape::GetEnumerator
+TopTools_MapOfShape::.ctor
+TopTools_MapOfShape::ToArray
+TopTools_MapOfShape::GetEnumerator
+TopTools_IndexedMapOfShape::.ctor
+TopTools_IndexedMapOfShape::ToArray
+TopTools_IndexedMapOfShape::GetEnumerator
+TopTools_DataMapOfShapeShape::.ctor
+TopTools_DataMapOfShapeShape::ToArray
+TopTools_DataMapOfShapeShape::GetEnumerator
+TopTools_IndexedDataMapOfShapeListOfShape::.ctor
+TopTools_IndexedDataMapOfShapeListOfShape::ToArray
+TopTools_IndexedDataMapOfShapeListOfShape::GetEnumerator
+TColgp_Array1OfPnt::.ctor
+TColgp_Array1OfPnt::ToArray
+TColgp_Array1OfPnt::GetEnumerator
+TColgp_Array1OfPnt2d::.ctor
+TColgp_Array1OfPnt2d::ToArray
+TColgp_Array1OfPnt2d::GetEnumerator
+TColgp_Array1OfVec::.ctor
+TColgp_Array1OfVec::ToArray
+TColgp_Array1OfVec::GetEnumerator
+TColgp_Array2OfPnt::.ctor
+TColgp_Array2OfPnt::ToArray
+TColgp_Array2OfPnt::GetEnumerator
+TColgp_HArray1OfPnt::.ctor
+TColgp_HArray1OfPnt::ToArray
+TColgp_HArray1OfPnt::GetEnumerator
+TColgp_HArray2OfPnt::.ctor
+TColgp_HArray2OfPnt::ToArray
+TColgp_HArray2OfPnt::GetEnumerator
+TColStd_Array1OfInteger::.ctor
+TColStd_Array1OfInteger::ToArray
+TColStd_Array1OfInteger::GetEnumerator
+TColStd_Array1OfReal::.ctor
+TColStd_Array1OfReal::ToArray
+TColStd_Array1OfReal::GetEnumerator
+TColStd_Array2OfReal::.ctor
+TColStd_Array2OfReal::ToArray
+TColStd_Array2OfReal::GetEnumerator
+TColStd_HArray1OfBoolean::.ctor
+TColStd_HArray1OfBoolean::ToArray
+TColStd_HArray1OfBoolean::GetEnumerator
+TColStd_HArray1OfReal::.ctor
+TColStd_HArray1OfReal::ToArray
+TColStd_HArray1OfReal::GetEnumerator
+TColStd_HArray2OfReal::.ctor
+TColStd_HArray2OfReal::ToArray
+TColStd_HArray2OfReal::GetEnumerator
+TopoDS_Shape::StdHash
+BRepLib::BuildCurves3d
+BRepMesh_IncrementalMesh::.ctor
+
+# Data exchange: the stream forms with limits and cancellation (src/Build123d.OcctNet/Runtime/Exchange.cs), which the
+# native binding writes by hand too (src/Build123d.Occt/Runtime/Exchange.Native.cs)
+STEPControl_Reader::ReadStream
+STEPControl_Reader::TransferRoots(global::System.Threading.CancellationToken)
+STEPControl_Writer::Transfer(TopoDS_Shape, STEPControl_StepModelType, StepWriteSettings, global::System.Threading.CancellationToken)
+STEPControl_Writer::WriteStream

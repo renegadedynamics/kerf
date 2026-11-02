@@ -1,0 +1,464 @@
+using Build123d.Occt;
+
+namespace Build123d;
+
+/// <summary>The module-level functions of build123d's topology/one_d.py.</summary>
+public static class OneD
+{
+    /// <summary>The wires made by connecting edges end to end within <paramref name="tolerance"/>.</summary>
+    public static ShapeList<Wire> EdgesToWires(IEnumerable<Edge> edges, double tolerance = 1e-6)
+    {
+        using var edgesIn = new TopTools_HSequenceOfShape();
+        foreach (var edge in edges)
+            if (!edge.IsEmpty)
+                edgesIn.Append(edge.TopoShape);
+        using var wiresOut = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
+        if (wiresOut is null)
+            return [];
+        return new ShapeList<Wire>(wiresOut.Select(w => new Wire(TopoDS.Wire(w))));
+    }
+
+    internal static Shape Add1D(Shape self, IEnumerable<Shape?> other)
+    {
+        var topoSummands = other.OfType<Shape>().Where(o => !o.IsEmpty)
+                                .SelectMany(o => TopoUtil.TopLevelShapes(o.TopoShape)).ToList();
+        if (topoSummands.Count == 0)
+            return self;
+        if (topoSummands.Any(s => TopoUtil.Dim(s) != 1))
+            throw new ArgumentException("Only shapes with the same dimension can be added");
+        var summands = topoSummands.Select(s => (Shape1D)Shape.Cast(s)).ToList();
+        var summandEdges = summands.SelectMany(s => s.Edges()).ToList();
+        var brought = summands.Select(s => s.TopoShape).ToList();
+
+        Shape sum;
+        if (self.IsEmpty)
+        {
+            if (summands.Count == 1)
+                sum = summands[0];
+            else
+            {
+                try
+                {
+                    sum = JoinedWire(summandEdges, [], brought);
+                }
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+                {
+                    sum = summands[0].Fuse(summands.Skip(1));
+                    if (sum.History is not null)
+                        sum = sum.MadeBy(sum.History.WithInputs([], brought));
+                }
+            }
+        }
+        else
+        {
+            try
+            {
+                sum = JoinedWire([.. self.Edges(), .. summandEdges], [self.TopoShape], brought);
+            }
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+            {
+                sum = self.Fuse(summands);
+            }
+        }
+        if (SkipClean.Clean)
+            sum = sum.Clean();
+        // A single edge is returned as an Edge, with the record of how it was made
+        return sum.Edges().Count == 1 ? sum.SingleEdge().MadeBy(sum.History) : sum;
+    }
+
+    /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
+    public static TopoDS_Shape OffsetTopodsFace(TopoDS_Face face, double amount)
+    {
+        using var offsetter = new BRepOffset_MakeOffset();
+        offsetter.Initialize(face, amount, Constants.Tolerance);
+        offsetter.MakeOffsetShape();
+        return offsetter.Shape();
+    }
+
+    /// <summary>
+    /// The edges of <paramref name="parent"/> (default the edge's <see cref="Shape.TopoParent"/>) connected to
+    /// <paramref name="edge"/> with at least the given continuity. A moved copy of one of the parent's edges gets its
+    /// neighbours in its own frame.
+    /// </summary>
+    public static ShapeList<Edge> ConnectedEdges(Edge edge, Shape? parent = null, ContinuityLevel continuity = ContinuityLevel.C0)
+    {
+        parent ??= edge.TopoParent ?? throw new ArgumentException("edge has no valid parent");
+        if (edge.IsEmpty)
+            throw new ArgumentException("edge is empty");
+        var topoEdges = parent.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape).ToList();
+        // Work with the parent's own copy of the edge so vertices match
+        var parentEdge = TopoUtil.FindSame(edge.TopoShape, topoEdges);
+        if (parentEdge is null)
+            return [];
+        var given = TopoDS.Edge(parentEdge);
+        using var relocation = TopoUtil.RelocationBetween(given, edge.TopoShape);
+        var connected = new List<TopoDS_Shape>();
+        foreach (var other in topoEdges)
+        {
+            if (given.IsSame(other))
+                continue;
+            using var otherEdge = TopoDS.Edge(other);
+            var common = Vertex.CommonVertex(given, otherEdge);
+            if (common.IsEmpty)
+                continue;
+            var u1 = BRep_Tool.Parameter(common.TopoVertex, given);
+            var u2 = BRep_Tool.Parameter(common.TopoVertex, otherEdge);
+            using var curve1 = new BRepAdaptor_Curve(given);
+            using var curve2 = new BRepAdaptor_Curve(otherEdge);
+            var actual = BRepLProp.Continuity(curve1, curve2, u1, u2, Constants.Tolerance, Constants.Tolerance);
+            var level = actual switch
+            {
+                GeomAbs_Shape.GeomAbs_C0 => ContinuityLevel.C0,
+                GeomAbs_Shape.GeomAbs_G1 or GeomAbs_Shape.GeomAbs_C1 => ContinuityLevel.C1,
+                _ => ContinuityLevel.C2,
+            };
+            if (level >= continuity && !connected.Any(c => c.IsSame(other)))
+                connected.Add(other);
+        }
+        return relocation.IsIdentity()
+            ? new ShapeList<Edge>(connected.Select(e => new Edge(TopoDS.Edge(e))))
+            : new ShapeList<Edge>(connected.Select(e => new Edge(TopoDS.Edge(e.Moved(relocation)))));
+    }
+
+    /// <summary>
+    /// The faces of <paramref name="parent"/> (default the edge's <see cref="Shape.TopoParent"/>) that meet at an edge.
+    /// A moved copy of one of the parent's edges gets the faces in its own frame; an edge the parent doesn't contain has none.
+    /// </summary>
+    public static List<TopoDS_Face> ConnectedFaces(Edge edge, Shape? parent = null) => ConnectedFaces((Shape1D)edge, parent);
+
+    internal static List<TopoDS_Face> ConnectedFaces(Shape1D edge, Shape? parent = null)
+    {
+        if (edge.IsEmpty)
+            throw new ArgumentException("Can't explore from an empty edge");
+        parent ??= edge.TopoParent;
+        if (parent is null || parent.IsEmpty)
+            throw new InvalidOperationException("edge has no valid parent");
+        using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+        TopExp.MapShapesAndAncestors(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
+        // The map keys on TShape and Location, so a moved edge isn't found by Contains
+        var parentEdge = TopoUtil.FindSame(edge.TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey));
+        if (parentEdge is null)
+            return [];
+        using var relocation = TopoUtil.RelocationBetween(parentEdge, edge.TopoShape);
+        using var unique = new TopTools_IndexedMapOfShape();
+        using (var faces = map.FindFromKey(parentEdge))
+            foreach (var face in faces)
+                unique.Add(face);
+        return [.. unique.Select(f => TopoDS.Face(f.Moved(relocation)))];
+    }
+
+    /// <summary>Whether the face meets itself along the edge, as a cylinder does at its seam.</summary>
+    internal static bool IsSeamOf(TopoDS_Edge edge, TopoDS_Face face)
+    {
+        int count = 0;
+        using var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        for (; explorer.More(); explorer.Next())
+            if (explorer.Current().IsSame(edge))
+                count++;
+        return count > 1;
+    }
+
+    /// <summary>The edge with the orientation it has in the face's boundary.</summary>
+    private static TopoDS_Edge AsBoundedBy(TopoDS_Face face, TopoDS_Edge edge)
+    {
+        using var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        for (; explorer.More(); explorer.Next())
+            if (explorer.Current().IsSame(edge))
+                return TopoDS.Edge(explorer.Current());
+        throw new ArgumentException("edge is not on the face");
+    }
+
+    /// <summary>
+    /// Classifies the crease between two faces along their shared edge. At each sample the faces' outward normals and the
+    /// edge tangent (the way the second face's boundary runs) give the direction from the edge into the second face,
+    /// which dips behind the first face's tangent plane at a convex crease and rises above it at a concave one. Normals
+    /// that agree within <paramref name="sinTolerance"/> are a smooth join; degenerate samples are skipped.
+    /// </summary>
+    internal static Convexity DihedralConvexity(TopoDS_Edge edge, TopoDS_Face face1, TopoDS_Face face2,
+                                                int samples = 7, double sinTolerance = 1e-4)
+    {
+        using var curve = new BRepAdaptor_Curve(edge);
+        double first = curve.FirstParameter(), last = curve.LastParameter();
+        double f1 = first, l1 = last, f2 = first, l2 = last;
+        using var pcurve1 = BRep_Tool.CurveOnSurface(edge, face1, ref f1, ref l1)!;
+        using var pcurve2 = BRep_Tool.CurveOnSurface(edge, face2, ref f2, ref l2)!;
+        bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
+        using var props1 = new BRepGProp_Face(face1);
+        using var props2 = new BRepGProp_Face(face2);
+        var kinds = new HashSet<Convexity>();
+        for (int i = 0; i < samples; i++)
+        {
+            var param = first + (last - first) * (i + 0.5) / samples;
+            using var point = new gp_Pnt();
+            using var tangent = new gp_Vec();
+            curve.D1(param, point, tangent);
+            using var uv1 = pcurve1.Value(param);
+            using var uv2 = pcurve2.Value(param);
+            using var normal1 = new gp_Vec();
+            using var normal2 = new gp_Vec();
+            props1.Normal(uv1.X(), uv1.Y(), point, normal1);
+            props2.Normal(uv2.X(), uv2.Y(), point, normal2);
+            if (Math.Min(tangent.Magnitude(), Math.Min(normal1.Magnitude(), normal2.Magnitude())) < 1e-12)
+                continue;
+            tangent.Normalize();
+            normal1.Normalize();
+            normal2.Normalize();
+            using (var cross = normal1.Crossed(normal2))
+                if (cross.Magnitude() < sinTolerance)
+                {
+                    kinds.Add(Convexity.Smooth);
+                    continue;
+                }
+            if (reversedInFace2)
+                tangent.Reverse();
+            using var intoFace2 = normal2.Crossed(tangent);
+            kinds.Add(intoFace2.Dot(normal1) < 0 ? Convexity.Convex : Convexity.Concave);
+        }
+        if (kinds.Count == 0)
+            throw new InvalidOperationException("the faces are degenerate along this edge");
+        kinds.Remove(Convexity.Smooth);
+        return kinds.Count switch
+        {
+            0 => Convexity.Smooth,
+            1 => kinds.Single(),
+            _ => Convexity.Saddle,
+        };
+    }
+
+    /// <summary>
+    /// A wire from connected edges, with the record of what became of each: <c>BRepBuilderAPI_MakeWire</c> copies every
+    /// edge so neighbours share vertices, so each input edge is recorded as modified into the result edge with the same
+    /// geometry, and its vertices into those at the same points.
+    /// </summary>
+    internal static Wire JoinedWire(IReadOnlyList<Edge> edges, IEnumerable<TopoDS_Shape> before, IEnumerable<TopoDS_Shape> brought)
+    {
+        var wire = new Wire(edges);
+        using var history = new BRepTools_History();
+        var placed = wire.Edges();
+        var midpoints = placed.Select(e => e.PositionAt(0.5)).ToList();
+        foreach (var source in edges)
+        {
+            var midpoint = source.PositionAt(0.5);
+            var distances = midpoints.Select(m => (m - midpoint).Length).ToList();
+            var min = distances.Min();
+            if (min > Constants.Tolerance)
+                continue;   // MakeWire keeps every edge it is given
+            var match = placed[distances.IndexOf(min)];
+            if (!match.TopoShape.IsSame(source.TopoShape))
+                history.AddModified(source.TopoShape, match.TopoShape);
+            RecordMatchingVertices(history, source.TopoShape, match.TopoShape);
+        }
+        return (Wire)wire.MadeBy(ShapeHistory.FromHistory(history, before, brought));
+    }
+
+    /// <summary>Records the vertices of a rebuilt edge as modified from those at the same points.</summary>
+    internal static void RecordMatchingVertices(BRepTools_History history, TopoDS_Shape source, TopoDS_Shape placed)
+    {
+        var placedVertices = ShapeHistory.TrackedSubshapes([placed]).Where(v => v.ShapeType() == TopAbs_ShapeEnum.TopAbs_VERTEX).ToList();
+        foreach (var old in ShapeHistory.TrackedSubshapes([source]))
+        {
+            if (old.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX)
+                continue;
+            using var oldVertex = TopoDS.Vertex(old);
+            using var oldPoint = BRep_Tool.Pnt(oldVertex);
+            foreach (var @new in placedVertices)
+            {
+                if (@new.IsSame(old))
+                    break;
+                using var newVertex = TopoDS.Vertex(@new);
+                using var newPoint = BRep_Tool.Pnt(newVertex);
+                if (newPoint.Distance(oldPoint) < Constants.Tolerance)
+                {
+                    history.AddModified(old, @new);
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The wire with its offset curves (which STEP export, among others, can't handle) replaced by B-splines within a
+    /// tenth of the tolerance; a wire without offset curves is returned as it is.
+    /// </summary>
+    internal static Wire OffsetCurvesToBSplines(Wire wire)
+    {
+        var edges = wire.Edges();
+        if (edges.All(e => e.GeomType != GeomType.Offset))
+            return wire;
+        var fitted = new List<Edge>();
+        foreach (var edge in edges)
+        {
+            if (edge.GeomType != GeomType.Offset)
+            {
+                fitted.Add(edge);
+                continue;
+            }
+            using var adaptor = edge.GeomAdaptor();
+            // Fit only the part of the offset curve the edge uses, as it lies before the edge's location
+            using var curveLocation = new TopLoc_Location();
+            double f = 0, l = 0;
+            using var curve = BRep_Tool.Curve(edge.TopoEdge, curveLocation, ref f, ref l);
+            using var trimmed = new Geom_TrimmedCurve(curve, adaptor.FirstParameter(), adaptor.LastParameter());
+            using var approximation = new GeomConvert_ApproxCurve(trimmed, Constants.Tolerance / 10, GeomAbs_Shape.GeomAbs_C2, 100, 9);
+            if (!approximation.HasResult())
+                throw new InvalidOperationException("2D offset curve could not be converted to a spline");
+            using var spline = approximation.Curve();
+            using var maker = new BRepBuilderAPI_MakeEdge(spline);
+            // The curve is stored without the placement or direction of its edge
+            using var placed = maker.Edge().Located(edge.TopoShape.Location());
+            fitted.Add(new Edge(TopoDS.Edge(placed.Oriented(edge.TopoShape.Orientation()))));
+        }
+        // The edges came from the wire with its direction applied, so the new wire winds the same way
+        return new Wire(fitted);
+    }
+}
+
+public abstract partial class Shape1D
+{
+    /// <summary>
+    /// This planar edge or wire offset within its plane.
+    /// </summary>
+    /// <remarks>
+    /// Left and right are those of someone travelling along the curve from its start, the plane's normal pointing up. The
+    /// plane is <paramref name="plane"/> if given, else the one the curve lies in, with its normal taken from the curve's
+    /// location or from Plane.XY where one of them matches; a straight curve lies in many planes, and that of its location
+    /// is used if the line is in it, then Plane.XY. The offset of a line is a line and of a circle a circle; other curves
+    /// offset into offset curves, which are replaced by B-splines unless <paramref name="asBSpline"/> is false.
+    /// </remarks>
+    /// <param name="distance">How far to offset.</param>
+    /// <param name="kind">The transition at corners.</param>
+    /// <param name="side">Which side to offset to.</param>
+    /// <param name="closed">For one side of an open curve, close the offset back to the curve.</param>
+    /// <param name="plane">The plane of the offset.</param>
+    /// <param name="asBSpline">Replace offset curves by B-splines.</param>
+    /// <returns>An edge, or a wire.</returns>
+    public Shape1D Offset2D(double distance, Kind kind = Kind.Arc, Side side = Side.Both, bool closed = true, Plane? plane = null,
+                            bool asBSpline = true)
+    {
+        var join = kind switch
+        {
+            Kind.Arc => GeomAbs_JoinType.GeomAbs_Arc,
+            Kind.Intersection => GeomAbs_JoinType.GeomAbs_Intersection,
+            _ => GeomAbs_JoinType.GeomAbs_Tangent,
+        };
+        var line = this as Wire ?? new Wire([(Edge)this]);
+        var lineEdges = line.Edges();
+        var start = line.PositionAt(0);
+        var tangent = line.TangentAt(0);
+        var startAxis = new Axis(start, tangent);
+        bool isStraight = lineEdges.All(e => e.GeomType == GeomType.Line
+                                             && new Axis(e.PositionAt(0), e.TangentAt(0)).IsCoaxial(startAxis));
+
+        // The normal of the plane of the offset: the curve fixes the plane but not which way its normal points (and a
+        // straight one doesn't fix the plane), so both are settled by the curve's location, or failing that Plane.XY
+        Vector[] references = [Location.ZAxis.Direction, lineEdges[0].Location.ZAxis.Direction, new Vector(0, 0, 1)];
+        Vector? normal = null;
+        if (plane is not null)
+            normal = plane.ZDir;
+        else if (isStraight)
+        {
+            foreach (var r in references)
+                if (Math.Abs(r.Dot(tangent)) < Constants.Tolerance)
+                {
+                    normal = r;
+                    break;
+                }
+        }
+        else if (line.CommonPlane() is { } own)
+        {
+            normal = own.ZDir;
+            foreach (var r in references)
+                if (Math.Abs(own.ZDir.Dot(r)) > 1 - Constants.Tolerance)
+                {
+                    normal = r;
+                    break;
+                }
+        }
+
+        var signedDistance = distance;
+        if (side != Side.Both && line.IsClosed && normal is { } n)
+        {
+            // OCCT offsets a closed wire outwards for a positive distance; which side is outside depends on the winding
+            int steps = Math.Max(16, 8 * lineEdges.Count);
+            var points = Enumerable.Range(0, steps).Select(i => line.PositionAt(i / (double)steps)).ToList();
+            double twiceArea = 0;
+            for (int i = 1; i < steps - 1; i++)
+                twiceArea += (points[i] - points[0]).Cross(points[i + 1] - points[0]).Dot(n);
+            bool leftIsOutside = twiceArea < 0;
+            bool outwards = leftIsOutside == (side == Side.Left);
+            signedDistance = outwards ? Math.Abs(distance) : -Math.Abs(distance);
+        }
+
+        // Avoiding a bug when the wire contains a single edge
+        TopoDS_Wire topoWire = lineEdges.Count == 1
+            ? new Wire([lineEdges[0].Trim(0.0, 0.5), lineEdges[0].Trim(0.5, 1.0)]).TopoWire
+            : line.TopoWire;
+        using var builder = new BRepOffsetAPI_MakeOffset();
+        if (isStraight && normal is { } sn)
+        {
+            // A straight line has no plane of its own to offset within
+            using var spine = MakePlaneFace(new Plane(start, zDir: sn));
+            builder.Init(spine, join);
+        }
+        else
+            builder.Init(join);
+        builder.AddWire(topoWire);
+        builder.Perform(signedDistance);
+        if (!builder.IsDone())
+            throw new InvalidOperationException($"2D offset failed with distance {distance}");
+        var obj = TopoUtil.Downcast(builder.Shape());
+        if (obj is TopoDS_Compound c)
+            obj = TopoUtil.UnwrapCompound(c);
+        if (obj is not TopoDS_Wire offsetTopo)
+            throw new InvalidOperationException("Unexpected result type");   // likely several wires
+        var offsetWire = new Wire(offsetTopo);
+        if (asBSpline)
+            offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
+
+        if (side != Side.Both && !line.IsClosed)
+        {
+            // Remove the end arcs
+            Vector[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
+            var offsetEdges = offsetWire.Edges().FilterBy(
+                e => e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance),
+                reverse: true);
+            var wires = OneD.EdgesToWires(offsetEdges);
+            if (normal is null)
+            {
+                var angles = wires.Select(w => line.TangentAt(0).GetSignedAngle(w.PositionAt(0.5) - line.PositionAt(0))).ToList();
+                offsetWire = side == Side.Left ? wires[angles[0] > angles[1] ? 1 : 0] : wires[angles[0] <= angles[1] ? 1 : 0];
+            }
+            else
+            {
+                // Each side starts beside the start of the line; a side can be missing, as when an arc is offset inwards
+                // by more than its radius
+                var toTheLeft = normal.Value.Cross(tangent);
+                var onSide = wires.Where(w =>
+                {
+                    var besideStart = new[] { w.PositionAt(0), w.PositionAt(1) }.MinBy(e => (e - start).Length);
+                    return (besideStart - start).Dot(toTheLeft) > 0 == (side == Side.Left);
+                }).ToList();
+                if (onSide.Count == 0)
+                    throw new ArgumentException(
+                        $"Nothing is left of an offset of {distance} on the {side.ToString().ToUpperInvariant()} side - "
+                        + "reduce the distance or use the other side");
+                offsetWire = onSide[0];
+            }
+            if (closed)
+            {
+                var self0 = line.PositionAt(0);
+                var self1 = line.PositionAt(1);
+                var end0 = offsetWire.PositionAt(0);
+                var end1 = offsetWire.PositionAt(1);
+                Edge edge0, edge1;
+                if ((self0 - end0).Length - Math.Abs(distance) <= Constants.Tolerance)
+                    (edge0, edge1) = (Edge.MakeLine(self0, end0), Edge.MakeLine(self1, end1));
+                else
+                    (edge0, edge1) = (Edge.MakeLine(self0, end1), Edge.MakeLine(self1, end0));
+                offsetWire = new Wire([.. line.Edges(), .. offsetWire.Edges(), edge0, edge1]);
+            }
+        }
+        var result = offsetWire.Edges();
+        return result.Count == 1 ? result[0] : offsetWire;
+    }
+}
