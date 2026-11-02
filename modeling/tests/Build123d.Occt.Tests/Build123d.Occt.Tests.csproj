@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <!-- The native binding's own tests: run on the native backend only (-p:Build123dBackend=Native); dotnet test skips them otherwise -->
+    <IsTestProject Condition="'$(Build123dBackend)' != 'Native'">false</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>

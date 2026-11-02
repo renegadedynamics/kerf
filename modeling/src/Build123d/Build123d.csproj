@@ -6,6 +6,8 @@
     <!-- The public API is documented -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- Published on the OCCT.NET backend only; tools/pack.ps1 packs the native one for its load-context test -->
+    <IsPackable Condition="'$(Build123dBackend)' == 'Native' And '$(NativeStageDir)' == ''">false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

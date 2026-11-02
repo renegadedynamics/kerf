@@ -12,7 +12,7 @@ OpenCascade (OCCT).
 | Naming | Idiomatic .NET (PascalCase, `Try*`, properties instead of getters). A Python → .NET name map is kept in `docs/name-map.md`. |
 | OCCT | 8.0.x, built from source and linked dynamically (OCCT is LGPL 2.1 with an exception) |
 | Bindings | A thin C ABI over the subset of OCCT that build123d uses, generated from a whitelist, with C# `SafeHandle` wrappers on top |
-| Managed backend (spike) | `-p:Build123dBackend=OcctNet` builds `Build123d` on OCCT.NET, the managed port, through a second implementation of `Build123d.Occt`'s public API (`src/Build123d.OcctNet`) that forwards to OCCT.NET and is generated. Native stays the default. See "The OCCT.NET backend" |
+| Managed backend (the default) | `Build123d` builds on OCCT.NET, the managed port, through a second implementation of `Build123d.Occt`'s public API (`src/Build123d.OcctNet`) that forwards to OCCT.NET and is generated. Native is opt-in with `-p:Build123dBackend=Native`, as the oracle's reference, and is no longer published. See "The OCCT.NET backend" |
 
 ## Principles
 
@@ -236,13 +236,32 @@ change every shape sharing it, and race between threads. So:
 
 #### The OCCT.NET backend
 
-A spike: `Build123d` running on OCCT.NET, the managed C# port of OCCT 8 (class for class), with no native code.
-Native OCCT stays the default backend.
+`Build123d` running on OCCT.NET, the managed C# port of OCCT 8 (class for class), with no native code. A spike
+until OCCT.NET's phase 9, which made it the default backend.
 
-- **The switch.** `Build123dBackend` (`Native` by default, or `OcctNet`) chooses which project `Build123d`
-  references: `src/Build123d.Occt` (the shim) or `src/Build123d.OcctNet`, which references OCCT.NET's projects at
-  `OcctNetRoot`. Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`). `OCCTNET` is defined for
-  the tests' few backend-specific cases.
+- **The switch.** `Build123dBackend` (`OcctNet` by default, or `Native`) chooses which project `Build123d`
+  references: `src/Build123d.OcctNet` or `src/Build123d.Occt` (the shim). `OCCTNET` is defined for the tests' few
+  backend-specific cases.
+- **Where OCCT.NET comes from.** By default the `OcctNet.*` packages on nuget.org, at `OcctNetVersion`
+  (`Directory.Build.props`), so a fresh clone builds and tests with a plain `dotnet test`. With `OcctNetRoot` given,
+  `Build123d.OcctNet` references that OCCT.NET checkout's projects instead: for working on both together, and for
+  OCCT.NET's `tools/pack-nuget.ps1`, which packs `Build123d.OcctNet` and `Build123d` that way (the project references
+  become the same package dependencies).
+- **Native** (`-p:Build123dBackend=Native`) stays buildable and tested, as the reference: OCCT.NET's oracle tests
+  reference `Build123d` and `Build123d.Occt` with `Build123dBackend=Native` on the project reference, whatever the
+  default (and restore by the project graph, as NuGet's default walk would restore them on the default backend).
+  `Build123dNativeRoot` (this checkout by default) says whose `.deps/install` and `native/out` it copies, so a
+  worktree can use another checkout's native build. It isn't published: `Build123d.Occt` and native `Build123d` are
+  packable only through `tools/pack.ps1` (which passes the staged natives, `NativeStageDir`), into the local feed,
+  versioned `0.1.0-native`, for the load-context test.
+- **Output folders.** Each backend builds into folders of its own, so the two sit side by side: the default into
+  `bin` and `obj`, native into `bin-native` and `obj-native`. (Before the switch, OCCT.NET built into `bin-occtnet` and
+  `obj-occtnet`; those are still excluded from the projects' items, in case an old checkout has them.)
+- **Tests on one backend only.** `Build123d.Occt.Tests`, the binding's tests, is a test project on the native backend
+  only (`IsTestProject` false otherwise, so `dotnet test` skips it). In `Build123d.Tests`, `NativeFact` skips the
+  shim's tests under OCCT.NET, and `KnownOcctNetDifferenceFact` the one test that differs (`FilletRecord`, below).
+  The packaging tests skip without their inputs: the native packages (`B3D_PACKAGES`, set by `tools/pack.ps1`) or
+  OCCT.NET's build output (`B3D_OCCTNET_LIB`).
 - **Why a second `Build123d.Occt`, rather than `Build123d` compiled against `Occt` directly.** OCCT.NET's API differs
   from OCCT's in ways `Build123d` relies on:
   - its shapes and `gp` types are structs, so `TopoDS_Edge` isn't a `TopoDS_Shape` and can't be null or
@@ -308,7 +327,8 @@ Native OCCT stays the default backend.
 - **Measured** (OCCT.NET at be3b97db, with its phase 8 through STEPCAFControl; Windows x64):
   - 1,875 of 1,881 tests pass, 5 are skipped and 1 fails: `Fillet2DTests.FilletRecord`, whose 2D fillet's history
     gives a wire's first vertex two modified shapes where native gives one (an OCCT.NET difference, from before
-    phase 7). Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
+    phase 7). Since the switch to OCCT.NET by default it is skipped there (`KnownOcctNetDifferenceFact`), so 1,875
+    pass and 6 are skipped. Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
     (STEPControl), 1,856 of 1,862 passed; at 991bbe6, with
     phase 7, 1,813 of 1,819 passed; at bad099b, before it, 1,676 passed and 130 failed, 128 of them on phase 7;
   - the 37 introductory examples (all but 34, text) match native's volume to a part in 10⁹ and its face count

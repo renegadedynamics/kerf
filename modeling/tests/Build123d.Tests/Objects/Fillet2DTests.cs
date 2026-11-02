@@ -321,7 +321,7 @@ public class Fillet2DTests
         return $"{string.Join(" ", inputs)} new {string.Concat(news)}";
     }
 
-    [Fact]
+    [KnownOcctNetDifferenceFact("the wire's first vertex has two modified shapes where native gives one (docs/design.md)")]
     public void FilletRecord()
     {
         // The filleted vertex is removed (its arc counts as new), the edges beside it are modified and the rest untouched

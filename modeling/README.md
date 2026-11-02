@@ -4,7 +4,31 @@ A .NET 10 port of [build123d](https://github.com/gumyr/build123d), the Python CA
 OpenCascade (OCCT). Work in progress. See [docs/design.md](docs/design.md) for the design and the
 phase plan.
 
-## Building the native dependencies
+## Building and testing
+
+`Build123d` runs on OCCT.NET, the managed C# port of OCCT, with no native libraries. OCCT.NET comes from its
+packages on nuget.org (`OcctNet.Foundation`, `OcctNet.ModelingData`, `OcctNet.ModelingAlgorithms`,
+`OcctNet.DataExchange`, at the version `OcctNetVersion` in `Directory.Build.props`), so a fresh clone needs only the
+.NET 10 SDK:
+
+```powershell
+dotnet test
+```
+
+To work on build123d.NET and OCCT.NET together, point `OcctNetRoot` at an OCCT.NET checkout, and `Build123d.OcctNet`
+references its projects in place of the packages:
+
+```powershell
+dotnet test -p:OcctNetRoot=C:/src/OCCT.NET/
+```
+
+The native backend, `Build123d` over native OCCT through the `b3docct` shim, is opt-in with
+`-p:Build123dBackend=Native`, and needs the native build below. It is the reference OCCT.NET's oracle tests compare
+against, and is no longer published. Each backend builds into folders of its own, so the two sit side by side: the
+default into `bin` and `obj`, native into `bin-native` and `obj-native`. `Build123dNativeRoot` takes the native build
+from another checkout (a worktree, say) in place of this one's.
+
+## Building the native dependencies (native backend)
 
 OCCT 8.0 and FreeType are built from source by a CMake superbuild in [native/occt](native/occt).
 The result lands in `.deps/install/<rid>`.
@@ -38,43 +62,42 @@ generated C++ and C# are committed, so you only need to regenerate after editing
 ./tools/generate-bindings.ps1            # parses the OCCT headers from .deps/install
 ```
 
-Build the native shim (`b3docct`), then the .NET solution:
+Build the native shim (`b3docct`), then the .NET solution on the native backend:
 
 ```powershell
 ./native/build-shim.ps1                  # Windows; ./native/build-shim.sh <rid> on Linux/macOS
-dotnet test
+dotnet test -p:Build123dBackend=Native
 ```
+
+`tests/Build123d.Occt.Tests`, the binding's own tests, runs on the native backend only; `dotnet test` skips it on
+OCCT.NET.
 
 `Build123d.Occt` copies the OCCT, FreeType and shim libraries for the host runtime into the output
 directory of anything that references it.
 
 ## Packages
 
+`Build123d` and `Build123d.OcctNet` are published on OCCT.NET, packed with OCCT.NET's packages by OCCT.NET's
+`tools/pack-nuget.ps1`. The native backend is no longer published, and its projects aren't packable on their own.
+`tools/pack.ps1` still packs it, for its load-context test:
+
 ```powershell
-./tools/pack.ps1                         # Windows x64; -VersionSuffix preview.1 for a pre-release
+./tools/pack.ps1                         # Windows x64; versioned 0.1.0-native by default
 ```
 
-This writes `Build123d` and `Build123d.Occt` to the local folder feed `artifacts/packages`.
+This writes the native `Build123d` and `Build123d.Occt` to the local folder feed `artifacts/packages`.
 `Build123d.Occt` carries the shim, plus only the OCCT and FreeType libraries the shim depends on,
 flat under `runtimes/win-x64/native`. The script then runs
 [tests/Build123d.Packaging.Tests](tests/Build123d.Packaging.Tests). That test unpacks the packages into
 a folder of their own and loads them through a collectible `AssemblyLoadContext`, as Bento's extensions
 are loaded. Inside that context it makes and tessellates a box on a background thread, checks the native
-libraries came from that folder, and checks the context unloads. The test needs the packages, so it
-isn't part of the solution's `dotnet test`. Changes are listed in [CHANGELOG.md](CHANGELOG.md), and the
+libraries came from that folder, and checks the context unloads. The test needs the packages (`B3D_PACKAGES`, which the
+script sets), so it isn't part of the solution's `dotnet test`, and skips without them. Changes are listed in [CHANGELOG.md](CHANGELOG.md), and the
 shipped native code's licences in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-## The OCCT.NET backend (spike)
+## The OCCT.NET backend
 
-`Build123d` can also run on OCCT.NET, the managed C# port of OCCT, with no native libraries. The native backend stays
-the default. To build and test on OCCT.NET, point `OcctNetRoot` at an OCCT.NET checkout (by default `../OCCT.NET`
-beside this repository):
-
-```powershell
-dotnet test tests/Build123d.Tests -p:Build123dBackend=OcctNet -p:OcctNetRoot=C:/src/OCCT.NET/
-```
-
-Each backend builds into folders of its own (`bin-occtnet`, `obj-occtnet`), so the two don't mix. OCCT.NET's phase 7
+The default backend (see "Building and testing"). OCCT.NET's phase 7
 brings 3D fillets, chamfers, offsets, drafts and `BRepFeat`, and its phase 8 STEP, so every class is forwarded; STL,
 glTF and 3MF (`Importers`, `Exporters3D`) are OCCT.NET's only. The wrappers in
 `src/Build123d.OcctNet/Generated` are regenerated with `./tools/generate-occtnet.ps1` when the native bindings or
