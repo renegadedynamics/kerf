@@ -2768,9 +2768,12 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public NCollection_HSequence<Standard_Transient>? GiveList(Standard_Transient? obj)
     {
-        //   Already a list: an NCollection_HSequence is not a Standard_Transient in OCCT.NET (decision 17), so
-        //   OCCT's first case (the object is the list) never happens; see GiveList(string, string)
-        NCollection_HSequence<Standard_Transient> list = null;
+        //   Already a list
+        NCollection_HSequence<Standard_Transient> list = obj as NCollection_HSequence<Standard_Transient>;
+        if (list is not null)
+        {
+            return list;
+        }
 
         //   Nothing at all: returns nothing at all
         if (obj is null)
@@ -2860,20 +2863,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// selection is used (which contains a default input selection) if &lt;selname&gt; is erroneous, a null
     /// handle is returned REMARK : selname is processed as &lt;first second&gt; of preceding GiveList
     /// </summary>
-    /// <remarks>
-    /// OCCT.NET: OCCT's <c>ent</c> is a transient that may be a list (an NCollection_HSequence handle); the port
-    /// takes the list in its own overload, and this one an entity or an object GiveList interprets.
-    /// </remarks>
     public NCollection_HSequence<Standard_Transient>? GiveListFromList(string selname, Standard_Transient? ent)
-    {
-        return GiveListFromList(selname, GiveList(ent)); // ent null . list null otherwise interpreted
-    }
-
-    /// <summary>
-    /// Same as GiveListFromList(selname, ent) with an input list (OCCT: the same method, the list given as a
-    /// transient)
-    /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveListFromList(string selname, NCollection_HSequence<Standard_Transient>? ent)
     {
         NCollection_HSequence<Standard_Transient> list = null;
         int num;
@@ -2929,7 +2919,7 @@ public class IFSelect_WorkSession : Standard_Transient
         //   Si OUI . SelectionResultFromList.  Si NON . SelectionResult
         //   If an isolated entity . we make it a list
 
-        list = ent; // OCCT: GiveList(ent), the list itself
+        list = GiveList(ent); // ent null . list null otherwise interpreted
 
         //    Decomposition term1 term2 ...
 

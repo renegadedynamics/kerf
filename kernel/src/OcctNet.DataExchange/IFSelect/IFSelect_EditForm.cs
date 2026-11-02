@@ -60,8 +60,8 @@ public class IFSelect_EditForm : Standard_Transient
         thekeepst = false;
         thelabel = label;
         thenums = new NCollection_Array1<int>(0, 1);
-        theorigs = new NCollection_Array1<object>(0, (undoable ? editor.NbValues() : 0));
-        themodifs = new NCollection_Array1<object>(0, (@readonly ? 0 : editor.NbValues()));
+        theorigs = new NCollection_Array1<Standard_Transient>(0, (undoable ? editor.NbValues() : 0));
+        themodifs = new NCollection_Array1<Standard_Transient>(0, (@readonly ? 0 : editor.NbValues()));
         thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : editor.NbValues()));
         theeditor = editor;
         thetouched = 0;
@@ -78,8 +78,8 @@ public class IFSelect_EditForm : Standard_Transient
         thekeepst = false;
         thelabel = label;
         thenums = new NCollection_Array1<int>(0, nums.Length());
-        theorigs = new NCollection_Array1<object>(0, (undoable ? nums.Length() : 0));
-        themodifs = new NCollection_Array1<object>(0, (@readonly ? 0 : nums.Length()));
+        theorigs = new NCollection_Array1<Standard_Transient>(0, (undoable ? nums.Length() : 0));
+        themodifs = new NCollection_Array1<Standard_Transient>(0, (@readonly ? 0 : nums.Length()));
         thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : nums.Length()));
         theeditor = editor;
         thetouched = 0;
@@ -878,8 +878,8 @@ public class IFSelect_EditForm : Standard_Transient
     private bool thekeepst;
     private string thelabel = "";
     private NCollection_Array1<int> thenums;
-    private NCollection_Array1<object> theorigs;
-    private NCollection_Array1<object> themodifs;
+    private NCollection_Array1<Standard_Transient> theorigs;
+    private NCollection_Array1<Standard_Transient> themodifs;
     private NCollection_Array1<int> thestatus;
     private IFSelect_Editor? theeditor;
     private Standard_Transient? theent;

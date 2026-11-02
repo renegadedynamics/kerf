@@ -274,6 +274,9 @@ public class IFSelectTests
         Assert.Null(WS.GiveList("nothing")); // neither an entity nor a selection
         Assert.Equal("A F G H", Names(WS.GiveList(WS.NamedItem("roots"))));
         Assert.Equal("A B C D E F G H", Names(WS.GiveList(WS.Model())));
+        NCollection_HSequence<Standard_Transient>? aRoots = WS.GiveList("roots");
+        Assert.Same(aRoots, WS.GiveList(aRoots)); // a list (a transient): itself
+        Assert.Equal("B C", Names(WS.GiveListFromList("shared", aRoots)));
         Assert.Equal("C", Names(WS.GiveList(WS.StartingEntity(3))));
         Assert.Equal("D", Names(WS.GiveList(new TCollection_HAsciiString("4"))));
         Assert.Equal("B C", Names(WS.GiveListFromList("shared", WS.StartingEntity(1))));

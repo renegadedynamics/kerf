@@ -963,7 +963,20 @@ public class XSControl_TransferReader : Standard_Transient
                 }
             }
         }
-        //  Check-List on a LIST ... : the list overload (an NCollection_HSequence is not a Standard_Transient here)
+        //  Check-List on a LIST ...
+        else if (ent is NCollection_HSequence<Standard_Transient> list)
+        {
+            int i, nb = list.Length();
+            for (i = 1; i <= nb; i++)
+            {
+                Transfer_ResultFromModel rec = FinalResult(list.Value(i));
+                if (rec is not null)
+                {
+                    Interface_CheckIterator chiter = rec.CheckList(false, level);
+                    chl.Merge(chiter);
+                }
+            }
+        }
 
         //  otherwise, Check-List on an entity: Last or FinalResult
         else if (level < 0)
@@ -1010,70 +1023,6 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns True if an entity (with a final result) has checks : - failsonly = False : any kind of check
     /// message - failsonly = True : fails only Returns False if &lt;ent&gt; is not recorded
     /// </summary>
-    /// <summary>
-    /// Returns the CheckList of a list of entities (OCCT: CheckList(ent, level) with the list as the transient)
-    /// </summary>
-    public Interface_CheckIterator CheckList(NCollection_HSequence<Standard_Transient> list, int level = 0)
-    {
-        Interface_CheckIterator chl = new Interface_CheckIterator();
-        if (myModel is null || list is null)
-        {
-            return chl;
-        }
-        int i, nb = list.Length();
-        for (i = 1; i <= nb; i++)
-        {
-            Transfer_ResultFromModel rec = FinalResult(list.Value(i));
-            if (rec is not null)
-            {
-                Interface_CheckIterator chiter = rec.CheckList(false, level);
-                chl.Merge(chiter);
-            }
-        }
-        if (level < 0)
-        {
-            chl.SetName("XSControl : CheckList Last");
-        }
-        else if (level == 0)
-        {
-            chl.SetName("XSControl : CheckList Final Main");
-        }
-        else if (level == 1)
-        {
-            chl.SetName("XSControl : CheckList Final Main+Subs");
-        }
-        else if (level >= 2)
-        {
-            chl.SetName("XSControl : CheckList Final Complete");
-        }
-        return chl;
-    }
-
-    /// <summary>
-    /// Returns the list of starting entities to which a given check status is attached, for a list of entities
-    /// (OCCT: CheckedList(ent, ...) with the list as the transient)
-    /// </summary>
-    public NCollection_HSequence<Standard_Transient> CheckedList(NCollection_HSequence<Standard_Transient> list,
-                                                                 Interface_CheckStatus withcheck = Interface_CheckAny,
-                                                                 bool level = true)
-    {
-        NCollection_HSequence<Standard_Transient> res = new NCollection_HSequence<Standard_Transient>();
-        if (list is null)
-        {
-            return res;
-        }
-        int i, nb = list.Length();
-        for (i = 1; i <= nb; i++)
-        {
-            Transfer_ResultFromModel rec = FinalResult(list.Value(i));
-            if (rec is not null)
-            {
-                res.Append(rec.CheckedList(withcheck, level));
-            }
-        }
-        return res;
-    }
-
     public bool HasChecks(Standard_Transient? ent, bool failsonly)
     {
         Transfer_ResultFromModel resu = FinalResult(ent);
@@ -1123,7 +1072,18 @@ public class XSControl_TransferReader : Standard_Transient
                 }
             }
         }
-        // a list: the list overload (an NCollection_HSequence is not a Standard_Transient here)
+        else if (ent is NCollection_HSequence<Standard_Transient> list)
+        {
+            int i, nb = list.Length();
+            for (i = 1; i <= nb; i++)
+            {
+                Transfer_ResultFromModel rec = FinalResult(list.Value(i));
+                if (rec is not null)
+                {
+                    res.Append(rec.CheckedList(withcheck, level));
+                }
+            }
+        }
         else
         {
             Transfer_ResultFromModel rec = FinalResult(ent);

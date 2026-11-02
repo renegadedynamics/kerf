@@ -17,8 +17,7 @@ namespace Occt;
 /// recognizing most currently used auxiliary types (Binder, Mapper ...)
 /// </summary>
 /// <remarks>
-/// OCCT.NET: the sequences and arrays OCCT passes as <c>Standard_Transient</c> handles (HSequence, HArray1) are not
-/// transients in the port (decision 17): the members taking "a list" take an <see cref="object"/>. The extended
+/// OCCT.NET: the extended
 /// strings members (<c>ToEString</c>, <c>ToXString</c>, <c>AsciiToExtended</c>, <c>IsAscii</c>,
 /// <c>ExtendedToAscii</c>, <c>EStrValue</c>, <c>NewSeqEStr</c>, <c>AppendEStr</c> and the extended strings cases of
 /// the others) are left out: the port has no TCollection_ExtendedString, .NET strings are UTF-16 (decision 12702).
@@ -47,7 +46,7 @@ public class XSControl_Utils
     /// Just prints a line or a set of lines into the current Trace File. &lt;lines&gt; can be a HAscii String
     /// (produces a print without ending line) or a HSequence (one new line per item)
     /// </summary>
-    public void TraceLines(object? lines)
+    public void TraceLines(Standard_Transient? lines)
     {
         using Message_Messenger.StreamBuffer sout = Message.SendInfo();
         int i, nb;
@@ -119,7 +118,7 @@ public class XSControl_Utils
         return tn;
     }
 
-    public Standard_Transient? TraValue(object? seqval, int num)
+    public Standard_Transient? TraValue(Standard_Transient? seqval, int num)
     {
         Standard_Transient val = null;
         if (num < 1)
@@ -192,7 +191,7 @@ public class XSControl_Utils
         return strcon;
     }
 
-    public string CStrValue(object? list, int num)
+    public string CStrValue(Standard_Transient? list, int num)
     {
         if (list is NCollection_HSequence<TCollection_HAsciiString> linha)
         {
@@ -497,7 +496,7 @@ public class XSControl_Utils
         return sh;
     }
 
-    public int SeqLength(object? seqval)
+    public int SeqLength(Standard_Transient? seqval)
     {
         if (seqval is null)
         {
@@ -527,10 +526,10 @@ public class XSControl_Utils
         return 0;
     }
 
-    public object? SeqToArr(object? seqval, int first = 1)
+    public Standard_Transient? SeqToArr(Standard_Transient? seqval, int first = 1)
     {
         int i, lng;
-        object val = null;
+        Standard_Transient val = null;
         if (seqval is null)
         {
             return val;
@@ -560,10 +559,10 @@ public class XSControl_Utils
         throw new Standard_TypeMismatch("XSControl_Utils::SeqToArr");
     }
 
-    public object? ArrToSeq(object? arrval)
+    public Standard_Transient? ArrToSeq(Standard_Transient? arrval)
     {
         int i, first, last;
-        object val = null;
+        Standard_Transient val = null;
         if (arrval is null)
         {
             return val;

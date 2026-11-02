@@ -41,6 +41,8 @@
     <EmbeddedResource Include="..\..\tools\stepdatarec\text-cases.txt" LogicalName="StepData.text-cases.txt" />
     <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
     <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
+    <!-- Native OCCT's work session on the corpus's STEP files (tools/xscontrolrec, unit 8A3) -->
+    <EmbeddedResource Include="XSControl\Recordings\xscontrolrec.txt.gz" LogicalName="XSControl.xscontrolrec.txt.gz" />
   </ItemGroup>
 
   <ItemGroup>

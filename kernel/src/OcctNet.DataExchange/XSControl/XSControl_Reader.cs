@@ -178,14 +178,6 @@ public class XSControl_Reader
         return thesession.GiveListFromList(first, list);
     }
 
-    /// <summary>
-    /// Computes a list of entities from the list given in input (OCCT: GiveList(first, list) with the list as a
-    /// transient)
-    /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveList(string first, NCollection_HSequence<Standard_Transient>? list)
-    {
-        return thesession.GiveListFromList(first, list);
-    }
 
     /// <summary>
     /// Determines the list of root entities which are candidate for a transfer to a Shape, and returns the
