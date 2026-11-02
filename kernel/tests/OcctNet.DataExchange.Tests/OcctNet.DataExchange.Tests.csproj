@@ -55,6 +55,10 @@
          checks, messages) and data/occ's shapes and assemblies written in each schema and model type -->
     <EmbeddedResource Include="STEPControl\Recordings\stepctlrec-read.txt.gz" LogicalName="STEPControl.stepctlrec-read.txt.gz" />
     <EmbeddedResource Include="STEPControl\Recordings\stepctlrec-write.txt.gz" LogicalName="STEPControl.stepctlrec-write.txt.gz" />
+    <!-- Native OCCT's STEPCAFControl_Reader and STEPCAFControl_Writer over XCAF documents (tools/stepcafrec, unit 8G2):
+         the corpus read into documents (dumped), documents built and read written -->
+    <EmbeddedResource Include="STEPCAFControl\Recordings\stepcafrec-read.txt.gz" LogicalName="STEPCAFControl.stepcafrec-read.txt.gz" />
+    <EmbeddedResource Include="STEPCAFControl\Recordings\stepcafrec-write.txt.gz" LogicalName="STEPCAFControl.stepcafrec-write.txt.gz" />
     <!-- Native OCCT's work session on the corpus's STEP files (tools/xscontrolrec, unit 8A3) -->
     <EmbeddedResource Include="XSControl\Recordings\xscontrolrec.txt.gz" LogicalName="XSControl.xscontrolrec.txt.gz" />
   </ItemGroup>
