@@ -7,8 +7,7 @@ namespace Build123d.Packaging.Tests;
 
 /// <summary>
 /// A test that needs the OCCT.NET backend's build output: the folder of a project built with
-/// <c>-p:Build123dBackend=OcctNet</c>, given as B3D_OCCTNET_LIB. Skipped without it, as the package tests run by
-/// tools/pack.ps1 are about the native backend.
+/// <c>-p:Build123dBackend=OcctNet</c>, given as B3D_OCCTNET_LIB. Skipped without it.
 /// </summary>
 public sealed class OcctNetFactAttribute : FactAttribute
 {

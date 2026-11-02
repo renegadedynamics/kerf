@@ -1,21 +1,25 @@
 <#
 .SYNOPSIS
-  Packs Build123d and Build123d.Occt into the local folder feed artifacts/packages, then checks the packages load
-  through a collectible AssemblyLoadContext from a folder of their own (tests/Build123d.Packaging.Tests).
+  Packs the native backend's Build123d and Build123d.Occt into the local folder feed artifacts/packages, then checks the
+  packages load through a collectible AssemblyLoadContext from a folder of their own (tests/Build123d.Packaging.Tests).
 .DESCRIPTION
+  The native backend is no longer published: OCCT.NET is the default, and its packages (Build123d, Build123d.OcctNet)
+  are packed by OCCT.NET's tools/pack-nuget.ps1. These packages are for the load-context test only, versioned
+  0.1.0-native by default so they can't be taken for the published ones.
+
   Build123d.Occt carries the native libraries flat under runtimes/<rid>/native: the shim b3docct and only the OCCT
   and FreeType libraries it depends on, found by following the DLL imports from b3docct (dumpbin, from the MSVC
   environment devenv.ps1 sets up).
 .PARAMETER Rid
   The runtime to pack natives for.
 .PARAMETER VersionSuffix
-  A SemVer pre-release suffix, e.g. 'preview.1'.
+  A SemVer pre-release suffix: 'native' by default.
 .PARAMETER SkipTest
   Don't run the load-context test after packing.
 #>
 param(
   [ValidateSet('win-x64')] [string] $Rid = 'win-x64',
-  [string] $VersionSuffix = '',
+  [string] $VersionSuffix = 'native',
   [switch] $SkipTest
 )
 $ErrorActionPreference = 'Stop'
@@ -49,7 +53,7 @@ $size = ($needed | ForEach-Object { (Get-Item $available[$_]).Length } | Measure
 
 # Pack
 $feed = Join-Path $root 'artifacts/packages'
-$props = @("-p:NativeRid=$Rid", "-p:NativeStageDir=$stage/", "-p:PackageOutputPath=$feed")
+$props = @("-p:Build123dBackend=Native", "-p:NativeRid=$Rid", "-p:NativeStageDir=$stage/", "-p:PackageOutputPath=$feed")
 if ($VersionSuffix) { $props += "-p:VersionSuffix=$VersionSuffix" }
 foreach ($project in 'src/Build123d.Occt/Build123d.Occt.csproj', 'src/Build123d/Build123d.csproj') {
   dotnet pack (Join-Path $root $project) -c Release --artifacts-path (Join-Path $root '.deps/pack-build') @props -nologo

@@ -7,12 +7,17 @@
     <IsAotCompatible>true</IsAotCompatible>
     <!-- Generated wrappers keep OCCT's names (gp_Pnt, BRepAlgoAPI_Cut, ...) and are not documented -->
     <NoWarn>$(NoWarn);CS1591;CS8981;IDE1006</NoWarn>
+    <!-- The native backend is no longer published: only tools/pack.ps1 packs it, for its load-context test -->
+    <IsPackable Condition="'$(NativeStageDir)' == ''">false</IsPackable>
   </PropertyGroup>
 
-  <!-- Native libraries for local builds and tests: OCCT + FreeType from the superbuild, and the shim -->
+  <!--
+    Native libraries for local builds and tests: OCCT + FreeType from the superbuild, and the shim, of the checkout at
+    Build123dNativeRoot (this one by default)
+  -->
   <PropertyGroup>
-    <OcctNativeDir>$(RepoRoot).deps/install/$(NativeRid)/</OcctNativeDir>
-    <ShimNativeDir>$(RepoRoot)native/out/$(NativeRid)/</ShimNativeDir>
+    <OcctNativeDir>$(Build123dNativeRoot).deps/install/$(NativeRid)/</OcctNativeDir>
+    <ShimNativeDir>$(Build123dNativeRoot)native/out/$(NativeRid)/</ShimNativeDir>
   </PropertyGroup>
   <ItemGroup Condition="$(NativeRid.StartsWith('win'))">
     <NativeLib Include="$(OcctNativeDir)bin/*.dll;$(ShimNativeDir)bin/*.dll" />

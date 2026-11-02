@@ -20,13 +20,23 @@
     <Compile Include="..\Build123d.Occt\Runtime\Exchange.cs" Link="Shared\Exchange.cs" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--
+    OCCT.NET: the packages on nuget.org by default; with OcctNetRoot given, that checkout's projects, which pack as the
+    same package dependencies (OCCT.NET's pack-nuget.ps1 packs this way)
+  -->
+  <ItemGroup Condition="'$(OcctNetRoot)' == ''">
+    <PackageReference Include="OcctNet.Foundation" Version="$(OcctNetVersion)" />
+    <PackageReference Include="OcctNet.ModelingData" Version="$(OcctNetVersion)" />
+    <PackageReference Include="OcctNet.ModelingAlgorithms" Version="$(OcctNetVersion)" />
+    <PackageReference Include="OcctNet.DataExchange" Version="$(OcctNetVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(OcctNetRoot)' != ''">
     <ProjectReference Include="$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj" />
   </ItemGroup>
 
   <Target Name="RequireOcctNet" BeforeTargets="ResolveProjectReferences"
-          Condition="!Exists('$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj')">
-    <Error Text="OCCT.NET not found at '$(OcctNetRoot)': pass -p:OcctNetRoot=&lt;OCCT.NET checkout&gt;/" />
+          Condition="'$(OcctNetRoot)' != '' And !Exists('$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj')">
+    <Error Text="OCCT.NET not found at OcctNetRoot '$(OcctNetRoot)': pass an OCCT.NET checkout, or no OcctNetRoot for the packages" />
   </Target>
 
 </Project>

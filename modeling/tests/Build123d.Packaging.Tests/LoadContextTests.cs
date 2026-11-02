@@ -9,7 +9,20 @@ using System.Text.RegularExpressions;
 namespace Build123d.Packaging.Tests;
 
 /// <summary>
-/// The packages as Bento's 3D-models extension uses them: unpacked into a folder of their own, loaded through a
+/// A test of the native backend's packages, which tools/pack.ps1 packs into a local feed and gives as B3D_PACKAGES.
+/// Skipped without it: the native backend is no longer published, and OCCT.NET is the default.
+/// </summary>
+public sealed class NativePackagesFactAttribute : FactAttribute
+{
+    public NativePackagesFactAttribute()
+    {
+        if (Environment.GetEnvironmentVariable("B3D_PACKAGES") is not { Length: > 0 })
+            Skip = "set B3D_PACKAGES to the native backend's packages (tools/pack.ps1 does)";
+    }
+}
+
+/// <summary>
+/// The native packages as Bento's 3D-models extension uses them: unpacked into a folder of their own, loaded through a
 /// collectible <see cref="AssemblyLoadContext"/> that resolves managed and native libraries as Bento's does, with
 /// Schematiq.Collections shared from the host.
 /// </summary>
@@ -48,7 +61,7 @@ public class LoadContextTests
         }
     }
 
-    [Fact]
+    [NativePackagesFact]
     public void ABoxTriangulatesThroughACollectibleLoadContext()
     {
         var root = Unpack();
@@ -96,8 +109,7 @@ public class LoadContextTests
     private static string Unpack()
     {
         Assert.True(RuntimeInformation.RuntimeIdentifier == Rid, $"the packages carry natives for {Rid} only");
-        var feed = Environment.GetEnvironmentVariable("B3D_PACKAGES")
-                   ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "artifacts", "packages"));
+        var feed = Environment.GetEnvironmentVariable("B3D_PACKAGES")!;
         string Newest(string id)
         {
             var pattern = new Regex($@"^{Regex.Escape(id)}\.(\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?)\.nupkg$", RegexOptions.IgnoreCase);
