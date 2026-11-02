@@ -1611,3 +1611,8 @@ Phase 9 (part): the differential run (unit 9D2).
   first divergence of each of the 18 other tests is attributed: native varying from run to run (11 tests), backend-
   specific code in build123d.NET (5), OCCT.NET not writing a caller's face (1), a test mutating a canonically identical
   result's text (1). No port bug.
+
+Phase 9 (part): ReadyToRun packages (unit 9R).
+
+- The packages' assemblies are compiled ahead of time for win-x64 (ReadyToRun), keeping their IL for other platforms:
+  the first use of each operation no longer waits for the JIT.

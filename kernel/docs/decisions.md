@@ -13406,3 +13406,14 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          of it on OCCT.NET (decisions 468, 1102), so their fuse differs; a test mutating the text of a fillet's result.
        - **Port bugs:** none found. Everything the suite makes is native's, byte for byte or canonically, or differs
          where native differs from itself or where OCCT.NET doesn't write a caller's shape.
+
+## Phase 9: unit 9R, ReadyToRun packages
+
+14401. **The packages are compiled ahead of time** (owner, 2 November, on unit 9E's proposals 1 and 2). `tools/pack-nuget.ps1`
+       builds each of the six projects, publishes it with `PublishReadyToRun` for win-x64 (all six before any is
+       swapped in, as publishing a project builds the ones it references again), puts each ReadyToRun assembly in place of
+       its build output and packs without building again. The assemblies keep their IL: on another platform .NET ignores
+       the precompiled code. The script checks the assemblies it packs and the ones the smoke test restores hold
+       ReadyToRun code (the CLI header's ManagedNativeHeader). The packages grow about 2.5× (about 20 MB for the six);
+       unit 9E measured the first opening of Bento's example workbook a third faster. `-NoReadyToRun` packs IL only.
+       Proposal 1, the server garbage collector, is Bento's (its branch `perf/server-gc`).
