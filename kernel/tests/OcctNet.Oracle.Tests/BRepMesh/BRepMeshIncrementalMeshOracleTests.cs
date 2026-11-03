@@ -437,7 +437,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
 
     /// <summary>data/occ's .brep files under 1 MB (as unit 4C's oracle).</summary>
     private static IEnumerable<string> DataOccFiles()
-        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= (Tape.IsSampled ? 60_000 : 1_000_000));
+        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= 60_000);
 
     /// <summary>The data files of OCCT's mesh group (tests/mesh/data) that the public dataset has.</summary>
     private static IEnumerable<string> MeshGroupFiles()

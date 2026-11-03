@@ -1,11 +1,5 @@
 <Solution>
-  <!--
-    Everything but what runs native OCCT: the kernel's native benchmarks (kernel/OcctNet.slnx), the modeling layer's
-    native backend and its generator (modeling/Build123d.slnx with -p:Build123dBackend=Native). One restore can't serve
-    the modeling projects on both backends at once. The oracle tests replay native OCCT's recorded results (unit 10A),
-    so they are here; recording them again builds them on their own, with native OCCT (kernel/docs/oracle-testing.md).
-    Phase 10 retires the rest (unit 10B).
-  -->
+  <!-- Everything but the kernel's benchmarks (kernel/OcctNet.slnx) -->
   <Folder Name="/kernel/" />
   <Folder Name="/kernel/samples/">
     <Project Path="kernel/samples/OcctNet.WasmDemo/OcctNet.WasmDemo.csproj" />

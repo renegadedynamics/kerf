@@ -390,7 +390,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{aNbApprox} approximated; native and port threw for the same {aNbThrows} surfaces");
-        Assert.True(aNbApprox > (Tape.IsSampled ? 0 : 20)); // as recorded, a budgeted sample (decision 1337)
+        Assert.True(aNbApprox > 0); // as recorded, a budgeted sample (decision 1337)
         anOracle.Report("GeomConvert::SurfaceToBSplineSurface of offset surfaces");
     }
 

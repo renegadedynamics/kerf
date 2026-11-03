@@ -1,18 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Phase 4's benchmarks (phase4-plan section 2.5): meshing and the viewer's extraction, and phase 6's Booleans (unit 6M), the port against native OCCT
-    through a sibling build123d.NET checkout (Build123dNetRoot), as the oracle tests do. Without that checkout and its
-    native build, only the port is timed. Run it in Release with the argument "quick" (a Stopwatch table) or "bdn"
-    (BenchmarkDotNet, in process, with its own arguments after it); see Program.cs.
+    Phase 4's benchmarks (phase4-plan section 2.5): meshing and the viewer's extraction, and phase 6's Booleans (unit
+    6M). They timed the port against native OCCT until unit 10B retired it; now the port alone is timed. Run it in
+    Release with the argument "quick" (a Stopwatch table) or "bdn" (BenchmarkDotNet, in process, with its own arguments
+    after it); see Program.cs.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <ServerGarbageCollector>false</ServerGarbageCollector>
-    <Build123dOcctProject>$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj</Build123dOcctProject>
-    <HasNative Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNativeRoot)native/out/win-x64/bin/b3docct.dll')">true</HasNative>
-    <DefineConstants Condition="'$(HasNative)' == 'true'">$(DefineConstants);HAS_NATIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,13 +19,6 @@
     <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <!-- The WebAssembly demo's work, to compare its buffers with win-x64's -->
     <Compile Include="..\..\samples\OcctNet.WasmDemo\DemoCore.cs" Link="DemoCore.cs" />
-    <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasNative)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
-    <!-- The Booleans suite (unit 6M): build123d.NET's tests' Booleans, rebuilt with its public API as the oracle's capture does -->
-    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasNative)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
-    <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dBooleanCapture.cs" Link="Build123dBooleanCapture.cs" />
-    <!-- The phase 7 suite (unit 7X): build123d.NET's tests' offset, draft, feature, healing, fillet and chamfer calls, as the oracle's capture records them -->
-    <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dPhase7Capture.cs" Link="Build123dPhase7Capture.cs" />
-    <Compile Include="..\..\tests\OcctNet.Oracle.Tests\Build123d\Build123dPhase7Capture.Blend.cs" Link="Build123dPhase7Capture.Blend.cs" />
     <!-- The corpus's bopfuse_simple arguments (tools/pfrec's recording, decision 785) -->
     <EmbeddedResource Include="..\..\tests\OcctNet.ModelingAlgorithms.Tests\BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" Link="PaveFillerRecordings.txt.gz" />
     <!-- OCCT's source (tools/get-occt.ps1), for data/occ -->

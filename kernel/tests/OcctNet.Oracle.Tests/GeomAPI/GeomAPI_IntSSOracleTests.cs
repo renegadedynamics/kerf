@@ -517,7 +517,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             Compare(aPair, aTally);
         }
         aTally.Report(output);
-        Assert.True(aTally.PairsWithLines > (Tape.IsSampled ? 0 : 300)); // as recorded, a budgeted sample (decision 1337)
+        Assert.True(aTally.PairsWithLines > 0); // as recorded, a budgeted sample (decision 1337)
         Assert.True(aTally.IdenticalPairs >= aTally.Pairs * 0.95, $"{aTally.IdenticalPairs} of {aTally.Pairs} identical");
     }
 
@@ -531,7 +531,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             Compare(aPair, aTally);
         }
         aTally.Report(output);
-        Assert.True(aTally.PairsWithLines > (Tape.IsSampled ? 0 : 50)); // as recorded, a budgeted sample (decision 1337)
+        Assert.True(aTally.PairsWithLines > 0); // as recorded, a budgeted sample (decision 1337)
         Assert.True(aTally.IdenticalPairs >= aTally.Pairs * 0.95, $"{aTally.IdenticalPairs} of {aTally.Pairs} identical");
     }
 

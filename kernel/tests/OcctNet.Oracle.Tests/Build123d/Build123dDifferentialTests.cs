@@ -22,9 +22,9 @@ namespace OcctNet.Oracle.Tests;
 /// Checked flags masked) and its properties (sub-shape counts, volume, area, bounding box), plus its full text where
 /// OCCT.NET's entry wasn't the same under the masks when it was recorded; and where native's own runs differed from each
 /// other. OCCT.NET's log is read from the folder <c>B3D_DIFF_LOGS</c> names (its <c>occtnet</c> folder); without it the
-/// test checks the recording and compares nothing. With <c>B3D_DIFF_RECORD=1</c> the recording is made again from the
-/// folder's native logs (<c>native1</c>, and <c>native2</c>... to see where native varies) before comparing. A report
-/// and the texts of each first divergence are written to the folder's <c>report</c> folder.
+/// test checks the recording and compares nothing. The recording was made from six native runs, and is frozen since
+/// native OCCT went (unit 10B). A report and the texts of each first divergence are written to the folder's
+/// <c>report</c> folder.
 /// </remarks>
 public sealed class Build123dDifferentialTests(ITestOutputHelper output)
 {
@@ -75,10 +75,6 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     public void Build123d_suite_as_native()
     {
         string? aRoot = Environment.GetEnvironmentVariable("B3D_DIFF_LOGS") is { Length: > 0 } r ? r : null;
-        if (aRoot is not null && Environment.GetEnvironmentVariable("B3D_DIFF_RECORD") == "1")
-        {
-            Record(aRoot);
-        }
         Dictionary<string, NativeTest> aNative = LoadRecording();
         Assert.True(aNative.Count > 900, $"the native recording has {aNative.Count} tests");
         if (aRoot is null)
@@ -403,91 +399,10 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------------
     // The recording of native's log
 
-    /// <summary>
-    /// Records native's log (<c>native1</c>) from the folder: digests and properties for every entry, the text where
-    /// OCCT.NET's log (<c>occtnet</c>) wasn't the same under the masks, from the test's first such entry on, and where
-    /// native's other runs (<c>native2</c>...) first differ from it.
-    /// </summary>
-    private void Record(string theRoot)
-    {
-        string aNative1 = Path.Combine(theRoot, "native1"), aPort = Path.Combine(theRoot, "occtnet");
-        Assert.True(Directory.Exists(aNative1) && Directory.Exists(aPort), $"{theRoot} needs native1 and occtnet");
-        string[] anOtherNatives = [.. Directory.EnumerateDirectories(theRoot, "native*")
-                                              .Where(d => !Path.GetFileName(d).Equals("native1", StringComparison.Ordinal)).Order(StringComparer.Ordinal)];
-        string aFile = Path.Combine(RecordingsDir, RecordingName);
-        int aTests = 0, anEntries = 0, aTexts = 0;
-        using (var aStream = File.Create(aFile))
-        using (var aGz = new GZipStream(aStream, CompressionLevel.SmallestSize))
-        using (var aWriter = new BinaryWriter(aGz, Encoding.UTF8))
-        {
-            aWriter.Write("b3d-native-log-1");
-            foreach (string aLog in Directory.EnumerateFiles(aNative1, "*.brlog").Order(StringComparer.Ordinal))
-            {
-                string aTest = Path.GetFileNameWithoutExtension(aLog);
-                List<Entry> aN = Load(aLog), aP = Load(Path.Combine(aPort, aTest + ".brlog"));
-                if (aN.Count == 0)
-                {
-                    continue;
-                }
-                int aNativeAt = int.MaxValue;
-                foreach (string anOther in anOtherNatives)
-                {
-                    if (File.Exists(Path.Combine(anOther, aTest + ".brlog")))
-                    {
-                        aNativeAt = Math.Min(aNativeAt, FirstDivergence(aN, Load(Path.Combine(anOther, aTest + ".brlog")), null, out _, out _));
-                    }
-                }
-                // native's text is kept from the first entry OCCT.NET's log doesn't match under the masks, and from
-                // where native varies
-                int aKeepFrom = Math.Min(aNativeAt, aN.Count);
-                for (int i = 0; i < aN.Count; i++)
-                {
-                    if (i >= aP.Count || Compare(aN[i], aP[i], false, out _) == Kind.Different)
-                    {
-                        aKeepFrom = Math.Min(aKeepFrom, i);
-                        break;
-                    }
-                }
-                aWriter.Write(true);
-                aWriter.Write(aTest);
-                aWriter.Write(aNativeAt);
-                aWriter.Write(aN.Count);
-                for (int i = 0; i < aN.Count; i++)
-                {
-                    Entry e = aN[i];
-                    aWriter.Write(e.Header);
-                    aWriter.Write(e.Op);
-                    aWriter.Write(e.Points ?? "");
-                    aWriter.Write(e.Hash);
-                    aWriter.Write(e.FreeHash);
-                    aWriter.Write(e.CheckedHash);
-                    aWriter.Write(Properties(e.Text!));
-                    aWriter.Write(i >= aKeepFrom);
-                    if (i >= aKeepFrom)
-                    {
-                        aWriter.Write(e.Text!);
-                        aTexts++;
-                    }
-                }
-                aTests++;
-                anEntries += aN.Count;
-            }
-            aWriter.Write(false);
-        }
-        output.WriteLine($"recorded native's log: {aTests} tests, {anEntries} shapes, {aTexts} texts kept, {new FileInfo(aFile).Length:N0} bytes");
-    }
-
-    private static string RecordingsDir =>
-        System.Reflection.CustomAttributeExtensions.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>(typeof(Build123dDifferentialTests).Assembly)
-                                          .First(a => a.Key == "OracleRecordingsDir").Value!;
-
     private static Dictionary<string, NativeTest> LoadRecording()
     {
-        string aRecorded = Path.Combine(RecordingsDir, RecordingName);
-        Stream aStream = Environment.GetEnvironmentVariable("B3D_DIFF_RECORD") == "1" && File.Exists(aRecorded)
-            ? File.OpenRead(aRecorded)
-            : typeof(Build123dDifferentialTests).Assembly.GetManifestResourceStream("Recordings." + RecordingName)
-              ?? throw new InvalidOperationException($"No recording of native's log ({RecordingName}): tools/b3d-differential.ps1 -Record");
+        Stream aStream = typeof(Build123dDifferentialTests).Assembly.GetManifestResourceStream("Recordings." + RecordingName)
+                         ?? throw new InvalidOperationException($"No recording of native's log ({RecordingName})");
         var aTests = new Dictionary<string, NativeTest>(StringComparer.Ordinal);
         using (aStream)
         using (var aGz = new GZipStream(aStream, CompressionMode.Decompress))

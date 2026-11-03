@@ -7,18 +7,12 @@ namespace OcctNet.Oracle.Tests;
 public class OracleAvailability
 {
     /// <summary>
-    /// Fails loudly rather than letting a missing oracle pass as "no differences": native OCCT's version, as recorded
-    /// (or live, when recording).
+    /// Fails loudly rather than letting a missing oracle pass as "no differences": native OCCT's version, as recorded.
     /// </summary>
     [Fact]
     public void Native_OCCT_is_available()
     {
         Assert.StartsWith("8.0.1", N.Occt.Version);
-#if !ORACLE_DIRECT
-        if (!Tape.IsRecording)
-        {
-            Assert.Contains(typeof(OracleAvailability).Assembly.GetManifestResourceNames(), n => n.EndsWith(".tape.gz", StringComparison.Ordinal));
-        }
-#endif
+        Assert.Contains(typeof(OracleAvailability).Assembly.GetManifestResourceNames(), n => n.EndsWith(".tape.gz", StringComparison.Ordinal));
     }
 }
