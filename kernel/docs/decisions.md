@@ -15030,3 +15030,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `ComputeCurve_ConversionTypes` had relied on the bug: a rational quadratic arc with an end pole moved, meant
        not to be an ellipse, is one (any rational quadratic is a conic), now recognised; the failing case is now an
        inner pole of a two-span arc. ShapeAnalysis's canonical recognition tests pass unchanged.
+16810. **GeomConvert_SurfToAnaSurf::TryCylinerCone's half-range point is left** (occt-issues.md; reclassified from fix
+       K7 to leave). The point is taken on an end iso only when it isn't a circle: on a cone that is the apex's iso, a
+       point, the same at any parameter (inside the range or not, its poles being one point). An iso that is neither
+       makes the surface no cone, and the cone built through it fails the conversion's gap test, as it would through
+       the middle point. No case shows a user the difference, so no test can fail first; the marker stays.
