@@ -2,12 +2,13 @@
 
   <!--
     The public API's tests (unit 10L1), written as a user calls it: this assembly has no InternalsVisibleTo from the
-    kernel, so a test that reaches for the engine doesn't compile. Topology's tests need shapes, which only the
-    construction area (10L2) will make publicly; until then they live in Kerf.Kernel.ModelingAlgorithms.Tests/PublicApi.
+    kernel, so a test that reaches for the engine doesn't compile. Since 10L2 it also reaches
+    ModelingAlgorithms' public operations (geometry's, construction, Booleans, fillets, offsets and features).
   -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
     <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
   </ItemGroup>
 
   <ItemGroup>
