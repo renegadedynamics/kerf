@@ -1702,3 +1702,13 @@ Phase 10 (part): the rename (unit 10E). **Breaking: every name changes.**
 - The analyzers are `Kerf.Analyzers`, with ids `KERF0001` and `KERF0002`; .NET naming (IDE1006) is an error in the
   build where the code obeys it.
 - No behaviour changes: every test passes as before.
+
+Phase 10 (part): errors (unit 10F).
+- `Kerf.Result<T>`, `Result`, `Diagnostic` (a severity, a stable string code, a plain message and, from ModelingData,
+  the sub-shapes concerned), `DiagnosticCode`, `Severity` and `KerfException`, in Foundation; `Built<T>` in
+  ModelingData. Nothing public returns them yet: unit 10L's operations will.
+- Bridges from OCCT's error models to diagnostics: `FailureDiagnostics` (exceptions), `AlertDiagnostics` (a report's
+  alerts), `StatusDiagnostics` and `OperationDiagnostics` (the status enums; a failed operation), `ExchangeDiagnostics`
+  (`IFSelect_ReturnStatus`). docs/api/diagnostics.md lists the codes.
+- `Resource_Manager.TryGetInteger`; ShapeProcess reads its parameters without catching an exception for each one that
+  isn't set (results unchanged).
