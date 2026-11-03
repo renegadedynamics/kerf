@@ -22,8 +22,8 @@ namespace Kerf.Engine.HiddenLines;
 /// </summary>
 /// <remarks>
 /// The edges are built unfrozen, for ported code (HLRBRep_HLRToShape freezes the compounds it returns). A 3D edge
-/// shares the curve and, at its ends, the vertices of the edge HLRBRep_Curve was loaded with: the outliner's working
-/// shape, which is the caller's shape or its copy at the entry (decision 1095).
+/// shares the curve and, at its ends, the vertices of the edge HLRBRep_Curve was loaded with: a caller's edge, or one
+/// the outliner split from it.
 /// </remarks>
 public static class HlrbRep
 {

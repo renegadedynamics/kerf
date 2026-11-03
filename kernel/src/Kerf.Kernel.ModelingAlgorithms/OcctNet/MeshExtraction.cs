@@ -152,8 +152,14 @@ public static class MeshExtraction
                 return;
             }
 
-            // The surface's normals at the nodes, on a copy: the face's own triangulation is never written
-            Triangulation aTri = ToolTriangulatedShape.NormalsComputed(face, tri)!;
+            // The surface's normals at the nodes, written straight into the buffer (unit 10H6: they were computed on a copy
+            // of the triangulation, which for a big mesh allocated several times the buffers); the face's own
+            // triangulation is never written
+            Span<float> normals = Normals.AsSpan(_nodeFloats, 3 * tri.NodeCount);
+            Triangulation aTri = ToolTriangulatedShape.TryWriteSurfaceNormals(face, tri, normals)
+                                     ? tri
+                                     : ToolTriangulatedShape.NormalsComputed(face, tri)!;
+            bool isWritten = ReferenceEquals(aTri, tri) && !tri.HasNormals;
             Transform3D trsf = location.Transformation();
             bool isReversed = face.Orientation() == Reversed;
             // Winding follows the surface's natural normal: flipped for a reversed face, and again by a mirroring location
@@ -164,7 +170,10 @@ public static class MeshExtraction
                 Positions[_nodeFloats] = (float)p.X();
                 Positions[_nodeFloats + 1] = (float)p.Y();
                 Positions[_nodeFloats + 2] = (float)p.Z();
-                Direction3D n = aTri.Normal(i).Transformed(trsf);
+                Direction3D n = isWritten
+                                    ? new Direction3D(Normals[_nodeFloats], Normals[_nodeFloats + 1], Normals[_nodeFloats + 2])
+                                    : aTri.Normal(i);
+                n = n.Transformed(trsf);
                 if (isReversed)
                 {
                     n = n.Reversed();

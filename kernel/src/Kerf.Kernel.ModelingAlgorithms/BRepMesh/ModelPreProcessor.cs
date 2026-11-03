@@ -27,8 +27,8 @@ namespace Kerf.Engine.Meshing;
 /// <remarks>
 /// <para>
 /// Writes into the shape being meshed, as OCCT does: <see cref="ShapeTool.NullifyFace"/> and
-/// <c>NullifyEdge</c> remove outdated meshes, which throws on a frozen face or edge. The mesher runs on an unfrozen
-/// shape or an exact copy of a frozen one (decision 489); a reused triangulation is only read, so it may stay frozen.
+/// <c>NullifyEdge</c> remove outdated meshes. The mesher runs on an unfrozen shape in place, or on a frozen one in a
+/// working overlay (decision 489, unit 10H6); a reused triangulation is only read, so it may stay frozen.
 /// </para>
 /// <para>
 /// The two face loops run in parallel when the parameters ask for it: each body writes only its face's status and

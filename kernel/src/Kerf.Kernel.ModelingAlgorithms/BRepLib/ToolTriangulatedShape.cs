@@ -57,40 +57,75 @@ public static class ToolTriangulatedShape
             return;
         }
 
-        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        int tri0, tri1, tri2;
-        var norm = new Direction3D();
         tris.AddNormals();
         for (int nodeIter = 1; nodeIter <= tris.NodeCount; ++nodeIter)
         {
-            // try to retrieve normal from real surface first, when UV coordinates are available
-            if (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, tris.UVNode(nodeIter), tol, ref norm) > 1)
-            {
-                if (!ReferenceEquals(polyConnect.Triangulation(), tris))
-                {
-                    polyConnect.Load(tris);
-                }
+            tris.SetNormal(nodeIter, NodeNormal(surf, tris, nodeIter, polyConnect));
+        }
+    }
 
-                // compute flat normals
-                var eqPlan = new Xyz(0.0, 0.0, 0.0);
-                for (polyConnect.Initialize(nodeIter); polyConnect.More(); polyConnect.Next())
-                {
-                    tris.Triangle(polyConnect.Value()).Get(out tri0, out tri1, out tri2);
-                    Xyz v1 = tris.Node(tri1).Coord() - tris.Node(tri0).Coord();
-                    Xyz v2 = tris.Node(tri2).Coord() - tris.Node(tri1).Coord();
-                    Xyz vv = v1 ^ v2;
-                    double mod = vv.Modulus();
-                    if (mod >= tol)
-                    {
-                        eqPlan += vv / mod;
-                    }
-                }
-                double modMax = eqPlan.Modulus();
-                norm = (modMax > tol) ? new Direction3D(eqPlan) : Constants.DZ();
+    /// <summary>
+    /// Kerf (unit 10H6): the nodal normals <see cref="ComputeNormals(in Face, Triangulation?)"/> would compute, written
+    /// to <paramref name="normals"/> (three floats a node, in the triangulation's coordinates) without copying or
+    /// writing the triangulation. False, with nothing written, when the triangulation has its own normals or the
+    /// normals need no surface (no UV nodes, or no surface): the caller then takes
+    /// <see cref="NormalsComputed"/>.
+    /// </summary>
+    internal static bool TryWriteSurfaceNormals(in Face face, Triangulation tris, Span<float> normals)
+    {
+        if (tris.HasNormals || !tris.HasUVNodes)
+        {
+            return false;
+        }
+        Surface? surf = Tool.Surface(ShapeCasts.Face(face.Located(new Placement())));
+        if (surf is null)
+        {
+            return false;
+        }
+        var polyConnect = new Connect();
+        for (int nodeIter = 1; nodeIter <= tris.NodeCount; ++nodeIter)
+        {
+            Direction3D norm = NodeNormal(surf, tris, nodeIter, polyConnect);
+            int k = 3 * (nodeIter - 1);
+            normals[k] = (float)norm.X();
+            normals[k + 1] = (float)norm.Y();
+            normals[k + 2] = (float)norm.Z();
+        }
+        return true;
+    }
+
+    // The normal at a node: the surface's at its UV point, or, where the surface's is undefined, the mean of the
+    // normals of the triangles around it (OCCT's loop body).
+    private static Direction3D NodeNormal(Surface surf, Triangulation tris, int nodeIter, Connect polyConnect)
+    {
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        var norm = new Direction3D();
+        // try to retrieve normal from real surface first, when UV coordinates are available
+        if (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, tris.UVNode(nodeIter), tol, ref norm) > 1)
+        {
+            if (!ReferenceEquals(polyConnect.Triangulation(), tris))
+            {
+                polyConnect.Load(tris);
             }
 
-            tris.SetNormal(nodeIter, norm);
+            // compute flat normals
+            var eqPlan = new Xyz(0.0, 0.0, 0.0);
+            for (polyConnect.Initialize(nodeIter); polyConnect.More(); polyConnect.Next())
+            {
+                tris.Triangle(polyConnect.Value()).Get(out int tri0, out int tri1, out int tri2);
+                Xyz v1 = tris.Node(tri1).Coord() - tris.Node(tri0).Coord();
+                Xyz v2 = tris.Node(tri2).Coord() - tris.Node(tri1).Coord();
+                Xyz vv = v1 ^ v2;
+                double mod = vv.Modulus();
+                if (mod >= tol)
+                {
+                    eqPlan += vv / mod;
+                }
+            }
+            double modMax = eqPlan.Modulus();
+            norm = (modMax > tol) ? new Direction3D(eqPlan) : Constants.DZ();
         }
+        return norm;
     }
 
     /// <summary>

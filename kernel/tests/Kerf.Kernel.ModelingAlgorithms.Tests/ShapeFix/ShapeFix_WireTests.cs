@@ -370,7 +370,7 @@ public class ShapeFix_WireTests
             aEdges.Add(anE);
         }
         Wire aW = MakeWire([.. aEdges]);
-        Shape aCopy = BrepTools.ExactCopyForWrite(aW, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aW, out _);
         List<Edge> aCopied = Edges(aCopy);
         int aShifted = -1;
         for (int i = 0; i < aCopied.Count; i++)

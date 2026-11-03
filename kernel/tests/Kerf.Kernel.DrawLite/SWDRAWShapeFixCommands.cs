@@ -52,18 +52,16 @@ internal static class SWDRAWShapeFixCommands
     }
 
     /// <summary>
-    /// Runs an in-place healing tool as DRAWEXE does, on the Draw variable's shape: the tool gets an unfrozen copy and
-    /// returns its result over it; the copy's unchanged sub-shapes are given back to the input's, every variable
-    /// sharing a changed sub-shape is rebound, and the result (unfrozen, made of the input's shapes where unchanged) is
-    /// returned.
+    /// Runs an in-place healing tool as DRAWEXE does, on the Draw variable's shape: the tool runs on the shape itself in
+    /// a working overlay (unit 10H6; until then on an unfrozen copy) and returns its result; every variable sharing a
+    /// changed sub-shape is rebound, and the result (unfrozen, made of the input's shapes where unchanged) is returned.
     /// </summary>
     internal static Shape InPlace(DrawInterpreter theDI, in Shape theShape, Func<Shape, Shape> theTool)
     {
-        var anEntry = new CopyAtEntry(theShape, null, true);
-        Shape aWork = anEntry.Shape();
-        Shape aResult = theTool(aWork);
-        aResult = anEntry.Finish(aResult, [aWork]);
-        DrawShapeRebind.Rebind(theDI, theShape, anEntry.Final(aWork));
+        using var anOverlay = WorkingOverlay.Begin(theShape);
+        Shape aResult = theTool(theShape);
+        aResult = anOverlay.Finish(aResult, [theShape]);
+        DrawShapeRebind.Rebind(theDI, theShape, anOverlay.Final(theShape));
         return aResult;
     }
 

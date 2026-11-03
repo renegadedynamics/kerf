@@ -15,8 +15,8 @@ namespace Kerf.Engine.HiddenLines;
 /// <c>Hide</c>, then read the visible and hidden lines with HLRBRep_HLRToShape.
 /// </summary>
 /// <remarks>
-/// A working object (a transient), as OCCT's. The caller's shapes are not written into: the outliners copy frozen
-/// shapes at the entry (decision 1095).
+/// A working object (a transient), as OCCT's. The caller's shapes are not written into: the outliners write in
+/// working overlays (unit 10H6).
 /// </remarks>
 public class HiddenLineAlgo : InternalAlgo
 {

@@ -109,3 +109,7 @@ The first packages, for Bento's 3D-models extension.
   before.
 - Kerf's unit 10K1: `Face.MakeSurfacePatch` with `ContinuityLevel.C2` constraints works (the kernel's MakeFilling threw
   on G2), and `C1` keeps meaning tangent continuity.
+- Kerf's unit 10H6: triangulating a part no longer copies it in the kernel: the mesh is written in a working overlay,
+  and copying it out allocates less than half what it did (the normals go straight into the buffer).
+  `ShapeMeshTests.ABigMeshComesOutQuickly` checks the allocation and the best of five runs instead of one timing, which
+  failed on loaded machines. Results are as before.

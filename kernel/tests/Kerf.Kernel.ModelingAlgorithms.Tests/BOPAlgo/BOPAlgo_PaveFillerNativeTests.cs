@@ -84,7 +84,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         BrepTools.Read(out Shape aShape, new StringReader(theCase.ShapesText));
         if (!theFreeze)
         {
-            aShape = BrepTools.ExactCopyForWrite(aShape, out _);
+            aShape = TestCopies.ExactCopyForWrite(aShape, out _);
         }
         NCollection_List<Shape> aLS = new();
         for (Iterator anIt = new(aShape); anIt.More(); anIt.Next())

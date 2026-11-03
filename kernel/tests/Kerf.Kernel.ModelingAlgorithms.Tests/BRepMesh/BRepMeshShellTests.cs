@@ -391,7 +391,7 @@ public class BRepMeshShellTests
     public void MeshBuilder_statuses()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
 
         var aNoContext = new MeshBuilder();
         aNoContext.Perform(new ProgressRange());
@@ -440,7 +440,7 @@ public class BRepMeshShellTests
         Assert.Null(aGood.GetModel());
         ToolContext aKeep = StubContext();
         aKeep.ChangeParameters().CleanModel = false;
-        Assert.Equal(Done1, Run(aKeep, BrepTools.ExactCopyForWrite(aBox, out _)));
+        Assert.Equal(Done1, Run(aKeep, TestCopies.ExactCopyForWrite(aBox, out _)));
         Assert.Equal(6, aKeep.GetModel()!.FacesNb());
         Assert.Equal(12, aKeep.GetModel()!.EdgesNb());
     }
@@ -650,7 +650,7 @@ public class BRepMeshShellTests
         }
         TestShapes.Frozen(aBox);
 
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
         Face aFace = Faces(aCopy)[0];
         Triangulation aTri = Triangulation(aFace)!;
         Assert.True(aTri.IsFrozen); // shared with the frozen input

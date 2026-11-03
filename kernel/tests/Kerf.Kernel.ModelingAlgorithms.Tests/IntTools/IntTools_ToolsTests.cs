@@ -21,7 +21,7 @@ public class IntTools_ToolsTests
     private static Vertex Vertex(double theX, double theY, double theZ, double theTol)
     {
         Vertex aV = new MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
-        Vertex aCopy = ShapeCasts.Vertex(BrepTools.ExactCopyForWrite(aV, out _));
+        Vertex aCopy = ShapeCasts.Vertex(TestCopies.ExactCopyForWrite(aV, out _));
         new BrepBuilder().UpdateVertex(aCopy, theTol);
         return aCopy;
     }

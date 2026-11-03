@@ -138,7 +138,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
         if (theCase.Kind.StartsWith("loop", StringComparison.Ordinal))
         {
             // BRepAlgo_Loop writes into the edges it is given, as in OCCT: an unfrozen copy
-            aRead = BrepTools.ExactCopyForWrite(aRead, out _);
+            aRead = TestCopies.ExactCopyForWrite(aRead, out _);
         }
         List<Shape> anIn = [];
         for (global::Kerf.Engine.Topology.Iterator anIt = new(aRead); anIt.More(); anIt.Next())
@@ -274,7 +274,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
         Assert.False(aRead.IsNull);
         if (theInPlace)
         {
-            aRead = BrepTools.ExactCopyForWrite(aRead, out _);
+            aRead = TestCopies.ExactCopyForWrite(aRead, out _);
         }
         (Face aFace, List<Wire> aWires) = Input(aRead);
         StringBuilder aRec = new();

@@ -27,7 +27,7 @@ public class BOPTools_AlgoTools_1Tests
     // An unfrozen copy of the data/occ shape with every edge and vertex tolerance set to 1e-10 (read as 1e-7).
     private static Shape ShrunkCopy(string theFile)
     {
-        Shape aShape = BrepTools.ExactCopyForWrite(BRepMeshModelKit.ReadDataOcc(theFile), out _);
+        Shape aShape = TestCopies.ExactCopyForWrite(BRepMeshModelKit.ReadDataOcc(theFile), out _);
         for (Explorer anExp = new(aShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             ((BrepTEdge)anExp.Current().TShape()!).Tolerance(theShrunk);

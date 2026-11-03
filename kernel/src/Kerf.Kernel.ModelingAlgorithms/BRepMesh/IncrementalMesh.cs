@@ -22,11 +22,14 @@ namespace Kerf.Engine.Meshing;
 /// <b>Writing into the shape</b> (decision 489). OCCT writes the triangulations into the faces of the shape it is
 /// given, and the polygons into its edges.
 /// <list type="bullet">
-/// <item>On a shape whose graph holds a frozen TShape (any shape a caller holds), the port meshes
-/// <c>BRepTools.ExactCopyForWrite</c> of it; then <c>BRepTools.KeepUnchanged</c> gives back the input's own sub-shapes
-/// wherever meshing changed nothing (decisions 416, 468), and the result is frozen. <see cref="DiscretRoot.Shape"/>
-/// then returns the meshed result and <see cref="History"/> maps the input's sub-shapes to the result's. The input is
-/// never written; meshing a shape that is already meshed finely enough gives back the input itself.</item>
+/// <item>On a shape whose graph holds a frozen TShape (any shape a caller holds), the port meshes it in a working
+/// overlay of its own (unit 10H6, <see cref="WorkingOverlay"/>; its unfrozen TShapes, a compound a caller built,
+/// copied first): the triangulations and polygons go to working copies of the faces and edges, and the result holds
+/// new TShapes for them and the input's own sub-shapes wherever meshing changed nothing, frozen.
+/// <see cref="DiscretRoot.Shape"/> then returns the meshed result and <see cref="History"/> maps the input's sub-shapes
+/// to the result's. The input is never written; meshing a shape that is already meshed finely enough gives back the
+/// input itself. The overlay is the mesher's own even inside another operation's, as the copy was: meshing gives a
+/// result, it doesn't write into the operation's shapes.</item>
 /// <item>On an unfrozen shape (ported code's), it meshes in place, as OCCT does; <see cref="History"/> is empty.</item>
 /// </list>
 /// So build123d.NET's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
@@ -52,7 +55,7 @@ public class IncrementalMesh : DiscretRoot
     protected bool _modified;
     protected int _status;
 
-    // OCCT.NET: the copy for write (decision 489)
+    // OCCT.NET: the history of a frozen shape's meshing (decision 489)
     private History _history = new();
     private bool _toCopyAlways;
 
@@ -108,12 +111,31 @@ public class IncrementalMesh : DiscretRoot
     {
         InitParameters();
 
-        // OCCT.NET: a shape holding frozen TShapes is meshed on an exact copy (decision 489)
+        // OCCT.NET: a shape holding frozen TShapes is meshed in a working overlay (decision 489, unit 10H6)
         Shape input = Shape();
-        bool isCopy = !input.IsNull && (_toCopyAlways || BrepTools.HoldsFrozen(input));
-        Shape target = isCopy ? BrepTools.ExactCopyForWrite(input, out _) : input;
         _history = new History();
+        Dictionary<TShape, TShape>? copies = null;
+        Shape target = input;
+        WorkingOverlay? overlay = null;
+        if (!input.IsNull && (_toCopyAlways || !WorkingOverlay.IsWritableInPlace(input)))
+        {
+            target = WorkingOverlay.WithUnfrozenCopied(input, out copies);
+            overlay = WorkingOverlay.Begin(target);
+        }
+        try
+        {
+            Perform(context, target, overlay, copies, range);
+        }
+        finally
+        {
+            overlay?.Dispose();
+        }
+    }
 
+    // Meshes target (the input, or the input with its unfrozen TShapes copied) in the overlay, if any.
+    private void Perform(ToolContext context, in Shape target, WorkingOverlay? overlay,
+                         Dictionary<TShape, TShape>? copies, ProgressRange range)
+    {
         context.SetShape(target);
         context.ChangeParameters() = _parameters;
         context.ChangeParameters().CleanModel = false;
@@ -143,10 +165,11 @@ public class IncrementalMesh : DiscretRoot
             }
         }
 
-        // OCCT.NET: publish the meshed copy, sharing what meshing left unchanged
-        if (isCopy)
+        // OCCT.NET: publish the meshed shape, sharing what meshing left unchanged (unit 10H6)
+        if (overlay is not null)
         {
-            _shape = BrepTools.KeepUnchanged(input, target, out _history);
+            _shape = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(target), copies);
+            _history = overlay.History();
             _shape.TShape()?.FreezeGraph();
         }
 

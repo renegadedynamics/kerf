@@ -46,7 +46,7 @@ internal static class ReconComparison
         else
         {
             // the fillet builder's working copy (decision 1087): Compute's steps after MergeSolid write into it
-            anInput = BrepTools.ExactCopyForWrite(anInput, out History _);
+            anInput = TestCopies.ExactCopyForWrite(anInput, out History _);
         }
         DsHDataStructure aHDS = TextDump.Read(theCase.DsText, anInput);
         DsDataStructure aDS = aHDS.DS();

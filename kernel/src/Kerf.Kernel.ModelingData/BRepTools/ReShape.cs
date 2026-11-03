@@ -687,23 +687,20 @@ public class ReShape : Transient
     }
 
     /// <summary>
-    /// OCCT.NET (decision 583, <c>BRepTools_CopyAtEntry</c>): replaces, in every recorded request, the TShape of the
-    /// recorded shape by its image in <paramref name="keys"/> and the TShape of the replacement (and of the
-    /// recorded replacements, <see cref="IsNewShape"/>) by its image in <paramref name="results"/>, keeping their
-    /// locations and orientations; TShapes without an image stay. The requests keep their order and kinds; if two
-    /// recorded shapes get the same image, the later request wins. So a context filled by an algorithm working on a
-    /// copy answers for the shapes the copy was made from, and the other way round.
+    /// Kerf (the working overlay's <c>Finish</c>, units 10H1 and 10H6): replaces, in every recorded request, the TShape
+    /// of the replacement (and of the recorded replacements, <see cref="IsNewShape"/>) by its image in
+    /// <paramref name="results"/>, keeping their locations and orientations; TShapes without an image stay, and so do
+    /// the recorded shapes, the requests' order and kinds. So a context filled by an operation in a working overlay
+    /// answers with what stands for its replacements in the operation's result.
     /// </summary>
-    internal void ReplaceTShapes(IReadOnlyDictionary<TShape, TShape> keys,
-                                 IReadOnlyDictionary<TShape, TShape> results)
+    internal void ReplaceResults(IReadOnlyDictionary<TShape, TShape> results)
     {
         var entries = new List<KeyValuePair<Shape, TReplacement>>(_shapeToReplacement);
         _shapeToReplacement.Clear();
         foreach (KeyValuePair<Shape, TReplacement> entry in entries)
         {
-            Shape key = WithImage(entry.Key, keys);
             Shape result = WithImage(entry.Value.RelationResult(), results);
-            _shapeToReplacement.Bind(key, new TReplacement(result, entry.Value.Kind()));
+            _shapeToReplacement.Bind(entry.Key, new TReplacement(result, entry.Value.Kind()));
         }
 
         var newShapes = new List<Shape>(_newShapes);
@@ -715,8 +712,8 @@ public class ReShape : Transient
     }
 
     /// <summary>
-    /// OCCT.NET: the replacements recorded (the results of the requests, null for removals), unfrozen, for
-    /// <c>BRepTools_CopyAtEntry</c>.
+    /// OCCT.NET: the replacements recorded (the results of the requests, null for removals), unfrozen, for the working
+    /// overlay's <c>Finish</c> and the operations that assemble them.
     /// </summary>
     internal IEnumerable<Shape> InternalReplacements()
     {

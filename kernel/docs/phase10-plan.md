@@ -399,7 +399,7 @@ Sizes are rough, in OCCT.NET lines touched.
 | **10E** The rename | The map applied assembly by assembly (Foundation, ModelingData, ModelingAlgorithms, DataExchange), with Draw-lite, build123d.NET and Bento updated by the same tool; engine types made internal | 10C, 10D's split |
 | **10F** Errors | `Result<T>` at the public boundary; `IsDone`/`Perform` replaced by operations returning results; hot-path exceptions-as-statuses removed | 10D, 10E |
 | **10G** Immutability | Public setters removed: STEP's entities get `init` and builders; geometry's post-publication mutators become copies; `InternalsVisibleTo` removed | 10E |
-| **10H1–10H6** No copy at entry | 2.4's overlay; then Booleans, construction (sharing the profile face: decisions 468 and 1102), healing, offsets, fillets, features. Each removes its sites and keeps its tests at level 1 or 2 | 10A, 10E |
+| **10H1–10H6** No copy at entry (**done**, 3 November: overlay-survey.md section 9) | 2.4's overlay; then Booleans, construction (sharing the profile face: decisions 468 and 1102), healing, offsets, fillets, features. Each removes its sites and keeps its tests at level 1 or 2 | 10A, 10E |
 | **10I** State | 2.7: statics and thread statics into per-operation context | 10E |
 | **10J** Heap and collections | 2.6: NCollection replaced, small maths on spans and inline arrays, capacities, returned types; measured with 9E's benchmarks | 10E |
 | **10K** OCCT's bugs | 2.8's triage, then the "fix" list | 10A |
@@ -420,7 +420,7 @@ With at most three OCCT.NET units at once; build123d.NET and Bento work runs out
 | 5 | 10F ‖ 10G ‖ 10H1 | |
 | 6 | 10H2 ‖ 10H3 ‖ 10I | |
 | 7 | 10H4 ‖ 10H5 ‖ 10J | |
-| 8 | 10H6 ‖ 10L ‖ 10K's fixes | |
+| 8 | 10H6 ‖ 10L ‖ 10K's fixes | 10H done with 10H6: no copy at entry left, and its machinery gone |
 | 9 | 10M, then 10N | |
 
 **Releases:**

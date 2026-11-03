@@ -127,7 +127,7 @@ public class BOPAlgo_CheckerSITests
         Assert.False(aChecker.HasErrors);
         Assert.Equal(aBefore, BRepTextComparison.Write(aC));
         // the same on an unfrozen copy: the checker is non-destructive
-        Shape aCopy = BrepTools.ExactCopyForWrite(aC, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aC, out _);
         string aCopyBefore = BRepTextComparison.Write(aCopy);
         Assert.Equal(Kinds(aChecker), Kinds(Check(aCopy)));
         Assert.Equal(aCopyBefore, BRepTextComparison.Write(aCopy));

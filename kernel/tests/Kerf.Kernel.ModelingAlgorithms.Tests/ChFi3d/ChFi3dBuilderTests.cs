@@ -54,7 +54,7 @@ public class ChFi3dBuilderTests
         // UpdateVertex) and gives the elementary spines' edges 3D curves: in the builder's working overlay, never in
         // the caller's frozen shape (decision 1087, unit 10H5)
         Shape aBox = Box();
-        Assert.True(BrepTools.HoldsFrozen(aBox));
+        Assert.True(TestCopies.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
         (FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 10)));

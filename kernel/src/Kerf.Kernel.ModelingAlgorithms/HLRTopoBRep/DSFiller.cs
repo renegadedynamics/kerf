@@ -26,8 +26,8 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// </summary>
 /// <remarks>
 /// OCCT's static class. It writes into the shape it is given (the point representations of the end vertices of the
-/// edges it splits, in <c>ProcessEdges</c>), so the shape must be unfrozen: HLRTopoBRep_OutLiner gives it its
-/// working copy (decision 1095); a frozen shape throws TopoDS_LockedShape. The contours are built as OCCT does
+/// edges it splits, in <c>ProcessEdges</c>): HLRTopoBRep_OutLiner runs it in a working overlay (unit 10H6); outside
+/// one a frozen shape throws TopoDS_LockedShape. The contours are built as OCCT does
 /// (decision 1084). The commented-out vertex map and interpolation of short walking lines are left out.
 /// </remarks>
 public static class DSFiller

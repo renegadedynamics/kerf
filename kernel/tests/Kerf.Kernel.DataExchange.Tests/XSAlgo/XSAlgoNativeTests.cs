@@ -296,7 +296,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return Run("PCURVE", () =>
         {
             Assert.True(BrepTools.Read(out Shape aRead, thePath));
-            Shape anInput = BrepTools.ExactCopyForWrite(aRead, out _); // a reader's shape, not frozen
+            Shape anInput = TestCopies.ExactCopyForWrite(aRead, out _); // a reader's shape, not frozen
             var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
             int aNb = 0, aNbTrue = 0;
@@ -346,7 +346,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     {
         string aPath = Path.Combine(Metadata("OcctSourceDir"), "data", "occ", "CrankArm.brep");
         Assert.True(BrepTools.Read(out Shape aRead, aPath), aPath);
-        Shape aShape = BrepTools.ExactCopyForWrite(aRead, out _);
+        Shape aShape = TestCopies.ExactCopyForWrite(aRead, out _);
         var aSetup = new Setup();
         var aProcessor = new global::Kerf.Engine.Exchange.Framework.ShapeProcessor(aSetup.WriteParams);
         aProcessor.ProcessShape(aShape, aSetup.WriteFlags);

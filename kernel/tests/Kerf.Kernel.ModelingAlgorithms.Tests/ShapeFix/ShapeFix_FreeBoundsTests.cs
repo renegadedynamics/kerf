@@ -180,7 +180,7 @@ public class ShapeFix_FreeBoundsTests
     public void UnfrozenInput_IsConnectedInPlace()
     {
         Face aFace = SquareWithOpenCorner(1e-4, true);
-        Assert.False(BrepTools.HoldsFrozen(aFace));
+        Assert.False(TestCopies.HoldsFrozen(aFace));
         var aB = new BrepBuilder();
         var aC = new Compound();
         aB.MakeCompound(ref aC);

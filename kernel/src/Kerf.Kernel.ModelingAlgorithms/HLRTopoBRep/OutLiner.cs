@@ -30,12 +30,11 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// <para>
 /// OCCT's outlining writes into the original shape: the vertices of the edges it splits get point representations on
 /// the new edges (HLRTopoBRep_DSFiller's <c>ProcessEdges</c>, HLRTopoBRep_FaceIsoLiner's <c>MakeIsoLine</c>). So
-/// <see cref="Fill"/> copies an original shape holding frozen TShapes at the entry (<c>BRepTools.ExactCopyForWrite</c>,
-/// decision 1095, as decisions 973, 1005 and 1013) and outlines the copy, its working shape; an unfrozen shape (a
-/// ported caller's) is outlined in place, as OCCT does. <see cref="OriginalShape()"/> stays the caller's shape; the
-/// outlined shape, the data and the maps of adaptors given to <see cref="Fill"/> refer to the working shape, which
-/// ported code reads with <see cref="InternalWorkingShape"/> (HLRBRep_ShapeToHLR). The hidden-line results are new
-/// edges, so nothing is to be given back. <see cref="OutLinedShape()"/> is a publication point (frozen);
+/// <see cref="Fill"/> outlines the caller's shape in a working overlay (unit 10H6, <see cref="WorkingOverlay"/>; in
+/// place inside an operation's overlay that takes writes, as HLRBRep_ShapeToHLR's <c>Load</c> opens one around the
+/// outlining and its reads): the vertices' new representations go to working copies, and the data and the maps of
+/// adaptors refer to the caller's own sub-shapes, as OCCT's. At the end the outlined shape holds new TShapes for the
+/// vertices that took a representation (and the caller's edges holding them); the hidden-line results are new edges. <see cref="OutLinedShape()"/> is a publication point (frozen);
 /// <see cref="InternalOutLinedShape"/> doesn't freeze.
 /// </para>
 /// </remarks>
@@ -43,8 +42,6 @@ public class OutLiner : Transient
 {
     private Shape _originalShape = new();
     private Shape _outLinedShape = new();
-    private Shape _workingShape = new();
-    private Dictionary<TShape, TShape>? _copies; // the original's TShapes to the working shape's (7Q2)
     private readonly TopologyData _ds = new();
 
     public OutLiner()
@@ -79,28 +76,6 @@ public class OutLiner : Transient
     /// <summary><see cref="OutLinedShape()"/> without freezing, for ported code.</summary>
     internal Shape InternalOutLinedShape() => _outLinedShape;
 
-    /// <summary>
-    /// The shape the outlining works on: the original shape, or its copy when it held frozen TShapes (decision 1095).
-    /// The original shape before <see cref="Fill"/>.
-    /// </summary>
-    internal Shape InternalWorkingShape() => _workingShape.IsNull ? _originalShape : _workingShape;
-
-    /// <summary>
-    /// The image of a sub-shape of the original shape in the working shape (the same place and orientation, the
-    /// copy's TShape); the shape itself when the original wasn't copied or the shape isn't one of its sub-shapes
-    /// (unit 7Q2: HLRBRep_HLRToShape finds a caller's sub-shapes in the data structure through it).
-    /// </summary>
-    internal Shape InternalWorkingImage(in Shape s)
-    {
-        if (_copies is not null && !s.IsNull && _copies.TryGetValue(s.TShape()!, out TShape? image))
-        {
-            Shape shape = s;
-            shape.TShape(image);
-            return shape;
-        }
-        return s;
-    }
-
     public TopologyData DataStructure() => _ds;
 
     /// <summary>
@@ -113,11 +88,8 @@ public class OutLiner : Transient
         {
             if (_outLinedShape.IsNull)
             {
-                // copy at the entry (decision 1095)
-                _copies = null;
-                _workingShape = BrepTools.HoldsFrozen(_originalShape)
-                                     ? BrepTools.ExactCopyForWrite(_originalShape, out _, out _copies)
-                                     : _originalShape;
+                // Kerf: outlined in a working overlay (unit 10H6), unless one that takes writes is open here
+                using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_originalShape);
 
                 Vector3D vecz = new(0.0, 0.0, 1.0);
                 Transform3D tr = p.Transformation();
@@ -134,8 +106,12 @@ public class OutLiner : Transient
                     Direction3D dirZ = new(vecz);
                     fo.Init(new Vector3D(dirZ));
                 }
-                DSFiller.Insert(_workingShape, fo, _ds, mst, nbIso);
+                DSFiller.Insert(_originalShape, fo, _ds, mst, nbIso);
                 BuildShape(mst);
+                if (overlay is not null)
+                {
+                    _outLinedShape = overlay.Finish(_outLinedShape);
+                }
             }
         }
     }
@@ -334,7 +310,7 @@ public class OutLiner : Transient
         _outLinedShape = compound;
         HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
 
-        for (exshell.Init(_workingShape, ShapeType.Shell); exshell.More(); exshell.Next())
+        for (exshell.Init(_originalShape, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
 
             Shell theShell = new();
@@ -352,7 +328,7 @@ public class OutLiner : Transient
             b.Add(_outLinedShape, theShell);
         }
 
-        for (exface.Init(_workingShape, ShapeType.Face, ShapeType.Shell); exface.More(); exface.Next())
+        for (exface.Init(_originalShape, ShapeType.Face, ShapeType.Shell); exface.More(); exface.Next())
         { // faces not in a shell
             if (shapeMap.Add(exface.Current()))
             {
@@ -360,7 +336,7 @@ public class OutLiner : Transient
             }
         }
 
-        for (exedge.Init(_workingShape, ShapeType.Edge, ShapeType.Face); exedge.More(); exedge.Next())
+        for (exedge.Init(_originalShape, ShapeType.Edge, ShapeType.Face); exedge.More(); exedge.Next())
         { // edges not in a face
             b.Add(_outLinedShape, exedge.Current());
         }

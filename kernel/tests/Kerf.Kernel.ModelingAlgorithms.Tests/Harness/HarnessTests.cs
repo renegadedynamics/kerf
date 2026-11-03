@@ -217,7 +217,7 @@ public class HarnessTests
             CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aShape, aCopy);
             Assert.True(aComparison.IsIdentical, aComparison.ToString());
 
-            Shape anExact = BrepTools.ExactCopyForWrite(aShape, out _);
+            Shape anExact = TestCopies.ExactCopyForWrite(aShape, out _);
             CanonicalShapeComparer.AssertIdentical(aShape, anExact);
         }
     }
@@ -226,7 +226,7 @@ public class HarnessTests
     public void Canonical_VertexMoved_DetectedExactly_MatchedWithTolerance()
     {
         Shape aBox = Box();
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
         Vertex aVertex = ShapeCasts.Vertex(CanonicalShapeComparer.SubShapes(aCopy, ShapeType.Vertex)[0]);
         Point3D aP = Tool.Pnt(aVertex);
         new BrepBuilder().UpdateVertex(aVertex, new Point3D(aP.X() + 1.0e-12, aP.Y(), aP.Z()), Tool.Tolerance(aVertex));
@@ -243,7 +243,7 @@ public class HarnessTests
     public void Canonical_ToleranceChanged_ReportedAsAttributeDifference()
     {
         Shape aBox = Box();
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
         Vertex aVertex = ShapeCasts.Vertex(CanonicalShapeComparer.SubShapes(aCopy, ShapeType.Vertex)[3]);
         new BrepBuilder().UpdateVertex(aVertex, 1.0e-4);
 
@@ -328,11 +328,11 @@ public class HarnessTests
 
         DeterminismHarness.AssertSerialEqualsParallel([aBox], () =>
         {
-            Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
+            Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out History aHistory);
             return (aCopy, aHistory);
         }, 2);
 
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out History aHistory);
         string aText = DeterminismHarness.HistoryText([aBox], aCopy, aHistory);
         Assert.Contains("TopAbs_FACE M[", aText, StringComparison.Ordinal);
         Assert.DoesNotContain("M[0", aText, StringComparison.Ordinal);
@@ -345,7 +345,7 @@ public class HarnessTests
     {
         // Arguments and result renumbered at the top level only: the history knows the solids and below
         Shape anArgument = SharedCompound();
-        Shape aCopy = BrepTools.ExactCopyForWrite(anArgument, out History aHistory);
+        Shape aCopy = TestCopies.ExactCopyForWrite(anArgument, out History aHistory);
         Shape aPortArgument = ShuffleTopLevel(anArgument, new Random(5));
         Shape aPortCopy = ShuffleTopLevel(aCopy, new Random(6));
         Assert.NotEqual(BRepTextComparison.Write(aCopy), BRepTextComparison.Write(aPortCopy));
@@ -353,7 +353,7 @@ public class HarnessTests
         HistoryComparison.AssertSame([anArgument], aCopy, aHistory, [aPortArgument], aPortCopy, aHistory);
 
         // An independent copy: different TShapes on the port side, the same geometry
-        Shape aCopy2 = BrepTools.ExactCopyForWrite(anArgument, out History aHistory2);
+        Shape aCopy2 = TestCopies.ExactCopyForWrite(anArgument, out History aHistory2);
         HistoryComparison.AssertSame([anArgument], aCopy, aHistory, [anArgument], aCopy2, aHistory2);
     }
 
@@ -379,7 +379,7 @@ public class HarnessTests
     public void History_Different_IsReported()
     {
         Shape aBox = Box();
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out History aHistory);
         var anEmpty = new History();
         Shape aFace = CanonicalShapeComparer.SubShapes(aBox, ShapeType.Face)[0];
         anEmpty.Remove(aFace);
