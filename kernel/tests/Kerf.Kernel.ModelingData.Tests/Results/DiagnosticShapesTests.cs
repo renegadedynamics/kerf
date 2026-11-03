@@ -39,7 +39,7 @@ public class DiagnosticShapesTests
     public void BuiltConvertsToItsShape()
     {
         var vertex = MakeVertex(3);
-        var history = new History();
+        ShapeHistory history = ShapeHistory.Empty;
         var built = new Built<Vertex>(vertex, history);
         Vertex shape = built;
         Assert.True(shape.IsSame(vertex));
@@ -52,7 +52,7 @@ public class DiagnosticShapesTests
     public void BuiltSucceedsAsAResult()
     {
         var vertex = MakeVertex(4);
-        Result<Built<Vertex>> result = new Built<Vertex>(vertex, new History());
+        Result<Built<Vertex>> result = new Built<Vertex>(vertex, ShapeHistory.Empty);
         Vertex shape = result.Value;
         Assert.True(shape.IsSame(vertex));
     }
