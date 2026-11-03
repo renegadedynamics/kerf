@@ -12,6 +12,7 @@ using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.Orientation;
@@ -1084,7 +1085,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         _history!.Merge(adjFacesHistory);
         // History of intersection
         _history.Merge(mv.InternalHistory());
-        // OCCT.NET: frozen. The input faces RemoveInternalWires replaced by copies (OCCT edits them in place)
+        // Kerf: the input faces RemoveInternalWires changed in its overlay, modified into what stands for them
         _history.Merge(copies);
 
         if (HasHistory)
@@ -1325,15 +1326,17 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     }
 
     // Removes internal wires from the faces.
-    // OCCT.NET: frozen. OCCT removes the wires from the face itself (BRep_Builder::Remove on the face reached through
-    // the explorer), so every shape sharing the face sees the change. A frozen face (one of the input's) can't be
-    // changed: it is replaced by a copy without those wires, in the containers of theShapes that hold it (rebuilt in
-    // their order) or in the list itself, and the replacement is recorded in theCopies (Modified).
+    // Kerf: OCCT removes the wires from the face itself (BRep_Builder::Remove on the face reached through the
+    // explorer), so every shape sharing the face sees the change. It does so here in a working overlay: a frozen face
+    // (one of the input's) gets a working copy, and at the end the shapes of theShapes hold what stands for it (an
+    // unfrozen container in place, a face of the list replaced); each face so replaced is recorded in theCopies
+    // (Modified).
     private static void RemoveInternalWires(NCollection_List<Shape> shapes,
                                             NCollection_List<Shape>? removed,
                                             History copies)
     {
-        NCollection_DataMap<Shape, Shape> aCopies = new(ShapeHasher.Instance);
+        using var overlay = WorkingOverlay.Begin(new Shape());
+        NCollection_List<Shape> changed = new();
         NCollection_List<Shape>.Iterator itLS = new(shapes);
         for (; itLS.More(); itLS.Next())
         {
@@ -1346,31 +1349,6 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 FindInternals(f, lwToRemove);
                 if (lwToRemove.Extent() != 0)
                 {
-                    if (f.TShape()!.IsFrozen)
-                    {
-                        if (aCopies.IsBound(f))
-                        {
-                            continue;
-                        }
-                        // the copy: the face's TShape emptied, with the wires that stay
-                        Shape fCopy = f.EmptyCopied();
-                        Iterator itW = new(f);
-                        for (; itW.More(); itW.Next())
-                        {
-                            if (!lwToRemove.Contains(itW.Value()))
-                            {
-                                new BrepBuilder().Add(fCopy, itW.Value());
-                            }
-                        }
-                        NCollection_List<Shape>.Iterator itR0 = new(lwToRemove);
-                        for (; itR0.More(); itR0.Next())
-                        {
-                            removed?.Append(itR0.Value());
-                        }
-                        aCopies.Bind(f, fCopy);
-                        copies.AddModified(f, fCopy);
-                        continue;
-                    }
                     f.Free(true);
                     NCollection_List<Shape>.Iterator itR = new(lwToRemove);
                     for (; itR.More(); itR.Next())
@@ -1379,88 +1357,25 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                         new BrepBuilder().Remove(f, itR.Value());
                     }
                     f.Free(false);
+                    changed.Append(f);
                 }
             }
         }
 
-        if (aCopies.IsEmpty())
-        {
-            return;
-        }
-        // Put the copies in place of the frozen faces
+        overlay.Finish(new Shape(), shapes);
         for (itLS.Initialize(shapes); itLS.More(); itLS.Next())
         {
-            Shape shape = itLS.Value();
-            if (shape.ShapeType() == ShapeType.Face)
+            itLS.ChangeValue() = overlay.Final(itLS.Value());
+        }
+        for (NCollection_List<Shape>.Iterator it = new(changed); it.More(); it.Next())
+        {
+            Shape f = it.Value();
+            Shape now = overlay.Final(f);
+            if (!ReferenceEquals(now.TShape(), f.TShape()))
             {
-                if (aCopies.Find(shape, out Shape copy))
-                {
-                    itLS.ChangeValue() = WithTShape(shape, copy);
-                }
-                continue;
+                copies.AddModified(f, now);
             }
-            ReplaceFaces(shape, aCopies);
         }
-    }
-
-    // The shape with the TShape of theTShapeOf, keeping its own location and orientation.
-    private static Shape WithTShape(in Shape shape, in Shape tShapeOf)
-    {
-        Shape s = shape;
-        s.TShape(tShapeOf.TShape());
-        return s;
-    }
-
-    // Replaces the faces bound in theCopies by their copies in the (unfrozen) containers of theShape, keeping the
-    // order of every container's children.
-    private static bool ReplaceFaces(in Shape shape, NCollection_DataMap<Shape, Shape> copies)
-    {
-        if (shape.ShapeType() == ShapeType.Face)
-        {
-            return false;
-        }
-        List<Shape> children = [];
-        bool changed = false;
-        for (Iterator it = new(shape, false, false); it.More(); it.Next())
-        {
-            Shape child = it.Value();
-            if (child.ShapeType() == ShapeType.Face && copies.Find(child, out Shape copy))
-            {
-                child = WithTShape(child, copy);
-                changed = true;
-            }
-            else if (!child.TShape()!.IsFrozen && ReplaceFaces(child, copies))
-            {
-                changed = true;
-            }
-            children.Add(child);
-        }
-        if (!changed)
-        {
-            return false;
-        }
-        // Rebuild the container's list in its order (TShape-relative children: no location or orientation composed)
-        Shape bare = shape;
-        bare.Location(new Placement(), false);
-        bare.Orientation(Forward);
-        bool free = bare.Free();
-        bare.Free(true);
-        BrepBuilder bb = new();
-        List<Shape> old = [];
-        for (Iterator it = new(bare, false, false); it.More(); it.Next())
-        {
-            old.Add(it.Value());
-        }
-        foreach (Shape child in old)
-        {
-            bb.Remove(bare, child);
-        }
-        foreach (Shape child in children)
-        {
-            bb.Add(bare, child);
-        }
-        bare.Free(free);
-        return true;
     }
 
     // Get original faces from my face

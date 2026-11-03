@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.Orientation;
@@ -25,8 +26,8 @@ namespace Kerf.Engine.Booleans;
 /// <para>
 /// The result is built step by step: each Add/Remove call changes it. <see cref="BuilderShape.Shape"/>
 /// publishes (freezes) the current result; OCCT then adds the next parts into that same compound, changing the shape
-/// the caller holds. The port adds them into a new compound holding the same parts instead (<c>// OCCT.NET</c>), so a
-/// published result never changes and the next one is OCCT's.
+/// the caller holds. The port adds them in a working overlay instead, so a published result never changes and the
+/// next one is OCCT's, a new compound holding the same parts and the new ones.
 /// </para>
 /// <para>
 /// <see cref="GetAllParts"/> is the compound of all the parts, unfrozen until published like the result.
@@ -218,23 +219,6 @@ public class CellsBuilder : BooleanBuilder
         }
     }
 
-    // OCCT.NET: frozen. OCCT adds parts into myShape in place; once Shape() has published it, the port adds into a new
-    // compound holding the same parts (a published result never changes).
-    private void UnfreezeResult()
-    {
-        if (_shape.TShape() is { } tShape && tShape.IsFrozen)
-        {
-            BrepBuilder bb = new();
-            Compound c = new();
-            bb.MakeCompound(ref c);
-            for (Iterator it = new(_shape); it.More(); it.Next())
-            {
-                bb.Add(c, it.Value());
-            }
-            _shape = c;
-        }
-    }
-
     /// <summary>
     /// Adds to the result the parts that belong to all the shapes of <paramref name="lsToTake"/> and to none of
     /// <paramref name="lsToAvoid"/>, with the material <paramref name="material"/> (0: none); with
@@ -263,17 +247,22 @@ public class CellsBuilder : BooleanBuilder
         //
         bool bChanged = false;
         // add parts to result
+        // Kerf: OCCT adds the parts into myShape in place; once Shape() has published it, the working overlay takes
+        // them, and the result is a new compound holding its parts and the new ones (a published result never changes)
         NCollection_List<Shape>.Iterator itLP = new(parts);
-        for (; itLP.More(); itLP.Next())
+        using (var overlay = WorkingOverlay.Begin(_shape))
         {
-            Shape part = itLP.Value();
-            // provide uniqueness of the parts
-            if (resParts.Add(part) && !_shapeMaterial.IsBound(part))
+            for (; itLP.More(); itLP.Next())
             {
-                UnfreezeResult();
-                new BrepBuilder().Add(_shape, part);
-                bChanged = true;
+                Shape part = itLP.Value();
+                // provide uniqueness of the parts
+                if (resParts.Add(part) && !_shapeMaterial.IsBound(part))
+                {
+                    new BrepBuilder().Add(_shape, part);
+                    bChanged = true;
+                }
             }
+            _shape = overlay.Finish(_shape);
         }
         //
         // update the material
